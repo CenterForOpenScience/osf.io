@@ -9,11 +9,11 @@
             <span data-bind="if: connected">
                 <dl class="dl-horizontal dl-dataverse" style="white-space: normal">
 
-                    <dt>Study</dt>
-                    <dd>{{ study }}</dd>
+                    <dt>Dataset</dt>
+                    <dd>{{ dataset }}</dd>
 
                     <dt>Global ID</dt>
-                    <dd><a data-bind="attr: {href: studyUrl}">{{ doi }}</a></dd>
+                    <dd><a data-bind="attr: {href: datasetUrl}">{{ doi }}</a></dd>
 
                     <dt>Dataverse</dt>
                     <dd><a data-bind="attr: {href: dataverseUrl}">{{ dataverse }}</a></dd>

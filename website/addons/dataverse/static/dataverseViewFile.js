@@ -18,8 +18,8 @@ function ViewModel(url) {
     self.filename = ko.observable();
     self.dataverse = ko.observable();
     self.dataverse_url = ko.observable();
-    self.study = ko.observable();
-    self.study_url = ko.observable();
+    self.dataset = ko.observable();
+    self.dataset_url = ko.observable();
     self.download_url = ko.observable();
     self.delete_url = ko.observable();
     self.files_url = ko.observable();
@@ -37,8 +37,8 @@ function ViewModel(url) {
             self.filename(data.filename);
             self.dataverse(data.dataverse);
             self.dataverse_url(data.urls.dataverse);
-            self.study(data.study);
-            self.study_url(data.urls.study);
+            self.dataset(data.dataset);
+            self.dataset_url(data.urls.dataset);
             self.download_url(data.urls.download);
             self.delete_url(data.urls.delete);
             self.files_url(data.urls.files);

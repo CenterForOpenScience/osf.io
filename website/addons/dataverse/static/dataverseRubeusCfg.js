@@ -25,34 +25,34 @@ function refreshDataverseTree(grid, item, state) {
 }
 
 // Define HGrid Button Actions
-HGrid.Actions['releaseStudy'] = {
+HGrid.Actions['publishDataset'] = {
     on: 'click',
     callback: function (evt, row) {
         var self = this;
-        var url = row.urls.release;
+        var url = row.urls.publish;
         bootbox.confirm({
-            title: 'Release this study?',
-            message: 'By releasing this study, all content will be ' +
+            title: 'Publish this dataset?',
+            message: 'By publishing this dataset, all content will be ' +
                 'made available through the Harvard Dataverse using their ' +
                 'internal privacy settings, regardless of your OSF project ' +
-                'settings. Are you sure you want to release this study?',
+                'settings. Are you sure you want to publish this dataset?',
             callback: function(result) {
                 if(result) {
-                    self.changeStatus(row, Rubeus.Status.RELEASING_STUDY);
+                    self.changeStatus(row, Rubeus.Status.PUBLISHING_DATASET);
                     osfHelpers.putJSON(
                         url,
                         {}
                     ).done(function() {
-                        osfHelpers.growl('Your study has been released.',
-                                'Please allow up to 24 hours for the released version to ' +
+                        osfHelpers.growl('Your dataset has been published.',
+                                'Please allow up to 24 hours for the published version to ' +
                                 'appear on your OSF project\'s file page.',
                             'success');
                         self.updateItem(row);
                     }).fail( function(args) {
                         var message = args.responseJSON.code === 400 ?
                             'Something went wrong when attempting to ' +
-                            'release your study.' :
-                            'This version has already been released.';
+                            'publish your dataset.' :
+                            'This version has already been published.';
                         osfHelpers.growl('Error', message);
                         self.updateItem(row);
                     });

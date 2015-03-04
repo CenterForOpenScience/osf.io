@@ -21,7 +21,7 @@ settings_routes = {
         Rule([
             '/project/<pid>/dataverse/set/',
             '/project/<pid>/node/<nid>/dataverse/set/',
-        ], 'post', views.config.set_dataverse_and_study, json_renderer),
+        ], 'post', views.config.set_dataverse_and_dataset, json_renderer),
         Rule([
             '/project/<pid>/dataverse/deauthorize/',
             '/project/<pid>/node/<nid>/dataverse/deauthorize/',
@@ -90,10 +90,10 @@ page_routes = {
 api_routes = {
     'rules': [
         Rule(
-            ['/project/<pid>/dataverse/config/get-studies/',
-            '/project/<pid>/node/<nid>/dataverse/config/get-studies/'],
+            ['/project/<pid>/dataverse/config/get-datasets/',
+            '/project/<pid>/node/<nid>/dataverse/config/get-datasets/'],
             'post',
-            views.config.dataverse_get_studies,
+            views.config.dataverse_get_datasets,
             json_renderer
         ),
         Rule(
@@ -143,11 +143,11 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dataverse/release/',
-                '/project/<pid>/node/<nid>/dataverse/release/',
+                '/project/<pid>/dataverse/publish/',
+                '/project/<pid>/node/<nid>/dataverse/publish/',
             ],
             'put',
-            views.crud.dataverse_release_study,
+            views.crud.dataverse_publish_dataset,
             json_renderer,
         ),
         Rule(

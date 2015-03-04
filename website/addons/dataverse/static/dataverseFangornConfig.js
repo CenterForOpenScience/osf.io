@@ -39,30 +39,30 @@ function _fangornActionColumn (item, col) {
         this.dropzoneItemCache = item;
     }
 
-    function dataverseRelease(event, item, col) {
+    function dataversePublish(event, item, col) {
         var self = this; // treebeard
-        var url = item.data.urls.release;
+        var url = item.data.urls.publish;
         var modalContent = [
-            m('h3', 'Release this study?'),
-            m('p.m-md', 'By releasing this study, all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings.'),
-            m('p.font-thick.m-md', 'Are you sure you want to release this study?')
+            m('h3', 'Publish this dataset?'),
+            m('p.m-md', 'By publishing this dataset, all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings.'),
+            m('p.font-thick.m-md', 'Are you sure you want to publish this dataset?')
         ];
         var modalActions = [
             m('button.btn.btn-default.m-sm', { 'onclick' : function (){ self.modal.dismiss(); }},'Cancel'),
-            m('button.btn.btn-primary.m-sm', { 'onclick' : function() { releaseStudy(); } }, 'Release Study')
+            m('button.btn.btn-primary.m-sm', { 'onclick' : function() { publishDataset(); } }, 'Publish Dataset')
         ];
 
         this.modal.update(modalContent, modalActions);
 
-        function releaseStudy() {
+        function publishDataset() {
             self.modal.dismiss();
-            item.notify.update('Releasing Study', 'info', 1, 3000);
+            item.notify.update('Publishing Dataset', 'info', 1, 3000);
             $.osf.putJSON(
                 url,
                 {}
             ).done(function(data) {
                 var modalContent = [
-                    m('p.m-md', 'Your study has been released. Please allow up to 24 hours for the released version to appear on your OSF project\'s file page.')
+                    m('p.m-md', 'Your dataset has been published. Please allow up to 24 hours for the published version to appear on your OSF project\'s file page.')
                 ];
                 var modalActions = [
                     m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
@@ -70,8 +70,8 @@ function _fangornActionColumn (item, col) {
                 self.modal.update(modalContent, modalActions);
             }).fail( function(args) {
                 var message = args.responseJSON.code === 400 ?
-                    'Error: Something went wrong when attempting to release your study.' :
-                    'Error: This version has already been released.';
+                    'Error: Something went wrong when attempting to publish your dataset.' :
+                    'Error: This version has already been published.';
 
                 var modalContent = [
                     m('p.m-md', message)
@@ -95,11 +95,11 @@ function _fangornActionColumn (item, col) {
                 'onclick' : _uploadEvent
             },
             {
-                'name' : ' Release Study',
+                'name' : ' Publish Dataset',
                 'tooltip' : '',
                 'icon' : 'icon-globe',
                 'css' : 'btn btn-primary btn-xs',
-                'onclick' : dataverseRelease
+                'onclick' : dataversePublish
             }
         );
     } else if (item.kind === 'folder' && !item.data.addonFullname) {
@@ -142,11 +142,11 @@ function _fangornDataverseTitle(item, col) {
     var tb = this;
     if (item.data.addonFullname) {
         var contents = [m('dataverse-name', item.data.name + ' ')];
-        if (item.data.hasReleasedFiles) {
+        if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
                 var options = [
                     m('option', {selected: item.data.state === 'draft', value: 'draft'}, 'Draft'),
-                    m('option', {selected: item.data.state === 'released', value: 'released'}, 'Released')
+                    m('option', {selected: item.data.state === 'published', value: 'published'}, 'Published')
                 ];
                 contents.push(
                     m('span', [
@@ -160,7 +160,7 @@ function _fangornDataverseTitle(item, col) {
                 );
             } else {
                 contents.push(
-                    m('span', '[Released]')
+                    m('span', '[Published]')
                 );
             }
         }

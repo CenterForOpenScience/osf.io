@@ -2,7 +2,7 @@ import httplib as http
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from website.addons.dataverse.client import connect_from_settings_or_403
+from website.addons.dataverse.client import connect_from_settings_or_401
 from website.project import decorators
 from website.util import api_url_for
 
@@ -39,9 +39,9 @@ def dataverse_user_config_get(user_addon, auth, **kwargs):
     Dataverse user settings.
     """
     try:
-        connection = connect_from_settings_or_403(user_addon)
+        connection = connect_from_settings_or_401(user_addon)
     except HTTPError as error:
-        if error.code == 403:
+        if error.code == 401:
             connection = None
         else:
             raise

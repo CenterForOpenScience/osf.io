@@ -1,13 +1,13 @@
 ## State selector
 % if authorized:
-    % if has_released_files:
+    % if has_published_files:
         <select class="dataverse-state-select">
             <option value="draft" ${"selected" if state == "draft" else ""}>Draft</option>
-            <option value="released" ${"selected" if state == "released" else ""}>Released</option>
+            <option value="published" ${"selected" if state == "published" else ""}>Published</option>
         </select>
     % else:
         [Draft]
     % endif
 % else:
-    [Released]
+    [Published]
 % endif

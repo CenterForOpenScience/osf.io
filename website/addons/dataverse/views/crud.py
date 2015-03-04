@@ -15,8 +15,8 @@ from framework.utils import secure_filename
 from framework.auth.utils import privacy_info_handle
 
 from website.addons.dataverse.client import delete_file, upload_file, \
-    get_file, get_file_by_id, release_study, get_study, get_dataverse, \
-    connect_from_settings_or_403, get_files
+    get_file, get_file_by_id, publish_dataset, get_dataset, get_dataverse, \
+    connect_from_settings_or_401, get_files
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
@@ -37,7 +37,7 @@ session = requests.Session()
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
-def dataverse_release_study(node_addon, auth, **kwargs):
+def dataverse_publish_dataset(node_addon, auth, **kwargs):
 
     node = node_addon.owner
     user_settings = node_addon.user_settings
@@ -45,34 +45,34 @@ def dataverse_release_study(node_addon, auth, **kwargs):
     now = datetime.datetime.utcnow()
 
     try:
-        connection = connect_from_settings_or_403(user_settings)
+        connection = connect_from_settings_or_401(user_settings)
     except HTTPError as error:
-        if error.code == 403:
+        if error.code == httplib.UNAUTHORIZED:
             connection = None
         else:
             raise
 
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
+    dataset = get_dataset(dataverse, node_addon.dataset_doi)
 
-    if study.get_state() == 'RELEASED':
+    if dataset.get_state() == 'RELEASED':
         raise HTTPError(httplib.CONFLICT)
 
-    release_study(study)
+    publish_dataset(dataset)
 
     # Add a log
     node.add_log(
-        action='dataverse_study_released',
+        action='dataverse_dataset_published',
         params={
             'project': node.parent_id,
             'node': node._primary_key,
-            'study': study.title,
+            'dataset': dataset.title,
         },
         auth=auth,
         log_date=now,
     )
 
-    return {'study': study.title}, httplib.OK
+    return {'dataset': dataset.title}, httplib.OK
 
 
 @must_be_contributor_or_public
@@ -123,7 +123,7 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
 
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
     dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
-    study_url = 'http://dx.doi.org/' + node_addon.study_hdl
+    dataset_url = 'http://dx.doi.org/' + node_addon.dataset_doi
     delete_url = node.api_url_for('dataverse_delete_file', path=file_id)
 
     data = {
@@ -133,10 +133,10 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
         },
         'filename': scrape_dataverse(file_id, name_only=True)[0],
         'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
-        'study': privacy_info_handle(node_addon.study, anonymous),
+        'dataset': privacy_info_handle(node_addon.dataset, anonymous),
         'urls': {
             'dataverse': privacy_info_handle(dataverse_url, anonymous),
-            'study': privacy_info_handle(study_url, anonymous),
+            'dataset': privacy_info_handle(dataset_url, anonymous),
             'download': privacy_info_handle(download_url, anonymous),
             'delete': privacy_info_handle(delete_url, anonymous),
             'files': node.web_url_for('collect_file_trees'),
@@ -222,15 +222,15 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     can_view = node.can_view(auth)
 
     try:
-        connection = connect_from_settings_or_403(user_settings)
+        connection = connect_from_settings_or_401(user_settings)
     except HTTPError as error:
-        if error.code == httplib.FORBIDDEN:
+        if error.code == httplib.UNAUTHORIZED:
             connection = None
         else:
             raise
 
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
+    dataset = get_dataset(dataverse, node_addon.dataset_doi)
 
     filename = secure_filename(name)
     status_code = httplib.CREATED
@@ -242,17 +242,17 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
         raise HTTPError(httplib.UNSUPPORTED_MEDIA_TYPE)
 
     # Replace file if old version exists
-    old_file = get_file(study, filename)
+    old_file = get_file(dataset, filename)
     if old_file is not None:
         status_code = httplib.OK
         old_id = old_file.id
         delete_file(old_file)
         # Check if file was deleted
-        if get_file_by_id(study, old_id) is not None:
+        if get_file_by_id(dataset, old_id) is not None:
             raise HTTPError(httplib.BAD_REQUEST)
 
-    upload_file(study, filename, content)
-    file = get_file(study, filename)
+    upload_file(dataset, filename, content)
+    file = get_file(dataset, filename)
 
     if file is None:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -264,7 +264,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
             'node': node._primary_key,
             'filename': filename,
             'path': node.web_url_for('dataverse_view_file', path=file.id),
-            'study': study.title,
+            'dataset': dataset.title,
         },
         auth=auth,
         log_date=now,
@@ -313,21 +313,21 @@ def dataverse_delete_file(node_addon, auth, **kwargs):
         raise HTTPError(httplib.NOT_FOUND)
 
     try:
-        connection = connect_from_settings_or_403(user_settings)
+        connection = connect_from_settings_or_401(user_settings)
     except HTTPError as error:
-        if error.code == httplib.FORBIDDEN:
+        if error.code == httplib.UNAUTHORIZED:
             connection = None
         else:
             raise
 
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
-    file = get_file_by_id(study, file_id)
+    dataset = get_dataset(dataverse, node_addon.dataset_doi)
+    file = get_file_by_id(dataset, file_id)
 
     delete_file(file)
 
     # Check if file was deleted
-    if get_file_by_id(study, file_id) is not None:
+    if get_file_by_id(dataset, file_id) is not None:
         raise HTTPError(httplib.BAD_REQUEST)
 
     node.add_log(
@@ -336,7 +336,7 @@ def dataverse_delete_file(node_addon, auth, **kwargs):
             'project': node.parent_id,
             'node': node._primary_key,
             'filename': file.name,
-            'study': study.title,
+            'dataset': dataset.title,
         },
         auth=auth,
         log_date=now,
@@ -375,7 +375,7 @@ def scrape_dataverse(file_id, name_only=False):
             'form1:termsAccepted': 'on',
             'form1:termsButton': 'Continue',
         }
-        terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
+        terms_url = 'http://{0}/dvn/faces/dataset/TermsOfUsePage.xhtml'.format(HOST)
         session.post(terms_url, data=data)
         response = session.head(url) if name_only else session.get(url)
 
@@ -396,21 +396,21 @@ def fail_if_unauthorized(node_addon, auth, file_id):
         raise HTTPError(httplib.NOT_FOUND)
 
     try:
-        connection = connect_from_settings_or_403(user_settings)
+        connection = connect_from_settings_or_401(user_settings)
     except HTTPError as error:
-        if error.code == 403:
+        if error.code == httplib.UNAUTHORIZED:
             connection = None
         else:
             raise
 
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
-    released_file_ids = [f.id for f in get_files(study, released=True)]
-    all_file_ids = [f.id for f in get_files(study)] + released_file_ids
+    dataset = get_dataset(dataverse, node_addon.dataset_doi)
+    published_file_ids = [f.id for f in get_files(dataset, published=True)]
+    all_file_ids = [f.id for f in get_files(dataset)] + published_file_ids
 
     if file_id not in all_file_ids:
         raise HTTPError(httplib.FORBIDDEN)
-    elif not node.can_edit(auth) and file_id not in released_file_ids:
+    elif not node.can_edit(auth) and file_id not in published_file_ids:
         raise HTTPError(httplib.UNAUTHORIZED)
 
 
@@ -426,7 +426,7 @@ def fail_if_private(file_id):
                 'message_short': 'Cannot access file contents',
                 'message_long':
                     'The dataverse does not allow users to download files on ' +
-                    'private studies at this time. Please contact the owner ' +
-                    'of this Dataverse study for access to this file.',
+                    'private datasets at this time. Please contact the owner ' +
+                    'of this Dataverse dataset for access to this file.',
             }
         )

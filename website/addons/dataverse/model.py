@@ -94,8 +94,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
-    study_hdl = fields.StringField()
-    study = fields.StringField()
+    dataset_doi = fields.StringField()
+    dataset = fields.StringField()
 
     user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
@@ -103,7 +103,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     @property
     def is_fully_configured(self):
-        return bool(self.has_auth and self.study_hdl is not None)
+        return bool(self.has_auth and self.dataset_doi is not None)
 
     @property
     def has_auth(self):
@@ -130,8 +130,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         """Remove user authorization from this node and log the event."""
         self.dataverse_alias = None
         self.dataverse = None
-        self.study_hdl = None
-        self.study = None
+        self.dataset_doi = None
+        self.dataset = None
         self.user_settings = None
 
         if add_log:
@@ -156,7 +156,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             return (
                 u'The contents of Dataverse add-ons cannot be registered at this time; '
-                u'the Dataverse study linked to this {category} will not be included '
+                u'the Dataverse dataset linked to this {category} will not be included '
                 u'as part of this registration.'
             ).format(**locals())
 

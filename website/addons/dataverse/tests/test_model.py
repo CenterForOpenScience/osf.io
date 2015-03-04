@@ -49,8 +49,8 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         # Authorized node settings were deauthorized
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
-        assert_false(self.node_settings.study_hdl)
-        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.dataset_doi)
+        assert_false(self.node_settings.dataset)
         assert_false(self.node_settings.user_settings)
 
         # Authorized node settings were not deleted
@@ -74,16 +74,16 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         assert_equal(node_settings.user_settings.owner, self.user)
         assert_true(hasattr(node_settings, 'dataverse'))
         assert_true(hasattr(node_settings, 'dataverse_alias'))
-        assert_true(hasattr(node_settings, 'study'))
-        assert_true(hasattr(node_settings, 'study_hdl'))
+        assert_true(hasattr(node_settings, 'dataset'))
+        assert_true(hasattr(node_settings, 'dataset_doi'))
 
     def test_defaults(self):
         node_settings = AddonDataverseNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_is_none(node_settings.dataverse)
         assert_is_none(node_settings.dataverse_alias)
-        assert_is_none(node_settings.study)
-        assert_is_none(node_settings.study_hdl)
+        assert_is_none(node_settings.dataset)
+        assert_is_none(node_settings.dataset_doi)
 
     def test_has_auth(self):
         node_settings = AddonDataverseNodeSettings()
@@ -141,8 +141,8 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
-        assert_false(self.node_settings.study_hdl)
-        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.dataset_doi)
+        assert_false(self.node_settings.dataset)
         assert_false(self.node_settings.user_settings)
 
 
@@ -190,8 +190,8 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.dataverse_alias is None)
         assert_true(self.node_settings.dataverse is None)
-        assert_true(self.node_settings.study_hdl is None)
-        assert_true(self.node_settings.study is None)
+        assert_true(self.node_settings.dataset_doi is None)
+        assert_true(self.node_settings.dataset is None)
 
     def test_does_not_get_copied_to_registrations(self):
         registration = self.project.register_node(

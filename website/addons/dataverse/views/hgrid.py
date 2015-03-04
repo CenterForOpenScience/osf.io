@@ -4,7 +4,7 @@ import os
 
 from flask import request
 
-from website.addons.dataverse.client import get_study, get_files, \
+from website.addons.dataverse.client import get_dataset, get_files, \
     get_dataverse, connect_from_settings
 
 from website.project.decorators import must_be_contributor_or_public
@@ -16,35 +16,35 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
     node = node_addon.owner
     user_settings = node_addon.user_settings
 
-    default_state = 'released'
-    state = 'released' if not node.can_edit(auth) else state or default_state
+    default_state = 'published'
+    state = 'published' if not node.can_edit(auth) else state or default_state
 
     connection = connect_from_settings(user_settings)
 
-    # Quit if no study linked
-    if node_addon.study_hdl is None or connection is None:
+    # Quit if no dataset linked
+    if node_addon.dataset_doi is None or connection is None:
         return []
 
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
+    dataset = get_dataset(dataverse, node_addon.dataset_doi)
 
-    # Quit if hdl does not produce a study
-    if study is None:
+    # Quit if hdl does not produce a dataset
+    if dataset is None:
         return []
 
-    released_files = get_files(study, released=True)
+    published_files = get_files(dataset, published=True)
     authorized = node.can_edit(auth)
 
-    # Produce draft version or quit if no released version is available
-    if not released_files:
+    # Produce draft version or quit if no published version is available
+    if not published_files:
         if authorized:
             state = 'draft'
         else:
             return []
 
-    study_name = node_addon.study
-    if len(study_name) > 23:
-        study_name = u'{0}...'.format(study_name[:20])
+    dataset_name = node_addon.dataset
+    if len(dataset_name) > 23:
+        dataset_name = u'{0}...'.format(dataset_name[:20])
 
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
@@ -55,24 +55,24 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         'upload': node.api_url_for('dataverse_upload_file'),
         'fetch': node.api_url_for('dataverse_hgrid_data_contents', state=state),
         'state': node.api_url_for('dataverse_root_folder_public'),
-        'release': node.api_url_for('dataverse_release_study'),
+        'publish': node.api_url_for('dataverse_publish_dataset'),
     }
 
     buttons = [rubeus.build_addon_button(
-        '<i class="icon-globe"></i> Release Study',
-        'releaseStudy')] if state == 'draft' else None
+        '<i class="icon-globe"></i> Publish Study',
+        'publishStudy')] if state == 'draft' else None
 
     return [rubeus.build_addon_root(
         node_addon,
-        study_name,
+        dataset_name,
         urls=urls,
         permissions=permissions,
         buttons=buttons,
-        study=study_name,
-        doi=study.doi,
+        dataset=dataset_name,
+        doi=dataset.doi,
         dataverse=dataverse.title,
-        citation=study.citation,
-        hasReleasedFiles=bool(released_files),
+        citation=dataset.citation,
+        hasPublishedFiles=bool(published_files),
         state=state,
     )]
 
@@ -91,29 +91,29 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
     user_settings = node_addon.user_settings
 
     state = request.args.get('state')
-    default_state = 'released'
-    state = 'released' if not node.can_edit(auth) else state or default_state
+    default_state = 'published'
+    state = 'published' if not node.can_edit(auth) else state or default_state
 
-    released = state == 'released'
+    published = state == 'published'
 
-    can_edit = node.can_edit(auth) and not node.is_registration and not released
+    can_edit = node.can_edit(auth) and not node.is_registration and not published
     can_view = node.can_view(auth)
 
     connection = connect_from_settings(user_settings)
 
-    if node_addon.study_hdl is None or connection is None:
+    if node_addon.dataset_doi is None or connection is None:
         return []
 
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
+    dataset = get_dataset(dataverse, node_addon.dataset_doi)
 
-    # Quit if hdl does not produce a study
-    if study is None:
+    # Quit if hdl does not produce a dataset
+    if dataset is None:
         return []
 
     info = []
 
-    for f in get_files(study, released):
+    for f in get_files(dataset, published):
 
         item = {
             'addon': 'dataverse',
