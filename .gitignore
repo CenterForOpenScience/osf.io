@@ -39,7 +39,8 @@ nosetests.xml
 .idea
 .hg
 .hgignore
-env/*
+env/
+mathenv
 cover/
 .konchrc
 
