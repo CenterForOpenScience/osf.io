@@ -242,10 +242,10 @@ def search_share_atom(**kwargs):
     try:
         page = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
     except ValueError:
-        page = 0
+        page = 1
 
-    if page < 0:
-        page = 0
+    if page < 1:
+        page = 1
 
     query = build_query(q, size=RESULTS_PER_PAGE, start=page, sort=sort)
 
