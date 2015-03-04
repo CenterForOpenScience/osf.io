@@ -166,10 +166,9 @@
                   <div class="row">
                       <div class="col-xs-12">
                           <i class="icon-exchange"> </i>  Compare
-                      </div>
-                      <div class="col-xs-12">
+                      
                             <!-- Version Picker -->
-                          <span class="compare-version-text"><span data-bind="text: viewVersionDisplay"></span> to
+                          <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                             <select data-bind="value: compareVersion" id="compareVersionSelect">
                                 <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                 % if len(versions) > 1:

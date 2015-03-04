@@ -817,6 +817,7 @@ h1.node-title, h1.node-parent-title {
 
 .compare-version-text{
     margin-right: 5px;
+    margin-left: 5px;
 }
 
 .wiki-title {
