@@ -24,7 +24,7 @@
                     <form id="changeEmailForm" role="form">
                         <div class="form-group">
                             <label for="old-email">Old Email</label>
-                            <input type="email" class="form-control" name="old_email">
+                            <input type="email" class="form-control" name="old_email" value="${username}">
                         </div>
                         <div class="form-group">
                             <label for="email">New Email</label>

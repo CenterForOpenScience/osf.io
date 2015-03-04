@@ -181,6 +181,7 @@ def user_account(auth, **kwargs):
     user = auth.user
     return {
         'user_id': user._id,
+        'username': user.username
     }
 
 
