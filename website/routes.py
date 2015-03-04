@@ -636,6 +636,13 @@ def make_url_map(app):
             json_renderer
         ),
 
+        Rule(
+            '/settings/account/',
+            'get',
+            profile_views.user_account,
+            json_renderer,
+        ),
+
     ], prefix='/api/v1',)
 
     ### Search ###
