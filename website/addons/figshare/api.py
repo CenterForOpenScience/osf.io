@@ -49,10 +49,10 @@ class Figshare(object):
             return cls(None, None, None, None)
         else:
             return cls(
-                client_token=figshare_settings.CLIENT_ID,
-                client_secret=figshare_settings.CLIENT_SECRET,
-                owner_token=settings.oauth_access_token,
-                owner_secret=settings.oauth_access_token_secret,
+                client_token=figshare_settings.CLIENT_ID or '',
+                client_secret=figshare_settings.CLIENT_SECRET or '',
+                owner_token=settings.oauth_access_token or '',
+                owner_secret=settings.oauth_access_token_secret or '',
             )
 
     def _get_last_error(self):
