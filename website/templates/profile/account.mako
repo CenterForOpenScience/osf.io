@@ -47,6 +47,8 @@
                         <button type="submit"
                                 class="btn btn-default"
                                 data-bind="click:submit">Update Email</button>
+                        <!-- Flashed Messages -->
+                        <div data-bind="html: message, attr: {class: messageClass}" style="padding-top: 10px"></div>
                     </form>
                 </div>
             </div>
