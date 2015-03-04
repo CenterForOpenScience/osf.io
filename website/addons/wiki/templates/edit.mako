@@ -130,7 +130,7 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="wiki-panel">
+              <div id="wikiViewPanel" class="wiki-panel">
                 <div class="wiki-panel-header">
                     <div class="row">
                         <div class="col-sm-6">
@@ -153,9 +153,11 @@
                         </div>
                     </div>
                 </div>
-
-                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : 230" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
+                <div  class="wiki-panel-body wiki-panel-body-flex">
+                  <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 175, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+                  </div>
                 </div>
+
               </div>
           </div>
           <div data-osf-panel="Compare"

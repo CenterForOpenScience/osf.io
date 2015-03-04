@@ -303,16 +303,17 @@ ko.bindingHandlers.tooltip = {
  */
 ko.bindingHandlers.anchorScroll = {
     init: function(elem, valueAccessor) {
-        console.log(elem, $(elem),valueAccessor());
-        var buffer = valueAccessor() || 100;
-        $(elem).on('click', 'a[href^="#"]', function (event) {
+        console.log( valueAccessor());
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        $(element).on('click', 'a[href^="#"]', function (event) {
             var $item = $(this);
             if(!$item.attr('data-model') && $item.attr('href') !== "#") {
                 event.preventDefault();
                 // get location of the target
                 var target = $item.attr('href'),
                     offset = $(target).offset();
-                $(elem).scrollTop(offset.top - buffer);
+                $(element).scrollTop(offset.top - buffer);
             }
         });
     }
