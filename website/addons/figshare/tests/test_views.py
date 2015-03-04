@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import furl
 import mock
 import unittest
+import responses
+from os.path import join as join_path
+from json import dumps
 
-from nose.tools import *
+from nose.tools import *  # noqa
 
 import httplib as http
 
@@ -20,7 +22,6 @@ from website.addons.figshare.views.config import serialize_settings
 from website.util import api_url_for, web_url_for
 
 from framework.auth import Auth
-
 
 figshare_mock = create_mock_figshare(project=436)
 
@@ -57,7 +58,21 @@ class TestViewsConfig(OsfTestCase):
 
         self.figshare = create_mock_figshare('test')
 
+    def configure_responses(self):
+        responses.add(
+            responses.GET,
+            join_path(self.node_settings.api_url, 'articles'),
+            body=dumps(self.figshare.articles.return_value)
+        )
+        responses.add(
+            responses.GET,
+            join_path(self.node_settings.api_url, 'articles', '902210'),
+            body=dumps(self.figshare.article.return_value)
+        )
+
+    @responses.activate
     def test_import_auth(self):
+        self.configure_responses()
         """Testing figshare_import_user_auth to ensure that auth gets imported correctly"""
         settings = self.node_settings
         settings.user_settings = None
@@ -65,7 +80,7 @@ class TestViewsConfig(OsfTestCase):
         url = '/api/v1/project/{0}/figshare/config/import-auth/'.format(self.project._id)
         self.app.put(url, auth=self.user.auth)
         self.node_settings.reload()
-        is_not_none = settings.user_settings != None
+        is_not_none = settings.user_settings is not None
         assert_true(is_not_none)
 
     def test_cancelled_oauth_request_from_user_settings_page_redirects_correctly(self):
@@ -152,13 +167,19 @@ class TestViewsConfig(OsfTestCase):
         assert_equal(res.status_int, http.FORBIDDEN)
         assert_equal(nlogs, len(self.project.logs))
 
+    @responses.activate
     def test_serialize_settings_helper_returns_correct_auth_info(self):
+        self.configure_responses()
+
         result = serialize_settings(self.node_settings, self.user, client=figshare_mock)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
+    @responses.activate
     def test_serialize_settings_for_user_no_auth(self):
+        self.configure_responses()
+
         no_addon_user = AuthUserFactory()
         result = serialize_settings(self.node_settings, no_addon_user, client=figshare_mock)
         assert_false(result['userIsOwner'])
