@@ -1,16 +1,15 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
+# -*- coding: utf-8 -*-
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
 import datetime
 
-import hurry
+import hurry.filesize
 from modularodm import Q
 
-from website.util import paths
 from framework.auth.decorators import Auth
+
+from website.util import paths
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
     ALL_MY_REGISTRATIONS_NAME
