@@ -232,10 +232,10 @@ def data_for_charts(elastic_results):
 
 def to_atom(result):
     return {
-        'title': result.get('title', 'No title provided'),
+        'title': result.get('title') or 'No title provided.',
         'content': json.dumps(result, indent=4, sort_keys=True),
         'content_type': 'json',
-        'summary': result.get('description', 'No summary'),
+        'summary': result.get('description') or 'No summary provided.',
         'id': result['id']['serviceID'],
         'updated': get_date_updated(result),
         'link': result['id']['url'],
