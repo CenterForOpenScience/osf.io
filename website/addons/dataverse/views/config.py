@@ -64,7 +64,7 @@ def serialize_settings(node_settings, current_user):
             uid=user_settings.owner._primary_key)
         result.update({
             'ownerName': user_settings.owner.fullname,
-            'dataverseUsername': user_settings.dataverse_username,
+            'apiToken': user_settings.api_token,
         })
         # Add owner's dataverse settings
         connection = client.connect_from_settings(user_settings)
@@ -131,20 +131,18 @@ def dataverse_set_user_config(auth, **kwargs):
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     # Log in with Dataverse
-    username = request.json.get('dataverse_username')
-    password = request.json.get('dataverse_password')
-    client.connect_or_401(username, password)
+    token = request.json.get('api_token')
+    client.connect_or_401(token)
 
     user_addon = user.get_addon('dataverse')
     if user_addon is None:
         user.add_addon('dataverse')
         user_addon = user.get_addon('dataverse')
 
-    user_addon.dataverse_username = username
-    user_addon.dataverse_password = password
+    user_addon.api_token = token
     user_addon.save()
 
-    return {'username': username}, http.OK
+    return {'token': token}, http.OK
 
 
 @decorators.must_have_permission('write')

@@ -16,7 +16,7 @@
 
             <span data-bind="if: showLinkDataverse">
                 <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
-                    Import Credentials
+                    Import API Token
                 </a>
             </span>
 
@@ -90,7 +90,7 @@
             </span>
 
             <div class="text-info" data-bind="ifnot: hasDataverses">
-                Dataverse user {{ dataverseUsername }} does not currently have any published Dataverses.
+                The Dataverse user associated with this node does not currently have any published Dataverses.
             </div>
 
         </div>
@@ -100,7 +100,7 @@
     <!-- Changed Credentials -->
     <div class="text-info dataverse-settings" data-bind="if: credentialsChanged">
         <span data-bind="if: userIsOwner">
-            Your dataverse credentials may not be valid. Please re-enter your password.
+            Your dataverse credentials may not be valid. Please re-enter your api token.
         </span>
         <span data-bind="ifnot: userIsOwner">
             There was a problem connecting to the Dataverse with the given
@@ -111,12 +111,8 @@
     <!-- Input Credentials-->
     <form data-bind="if: showInputCredentials">
         <div class="form-group">
-            <label for="dataverseUsername">Dataverse Username</label>
-            <input class="form-control" name="dataverseUsername" data-bind="value: dataverseUsername"/>
-        </div>
-        <div class="form-group">
-            <label for="dataversePassword">Dataverse Password</label>
-            <input class="form-control" type="password" name="dataversePassword" data-bind="value: dataversePassword" />
+            <label for="apiToken">API Token</label>
+            <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
         </div>
         <!-- Submit button for input credentials -->
         <button data-bind="click: sendAuth" class="btn btn-success">

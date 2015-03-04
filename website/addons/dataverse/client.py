@@ -6,43 +6,29 @@ from framework.exceptions import HTTPError
 from website.addons.dataverse import settings
 
 
-def _connect(username, password, host=settings.HOST):
+def _connect(token, host=settings.HOST):
     try:
-        return Connection(
-            host=host,
-            username=username,
-            password=password,
-        )
+        return Connection(host, token)
     except ConnectionError:
         return None
 
 
 def connect_from_settings(user_settings):
     try:
-        return _connect(
-            user_settings.dataverse_username,
-            user_settings.dataverse_password
-        ) if user_settings else None
+        return _connect(user_settings.api_token) if user_settings else None
     except UnauthorizedError:
         return None
 
 
-def connect_or_401(username, password, host=settings.HOST):
+def connect_or_401(token):
     try:
-        return _connect(
-            host=host,
-            username=username,
-            password=password,
-        )
+        return _connect(token)
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
 
 
 def connect_from_settings_or_401(user_settings):
-    return connect_or_401(
-        user_settings.dataverse_username,
-        user_settings.dataverse_password
-    ) if user_settings else None
+    return connect_or_401(user_settings.api_token) if user_settings else None
 
 
 def delete_file(file):

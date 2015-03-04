@@ -54,7 +54,7 @@ def dataverse_user_config_get(user_addon, auth, **kwargs):
         'result': {
             'connected': connection is not None,
             'userHasAuth': user_addon.has_auth,
-            'dataverseUsername': user_addon.dataverse_username,
+            'apiToken': user_addon.api_token,
             'urls': urls
         },
     }, http.OK

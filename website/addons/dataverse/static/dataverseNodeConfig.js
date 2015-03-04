@@ -15,8 +15,7 @@ function ViewModel(url) {
     var self = this;
     self.url = url;
     self.urls = ko.observable();
-    self.dataverseUsername = ko.observable();
-    self.dataversePassword = ko.observable();
+    self.apiToken = ko.observable();
 
     self.ownerName = ko.observable();
     self.nodeHasAuth = ko.observable(false);
@@ -110,7 +109,7 @@ function ViewModel(url) {
 
     self.updateFromData = function(data) {
         self.urls(data.urls);
-        self.dataverseUsername(data.dataverseUsername);
+        self.apiToken(data.apiToken);
         self.ownerName(data.ownerName);
         self.nodeHasAuth(data.nodeHasAuth);
         self.userHasAuth(data.userHasAuth);
@@ -216,10 +215,7 @@ function ViewModel(url) {
     self.sendAuth = function() {
         return osfHelpers.postJSON(
             self.urls().create,
-            ko.toJS({
-                dataverse_username: self.dataverseUsername,
-                dataverse_password: self.dataversePassword
-            })
+            ko.toJS({api_token: self.apiToken})
         ).done(function() {
             // User now has auth
             authorizeNode();

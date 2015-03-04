@@ -51,27 +51,11 @@ class DataverseFile(GuidFile):
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
 
-    dataverse_username = fields.StringField()
-    encrypted_password = fields.StringField()
+    api_token = fields.StringField()
 
     @property
     def has_auth(self):
-        return bool(self.dataverse_username and self.encrypted_password)
-
-    @property
-    def dataverse_password(self):
-        if self.encrypted_password is None:
-            return None
-
-        return decrypt(self.encrypted_password)
-
-    @dataverse_password.setter
-    def dataverse_password(self, value):
-        if value is None:
-            self.encrypted_password = None
-            return
-
-        self.encrypted_password = encrypt(value)
+        return bool(self.api_token)
 
     def delete(self, save=True):
         self.clear()
@@ -82,8 +66,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
         :param bool delete: Indicates if the settings should be deleted.
         """
-        self.dataverse_username = None
-        self.dataverse_password = None
+        self.api_token = None
         for node_settings in self.addondataversenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()

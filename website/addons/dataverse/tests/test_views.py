@@ -81,7 +81,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         result = res.json.get('result')
         assert_true(result['connected'])
         assert_true(result['userHasAuth'])
-        assert_equal(result['dataverseUsername'],
+        assert_equal(result['apiToken'],
                      self.user_settings.dataverse_username)
         assert_in('create', result['urls'])
         assert_in('delete', result['urls'])
@@ -96,7 +96,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         result = res.json.get('result')
         assert_false(result['connected'])
         assert_true(result['userHasAuth'])
-        assert_equal(result['dataverseUsername'],
+        assert_equal(result['apiToken'],
                      self.user_settings.dataverse_username)
         assert_in('create', result['urls'])
         assert_in('delete', result['urls'])

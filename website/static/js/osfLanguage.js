@@ -19,7 +19,7 @@ module.exports = {
             deauthError: 'Could not unlink Dataverse at this time.',
             deauthSuccess: 'Unlinked your Dataverse account.',
             authError: 'There was a problem connecting to the Dataverse.',
-            authInvalid: 'Your Dataverse username or password is invalid.',
+            authInvalid: 'Your Dataverse API token is invalid.',
             authSuccess: 'Your Dataverse account was linked.',
             datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
                 'and cannot be connected to the OSF.',
