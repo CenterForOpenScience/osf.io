@@ -5,7 +5,7 @@ import httplib as http
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework.exceptions import HTTPError
 from framework.forms.utils import process_payload, unprocess_payload
@@ -52,30 +52,27 @@ def node_registration_retraction(auth, **kwargs):
     """ Handles retraction of public registrations
 
     :param auth: Authentication object for User
-
     :return: Template for GET, redirect URL for successful POST
     """
 
     node = kwargs['node'] or kwargs['project']
 
     if request.method == 'POST':
-
-        data = request.json
+        data = request.get_json()
 
         try:
             node.retracted_justification = data['justification']
         except KeyError:
             raise HTTPError(http.BAD_REQUEST)
 
-        node.is_retracted = True
-        node.save()
-        url = '/project/{0}/'.format(node._id)
-        ret = {'redirectUrl': url}
+        try:
+            node.retract_registration(data['justification'])
+        except ValidationValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
-        return ret
+        return {'redirectUrl': node.web_url_for('view_project')}
 
-    ret = _view_project(node, auth, primary=True)
-    return ret
+    return serialize_node(node, auth, primary=True)
 
 @must_be_valid_project(are_retractions_valid=True)
 @must_be_contributor_or_public

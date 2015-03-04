@@ -2717,6 +2717,15 @@ class Node(GuidStoredObject, AddonModelMixin):
             'is_registration': self.is_registration
         }
 
+    def retract_registration(self, justification):
+
+        if not self.is_public or not self.is_registration:
+            raise ValidationTypeError  ## @todo(hrybacki) what kind of exception should this raise?
+
+        self.retracted_justification = justification
+        self.is_retracted = True
+
+        self.save()
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
