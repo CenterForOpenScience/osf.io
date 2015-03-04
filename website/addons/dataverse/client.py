@@ -1,6 +1,6 @@
 import httplib as http
 from dataverse import Connection
-from dataverse.exceptions import ConnectionError, UnauthorizedError
+from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
 
 from framework.exceptions import HTTPError
 from website.addons.dataverse import settings
@@ -67,7 +67,13 @@ def get_files(dataset, published=False):
 
 
 def publish_dataset(dataset):
-    return dataset.publish()
+    if not dataset.dataverse.is_published:
+        raise HTTPError(http.METHOD_NOT_ALLOWED)
+
+    try:
+        dataset.publish()
+    except OperationFailedError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 def get_datasets(dataverse):
@@ -95,13 +101,10 @@ def get_dataset(dataverse, doi):
 def get_dataverses(connection):
     if connection is None:
         return []
-    dataverses = connection.get_dataverses()
-    published_dataverses = [d for d in dataverses if d.is_published]
-    return published_dataverses
+    return connection.get_dataverses()
 
 
 def get_dataverse(connection, alias):
     if connection is None:
         return
-    dataverse = connection.get_dataverse(alias)
-    return dataverse if dataverse and dataverse.is_published else None
+    return connection.get_dataverse(alias)

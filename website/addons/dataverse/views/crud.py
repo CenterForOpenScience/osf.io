@@ -16,7 +16,7 @@ from framework.auth.utils import privacy_info_handle
 
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, publish_dataset, get_dataset, get_dataverse, \
-    connect_from_settings_or_401, get_files
+    connect_from_settings, connect_from_settings_or_401, get_files
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
@@ -395,14 +395,7 @@ def fail_if_unauthorized(node_addon, auth, file_id):
     if file_id is None:
         raise HTTPError(httplib.NOT_FOUND)
 
-    try:
-        connection = connect_from_settings_or_401(user_settings)
-    except HTTPError as error:
-        if error.code == httplib.UNAUTHORIZED:
-            connection = None
-        else:
-            raise
-
+    connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
     dataset = get_dataset(dataverse, node_addon.dataset_doi)
     published_file_ids = [f.id for f in get_files(dataset, published=True)]

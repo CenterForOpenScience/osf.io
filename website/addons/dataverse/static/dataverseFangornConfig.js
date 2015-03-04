@@ -69,8 +69,9 @@ function _fangornActionColumn (item, col) {
                 ];
                 self.modal.update(modalContent, modalActions);
             }).fail( function(args) {
-                var message = args.responseJSON.code === 400 ?
-                    'Error: Something went wrong when attempting to publish your dataset.' :
+                var message = args.responseJSON.code ===
+                    405 ? 'Error: This dataset cannot be published until its parent Dataverse is published.' :
+                    400 ? 'Error: Something went wrong when attempting to publish your dataset.' :
                     'Error: This version has already been published.';
 
                 var modalContent = [
