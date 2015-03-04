@@ -51,9 +51,14 @@ class TestS3ViewsConfig(OsfTestCase):
         assert_true('trouble' in rv.body)
 
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
+    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
     @mock.patch('website.addons.s3.views.config.adjust_cors')
-    def test_s3_set_bucket(self, mock_cors, mock_exist):
-
+    def test_s3_set_bucket(self, mock_cors, mock_wrapper, mock_exist):
+        wrapper = create_mock_wrapper()
+        bucket = mock.create_autospec(Bucket)
+        bucket.list = lambda: list()
+        wrapper.bucket = bucket
+        mock_wrapper.return_value = wrapper
         mock_cors.return_value = True
         mock_exist.return_value = True
 
@@ -140,7 +145,7 @@ class TestS3ViewsConfig(OsfTestCase):
             content='anything...',
             root_title='different_than_path.txt',
         )
-        comment2 = Comment.create(
+        comment3 = Comment.create(
             auth=Auth(self.project.creator),
             node=self.project,
             target=comment2,
