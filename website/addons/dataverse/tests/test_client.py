@@ -31,108 +31,84 @@ class TestClient(DataverseAddonTestCase):
         self.mock_dataverse.connection = self.mock_connection
 
     @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect(self, mock_dvn_connection):
-        mock_obj = mock.create_autospec(Connection)
-        mock_dvn_connection.return_value = mock_obj
+    def test_connect(self, mock_connection):
+        mock_connection.return_value = mock.create_autospec(Connection)
+        c = _connect('My token', 'My host')
 
-        c = _connect('My user', 'My pw', 'My host')
-
-        mock_dvn_connection.assert_called_once_with(
-            username='My user', password='My pw', host='My host',
-        )
-
+        mock_connection.assert_called_once_with('My host', 'My token')
         assert_true(c)
 
     @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_fail(self, mock_dvn_connection):
-        mock_dvn_connection.side_effect = UnauthorizedError()
+    def test_connect_default_host(self, mock_connection):
+        mock_connection.return_value = mock.create_autospec(Connection)
+        c = _connect('My token')
 
-        with assert_raises(UnauthorizedError) as e:
-            c = _connect('My user', 'My pw', 'My host')
-
-        mock_dvn_connection.assert_called_once_with(
-            username='My user', password='My pw', host='My host',
-        )
-
-    @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_or_401(self, mock_dvn_connection):
-        mock_obj = mock.create_autospec(Connection)
-        mock_obj.connected = True
-        mock_dvn_connection.return_value = mock_obj
-
-        c = connect_or_401('My user', 'My pw', 'My host')
-
-        mock_dvn_connection.assert_called_once_with(
-            username='My user', password='My pw', host='My host',
-        )
-
+        mock_connection.assert_called_once_with(settings.HOST, 'My token')
         assert_true(c)
 
     @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_or_401_forbidden(self, mock_dvn_connection):
-        mock_dvn_connection.side_effect = UnauthorizedError()
+    def test_connect_fail(self, mock_connection):
+        mock_connection.side_effect = UnauthorizedError()
+        with assert_raises(UnauthorizedError):
+            _connect('My token', 'My host')
 
+        mock_connection.assert_called_once_with('My host', 'My token')
+
+    @mock.patch('website.addons.dataverse.client.Connection')
+    def test_connect_or_401(self, mock_connection):
+        mock_connection.return_value = mock.create_autospec(Connection)
+        c = connect_or_401('My token')
+
+        mock_connection.assert_called_once_with(settings.HOST, 'My token')
+        assert_true(c)
+
+    @mock.patch('website.addons.dataverse.client.Connection')
+    def test_connect_or_401_forbidden(self, mock_connection):
+        mock_connection.side_effect = UnauthorizedError()
         with assert_raises(HTTPError) as cm:
-            connect_or_401('My user', 'My pw', 'My host')
+            connect_or_401('My token')
 
-        mock_dvn_connection.assert_called_once_with(
-            username='My user', password='My pw', host='My host',
-        )
-
+        mock_connection.assert_called_once_with(settings.HOST, 'My token')
         assert_equal(cm.exception.code, 401)
 
     @mock.patch('website.addons.dataverse.client._connect')
     def test_connect_from_settings(self, mock_connect):
         user_settings = AddonDataverseUserSettings()
-        user_settings.dataverse_username = 'Something ridiculous'
-        user_settings.dataverse_password = 'm04rR1d1cul0u$'
+        user_settings.api_token = 'Something ridiculous'
 
         connection = connect_from_settings(user_settings)
         assert_true(connection)
-        mock_connect.assert_called_once_with(
-            user_settings.dataverse_username,
-            user_settings.dataverse_password,
-        )
+        mock_connect.assert_called_once_with(user_settings.api_token)
 
     def test_connect_from_settings_none(self):
         connection = connect_from_settings(None)
         assert_is_none(connection)
 
-
-    @mock.patch('website.addons.dataverse.client.connect_or_401')
+    @mock.patch('website.addons.dataverse.client._connect')
     def test_connect_from_settings_or_401(self, mock_connect):
         user_settings = AddonDataverseUserSettings()
-        user_settings.dataverse_username = 'Something ridiculous'
-        user_settings.dataverse_password = 'm04rR1d1cul0u$'
+        user_settings.api_token = 'Something ridiculous'
 
         connection = connect_from_settings_or_401(user_settings)
         assert_true(connection)
-        mock_connect.assert_called_once_with(
-            user_settings.dataverse_username,
-            user_settings.dataverse_password,
-        )
+        mock_connect.assert_called_once_with(user_settings.api_token)
 
     def test_connect_from_settings_or_401_none(self):
         connection = connect_from_settings_or_401(None)
         assert_is_none(connection)
 
     @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_from_settings_or_401_forbidden(self, mock_dvn_connection):
-        mock_dvn_connection.side_effect = UnauthorizedError()
-
+    def test_connect_from_settings_or_401_forbidden(self, mock_connection):
+        mock_connection.side_effect = UnauthorizedError()
         user_settings = AddonDataverseUserSettings()
-        user_settings.dataverse_username = 'Something ridiculous'
-        user_settings.dataverse_password = 'm04rR1d1cul0u$'
+        user_settings.api_token = 'Something ridiculous'
 
         with assert_raises(HTTPError) as e:
             connect_from_settings_or_401(user_settings)
 
-        mock_dvn_connection.assert_called_once_with(
-            username=user_settings.dataverse_username,
-            password=user_settings.dataverse_password,
-            host=settings.HOST,
+        mock_connection.assert_called_once_with(
+            settings.HOST, user_settings.api_token,
         )
-
         assert_equal(e.exception.code, 401)
 
     def test_delete_file(self):
@@ -162,6 +138,14 @@ class TestClient(DataverseAddonTestCase):
     def test_publish_dataset(self):
         publish_dataset(self.mock_dataset)
         self.mock_dataset.publish.assert_called_once_with()
+
+    def test_publish_dataset_unpublished_dataverse(self):
+        type(self.mock_dataverse).is_published = mock.PropertyMock(return_value=False)
+        with assert_raises(HTTPError) as e:
+            publish_dataset(self.mock_dataset)
+
+        assert_false(self.mock_dataset.publish.called)
+        assert_equal(e.exception.code, 405)
 
     def test_get_datasets(self):
         mock_dataset1 = mock.create_autospec(Dataset)
@@ -246,7 +230,8 @@ class TestClient(DataverseAddonTestCase):
         self.mock_connection.get_dataverses.assert_called_once_with()
 
         assert_in(published_dv, dvs)
-        assert_not_in(unpublished_dv, dvs)
+        assert_in(unpublished_dv, dvs)
+        assert_equal(len(dvs), 2)
 
     def test_get_dataverse(self):
         type(self.mock_dataverse).is_published = mock.PropertyMock(return_value=True)
@@ -264,4 +249,4 @@ class TestClient(DataverseAddonTestCase):
         d = get_dataverse(self.mock_connection, 'ALIAS')
         self.mock_connection.get_dataverse.assert_called_once_with('ALIAS')
 
-        assert_equal(d, None)
+        assert_equal(d, self.mock_dataverse)
