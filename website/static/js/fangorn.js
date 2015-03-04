@@ -3,6 +3,7 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
+'use strict';
 
 var $ = require('jquery');
 var m = require('mithril');
@@ -19,6 +20,36 @@ var tbOptions;
 
 var tempCounter = 1;
 
+var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
+    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
+    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
+    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
+    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
+    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
+    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
+    'xlsx', 'py'];
+
+var EXTENSION_MAP = {};
+EXTENSIONS.forEach(function(extension) {
+    EXTENSION_MAP[extension] = extension;
+});
+$.extend(EXTENSION_MAP, {
+    gdoc: 'docx',
+    gsheet: 'xlsx'
+});
+
+var ICON_PATH = '/static/img/hgrid/fatcowicons/';
+
+var getExtensionIcon = function(name) {
+    var extension = name.split('.').pop().toLowerCase();
+    var icon = EXTENSION_MAP[extension];
+    if (icon) {
+        return ICON_PATH + 'file_extension_' + icon + '.png';
+    } else {
+        return null;
+    }
+};
+
 /**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
@@ -27,17 +58,16 @@ var tempCounter = 1;
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
+    var privateFolder = m('img', {src: '/static/img/hgrid/fatcowicons/folder_delete.png'}),
         pointerFolder = m('i.icon-link', ' '),
         openFolder  = m('i.icon-folder-open', ' '),
         closedFolder = m('i.icon-folder-close', ' '),
-        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
-        ext,
-        extensions;
+        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
+        icon;
 
     if (item.kind === 'folder') {
         if (item.data.iconUrl) {
-            return m('img', { src : item.data.iconUrl, style: {width: '16px', height: 'auto'} });
+            return m('img', {src: item.data.iconUrl, style: {width: '16px', height: 'auto'}});
         }
         if (!item.data.permissions.view) {
             return privateFolder;
@@ -54,20 +84,12 @@ function _fangornResolveIcon(item) {
         return m('i.fa.' + item.data.icon, ' ');
     }
 
-    ext = item.data.name.split('.').pop().toLowerCase();
-    extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-        'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-        'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-        'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-        'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-        'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
-        'xlsx', 'py'];
-
-    if (extensions.indexOf(ext) !== -1) {
-        return m('img', { src : '/static/img/hgrid/fatcowicons/file_extension_' + ext + '.png'});
+    icon = getExtensionIcon(item.data.name);
+    if (icon) {
+        return m('img', {src: icon});
+    } else {
+        return m('i.icon-file-alt');
     }
-    return m('i.icon-file-alt');
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
@@ -98,7 +120,7 @@ function getconfig(item, key) {
  * @returns {*} Returns if its a property, runs the function if function, returns null if no option is defined.
  */
 function resolveconfigOption(item, option, args) {
-    var self = this,
+    var self = this,  // jshint ignore:line
         prop = getconfig(item, option);
     if (prop) {
         return typeof prop === 'function' ? prop.apply(self, args) : prop;
@@ -168,7 +190,7 @@ function _fangornToggleCheck(item) {
  * @private
  */
 function _fangornResolveUploadUrl(item, file) {
-    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]);
+    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]); // jshint ignore:line
     return configOption || waterbutler.buildTreeBeardUpload(item, file);
 }
 
@@ -266,7 +288,7 @@ function _fangornAddedFile(treebeard, file) {
     file.url = _fangornResolveUploadUrl(item, file);
     file.method = _fangornUploadMethod(item);
 
-    blankItem = {       // create a blank item that will refill when upload is finished.
+    var blankItem = {       // create a blank item that will refill when upload is finished.
         name: file.name,
         kind: 'file',
         provider: item.data.provider,
@@ -415,15 +437,16 @@ function _fangornDropzoneError(treebeard, file, message) {
  * @private
  */
 function _uploadEvent(event, item, col) {
+    var self = this;  // jshint ignore:line
     try {
         event.stopPropagation();
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    this.dropzoneItemCache = item;
-    this.dropzone.hiddenFileInput.click();
-    if(!item.open){
-        this.updateFolder(null, item);
+    self.dropzoneItemCache = item;
+    self.dropzone.hiddenFileInput.click();
+    if (!item.open) {
+        self.updateFolder(null, item);
     }
 }
 
@@ -513,7 +536,6 @@ function _fangornResolveLazyLoad(item) {
     if (item.data.provider === undefined) {
         return false;
     }
-
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
@@ -561,7 +583,7 @@ function _fangornLazyLoadOnLoad (tree) {
         inheritFromParent(item, tree);
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     if (tree.depth > 1) {
         _fangornOrderFolder.call(this, tree);
@@ -679,7 +701,6 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-
     if(item.data.tmpID){
         return [
         {
@@ -799,7 +820,7 @@ function expandStateLoad(item) {
             }
         }
     }
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 }
 
 
@@ -891,7 +912,7 @@ tbOptions = {
         return false;
     },
     onscrollcomplete : function(){
-        $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     },
     onselectrow : function(row) {
     },
@@ -905,7 +926,7 @@ tbOptions = {
         previewTemplate: '<div></div>',
         parallelUploads: 1,
         acceptDirectories: false,
-        fallback: function(){},
+        fallback: function(){}
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
