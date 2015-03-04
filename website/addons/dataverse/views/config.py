@@ -96,7 +96,7 @@ def serialize_urls(node_settings):
         'deauthorize': node.api_url_for('deauthorize_dataverse'),
         'getDatasets': node.api_url_for('dataverse_get_datasets'),
         'datasetPrefix': 'http://dx.doi.org/',
-        'dataversePrefix': 'http://{0}/dvn/dv/'.format(HOST),
+        'dataversePrefix': 'http://{0}/dataverse/'.format(HOST),
     }
     return urls
 

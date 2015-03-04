@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 
 import os
 import httplib
@@ -6,17 +7,19 @@ import logging
 import datetime
 
 import requests
-from bs4 import BeautifulSoup
 from flask import request, make_response
 
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.utils import secure_filename
 from framework.auth.utils import privacy_info_handle
+from website.addons.dataverse import settings
 
-from website.addons.dataverse.client import delete_file, upload_file, \
-    get_file, get_file_by_id, publish_dataset, get_dataset, get_dataverse, \
-    connect_from_settings, connect_from_settings_or_401, get_files
+from website.addons.dataverse.client import (
+    delete_file, upload_file, get_file, get_file_by_id, get_files,
+    publish_dataset, get_dataset, get_dataverse, connect_from_settings,
+    connect_from_settings_or_401,
+)
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_not_be_registration
@@ -30,8 +33,6 @@ from website.addons.dataverse.settings import HOST
 from website.addons.base.views import check_file_guid
 
 logger = logging.getLogger(__name__)
-
-session = requests.Session()
 
 
 @must_have_permission('write')
@@ -75,29 +76,40 @@ def dataverse_publish_dataset(node_addon, auth, **kwargs):
     return {'dataset': dataset.title}, httplib.OK
 
 
+# TODO: Temporary solution until waterbutler is implemented
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_download_file(node_addon, auth, **kwargs):
 
+    user_settings = node_addon.user_settings
+    token = user_settings.api_token
     file_id = kwargs.get('path')
 
     fail_if_unauthorized(node_addon, auth, file_id)
-    fail_if_private(file_id)
+    filename, content = get_file_content(file_id, token)
 
-    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
-    return redirect(url)
+    # Build response
+    resp = make_response(content)
+    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
+        filename
+    )
+
+    resp.headers['Content-Type'] = 'application/octet-stream'
+
+    return resp
 
 
+# TODO: Temporary solution until waterbutler is implemented
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_download_file_proxy(node_addon, auth, **kwargs):
 
+    user_settings = node_addon.user_settings
+    token = user_settings.api_token
     file_id = kwargs.get('path')
 
     fail_if_unauthorized(node_addon, auth, file_id)
-    fail_if_private(file_id)
-
-    filename, content = scrape_dataverse(file_id)
+    filename, content = get_file_content(file_id, token)
 
     # Build response
     resp = make_response(content)
@@ -114,24 +126,26 @@ def dataverse_download_file_proxy(node_addon, auth, **kwargs):
 def dataverse_get_file_info(node_addon, auth, **kwargs):
     """API view that gets info for a file."""
     node = node_addon.owner
+    user_settings = node_addon.user_settings
+    token = user_settings.api_token
     file_id = kwargs.get('path')
 
     fail_if_unauthorized(node_addon, auth, file_id)
-    fail_if_private(file_id)
 
     anonymous = has_anonymous_link(node, auth)
 
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
-    dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
+    dataverse_url = 'http://{0}/dataverse/'.format(HOST) + node_addon.dataverse_alias
     dataset_url = 'http://dx.doi.org/' + node_addon.dataset_doi
     delete_url = node.api_url_for('dataverse_delete_file', path=file_id)
+    filename = get_file_content(file_id, token, name_only=True)[0]
 
     data = {
         'node': {
             'id': node._id,
             'title': node.title
         },
-        'filename': scrape_dataverse(file_id, name_only=True)[0],
+        'filename': filename,
         'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
         'dataset': privacy_info_handle(node_addon.dataset, anonymous),
         'urls': {
@@ -151,11 +165,12 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
 def dataverse_view_file(node_addon, auth, **kwargs):
 
     node = node_addon.owner
+    user_settings = node_addon.user_settings
+    token = user_settings.api_token
 
     file_id = kwargs.get('path')
 
     fail_if_unauthorized(node_addon, auth, file_id)
-    fail_if_private(file_id)
 
     # lazily create a file GUID record
     file_obj, created = DataverseFile.get_or_create(node=node, path=file_id)
@@ -169,7 +184,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     rendered = get_cache_content(node_addon, cache_file_name)
 
     if rendered is None:
-        filename, content = scrape_dataverse(file_id)
+        filename, content = get_file_content(file_id, token)
         _, ext = os.path.splitext(filename)
         download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
@@ -183,7 +198,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
             download_url=download_url,
         )
     else:
-        filename, _ = scrape_dataverse(file_id, name_only=True)
+        filename, _ = get_file_content(file_id, token, name_only=True)
 
     render_url = node.api_url_for('dataverse_get_rendered_file',
                                 path=file_id)
@@ -358,29 +373,14 @@ def dataverse_get_rendered_file(**kwargs):
     return get_cache_content(node_settings, cache_file)
 
 
-def scrape_dataverse(file_id, name_only=False):
+def get_file_content(file_id, token, name_only=False):
+    url = 'http://{0}/api/access/datafile/{1}'.format(settings.HOST, file_id)
+    params = {'key': token}
+    response = requests.head(url, params=params, allow_redirects=True) \
+        if name_only else requests.get(url, params=params)
 
-    # Go to file url
-    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
-    response = session.head(url, allow_redirects=True) if name_only else session.get(url)
-
-    # Agree to terms if a redirect has occurred
-    if response.history:
-        response = session.get(url) if name_only else response
-        parsed = BeautifulSoup(response.content)
-        view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
-        data = {
-            'form1': 'form1',
-            'javax.faces.ViewState': view_state,
-            'form1:termsAccepted': 'on',
-            'form1:termsButton': 'Continue',
-        }
-        terms_url = 'http://{0}/dvn/faces/dataset/TermsOfUsePage.xhtml'.format(HOST)
-        session.post(terms_url, data=data)
-        response = session.head(url) if name_only else session.get(url)
-
-    if 'content-disposition' not in response.headers.keys():
-        raise HTTPError(httplib.NOT_FOUND)
+    if response.status_code == http.NOT_FOUND:
+        raise HTTPError(http.NOT_FOUND)
 
     filename = response.headers['content-disposition'].split('"')[1]
 
@@ -405,21 +405,3 @@ def fail_if_unauthorized(node_addon, auth, file_id):
         raise HTTPError(httplib.FORBIDDEN)
     elif not node.can_edit(auth) and file_id not in published_file_ids:
         raise HTTPError(httplib.UNAUTHORIZED)
-
-
-def fail_if_private(file_id):
-
-    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
-    resp = requests.head(url)
-
-    if resp.status_code == httplib.FORBIDDEN:
-        raise HTTPError(
-            httplib.FORBIDDEN,
-            data={
-                'message_short': 'Cannot access file contents',
-                'message_long':
-                    'The dataverse does not allow users to download files on ' +
-                    'private datasets at this time. Please contact the owner ' +
-                    'of this Dataverse dataset for access to this file.',
-            }
-        )

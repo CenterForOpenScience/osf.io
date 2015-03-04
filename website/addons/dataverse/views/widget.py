@@ -44,7 +44,7 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
     if dataset is None:
         return {'data': data}, http.BAD_REQUEST
 
-    dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + alias
+    dataverse_url = 'http://{0}/dataverse/'.format(HOST) + alias
     dataset_url = 'http://dx.doi.org/' + doi
 
     data.update({
