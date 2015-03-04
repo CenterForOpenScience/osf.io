@@ -191,7 +191,7 @@ var ViewModel = function(url, selector, folderPicker) {
     });
 
     function onSubmitSuccess(response) {
-        self.changeMessage('Successfully linked "' + self.selected().name +
+        self.changeMessage('Successfully linked "' + $osf.htmlEscape(self.selected().name) +
             '". Go to the <a href="' +
             self.urls().files + '">Files page</a> to view your files.',
             'text-success', 5000);
@@ -304,18 +304,19 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     /** Callback for chooseFolder action.
-    *   Just changes the ViewModel's self.selected observable to the selected
-    *   folder.
-    */
+     *   Just changes the ViewModel's self.selected observable to the selected
+     *   folder.
+     */
     function onPickFolder(evt, item) {
-            evt.preventDefault();
-            self.selected({name: 'Dropbox' + item.data.path, path: item.data.path});
-            return false; // Prevent event propagation
-        }
+        evt.preventDefault();
+        var name = item.data.path !== '/' ? item.data.path : '/ (Full Dropbox)';
+        self.selected({name: name, path: item.data.path});
+        return false; // Prevent event propagation
+    }
 
     /**
-        * Activates the HGrid folder picker.
-        */
+     * Activates the HGrid folder picker.
+     */
     self.activatePicker = function() {
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
@@ -324,8 +325,8 @@ var ViewModel = function(url, selector, folderPicker) {
             self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                initialFolderName : self.folderName(),
-                initialFolderPath : 'Dropbox',
+                initialFolderPath : self.folder().path,
+                rootName: '/ (Full Dropbox)',
                 // Fetch Dropbox folders with AJAX
                 filesData: self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents

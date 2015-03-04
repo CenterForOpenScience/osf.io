@@ -1,0 +1,42 @@
+.box-confirm-selection {
+    padding-top: 10px;
+}
+.box-confirm-dlg {
+    display: inline-block;
+}
+.box-folder-picker {
+    margin-top: 10px;
+}
+
+.selected-folder {
+    margin: 12px;
+    font-size: 1.3em;
+}
+
+.box-loading-text {
+    padding-top: 20px;
+}
+
+
+.btn-box {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+
+.btn-box:hover,
+.btn-box:focus,
+.btn-box:active,
+.btn-box.active,
+.open .dropdown-toggle.btn-box {
+    color: #333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+.box-folderpicker-odd {
+    background-color: #f5f5f5;
+}
+.box-folderpicker-even {
+    background-color: #fff;
+}

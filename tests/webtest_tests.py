@@ -283,6 +283,7 @@ class TestAUser(OsfTestCase):
         # Can see log event
         assert_in('created', res)
 
+    @unittest.skip('"No wiki content" replaced with javascript handling')
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
@@ -309,14 +310,14 @@ class TestAUser(OsfTestCase):
         # Should not see wiki widget (since non-contributor and no content)
         assert_not_in('No wiki content', res)
 
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
         res = self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
             'not a real page yet',
         ), auth=self.auth, expect_errors=True)
-        assert_in('This wiki page does not currently exist.', res)
-        assert_equal(res.status_code, 404)
+        assert_in('No wiki content', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
