@@ -11,7 +11,7 @@ from modularodm.exceptions import ValidationValueError
 import framework.auth
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
-from framework.auth import exceptions
+from framework.auth import exceptions, signals
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
 from framework.auth import (login, logout, get_user, DuplicateEmailError)
@@ -169,8 +169,12 @@ def confirm_email_get(**kwargs):
     if user:
         if user.confirm_email(token):
             if user.unconfirmed_username:
+                old_username = user.username
                 user.username = user.unconfirmed_username
                 user.save()
+                # Emit signal that username changed
+                # Must send previous username for mailchimp subscriber lookup
+                signals.username_changed.send(user, old_username=old_username)
                 status.push_status_message(language.UPDATED_EMAIL_CONFIRMATION, 'success')
                 response = redirect('/settings/')
                 return framework.auth.authenticate(user, response=response)

@@ -6,7 +6,7 @@ from framework import sentry
 from framework.tasks import app
 from framework.auth.core import User
 from framework.tasks.handlers import queued_task
-from framework.auth.signals import user_confirmed
+from framework.auth.signals import user_confirmed, username_changed
 
 from framework.transactions.context import transaction
 
@@ -88,9 +88,23 @@ def unsubscribe_mailchimp(list_name, user_id):
     user.mailing_lists[list_name] = False
     user.save()
 
-
 @user_confirmed.connect
 def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
     if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
+
+@username_changed.connect
+def update_subscriber_email(user, old_username=None):
+    # Update user's email address in mailchimp mailing lists when user changes their username/email
+    if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+        m = get_mailchimp_api()
+
+        if user.mailing_lists is None:
+            user.mailing_lists = {}
+            user.save()
+
+        for list_name in user.mailing_lists:
+            list_id = get_list_id_from_name(list_name=list_name)
+            if list_id:
+                m.lists.update_member(id=list_id, email={'email': old_username}, merge_vars={'email': user.username})
