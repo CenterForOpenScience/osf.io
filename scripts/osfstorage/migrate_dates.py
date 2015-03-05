@@ -6,7 +6,6 @@ before migration to OSF Storage. Note: the user-facing date field is called
 """
 
 import logging
-import datetime
 
 from modularodm import Q
 
@@ -16,7 +15,6 @@ from framework.transactions.context import TokuTransaction
 from website import settings
 from website.models import Node
 from website.app import init_app
-from website.addons.osffiles.model import NodeFile
 from website.addons.osfstorage.model import OsfStorageFileRecord
 
 from scripts import utils as script_utils
@@ -75,38 +73,3 @@ if __name__ == '__main__':
     ensure_osf_files(settings)
     init_app(set_backends=True, routes=False)
     main(dry_run=dry_run)
-
-
-# Hack: Must configure add-ons before importing `OsfTestCase`
-ensure_osf_files(settings)
-
-from nose.tools import *  # noqa
-
-from tests.base import OsfTestCase
-from tests.factories import ProjectFactory
-
-from website.addons.osfstorage.tests.factories import FileVersionFactory
-
-
-class TestMigrateDates(OsfTestCase):
-
-    def setUp(self):
-        super(TestMigrateDates, self).setUp()
-        self.path = 'old-pizza'
-        self.project = ProjectFactory()
-        self.node_settings = self.project.get_addon('osfstorage')
-        self.node_file = NodeFile(path=self.path)
-        self.node_file.save()
-        self.node_file.reload()
-        self.date = self.node_file.date_modified
-        self.project.files_versions['old_pizza'] = [self.node_file._id]
-        self.project.save()
-        self.version = FileVersionFactory(date_modified=datetime.datetime.now())
-        self.record, _ = OsfStorageFileRecord.get_or_create(self.node_file.path, self.node_settings)
-        self.record.versions = [self.version]
-        self.record.save()
-
-    def test_migrate_dates(self):
-        assert_not_equal(self.version.date_modified, self.date)
-        main(dry_run=False)
-        assert_equal(self.version.date_created, self.date)
