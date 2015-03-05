@@ -28,7 +28,7 @@ def main(dry_run=True):
     analytics = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/analytics.sh')))
     analytics.hour.on(2)
 
-    digests = ensure_item('bash {}'.format(app_prefix('scripts/send_digests.sh')))
+    digests = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_digests.sh')))
     digests.hour.on(2)
 
     logger.info('Updating crontab file:')
