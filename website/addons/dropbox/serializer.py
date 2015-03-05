@@ -9,6 +9,10 @@ from website.addons.dropbox.utils import get_share_folder_uri
 
 class DropboxSerializer(StorageAddonSerializer):
 
+    def __init__(self, addon_node_settings, user, client=None):
+        super(StorageAddonSerializer, self).__init__(addon_node_settings, user)
+        self.client = client
+
     @property
     def serialized_urls(self):
         node = self.addon_node_settings.owner
@@ -39,7 +43,7 @@ class DropboxSerializer(StorageAddonSerializer):
         valid_credentials = True
         if user_settings:
             try:
-                client = get_client_from_user_settings(user_settings)
+                client = self.client or get_client_from_user_settings(user_settings)
                 client.account_info()
             except ErrorResponse as error:
                 if error.status == 401:
