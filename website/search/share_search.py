@@ -163,7 +163,6 @@ def data_for_charts(elastic_results):
             'doc_count': bucket['doc_count'],
         }
         colors[bucket['key']] = r.next()
-        # colors[bucket['key']] = source_to_color(bucket['key'])
 
     for bucket in elastic_results['aggregations']['earlier_documents']['sources']['buckets']:
         stats[bucket['key']]['earlier_documents'] = bucket['doc_count']
