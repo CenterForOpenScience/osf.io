@@ -31,7 +31,7 @@ def build_query_string(q):
 
 def source_to_color(source):
     md5 = hashlib.md5()
-    md5.update(source+'share')
+    md5.update(source+'elephant')
     hash_value = md5.hexdigest()
     rgb = '#' + hash_value[0:2] + hash_value[2:4] + hash_value[4:6]
     return rgb
