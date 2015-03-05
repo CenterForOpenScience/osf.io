@@ -1,6 +1,7 @@
 <script id="profileName" type="text/html">
 
     <form role="form" data-bind="submit: submit">
+
         <div class="form-group">
             <label>Full Name (e.g. Rosalind Elsie Franklin)</label>
             <input class="form-control" data-bind="value: full" />

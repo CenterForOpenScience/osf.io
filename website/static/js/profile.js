@@ -426,12 +426,9 @@ var NameViewModel = function(urls, modes) {
     });
 
     self.fetch();
-    
 };
-
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
-
 
 /*
  * Custom observable for use with external services.
