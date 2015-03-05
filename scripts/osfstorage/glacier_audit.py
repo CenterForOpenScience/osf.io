@@ -57,7 +57,7 @@ def get_job(vault, job_id=None):
         return vault.get_job(job_id)
     jobs = vault.list_jobs(completed=True)
     if not jobs:
-        raise
+        raise RuntimeError('No completed jobs found')
     return sorted(jobs, key=lambda job: job.creation_date)[-1]
 
 
@@ -115,83 +115,3 @@ if __name__ == '__main__':
     except IndexError:
         job_id = None
     main(job_id=job_id)
-
-
-from nose.tools import *  # noqa
-
-from tests.base import OsfTestCase
-
-from website.addons.osfstorage.tests.factories import FileVersionFactory
-
-
-mock_output = {
-    'ArchiveList': [
-        {
-            'ArchiveDescription': 'abcdef',
-            'ArchiveId': '123456',
-            'Size': 24601,
-        },
-    ],
-}
-mock_inventory = {
-    each['ArchiveDescription']: each
-    for each in mock_output['ArchiveList']
-}
-
-
-class TestGlacierInventory(OsfTestCase):
-
-    def tearDown(self):
-        super(TestGlacierInventory, self).tearDown()
-        model.OsfStorageFileVersion.remove()
-
-    def test_inventory(self):
-        version = FileVersionFactory(
-            size=24601,
-            metadata={'archive': '123456'},
-            location={
-                'service': 'cloud',
-                'container': 'cloud',
-                'object': 'abcdef',
-            },
-        )
-        check_glacier_version(version, mock_inventory)
-
-    def test_inventory_not_found(self):
-        version = FileVersionFactory(
-            size=24601,
-            metadata={'archive': '123456'},
-            location={
-                'service': 'cloud',
-                'container': 'cloud',
-                'object': 'abcdefg',
-            },
-        )
-        with assert_raises(NotFound):
-            check_glacier_version(version, mock_inventory)
-
-    def test_inventory_wrong_archive_id(self):
-        version = FileVersionFactory(
-            size=24601,
-            metadata={'archive': '1234567'},
-            location={
-                'service': 'cloud',
-                'container': 'cloud',
-                'object': 'abcdef',
-            },
-        )
-        with assert_raises(BadArchiveId):
-            check_glacier_version(version, mock_inventory)
-
-    def test_inventory_wrong_size(self):
-        version = FileVersionFactory(
-            size=24602,
-            metadata={'archive': '123456'},
-            location={
-                'service': 'cloud',
-                'container': 'cloud',
-                'object': 'abcdef',
-            },
-        )
-        with assert_raises(BadSize):
-            check_glacier_version(version, mock_inventory)
