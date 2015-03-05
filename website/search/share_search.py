@@ -236,7 +236,7 @@ def to_atom(result):
         'content': json.dumps(result, indent=4, sort_keys=True),
         'content_type': 'json',
         'summary': result.get('description') or 'No summary provided.',
-        'id': result['id']['serviceID'],
+        'id': result['id']['url'],
         'updated': get_date_updated(result),
         'link': result['id']['url'],
         'author': format_contributors_for_atom(result['contributors']),
@@ -248,8 +248,7 @@ def to_atom(result):
 def format_contributors_for_atom(contributors_list):
     return [
         {
-            'name': '{} {}'.format(entry['given'], entry['family']),
-            'email': entry.get('email', '')
+            'name': '{} {}'.format(entry['given'], entry['family'])
         }
         for entry in contributors_list
     ]
