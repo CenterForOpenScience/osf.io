@@ -731,6 +731,56 @@ class TestProjectViews(OsfTestCase):
         assert_equal(1, res.json['node']['fork_count'])
 
 
+class TestEditableChildrenViews(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=False)
+        self.child = ProjectFactory(project=self.project, creator=self.user, is_public=True)
+        self.grandchild = ProjectFactory(project=self.child, creator=self.user, is_public=False)
+        self.great_grandchild = ProjectFactory(project=self.grandchild, creator=self.user, is_public=True)
+        self.great_great_grandchild = ProjectFactory(project=self.great_grandchild, creator=self.user, is_public=False)
+        url = self.project.api_url_for('get_editable_children')
+        self.project_results = self.app.get(url, auth=self.user.auth).json
+
+    def test_get_editable_children(self):
+        assert_equal(len(self.project_results['children']), 4)
+        assert_equal(self.project_results['node']['id'], self.project._id)
+
+    def test_editable_children_order(self):
+        assert_equal(self.project_results['children'][0]['id'], self.child._id)
+        assert_equal(self.project_results['children'][1]['id'], self.grandchild._id)
+        assert_equal(self.project_results['children'][2]['id'], self.great_grandchild._id)
+        assert_equal(self.project_results['children'][3]['id'], self.great_great_grandchild._id)
+
+    def test_editable_children_indents(self):
+        assert_equal(self.project_results['children'][0]['indent'], 0)
+        assert_equal(self.project_results['children'][1]['indent'], 1)
+        assert_equal(self.project_results['children'][2]['indent'], 2)
+        assert_equal(self.project_results['children'][3]['indent'], 3)
+
+    def test_editable_children_parents(self):
+        assert_equal(self.project_results['children'][0]['parent_id'], self.project._id)
+        assert_equal(self.project_results['children'][1]['parent_id'], self.child._id)
+        assert_equal(self.project_results['children'][2]['parent_id'], self.grandchild._id)
+        assert_equal(self.project_results['children'][3]['parent_id'], self.great_grandchild._id)
+
+    def test_editable_children_privacy(self):
+        assert_false(self.project_results['node']['is_public'])
+        assert_true(self.project_results['children'][0]['is_public'])
+        assert_false(self.project_results['children'][1]['is_public'])
+        assert_true(self.project_results['children'][2]['is_public'])
+        assert_false(self.project_results['children'][3]['is_public'])
+
+    def test_editable_children_titles(self):
+        assert_equal(self.project_results['node']['title'], self.project.title)
+        assert_equal(self.project_results['children'][0]['title'], self.child.title)
+        assert_equal(self.project_results['children'][1]['title'], self.grandchild.title)
+        assert_equal(self.project_results['children'][2]['title'], self.great_grandchild.title)
+        assert_equal(self.project_results['children'][3]['title'], self.great_great_grandchild.title)
+
+
 class TestChildrenViews(OsfTestCase):
 
     def setUp(self):

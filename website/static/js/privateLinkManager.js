@@ -35,7 +35,7 @@ var PrivateLinkViewModel = function(url) {
             }
         }
     });
-    
+
     /**
         * Fetches the node info from the server and updates the viewmodel.
         */
