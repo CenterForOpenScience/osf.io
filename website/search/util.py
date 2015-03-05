@@ -39,12 +39,12 @@ def create_atom_feed(name, data, query, size, start, url, to_atom):
     author = 'COS'
 
     links = [
-        {'href': url, 'rel': 'first'},
+        {'href': '{url}?page=1'.format(url=url), 'rel': 'first'},
         {'href': '{url}?page={page}'.format(url=url, page=(start / size) + 2), 'rel': 'next'},
         {'href': '{url}?page={page}'.format(url=url, page=(start / size)), 'rel': 'previous'}
     ]
 
-    links = links[:-1] if (start / size) == 0 else links
+    links = links[1:-1] if (start / size) == 0 else links
 
     feed = AtomFeed(
         title=title,
