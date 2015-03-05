@@ -14,6 +14,7 @@
     <form class="form col-md-4 col-md-offset-4"
             id="twoFactorSignInForm"
             class="form"
+            ## TODO: Use web_url_for /hrybacki
             % if next_url:
                 action="/login/two-factor/?next=${next_url}"
             % else:
@@ -25,6 +26,7 @@
         <div class="panel panel-primary">
             <div class="panel-heading">Two Factor Code</div>
                 <div class="panel-body">
+                    ## TODO: Use autofocus html5 attribute /hrybacki
                     <input type="text" class="form-control" name="twoFactorCode" placeholder="Enter two factor code" />
                     <button type="submit" class="btn btn-success pull-right m-t-md">Verify</button>
                 </div>

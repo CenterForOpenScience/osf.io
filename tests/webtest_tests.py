@@ -160,6 +160,7 @@ class TestAUser(OsfTestCase):
         # Sees a flash message
         assert_in('Log-in failed', res)
 
+    # TODO: Put in separate class?
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
         # User with two factor enabled is sent to two factor page
@@ -177,8 +178,14 @@ class TestAUser(OsfTestCase):
         # Submits
         res = form.submit()
         res = res.follow()
-        assert_equal('/login/two-factor/', res.request.path)
+        assert_equal('/login/two_factor/', res.request.path)
         assert_equal(res.status_code, 200)
+
+    def test_user_with_2fa_success(self):
+        assert 0, 'todo (hrybacki)'
+
+    def test_user_with_2fa_failure(self):
+        assert 0, 'todo (hrybacki)'
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_access_resource_before_two_factor_authorization(self, mock_push_message):
@@ -191,7 +198,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get('/account/')
         # Fills the form with correct password
-        form  = res.forms['signinForm']
+        form = res.forms['signinForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -200,6 +207,8 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/dashboard/')
         assert_equal(res.status_code, 302)
         assert_in('login', res.location)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 401)
 
     def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
         res = self._login(self.user.username, 'science')
