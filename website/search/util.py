@@ -42,6 +42,7 @@ def generate_color():
         except IndexError:
             new_colors = get_new_colors(colors_used)
             colors_to_generate = new_colors
+            colors_used = []
 
         yield webcolors.rgb_to_hex(color)
 
