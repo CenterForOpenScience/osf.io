@@ -1,5 +1,4 @@
-import pytz
-
+from babel import dates, core, Locale
 from mako.lookup import Template
 
 from website import mails
@@ -166,7 +165,16 @@ def get_settings_url(uid, user):
 
 def localize_timestamp(timestamp, user):
     try:
-        user_timezone = pytz.timezone(user.timezone)
-    except pytz.UnknownTimeZoneError:
-        user_timezone = pytz.timezone('Etc/UTC')
-    return timestamp.astimezone(user_timezone).strftime(LOCALTIME_FORMAT)
+        user_timezone = dates.get_timezone(user.timezone)
+    except LookupError:
+        user_timezone = dates.get_timezone('Etc/UTC')
+
+    try:
+        user_locale = Locale(user.locale)
+    except core.UnknownLocaleError:
+        user_locale = 'en'
+
+    formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
+    formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
+
+    return formatted_time + ' on ' + formatted_date
