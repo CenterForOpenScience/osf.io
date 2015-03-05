@@ -7,7 +7,7 @@
     ## Center the form
     <div class="col-md-6 col-md-offset-3">
     <p>Hello ${firstname}! Please set a password to claim your account.</p>
-    <p>E-mail: ${email}</p>
+    <p>E-mail: <strong>${email}</strong></p>
 
         <form method="POST" id='setPasswordForm' role='form'>
             <div class='form-group'>
