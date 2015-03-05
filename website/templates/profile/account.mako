@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div id="changeUsername" class="panel panel-default">
+            <div id="changeUsername" class="panel panel-default" data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}">
                 <div class="panel-heading"><h3 class="panel-title">Change Account Email</h3></div>
                 <div class="panel-body">
                     <form>
@@ -36,6 +36,9 @@
                                    class="form-control"
                                    name="new_username"
                                    data-bind="value:newUsername">
+                            <div data-bind="visible: showMessages, css:'text-danger'">
+                                <p data-bind="validationMessage: newUsername"></p>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Confirm New Email</label>
@@ -43,6 +46,9 @@
                                    class="form-control"
                                    name="confirm_username"
                                    data-bind="value:confirmNewUsername">
+                            <div data-bind="visible: showMessages, css:'text-danger'">
+                                <p data-bind="validationMessage: confirmNewUsername"></p>
+                            </div>
                         </div>
                         <button type="submit"
                                 class="btn btn-default"
