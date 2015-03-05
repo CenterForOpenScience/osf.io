@@ -420,9 +420,9 @@ li.pointer {
     border-width: 1px;
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;
-    -webkit-flex: 0 0 auto;
-    -ms-flex: 0 0 auto;
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px; /* this will get overwritten by flex box */
 }
@@ -844,6 +844,7 @@ h1.node-title, h1.node-parent-title {
 
 .compare-version-text{
     margin-right: 5px;
+    margin-left: 5px;
 }
 
 .wiki-title {
@@ -880,6 +881,7 @@ h1.node-title, h1.node-parent-title {
 .wiki-panel-header .icon-list {
     color: #808080;
 }
+
 
 
 .wiki-panel-body .superlist li {
@@ -2279,6 +2281,7 @@ span#profileFullname{
     position: relative;
     overflow-x: hidden;
 }
+
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
@@ -2367,6 +2370,46 @@ span#profileFullname{
     background: #D9E8D9;
 }
 
+
+.wiki-panel-flex {
+    width: 100%;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    height: 750px;
+    -webkit-align-content: flex-start;
+    -ms-align-content: flex-start;
+    align-content: flex-start;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: stretch;
+    -webkit-align-items: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.wiki-panel-header-flex {
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
+    flex: 0 0 auto;
+}
+.wiki-panel-body-flex{
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
+    flex: 3 0 auto;
+    height: 500px;
+}
 
 
 .container-xxl {
