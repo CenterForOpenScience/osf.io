@@ -966,9 +966,15 @@ h1.unavailable {
     font-style: italic;
 }
 
-.anchor {
+.project-page .anchor {
     margin-top: -100px;
     padding-top: 100px;
+    display: block; 
+}
+
+.anchor {
+    margin-top: -60px;
+    padding-top: 60px;
     display: block;
 }
 

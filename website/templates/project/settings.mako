@@ -15,7 +15,7 @@
   <h2 class="text-300">Settings</h2>
 </div>
 
-<div class="row">
+<div class="row project-page">
     <div class="col-sm-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
