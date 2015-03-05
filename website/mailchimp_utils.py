@@ -22,12 +22,18 @@ def get_mailchimp_api():
 def get_list_id_from_name(list_name):
     m = get_mailchimp_api()
     mailing_list = m.lists.list(filters={'list_name': list_name})
+    if not mailing_list['data']:
+        sentry.log_message('A list with the name ' + list_name + ' does not exist.')
+        return
     return mailing_list['data'][0]['id']
 
 
 def get_list_name_from_id(list_id):
     m = get_mailchimp_api()
     mailing_list = m.lists.list(filters={'list_id': list_id})
+    if not mailing_list['data']:
+        sentry.log_message('A list with the id ' + list_id + ' does not exist.')
+        return
     return mailing_list['data'][0]['name']
 
 
