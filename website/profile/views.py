@@ -576,6 +576,7 @@ def unserialize_names(**kwargs):
 def send_update_email_confirmation(**kwargs):
     user = kwargs['auth'].user
     user.add_email_verification(user.unconfirmed_username)
+    user.save()
     confirm_update_email(user, email=user.unconfirmed_username)
 
 
