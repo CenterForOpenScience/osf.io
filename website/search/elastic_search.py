@@ -411,3 +411,49 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
         'pages': pages,
         'page': page,
     }
+
+
+@requires_search
+def search_node(query, page=0, size=10, exclude=[], auth=None):
+    start = (page * size)
+    items = re.split(r'[\s-]+', query)
+
+    query = "(category:project OR category:component OR category:registration) AND " \
+            + "".join('{}*~'.format(re.escape(item)) for item in items) \
+            + "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
+    logger.info(build_query(query, start=start, size=size))
+
+    results = search(build_query(query, start=start, size=size), index='website')
+    print(results)
+    docs = results['results']
+    pages = math.ceil(
+        (results['counts'].get('project', 0)
+         + results['counts'].get('component', 0)
+         + results['counts'].get('registration', 0))
+        / size
+    )
+
+    nodes = []
+    for doc in docs:
+        # TODO: use utils.serialize_user
+        node = Node.load(doc['id'])
+
+        if node is None:
+            logger.error('Could not load node {0}'.format(doc['id']))
+            continue
+
+        if node.can_view(auth):  # exclude merged, unregistered, etc.
+
+            nodes.append({
+                'id': doc['_id'],
+                'title': node.title,
+                'firstAuthor': node.visible_contributors[0].family_name,
+                'etal': len(node.visible_contributors) > 1,
+            })
+
+    return {
+        'nodes': nodes,
+        'total': results['counts']['total'],
+        'pages': pages,
+        'page': page,
+    }
