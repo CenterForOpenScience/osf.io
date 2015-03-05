@@ -130,8 +130,8 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div id="wikiViewPanel" class="wiki-panel">
-                <div class="wiki-panel-header">
+              <div class="wiki-panel wiki-panel-flex">
+                <div class="wiki-panel-header wiki-panel-header-flex">
                     <div class="row">
                         <div class="col-sm-6">
                             <i class="icon-eye-open"> </i>  View
@@ -153,25 +153,21 @@
                         </div>
                     </div>
                 </div>
-                <div  class="wiki-panel-body wiki-panel-body-flex">
-                  <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 175, elem : '#wikiViewPanel'}" class=" markdown-it-view">
-                  </div>
+                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
                 </div>
-
               </div>
           </div>
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel">
-              <div class="wiki-panel-header">
+            <div class="wiki-panel wiki-panel-flex">
+              <div class="wiki-panel-header wiki-panel-header-flex">
                   <div class="row">
-                      <div class="col-sm-6">
+                      <div class="col-xs-12">
                           <i class="icon-exchange"> </i>  Compare
-                      </div>
-                      <div class="col-sm-6">
+                      
                             <!-- Version Picker -->
-                          <span class="compare-version-text pull-right"><span data-bind="text: viewVersionDisplay"></span> to
+                          <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                             <select data-bind="value: compareVersion" id="compareVersionSelect">
                                 <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                 % if len(versions) > 1:
@@ -184,7 +180,7 @@
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view">
+              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view wiki-panel-body-flex">
 
               </div>
             </div>

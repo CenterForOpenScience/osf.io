@@ -266,7 +266,7 @@ var ViewModel = function(url, selector, folderPicker) {
         $(self.folderPicker).folderpicker({
             onPickFolder: onPickFolder,
             initialFolderName : self.folderName(),
-            initialFolderPath : undefined,
+            initialFolderPath : '__NONE__',
             // Fetch Figshare folders with AJAX
             filesData: self.urls().options, // URL for fetching folders
             // Lazy-load each folder's contents
