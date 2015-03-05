@@ -234,7 +234,7 @@ def to_atom(result):
     return {
         'title': result.get('title') or 'No title provided.',
         'content': json.dumps(result, indent=4, sort_keys=True),
-        'content_type': 'json',
+        'content_type': 'text',
         'summary': result.get('description') or 'No summary provided.',
         'id': result['id']['url'],
         'updated': get_date_updated(result),
