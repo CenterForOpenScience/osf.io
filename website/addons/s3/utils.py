@@ -189,12 +189,13 @@ def serialize_urls(node_addon, user):
     result = {
         'createBucket': node.api_url_for('create_new_bucket'),
         'importAuth': node.api_url_for('s3_node_import_auth'),
+        'createAuth': node.api_url_for('s3_authorize_node'),
         'deauthorize': node.api_url_for('s3_remove_node_settings'),
         'bucketList': node.api_url_for('s3_bucket_list'),
         'setBucket': node.api_url_for('s3_node_settings'),
+        'settings': web_url_for('user_addons'),
     }
     if user_settings:
         result['owner'] = web_url_for('profile_view_id',
                                       uid=user_settings.owner._primary_key)
-
     return result

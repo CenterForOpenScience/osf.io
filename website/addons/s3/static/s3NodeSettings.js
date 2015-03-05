@@ -24,16 +24,17 @@ var ViewModel = function(url, selector) {
 
     self.urls = ko.observable({});
     self.loadedSettings = ko.observable(false);
-    self.bucketList = ko.observable([]);
+    self.bucketList = ko.observableArray([]);
     self.loadedBucketList = ko.observable(false);
     self.currentBucket = ko.observable('');
     self.selectedBucket = ko.observable('');
 
     self.accessKey = ko.observable('');
-    self.password = ko.observable('');
+    self.secretKey = ko.observable('');
 
     self.loading = ko.observable(false);
     self.creating = ko.observable(false);
+    self.creatingCredentials = ko.observable(false);
 
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
@@ -52,54 +53,63 @@ var ViewModel = function(url, selector) {
     self.showImport = ko.pureComputed(function() {
         return self.userHasAuth() && !self.nodeHasAuth();
     });
-    self.showCreateCredentials = ko.pureComputed(function(){
+    self.showCreateCredentials = ko.pureComputed(function() {
         return !self.nodeHasAuth() && !self.userHasAuth();
     });
-    self.canChange = ko.pureComputed(function(){
+    self.canChange = ko.pureComputed(function() {
         return self.userIsOwner() && self.nodeHasAuth();
+    });
+    self.allowSelectBucket = ko.pureComputed(function(){
+        return (self.bucketList().length > 0 || self.loadedBucketList())  && (!self.loading());
     });
 
     self.fetchFromServer();
 };
 
-ViewModel.prototype.toggleSelect = function(){
+ViewModel.prototype.toggleSelect = function() {
     this.showSelect(!this.showSelect());
-    if (!this.loadedBucketList()){
+    if (!this.loadedBucketList()) {
         this.fetchBucketList();
-        this.loadedBucketList(true);
     }
 };
 
-ViewModel.prototype.selectBucket = function(){    
+ViewModel.prototype.selectBucket = function() {
     var self = this;
     self.loading(true);
     $osf.postJSON(
-        self.urls().setBucket,
-        {
-            's3_bucket': self.selectedBucket()
-        }
-    )
-        .done(function(response){
+            self.urls().setBucket, {
+                's3_bucket': self.selectedBucket()
+            }
+        )
+        .done(function(response) {
             self.updateFromData(response);
             var filesUrl = window.contextVars.node.urls.web + 'files/';
             self.changeMessage('Successfully linked S3 bucket \'' + self.currentBucket() + '\'. Go to the <a href="' +
-                               filesUrl + '">Files page</a> to view your content.', 'text-success');
+                filesUrl + '">Files page</a> to view your content.', 'text-success');
             self.loading(false);
         })
-        .fail(function(xhr, status, error){
+        .fail(function(xhr, status, error) {
             self.loading(false);
-            $osf.handleJSONError(xhr, status, error);
+            var message = 'Could not change S3 bucket at this time. ' +
+                'Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.changeMessage(message, 'text-warning');
+            Raven.captureMessage('Could not set S3 bucket', {
+                url: self.urls().setBucket,
+                textStatus: status,
+                error: error
+            });
         });
 };
 
-ViewModel.prototype.deauthorizeNode = function(){
+ViewModel.prototype.deauthorizeNode = function() {
     var self = this;
 
     bootbox.confirm({
         title: 'Deauthorize S3?',
         message: 'Are you sure you want to remove this S3 authorization?',
         callback: function(confirm) {
-            if(confirm) {
+            if (confirm) {
                 $.ajax({
                     type: 'DELETE',
                     url: self.urls().deauthorize,
@@ -107,43 +117,81 @@ ViewModel.prototype.deauthorizeNode = function(){
                     dataType: 'json'
                 }).done(function(response) {
                     self.updateFromData(response);
-                }).fail(
-                    $osf.handleJSONError
-                );
+                }).fail(function(xhr, status, error){
+                    var message = 'Could not deauthorize S3 at ' +
+                        'this time. Please refresh the page. If the problem persists, email ' +
+                        '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    self.changeMessage(message, 'text-warning');
+                    Raven.captureMessage('Could not remove S3 authorization.', {
+                        url: self.urls().deauthorize,
+                        textStatus: status,
+                        error: error
+                    });
+                });
             }
         }
-    });    
+    });
 };
 
 ViewModel.prototype.importAuth = function() {
     var self = this;
     $osf.postJSON(
-        self.urls().importAuth,
-        {}
+        self.urls().importAuth, {}
     ).done(function(response) {
+        self.changeMessage('Successfully imported S3 credentials.', 'text-success');
         self.updateFromData(response);
-    }).fail(
-        $osf.handleJSONError
-    );
-    
+    }).fail(function(xhr, status, error){
+        var message = 'Could not import S3 credentials at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not import S3 credentials', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
+    });
 };
 
 ViewModel.prototype.createCredentials = function() {
-
+    var self = this;
+    $osf.postJSON(
+        self.urls().createAuth, 
+        {
+            secret_key: self.secretKey(),            
+            access_key: self.accessKey()
+        }
+    ).done(function(response) {
+        self.creatingCredentials(false);
+        self.changeMessage('Successfully added S3 credentials.', 'text-success');
+        self.updateFromData(response);
+    }).fail(function(xhr, status, error){
+        self.creatingCredentials(false);
+        var message = 'Could not add S3 credentials at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not add S3 credentials', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
+    });   
 };
 
-ViewModel.prototype.createBucket = function(bucketName){
+ViewModel.prototype.createBucket = function(bucketName) {
     var self = this;
     self.creating(true);
     $osf.postJSON(
-        self.urls().createBucket, 
-        {
+        self.urls().createBucket, {
             bucket_name: bucketName
         }
     ).done(function(response) {
         self.creating(false);
         self.updateFromData(response);
-        self.changeMessage('Successfully created bucket. You can now select it from the dropdown of buckets.', 'text-success');
+        self.changeMessage('Successfully created bucket \'' + bucketName +'\'. You can now select it from the drop down list.', 'text-success');
+        self.bucketList().push(bucketName);
+        self.selectedBucket(bucketName);
         self.showSelect(true);
     }).fail(function(xhr) {
         var message = JSON.parse(xhr.responseText).message;
@@ -161,23 +209,6 @@ ViewModel.prototype.createBucket = function(bucketName){
             }
         });
     });
-
-};
-
-ViewModel.prototype.fetchBucketList = function(){
-    var self = this;
-    $.ajax({
-        url: self.urls().bucketList,
-        type: 'GET',
-        dataType: 'application/json'
-    })
-        .done(function(response){
-            self.bucketList(response);
-        })
-        .fail(function(xhr, status, error){
-            
-        });
-
 };
 
 ViewModel.prototype.openCreateBucket = function() {
@@ -205,18 +236,42 @@ ViewModel.prototype.openCreateBucket = function() {
     });
 };
 
-ViewModel.prototype.updateFromData = function(settings){
+ViewModel.prototype.fetchBucketList = function() {
+    var self = this;
+    $.ajax({
+            url: self.urls().bucketList,
+            type: 'GET',
+            dataType: 'json'
+        })
+        .done(function(response) {
+            self.bucketList(response.buckets);
+            self.loadedBucketList(true);
+        })
+        .fail(function(xhr, status, error) {
+            var message = 'Could not retrieve list of S3 buckets at' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.changeMessage(message, 'text-warning');
+            Raven.captureMessage('Could not GET s3 bucket list', {
+                url: self.urls().bucketList,
+                textStatus: status,
+                error: error
+            });
+        });
+};
+
+ViewModel.prototype.updateFromData = function(settings) {
     var self = this;
     self.nodeHasAuth(settings.node_has_auth);
-    self.userHasAuth(settings.user_has_auth);            
+    self.userHasAuth(settings.user_has_auth);
     self.userIsOwner(settings.user_is_owner);
     self.ownerName(settings.owner);
     self.currentBucket(settings.has_bucket ? settings.bucket : 'None');
-    self.bucketList(settings.bucket_list);
+    //self.bucketList(settings.bucket_list);
     self.loadedSettings(true);
-    if (settings.urls){
+    if (settings.urls) {
         self.urls(settings.urls);
-    }  
+    }
 };
 
 ViewModel.prototype.fetchFromServer = function() {
@@ -229,16 +284,28 @@ ViewModel.prototype.fetchFromServer = function() {
         .done(function(response) {
             var settings = response.result;
             self.updateFromData(settings);
+            /*
             if (self.nodeHasAuth() && (self.bucketList() === null)) {
+                var message = '';
                 if (self.userIsOwner()) {
-                    //self.changeMessage();
+                    message = 'Could not retrieve S3 settings at ' +
+                        'this time. The S3 addon credentials may no longer be valid.' +
+                        ' Try deauthorizing and reauthorizing S3 on your <a href="' +
+                        self.urls().settings + '">account settings page</a>.';
                 } else {
-                    //self.changeMessage();
+                    message = 'Could not retrieve S3 settings at ' +
+                        'this time. The S3 addon credentials may no longer be valid.' +
+                        ' Contact ' + self.ownerName() + ' to verify.';
                 }
+                self.changeMessage(message, 'text-warning');
             }
+            */
         })
         .fail(function(xhr, status, error) {
-            //self.changeMessage(self.messages.CANT_RETRIEVE_SETTINGS(), 'text-warning');
+            var message = 'Could not retrieve S3 settings at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.changeMessage(message, 'text-warning');
             Raven.captureMessage('Could not GET s3 settings', {
                 url: self.url,
                 textStatus: status,
@@ -262,7 +329,7 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-var S3Config = function(selector, url){   
+var S3Config = function(selector, url) {
     var viewModel = new ViewModel(url, selector);
     $osf.applyBindings(viewModel, selector);
 };

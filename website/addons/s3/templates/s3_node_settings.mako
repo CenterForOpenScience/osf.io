@@ -24,7 +24,8 @@
             <strong>Current Bucket:</strong>
             <span data-bind="text: currentBucket"></span>
         </p>
-        <div class="row">
+        <div class="row"
+             data-bind="attr.disabled: creating">
           <div class="col-md-1" data-bind="if: canChange">
             <button data-bind="click: toggleSelect,
                                css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
@@ -35,32 +36,36 @@
           </div>
         </div>
         <br />
-        <div class="row" data-bind="if: showSelect">     
+        <div class="row" data-bind="if: showSelect">
           <div class="col-md-6">
-            <select class="form-control" id="s3_bucket" name="s3_bucket" data-bind="value: selectedBucket, attr.diabled: disableSettings, options: bucketList"> </select>
+            <select class="form-control" id="s3_bucket" name="s3_bucket" 
+                    data-bind="value: selectedBucket,
+                               attr.disabled: !loadedBucketList(),
+                               options: bucketList"> </select>
           </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
-                               attr.disabled: loading" class="btn btn-primary">
+                               attr.disabled: !allowSelectBucket()"
+                    class="btn btn-primary">
               Submit
             </button> 
           </div>         
         </div>          
-
-        <div data-bind="if: showCreateCredentials">
-          <div class="form-group">
-            <label for="s3Addon">Access Key</label>
-            <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
-          </div>
-          <div class="form-group">
-            <label for="s3Addon">Secret Key</label>
-            <input data-bind="value: password" type="password" class="form-control" id="secret_key" name="secret_key" />
-          </div>
-          <button data-bind="click: createCredentials" class="btn btn-success btn-addon addon-settings-submit">
-            Submit
-          </button>
-        </div>
     </div>
+    <div data-bind="if: showCreateCredentials">
+      <div class="form-group">
+        <label for="s3Addon">Access Key</label>
+        <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
+      </div>
+      <div class="form-group">
+        <label for="s3Addon">Secret Key</label>
+        <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
+      </div>
+      <button data-bind="click: createCredentials
+                         attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
+        Submit
+      </button>
+    </div>    
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr.class: messageClass"></p>
