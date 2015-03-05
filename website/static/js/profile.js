@@ -339,17 +339,13 @@ var NameViewModel = function(urls, modes) {
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
-    self.username = koHelpers.sanitizedObservable().extend({trimmed: true});
-    self.unconfirmed_username = koHelpers.sanitizedObservable().extend({trimmed: true});
 
     self.trackedProperties = [
         self.full,
         self.given,
         self.middle,
         self.family,
-        self.suffix,
-        self.unconfirmed_username,
-        self.username
+        self.suffix
     ];
 
     var validated = ko.validatedObservable(self);
@@ -436,67 +432,6 @@ var NameViewModel = function(urls, modes) {
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
-NameViewModel.prototype.handleEmailSuccess = function() {
-    if ($.inArray('view', this.modes) >= 0) {
-        this.mode('view');
-    } else {
-        this.changeMessage(
-            'Settings updated. Please check ' + this.unconfirmed_username() + ' to confirm your email address.',
-            'text-success',
-            5000
-        );
-    }
-};
-
-NameViewModel.prototype.handleEmailError = function() {
-    this.changeMessage(
-        'Email address cannot be updated.',
-        'text-danger',
-        5000
-    );
-};
-
-NameViewModel.prototype.handleSuccess = function() {
-    if ($.inArray('view', this.modes) >= 0) {
-        this.mode('view');
-    } else {
-        this.changeMessage(
-            'Settings updated',
-            'text-success',
-            5000
-        );
-    }
-};
-
-NameViewModel.prototype.handleError = function() {
-    this.changeMessage(
-        'Could not update settings',
-        'text-danger',
-        5000
-    );
-};
-
-NameViewModel.prototype.submit = function() {
-    if (this.unconfirmed_username() !== this.username()) {
-        $osf.putJSON(
-            this.urls.crud,
-            this.serialize()
-        ).done(
-            [this.handleEmailSuccess.bind(this), this.setOriginal()]
-        ).fail(
-            this.handleEmailError.bind(this)
-        );
-    } else {
-        $osf.putJSON(
-            this.urls.crud,
-            this.serialize()
-        ).done(
-            [this.handleSuccess.bind(this), this.setOriginal()]
-        ).fail(
-            this.handleError.bind(this)
-        );
-    }
-};
 
 /*
  * Custom observable for use with external services.
