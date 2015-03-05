@@ -842,7 +842,7 @@ tbOptions = {
             if (window.File && window.FileReader) {
                 return m('p', {
                 }, [
-                    m('span', 'To Upload: Drag files into a folder below OR click the '),
+                    m('span', 'To Upload: Drag files into a folder OR click the '),
                     m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
                     m('span', ' below.')
                 ]);
