@@ -49,6 +49,7 @@ var AddPointerViewModel = function(nodeTitle) {
                     page: self.currentPage
                 }
             ).done(function(result) {
+                    console.log(result);
                 if (!result.nodes.length) {
                     self.errorMsg('No results found.');
                 }

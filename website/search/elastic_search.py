@@ -418,11 +418,13 @@ def search_node(query, page=0, size=10, exclude=[], auth=None):
     start = (page * size)
     items = re.split(r'[\s-]+', query)
 
-    query = "category:project OR category:component OR category:registration AND "\
-                .join('{}*~'.format(re.escape(item)) for item in items) + \
-            "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
+    query = "(category:project OR category:component OR category:registration) AND " \
+            + "".join('{}*~'.format(re.escape(item)) for item in items) \
+            + "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
+    logger.info(build_query(query, start=start, size=size))
 
     results = search(build_query(query, start=start, size=size), index='website')
+    print(results)
     docs = results['results']
     pages = math.ceil(
         (results['counts'].get('project', 0)

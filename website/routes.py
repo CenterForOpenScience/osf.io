@@ -654,7 +654,7 @@ def make_url_map(app):
 
         Rule(
             '/api/v1/search/node/',
-            'post',
+            'get',
             search_views.search_node,
             json_renderer,
         ),
