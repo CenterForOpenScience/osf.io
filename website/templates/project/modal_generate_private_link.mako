@@ -50,10 +50,10 @@
 
                             <div data-bind="foreach:nodes">
                                 <div data-bind="style:{'marginLeft': margin}">
-                                    <!-- ko if: ($parent.nodesToChange().indexOf($data.parent_id) !== -1 ||  $data.parent_id === $parent.id())-->
+                                    <!-- ko if: $root.isChildVisible($data) -->
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <!-- /ko -->
-                                    <!-- ko if: ($parent.nodesToChange().indexOf($data.parent_id) === -1 &&  $data.parent_id !== $parent.id()) -->
+                                    <!-- ko ifnot: $root.isChildVisible($data) -->
                                         <i class="icon-question-sign" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
                                     <!-- /ko -->
                                     <span data-bind="text:$data.title"></span>
