@@ -66,13 +66,12 @@ MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
 def teardown_database(client=None, database=None):
     client = client or client_proxy
     database = database or database_proxy
-    if settings.USE_TOKU_MX:
-        try:
-            commands.rollback(database)
-        except OperationFailure as error:
-            message = utils.get_error_message(error)
-            if messages.NO_TRANSACTION_ERROR not in message:
-                raise
+    try:
+        commands.rollback(database)
+    except OperationFailure as error:
+        message = utils.get_error_message(error)
+        if messages.NO_TRANSACTION_ERROR not in message:
+            raise
     client.drop_database(database)
 
 

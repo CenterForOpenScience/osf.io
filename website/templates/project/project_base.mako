@@ -75,7 +75,7 @@ ${next.body()}
     });
 </script>
 <script type="text/javascript"
-    src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 
 ## NOTE: window.contextVars must be set before loading this script
