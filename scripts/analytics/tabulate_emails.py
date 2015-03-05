@@ -17,8 +17,8 @@ from website.app import app, init_app
 from scripts.analytics import utils
 
 
-NODE_ID = '95nv8'
-USER_ID = 'icpnw'
+NODE_ID = '95nv8'  # Daily updates project
+USER_ID = 'icpnw'  # Josh
 FILE_NAME = 'daily-users.csv'
 CONTENT_TYPE = 'text/csv'
 TIME_DELTA = relativedelta(days=1)
@@ -35,9 +35,10 @@ def get_emails(query=None):
 
 def get_emails_since(delta):
     return get_emails({
-        'date_confirmed': {
-            '$gte': datetime.datetime.utcnow() - delta,
-        }
+        'is_registered': True,
+        'password': {'$ne': None},
+        'is_merged': {'$ne': True},
+        'date_confirmed': {'$gte': datetime.datetime.utcnow() - delta},
     })
 
 

@@ -945,7 +945,7 @@ class TestClaiming(OsfTestCase):
         self.project.reload()
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
-        form['username'] = new_user.username
+        #form['username'] = new_user.username #Removed as long as E-mail can't be updated.
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
@@ -1027,7 +1027,7 @@ class TestClaiming(OsfTestCase):
         self.project.reload()
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
-        form['username'] = new_user.username
+        #form['username'] = new_user.username #Removed as long as the E-mail can't be changed
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
@@ -1039,6 +1039,7 @@ class TestClaiming(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('already been claimed', res)
 
+    @unittest.skip("as long as E-mails cannot be changed")
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
