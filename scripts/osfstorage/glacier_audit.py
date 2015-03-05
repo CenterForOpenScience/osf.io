@@ -3,6 +3,7 @@
 """Verify that all `OsfStorageFileVersion` records created earlier than two
 days before the latest inventory report are contained in the inventory, point
 to the correct Glacier archive, and have an archive of the correct size.
+Should be run after `glacier_inventory.py`.
 """
 
 import logging
@@ -43,7 +44,7 @@ class BadArchiveId(AuditError):
     pass
 
 
-def get_vault(credentials, settings):
+def get_vault():
     layer2 = Layer2(
         aws_access_key_id=storage_settings.AWS_ACCESS_KEY,
         aws_secret_access_key=storage_settings.AWS_SECRET_KEY,
@@ -89,7 +90,8 @@ def check_glacier_version(version, inventory):
 
 
 def main(job_id=None):
-    job = get_job(job_id=job_id)
+    vault = get_vault()
+    job = get_job(vault, job_id=job_id)
     output = job.get_output()
     date = parse_date(job.creation_date)
     inventory = {
