@@ -80,8 +80,7 @@ class TestViewsConfig(OsfTestCase):
         url = '/api/v1/project/{0}/figshare/config/import-auth/'.format(self.project._id)
         self.app.put(url, auth=self.user.auth)
         self.node_settings.reload()
-        is_not_none = settings.user_settings is not None
-        assert_true(is_not_none)
+        assert_is_not_none(settings.user_settings)
 
     def test_cancelled_oauth_request_from_user_settings_page_redirects_correctly(self):
         res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id), auth=self.user.auth)
@@ -104,9 +103,7 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.reload()
         assert_true(settings.user_settings is None)
         is_none = (
-            settings.figshare_id is None
-            and settings.figshare_title is None
-            and settings.figshare_type is None
+            settings.figshare_id is None and settings.figshare_title is None and settings.figshare_type is None
         )
         assert_true(is_none)
 

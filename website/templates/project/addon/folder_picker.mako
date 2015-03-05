@@ -1,5 +1,4 @@
 <div id="${addon_short_name}Scope" class="scripted">
-    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
     ${addon_full_name}        
         <small class="authorized-by">

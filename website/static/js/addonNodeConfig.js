@@ -167,7 +167,7 @@ var FolderPickerViewModel = function(addonName, url, selector, folderPicker, opt
         return (userIsOwner && selected) ? selected.name : '';
     });
 
-    self.selectedFolderType = ko.computed(function() {
+    self.selectedFolderType = ko.pureComputed(function() {
         var userHasAuth = self.userHasAuth();
         var selected = self.selected();
         return (userHasAuth && selected) ? selected.type : '';
