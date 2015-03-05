@@ -45,6 +45,13 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div class='help-block'>
+                            <div data-bind='if: foundResults'>
+                                <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                    <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="col-md-6">
