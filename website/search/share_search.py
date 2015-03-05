@@ -233,12 +233,12 @@ def data_for_charts(elastic_results):
 def to_atom(result):
     return {
         'title': result.get('title') or 'No title provided.',
-        'content': json.dumps(result, indent=4, sort_keys=True),
-        'content_type': 'text',
         'summary': result.get('description') or 'No summary provided.',
         'id': result['id']['url'],
         'updated': get_date_updated(result),
-        'link': result['id']['url'],
+        'links': [
+            {'href': result['id']['url'], 'rel': 'alternate'}
+        ],
         'author': format_contributors_for_atom(result['contributors']),
         'categories': [{"term": tag} for tag in result.get('tags')],
         'published': parse(result.get('dateUpdated'))
