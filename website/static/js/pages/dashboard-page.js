@@ -51,7 +51,7 @@ var ensureUserTimezone = function(savedTimezone, savedLocale) {
     var clientTimezone = jstz.determine().name();
     var clientLocale = window.navigator.userLanguage || window.navigator.language;
 
-    if (savedTimezone != clientTimezone || savedLocale != clientLocale) {
+    if (savedTimezone !== clientTimezone || savedLocale !== clientLocale) {
         var url = '/api/v1/profile/';
 
         var request = $osf.putJSON(
