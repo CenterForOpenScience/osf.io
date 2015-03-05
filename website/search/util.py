@@ -1,4 +1,6 @@
 import random
+import webcolors
+import hashlib
 
 
 def build_query(q='*', start=0, size=10, sort=None):
@@ -34,29 +36,35 @@ def color_too_close(color, colors, threshold=100):
     For the random_color function, calculates the distance between
     two colors and returns False if they are closer than the threshold
     """
-    pairs = (color[0:2], color[2:4], color[4:6])
     for x in colors:
-        distance = sum(abs(int(x[i], 16) - int(pairs[i], 16)) for i in xrange(3))
+        distance = sum(abs(x[i] - color[i]) for i in xrange(3))
         if distance < threshold:
             return True
     return False
 
 
-def random_color(seed=15485863, max_iterations=15, threshold=100):
+def random_color(seed=4545, max_iterations=15, threshold=100):
     """
     A Generator for random hex colors.
     Generates a sequence of colors that are different up to some threshold
     """
     random.seed(seed)
-    values = [str(i) for i in range(10)] + ['A', 'B', 'C', 'D', 'E', 'F']
     colors = []
     iterations = 0
     while True:
-        color = ''.join(random.choice(values) for i in range(6))
+        color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         if color_too_close(color, colors, threshold) and not iterations > max_iterations:
             iterations += 1
             continue
         else:
-            colors.append((color[0:2], color[2:4], color[4:6]))
+            colors.append(color)
             iterations = 0
-        yield '#' + color
+        yield webcolors.rgb_to_hex(color)
+
+
+def source_to_color(source):
+    md5 = hashlib.md5()
+    md5.update(source+'yo')
+    hash_value = md5.hexdigest()
+    rgb = '#' + hash_value[0:2] + hash_value[2:4] + hash_value[4:6]
+    return rgb
