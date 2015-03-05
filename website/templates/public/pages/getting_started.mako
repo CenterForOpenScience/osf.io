@@ -34,6 +34,7 @@
                             <li><a href="#privacy"><i class="icon-chevron-right"></i> Privacy</a></li>
                             <li><a href="#viewonly"><i class="icon-chevron-right"></i> View-only Links</a></li>
                             <li><a href="#comments"><i class="icon-chevron-right"></i> Comments</a></li>
+                            <li><a href="#notifications"><i class="icon-chevron-right"></i> Notifications</a></li>
                         </ul>
                     </li>
                     <li>
@@ -206,6 +207,14 @@
                     </div>
                     <p>You may find that you can view comments but not leave one. That is the administrator's choice, and it reflects their decision to only allow contributors to comment on the project.</p>
                     <p>To change your project's comment settings, visit "Settings" in the grey navigation bar below the project title. Select your preference under "Configure Commenting" and submit your changes. </p>
+                    
+                    <span id="notifications" class="anchor"></span>
+                    <p class="gs-header">Notifications</p>
+                    <p>Notifications can be enabled for any OSF project or component. To be notified via email when a new comment is added to a project or component, visit the settings page on the project. You can choose to receive an email every time a comment is added or in a daily digest. You can also choose to receive email notifications when someone replies to your comment on a project; configure this in your account settings.</p>
+                    <div class="gs-video embed-responsive embed-responsive-16by9">
+                        <div class="embed-responsive-item youtube-loader" id="iOkb9OH4x5k"></div>
+                    </div>
+                
                 </div>
             </div>
             <div class="row" style="margin-bottom: 70px;">
