@@ -12,10 +12,11 @@ from website.project.decorators import (
 )
 
 from .provider import MendeleyCitationsProvider
+from .serializer import MendeleySerializer
 
 
 @must_be_logged_in
-def list_mendeley_accounts_user(auth):
+def list_accounts_user(auth):
     """ Returns the list of all of the current user's authorized Mendeley accounts """
 
     provider = MendeleyCitationsProvider()
@@ -24,18 +25,16 @@ def list_mendeley_accounts_user(auth):
 
 @must_have_permission('read')
 @must_have_addon('mendeley', 'node')
-def mendeley_get_config(auth, node_addon, **kwargs):
+def get_config(auth, node_addon, **kwargs):
     """ Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
-
-    provider = MendeleyCitationsProvider()
-    return provider.serialize_settings(node_addon, auth.user)
+    return MendeleySerializer(node_addon, auth.user).serialized_settings
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
-def mendeley_set_config(auth, node_addon, **kwargs):
+def set_config(auth, node_addon, **kwargs):
     """ Updates MendeleyNodeSettings based on submitted account and folder information """
 
     provider = MendeleyCitationsProvider()
@@ -53,7 +52,7 @@ def mendeley_set_config(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
-def mendeley_add_user_auth(auth, node_addon, **kwargs):
+def add_user_auth(auth, node_addon, **kwargs):
     """ Allows for importing existing auth to MendeleyNodeSettings """
 
     provider = MendeleyCitationsProvider()
@@ -64,7 +63,7 @@ def mendeley_add_user_auth(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
-def mendeley_remove_user_auth(auth, node_addon, **kwargs):
+def remove_user_auth(auth, node_addon, **kwargs):
     """ Removes auth from MendeleyNodeSettings """
 
     provider = MendeleyCitationsProvider()
@@ -82,7 +81,7 @@ def mendeley_widget(node_addon, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
-def mendeley_citation_list(auth, node_addon, mendeley_list_id=None, **kwargs):
+def citation_list(auth, node_addon, mendeley_list_id=None, **kwargs):
     """
     This function collects a listing of folders and citations based on the
     passed mendeley_list_id. If mendeley_list_id is None, then all of the

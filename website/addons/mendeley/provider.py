@@ -6,37 +6,7 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
 
     def __init__(self):
         super(MendeleyCitationsProvider, self).__init__('mendeley')
-
-    def _serialize_model(self, node_addon, user):
-        ret = super(MendeleyNodeSettings, node_addon).to_json(user)
-        ret.update({
-            'listId': node_addon.mendeley_list_id,
-            'accounts': self.user_accounts(user),
-            'currentAccount': serialize_account(node_addon.external_account),
-        })
-        return ret
-
-    def _serialize_urls(self, node_addon):
-        # collects node_settings and oauth urls
-        ret = serialize_urls(node_addon)
-
-        node = node_addon.owner
-
-        external_account = node_addon.external_account
-        deauthorize = None
-        if external_account:
-            deauthorize = node.api_url_for('mendeley_remove_user_auth')
-
-        specific = {
-            'importAuth': node.api_url_for('mendeley_add_user_auth'),
-            'folders': node.api_url_for('mendeley_citation_list'),
-            'config': node.api_url_for('mendeley_set_config'),
-            'deauthorize': deauthorize,
-            'accounts': node.api_url_for('list_mendeley_accounts_user')
-        }
-        ret.update(specific)
-        return ret
-
+        
     def widget(self, node_addon):
 
         ret = super(MendeleyCitationsProvider, self).widget(node_addon)
