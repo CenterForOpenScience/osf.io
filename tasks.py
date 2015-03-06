@@ -386,7 +386,7 @@ def karma(single=False, browsers=None):
     # what's specified in karma.conf.js
     if browsers:
         cmd += ' --browsers {}'.format(browsers)
-    run(cmd, pty=True, echo=True)
+    run(cmd, echo=True)
 
 
 @task
