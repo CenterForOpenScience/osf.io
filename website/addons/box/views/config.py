@@ -37,7 +37,7 @@ def serialize_folder(metadata):
     """
     # if path is root
     if metadata['path'] == '' or metadata['path'] == '/':
-        name = 'All Files'
+        name = '/ (Full Box)'
     else:
         name = 'Box' + metadata['path']
     return {
@@ -53,7 +53,7 @@ def get_folders(client):
     metadata = client.metadata('/', list=True)
     # List each folder, including the root
     root = {
-        'name': 'All Files',
+        'name': '/ (Full Box)',
         'path': '',
     }
     folders = [root] + [
@@ -145,7 +145,7 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': path,
+                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Box)',
                 'path': path,
             },
             'urls': serialize_urls(node_addon),
