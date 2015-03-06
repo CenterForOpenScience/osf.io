@@ -5,7 +5,6 @@ var ko = require('knockout');
 require('knockout-validation');
 require('knockout-punches');
 ko.punches.enableAll();
-var koHelpers = require('koHelpers');
 var $osf = require('osfHelpers');
 
 var ViewModel = function() {
