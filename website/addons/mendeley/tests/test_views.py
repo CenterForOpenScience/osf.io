@@ -111,7 +111,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_user_folders(self):
         # JSON: a list of user's Mendeley folders"
         res = self.app.get(
-            api_url_for('list_accounts_user'),
+            api_url_for('mendeley_list_accounts_user'),
             auth=self.user.auth,
         )
         expected = {
