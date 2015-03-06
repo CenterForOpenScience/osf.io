@@ -117,6 +117,7 @@ class CitationsProvider(object):
             'csl': citation,
             'kind': 'file',
             'id': citation['id'],
+            'data': citation,
         }
 
     @abc.abstractmethod
@@ -124,7 +125,7 @@ class CitationsProvider(object):
 
         return None
 
-    def citation_list(self, node_addon, user, list_id, show='all'):
+    def citation_list(self, node_addon, user, list_id, show, page):
 
         attached_list_id = self._folder_id(node_addon)
         account_folders = node_addon.api.citation_lists(self._extract_folder)
@@ -169,11 +170,20 @@ class CitationsProvider(object):
                 ]
 
             if show in ('all', 'citations'):
+                citations = node_addon.api.get_list(list_id, page)
                 contents += [
                     self._serialize_citation(each)
-                    for each in node_addon.api.get_list(list_id)
+                    for each in citations
                 ]
-
+                # TODO deleteme
+                if len(citations) > 20:
+                    contents.append({
+                        'name': 'Show more',
+                        'kind': 'message',
+                        'urls': {
+                            'fetch': node_addon.owner.api_url_for('zotero_citation_list', zotero_list_id=list_id, page=(page + 1))
+                        }
+                    })
         return {
             'contents': contents
         }

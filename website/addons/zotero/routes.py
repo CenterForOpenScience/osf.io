@@ -69,9 +69,7 @@ api_routes = {
             'get',
             views.zotero_citation_list,
             json_renderer,
-
         ),
-
     ],
     'prefix': '/api/v1',
 

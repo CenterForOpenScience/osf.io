@@ -12,7 +12,7 @@ from website.oauth.models import ExternalProvider
 # TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
 # of citations, requesting the citations may take longer than the UWSGI harakiri time.
 # For now, we load 200 citations max and show a message to the user.
-MAX_CITATION_LOAD = 200
+MAX_CITATION_LOAD = 25
 
 class Zotero(ExternalProvider):
     name = "Zotero"
@@ -69,7 +69,7 @@ class Zotero(ExternalProvider):
         collection = self.client.collection(folder_id)
         return collection
 
-    def get_list(self, list_id=None):
+    def get_list(self, list_id=None, page=1):
         """Get a single CitationList
 
         :param str list_id: ID for a Zotero collection. Optional.
@@ -81,7 +81,7 @@ class Zotero(ExternalProvider):
         if list_id:
             citations = []
             more = True
-            offset = 0
+            offset = (page - 1) * 100
             while more and len(citations) <= MAX_CITATION_LOAD:
                 page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
                 citations = citations + page
@@ -89,6 +89,7 @@ class Zotero(ExternalProvider):
                     more = False
                 else:
                     offset = offset + len(page)
+
             return self._citations_for_zotero_collection(citations)
         else:
             return self._citations_for_zotero_user()

@@ -34,9 +34,16 @@ function resolveIcon(item) {
     if (item.kind === 'folder') {
         return item.open ? openFolder : closedFolder;
     } else if (item.kind === 'message'){
-        return '';
+        return m('i.icon-ellipsis-horizontal', {
+            onclick: function(){
+                $.get(item.data.urls.fetch)
+                .done(function(res){
+                    debugger;
+                });
+            }
+        }, ' ');
     } else if (item.data.icon) {
-        return m('i.fa.' + item.data.icon, ' ');
+        return m('i.fa' + item.data.icon, ' ');
     } else {
         return m('i.icon-file-alt');
     }
@@ -289,17 +296,9 @@ CitationGrid.prototype.initTreebeard = function() {
     var preprocess = options.lazyLoadPreprocess;
     options.lazyLoadPreprocess = function(data){
         data = preprocess(data);
-        // TODO remove special case for Zotero
-        if (self.provider === 'Zotero') {
-            if (data.length >= 200) {
-		data.push({
-                    name: 'Only 200 citations may be displayed',
-                    kind: 'message'
-                });
-            }
-        }        
         return data;
     };
+    var resolveIcon = options.resolveIcon;
     self.treebeard = new Treebeard(options);
 };
 

@@ -13,7 +13,6 @@ from website.project.decorators import (
 
 from .provider import ZoteroCitationsProvider
 
-
 @must_be_logged_in
 def list_zotero_accounts_user(auth):
     """Return the list of all of the current user's authorized Zotero accounts."""
@@ -89,4 +88,5 @@ def zotero_citation_list(auth, node_addon, zotero_list_id=None, **kwargs):
 
     provider = ZoteroCitationsProvider()
     show = request.args.get('view', 'all')
-    return provider.citation_list(node_addon, auth.user, zotero_list_id, show)
+    page = int(request.args.get('page', 1))
+    return provider.citation_list(node_addon, auth.user, zotero_list_id, show, page)
