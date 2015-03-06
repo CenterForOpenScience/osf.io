@@ -223,6 +223,3 @@ def search_share_stats():
 
     return search.share_stats(query=query)
 
-
-def handle_search_query(query):
-    return redirect('/search/?q={0}'.format(query))
