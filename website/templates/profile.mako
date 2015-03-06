@@ -37,7 +37,7 @@
 
 <div class="row">
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
 
         <div>
@@ -70,7 +70,7 @@
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
 
 
         <ul class="nav nav-tabs">
@@ -106,7 +106,7 @@
 ##
 ##<div class="row">
 ##%if badges:
-##    <div class="col-md-6">
+##    <div class="col-sm-6">
 ##        <h3>Badges Endorsed by This User</h3>
 ##        <div class="badge-list" style="overflow-y:auto; height:250px; padding-top:10px;">
 ##            %for badge in badges:
@@ -120,9 +120,9 @@
 ##            %endfor
 ##        </div>
 ##    </div>
-##    <div class="col-md-6">
+##    <div class="col-sm-6">
 ##%else:
-##    <div class="col-md-12">
+##    <div class="col-sm-12">
 ##%endif
 ##        <h3>"Sash"</h3>
 ##        <div class="profile-badge-list">
@@ -144,7 +144,7 @@
 
 <hr />
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-sm-6">
         <h3>Public Projects</h3>
         <div mod-meta='{
                 "tpl" : "util/render_nodes.mako",
@@ -153,7 +153,7 @@
                 "kwargs" : {"sortable" : true}
             }'></div>
     </div>
-    <div class="col-md-6">
+    <div class="col-sm-6">
         <h3>Public Components</h3>
         <div mod-meta='{
                 "tpl" : "util/render_nodes.mako",
