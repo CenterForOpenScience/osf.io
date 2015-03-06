@@ -206,9 +206,30 @@ def user_account_password(auth, **kwargs):
 def user_account_email(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
-    unconfirmed_username = json_data.get('unconfirmed_username', None)
+    new_username = json_data.get('new_username', None)
+    confirm_new_username = json_data.get('confirm_new_username', None)
 
-    if user.username != unconfirmed_username:
+    if not new_username or not confirm_new_username:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Bad Request",
+            message_long="Please enter an email address.",
+            error_type="invalid_username"))
+
+    elif not new_username == confirm_new_username:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Bad Request",
+            message_long="Confirmed email address does not match.",
+            error_type="invalid_username"))
+    else:
+        unconfirmed_username = new_username
+
+    if user.username == unconfirmed_username:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Bad Request",
+            message_long="Please enter a new email address.",
+            error_type="invalid_username"))
+
+    else:
         if user.find(Q('username', 'eq', unconfirmed_username)).count() > 0:
             raise HTTPError(http.BAD_REQUEST, data=dict(
                 message_short="Bad Request",

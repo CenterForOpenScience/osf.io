@@ -79,7 +79,8 @@ var ViewModel = function() {
     self.submit = function() {
         if (self.isValid()) {
             var payload = {
-                'unconfirmed_username': self.newUsername()
+                'new_username': self.newUsername(),
+                'confirm_new_username': self.confirmNewUsername()
             };
             var request = $osf.postJSON('/api/v1/settings/account/email/', payload);
             request.done(function () {
@@ -88,7 +89,7 @@ var ViewModel = function() {
             });
             request.fail(function (xhr) {
                 if (xhr.responseJSON.error_type === 'invalid_username') {
-                    var message = "Could not update settings. A user with this username already exists.";
+                    var message = xhr.responseJSON.message_long;
                     self.changeMessage(message, 'text-danger', 5000)
                 } else {
                     self.changeMessage("Could not update settings.", 'text-danger', 5000)
