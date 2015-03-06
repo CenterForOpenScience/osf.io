@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+import logging
+
 from .defaults import *  # noqa
 
 logger = logging.getLogger(__name__)
