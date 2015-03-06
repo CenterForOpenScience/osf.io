@@ -2175,6 +2175,11 @@ span#profileFullname{
 .break-word {
     word-wrap: break-word;
 }
+.table-fixed {
+    table-layout: fixed;
+    width: 100%;
+    word-wrap: break-word;
+}
 .modal-backdrop {
     position: fixed;
 }
