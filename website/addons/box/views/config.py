@@ -19,8 +19,6 @@ from website.project.decorators import (
 from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
-from website.addons.box import settings
-
 BOX_SHARE_URL_TEMPLATE = 'https://app.box.com/files/0/f/{0}'
 
 @must_have_addon('box', 'node')
