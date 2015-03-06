@@ -1935,9 +1935,6 @@ span#profileFullname{
     border:1px solid #ddd;
     margin-bottom: 20px;
 }
-.addon-widget-header.hide-border {
-  border-bottom: none;
-}
 .addon-widget-header {
     padding: 0 10px;
     background-color: #efefef;
