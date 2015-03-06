@@ -16,11 +16,7 @@ var NavbarViewModel = function() {
     self.showClose = true;
 
     self.onSearchPage = ko.computed(function() {
-        if (window.contextVars.search){
-            return true;
-        } else {
-            return false;
-        }
+        return window.contextVars.search
     });
 
 
