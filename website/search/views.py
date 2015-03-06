@@ -9,7 +9,6 @@ import bleach
 from flask import request
 
 from modularodm import Q
-
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
