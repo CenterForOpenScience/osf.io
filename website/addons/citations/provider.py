@@ -6,8 +6,6 @@ from framework.exceptions import PermissionsError
 
 from website.oauth.models import ExternalAccount
 
-from . import utils
-
 class CitationsProvider(object):
 
     __metaclass__ = abc.ABCMeta
@@ -64,10 +62,20 @@ class CitationsProvider(object):
         })
         return ret
 
-    @abc.abstractmethod
-    def _extract_folder(self, data):
+    def _extract_folder(self, folder):
+        folder = self._folder_to_dict(folder)
+        ret = {
+            'name': folder['name'],
+            'provider_list_id': folder['list_id'],
+            'id': folder['id'],
+        }
+        if folder['parent_id']:
+            ret['parent_list_id'] = folder['parent_id']
+        return ret
 
-        return {}
+    @abc.abstractmethod
+    def _folder_to_dict(self, data):
+        pass
 
     @abc.abstractmethod
     def _folder_id(self):
@@ -127,3 +135,4 @@ class CitationsProvider(object):
         return {
             'contents': contents
         }
+    

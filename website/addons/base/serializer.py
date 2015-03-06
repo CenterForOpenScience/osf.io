@@ -168,6 +168,7 @@ class CitationsAddonSerializer(AddonSerializer):
             'provider_id': external_account.provider_id,
             'display_name': external_account.display_name,
         }
+
     @abc.abstractmethod
     def serialize_folder(self, folder):
         pass
