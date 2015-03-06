@@ -1070,8 +1070,8 @@ def search_node(**kwargs):
     auth = kwargs['auth']
     node = Node.load(request.json.get('nodeId'))
     include_public = request.json.get('includePublic')
-    size = float(request.json.get('size', '5').strip())
-    page = request.json.get('page', '0')
+    size = float(request.json.get('size', 5).strip())
+    page = request.json.get('page', 0)
     query = request.json.get('query', '').strip()
 
     start = (page * size)
