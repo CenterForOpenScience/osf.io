@@ -16,9 +16,9 @@ from tests.factories import AuthUserFactory
 from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, mock_responses, MockDropbox, patch_client
 )
+from website.addons.dropbox.views.config import serialize_settings
 from website.addons.dropbox.views.hgrid import dropbox_addon_folder
 from website.addons.dropbox import utils
-from website.addons.dropbox.serializer import DropboxSerializer
 
 mock_client = MockDropbox()
 
@@ -126,7 +126,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(urls['create'], api_url_for('dropbox_oauth_start_user'))
 
     def test_serialize_settings_helper_returns_correct_urls(self):
-        result = DropboxSerializer(self.node_settings, self.user, client=mock_client).serialized_settings
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         urls = result['urls']
 
         assert_equal(urls['config'], self.project.api_url_for('dropbox_config_put'))
@@ -142,21 +142,21 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(urls['settings'], web_url_for('user_addons'))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
-        result = DropboxSerializer(self.node_settings, self.user, client=mock_client).serialized_settings
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
     def test_serialize_settings_for_user_no_auth(self):
         no_addon_user = AuthUserFactory()
-        result = DropboxSerializer(self.node_settings, no_addon_user, client=mock_client).serialized_settings
+        result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
     def test_serialize_settings_valid_credentials(self, mock_account_info):
         mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        result = DropboxSerializer(self.node_settings, self.user, client=mock_client).serialized_settings
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_true(result['validCredentials'])
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
@@ -164,11 +164,11 @@ class TestConfigViews(DropboxAddonTestCase):
         mock_response = mock.Mock()
         mock_response.status = 401
         mock_account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
-        result = DropboxSerializer(self.node_settings, self.user).serialized_settings
+        result = serialize_settings(self.node_settings, self.user)
         assert_false(result['validCredentials'])
 
     def test_serialize_settings_helper_returns_correct_folder_info(self):
-        result = DropboxSerializer(self.node_settings, self.user, client=mock_client).serialized_settings
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         folder = result['folder']
         assert_equal(folder['name'], self.node_settings.folder)
         assert_equal(folder['path'], self.node_settings.folder)
@@ -237,8 +237,8 @@ class TestConfigViews(DropboxAddonTestCase):
         self.project.reload()
         self.node_settings.reload()
 
-        expected_result = DropboxSerializer(self.node_settings, self.user,
-                                             client=mock_client).serialized_settings
+        expected_result = serialize_settings(self.node_settings, self.user,
+                                             client=mock_client)
         result = res.json['result']
         assert_equal(result, expected_result)
 
