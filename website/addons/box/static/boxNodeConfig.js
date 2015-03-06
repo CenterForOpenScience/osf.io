@@ -65,7 +65,7 @@ var ViewModel = function(url, selector, folderPicker) {
 
     self.disableShare = ko.pureComputed(function() {       
         var isRoot = self.folder().path === 'All Files';
-        var notSet = (typeof self.folder().path === 'undefined');
+        var notSet = (self.folder().path == null);
         return !(self.urls().emails) || !self.validCredentials() || isRoot || notSet;
 
     });
