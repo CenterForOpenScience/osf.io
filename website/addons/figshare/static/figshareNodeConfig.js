@@ -283,7 +283,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     self.loading(false);
                     self.changeMessage('Could not connect to figshare at this time. ' +
                                         'Please try again later.', 'text-warning');
-                    Raven.captureMessage('Could not GET Figshare contents', {
+                    Raven.captureMessage('Could not GET figshare contents', {
                         textStatus: textStatus,
                         error: error
                     });
