@@ -115,14 +115,6 @@ class TestSubscriptionView(OsfTestCase):
         self.node = factories.NodeFactory()
         self.user = self.node.creator
 
-    def test_update_user_timezone_offset(self):
-        assert_equal(self.user.timezone, 'Etc/UTC')
-        payload = {'timezone': 'America/New_York'}
-        url = api_url_for('update_user', uid=self.user._id)
-        self.app.put_json(url, payload, auth=self.user.auth)
-        self.user.reload()
-        assert_equal(self.user.timezone, 'America/New_York')
-
     def test_create_new_subscription(self):
         payload = {
             'id': self.node._id,
@@ -192,6 +184,7 @@ class TestSubscriptionView(OsfTestCase):
         # assert that user is removed from the subscription entirely
         for n in constants.NOTIFICATION_TYPES:
             assert_false(self.node.creator in getattr(s, n))
+
 
 class TestRemoveContributor(OsfTestCase):
     def setUp(self):
