@@ -10,6 +10,18 @@ from . import piwik
 @queued_task
 @app.task(bind=True, max_retries=5, default_retry_delay=60)
 @transaction()
+def update_user(self, user_id):
+    from website import models
+    user = models.User.load(user_id)
+    try:
+        piwik._create_user(user)
+    except Exception as error:
+        raise self.retry(exc=error)
+
+
+@queued_task
+@app.task(bind=True, max_retries=5, default_retry_delay=60)
+@transaction()
 def update_node(self, node_id, updated_fields=None):
     # Avoid circular imports
     from website import models
