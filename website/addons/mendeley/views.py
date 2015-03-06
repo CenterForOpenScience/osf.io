@@ -16,7 +16,7 @@ from .serializer import MendeleySerializer
 
 
 @must_be_logged_in
-def list_accounts_user(auth):
+def mendeley_list_accounts_user(auth):
     """ Returns the list of all of the current user's authorized Mendeley accounts """
 
     provider = MendeleyCitationsProvider()
@@ -25,7 +25,7 @@ def list_accounts_user(auth):
 
 @must_have_permission('read')
 @must_have_addon('mendeley', 'node')
-def get_config(auth, node_addon, **kwargs):
+def mendeley_get_config(auth, node_addon, **kwargs):
     """ Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
@@ -34,7 +34,7 @@ def get_config(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
-def set_config(auth, node_addon, **kwargs):
+def mendeley_set_config(auth, node_addon, **kwargs):
     """ Updates MendeleyNodeSettings based on submitted account and folder information """
 
     provider = MendeleyCitationsProvider()
@@ -52,7 +52,7 @@ def set_config(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
-def add_user_auth(auth, node_addon, **kwargs):
+def mendeley_add_user_auth(auth, node_addon, **kwargs):
     """ Allows for importing existing auth to MendeleyNodeSettings """
 
     provider = MendeleyCitationsProvider()
@@ -63,7 +63,7 @@ def add_user_auth(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
 @must_not_be_registration
-def remove_user_auth(auth, node_addon, **kwargs):
+def mendeley_remove_user_auth(auth, node_addon, **kwargs):
     """ Removes auth from MendeleyNodeSettings """
 
     provider = MendeleyCitationsProvider()
@@ -81,7 +81,7 @@ def mendeley_widget(node_addon, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('mendeley', 'node')
-def citation_list(auth, node_addon, mendeley_list_id=None, **kwargs):
+def mendeley_citation_list(auth, node_addon, mendeley_list_id=None, **kwargs):
     """
     This function collects a listing of folders and citations based on the
     passed mendeley_list_id. If mendeley_list_id is None, then all of the

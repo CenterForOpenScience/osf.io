@@ -108,6 +108,7 @@ class CitationsAddonSerializer(AddonSerializer):
             ret['owner'] = external_account.profile_url
 
         addon_urls = self.addon_serialized_urls
+        import ipb; ipdb.set_trace()
         # Make sure developer returns set of needed urls
         for url in self.REQUIRED_URLS:
             assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)

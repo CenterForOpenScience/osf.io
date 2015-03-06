@@ -11,7 +11,7 @@ api_routes = {
                 '/settings/mendeley/accounts/',
             ],
             'get',
-            views.list_accounts_user,
+            views.mendeley_list_accounts_user,
             json_renderer,
         ),
         Rule(
@@ -20,7 +20,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/settings/',
             ],
             'get',
-            views.get_config,
+            views.mendeley_get_config,
             json_renderer,
         ),
         Rule(
@@ -29,7 +29,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/settings/',
             ],
             'put',
-            views.set_config,
+            views.mendeley_set_config,
             json_renderer,
         ),
         Rule(
@@ -38,7 +38,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/user_auth/',
             ],
             'post',
-            views.add_user_auth,
+            views.mendeley_add_user_auth,
             json_renderer,
         ),
         Rule(
@@ -47,7 +47,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/user_auth/',
             ],
             'delete',
-            views.remove_user_auth,
+            views.mendeley_remove_user_auth,
             json_renderer,
         ),
         Rule(
@@ -67,7 +67,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/citations/<mendeley_list_id>/',
             ],
             'get',
-            views.citation_list,
+            views.mendeley_citation_list,
             json_renderer,
         ),
     ],

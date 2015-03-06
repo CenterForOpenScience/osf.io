@@ -73,7 +73,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_serialize_settings_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
         res = self.app.get(
-            self.project.api_url_for('get_config'),
+            self.project.api_url_for('mendeley_get_config'),
             auth=self.user.auth,
         )        
         assert_true(res.json['nodeHasAuth'])
@@ -93,7 +93,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)
         res = self.app.get(
-            self.project.api_url_for('get_config'),
+            self.project.api_url_for('mendeley_get_config'),
             auth=non_authorizing_user.auth,
         )
         assert_true(res.json['nodeHasAuth'])
@@ -126,7 +126,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_set_auth(self):
 
         res = self.app.post_json(
-            self.project.api_url_for('add_user_auth'),
+            self.project.api_url_for('mendeley_add_user_auth'),
             {
                 'external_account_id': self.account._id,
             },
@@ -153,7 +153,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.node_addon.set_auth(self.account, self.user)
 
         res = self.app.delete_json(
-            self.project.api_url_for('remove_user_auth'),
+            self.project.api_url_for('mendeley_remove_user_auth'),
             {
                 'external_account_id': self.account._id,
             },
@@ -175,7 +175,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.node_addon.associated_user_settings = []
         self.node_addon.save()
         res = self.app.put_json(
-            self.project.api_url_for('set_config'),
+            self.project.api_url_for('mendeley_set_config'),
             {
                 'external_account_id': self.account._id,
                 'external_list_id': 'list',
@@ -192,7 +192,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.project.add_contributor(user)
         self.project.save()
         res = self.app.put_json(
-            self.project.api_url_for('set_config'),
+            self.project.api_url_for('mendeley_set_config'),
             {
                 'external_account_id': self.account._id,
                 'external_list_id': 'list',
@@ -241,7 +241,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
 
         res = self.app.get(
-            self.project.api_url_for('citation_list'),
+            self.project.api_url_for('mendeley_citation_list'),
             auth=self.user.auth
         )
         root = res.json['contents'][0]
@@ -267,7 +267,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
 
         res = self.app.get(
-            self.project.api_url_for('citation_list', mendeley_list_id='ROOT'),
+            self.project.api_url_for('mendeley_citation_list', mendeley_list_id='ROOT'),
             auth=self.user.auth
         )
 
@@ -301,7 +301,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
 
         res = self.app.get(
-            self.project.api_url_for('citation_list', mendeley_list_id='ROOT'),
+            self.project.api_url_for('mendeley_citation_list', mendeley_list_id='ROOT'),
             auth=non_authorizing_user.auth,
             expect_errors=True
         )
