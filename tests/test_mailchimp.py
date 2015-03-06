@@ -96,6 +96,63 @@ class TestMailChimpHelpers(OsfTestCase):
         mailchimp_utils.update_subscriber_email(user, old_username=old_username)
         mock_client.lists.update_member.assert_called_with(id=list_id, email={'email': old_username}, merge_vars={'email': user.username})
 
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_update_subscriber_email_for_user_unsubscribed_from_list(self, mock_get_mailchimp_api):
+        list_name = 'foo'
+        user = UserFactory()
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+
+        # user is subscribed in the db, but not on mailchimp
+        user.mailing_lists[list_name] = True
+
+        # update subscriber email
+        old_username = user.username
+        user.username = 'foobar@fizzbuzz.com'
+        user.save()
+        mock_client.lists.update_member.side_effect = mailchimp.ListNotSubscribedError
+        mailchimp_utils.update_subscriber_email(user, old_username=old_username)
+        assert_false(user.mailing_lists[list_name])
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_update_subscriber_email_not_found_in_list(self, mock_get_mailchimp_api):
+        list_name = 'foo'
+        user = UserFactory()
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+
+        # user is subscribed in the db, but not on mailchimp
+        user.mailing_lists[list_name] = True
+
+        # update subscriber email
+        old_username = user.username
+        user.username = 'foofoo@fizzbuzz.com'
+        user.save()
+        mock_client.lists.update_member.side_effect = mailchimp.EmailNotExistsError
+        mailchimp_utils.update_subscriber_email(user, old_username=old_username)
+        assert_false(user.mailing_lists[list_name])
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_update_subscriber_email_invalid_new_email(self, mock_get_mailchimp_api):
+        list_name = 'foo'
+        user = UserFactory()
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+
+        # subscribe user
+        mailchimp_utils.subscribe_mailchimp(list_name, user)
+
+        # update subscriber email
+        old_username = user.username
+        user.username = 'test+1@test.com'
+        user.save()
+        mock_client.lists.update_member.side_effect = mailchimp.ListMergeFieldRequiredError
+        mailchimp_utils.update_subscriber_email(user, old_username=old_username)
+        assert_false(user.mailing_lists[list_name])
+
     def tearDown(self):
         super(TestMailChimpHelpers, self).tearDown()
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = self._enable_email_subscriptions_original

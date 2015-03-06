@@ -1265,7 +1265,6 @@ class TestChangeUsername(OsfTestCase):
         res = self.app.post_json(url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-
     def test_change_username_to_existing_username(self):
         payload = {
             'new_username': self.user.username,
