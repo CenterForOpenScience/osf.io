@@ -1,5 +1,6 @@
 """Tests related to retraction of public registrations"""
 
+import datetime
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -25,36 +26,47 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
     def test_retract(self):
         self.registration.is_public = True
-        self.registration.retract_registration(self.justification)
+        self.registration.retract_registration(self.user, self.justification)
 
         self.registration.reload()
         assert_true(self.registration.is_retracted)
         assert_equal(self.registration.retracted_justification, self.justification)
+        assert_equal(self.registration.retracted_by, self.user)
+        assert_equal(
+            self.registration.retraction_date.date(),
+            datetime.datetime.utcnow().date()
+        )
 
     def test_retract_private_registration_throws_type_error(self):
         with assert_raises(ValidationTypeError):
-            self.registration.retract_registration(self.justification)
+            self.registration.retract_registration(self.user, self.justification)
 
         self.registration.reload()
         assert_false(self.registration.is_retracted)
         assert_is_none(self.registration.retracted_justification)
+        assert_is_none(self.registration.retracted_by)
+        assert_is_none(self.registration.retraction_date)
 
     def test_retract_public_non_registration_throws_type_error(self):
         self.project.is_public = True
         with assert_raises(ValidationTypeError):
-            self.project.retract_registration(self.justification)
+            self.project.retract_registration(self.user, self.justification)
 
         self.registration.reload()
         assert_false(self.registration.is_retracted)
         assert_is_none(self.registration.retracted_justification)
+        assert_is_none(self.registration.retracted_by)
+        assert_is_none(self.registration.retraction_date)
 
     def test_retract_invalid_justification_throw_value_error(self):
         self.registration.is_public = True
         with assert_raises(ValidationValueError):
-            self.registration.retract_registration("")
+            self.registration.retract_registration(self.user, "")
         self.registration.reload()
         assert_false(self.registration.is_retracted)
         assert_is_none(self.registration.retracted_justification)
+        assert_is_none(self.registration.retracted_by)
+        assert_is_none(self.registration.retraction_date)
 
 
 class RegistrationRetractionViewsTestCase(OsfTestCase):

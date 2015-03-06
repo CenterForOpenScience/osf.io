@@ -601,6 +601,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     registered_meta = fields.DictionaryField()
     is_retracted = fields.BooleanField(default=False)
     retracted_justification = fields.StringField(validate=validated_retracted_justification)
+    retraction_date = fields.DateTimeField()
+    retracted_by = fields.ForeignField('user', backref='retracted_registration')
 
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
@@ -2717,13 +2719,15 @@ class Node(GuidStoredObject, AddonModelMixin):
             'is_registration': self.is_registration
         }
 
-    def retract_registration(self, justification):
+    def retract_registration(self, user, justification):
 
         if not self.is_public or not self.is_registration:
-            raise ValidationTypeError  ## @todo(hrybacki) what kind of exception should this raise?
+            raise ValidationTypeError
 
         self.retracted_justification = justification
         self.is_retracted = True
+        self.retraction_date = datetime.datetime.utcnow()
+        self.retracted_by = user
 
         self.save()
 
