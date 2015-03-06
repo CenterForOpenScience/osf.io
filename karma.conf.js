@@ -21,6 +21,7 @@ var webpackTestConfig = {
     resolve: webpackCommon.resolve,
     module: {
         loaders: [
+            // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ]
     }
@@ -45,14 +46,6 @@ module.exports = function (config) {
         webpack: webpackTestConfig,
         webpackServer: {
             noInfo: true // don't spam the console
-        },
-        plugins: [
-            require('karma-webpack'),
-            require('karma-mocha'),
-            require('karma-sourcemap-loader'),
-            require('karma-chrome-launcher'),
-            require('karma-spec-reporter'),
-            require('karma-sinon')
-        ]
+        }
     });
 };
