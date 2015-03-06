@@ -193,14 +193,14 @@ class User(GuidStoredObject, AddonModelMixin):
     }
 
     SOCIAL_FIELDS = {
-        'orcid': 'http://orcid.com/{}',
-        'github': 'http://github.com/{}',
-        'scholar': 'http://scholar.google.com/citation?user={}',
-        'twitter': 'http://twitter.com/{}',
-        'personal': '{}',
-        'linkedIn': 'https://www.linkedin.com/profile/view?id={}',
-        'impactStory': 'https://impactstory.org/{}',
-        'researcherId': 'http://researcherid.com/rid/{}',
+        'orcid': u'http://orcid.com/{}',
+        'github': u'http://github.com/{}',
+        'scholar': u'http://scholar.google.com/citation?user={}',
+        'twitter': u'http://twitter.com/{}',
+        'personal': u'{}',
+        'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
+        'impactStory': u'https://impactstory.org/{}',
+        'researcherId': u'http://researcherid.com/rid/{}',
     }
 
     _id = fields.StringField(primary=True)
