@@ -26,7 +26,7 @@ def get_nodes():
     templated = Q('__backrefs.template_node.node.template_node', 'ne', None)
     duplicate = (forked | registered | templated)
 
-    return Node.&(
+    return Node.find(
         duplicate and Q('date_created', 'lt', datetime.datetime(2014, 10, 31))
     )
 
@@ -49,8 +49,9 @@ def main():
         for node in nodes:
             # Wait a second between requests to reduce load on Piwik
             time.sleep(1)
+            logger.info('Calling _update_node_objecton Node {}'.format(node._id))
             _update_node_object(node)
-            logger.info(node._id)
+    logger.info('Finished')
 
 
 if __name__ == "__main__":
