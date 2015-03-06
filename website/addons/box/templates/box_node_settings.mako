@@ -53,11 +53,10 @@
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-box"><i class="icon-edit"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
-                                        visible: showShare,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
                         class="btn btn-sm btn-box"><i class="icon-share-alt"></i> Share on Box
-                            <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
+                            <span data-bind="visible: folder().path === 'All Files'">(Cannot share root folder)</span>
                         </button>
                 </div>
 
