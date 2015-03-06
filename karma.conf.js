@@ -31,7 +31,7 @@ var webpackTestConfig = {
 
 module.exports = function (config) {
     config.set({
-        browsers: ['Chrome'],
+        browsers: ['PhantomJS'],
         frameworks: ['mocha', 'sinon'],
         files: [
             // Only need to target one file, which will load all files in tests/ that
