@@ -96,6 +96,8 @@ mock_responses = {
         u'thumb_exists': False
     },
     'metadata_delta': {
+        'cursor': None,
+        'has_more': False,
         'entries':
             [
             [
