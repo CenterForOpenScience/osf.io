@@ -59,15 +59,15 @@ var ViewModel = function(url, selector, folderPicker) {
     self.loadedFolders = ko.observable(false);
 
     // List of contributor emails as a comma-separated values
-    self.emailList = ko.computed(function() {
+    self.emailList = ko.pureComputed(function() {
         return self.emails().join([', ']);
     });
 
-    self.disableShare = ko.computed(function() {
+    self.disableShare = ko.pureComputed(function() {
         return !self.urls().emails;
     });
 
-    self.showShare = ko.computed(function(){
+    self.showShare = ko.pureComputed(function(){
         return self.validCredentials() && self.folder().path !== 'All Files' && (typeof self.folder().path !== 'undefined');
     });
 
