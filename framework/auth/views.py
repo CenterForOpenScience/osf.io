@@ -17,7 +17,7 @@ from framework.sessions import set_previous_url
 from framework.auth import (login, logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
-        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
+                                  ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
 
 import website.settings
 from website import mails
@@ -37,8 +37,8 @@ def reset_password(auth, **kwargs):
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
         error_data = {'message_short': 'Invalid url.',
-            'message_long': 'The verification key in the URL is invalid or '
-            'has expired.'}
+                      'message_long': 'The verification key in the URL is invalid or '
+                                      'has expired.'}
         raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
@@ -187,9 +187,9 @@ def confirm_email_get(**kwargs):
                 return framework.auth.authenticate(user, response=response)
         # Return data for the error template
         return {
-           'code': http.BAD_REQUEST,
-           'message_short': 'Link Expired',
-           'message_long': language.LINK_EXPIRED
+            'code': http.BAD_REQUEST,
+            'message_short': 'Link Expired',
+            'message_long': language.LINK_EXPIRED
         }, http.BAD_REQUEST
 
 

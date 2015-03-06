@@ -361,7 +361,7 @@ def update_subscription(user, list_name, subscription):
                             data=dict(message_short="ListNotSubscribedError",
                                       message_long="The user is already unsubscribed from this mailing list.",
                                       error_type="not_subscribed")
-            )
+                            )
 
 
 def mailchimp_get_endpoint(**kwargs):

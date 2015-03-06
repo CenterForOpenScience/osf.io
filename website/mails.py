@@ -121,7 +121,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 TEST = Mail('test', subject='A test email to ${name}')
 CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
-UPDATE_EMAIL= Mail('update', subject='Confirm your new email address')
+UPDATE_EMAIL = Mail('update', subject='Confirm your new email address')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
