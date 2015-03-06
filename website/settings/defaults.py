@@ -63,6 +63,9 @@ DEBUG_MODE = False
 # TODO: Remove after migration to OSF Storage
 COPY_GIT_REPOS = False
 
+# Change if using `scripts/cron.py` to manage crontab
+CRON_USER = None
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 

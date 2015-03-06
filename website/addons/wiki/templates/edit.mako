@@ -26,11 +26,11 @@
   <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="wiki-panel hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu
+        <div class="wiki-panel wiki-panel-flex hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
+            <div class="wiki-panel-header wiki-panel-header-flex"> <i class="icon-list"> </i>  Menu
                 <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
             </div>
-            <div class="wiki-panel-body">
+            <div class="wiki-panel-body wiki-panel-body-flex">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
