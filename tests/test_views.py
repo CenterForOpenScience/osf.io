@@ -1232,13 +1232,17 @@ class TestChangeUsername(OsfTestCase):
     def setUp(self):
         super(TestChangeUsername, self).setUp()
         self.user = AuthUserFactory()
+        self.user.set_password('password')
+        self.user.save()
+        self.user.reload()
         self.user2 = AuthUserFactory()
 
     @mock.patch('website.profile.views.send_update_email_confirmation')
     def test_change_username_valid(self, mock_send_confirmation):
         payload = {
             'new_username': 'freddieHg@cos.io',
-            'confirm_new_username': 'freddieHg@cos.io'
+            'confirm_new_username': 'freddieHg@cos.io',
+            'password': 'password'
         }
         url = api_url_for('user_account_email')
         res = self.app.post_json(url, payload, auth=self.user.auth)
@@ -1250,7 +1254,8 @@ class TestChangeUsername(OsfTestCase):
     def test_change_username_empty_fields(self):
         payload = {
             'new_username': '',
-            'confirm_new_username': ''
+            'confirm_new_username': '',
+            'password': 'password'
         }
         url = api_url_for('user_account_email')
         res = self.app.post_json(url, payload, auth=self.user.auth, expect_errors=True)
@@ -1259,7 +1264,8 @@ class TestChangeUsername(OsfTestCase):
     def test_change_username_confirmed_email_doesnt_match(self):
         payload = {
             'new_username': 'freddieHg@cos.io',
-            'confirm_new_username': 'freddieHggg@cos.io'
+            'confirm_new_username': 'freddieHggg@cos.io',
+            'password': 'password'
         }
         url = api_url_for('user_account_email')
         res = self.app.post_json(url, payload, auth=self.user.auth, expect_errors=True)
@@ -1268,7 +1274,18 @@ class TestChangeUsername(OsfTestCase):
     def test_change_username_to_existing_username(self):
         payload = {
             'new_username': self.user.username,
-            'confirm_new_username': self.user.username
+            'confirm_new_username': self.user.username,
+            'password': 'password'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user2.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def change_username_invalid_password_raises_error(self):
+        payload = {
+            'new_username': 'freddieHg@cos.io',
+            'confirm_new_username': 'freddieHg@cos.io',
+            'password': 'incorrectpassword'
         }
         url = api_url_for('user_account_email')
         res = self.app.post_json(url, payload, auth=self.user2.auth, expect_errors=True)
@@ -1279,7 +1296,8 @@ class TestChangeUsername(OsfTestCase):
         url = api_url_for('user_account_email')
         payload = {
             'new_username': 'bluesuede@shoes.com',
-            'confirm_new_username': 'bluesuede@shoes.com'
+            'confirm_new_username': 'bluesuede@shoes.com',
+            'password': 'password'
         }
         self.app.post_json(url, payload, auth=self.user.auth)
         self.user.reload()
