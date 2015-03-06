@@ -1,9 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import mock
 import unittest
-import urlparse
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
@@ -14,9 +12,8 @@ from github3.repos.branch import Branch
 from framework.exceptions import HTTPError
 from framework.auth import Auth
 
-from website.util import web_url_for, api_url_for
+from website.util import api_url_for
 from website.addons.github import views, utils
-from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import check_permissions
 from website.addons.github.tests.utils import create_mock_github
 
@@ -601,8 +598,6 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user_settings.github_user_name, "testing user")
         assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
         assert_equal(node_settings.user_settings, self.user_settings)
-
-
 
     @mock.patch('website.addons.github.api.GitHub.user')
     def test_create_and_attach_oauth(self, mock_github_user):
