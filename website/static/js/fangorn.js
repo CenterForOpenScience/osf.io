@@ -571,6 +571,18 @@ function _fangornLazyLoadError (item) {
         item.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000);
     }
 }
+/**
+ * Applies the positionining and initialization of tooltips for file names
+ * @private
+ */
+
+function reapplyTooltips () {
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    $(".title-text>[data-toggle=tooltip]").hover(function(event){
+        var mousePosition = event.pageX - 20;
+        $('.tooltip').css('left', mousePosition + 'px');
+    });
+}
 
 /**
  * Called when new object data has arrived to be loaded.
@@ -583,7 +595,7 @@ function _fangornLazyLoadOnLoad (tree) {
         inheritFromParent(item, tree);
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
-    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    reapplyTooltips();
 
     if (tree.depth > 1) {
         _fangornOrderFolder.call(this, tree);
@@ -684,7 +696,7 @@ function _fangornTitleColumn(item, col) {
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 window.location = redir.toString() + '/';
             },
-            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
+            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'bottom'
         }, item.data.name);
     }
     return m('span', item.data.name);
@@ -820,7 +832,7 @@ function expandStateLoad(item) {
             }
         }
     }
-    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    reapplyTooltips();
 }
 
 
@@ -912,7 +924,8 @@ tbOptions = {
         return false;
     },
     onscrollcomplete : function(){
-        $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+        reapplyTooltips();
+
     },
     onselectrow : function(row) {
     },
@@ -987,7 +1000,8 @@ Fangorn.DefaultColumns = {
 
 Fangorn.Utils = {
     inheritFromParent: inheritFromParent,
-    resolveconfigOption: resolveconfigOption
+    resolveconfigOption: resolveconfigOption,
+    reapplyTooltips : reapplyTooltips
 };
 
 module.exports = Fangorn;
