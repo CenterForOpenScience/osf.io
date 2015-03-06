@@ -125,6 +125,18 @@
             ga('linker:autoLink', ['centerforopenscience.org'] );
             ga('send', 'pageview');
             </script>
+        % else:
+            <script>
+                window.ga = function(source) {
+                        console.error('=== Mock ga event called: ===');
+                        console.log('event: ga(' +
+                                    arguments[0] + ', ' +
+                                    arguments[1] + ', ' +
+                                    arguments[2] + ', ' +
+                                    arguments[3] + ')'
+                        );
+                };
+          </script>
         % endif
 
         % if piwik_host:
