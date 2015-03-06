@@ -1237,7 +1237,8 @@ class TestChangeUsername(OsfTestCase):
     @mock.patch('website.profile.views.send_update_email_confirmation')
     def test_change_username_valid(self, mock_send_confirmation):
         payload = {
-            'unconfirmed_username': 'freddieHg@cos.io'
+            'new_username': 'freddieHg@cos.io',
+            'confirm_new_username': 'freddieHg@cos.io'
         }
         url = api_url_for('user_account_email')
         res = self.app.post_json(url, payload, auth=self.user.auth)
@@ -1246,9 +1247,29 @@ class TestChangeUsername(OsfTestCase):
         assert_equal(self.user.unconfirmed_username, 'freddieHg@cos.io')
         assert_true(mock_send_confirmation.called)
 
+    def test_change_username_empty_fields(self):
+        payload = {
+            'new_username': '',
+            'confirm_new_username': ''
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_change_username_confirmed_email_doesnt_match(self):
+        payload = {
+            'new_username': 'freddieHg@cos.io',
+            'confirm_new_username': 'freddieHggg@cos.io'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+
     def test_change_username_to_existing_username(self):
         payload = {
-            'unconfirmed_username': self.user.username
+            'new_username': self.user.username,
+            'confirm_new_username': self.user.username
         }
         url = api_url_for('user_account_email')
         res = self.app.post_json(url, payload, auth=self.user2.auth, expect_errors=True)
@@ -1258,7 +1279,8 @@ class TestChangeUsername(OsfTestCase):
     def test_send_update_email_confirmation(self, mock_confirm_update_email):
         url = api_url_for('user_account_email')
         payload = {
-            'unconfirmed_username': 'bluesuede@shoes.com',
+            'new_username': 'bluesuede@shoes.com',
+            'confirm_new_username': 'bluesuede@shoes.com'
         }
         self.app.post_json(url, payload, auth=self.user.auth)
         self.user.reload()
