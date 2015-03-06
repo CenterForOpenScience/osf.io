@@ -116,4 +116,19 @@ def update_subscriber_email(user, old_username=None):
         for list_name in user.mailing_lists:
             list_id = get_list_id_from_name(list_name=list_name)
             if list_id:
-                m.lists.update_member(id=list_id, email={'email': old_username}, merge_vars={'email': user.username})
+                try:
+                    m.lists.update_member(id=list_id, email={'email': old_username}, merge_vars={'email': user.username})
+                except mailchimp.ListNotSubscribedError as error:
+                    sentry.log_exception()
+                    sentry.log_message(error.message)
+                    user.mailing_lists[list_name] = False
+                except mailchimp.EmailNotExistsError as error:
+                    sentry.log_exception()
+                    sentry.log_message(error.message)
+                    user.mailing_lists[list_name] = False
+                except mailchimp.ListMergeFieldRequiredError as error:
+                    sentry.log_exception()
+                    sentry.log_message(error.message)
+                    user.mailing_lists[list_name] = False
+                finally:
+                    user.save()
