@@ -37,7 +37,7 @@ def main():
         users = get_users()
         logger.info('=== Updating {} Users ==='.format(users.count()))
         for user in users:
-            piwik.create_user(user)
+            piwik._create_user(user)
             logger.info(user._id)
 
 
