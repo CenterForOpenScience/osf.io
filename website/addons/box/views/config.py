@@ -19,8 +19,6 @@ from website.project.decorators import (
 from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
-from website.addons.box import settings
-
 BOX_SHARE_URL_TEMPLATE = 'https://app.box.com/files/0/f/{0}'
 
 @must_have_addon('box', 'node')
@@ -38,7 +36,7 @@ def serialize_folder(metadata):
     """
     # if path is root
     if metadata['path'] == '' or metadata['path'] == '/':
-        name = 'All Files'
+        name = '/ (Full Box)'
     else:
         name = 'Box' + metadata['path']
     return {
@@ -54,7 +52,7 @@ def get_folders(client):
     metadata = client.metadata('/', list=True)
     # List each folder, including the root
     root = {
-        'name': 'All Files',
+        'name': '/ (Full Box)',
         'path': '',
     }
     folders = [root] + [
@@ -146,7 +144,7 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': path,
+                'name': path if path != 'All Files' else '/ (Full Box)',
                 'path': path,
             },
             'urls': serialize_urls(node_addon),
