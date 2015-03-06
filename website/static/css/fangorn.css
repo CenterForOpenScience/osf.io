@@ -70,3 +70,108 @@ text-align: center;
 .tb-notify {
 	white-space: nowrap;
 }
+
+/* File icons */
+.file-extension {
+
+}
+.file-extension._3gp {background: url('/static/img/hgrid/fatcowicons/file_extension_3gp.png');	}
+.file-extension._7z  {background: url('/static/img/hgrid/fatcowicons/file_extension_7z.png'); 	}
+.file-extension._ace {background: url('/static/img/hgrid/fatcowicons/file_extension_ace.png');	}
+.file-extension._ai  {background: url('/static/img/hgrid/fatcowicons/file_extension_ai.png');	}
+.file-extension._aif {background: url('/static/img/hgrid/fatcowicons/file_extension_aif.png');	}
+.file-extension._aiff{background: url('/static/img/hgrid/fatcowicons/file_extension_aiff.png');	}
+.file-extension._amr {background: url('/static/img/hgrid/fatcowicons/file_extension_amr.png');	}
+.file-extension._asf {background: url('/static/img/hgrid/fatcowicons/file_extension_asf.png');	}
+.file-extension._asx {background: url('/static/img/hgrid/fatcowicons/file_extension_asx.png');	}
+.file-extension._bin {background: url('/static/img/hgrid/fatcowicons/file_extension_bin.png');	}
+.file-extension._bmp {background: url('/static/img/hgrid/fatcowicons/file_extension_bmp.png');	}
+
+.file-extension._bup {background: url('/static/img/hgrid/fatcowicons/file_extension_bup.png');	}
+
+.file-extension._cab {background: url('/static/img/hgrid/fatcowicons/file_extension_cab.png');	}
+
+.file-extension._cbr {background: url('/static/img/hgrid/fatcowicons/file_extension_cbr.png');	}
+
+.file-extension._cda {background: url('/static/img/hgrid/fatcowicons/file_extension_bmp.cda');	}
+
+.file-extension._cdl {background: url('/static/img/hgrid/fatcowicons/file_extension_cdl.png');	}
+
+.file-extension._cdr {background: url('/static/img/hgrid/fatcowicons/file_extension_cdr.png');	}
+
+.file-extension._chm {background: url('/static/img/hgrid/fatcowicons/file_extension_chm.png');	}
+
+.file-extension._dat {background: url('/static/img/hgrid/fatcowicons/file_extension_dat.png');	}
+
+.file-extension._divx{background: url('/static/img/hgrid/fatcowicons/file_extension_divx.png');	}
+
+.file-extension._dll {background: url('/static/img/hgrid/fatcowicons/file_extension_dll.png');	}
+
+.file-extension._dmg {background: url('/static/img/hgrid/fatcowicons/file_extension_dmg.png');	}
+
+.file-extension._doc {background: url('/static/img/hgrid/fatcowicons/file_extension_doc.png');	}
+
+.file-extension._docx{background: url('/static/img/hgrid/fatcowicons/file_extension_docx.png');	}
+
+.file-extension._dss {background: url('/static/img/hgrid/fatcowicons/file_extension_dss.png');	}
+
+.file-extension._dvf {background: url('/static/img/hgrid/fatcowicons/file_extension_dvf.png');	}
+
+.file-extension._dwg {background: url('/static/img/hgrid/fatcowicons/file_extension_dwg.png');	}
+
+.file-extension._eml {background: url('/static/img/hgrid/fatcowicons/file_extension_eml.png');	}
+
+.file-extension._eps {background: url('/static/img/hgrid/fatcowicons/file_extension_eps.png');	}
+
+.file-extension._exe {background: url('/static/img/hgrid/fatcowicons/file_extension_exe.png');	}
+
+.file-extension._fla {background: url('/static/img/hgrid/fatcowicons/file_extension_fla.png');	}
+
+.file-extension._flv {background: url('/static/img/hgrid/fatcowicons/file_extension_flv.png');	}
+
+.file-extension._gif {background: url('/static/img/hgrid/fatcowicons/file_extension_gif.png');	}
+
+.file-extension._gz  {background: url('/static/img/hgrid/fatcowicons/file_extension_gz.png');	}
+
+.file-extension._hqx {background: url('/static/img/hgrid/fatcowicons/file_extension_hqx.png');	}
+
+.file-extension._htm {background: url('/static/img/hgrid/fatcowicons/file_extension_htm.png');	}
+
+.file-extension._ifo {background: url('/static/img/hgrid/fatcowicons/file_extension_ifo.png');	}
+
+.file-extension._indd{background: url('/static/img/hgrid/fatcowicons/file_extension_indd.png');	}
+
+.file-extension._iso {background: url('/static/img/hgrid/fatcowicons/file_extension_iso.png');	}
+
+.file-extension._jar {background: url('/static/img/hgrid/fatcowicons/file_extension_jar.png');	}
+
+.file-extension._jpeg{background: url('/static/img/hgrid/fatcowicons/file_extension_jpeg.png');	}
+
+.file-extension._jpg {background: url('/static/img/hgrid/fatcowicons/file_extension_jpg.png');	}
+
+.file-extension._lnk {background: url('/static/img/hgrid/fatcowicons/file_extension_lnk.png');	}
+
+.file-extension._log {background: url('/static/img/hgrid/fatcowicons/file_extension_log.png');	}
+
+.file-extension._m4a {background: url('/static/img/hgrid/fatcowicons/file_extension_m4a.png');	}
+
+.file-extension._m4b {background: url('/static/img/hgrid/fatcowicons/file_extension_m4b.png');	}
+
+.file-extension._m4p {background: url('/static/img/hgrid/fatcowicons/file_extension_m4p.png');	}
+
+.file-extension._m4v {background: url('/static/img/hgrid/fatcowicons/file_extension_m4v.png');	}
+
+.file-extension._mcd {background: url('/static/img/hgrid/fatcowicons/file_extension_mcd.png');	}
+
+.file-extension._mdb {background: url('/static/img/hgrid/fatcowicons/file_extension_mdb.png');	}
+
+.file-extension._mid {background: url('/static/img/hgrid/fatcowicons/file_extension_mid.png');	}
+
+.file-extension._mov {background: url('/static/img/hgrid/fatcowicons/file_extension_mov.png');	}
+
+
+
+
+
+
+
