@@ -760,10 +760,13 @@ li.list-group-item-node {
 
 li .project-meta {
     position: absolute;
-    top: 10px;
     right: 10px;
     font-weight: normal;
     font-style: italic;
+}
+
+li .project-meta.pull-right {
+    text-align:right;
 }
 
 /*****************************************************/
@@ -1937,7 +1940,6 @@ span#profileFullname{
 }
 .addon-widget-header {
     padding: 0 10px;
-    border-bottom: 1px solid #ddd;
     background-color: #efefef;
     width: 100%;
 }
@@ -1955,6 +1957,7 @@ span#profileFullname{
 .addon-widget-body {
     padding: 15px;
     background-color: white;
+    border-top: 1px solid #ddd;
 }
 .addon-widget-body .list-group-item {
     border: none;
