@@ -931,7 +931,6 @@ class TestSendEmails(OsfTestCase):
         emails.check_parent(node._id, 'comments', [])
         assert_false(mock_send.called)
 
-
     # @mock.patch('website.notifications.emails.email_transactional')
     # def test_send_calls_correct_mail_function(self, email_transactional):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
@@ -962,7 +961,7 @@ class TestSendEmails(OsfTestCase):
             parent_comment='',
             title=self.project.title,
             node_id=self.project._id,
-            url=self.project.absolute_url
+            url=self.project.absolute_url,
         )
         subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
             nodeType='project',
@@ -972,7 +971,8 @@ class TestSendEmails(OsfTestCase):
             content='',
             parent_comment='',
             title=self.project.title,
-            url=self.project.absolute_url)
+            url=self.project.absolute_url,
+        )
         message = mails.render_message(
             'comments.html.mako',
             nodeType='project',
@@ -983,7 +983,8 @@ class TestSendEmails(OsfTestCase):
             parent_comment='',
             title=self.project.title,
             url=self.project.absolute_url,
-            localized_timestamp=emails.localize_timestamp(timestamp, self.user))
+            localized_timestamp=emails.localize_timestamp(timestamp, self.user),
+        )
 
         assert_true(send_mail.called)
         send_mail.assert_called_with(
@@ -995,7 +996,7 @@ class TestSendEmails(OsfTestCase):
             node_id=self.project._id,
             subject=subject,
             message=message,
-            url=self.project.absolute_url + 'settings/'
+            url=self.project.absolute_url + 'settings/',
         )
 
     def test_send_email_digest_creates_digest_notification(self):
