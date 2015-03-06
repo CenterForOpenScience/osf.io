@@ -18,7 +18,7 @@ from framework.forms import (
 
 from framework import auth
 
-from website import language, settings
+from website import language
 
 
 ##### Custom validators #####
@@ -126,7 +126,6 @@ class ResetPasswordForm(Form):
 
 
 class SetEmailAndPasswordForm(ResetPasswordForm):
-    username = unique_email_field
     token = HiddenField()
 
 # TODO: use unique email field and remove redundant status message and
@@ -146,16 +145,6 @@ class ResendConfirmationForm(Form):
 class SignInForm(Form):
     username = email_field
     password = password_field
-
-# Only add the 2FA code if the twofactor addon is enabled
-if 'twofactor' in settings.ADDONS_REQUESTED:
-    SignInForm.two_factor = TextField(
-        'Two-factor Code (<span id="twoFactorHelpText">if applicable</span>)',
-        [
-            NoHtmlCharacters(),
-        ],
-        widget=BootstrapTextInput(),
-    )
 
 
 class PasswordForm(Form):

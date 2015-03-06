@@ -28,10 +28,9 @@ var markdown = new MarkdownIt('commonmark', {
 
 
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
-var markdownQuick = new MarkdownIt(('commonmark'), {
-     highlight: highlighter
-})
+var markdownQuick = new MarkdownIt(('commonmark'), { })
     .use(require('markdown-it-sanitizer'))
+    .disable('link')
     .disable('image');
 
 module.exports = {
