@@ -1102,7 +1102,7 @@ def search_node(**kwargs):
     return {
         'nodes': [
             _serialize_node_search(each)
-            for each in islice(nodes, start, start+size)
+            for each in islice(nodes, start, start + size)
             if each.contributors
         ],
         'total': count,
