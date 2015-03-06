@@ -14,7 +14,7 @@ from scripts import utils as scripts_utils
 from website.app import init_app
 
 
-logger = logging.getLogger('root')
+logger = logging.getLogger(__name__)
 
 
 def get_users():

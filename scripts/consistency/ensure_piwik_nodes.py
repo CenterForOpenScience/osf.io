@@ -16,7 +16,7 @@ from website.app import init_app
 from website.project.model import NodeLog
 
 
-logger = logging.getLogger('root')
+logger = logging.getLogger(__name__)
 
 
 def get_nodes():
