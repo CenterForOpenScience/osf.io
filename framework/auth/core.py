@@ -94,6 +94,7 @@ def validate_personal_site(value):
 def validate_social(value):
     validate_personal_site(value.get('personal'))
 
+# TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
     return User.load(uid)
@@ -263,6 +264,11 @@ class User(GuidStoredObject, AddonModelMixin):
     # Recently added contributors stored via a list of users
     recently_added = fields.ForeignField("user", list=True, backref="recently_added")
 
+    # Attached external accounts (OAuth)
+    external_accounts = fields.ForeignField("externalaccount",
+                                            list=True,
+                                            backref="connected")
+
     # CSL names
     given_name = fields.StringField()
     middle_names = fields.StringField()
@@ -319,6 +325,9 @@ class User(GuidStoredObject, AddonModelMixin):
     #   'node_id': 'timestamp'
     # }
     comments_viewed_timestamp = fields.DictionaryField()
+
+    # timezone for user's locale (e.g. 'America/New_York')
+    timezone = fields.StringField(default='Etc/UTC')
 
     _meta = {'optimistic': True}
 

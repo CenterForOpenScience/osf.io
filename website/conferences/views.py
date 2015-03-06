@@ -122,7 +122,7 @@ def add_poster_by_email(conference, message):
         profile_url=user.absolute_url,
         node_url=node.absolute_url,
         file_url=download_url,
-        presentation_type=message.conference_category,
+        presentation_type=message.conference_category.lower(),
         is_spam=message.is_spam,
     )
 
@@ -169,7 +169,7 @@ def conference_data(meeting):
         raise HTTPError(httplib.NOT_FOUND)
 
     nodes = Node.find(
-        Q('tags', 'eq', meeting) &
+        Q('tags', 'iexact', meeting) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
@@ -205,7 +205,7 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         query = (
-            Q('tags', 'eq', conf.endpoint)
+            Q('tags', 'iexact', conf.endpoint)
             & Q('is_public', 'eq', True)
             & Q('is_deleted', 'eq', False)
         )

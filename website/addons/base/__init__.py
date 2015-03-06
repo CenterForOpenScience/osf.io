@@ -14,12 +14,14 @@ from mako.lookup import TemplateLookup
 import furl
 import requests
 
+from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import exceptions
+from website.project.model import Node
 
 lookup = TemplateLookup(
     directories=[
@@ -169,6 +171,7 @@ class GuidFile(GuidStoredObject):
 
     redirect_mode = 'proxy'
 
+    _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
 
@@ -216,7 +219,6 @@ class GuidFile(GuidStoredObject):
     @property
     def _base_butler_url(self):
         url = furl.furl(settings.WATERBUTLER_URL)
-
         url.args.update({
             'nid': self.node._id,
             'provider': self.provider,
@@ -334,7 +336,6 @@ class GuidFile(GuidStoredObject):
 
         if should_raise:
             self._exception_from_response(resp)
-
         self._metadata_cache = resp.json()['data']
 
 
@@ -437,6 +438,115 @@ class AddonUserSettingsBase(AddonSettingsBase):
             ]
         })
         return ret
+
+
+class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
+    _meta = {
+        'abstract': True,
+    }
+
+    # Keeps track of what nodes have been given permission to use external
+    #   accounts belonging to the user.
+    oauth_grants = fields.DictionaryField()
+    # example:
+    # {
+    #     '<Node._id>': {
+    #         '<ExternalAccount._id>': {
+    #             <metadata>
+    #         },
+    #     }
+    # }
+    #
+    # metadata here is the specific to each addon.
+
+    # The existence of this property is used to determine whether or not
+    #   an addon instance is an "OAuth addon" in
+    #   AddonModelMixin.get_oauth_addons().
+    oauth_provider = None
+
+    @property
+    def connected_oauth_accounts(self):
+        """The user's list of ``ExternalAccount`` instances for this provider"""
+        return [
+            x for x in self.owner.external_accounts
+            if x.provider == self.oauth_provider.short_name
+        ]
+
+    def grant_oauth_access(self, node, external_account, metadata=None):
+        """Give a node permission to use an ``ExternalAccount`` instance."""
+        # ensure the user owns the external_account
+        if external_account not in self.owner.external_accounts:
+            raise PermissionsError()
+
+        metadata = metadata or {}
+
+        # create an entry for the node, if necessary
+        if node._id not in self.oauth_grants:
+            self.oauth_grants[node._id] = {}
+
+        # create an entry for the external account on the node, if necessary
+        if external_account._id not in self.oauth_grants[node._id]:
+            self.oauth_grants[node._id][external_account._id] = {}
+
+        # update the metadata with the supplied values
+        for key, value in metadata.iteritems():
+            self.oauth_grants[node._id][external_account._id][key] = value
+
+        self.save()
+
+    def revoke_oauth_access(self, external_account):
+        """Revoke all access to an ``ExternalAccount``.
+
+        TODO: This should accept node and metadata params in the future, to
+            allow fine-grained revocation of grants. That's not yet been needed,
+            so it's not yet been implemented.
+        """
+        for key in self.oauth_grants:
+            self.oauth_grants[key].pop(external_account._id, None)
+
+        self.save()
+
+    def verify_oauth_access(self, node, external_account, metadata=None):
+        """Verify that access has been previously granted.
+
+        If metadata is not provided, this checks only if the node can access the
+        account. This is suitable to check to see if the node's addon settings
+        is still connected to an external account (i.e., the user hasn't revoked
+        it in their user settings pane).
+
+        If metadata is provided, this checks to see that all key/value pairs
+        have been granted. This is suitable for checking access to a particular
+        folder or other resource on an external provider.
+        """
+
+        metadata = metadata or {}
+
+        # ensure the grant exists
+        try:
+            grants = self.oauth_grants[node._id][external_account._id]
+        except KeyError:
+            return False
+
+        # Verify every key/value pair is in the grants dict
+        for key, value in metadata.iteritems():
+            if key not in grants or grants[key] != value:
+                return False
+
+        return True
+
+    #############
+    # Callbacks #
+    #############
+
+    def on_delete(self):
+        """When the user deactivates the addon, clear auth for connected nodes.
+        """
+        super(AddonOAuthUserSettingsBase, self).on_delete()
+        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
+        for node in nodes:
+            node_addon = node.get_addon(self.oauth_provider.short_name)
+            if node_addon and node_addon.user_settings == self:
+                node_addon.clear_auth()
 
 
 class AddonNodeSettingsBase(AddonSettingsBase):
@@ -591,6 +701,68 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         """
         pass
+
+
+class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
+    _meta = {
+        'abstract': True,
+    }
+
+    # TODO: Validate this field to be sure it matches the provider's short_name
+    # NOTE: Do not set this field directly. Use ``set_auth()``
+    external_account = fields.ForeignField('externalaccount',
+                                           backref='connected')
+
+    # NOTE: Do not set this field directly. Use ``set_auth()``
+    user_settings = fields.AbstractForeignField()
+
+    # The existence of this property is used to determine whether or not
+    #   an addon instance is an "OAuth addon" in
+    #   AddonModelMixin.get_oauth_addons().
+    oauth_provider = None
+
+    @property
+    def has_auth(self):
+        """Instance has an external account and *active* permission to use it"""
+        if not (self.user_settings and self.external_account):
+            return False
+
+        return self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account
+        )
+
+    def set_auth(self, external_account, user):
+        """Connect the node addon to a user's external account.
+
+        This method also adds the permission to use the account in the user's
+        addon settings.
+        """
+        # tell the user's addon settings that this node is connected to it
+        user_settings = user.get_or_add_addon(self.oauth_provider.short_name)
+        user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=external_account
+            # no metadata, because the node has access to no folders
+        )
+        user_settings.save()
+
+        # update this instance
+        self.user_settings = user_settings
+        self.external_account = external_account
+
+        self.save()
+
+    def clear_auth(self):
+        """Disconnect the node settings from the user settings.
+
+        This method does not remove the node's permission in the user's addon
+        settings.
+        """
+
+        self.external_account = None
+        self.user_settings = None
+        self.save()
 
 
 # TODO: No more magicks
