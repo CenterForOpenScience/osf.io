@@ -372,6 +372,14 @@ def test_all(flake=False):
     test_osf()
     test_addons()
 
+@task
+def karma(single=False):
+    """Run JS tests with Karma. Requires Chrome to be installed."""
+    cmd = 'karma start'
+    if single:
+        cmd += ' --single-run'
+    run(cmd, pty=True, echo=True)
+
 
 @task
 def wheelhouse(repo, path):
