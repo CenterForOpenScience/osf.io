@@ -571,14 +571,14 @@ function _fangornLazyLoadError (item) {
         item.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000);
     }
 }
+
 /**
  * Applies the positionining and initialization of tooltips for file names
  * @private
  */
-
 function reapplyTooltips () {
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
-    $(".title-text>[data-toggle=tooltip]").hover(function(event){
+    $(".title-text [data-toggle=tooltip]").hover(function(event){
         var mousePosition = event.pageX - 20;
         $('.tooltip').css('left', mousePosition + 'px');
     });
@@ -925,7 +925,6 @@ tbOptions = {
     },
     onscrollcomplete : function(){
         reapplyTooltips();
-
     },
     onselectrow : function(row) {
     },
