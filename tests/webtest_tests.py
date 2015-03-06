@@ -12,9 +12,10 @@ from modularodm import Q
 
 from framework.mongo.utils import to_mongo_key
 
+from framework.auth.signals import username_changed
 from framework.auth.views import confirm_update_email
 from framework.auth.core import User, Auth
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase, fake, capture_signals
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
@@ -1163,6 +1164,20 @@ class TestConfirmingNewUsernameEmail(OsfTestCase):
         res = self.app.get(confirmation_url, expect_errors=True)
         assert_in('Link Expired', res)
         assert_not_equal(user.username, user.unconfirmed_username)
+
+    def test_username_changed_signal_sent_after_confirm_new_username(self):
+        user = AuthUserFactory()
+        user.unconfirmed_username = "freddie_mercury@example.com"
+        user.add_email_verification(user.unconfirmed_username)
+        confirm_update_email(user, user.unconfirmed_username)
+        confirmation_url = user.get_confirmation_url(
+            user.unconfirmed_username,
+            external=False,
+        )
+        user.save()
+        with capture_signals() as mock_signals:
+            res = self.app.get(confirmation_url).follow()
+        assert_equal(mock_signals.signals_sent(), set([username_changed]))
 
 
 class TestClaimingAsARegisteredUser(OsfTestCase):
