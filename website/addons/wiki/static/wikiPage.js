@@ -167,7 +167,7 @@ function ViewModel(options){
     self.compareVis = ko.observable(options.compareVisible);
     self.menuVis = ko.observable(options.menuVisible);
 
-    self.pageTitle = $(document).find("title").text();
+    self.pageTitle = $(document).find('title').text();
 
     self.compareVersion = ko.observable(options.compareVersion);
     self.viewVersion = ko.observable(options.viewVersion);
@@ -197,21 +197,26 @@ function ViewModel(options){
     });
 
     self.currentURL = ko.computed(function() {
-
         // Do not change URL for incompatible browsers
         if (typeof window.history.replaceState === 'undefined') {
             return;
         }
 
+        // TODO: Revisit this logic. /sloria
+        var paramPrefix = '?';
         var url = self.pageURL;
+        // Preserve current query params
+        var queryParams = $.param($osf.urlParams());
+        if (queryParams) {
+            url += paramPrefix + queryParams;
+            paramPrefix = '&';
+        }
 
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
             window.history.replaceState({}, '', url);
             return;
         }
-
-        var paramPrefix = '?';
 
         if (self.editVis()) {
             url += paramPrefix + 'edit';
@@ -236,6 +241,8 @@ function ViewModel(options){
             url += paramPrefix + 'menu';
         }
 
+        console.log('state is..');
+        console.log(window.history.state);
         window.history.replaceState({}, self.pageTitle, url);
     });
 
