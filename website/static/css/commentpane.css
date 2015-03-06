@@ -1,6 +1,6 @@
 #commentPane {
     position: fixed;
-    z-index: 999; /* Note: Must be lower than Bootstrap modals, BlockUI */
+    z-index: 98; /* Note: Must be lower than Bootstrap modals, BlockUI */
     width: 0;
     top: 0;
     right: 0;
