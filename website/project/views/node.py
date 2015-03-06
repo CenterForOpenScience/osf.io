@@ -1071,7 +1071,7 @@ def search_node(**kwargs):
     node = Node.load(request.json.get('nodeId'))
     include_public = request.json.get('includePublic')
     size = float(request.json.get('size', '5').strip())
-    page = int(request.json.get('page', '0').strip())
+    page = request.json.get('page', '0')
     query = request.json.get('query', '').strip()
 
     start = (page * size)
@@ -1098,9 +1098,7 @@ def search_node(**kwargs):
     nodes = Node.find(odm_query)
     count = nodes.count()
     pages = math.ceil(count / size)
-    print size
-    print count
-    print pages
+
     return {
         'nodes': [
             _serialize_node_search(each)

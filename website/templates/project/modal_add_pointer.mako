@@ -15,8 +15,8 @@
                         <input class="form-control" placeholder="Search projects" style="margin-bottom: 8px;" data-bind="value:query" />
                     </div>
                     <div>
-                        <button class="btn btn-default" data-bind="click:function(){search(true)}">Search all projects</button>
-                        <button class="btn btn-default" data-bind="click:function(){search(false)}">Search my projects</button>
+                        <button class="btn btn-default" data-bind="click:searchAllProjects">Search all projects</button>
+                        <button class="btn btn-default" data-bind="click:searchMyProjects">Search my projects</button>
                     </div>
                 </form>
 

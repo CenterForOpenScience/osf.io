@@ -28,7 +28,7 @@ var AddPointerViewModel = function(nodeTitle) {
     self.currentPage = ko.observable(0);
     self.totalPages = ko.observable(0);
     self.paginators = ko.observableArray([]);
-
+    self.includePublic = ko.observable(true);
     self.foundResults = ko.computed(function() {
         return self.query() && self.results().length;
     });
@@ -40,8 +40,17 @@ var AddPointerViewModel = function(nodeTitle) {
     var MAX_PAGES_ON_PAGINATOR = 7;
     var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 
+    self.searchAllProjects = function() {
+        self.includePublic(true);
+        self.search();
+    };
+
+    self.searchMyProjects = function() {
+        self.includePublic(false);
+        self.search();
+    };
+
     self.addNewPaginators = function() {
-        console.log("1");
         self.paginators.removeAll();
         if (self.numberOfPages() > 1) {
             self.paginators.push({
@@ -148,7 +157,7 @@ var AddPointerViewModel = function(nodeTitle) {
         self.search();
     };
 
-    self.search = function(includePublic) {
+    self.search = function() {
         self.errorMsg('');
         if (self.query()) {
             osfHelpers.postJSON(
@@ -156,8 +165,8 @@ var AddPointerViewModel = function(nodeTitle) {
                 {
                     query: self.query(),
                     nodeId: nodeId,
-                    includePublic: includePublic,
-                    page: self.currentPage
+                    includePublic: self.includePublic(),
+                    page: self.currentPage()
                 }
             ).done(function (result) {
                     if (!result.nodes.length) {
@@ -166,9 +175,7 @@ var AddPointerViewModel = function(nodeTitle) {
                     self.results(result.nodes);
                     self.currentPage(result.page);
                     self.numberOfPages(result.pages);
-                    console.log(result.nodes);
-                    console.log(result.page);
-                    console.log(result.pages);
+
                     self.addNewPaginators();
                 }).fail(
                 osfHelpers.handleJSONError
