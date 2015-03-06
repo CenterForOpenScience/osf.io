@@ -823,47 +823,6 @@ class TestUserProfile(OsfTestCase):
         self.user = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_send_update_email_confirmation_sends_confirm_email(self, send_mail):
-        url = api_url_for('user_account_email')
-        payload = {
-            'unconfirmed_username': 'bluesuede@shoes.com',
-        }
-        self.app.post_json(
-            url,
-            payload,
-            auth=self.user.auth,
-        )
-        self.user.reload()
-
-        token = self.user.get_confirmation_token(self.user.unconfirmed_username)
-        assert_equal(self.user.email_verifications[token]['email'], self.user.unconfirmed_username)
-
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr=self.user.unconfirmed_username,
-        ))
-
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_confirm_update_email(self, send_mail):
-        self.user.unconfirmed_username = 'hounddog@graceland.com'
-        self.user.add_email_verification(self.user.unconfirmed_username)
-        self.user.save()
-
-        confirmation_url = self.user.get_confirmation_url(
-            self.user.unconfirmed_username,
-            external=False
-        )
-        confirm_update_email(user=self.user, email=self.user.unconfirmed_username)
-
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr=self.user.unconfirmed_username,
-            confirmation_url=confirmation_url,
-            mail=mails.UPDATE_EMAIL
-        ))
-
     def test_serialize_names(self):
         self.user.fullname = 'Thomas Jefferson'
         self.user.given_name = 'Thomas'
@@ -1266,6 +1225,65 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_blank_confirm_password(self):
         for password in ('', '      '):
             self.test_password_change_invalid_blank_password('password', 'new password', password)
+
+
+class TestChangeUsername(OsfTestCase):
+
+    def setUp(self):
+        super(TestChangeUsername, self).setUp()
+        self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
+
+    @mock.patch('website.profile.views.send_update_email_confirmation')
+    def test_change_username_valid(self, mock_send_confirmation):
+        payload = {
+            'unconfirmed_username': 'freddieHg@cos.io'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(self.user.unconfirmed_username, 'freddieHg@cos.io')
+        assert_true(mock_send_confirmation.called)
+
+    def test_change_username_to_existing_username(self):
+        payload = {
+            'unconfirmed_username': self.user.username
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user2.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    @mock.patch('website.profile.views.confirm_update_email')
+    def test_send_update_email_confirmation(self, mock_confirm_update_email):
+        url = api_url_for('user_account_email')
+        payload = {
+            'unconfirmed_username': 'bluesuede@shoes.com',
+        }
+        self.app.post_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        token = self.user.get_confirmation_token(self.user.unconfirmed_username)
+        assert_equal(self.user.email_verifications[token]['email'], self.user.unconfirmed_username)
+        assert_true(mock_confirm_update_email.called)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_confirm_update_email_called_with_correct_args(self, send_mail):
+        self.user.unconfirmed_username = 'hounddog@graceland.com'
+        self.user.add_email_verification(self.user.unconfirmed_username)
+        self.user.save()
+
+        confirmation_url = self.user.get_confirmation_url(
+            self.user.unconfirmed_username,
+            external=True
+        )
+        confirm_update_email(user=self.user, email=self.user.unconfirmed_username)
+
+        assert_true(send_mail.called)
+        send_mail.assert_called_with(self.user.unconfirmed_username,
+                                     mails.UPDATE_EMAIL,
+                                     'plain',
+                                     user=self.user,
+                                     confirmation_url=confirmation_url)
 
 
 class TestAddingContributorViews(OsfTestCase):

@@ -200,9 +200,11 @@ def send_confirm_email(user, email):
         email.
     """
     confirmation_url = user.get_confirmation_url(email, external=True, force=True)
-    mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
-        user=user,
-        confirmation_url=confirmation_url)
+    mails.send_mail(email,
+                    mails.CONFIRM_EMAIL,
+                    'plain',
+                    user=user,
+                    confirmation_url=confirmation_url)
 
 
 def confirm_update_email(user, email):
@@ -212,9 +214,11 @@ def confirm_update_email(user, email):
         email.
     """
     confirmation_url = user.get_confirmation_url(email, external=True)
-    mails.send_mail(email, mails.UPDATE_EMAIL, 'plain',
-        user=user,
-        confirmation_url=confirmation_url)
+    mails.send_mail(email,
+                    mails.UPDATE_EMAIL,
+                    'plain',
+                    user=user,
+                    confirmation_url=confirmation_url)
 
 
 def register_user(**kwargs):
