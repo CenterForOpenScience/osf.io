@@ -296,26 +296,27 @@ class NodeProjectCollector(object):
         readable_children = []
         for child in child_nodes:
             if child is not None:
-                if child.resolve().can_view(auth=self.auth) and not child.resolve().is_deleted:
+                resolved = child.resolve()
+                if resolved.can_view(auth=self.auth) and not resolved.is_deleted:
                     readable_children.append(child)
         children_count = len(readable_children)
         is_pointer = not node.primary
-        is_component = node.category != "project"
-        is_project = node.category == "project"
+        is_component = node.category != 'project'
+        is_project = node.category == 'project'
         is_file = False
-        type_ = "project"
+        type_ = 'project'
         if is_file:
-            type_ = "file"
+            type_ = 'file'
         if is_pointer and not parent_is_folder:
-            type_ = "pointer"
+            type_ = 'pointer'
         if node.is_folder:
-            type_ = "folder"
+            type_ = 'folder'
         if is_component:
-            type_ = "component"
+            type_ = 'component'
 
         if node.is_dashboard:
             to_expand = True
-        elif type_ != "pointer":
+        elif type_ != 'pointer':
             to_expand = expanded
         else:
             to_expand = False
