@@ -24,4 +24,5 @@ REGION = 'changeme'
 
 AWS_ACCESS_KEY = 'changeme'
 AWS_SECRET_KEY = 'changeme'
+AWS_SNS_ARN = 'changeme'
 AUDIT_TEMP_PATH = 'audit'
