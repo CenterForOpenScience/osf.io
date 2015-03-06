@@ -51,10 +51,6 @@ def activity():
         Q('is_deleted', 'eq', False)
     )
 
-    # Temporary bug fix: Skip projects with empty contributor lists
-    # Todo: Fix underlying bug and remove this selector
-    recent_query = recent_query & Q('contributors', 'ne', [])
-
     recent_public_projects = Node.find(
         recent_query &
         Q('is_registration', 'eq', False)
