@@ -84,3 +84,11 @@ src/
 website/mfrtemp/
 docs/_build
 website/static/img/badges
+
+# Emacs temporary/lock files
+\#*
+.\#*
+*~
+
+# Rope config
+.ropeproject
