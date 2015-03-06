@@ -18,6 +18,15 @@ class AddonModelMixin(StoredObject):
                 addons.append(addon)
         return addons
 
+    def get_oauth_addons(self):
+        # TODO: Using hasattr is a dirty hack - we should be using issubclass().
+        #       We can't, because importing the parent classes here causes a
+        #       circular import error.
+        return [
+            addon for addon in self.get_addons()
+            if hasattr(addon, 'oauth_provider')
+        ]
+
     def get_addon_names(self):
         return [
             addon.config.short_name

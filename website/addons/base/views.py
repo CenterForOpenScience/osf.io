@@ -15,6 +15,7 @@ from flask import make_response
 
 from framework.auth import Auth
 from framework.sessions import Session
+from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
@@ -159,8 +160,12 @@ def get_auth(**kwargs):
     if not provider_settings:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    credentials = provider_settings.serialize_waterbutler_credentials()
-    settings = provider_settings.serialize_waterbutler_settings()
+    try:
+        credentials = provider_settings.serialize_waterbutler_credentials()
+        settings = provider_settings.serialize_waterbutler_settings()
+    except exceptions.AddonError:
+        log_exception()
+        raise HTTPError(httplib.BAD_REQUEST)
 
     return {
         'auth': make_auth(user),

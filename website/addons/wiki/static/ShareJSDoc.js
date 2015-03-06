@@ -1,5 +1,4 @@
 var $ = require('jquery');
-require('bootstrap');
 
 var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');
@@ -7,23 +6,27 @@ var LanguageTools = ace.require('ace/ext/language_tools');
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
-var ShareJSDoc = function(selector, url, metadata) {
-    var wikiEditor = new WikiEditor(selector, url);
+var ShareJSDoc = function(url, metadata, viewText, editor) {
+    var self = this;
+    self.editor = editor;
+    var wikiEditor = new WikiEditor(url, viewText, self.editor);
+    self.wikiEditor = wikiEditor;
+
     var viewModel = wikiEditor.viewModel;
+    var ctx = window.contextVars.wiki;
     var deleteModal = $('#deleteModal');
     var renameModal = $('#renameModal');
     var permissionsModal = $('#permissionsModal');
 
     // Initialize Ace and configure settings
-    var editor = ace.edit('editor');
-    editor.getSession().setMode('ace/mode/markdown');
-    editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
-    editor.getSession().setUseWrapMode(true);   // Wraps text
-    editor.renderer.setShowGutter(false);       // Hides line number
-    editor.setShowPrintMargin(false);           // Hides print margin
-    editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
-    editor.setReadOnly(true); // Read only until initialized
-    editor.setOptions({
+    self.editor.getSession().setMode('ace/mode/markdown');
+    self.editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
+    self.editor.getSession().setUseWrapMode(true);   // Wraps text
+    self.editor.renderer.setShowGutter(false);       // Hides line number
+    self.editor.setShowPrintMargin(false);           // Hides print margin
+    self.editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
+    self.editor.setReadOnly(true); // Read only until initialized
+    self.editor.setOptions({
         enableBasicAutocompletion: [LanguageTools.snippetCompleter],
         enableSnippets: true,
         enableLiveAutocompletion: true
@@ -32,8 +35,8 @@ var ShareJSDoc = function(selector, url, metadata) {
     if (!collaborative) {
         // Populate editor with most recent draft
         viewModel.fetchData().done(function(response) {
-            editor.setValue(response.wiki_draft, -1);
-            editor.setReadOnly(false);
+            self.editor.setValue(response.wiki_draft, -1);
+            self.editor.setReadOnly(false);
             if (typeof WebSocket === 'undefined') {
                 viewModel.status('unsupported');
             } else {
@@ -50,13 +53,14 @@ var ShareJSDoc = function(selector, url, metadata) {
 
     // Configure connection
     var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-    var wsUrl = wsPrefix + window.contextVars.wiki.urls.sharejs;
+    var wsUrl = wsPrefix + ctx.urls.sharejs;
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
     var madeConnection = false;
     var allowRefresh = true;
     var refreshTriggered = false;
+    var canEdit = true;
 
     function whenReady() {
 
@@ -66,7 +70,7 @@ var ShareJSDoc = function(selector, url, metadata) {
         }
 
         viewModel.fetchData().done(function(response) {
-            doc.attachAce(editor);
+            doc.attachAce(self.editor);
             if (viewModel.wikisDiffer(viewModel.currentText(), response.wiki_draft)) {
                 viewModel.currentText(response.wiki_draft);
             }
@@ -78,11 +82,11 @@ var ShareJSDoc = function(selector, url, metadata) {
     }
 
     function unlockEditor() {
-        editor.gotoLine(0,0);
-        var undoManager = editor.getSession().getUndoManager();
+        self.editor.gotoLine(0,0);
+        var undoManager = self.editor.getSession().getUndoManager();
         undoManager.reset();
-        editor.getSession().setUndoManager(undoManager);
-        editor.setReadOnly(false);
+        self.editor.getSession().setUndoManager(undoManager);
+        self.editor.setReadOnly(false);
     }
 
     // Send user metadata
@@ -92,7 +96,11 @@ var ShareJSDoc = function(selector, url, metadata) {
 
     function refreshMaybe() {
         if (allowRefresh && refreshTriggered) {
-            window.location.reload();
+            if (canEdit) {
+                window.location.reload();
+            } else {
+                window.location.replace(ctx.urls.page);
+            }
         }
     }
 
@@ -114,7 +122,7 @@ var ShareJSDoc = function(selector, url, metadata) {
                 break;
             case 'lock':
                 allowRefresh = false;
-                editor.setReadOnly(true);
+                self.editor.setReadOnly(true);
                 permissionsModal.modal({
                     backdrop: 'static',
                     keyboard: false
@@ -125,11 +133,12 @@ var ShareJSDoc = function(selector, url, metadata) {
                 }, 3000);
                 break;
             case 'unlock':
+                canEdit = data.contributors.indexOf(metadata.userId) > -1;
                 refreshTriggered = true;
                 refreshMaybe();
                 break;
             case 'redirect':
-                editor.setReadOnly(true);
+                self.editor.setReadOnly(true);
                 renameModal.modal({
                     backdrop: 'static',
                     keyboard: false
@@ -139,7 +148,10 @@ var ShareJSDoc = function(selector, url, metadata) {
                 }, 3000);
                 break;
             case 'delete':
-                editor.setReadOnly(true);
+                if (ctx.triggeredDelete) {
+                    break;
+                }
+                self.editor.setReadOnly(true);
                 deleteModal.on('hide.bs.modal', function() {
                     window.location.replace(data.redirect);
                 });
