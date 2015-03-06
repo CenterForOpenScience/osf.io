@@ -100,6 +100,9 @@ def subscribe_on_confirm(user):
     if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
 
+@queued_task
+@app.task
+@transaction()
 @username_changed.connect
 def update_subscriber_email(user, old_username=None):
     # Update user's email address in mailchimp mailing lists when user changes their username/email
