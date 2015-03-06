@@ -13,9 +13,8 @@ from website.project.decorators import (
 
 from .provider import ZoteroCitationsProvider
 
-
 @must_be_logged_in
-def list_zotero_accounts_user(auth):
+def zotero_list_accounts_user(auth):
     """Return the list of all of the current user's authorized Zotero accounts."""
 
     provider = ZoteroCitationsProvider()
@@ -30,7 +29,7 @@ def zotero_get_config(auth, node_addon, **kwargs):
     """
 
     provider = ZoteroCitationsProvider()
-    return provider.serialize_settings(node_addon, auth.user)
+    return provider.serializer(node_addon, auth.user).serialized_settings
 
 @must_have_permission('write')
 @must_have_addon('zotero', 'node')

@@ -9,7 +9,6 @@ import unittest
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
-import json
 import urlparse
 
 from website.addons.mendeley.tests.factories import (
@@ -21,6 +20,7 @@ from website.util import api_url_for
 from website.addons.mendeley import utils
 from website.addons.mendeley import views
 from website.addons.citations.utils import serialize_folder
+from website.addons.mendeley.serializer import MendeleySerializer
 
 from utils import mock_responses
 
@@ -75,7 +75,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.project.api_url_for('mendeley_get_config'),
             auth=self.user.auth,
-        )
+        )        
         assert_true(res.json['nodeHasAuth'])
         assert_true(res.json['userHasAuth'])
         assert_true(res.json['userIsOwner'])
@@ -111,7 +111,7 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_user_folders(self):
         # JSON: a list of user's Mendeley folders"
         res = self.app.get(
-            api_url_for('list_mendeley_accounts_user'),
+            api_url_for('mendeley_list_accounts_user'),
             auth=self.user.auth,
         )
         expected = {

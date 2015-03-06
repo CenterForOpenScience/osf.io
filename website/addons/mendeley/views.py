@@ -13,9 +13,8 @@ from website.project.decorators import (
 
 from .provider import MendeleyCitationsProvider
 
-
 @must_be_logged_in
-def list_mendeley_accounts_user(auth):
+def mendeley_list_accounts_user(auth):
     """ Returns the list of all of the current user's authorized Mendeley accounts """
 
     provider = MendeleyCitationsProvider()
@@ -28,9 +27,8 @@ def mendeley_get_config(auth, node_addon, **kwargs):
     """ Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
-
     provider = MendeleyCitationsProvider()
-    return provider.serialize_settings(node_addon, auth.user)
+    return provider.serializer(node_addon, auth.user).serialized_settings
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')

@@ -4,12 +4,10 @@ from nose.tools import *  # noqa
 
 import responses
 import mock
-import unittest
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
-import json
 import urlparse
 
 from website.addons.zotero.tests.factories import (
@@ -110,7 +108,7 @@ class ZoteroViewsTestCase(OsfTestCase):
     def test_user_folders(self):
         # JSON: a list of user's Zotero folders"
         res = self.app.get(
-            api_url_for('list_zotero_accounts_user'),
+            api_url_for('zotero_list_accounts_user'),
             auth=self.user.auth,
         )
         expected = {
