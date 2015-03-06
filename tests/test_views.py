@@ -38,13 +38,20 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
 
-from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect, assert_datetime_equal
+from tests.base import (
+    OsfTestCase,
+    fake,
+    capture_signals,
+    assert_is_redirect,
+    assert_datetime_equal,
+)
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory
+    ProjectWithAddonFactory,
 )
+
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 
@@ -3350,8 +3357,7 @@ class TestDashboardViews(OsfTestCase):
         # Get the All My Projects smart folder from the dashboard
         url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
-
-        assert_equal(len(res.json), 1)
+        assert_equal(len(res.json['data']), 1)
 
     def test_get_dashboard_nodes(self):
         project = ProjectFactory(creator=self.creator)
@@ -3427,7 +3433,7 @@ class TestDashboardViews(OsfTestCase):
         url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
-        assert_equal(len(res.json), 1)
+        assert_equal(len(res.json['data']), 1)
 
     def test_untouched_node_is_collapsed(self):
         found_item = False
@@ -3808,6 +3814,7 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,8 +8,6 @@ import os
 import json
 import hashlib
 
-
-
 os_env = os.environ
 
 def parent_dir(path):
@@ -65,6 +63,9 @@ DEBUG_MODE = False
 # TODO: Remove after migration to OSF Storage
 COPY_GIT_REPOS = False
 
+# Change if using `scripts/cron.py` to manage crontab
+CRON_USER = None
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
@@ -103,7 +104,6 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
-USE_TOKU_MX = True
 DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
@@ -173,6 +173,7 @@ CELERY_IMPORTS = (
     'framework.render.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
+    'scripts.send_digest'
 )
 
 # Add-ons
@@ -187,6 +188,7 @@ ADDON_CATEGORIES = [
     'bibliography',
     'other',
     'security',
+    'citations',
 ]
 
 SYSTEM_ADDED_ADDONS = {

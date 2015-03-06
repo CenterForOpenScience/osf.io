@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import datetime
 from nose.tools import *  # noqa
 
@@ -6,9 +8,10 @@ from framework.auth.core import Auth
 from website.util import api_url_for
 from website.citations.utils import datetime_to_csl
 from website.models import Node, User
+from flask import redirect
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, UserFactory
+from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
 
 class CitationsUtilsTestCase(OsfTestCase):
@@ -138,8 +141,25 @@ class CitationsViewsTestCase(OsfTestCase):
             1,
         )
 
-    def test_citation_view(self):
-        # Response includes a valid text citation in the given format
-        node = ProjectFactory(is_public=True)
-        res = self.app.get(node.api_url_for('node_citation'))
-        assert_equal(res.json, {node._id: node.csl})
+    def test_list_styles_filter(self):
+        # Response includes a list of available citation styles
+        response = self.app.get(api_url_for('list_citation_styles', q='bibtex'))
+
+        assert_true(response.json)
+
+        assert_equal(
+            len(response.json['styles']), 1
+        )
+
+        assert_equal(
+            response.json['styles'][0]['id'], 'bibtex'
+        )
+
+    def test_node_citation_view(self):
+        node = ProjectFactory()
+        user = AuthUserFactory()
+        node.add_contributor(user)
+        node.save()
+        response = self.app.get("/api/v1" + "/project/" + node._id + "/citation/", auto_follow=True, auth=user.auth)
+        assert_true(response.json)
+
