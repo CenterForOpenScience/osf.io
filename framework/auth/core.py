@@ -1,28 +1,27 @@
 # -*- coding: utf-8 -*-
 import re
-import itertools
 import logging
 import urlparse
+import itertools
 import datetime as dt
 
-import pytz
 import bson
+import pytz
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 import framework
-from framework.sessions import session
-from framework.analytics import piwik
-from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import analytics
-from framework.guid.model import GuidStoredObject
-from framework.addons import AddonModelMixin
+from framework.sessions import session
 from framework.auth import utils, signals
-from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
-from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
+from framework.addons import AddonModelMixin
+from framework.exceptions import PermissionsError
+from framework.guid.model import GuidStoredObject
+from framework.bcrypt import generate_password_hash, check_password_hash
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 
 from website import settings, filters, security
 
@@ -32,7 +31,7 @@ name_formatters = {
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
     'initials': lambda user: u'{surname}, {initial}.'.format(
         surname=user.family_name,
-        initial=user.given_name_initial
+        initial=user.given_name_initial,
     ),
 }
 
@@ -753,15 +752,14 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     def save(self, *args, **kwargs):
+        # Avoid circular import
+        from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
-            try:
-                piwik.create_user(self)
-            except (piwik.PiwikException, ValueError):
-                logger.error("Piwik user creation failed: " + self._id)
+            piwik_tasks.update_user(self._id)
         return ret
 
     def update_search(self):
