@@ -371,12 +371,15 @@ def test_all(flake=False):
         flake()
     test_osf()
     test_addons()
-    karma()
+    karma(single=True, browsers='PhantomJS')
 
 @task
 def karma(single=False, browsers=None):
     """Run JS tests with Karma. Requires Chrome to be installed."""
-    cmd = 'karma start'
+    karma_bin = os.path.join(
+        HERE, 'node_modules', 'karma', 'bin', 'karma'
+    )
+    cmd = '{} start'.format(karma_bin)
     if single:
         cmd += ' --single-run'
     # Use browsers if specified on the command-line, otherwise default
