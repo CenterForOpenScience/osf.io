@@ -821,6 +821,7 @@ def _get_children(node, auth, indent=0):
                 'title': child.title,
                 'indent': indent,
                 'is_public': child.is_public,
+                'parent_id': child.parent_id,
             })
             children.extend(_get_children(child, auth, indent + 1))
 
@@ -927,7 +928,7 @@ def get_editable_children(auth, **kwargs):
     children = _get_children(node, auth)
 
     return {
-        'node': {'title': node.title, 'is_public': node.is_public},
+        'node': {'id': node._id, 'title': node.title, 'is_public': node.is_public},
         'children': children,
     }
 

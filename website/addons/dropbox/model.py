@@ -57,6 +57,7 @@ class DropboxFile(GuidFile):
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)
         """
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~', path)
         try:
             new = cls.find_one(
                 Q('node', 'eq', node) &

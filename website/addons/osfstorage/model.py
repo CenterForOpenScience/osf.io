@@ -71,6 +71,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     file_tree = fields.ForeignField('OsfStorageFileTree')
 
+    @property
+    def has_auth(self):
+        return True
+
     def find_or_create_file_guid(self, path):
         return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
 

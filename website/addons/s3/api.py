@@ -1,19 +1,6 @@
-import os
-
-from dateutil.parser import parse
-
-from boto.s3.connection import S3Connection, Key
+from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
 from boto.s3.cors import CORSConfiguration
-from boto.exception import S3ResponseError
-
-from hurry.filesize import size, alternative
-
-
-#Note: (from boto docs) this function is in beta
-def enable_versioning(user_settings):
-    wrapper = S3Wrapper.from_addon(user_settings)
-    wrapper.bucket.configure_versioning(True)
 
 
 def has_access(access_key, secret_key):
@@ -52,11 +39,6 @@ class S3Wrapper(object):
             return None
         return cls(S3Connection(s3.user_settings.access_key, s3.user_settings.secret_key), s3.bucket)
 
-    @classmethod
-    def bucket_exist(cls, s3, bucketName):
-        m = cls.fromAddon(s3)
-        return not m.connection.lookup(bucketName.lower(), validate=False)
-
     "S3 Bucket management"
 
     def __init__(self, connection, bucket_name):
@@ -65,69 +47,9 @@ class S3Wrapper(object):
             self.connection.calling_format = OrdinaryCallingFormat()
         self.bucket = self.connection.get_bucket(bucket_name, validate=False)
 
-    def create_key(self, key):
-        self.bucket.new_key(key)
-
-    def get_file_list(self, prefix=None):
-        if not prefix:
-            return self.bucket.list()
-        else:
-            return self.bucket.list(prefix=prefix)
-
-    def create_folder(self, name, pathToFolder=""):
-        if not name.endswith('/'):
-            name.append("/")
-        k = self.bucket.new_key(pathToFolder + name)
-        return k.set_contents_from_string("")
-
-    def delete_file(self, keyName):
-        return self.bucket.delete_key(keyName)
-
-    def download_file_URL(self, keyName, vid=None):
-        headers = {'response-content-disposition': 'attachment'}
-        return self.bucket.get_key(keyName, version_id=vid).generate_url(5, response_headers=headers)
-
-    def get_wrapped_keys(self, prefix=None):
-        return [S3Key(x) for x in self.get_file_list()]
-
-    def get_wrapped_key(self, key_name, vid=None):
-        """Get S3 key.
-
-        :param str key_name: Name of S3 key
-        :param str version_id: Optional file version
-        :return: Wrapped S3 key if found, else None
-
-        """
-        try:
-            key = self.bucket.get_key(key_name, version_id=vid)
-            if key is not None:
-                return S3Key(key)
-            return None
-        except S3ResponseError:
-            return None
-
-    def get_wrapped_keys_in_dir(self, directory=None):
-        return [S3Key(x) for x in self.bucket.list(delimiter='/', prefix=directory) if isinstance(x, Key) and x.key != directory]
-
-    def get_wrapped_directories_in_dir(self, directory=None):
-        return [S3Key(x) for x in self.bucket.list(prefix=directory) if isinstance(x, Key) and x.key.endswith('/') and x.key != directory]
-
     @property
     def bucket_name(self):
         return self.bucket.name
-
-    def get_version_data(self):
-        versions = {}
-        versions_list = self.bucket.list_versions()
-        for p in versions_list:
-            if isinstance(p, Key) and str(p.version_id) != 'null' and str(p.key) not in versions:
-                versions[str(p.key)] = [str(k.version_id)
-                                        for k in versions_list if p.key == k.key]
-        return versions
-        # TODO update this to cache results later
-
-    def get_file_versions(self, file_name):
-        return [x for x in self.bucket.list_versions(prefix=file_name) if isinstance(x, Key)]
 
     def get_cors_rules(self):
         try:
@@ -137,93 +59,3 @@ class S3Wrapper(object):
 
     def set_cors_rules(self, rules):
         return self.bucket.set_cors(rules)
-
-    def does_key_exist(self, key_name):
-        return self.bucket.get_key(key_name) is not None
-
-
-# TODO Extend me and you bucket.setkeyclass
-class S3Key(object):
-
-    def __init__(self, key):
-        self.s3Key = key
-        if self.type == 'file':
-            self.versions = ['current']
-        else:
-            self.versions = None
-
-    @property
-    def name(self):
-        d = self.s3Key.key.split('/')
-        if len(d) > 1 and self.type == 'file':
-            return d[-1]
-        elif self.type == 'folder':
-            return d[-2]
-        else:
-            return d[0]
-
-    @property
-    def type(self):
-        if not self.s3Key.key.endswith('/'):
-            return 'file'
-        else:
-            return 'folder'
-
-    @property
-    def parentFolder(self):
-        d = self.s3Key.key.split('/')
-
-        if len(d) > 1 and self.type == 'file':
-            return d[len(d) - 2]
-        elif len(d) > 2 and self.type == 'folder':
-            return d[len(d) - 3]
-        else:
-            return None
-
-    @property
-    def pathTo(self):
-        return self.s3Key.key[:self.s3Key.key.rfind('/')] + '/'
-
-    @property
-    def size(self):
-        if self.type == 'folder':
-            return None
-        else:
-            return size(float(self.s3Key.size), system=alternative)
-
-    @property
-    def lastMod(self):
-        if self.type == 'folder':
-            return None
-        else:
-            return parse(self.s3Key.last_modified)
-
-    @property
-    def version(self):
-        return self.versions
-
-    @property
-    def extension(self):
-        if self.type != 'folder':
-            if os.path.splitext(self.s3Key.key)[1] is None:
-                return None
-            else:
-                return os.path.splitext(self.s3Key.key)[1][1:]
-        else:
-            return None
-
-    @property
-    def md5(self):
-        return self.s3Key.md5
-
-    @property
-    def version_id(self):
-        return self.s3Key.version_id if self.s3Key.version_id != 'null' else 'Pre-versioning'
-
-    def updateVersions(self, manager):
-        if self.type != 'folder':
-            self.versions.extend(manager.get_file_versions(self.s3Key.key))
-
-    @property
-    def etag(self):
-        return self.s3Key.etag.replace('"', '')

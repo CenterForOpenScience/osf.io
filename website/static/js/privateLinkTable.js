@@ -21,7 +21,7 @@ var setupEditable = function(elm, data) {
         ajaxOptions: {
             type: 'PUT',
             dataType: 'json',
-            contentType: 'application/json',
+            contentType: 'application/json'
         },
         send: 'always',
         title: 'Edit Link Name',
@@ -33,7 +33,7 @@ var setupEditable = function(elm, data) {
         success: function(response, value) {
             data.name(value);
         },
-        error: $osf.handleEditableError,
+        error: $osf.handleEditableError
     });
 };
 
@@ -116,7 +116,7 @@ function ViewModel(url, nodeIsPublic) {
         $.ajax({
             url: url,
             type: 'GET',
-            dataType: 'json',
+            dataType: 'json'
         }).done(
             onFetchSuccess
         ).fail(
