@@ -341,17 +341,22 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         if not connection:
             connection = get_node_addon_client(self)
         dropbox_files = list()
-        files_data = connection.delta(cursor=None, path_prefix=self.folder)
-        dropbox_file_metadata = map(lambda entry: entry[1], files_data['entries'])
-        for file_metadata in dropbox_file_metadata:
-            if not file_metadata['is_dir']:
-                path = clean_path(file_metadata['path'])  # To ensure letter case
-                try:
-                    guid = DropboxFile.find_one(
-                        Q('node', 'eq', self.owner) &
-                        Q('path', 'eq', path)
-                    )
-                except:
-                    continue
-                dropbox_files.append(guid)
+        has_more = True
+        cursor = None
+        while has_more:
+            files_data = connection.delta(cursor=cursor, path_prefix=self.folder)
+            has_more = files_data['has_more']
+            cursor = files_data['cursor']
+            dropbox_file_metadata = map(lambda entry: entry[1], files_data['entries'])
+            for file_metadata in dropbox_file_metadata:
+                if not file_metadata['is_dir']:
+                    path = clean_path(file_metadata['path'])  # To ensure letter case
+                    try:
+                        guid = DropboxFile.find_one(
+                            Q('node', 'eq', self.owner) &
+                            Q('path', 'eq', path)
+                        )
+                    except:
+                        continue
+                    dropbox_files.append(guid)
         return dropbox_files
