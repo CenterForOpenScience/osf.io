@@ -53,7 +53,7 @@
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-box"><i class="icon-edit"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
-                                        visible: validCredentials,
+                                        visible: showShare,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
                         class="btn btn-sm btn-box"><i class="icon-share-alt"></i> Share on Box

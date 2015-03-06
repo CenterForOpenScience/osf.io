@@ -67,6 +67,10 @@ var ViewModel = function(url, selector, folderPicker) {
         return !self.urls().emails;
     });
 
+    self.showShare = ko.computed(function(){
+        return self.validCredentials() && self.folder().path !== 'All Files' && (typeof self.folder().path !== 'undefined');
+    });
+
     /**
     *  Update the view model from data returned from the server.
     */
