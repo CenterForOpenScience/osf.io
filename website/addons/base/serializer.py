@@ -1,6 +1,6 @@
 import abc
 
-from website.util import web_url_for
+from website.util import api_url_for, web_url_for
 
 class AddonSerializer(object):
     __metaclass__ = abc.ABCMeta
@@ -35,7 +35,6 @@ class AddonSerializer(object):
 
     @property
     def serialized_settings(self):
-
         node_has_auth = self.node_has_auth
         result = {
             'nodeHasAuth': node_has_auth,
@@ -51,6 +50,7 @@ class AddonSerializer(object):
                 result['urls']['owner'] = web_url_for('profile_view_id',
                                                   uid=owner._primary_key)
                 result['ownerName'] = owner.fullname
+            result['folder'] = self.addon_node_settings.selected_folder_name
 
         return result
 
@@ -87,45 +87,24 @@ class CitationsAddonSerializer(AddonSerializer):
         pass
 
     @property
-    def serialized_settings(self):
-        """Serializes parameters for building UI for widget and settings pages
-        """
-        result = {
-            'nodeHasAuth': self.node_has_auth,
-            'userIsOwner': self.user_is_owner,
-            'userHasAuth': self.user_has_auth,
-            'urls': self.serialized_urls,
-            'validCredentials': True,
-        }
-
-        node_account = self.addon_node_settings.external_account
-        if node_account is not None:
-            result['folder'] = addon_node_settings.selected_folder_name
-            result['ownerName'] = node_account.display_name
-
-        result = result.update(self.serialized_model)
-        return result
-
-    @property
     def serialized_urls(self):
         external_account = self.addon_node_settings.external_account
         ret = {
             'auth': api_url_for('oauth_connect',
-                                service_name=node_addon.provider_name),
+                                service_name=self.addon_node_settings.provider_name),
             'settings': web_url_for('user_addons'),
-            'files': addon_node_settings.owner.url,
+            'files': self.addon_node_settings.owner.url,
         }
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
-            ret = serialize_urls(node_addon)
 
         node = self.addon_node_settings.owner
-        
-        ret = ret.update({
+
+        ret.update({
             'importAuth': node.api_url_for('add_user_auth'),
             'folders': node.api_url_for('citation_list'),
             'config': node.api_url_for('set_config'),
-            'deauthorize': node.api_url_for('mendeley_remove_user_auth'),
+            'deauthorize': node.api_url_for('remove_user_auth'),
             'accounts': node.api_url_for('list_accounts_user'),
         })
 
@@ -155,8 +134,37 @@ class CitationsAddonSerializer(AddonSerializer):
     def user_is_owner(self):
         node_has_auth = self.node_has_auth
         user_accounts = self.user_accounts
-        return (node_has_auth and (node_account in user_accounts)) or bool(len(user_accounts))
+        return (node_has_auth and (self.addon_node_settings.external_account in user_accounts)) or bool(len(user_accounts))
 
     @property
     def credentials_owner(self):
-        return self.node_addon.user_settings.owner
+        return self.addon_node_settings.user_settings.owner
+
+    def serialized_account(self):
+        external_account = self.addon_node_settings.external_account
+        if external_account is None:
+            return None
+        return {
+            'id': external_account._id,
+            'provider_id': external_account.provider_id,
+            'display_name': external_account.display_name,
+        }
+
+    def serialize_account(self, external_account):
+        if external_account is None:
+            return None
+        return {
+            'id': external_account._id,
+            'provider_id': external_account.provider_id,
+            'display_name': external_account.display_name,
+        }
+    @abc.abstractmethod
+    def serialize_folder(self, folder):
+        pass
+
+    def serialize_citation(self, citation):
+        return {
+            'csl': citation,
+            'kind': 'file',
+            'id': citation['id'],
+        }

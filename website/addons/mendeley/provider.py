@@ -1,12 +1,17 @@
-from website.addons.citations import provider
-from .model import MendeleyNodeSettings
-from website.addons.citations.utils import serialize_account, serialize_folder, serialize_urls
+from website.addons.citations.provider import CitationsProvider
+from website.addons.citations.utils import serialize_folder
 
-class MendeleyCitationsProvider(provider.CitationsProvider):
+from website.addons.mendeley.serializer import MendeleySerializer
+
+class MendeleyCitationsProvider(CitationsProvider):
 
     def __init__(self):
         super(MendeleyCitationsProvider, self).__init__('mendeley')
-        
+
+    @property
+    def serializer(self):
+        return MendeleySerializer
+
     def widget(self, node_addon):
 
         ret = super(MendeleyCitationsProvider, self).widget(node_addon)
@@ -22,19 +27,6 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
             parent_id=data.json.get('parent_id'),
             id=data.json.get('id')
         )
-
-    def _serialize_folder(self, folder, node_addon):
-        return {
-            'data': folder,
-            'kind': 'folder',
-            'name': folder['name'],
-            'id': folder['id'],
-            'urls': {
-                'fetch': node_addon.owner.api_url_for(
-                    'mendeley_citation_list',
-                    mendeley_list_id=folder['id']),
-            },
-        }
 
     def _folder_id(self, node_addon):
 
