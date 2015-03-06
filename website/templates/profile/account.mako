@@ -26,7 +26,6 @@
                             <label>Old Email</label>
                             <input type="email"
                                    class="form-control"
-                                   name="old_username"
                                    data-bind="value:username"
                                    disabled="">
                         </div>
@@ -34,7 +33,6 @@
                             <label>New Email</label>
                             <input type="email"
                                    class="form-control"
-                                   name="new_username"
                                    data-bind="value:newUsername">
                             <div data-bind="visible: showMessages, css:'text-danger'">
                                 <p data-bind="validationMessage: newUsername"></p>
@@ -44,7 +42,6 @@
                             <label>Confirm New Email</label>
                             <input type="email"
                                    class="form-control"
-                                   name="confirm_username"
                                    data-bind="value:confirmNewUsername">
                             <div data-bind="visible: showMessages, css:'text-danger'">
                                 <p data-bind="validationMessage: confirmNewUsername"></p>
