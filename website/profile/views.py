@@ -208,6 +208,7 @@ def user_account_email(auth, **kwargs):
     json_data = escape_html(request.get_json())
     new_username = json_data.get('new_username', None)
     confirm_new_username = json_data.get('confirm_new_username', None)
+    password = json_data.get('password', None)
 
     if not new_username or not confirm_new_username:
         raise HTTPError(http.BAD_REQUEST, data=dict(
@@ -236,9 +237,15 @@ def user_account_email(auth, **kwargs):
                 message_long="A user with this username already exists.",
                 error_type="invalid_username"))
         else:
-            user.unconfirmed_username = unconfirmed_username
-            user.save()
-            send_update_email_confirmation(**kwargs)
+            if user.check_password(password):
+                user.unconfirmed_username = unconfirmed_username
+                user.save()
+                send_update_email_confirmation(**kwargs)
+            else:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_short="Bad Request",
+                    message_long="Incorrect password.",
+                    error_type="invalid_password"))
 
     return {'message': 'Confirmation email sent to ' + str(unconfirmed_username)}, 200
 

@@ -47,6 +47,15 @@
                                 <p data-bind="validationMessage: confirmNewUsername"></p>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password"
+                                   class="form-control"
+                                   data-bind="value:password">
+                            <div data-bind="visible: showMessages, css:'text-danger'">
+                                <p data-bind="validationMessage: password"></p>
+                            </div>
+                        </div>
                         <button type="submit"
                                 class="btn btn-default"
                                 data-bind="click:submit">Update Email</button>

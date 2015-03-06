@@ -39,6 +39,9 @@ var ViewModel = function() {
                 params: self.newUsername}
         ]
     });
+    self.password = ko.observable().extend({
+        required: {params: true, message: 'This field is required.'}
+    });
 
     var validated = ko.validatedObservable(self);
     self.isValid = ko.computed(function() {
@@ -80,7 +83,8 @@ var ViewModel = function() {
         if (self.isValid()) {
             var payload = {
                 'new_username': self.newUsername(),
-                'confirm_new_username': self.confirmNewUsername()
+                'confirm_new_username': self.confirmNewUsername(),
+                'password': self.password()
             };
             var request = $osf.postJSON('/api/v1/settings/account/email/', payload);
             request.done(function () {
@@ -88,7 +92,7 @@ var ViewModel = function() {
                 self.changeMessage(message, 'text-success');
             });
             request.fail(function (xhr) {
-                if (xhr.responseJSON.error_type === 'invalid_username') {
+                if (xhr.responseJSON.error_type === 'invalid_username' || xhr.responseJSON.error_type === 'invalid_password') {
                     var message = xhr.responseJSON.message_long;
                     self.changeMessage(message, 'text-danger', 5000)
                 } else {
