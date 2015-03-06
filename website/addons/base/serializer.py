@@ -5,9 +5,14 @@ from website.util import api_url_for, web_url_for
 class AddonSerializer(object):
     __metaclass__ = abc.ABCMeta
 
+    # TODO take addon_node_settings, addon_user_settings
     def __init__(self, addon_node_settings, user):
         self.addon_node_settings = addon_node_settings
         self.user = user
+
+    @abc.abstractproperty
+    def addon_serialized_urls(self):
+        pass
 
     @abc.abstractproperty
     def serialized_urls(self):
@@ -50,7 +55,6 @@ class AddonSerializer(object):
                 result['urls']['owner'] = web_url_for('profile_view_id',
                                                   uid=owner._primary_key)
                 result['ownerName'] = owner.fullname
-            result['folder'] = self.addon_node_settings.selected_folder_name
 
         return result
 
@@ -62,17 +66,19 @@ class StorageAddonSerializer(AddonSerializer):
 
     @property
     def serialized_settings(self):
-
         result = super(StorageAddonSerializer, self).serialized_settings
         result['folder'] = self.serialized_folder
         return result
 
 class CitationsAddonSerializer(AddonSerializer):
 
+    REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'accounts']
+
     def __init__(self, addon_node_settings, user, provider_name):
         super(CitationsAddonSerializer, self).__init__(addon_node_settings, user)
         self.provider_name = provider_name
 
+    '''
     def _serialize_account(self, external_account):
         if external_account is None:
             return None
@@ -81,10 +87,13 @@ class CitationsAddonSerializer(AddonSerializer):
             'provider_id': external_account.provider_id,
             'display_name': external_account.display_name,
         }
+    '''
 
+    '''
     @abc.abstractproperty
     def serialized_model(self):
         pass
+    '''
 
     @property
     def serialized_urls(self):
@@ -98,17 +107,18 @@ class CitationsAddonSerializer(AddonSerializer):
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
 
-        node = self.addon_node_settings.owner
-
-        ret.update({
-            'importAuth': node.api_url_for('add_user_auth'),
-            'folders': node.api_url_for('citation_list'),
-            'config': node.api_url_for('set_config'),
-            'deauthorize': node.api_url_for('remove_user_auth'),
-            'accounts': node.api_url_for('list_accounts_user'),
-        })
-
+        addon_urls = self.addon_serialized_urls
+        # Make sure developer returns set of needed urls
+        for url in self.REQUIRED_URLS:
+            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
+        ret.update(addon_urls)
         return ret
+
+    @property
+    def serialized_settings(self):
+        result = super(CitationsAddonSerializer, self).serialized_settings
+        result['folder'] = self.addon_node_settings.selected_folder_name
+        return result
 
     @property
     def user_accounts(self):
