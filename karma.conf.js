@@ -1,5 +1,6 @@
 var webpack = require('webpack');
-var BowerWebpackPlugin = require('bower-webpack-plugin');
+// TODO: use BowerWebpackPlugin
+// var BowerWebpackPlugin = require('bower-webpack-plugin');
 var webpackCommon = require('./webpack.common.config.js');
 
 // Put in separate file?

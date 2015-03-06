@@ -144,6 +144,7 @@ var plugins = [
     // Bundle common code between modules
     new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.[hash].js'),
     // Bower support
+    // TODO: Use BowerWebpackPlugin
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
     ),
