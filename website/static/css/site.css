@@ -1937,7 +1937,6 @@ span#profileFullname{
 }
 .addon-widget-header {
     padding: 0 10px;
-    border-bottom: 1px solid #ddd;
     background-color: #efefef;
     width: 100%;
 }
@@ -1955,6 +1954,7 @@ span#profileFullname{
 .addon-widget-body {
     padding: 15px;
     background-color: white;
+    border-top: 1px solid #ddd;
 }
 .addon-widget-body .list-group-item {
     border: none;
