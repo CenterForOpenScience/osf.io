@@ -33,11 +33,5 @@
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "jsTimezoneDetect": "https://cdnjs.cloudflare.com/ajax/libs/jstimezonedetect/1.0.4/jstz.js",
     "c3": "~0.4.9"
-  },
-  "devDependencies": {
-    "qunit": "~1.17.1",
-    "jquery-mockjax": "1.5.3",
-    "sinon-qunit": "~1.0.0",
-    "sinon": "~1.10.2"
   }
 }
