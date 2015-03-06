@@ -63,12 +63,11 @@ var ViewModel = function(url, selector, folderPicker) {
         return self.emails().join([', ']);
     });
 
-    self.disableShare = ko.pureComputed(function() {
-        return !self.urls().emails;
-    });
+    self.disableShare = ko.pureComputed(function() {       
+        var isRoot = self.folder().path === 'All Files';
+        var notSet = (typeof self.folder().path === 'undefined');
+        return !(self.urls().emails) || !self.validCredentials() || isRoot || notSet;
 
-    self.showShare = ko.pureComputed(function(){
-        return self.validCredentials() && self.folder().path !== 'All Files' && (typeof self.folder().path !== 'undefined');
     });
 
     /**

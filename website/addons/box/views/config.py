@@ -144,7 +144,7 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': path if path != 'All Files' else '/ (Full Box)',
+                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Box)',
                 'path': path,
             },
             'urls': serialize_urls(node_addon),
