@@ -13,10 +13,10 @@ from website import settings
 class PiwikException(Exception):
     pass
 
-def create_user(user):
+
+def _create_user(user):
     """ Given an OSF user, creates a Piwik user.
     """
-
     login = 'osf.' + user._id
     pw = str(uuid.uuid4())[:8]
 
@@ -30,7 +30,7 @@ def create_user(user):
             'userLogin': login,
             'password': pw,
             'email': user._id + '@osf.io',
-            'alias': "OSF User: " + user._id,
+            'alias': 'OSF User: {}'.format(user._id),
         }
     )
 
@@ -40,6 +40,7 @@ def create_user(user):
     user.piwik_token = md5(login + md5(pw).hexdigest()).hexdigest()
 
     user.save()
+
 
 def _update_node_object(node, updated_fields=None):
     """ Given a node, provisions a Piwik site if necessary and sets
@@ -97,8 +98,8 @@ def _users_with_view_access(node):
 
     try:
         # Could also raise ValueError
-        rv = json.loads(response.content)
-        return set((x.get('login') for x in rv if x.get('login') != 'anonymous'))
+        ret = json.loads(response.content)
+        return set((x.get('login') for x in ret if x.get('login') != 'anonymous'))
     except (ValueError, AttributeError):
         raise PiwikException('Failed to retrieve users for {}'.format(node._id))
 
