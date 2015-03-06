@@ -18,7 +18,13 @@ var webpackTestConfig = {
             'window.$': 'jquery'
         }),
     ],
-    resolve: webpackCommon.resolve
+    resolve: webpackCommon.resolve,
+    module: {
+        loaders: [
+            {test: /\.test\.js$/, loader: 'babel-loader'},
+        ]
+    }
+
 };
 
 

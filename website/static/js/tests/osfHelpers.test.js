@@ -6,8 +6,8 @@ var $ = require('jquery');
 
 var $osf = require('../osfHelpers.js');
 
-describe('growl', function() {
-    it('calls $.growl with correct arguments', function() {
+describe('growl', () => {
+    it('calls $.growl with correct arguments', () => {
         var spy = new sinon.spy($, 'growl');
         $osf.growl('The one', 'the only', 'danger');
         sinon.assert.calledOnce(spy);
@@ -17,15 +17,15 @@ describe('growl', function() {
     });
 });
 
-describe('ajax helpers', function() {
+describe('ajax helpers', () => {
     var spy;
-    beforeEach(function() {
+    beforeEach(() => {
         spy = new sinon.spy($, 'ajax');
     });
     afterEach(function() { spy.restore(); });
 
-    describe('postJSON', function() {
-        it('calls $.ajax with correct args', function() {
+    describe('postJSON', () => {
+        it('calls $.ajax with correct args', () => {
             var url = '/foo';
             var payload = {'bar': 42};
             $osf.postJSON(url, payload);
@@ -41,8 +41,8 @@ describe('ajax helpers', function() {
         });
     });
 
-    describe('putJSON', function() {
-        it('calls $.ajax with correct args', function() {
+    describe('putJSON', () => {
+        it('calls $.ajax with correct args', () => {
             var url = '/foo';
             var payload = {'bar': 42};
             $osf.putJSON(url, payload);
