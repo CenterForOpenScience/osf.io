@@ -329,6 +329,9 @@ class User(GuidStoredObject, AddonModelMixin):
     # timezone for user's locale (e.g. 'America/New_York')
     timezone = fields.StringField(default='Etc/UTC')
 
+    # user language and locale data (e.g. 'en_US')
+    locale = fields.StringField(default='en_US')
+
     _meta = {'optimistic': True}
 
     def __repr__(self):

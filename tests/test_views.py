@@ -1120,6 +1120,38 @@ class TestUserProfile(OsfTestCase):
         assert_true(gravatar_small is not None)
         assert_not_equal(gravatar_default_size, gravatar_small)
 
+    def test_update_user_timezone(self):
+        assert_equal(self.user.timezone, 'Etc/UTC')
+        payload = {'timezone': 'America/New_York'}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.timezone, 'America/New_York')
+
+    def test_update_user_locale(self):
+        assert_equal(self.user.locale, 'en_US')
+        payload = {'locale': 'de_DE'}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.locale, 'de_DE')
+
+    def test_update_user_locale_none(self):
+        assert_equal(self.user.locale, 'en_US')
+        payload = {'locale': None}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.locale, 'en_US')
+
+    def test_update_user_locale_empty_string(self):
+        assert_equal(self.user.locale, 'en_US')
+        payload = {'locale': ''}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.locale, 'en_US')
+
 
 class TestUserAccount(OsfTestCase):
 
