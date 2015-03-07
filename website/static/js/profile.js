@@ -270,13 +270,13 @@ BaseViewModel.prototype.setOriginal = function() {};
 
 BaseViewModel.prototype.dirty = function() { return false; };
 
-BaseViewModel.prototype.fetch = function() {
+BaseViewModel.prototype.fetch = function(callback) {
     var self = this;
     $.ajax({
         type: 'GET',
         url: this.urls.crud,
         dataType: 'json',
-        success: [this.unserialize.bind(this), self.setOriginal.bind(self)],
+        success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self )],
         error: this.handleError.bind(this, 'Could not fetch data')
     });
 };
@@ -329,7 +329,7 @@ BaseViewModel.prototype.submit = function() {
     }
 };
 
-var NameViewModel = function(urls, modes) {
+var NameViewModel = function(urls, modes, fetchCallback) {
     var self = this;
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
@@ -360,18 +360,18 @@ var NameViewModel = function(urls, modes) {
         return !! self.full();
     });
 
-    self.impute = function() {
+    self.impute = function(callback) {
         if (! self.hasFirst()) {
             return;
         }
-        $.ajax({
+        return $.ajax({
             type: 'GET',
             url: urls.impute,
             data: {
                 name: self.full()
             },
             dataType: 'json',
-            success: self.unserialize.bind(self),
+            success: [self.unserialize.bind(self), callback.bind(self)],
             error: self.handleError.bind(self, 'Could not fetch names')
         });
     };
@@ -425,7 +425,7 @@ var NameViewModel = function(urls, modes) {
         return cite;
     });
 
-    self.fetch();
+    self.fetch(fetchCallback);
 };
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
@@ -764,5 +764,7 @@ module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,
-    Schools: Schools
+    Schools: Schools,
+    // Expose private viewmodels
+    _NameViewModel: NameViewModel
 };
