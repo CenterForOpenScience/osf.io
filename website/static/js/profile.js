@@ -31,6 +31,8 @@ var cleanByRule = function(rule) {
     };
 };
 
+var noop = function() {};
+
 var SerializeMixin = function() {};
 
 /** Serialize to a JS Object. */
@@ -188,7 +190,7 @@ TrackedMixin.prototype.restoreOriginal = function () {
     }
 };
 
-var BaseViewModel = function(urls, modes) {
+var BaseViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
 
     self.urls = urls;
@@ -205,11 +207,13 @@ var BaseViewModel = function(urls, modes) {
     self.hasValidProperty = ko.observable(false);
 
     // Warn on URL change if dirty
-    $(window).on('beforeunload', function() {
-        if (self.dirty()) {
-            return 'There are unsaved changes to your settings.';
-        }
-    });
+    if (preventUnsaved !== false) {
+        $(window).on('beforeunload', function() {
+            if (self.dirty()) {
+                return 'There are unsaved changes to your settings.';
+            }
+        });
+    }
 
     // Warn on tab change if dirty
     $('body').on('show.bs.tab', function() {
@@ -272,11 +276,12 @@ BaseViewModel.prototype.dirty = function() { return false; };
 
 BaseViewModel.prototype.fetch = function(callback) {
     var self = this;
+    callback = callback || noop;
     $.ajax({
         type: 'GET',
         url: this.urls.crud,
         dataType: 'json',
-        success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self )],
+        success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self)],
         error: this.handleError.bind(this, 'Could not fetch data')
     });
 };
@@ -329,9 +334,10 @@ BaseViewModel.prototype.submit = function() {
     }
 };
 
-var NameViewModel = function(urls, modes, fetchCallback) {
+var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     var self = this;
-    BaseViewModel.call(self, urls, modes);
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
+    fetchCallback = fetchCallback || noop;
     TrackedMixin.call(self);
 
     self.full = koHelpers.sanitizedObservable().extend({required: true, trimmed: true});
@@ -361,6 +367,7 @@ var NameViewModel = function(urls, modes, fetchCallback) {
     });
 
     self.impute = function(callback) {
+        callback = callback || noop;
         if (! self.hasFirst()) {
             return;
         }
