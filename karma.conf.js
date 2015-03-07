@@ -19,13 +19,13 @@ var webpackTestConfig = {
         }),
     ],
     resolve: webpackCommon.resolve,
+    externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
         loaders: [
             // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ]
     }
-
 };
 
 
@@ -34,6 +34,8 @@ module.exports = function (config) {
         browsers: ['PhantomJS'],
         frameworks: ['mocha', 'sinon'],
         files: [
+            'website/static/vendor/bower_components/jquery/dist/jquery.js',
+            'website/static/vendor/bower_components/jquery-ui/ui/jquery-ui.js',
             // Only need to target one file, which will load all files in tests/ that
             // match *.test.js
             'website/static/js/tests/tests.webpack.js',
