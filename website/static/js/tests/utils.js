@@ -1,6 +1,6 @@
 'use strict';
 var assign = require('object-assign');
-var sinon = window.sinon || require('sinon');
+// var sinon = window.sinon || require('sinon');
 
 /**
  * Utility to create a fake server with sinon.
@@ -11,7 +11,7 @@ var sinon = window.sinon || require('sinon');
  *
  * var server;
  * before(() => {
- *     server = createServer([
+ *     server = createServer(sinon, [
  *        {url: '/projects/':  method: 'GET', response: {'id': '12345'}}
  *        {url: '/projects/': method: 'POST',
  *          response: {message: 'Successfully created project.'}, status: 201}
@@ -23,7 +23,7 @@ var sinon = window.sinon || require('sinon');
  * after(() => { server.restore(); });
  */
 var defaultHeaders = {'Content-Type': 'application/json'};
-function createServer(endpoints) {
+function createServer(sinon, endpoints) {
     var server = sinon.fakeServer.create();
     endpoints.forEach(function(endpoint) {
         var headers = assign(
