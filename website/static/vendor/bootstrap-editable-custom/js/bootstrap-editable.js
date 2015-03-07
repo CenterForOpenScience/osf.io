@@ -1,7 +1,11 @@
 /*! X-editable - v1.5.1 
 * In-place editing with Twitter Bootstrap, jQuery UI or pure jQuery
 * http://github.com/vitalets/x-editable
-* Copyright (c) 2013 Vitaliy Potapov; Licensed MIT */
+* Copyright (c) 2013 Vitaliy Potapov; Licensed MIT 
+*
+* Modified by @sloria on 2015-03-07: Remove datepicker and other extraneous
+* plugins and inputs
+* */
 /**
 Form with single input element, two buttons and two states: normal/loading.
 Applied as jQuery method to DIV tag (not to form tag!). This is because form can be in loading state when spinner shown.
