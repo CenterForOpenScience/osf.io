@@ -20,11 +20,15 @@ describe('growl', () => {
 });
 
 describe('ajax helpers', () => {
-    var spy;
+    var spy, xhr;
     beforeEach(() => {
         spy = new sinon.spy($, 'ajax');
+        xhr = sinon.useFakeXMLHttpRequest();
     });
-    afterEach(function() { spy.restore(); });
+    afterEach(function() {
+        spy.restore();
+        xhr.restore();
+    });
 
     describe('postJSON', () => {
         it('calls $.ajax with correct args', () => {
