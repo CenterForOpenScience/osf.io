@@ -91,7 +91,7 @@ var resolve = {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.js'),
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
-        'bootstrap-editable': staticPath('vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.js'),
+        'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),

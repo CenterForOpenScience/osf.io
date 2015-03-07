@@ -13,7 +13,6 @@
     "zeroclipboard": "~2.1.6",
     "jquery.tagsinput": "~1.3.2",
     "jquery-autosize": "~1.18.15",
-    "x-editable": "~1.5.1",
     "reconnectingWebsocket": "#07669519f8",
     "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
