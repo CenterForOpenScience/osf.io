@@ -177,7 +177,6 @@ CELERY_IMPORTS = (
 )
 
 # Add-ons
-
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_REQUESTED = json.load(fp)['addons']

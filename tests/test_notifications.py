@@ -2,6 +2,7 @@ import collections
 import datetime
 import mock
 import pytz
+from babel import dates, Locale
 
 from mako.lookup import Template
 from modularodm import Q
@@ -114,14 +115,6 @@ class TestSubscriptionView(OsfTestCase):
         self.node = factories.NodeFactory()
         self.user = self.node.creator
 
-    def test_update_user_timezone_offset(self):
-        assert_equal(self.user.timezone, 'Etc/UTC')
-        payload = {'timezone': 'America/New_York'}
-        url = api_url_for('update_user', uid=self.user._id)
-        self.app.put_json(url, payload, auth=self.user.auth)
-        self.user.reload()
-        assert_equal(self.user.timezone, 'America/New_York')
-
     def test_create_new_subscription(self):
         payload = {
             'id': self.node._id,
@@ -191,6 +184,7 @@ class TestSubscriptionView(OsfTestCase):
         # assert that user is removed from the subscription entirely
         for n in constants.NOTIFICATION_TYPES:
             assert_false(self.node.creator in getattr(s, n))
+
 
 class TestRemoveContributor(OsfTestCase):
     def setUp(self):
@@ -937,7 +931,6 @@ class TestSendEmails(OsfTestCase):
         emails.check_parent(node._id, 'comments', [])
         assert_false(mock_send.called)
 
-
     # @mock.patch('website.notifications.emails.email_transactional')
     # def test_send_calls_correct_mail_function(self, email_transactional):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
@@ -968,7 +961,7 @@ class TestSendEmails(OsfTestCase):
             parent_comment='',
             title=self.project.title,
             node_id=self.project._id,
-            url=self.project.absolute_url
+            url=self.project.absolute_url,
         )
         subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
             nodeType='project',
@@ -978,7 +971,8 @@ class TestSendEmails(OsfTestCase):
             content='',
             parent_comment='',
             title=self.project.title,
-            url=self.project.absolute_url)
+            url=self.project.absolute_url,
+        )
         message = mails.render_message(
             'comments.html.mako',
             nodeType='project',
@@ -989,7 +983,8 @@ class TestSendEmails(OsfTestCase):
             parent_comment='',
             title=self.project.title,
             url=self.project.absolute_url,
-            localized_timestamp=emails.localize_timestamp(timestamp, self.user))
+            localized_timestamp=emails.localize_timestamp(timestamp, self.user),
+        )
 
         assert_true(send_mail.called)
         send_mail.assert_called_with(
@@ -1001,7 +996,7 @@ class TestSendEmails(OsfTestCase):
             node_id=self.project._id,
             subject=subject,
             message=message,
-            url=self.project.absolute_url + 'settings/'
+            url=self.project.absolute_url + 'settings/',
         )
 
     def test_send_email_digest_creates_digest_notification(self):
@@ -1051,18 +1046,38 @@ class TestSendEmails(OsfTestCase):
     def test_localize_timestamp(self):
         timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         self.user.timezone = 'America/New_York'
+        self.user.locale = 'en_US'
         self.user.save()
-        localized_timestamp = emails.localize_timestamp(timestamp, self.user)
-        expected_timestamp = timestamp.astimezone(pytz.timezone(self.user.timezone)).strftime('%H:%M on %A, %B %d %Z')
-        assert_equal(localized_timestamp, expected_timestamp)
+        tz = dates.get_timezone(self.user.timezone)
+        locale = Locale(self.user.locale)
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
+        formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
+        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
-    def test_localize_timestamp_empty(self):
+    def test_localize_timestamp_empty_timezone(self):
         timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         self.user.timezone = ''
+        self.user.locale = 'en_US'
         self.user.save()
-        localized_timestamp = emails.localize_timestamp(timestamp, self.user)
-        expected_timestamp = timestamp.astimezone(pytz.timezone('Etc/UTC')).strftime('%H:%M on %A, %B %d %Z')
-        assert_equal(localized_timestamp, expected_timestamp)
+        tz = dates.get_timezone('Etc/UTC')
+        locale = Locale(self.user.locale)
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
+        formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
+        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
+
+    def test_localize_timestamp_empty_locale(self):
+        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        self.user.timezone = 'America/New_York'
+        self.user.locale = ''
+        self.user.save()
+        tz = dates.get_timezone(self.user.timezone)
+        locale = Locale('en')
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
+        formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
+        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
 
 class TestSendDigest(OsfTestCase):
