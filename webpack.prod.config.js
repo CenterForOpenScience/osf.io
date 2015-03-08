@@ -11,7 +11,8 @@ module.exports = assign(common, {
             'process.env': {
                 NODE_ENV: JSON.stringify('production')
             },
-            DEBUG: false
+            DEBUG: false,
+            '__DEV__': false
         }),
         new webpack.optimize.UglifyJsPlugin({
             exclude: /conference.*?\.js$/,
