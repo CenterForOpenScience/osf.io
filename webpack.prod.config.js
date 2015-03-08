@@ -10,8 +10,12 @@ module.exports = assign(common, {
         new webpack.DefinePlugin({
             'process.env': {
                 NODE_ENV: JSON.stringify('production')
-            }
+            },
+            DEBUG: false
         }),
-        new webpack.optimize.UglifyJsPlugin({exclude: /conference.*?\.js$/})
+        new webpack.optimize.UglifyJsPlugin({
+            exclude: /conference.*?\.js$/,
+            compress: {warnings: false}
+        })
     ])
 });
