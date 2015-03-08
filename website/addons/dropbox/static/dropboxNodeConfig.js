@@ -386,4 +386,7 @@ function DropboxNodeConfig(selector, url, folderPicker) {
     $osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports = DropboxNodeConfig;
+module.exports = {
+    DropboxNodeConfig: DropboxNodeConfig,
+    _ViewModel: ViewModel
+};
