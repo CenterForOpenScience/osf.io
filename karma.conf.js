@@ -21,10 +21,10 @@ var webpackTestConfig = {
     resolve: webpackCommon.resolve,
     externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
-        loaders: [
+        loaders: webpackCommon.module.loaders.concat([
             // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
-        ]
+        ])
     }
 };
 
