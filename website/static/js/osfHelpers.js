@@ -11,8 +11,6 @@ require('koHelpers');
 
 var GrowlBox = require('./growlBox.js');
 
-require('bootstrap-editable');
-
 /**
  * Convenience function to create a GrowlBox
  * Show a growl-style notification for messages. Defaults to an error type.

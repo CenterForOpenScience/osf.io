@@ -51,6 +51,7 @@ var entry = {
         'knockout-validation',
         'bootstrap',
         'bootbox',
+        'bootstrap-editable',
         'select2',
         'knockout-punches',
         'dropzone',
