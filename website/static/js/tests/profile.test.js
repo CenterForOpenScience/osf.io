@@ -75,7 +75,11 @@ describe('profile', () => {
                     server.respond();
                 });
             });
+
+            // TODO: Test citation computes
         });
+
+    // TODO: Test other profile ViewModels
     });
 });
 
