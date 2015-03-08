@@ -5,7 +5,7 @@ var $ = require('jquery');
 var moment = require('moment');
 var Raven = require('raven-js');
 
-var $osf = require('../osfHelpers.js');
+var $osf = require('../osfHelpers');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
@@ -28,7 +28,7 @@ describe('osfHelpers', () => {
             responseJSON: {message_short: 'Oh no!', message_long: 'Something went wrong'}
         };
         it('uses the response body if available', () => {
-            var spy = new sinon.spy($osf, 'growl');
+            var spy = new sinon.spy($.osf, 'growl');
             $osf.handleJSONError(response);
             assert.called(spy);
         });
