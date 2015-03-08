@@ -1,6 +1,4 @@
 var webpack = require('webpack');
-// TODO: use BowerWebpackPlugin
-// var BowerWebpackPlugin = require('bower-webpack-plugin');
 var webpackCommon = require('./webpack.common.config.js');
 
 // Put in separate file?
@@ -37,7 +35,7 @@ module.exports = function (config) {
             'website/static/vendor/bower_components/jquery/dist/jquery.js',
             'website/static/vendor/bower_components/jquery-ui/ui/jquery-ui.js',
             // Only need to target one file, which will load all files in tests/ that
-            // match *.test.js
+            // match *.test.js, including addons tests
             'website/static/js/tests/tests.webpack.js',
         ],
         reporters: ['spec'],

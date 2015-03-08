@@ -127,7 +127,8 @@ var resolve = {
         'markdown': staticPath('js/markdown.js'),
         'diffTool': staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
-        'citations': staticPath('js/citations.js')
+        'citations': staticPath('js/citations.js'),
+        'tests': staticPath('js/tests')
     }
 };
 
@@ -144,7 +145,6 @@ var plugins = [
     // Bundle common code between modules
     new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.[hash].js'),
     // Bower support
-    // TODO: Use BowerWebpackPlugin
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
     ),
