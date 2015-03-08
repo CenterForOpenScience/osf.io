@@ -28,15 +28,17 @@ describe('osfHelpers', () => {
             responseJSON: {message_short: 'Oh no!', message_long: 'Something went wrong'}
         };
         it('uses the response body if available', () => {
-            var spy = new sinon.spy($.osf, 'growl');
+            var spy = new sinon.spy($osf, 'growl');
             $osf.handleJSONError(response);
             assert.called(spy);
+            spy.restore();
         });
 
         it('logs error with Raven', () => {
             var spy = new sinon.spy(Raven, 'captureMessage');
             $osf.handleJSONError(response);
             assert.called(spy);
+            spy.restore();
         });
     });
 
