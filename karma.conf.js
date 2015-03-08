@@ -1,13 +1,18 @@
 var webpack = require('webpack');
 var webpackCommon = require('./webpack.common.config.js');
 
-// Put in separate file?
+// A subset of the app webpack config
 var webpackTestConfig = {
     devtool: 'inline-source-map',
     plugins: [
-       new webpack.ResolverPlugin(
+        new webpack.ResolverPlugin(
             new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
         ),
+
+        // Make sure that CommonJS is always used
+        new webpack.DefinePlugin({
+            'define.amd': false
+        }),
 
         new webpack.ProvidePlugin({
             $: 'jquery',
@@ -32,6 +37,7 @@ module.exports = function (config) {
         browsers: ['PhantomJS'],
         frameworks: ['mocha', 'sinon'],
         files: [
+            // Mimics loading jquery and jquery-ui with script tags
             'website/static/vendor/bower_components/jquery/dist/jquery.js',
             'website/static/vendor/bower_components/jquery-ui/ui/jquery-ui.js',
             // Only need to target one file, which will load all files in tests/ that
@@ -44,6 +50,7 @@ module.exports = function (config) {
             'website/static/js/tests/tests.webpack.js': ['webpack', 'sourcemap'],
         },
         webpack: webpackTestConfig,
+        webpackMiddleware: {noInfo: true},
         webpackServer: {
             noInfo: true // don't spam the console
         }
