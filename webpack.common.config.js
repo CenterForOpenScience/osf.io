@@ -83,6 +83,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
+    extensions: ['', '.es6.js', '.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -174,6 +175,7 @@ module.exports = {
     output: output,
     module: {
         loaders: [
+            {test: /\.es6.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
