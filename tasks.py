@@ -513,8 +513,7 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
-    npm_bower()
-    bower_install()
+    assets(develop=True, watch=False)
 
 
 @task
