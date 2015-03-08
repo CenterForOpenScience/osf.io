@@ -16,11 +16,15 @@ ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroCli
 var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
+
+function noop() {}
+
 /**
     * Knockout view model for the Dropbox node settings widget.
     */
-var ViewModel = function(url, selector, folderPicker) {
+var ViewModel = function(url, selector, folderPicker, fetchCallback) {
     var self = this;
+    // TODO: Remove selector?
     self.selector = selector;
     // Auth information
     self.nodeHasAuth = ko.observable(false);
@@ -81,8 +85,8 @@ var ViewModel = function(url, selector, folderPicker) {
         self.urls(data.urls);
     };
 
-    self.fetchFromServer = function() {
-        $.ajax({
+    self.fetchFromServer = function(callback) {
+        return $.ajax({
             url: url, type: 'GET', dataType: 'json',
             success: function(response) {
                 self.updateFromData(response.result);
@@ -114,7 +118,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     error: error
                 });
             }
-        });
+        }).done(fetchCallback || noop);
     };
 
     // Initial fetch from server
