@@ -3,6 +3,9 @@ var common = require('./webpack.common.config.js');
 var assign = require('object-assign');
 
 module.exports = assign(common, {
+    debug: false,
+    devtool: false,
+    stats: {reasons: false},
     plugins: common.plugins.concat([
         new webpack.optimize.DedupePlugin(),
         new webpack.optimize.OccurenceOrderPlugin(),
