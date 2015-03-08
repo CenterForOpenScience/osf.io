@@ -85,7 +85,7 @@ var ViewModel = function(url, selector, folderPicker, fetchCallback) {
         self.urls(data.urls);
     };
 
-    self.fetchFromServer = function(callback) {
+    self.fetchFromServer = function() {
         return $.ajax({
             url: url, type: 'GET', dataType: 'json',
             success: function(response) {
