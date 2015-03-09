@@ -4,6 +4,9 @@ var Stats = require('../share/stats.js');
 var Results = require('../share/results.js');
 var SearchBar = require('../share/searchBar.js');
 var MESSAGES = JSON.parse(require('raw!../share/messages.json'));
+
+require('../../css/share-search.css');
+require('../../vendor/bower_components/c3/c3.min.css');
 var ShareApp = {};
 
 ShareApp.ViewModel = function() {
