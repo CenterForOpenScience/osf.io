@@ -22,7 +22,7 @@ var ProviderMap = {
     stcloud: {name: 'theRepository at St. Cloud State'},
     texasstate: {name: 'DSpace at Texas State University', link: 'https://digital.library.txstate.edu/'},
     trinity: {name: 'Digital Commons@Trinity', link: 'http://digitalcommons.trinity.edu/'},
-    ucescholership: {name: 'California Digital Library eScholarship System', link: 'http://www.escholarship.org/'},
+    ucescholarship: {name: 'California Digital Library eScholarship System', link: 'http://www.escholarship.org/'},
     uiucideals: {name: 'University of Illinois at Urbana-Champaign Illinois Digital Enviornment for Access to Learning and Scholarship', link: 'https://www.ideals.illinois.edu/'},
     upennsylvania: {name: 'University of Pennsylvania Scholarly Commons', link: 'http://repository.upenn.edu/'},
     utaustin: {name: 'University of Texas Digital Repository', link: 'https://repositories.lib.utexas.edu/'},
