@@ -108,21 +108,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['importAuth'])
         assert_true(res.json['urls']['settings'])
 
-    def test_user_folders(self):
-        # JSON: a list of user's Mendeley folders"
-        res = self.app.get(
-            api_url_for('mendeley_list_accounts_user'),
-            auth=self.user.auth,
-        )
-        expected = {
-            'accounts': [
-                utils.serialize_account(each)
-                for each in self.user.external_accounts
-                if each.provider == 'mendeley'
-            ]
-        }
-        assert_equal(res.json, expected)
-
     def test_set_auth(self):
 
         res = self.app.post_json(

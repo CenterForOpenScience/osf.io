@@ -563,6 +563,14 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         return True
 
+    def get_nodes_with_oauth_grants(self, external_account):
+        # Generator of nodes which have grants for this external account
+        return (
+            Node.load(node_id)
+            for node_id, grants in self.oauth_grants.iteritems()
+            if external_account._id in grants.keys()
+        )
+
     def to_json(self, user):
         ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
         ret['accounts'] = [

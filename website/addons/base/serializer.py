@@ -1,5 +1,6 @@
 import abc
 
+from framework.auth.decorators import collect_auth
 from website.util import api_url_for, web_url_for
 
 
@@ -54,6 +55,11 @@ class AddonSerializer(object):
 
         return result
 
+    @property
+    def serialized_user_settings(self):
+        return {}
+
+
 class StorageAddonSerializer(AddonSerializer):
 
     @abc.abstractproperty
@@ -66,7 +72,55 @@ class StorageAddonSerializer(AddonSerializer):
         result['folder'] = self.serialized_folder
         return result
 
-class CitationsAddonSerializer(AddonSerializer):
+
+class OAuthAddonSerializer(AddonSerializer):
+    @property
+    def serialized_accounts(self):
+        return [
+            self.serialize_account(each)
+            for each in self.user_settings.external_accounts
+        ]
+
+    @property
+    def serialized_user_settings(self):
+        retval = super(OAuthAddonSerializer, self).serialized_user_settings
+
+        retval['accounts'] = self.serialized_accounts
+
+        return retval
+
+    def serialize_account(self, external_account):
+        if external_account is None:
+            return None
+        return {
+            'id': external_account._id,
+            'provider_id': external_account.provider_id,
+            'display_name': external_account.display_name,
+            'nodes': [
+                self.serialize_granted_node(node)
+                for node in self.user_settings.get_nodes_with_oauth_grants(
+                    external_account=external_account
+                )
+            ]
+        }
+
+    @collect_auth
+    def serialize_granted_node(self, node, auth):
+
+        node_settings = node.get_addon(
+            self.user_settings.oauth_provider.short_name
+        )
+        serializer = node_settings.serializer(node_settings=node_settings)
+
+        return {
+            'id': node._id,
+            'title': node.title if node.can_view(auth) else None,
+            'urls': {
+                'deauthorize': serializer.addon_serialized_urls,
+            },
+        }
+
+class CitationsAddonSerializer(OAuthAddonSerializer):
 
     REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'accounts']
 
@@ -136,15 +190,6 @@ class CitationsAddonSerializer(AddonSerializer):
 
     def serialized_account(self):
         external_account = self.node_settings.external_account
-        if external_account is None:
-            return None
-        return {
-            'id': external_account._id,
-            'provider_id': external_account.provider_id,
-            'display_name': external_account.display_name,
-        }
-
-    def serialize_account(self, external_account):
         if external_account is None:
             return None
         return {

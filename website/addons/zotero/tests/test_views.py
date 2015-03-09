@@ -105,21 +105,6 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['importAuth'])
         assert_true(res.json['urls']['settings'])
 
-    def test_user_folders(self):
-        # JSON: a list of user's Zotero folders"
-        res = self.app.get(
-            api_url_for('zotero_list_accounts_user'),
-            auth=self.user.auth,
-        )
-        expected = {
-            'accounts': [
-                serialize_account(each)
-                for each in self.user.external_accounts
-                if each.provider == 'zotero'
-            ]
-        }
-        assert_equal(res.json, expected)
-
     def test_set_auth(self):
 
         res = self.app.post_json(

@@ -6,6 +6,7 @@ from pyzotero import zotero
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.citations.utils import serialize_folder
+from website.addons.zotero import serializer
 from website.addons.zotero import settings
 from website.oauth.models import ExternalProvider
 
@@ -118,10 +119,12 @@ class Zotero(ExternalProvider):
 
 class ZoteroUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Zotero
+    serializer = serializer.ZoteroSerializer
 
 
 class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = Zotero
+    serializer = serializer.ZoteroSerializer
 
     zotero_list_id = fields.StringField()
 

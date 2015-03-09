@@ -13,12 +13,15 @@ from website.project.decorators import (
 
 from .provider import MendeleyCitationsProvider
 
+
 @must_be_logged_in
-def mendeley_list_accounts_user(auth):
+def mendeley_get_user_settings(auth):
     """ Returns the list of all of the current user's authorized Mendeley accounts """
 
     provider = MendeleyCitationsProvider()
-    return provider.user_accounts(auth.user)
+    return provider.serializer(
+        user_settings=auth.user.get_addon('mendeley')
+    ).serialized_user_settings
 
 
 @must_have_permission('read')
