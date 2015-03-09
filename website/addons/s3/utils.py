@@ -1,11 +1,4 @@
 import re
-import sha
-import hmac
-import time
-import base64
-import urllib
-import hashlib
-
 from bson import ObjectId
 
 from dateutil.parser import parse
@@ -14,8 +7,7 @@ from boto.iam import IAMConnection
 from boto.s3.cors import CORSConfiguration
 from boto.exception import BotoServerError
 
-from website.util import rubeus, web_url_for
-
+from website.util import web_url_for
 from api import get_bucket_list
 import settings as s3_settings
 
@@ -65,6 +57,7 @@ def get_bucket_drop_down(user_settings):
 
 def create_osf_user(access_key, secret_key, name):
 
+    import ipdb; ipdb.set_trace()
     connection = IAMConnection(access_key, secret_key)
 
     user_name = u'osf-{0}'.format(ObjectId())
@@ -107,24 +100,6 @@ def remove_osf_user(user_settings):
 def validate_bucket_name(name):
     validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$')
     return bool(validate_name.match(name))
-
-
-def generate_signed_url(mime, file_name, s3):
-
-    expires = int(time.time() + 10)
-    amz_headers = 'x-amz-acl:private'
-
-    request_to_sign = str("PUT\n\n{mime_type}\n{expires}\n{amz_headers}\n/{resource}".format(
-        mime_type=mime, expires=expires, amz_headers=amz_headers, resource=s3.bucket + '/' + file_name))
-
-    url = 'https://s3.amazonaws.com/{bucket}/{filename}'.format(
-        filename=file_name, bucket=s3.bucket)
-
-    signed = urllib.quote_plus(base64.encodestring(
-        hmac.new(str(s3.user_settings.secret_key), request_to_sign, sha).digest()).strip())
-
-    return '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url, access_key=s3.user_settings.access_key, expires=expires, signed=signed),
-    #/blackhttpmagick
 
 def serialize_urls(node_addon, user):
 

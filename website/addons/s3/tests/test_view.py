@@ -50,10 +50,12 @@ class TestS3ViewsConfig(OsfTestCase):
 
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
     @mock.patch('website.addons.s3.views.config.adjust_cors')
-    def test_s3_set_bucket(self, mock_cors, mock_exist):
+    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    def test_s3_set_bucket(self, mock_cors, mock_exist, mock_dropdown):
 
         mock_cors.return_value = True
         mock_exist.return_value = True
+        mock_dropdown.return_value = ['mybucket']
 
         url = self.project.api_url + 's3/settings/'
         self.app.post_json(
@@ -175,9 +177,10 @@ class TestS3ViewsConfig(OsfTestCase):
         rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
 
+    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
     @mock.patch('website.addons.s3.views.config.has_access')
     @mock.patch('website.addons.s3.views.config.create_osf_user')
-    def test_node_settings_no_user_settings(self, mock_user, mock_access):
+    def test_node_settings_no_user_settings(self, mock_user, mock_access, mock_dropdown):
         self.node_settings.user_settings = None
         self.node_settings.save()
         url = self.node_url + 's3/authorize/'
@@ -190,12 +193,14 @@ class TestS3ViewsConfig(OsfTestCase):
                 'secret_access_key': 'ssshhhhhhhhh'
             }
         )
+        mock_dropdown.return_value = ['mybucket']
         self.app.post_json(url, {'access_key': 'scout', 'secret_key': 'ssshhhhhhhhh'}, auth=self.user.auth)
-
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'scout')
 
-    def test_node_settings_no_user_settings_ui(self):
+    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    def test_node_settings_no_user_settings_ui(self, mock_dropdown):
+        mock_dropdown.return_value = ['mybucket']
         self.node_settings.user_settings.access_key = None
         self.node_settings.user_settings = None
         self.node_settings.save()
@@ -203,12 +208,15 @@ class TestS3ViewsConfig(OsfTestCase):
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('<label for="s3Addon">Access Key</label>' in rv.body)
 
+    '''
+    Test no longer relevant in KO driven UI 
     @mock.patch('website.addons.s3.model.get_bucket_drop_down')
     def test_node_settings_user_settings_ui(self, mock_dropdown):
         mock_dropdown.return_value = ['mybucket']
         url = self.project.url + 'settings/'
-        rv = self.app.get(url, auth=self.user.auth)
-        assert_true('mybucket' in rv.body)
+        ret = self.app.get(url, auth=self.user.auth)
+        assert_true('mybucket' in ret.body)
+    '''
 
 
 class TestCreateBucket(OsfTestCase):
@@ -252,8 +260,10 @@ class TestCreateBucket(OsfTestCase):
         assert_true(validate_bucket_name('kinda.name.spaced'))
 
     @mock.patch('website.addons.s3.views.crud.create_bucket')
-    def test_create_bucket_pass(self, mock_make):
+    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    def test_create_bucket_pass(self, mock_make, mock_dropdown):
         mock_make.return_value = True
+        mock_dropdown.return_value = ['mybucket']
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
