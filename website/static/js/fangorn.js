@@ -40,14 +40,13 @@ $.extend(EXTENSION_MAP, {
 
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
-var getExtensionIcon = function(name) {
+var getExtensionIconClass = function(name) {
     var extension = name.split('.').pop().toLowerCase();
     var icon = EXTENSION_MAP[extension];
     if (icon) {
-        return ICON_PATH + 'file_extension_' + icon + '.png';
-    } else {
-        return null;
+        return '_' + icon;
     }
+    return null;
 };
 
 /**
@@ -84,12 +83,11 @@ function _fangornResolveIcon(item) {
         return m('i.fa.' + item.data.icon, ' ');
     }
 
-    icon = getExtensionIcon(item.data.name);
+    icon = getExtensionIconClass(item.data.name);
     if (icon) {
-        return m('img', {src: icon});
-    } else {
-        return m('i.icon-file-alt');
+        return m('div.file-extension', { 'class': icon });
     }
+    return m('i.icon-file-alt');
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
