@@ -25,6 +25,7 @@ function resolveToggle(item) {
 }
 
 function resolveIcon(item) {
+    var self = this;
     var privateFolder = m('img', {
         src: '/static/img/hgrid/fatcowicons/folder_delete.png'
     });
@@ -33,15 +34,32 @@ function resolveIcon(item) {
 
     if (item.kind === 'folder') {
         return item.open ? openFolder : closedFolder;
-    } else if (item.kind === 'message'){
+    } else if (item.kind === 'message') {
         return m('i.icon-ellipsis-horizontal', {
-            onclick: function(){
+            onclick: function() {
+                item.data.name = 'Loading ...';
+                item.kind = 'loading';
                 $.get(item.data.urls.fetch)
-                    .done(function(res){
-                        
+                    .done(function(res) {
+                        var Item = self.options.callingParty.treebeard.Item;
+                        var citations = res.contents;
+                        var parent = item.parent();
+                        for (var i = 0; i < citations.length; i++) {
+                            parent.add(new Item(citations[i]));
+                        }
+                        item.removeSelf();
+                        self.redraw();
+                    })
+                    .fail(function(xhr, status, error){
+                        item.data.name = 'Error loading citations';
+                        item.kind = 'error';
                     });
             }
         }, ' ');
+    } else if (item.kind === 'loading') {
+        return m('i.icon-spinner.citation-spin', ' ');
+    } else if (item.kind === 'error'){
+        return m('i.icon-warning-sign', ' ');
     } else if (item.data.icon) {
         return m('i.fa' + item.data.icon, ' ');
     } else {
@@ -294,11 +312,11 @@ CitationGrid.prototype.initTreebeard = function() {
         treebeardOptions
     );
     var preprocess = options.lazyLoadPreprocess;
-    options.lazyLoadPreprocess = function(data){
+    options.lazyLoadPreprocess = function(data) {
         data = preprocess(data);
         return data;
     };
-    var resolveIcon = options.resolveIcon;
+    options.callingParty = self;
     self.treebeard = new Treebeard(options);
 };
 
@@ -375,6 +393,10 @@ CitationGrid.prototype.getBibliography = function(folder) {
 
 CitationGrid.prototype.getCitation = function(item) {
     var bibliography = this.getBibliography(item.parent());
+    if (Object.keys(bibliography).indexOf(item.data.csl.id) === -1) {
+        var parent = item.parent();
+        this.bibliographies[parent.id] = this.makeBibliography(parent);
+    }
     return bibliography[item.data.csl.id];
 };
 
@@ -393,13 +415,11 @@ CitationGrid.prototype.resolveRowAux = function(item) {
         data: 'csl',
         folderIcons: true,
         custom: function(item) {
-            if (item.kind === 'folder'){
+            if (item.kind === 'folder') {
                 return item.data.name;
-            }
-            else if (item.kind === 'message'){
+            } else if (item.kind === 'message' || item.kind === 'loading' || item.kind === 'error') {
                 return item.data.name;
-            }
-            else {
+            } else {
                 return self.getCitation(item);
             }
         }
