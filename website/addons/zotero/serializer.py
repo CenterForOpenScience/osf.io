@@ -2,9 +2,6 @@ from website.addons.base.serializer import CitationsAddonSerializer
 
 class ZoteroSerializer(CitationsAddonSerializer):
 
-    def __init__(self, addon_node_settings, user):
-        super(ZoteroSerializer, self).__init__(addon_node_settings, user, 'zotero')
-
     def serialize_folder(self, folder):
         return {
             'data': folder,
@@ -12,7 +9,7 @@ class ZoteroSerializer(CitationsAddonSerializer):
             'name': folder['name'],
             'id': folder['id'],
             'urls': {
-                'fetch': self.addon_node_settings.owner.api_url_for(
+                'fetch': self.node_settings.owner.api_url_for(
                     'zotero_citation_list',
                     zotero_list_id=folder['id']
                 ),
@@ -21,7 +18,7 @@ class ZoteroSerializer(CitationsAddonSerializer):
 
     @property
     def addon_serialized_urls(self):
-        node = self.addon_node_settings.owner
+        node = self.node_settings.owner
 
         return {
             'importAuth': node.api_url_for('zotero_add_user_auth'),

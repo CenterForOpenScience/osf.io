@@ -490,7 +490,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     oauth_provider = None
 
     @property
-    def connected_oauth_accounts(self):
+    def has_auth(self):
+        return bool(self.external_accounts)
+
+    @property
+    def external_accounts(self):
         """The user's list of ``ExternalAccount`` instances for this provider"""
         return [
             x for x in self.owner.external_accounts
@@ -563,7 +567,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
         ret['accounts'] = [
             oauth_utils.serialize_external_account(each)
-            for each in self.connected_oauth_accounts
+            for each in self.external_accounts
         ]
         return ret
 

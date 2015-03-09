@@ -2,13 +2,14 @@ import abc
 
 from website.util import api_url_for, web_url_for
 
+
 class AddonSerializer(object):
     __metaclass__ = abc.ABCMeta
 
     # TODO take addon_node_settings, addon_user_settings
-    def __init__(self, addon_node_settings, user):
-        self.addon_node_settings = addon_node_settings
-        self.user = user
+    def __init__(self, node_settings=None, user_settings=None):
+        self.node_settings = node_settings
+        self.user_settings = user_settings
 
     @abc.abstractproperty
     def addon_serialized_urls(self):
@@ -23,14 +24,6 @@ class AddonSerializer(object):
         pass
 
     @abc.abstractproperty
-    def node_has_auth(self):
-        pass
-
-    @abc.abstractproperty
-    def user_has_auth(self):
-        pass
-
-    @abc.abstractproperty
     def user_is_owner(self):
         pass
 
@@ -40,16 +33,19 @@ class AddonSerializer(object):
 
     @property
     def serialized_node_settings(self):
-        node_has_auth = self.node_has_auth
         result = {
-            'nodeHasAuth': node_has_auth,
-            'userHasAuth': self.user_has_auth,
+            'nodeHasAuth': self.node_settings.has_auth,
             'userIsOwner': self.user_is_owner,
             'validCredentials': self.has_valid_credentials,
             'urls': self.serialized_urls,
         }
 
-        if node_has_auth:
+        if self.user_settings:
+            result['userHasAuth'] = self.user_settings.has_auth
+        else:
+            result['userHasAuth'] = False
+
+        if self.node_settings.has_auth:
             owner = self.credentials_owner
             if owner:
                 result['urls']['owner'] = web_url_for('profile_view_id',
@@ -74,10 +70,6 @@ class CitationsAddonSerializer(AddonSerializer):
 
     REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'accounts']
 
-    def __init__(self, addon_node_settings, user, provider_name):
-        super(CitationsAddonSerializer, self).__init__(addon_node_settings, user)
-        self.provider_name = provider_name
-
     '''
     def _serialize_account(self, external_account):
         if external_account is None:
@@ -97,12 +89,12 @@ class CitationsAddonSerializer(AddonSerializer):
 
     @property
     def serialized_urls(self):
-        external_account = self.addon_node_settings.external_account
+        external_account = self.node_settings.external_account
         ret = {
             'auth': api_url_for('oauth_connect',
-                                service_name=self.addon_node_settings.provider_name),
+                                service_name=self.node_settings.provider_name),
             'settings': web_url_for('user_addons'),
-            'files': self.addon_node_settings.owner.url,
+            'files': self.node_settings.owner.url,
         }
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
@@ -117,13 +109,8 @@ class CitationsAddonSerializer(AddonSerializer):
     @property
     def serialized_node_settings(self):
         result = super(CitationsAddonSerializer, self).serialized_node_settings
-        result['folder'] = self.addon_node_settings.selected_folder_name
+        result['folder'] = self.node_settings.selected_folder_name
         return result
-
-    @property
-    def user_accounts(self):
-        return [account for account in self.user.external_accounts
-                if account.provider == self.provider_name]
 
     @property
     def has_valid_credentials(self):
@@ -131,27 +118,24 @@ class CitationsAddonSerializer(AddonSerializer):
         return True
 
     @property
-    def node_has_auth(self):
-        return self.addon_node_settings.has_auth
-
-    @property
-    def user_has_auth(self):
-        user_accounts = self.user_accounts
-        user_settings = self.user.get_addon(self.provider_name)
-        return bool(user_settings and user_accounts)
-
-    @property
     def user_is_owner(self):
-        node_has_auth = self.node_has_auth
-        user_accounts = self.user_accounts
-        return (node_has_auth and (self.addon_node_settings.external_account in user_accounts)) or bool(len(user_accounts))
+        if self.user_settings is None:
+            return False
+
+        user_accounts = self.user_settings.external_accounts
+        return bool(
+            (
+                self.node_settings.has_auth and
+                (self.node_settings.external_account in user_accounts)
+            ) or len(user_accounts)
+        )
 
     @property
     def credentials_owner(self):
-        return self.addon_node_settings.user_settings.owner
+        return self.node_settings.user_settings.owner
 
     def serialized_account(self):
-        external_account = self.addon_node_settings.external_account
+        external_account = self.node_settings.external_account
         if external_account is None:
             return None
         return {

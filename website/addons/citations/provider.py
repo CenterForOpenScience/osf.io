@@ -21,7 +21,9 @@ class CitationsProvider(object):
         """ Gets a list of the accounts authorized by 'user' """
         return {
             'accounts': [
-                self.serializer(None, user).serialize_account(each)
+                self.serializer(
+                    user_settings=user.get_addon(self.provider_name)
+                ).serialize_account(each)
                 for each in user.external_accounts
                 if each.provider == self.provider_name
             ]
@@ -44,14 +46,20 @@ class CitationsProvider(object):
         except PermissionsError:
             raise HTTPError(http.FORBIDDEN)
 
-        result = self.serializer(node_addon, user).serialized_node_settings
+        result = self.serializer(
+            node_settings=node_addon,
+            user_settings=user.get_addon(self.provider_name),
+        ).serialized_node_settings
         return {'result': result}
 
     def remove_user_auth(self, node_addon, user):
 
         node_addon.clear_auth()
         node_addon.reload()
-        result = self.serializer(node_addon, user).serialized_node_settings
+        result = self.serializer(
+            node_settings=node_addon,
+            user_settings=user.get_addon(self.provider_name),
+        ).serialized_node_settings
         return {'result': result}
 
     def widget(self, node_addon):
@@ -121,14 +129,20 @@ class CitationsProvider(object):
         else:
             if show in ('all', 'folders'):
                 contents += [
-                    self.serializer(node_addon, user).serialize_folder(each)
+                    self.serializer(
+                        node_settings=node_addon,
+                        user_settings=user.get_addon(self.provider_name),
+                    ).serialize_folder(each)
                     for each in account_folders
                     if each.get('parent_list_id') == list_id
                 ]
 
             if show in ('all', 'citations'):
                 contents += [
-                    self.serializer(node_addon, user).serialize_citation(each)
+                    self.serializer(
+                        node_settings=node_addon,
+                        user_settings=user.get_addon(self.provider_name),
+                    ).serialize_citation(each)
                     for each in node_addon.api.get_list(list_id)
                 ]
 
