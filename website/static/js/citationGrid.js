@@ -37,9 +37,9 @@ function resolveIcon(item) {
         return m('i.icon-ellipsis-horizontal', {
             onclick: function(){
                 $.get(item.data.urls.fetch)
-                .done(function(res){
-                    debugger;
-                });
+                    .done(function(res){
+                        
+                    });
             }
         }, ' ');
     } else if (item.data.icon) {
