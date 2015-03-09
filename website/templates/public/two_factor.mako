@@ -16,9 +16,9 @@
             class="form"
             ## TODO: Use web_url_for /hrybacki
             % if next_url:
-                action="/login/two-factor/?next=${next_url}"
+                action="${ web_url_for('two_factor') }?next=${next_url}"
             % else:
-                action="/login/two-factor/"
+                action="${ web_url_for('two_factor') }"
             % endif
             method="POST"
             name="signin"
