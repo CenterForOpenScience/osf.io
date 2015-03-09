@@ -14,5 +14,6 @@
     "unused": false,
     "node": true,
     "evil": true,
+    "esnext": true,
     "predef": ["window", "document"]
 }

@@ -67,34 +67,3 @@ settings_routes = {
     ],
     'prefix': '/api/v1',
 }
-
-api_routes = {
-    'rules': [
-        Rule(
-            [
-                '/project/<pid>/s3/hgrid/',
-                '/project/<pid>/node/<nid>/s3/hgrid/',
-                '/project/<pid>/s3/hgrid/<path:path>/',
-                '/project/<pid>/node/<nid>/s3/hgrid/<path:path>/',
-            ],
-            'get',
-            views.hgrid.s3_hgrid_data_contents,
-            json_renderer
-        ),
-        Rule(
-            [
-                '/project/<pid>/s3/hgrid/dummy/',
-                '/project/<pid>/node/<nid>/s3/hgrid/dummy/',
-            ],
-            'get',
-            views.hgrid.s3_dummy_folder,
-            json_renderer,
-        ),
-    ],
-    'prefix': '/api/v1',
-}
-
-
-nonapi_routes = {
-    'rules': []
-}

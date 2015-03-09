@@ -204,7 +204,11 @@ class GuidFile(GuidStoredObject):
 
     @property
     def name(self):
-        return self._metadata_cache['name']
+        try:
+            return self._metadata_cache['name']
+        except (TypeError, KeyError):
+            # If name is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute name')
 
     @property
     def file_name(self):
@@ -556,6 +560,11 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     _meta = {
         'abstract': True,
     }
+
+    @property
+    def has_auth(self):
+        """Whether the node has added credentials for this addon."""
+        return False
 
     def to_json(self, user):
         ret = super(AddonNodeSettingsBase, self).to_json(user)
