@@ -14,7 +14,7 @@ from boto.iam import IAMConnection
 from boto.s3.cors import CORSConfiguration
 from boto.exception import BotoServerError
 
-from website.util import rubeus, web_url_for
+from website.util import rubeus
 
 from api import get_bucket_list
 import settings as s3_settings
@@ -180,21 +180,3 @@ def generate_signed_url(mime, file_name, s3):
 
     return '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url, access_key=s3.user_settings.access_key, expires=expires, signed=signed),
     #/blackhttpmagick
-
-def serialize_urls(node_addon, user):
-
-    node = node_addon.owner
-    user_settings = node_addon.user_settings
-
-    result = {
-        'createBucket': node.api_url_for('create_new_bucket'),
-        'importAuth': node.api_url_for('s3_node_import_auth'),
-        'deauthorize': node.api_url_for('s3_remove_node_settings'),
-        'bucketList': node.api_url_for('s3_bucket_list'),
-        'setBucket': node.api_url_for('s3_node_settings'),
-    }
-    if user_settings:
-        result['owner'] = web_url_for('profile_view_id',
-                                      uid=user_settings.owner._primary_key)
-
-    return result

@@ -14,7 +14,7 @@ from website.project.decorators import must_be_contributor_or_public
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def create_new_bucket(node_addon, **kwargs):
+def create_new_bucket(**kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
     bucket_name = request.json.get('bucket_name')
@@ -23,7 +23,7 @@ def create_new_bucket(node_addon, **kwargs):
         return {'message': 'That bucket name is not valid.'}, http.NOT_ACCEPTABLE
     try:
         create_bucket(user_settings, request.json.get('bucket_name'))
-        return node_addon.to_json(user)
+        return {}
     except BotoClientError as e:
         return {'message': e.message}, http.NOT_ACCEPTABLE
     except S3ResponseError as e:

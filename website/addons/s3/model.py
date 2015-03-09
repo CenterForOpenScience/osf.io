@@ -192,6 +192,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         if self.has_auth:
             rv['owner'] = self.user_settings.owner.fullname
             rv['owner_url'] = self.user_settings.owner.url
+            rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
             rv['node_has_auth'] = True
 
         return rv

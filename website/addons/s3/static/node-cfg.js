@@ -1,9 +1,4 @@
-var S3Config = require('./s3NodeSettings');
-
-var url = window.contextVars.node.urls.api + 's3/settings/';
-new S3Config('#s3Scope', url);
-
-/*var AddonHelper = require('addonHelper');
+var AddonHelper = require('addonHelper');
 var $ = require('jquery');
 require('./s3-node-settings.js');
 
@@ -55,4 +50,3 @@ if (!window.contextVars.currentUser.hasAuth) {
         $(window.contextVars.s3SettingsSelector).on('submit', AddonHelper.onSubmitSettings);
     });
 }
-*/
