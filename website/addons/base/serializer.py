@@ -98,7 +98,7 @@ class OAuthAddonSerializer(AddonSerializer):
             'display_name': external_account.display_name,
             'nodes': [
                 self.serialize_granted_node(node)
-                for node in self.user_settings.get_nodes_with_oauth_grants(
+                for node in self.user_settings.get_attached_nodes(
                     external_account=external_account
                 )
             ]
@@ -111,13 +111,13 @@ class OAuthAddonSerializer(AddonSerializer):
             self.user_settings.oauth_provider.short_name
         )
         serializer = node_settings.serializer(node_settings=node_settings)
+        urls = serializer.addon_serialized_urls
+        urls['view'] = node.url
 
         return {
             'id': node._id,
             'title': node.title if node.can_view(auth) else None,
-            'urls': {
-                'deauthorize': serializer.addon_serialized_urls,
-            },
+            'urls': urls,
         }
 
 class CitationsAddonSerializer(OAuthAddonSerializer):

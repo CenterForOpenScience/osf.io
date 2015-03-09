@@ -1,5 +1,6 @@
 'use strict';
 
+require('../../css/user-addon-settings.css');
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -69,16 +70,39 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
 /***************
 * OAuth addons *
 ****************/
+var ConnectedProject = function(data) {
+    var self = this;
+    self.title = data.title;
+    self.id = data.id;
+    self.urls = data.urls;
+};
 
+var ExternalAccount = function(data) {
+    var self = this;
+    self.name = data.display_name;
+    self.id = data.id;
 
+    self.connectedNodes = ko.observableArray();
 
-////////////////
-// Public API //
-////////////////
+    ko.utils.arrayMap(data.nodes, function(item) {
+        self.connectedNodes.push(new ConnectedProject(item));
+    });
 
-var ExternalAccount = function(name, id) {
-    this.name = name;
-    this.id = id;
+    self.deauthorizeNode = function(node) {
+        console.log(node);
+        var url = node.urls.deauthorize;
+        $.ajax({
+            url: url,
+            type: 'DELETE'
+        }).done(function(data) {
+            self.connectedNodes.remove(node);
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Error deauthorizing node: ' + node.id, {
+                url: url, status: status, error: error
+            });
+        });
+    }
+
 };
 
 var OAuthAddonSettingsViewModel = function(name, displayName) {
@@ -135,7 +159,7 @@ var OAuthAddonSettingsViewModel = function(name, displayName) {
         var url = '/api/v1/settings/' + self.name + '/accounts/';
         $.get(url).done(function(data) {
             self.accounts(data.accounts.map(function(account) {
-                return new ExternalAccount(account.display_name, account.id);
+                return new ExternalAccount(account);
             }));
         }).fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {

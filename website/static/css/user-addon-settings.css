@@ -1,0 +1,7 @@
+div.addon-oauth td.authorized-nodes {
+    padding-left:20px;
+}
+
+div.addon-oauth table td:last-child {
+    text-align: right;
+}

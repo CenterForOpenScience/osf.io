@@ -149,4 +149,3 @@ class CitationsProvider(object):
         return {
             'contents': contents
         }
-    
