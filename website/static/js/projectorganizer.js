@@ -31,12 +31,19 @@ var projectOrganizer = {};
 
 // Templates load once
 var detailTemplateSource = $('#project-detail-template').html();
-var detailTemplate = Handlebars.compile(detailTemplateSource);
+if(detailTemplateSource) {
+    var detailTemplate = Handlebars.compile(detailTemplateSource);
+}
 
 var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
-var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+if(multiItemDetailTemplateSource) {
+    var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+}
+
 var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-no-action').html();
-var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
+if(multiItemDetailTemplateSourceNoAction) {
+    var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
+}
 
 
 var $detailDiv = $('.project-details');
@@ -1270,4 +1277,8 @@ ProjectOrganizer.prototype = {
     }
 };
 
-module.exports = ProjectOrganizer;
+module.exports = {
+    ProjectOrganizer: ProjectOrganizer,
+    _whichIsContainer: whichIsContainer,
+    _canAcceptDrop: canAcceptDrop
+};

@@ -8,7 +8,9 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('osfHelpers');
-var ProjectOrganizer = require('../projectorganizer.js');
+var projectOrganizer = require('projectOrganizer');
+var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
+
 var LogFeed = require('../logFeed.js');
 // Knockout components for the onboarder
 require('../onboarder.js');
