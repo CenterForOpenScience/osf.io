@@ -227,17 +227,18 @@ class TestExternalProviderOAuth1(OsfTestCase):
             body=(
                 'oauth_token=perm_token'
                 '&oauth_token_secret=perm_secret'
-                '&oauth_callback_confirmed=true',
+                '&oauth_callback_confirmed=true'
             ),
         )
 
         user = UserFactory()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        ctx = self.app.app.test_request_context(
             path='/oauth/callback/mock1a/',
             query_string='oauth_token=temp_key&oauth_verifier=mock_verifier',
-        ):
+        )
+        with ctx:
 
             # make sure the user is logged in
             authenticate(user=user, response=None)
