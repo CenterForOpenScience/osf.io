@@ -71,10 +71,13 @@ text-align: center;
 	white-space: nowrap;
 }
 
+.tb-expand-icon-holder {
+	cursor: default;	
+}
+
 .tb-expand-icon-holder > i {
-  font-size: 16px;
-  padding-left: 2px;
-  cursor: default;
+	font-size: 16px;
+	padding-left: 2px;
 }
 
 /* File icons */
