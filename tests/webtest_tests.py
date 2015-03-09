@@ -68,7 +68,6 @@ class TestAnUnregisteredUser(OsfTestCase):
         # A user is already registered
         user = UserFactory(username='foo@bar.com')
         # Goes to log in page
-        # @FIXME(hrybacki): No tests written to test landing page sign in
         res = self.app.get(web_url_for('auth_login')).maybe_follow()
         # Fills out registration form
         form = res.forms['registerForm']
