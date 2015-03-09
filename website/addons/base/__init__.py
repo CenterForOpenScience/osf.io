@@ -730,7 +730,6 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     def clear_auth(self):
         """Disconnect the node settings from the user settings"""
-
         self.external_account = None
         self.user_settings = None
         self.save()
@@ -742,7 +741,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         if self.has_auth and self.user_settings.owner == removed:
             return (
                 u'The {addon} add-on for this {category} is authenticated by {name}. '
-                u'Removing this user will also remove write access to Dropbox '
+                u'Removing this user will also remove write access to {addon} '
                 u'unless another contributor re-authenticates the add-on.'
             ).format(
                 addon=self.config.full_name,
