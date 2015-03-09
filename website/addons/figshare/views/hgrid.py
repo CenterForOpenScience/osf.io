@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from website.util import rubeus
-from website.project.decorators import must_be_contributor_or_public, must_have_addon
 
 from ..api import Figshare
 
-@must_be_contributor_or_public
-@must_have_addon('figshare', 'node')
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     node = node_settings.owner
     if node_settings.figshare_type == 'project':
