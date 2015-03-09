@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-import os
-import subprocess
-import shutil
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -13,12 +10,12 @@ import urlparse
 from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
-from modularodm import Q
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings
@@ -28,15 +25,8 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent,
 )
-from website.addons.osffiles.model import NodeFile
-from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
-from website.addons.osffiles.exceptions import (
-    InvalidVersionError,
-    VersionNotFoundError,
-    FileNotFoundError,
-)
 from website.addons.wiki.exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -77,23 +67,47 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_social_personal_empty(self):
-        self.user.social = {'personal_site': ''}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': ''}
+        self.user.save()
 
     def test_validate_social_valid(self):
-        self.user.social = {'personal_site': 'http://cos.io/'}
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
 
     def test_validate_social_personal_invalid(self):
-        self.user.social = {'personal_site': 'help computer'}
+        self.user.social = {'personal': 'help computer'}
         with assert_raises(ValidationError):
             self.user.save()
+
+    def test_empty_social_links(self):
+        assert_equal(self.user.social_links, {})
+        assert_equal(len(self.user.social_links), 0)
+
+    def test_personal_site_unchanged(self):
+        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.save()
+        assert_equal(self.user.social_links['personal'], 'http://cos.io/')
+        assert_equal(len(self.user.social_links), 1)
+
+    def test_various_social_handles(self):
+        self.user.social = {
+            'personal': 'http://cos.io/',
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {
+            'personal': 'http://cos.io/',
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        })
+
+    def test_nonsocial_ignored(self):
+        self.user.social = {
+            'foo': 'bar',
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {})
 
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
@@ -101,9 +115,9 @@ class TestUserValidation(OsfTestCase):
             'department': 'Fancy Patter',
             'title': 'Lover Boy',
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1980,
+            'endYear': '1980',
         }]
         self.user.save()
 
@@ -119,12 +133,13 @@ class TestUserValidation(OsfTestCase):
             'department': fake.bs(),
             'position': fake.catch_phrase(),
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1960,
+            'endYear': '1960',
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
+
 
     def test_validate_schools_bad_end_date(self):
         # end year is < start year
@@ -133,12 +148,42 @@ class TestUserValidation(OsfTestCase):
             'institution': fake.company(),
             'department': fake.bs(),
             'startMonth': 1,
-            'startYear': 1970,
+            'startYear': '1970',
             'endMonth': 1,
-            'endYear': 1960,
+            'endYear': '1960',
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
+
+    def test_validate_jobs_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.jobs = [{
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'position': fake.catch_phrase(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with assert_raises(ValidationValueError):
+                self.user.save()
+
+    def test_validate_schools_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.schools = [{
+                'degree': fake.catch_phrase(),
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with assert_raises(ValidationValueError):
+                self.user.save()
 
 
 class TestUser(OsfTestCase):
@@ -171,7 +216,7 @@ class TestUser(OsfTestCase):
                  is_registered=False)
         u.set_password('killerqueen')
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
@@ -208,12 +253,12 @@ class TestUser(OsfTestCase):
             is_registered=True,
         )
         u.save()
-        assert_false(u.is_active())
+        assert_false(u.is_active)
 
     def test_merged_user_is_not_active(self):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
-        assert_false(dupe.is_active())
+        assert_false(dupe.is_active)
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -266,12 +311,21 @@ class TestUser(OsfTestCase):
 
     @mock.patch('website.security.random_string')
     def test_add_email_verification(self, random_string):
-        random_string.return_value = '12345'
+        token = fake.lexify('???????')
+        random_string.return_value = token
         u = UserFactory()
         assert_equal(len(u.email_verifications.keys()), 0)
         u.add_email_verification('foo@bar.com')
         assert_equal(len(u.email_verifications.keys()), 1)
-        assert_equal(u.email_verifications['12345']['email'], 'foo@bar.com')
+        assert_equal(u.email_verifications[token]['email'], 'foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_add_email_verification_adds_expiration_date(self, random_string):
+        token = fake.lexify('???????')
+        random_string.return_value = token
+        u = UserFactory()
+        u.add_email_verification(u.username)
+        assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -281,6 +335,32 @@ class TestUser(OsfTestCase):
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
+    def test_get_confirmation_token_when_token_is_expired_raises_error(self):
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_token_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        token = u.get_confirmation_token('foo@bar.com', force=True)
+        assert_equal(token, '54321')
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
@@ -288,6 +368,33 @@ class TestUser(OsfTestCase):
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    def test_get_confirmation_url_when_token_is_expired_raises_error(self):
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_url('foo@bar.com')
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_when_token_is_expired_force(self, random_string):
+        random_string.return_value = '12345'
+        u = UserFactory()
+        # Make sure token is already expired
+        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        u.add_email_verification('foo@bar.com', expiration=expiration)
+
+        # sanity check
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token('foo@bar.com')
+
+        random_string.return_value = '54321'
+
+        url = u.get_confirmation_url('foo@bar.com', force=True)
+        expected = '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, '54321')
+        assert_equal(url, expected)
 
     def test_confirm_primary_email(self):
         u = UserFactory.build(username='foo@bar.com')
@@ -327,6 +434,21 @@ class TestUser(OsfTestCase):
         assert_false(u.verify_confirmation_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.verify_confirmation_token(valid_token))
+        manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
+        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        assert_false(u.verify_confirmation_token(valid_token))
+
+    def test_verify_confirmation_token_when_token_has_no_expiration(self):
+        # A user verification token may not have an expiration
+        email = fake.email()
+        u = UserFactory.build()
+        u.add_email_verification(email)
+        token = u.get_confirmation_token(email)
+        # manually remove expiration to simulate legacy user
+        del u.email_verifications[token]['expiration']
+        u.save()
+
+        assert_true(u.verify_confirmation_token(token))
 
     def test_factory(self):
         # Clear users
@@ -386,6 +508,65 @@ class TestUser(OsfTestCase):
         assert_true(user.check_password('ghostrider'))
         assert_false(user.check_password('ghostride'))
 
+    def test_change_password(self):
+        old_password = 'password'
+        new_password = 'new password'
+        confirm_password = new_password
+        self.user.set_password(old_password)
+        self.user.save()
+        self.user.change_password(old_password, new_password, confirm_password)
+        assert_true(self.user.check_password(new_password))
+
+    def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
+                                     error_message='Old password is invalid'):
+        self.user.set_password('password')
+        self.user.save()
+        with assert_raises(ChangePasswordError) as error:
+            self.user.change_password(old_password, new_password, confirm_password)
+            self.user.save()
+        assert_in(error_message, error.exception.message)
+        assert_false(self.user.check_password(new_password))
+
+    def test_change_password_invalid_old_password(self):
+        self.test_change_password_invalid(
+            'invalid old password',
+            'new password',
+            'new password',
+            'Old password is invalid',
+        )
+
+    def test_change_password_invalid_new_password_length(self):
+        self.test_change_password_invalid(
+            'password',
+            '12345',
+            '12345',
+            'Password should be at least six characters',
+        )
+
+    def test_change_password_invalid_confirm_password(self):
+        self.test_change_password_invalid(
+            'password',
+            'new password',
+            'invalid confirm password',
+            'Password does not match the confirmation',
+        )
+
+    def test_change_password_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
+        self.test_change_password_invalid(
+            old_password,
+            new_password,
+            confirm_password,
+            'Passwords cannot be blank',
+        )
+
+    def test_change_password_invalid_blank_new_password(self):
+        for password in (None, '', '      '):
+            self.test_change_password_invalid_blank_password('password', password, 'new password')
+
+    def test_change_password_invalid_blank_confirm_password(self):
+        for password in (None, '', '      '):
+            self.test_change_password_invalid_blank_password('password', 'new password', password)
+
     def test_url(self):
         assert_equal(
             self.user.url,
@@ -422,7 +603,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['registered'], user.is_registered)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active())
+        assert_equal(d['active'], user.is_active)
 
     def test_serialize_user_full(self):
         master = UserFactory()
@@ -560,6 +741,36 @@ class TestUserParse(unittest.TestCase):
         assert_equal(parsed['family_name'], 'van der Slice')
 
 
+class TestDisablingUsers(OsfTestCase):
+    def setUp(self):
+        super(TestDisablingUsers, self).setUp()
+        self.user = UserFactory()
+
+    def test_user_enabled_by_default(self):
+        assert_false(self.user.is_disabled)
+
+    def test_disabled_user(self):
+        """Ensure disabling a user sets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_true(self.user.is_disabled)
+        assert_false(self.user.is_active)
+
+    def test_reenabled_user(self):
+        """Ensure restoring a disabled user unsets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        self.user.is_disabled = False
+        self.user.save()
+
+        assert_is_none(self.user.date_disabled)
+        assert_false(self.user.is_disabled)
+        assert_true(self.user.is_active)
+
+
 class TestMergingUsers(OsfTestCase):
 
     def setUp(self):
@@ -650,35 +861,6 @@ class TestGUID(OsfTestCase):
                 record_guid.referent,
                 record
             )
-
-
-class TestNodeFile(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeFile, self).setUp()
-        # Create a project with a NodeFile
-        self.node = ProjectFactory()
-        self.node_file = NodeFile(node=self.node, path='foo.py', filename='foo.py', size=128)
-        self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
-        self.node.save()
-
-    def test_url(self):
-        assert_equal(
-            self.node_file.api_url(self.node),
-            '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
-        )
-
-    def test_clean(self):
-        assert_equal(self.node_file.clean_filename, 'foo_py')
-
-    def test_latest_version_number(self):
-        assert_equal(self.node_file.latest_version_number(self.node), 1)
-
-    def test_download_url(self):
-        assert_equal(
-            self.node_file.download_url(self.node),
-            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
-        )
 
 
 class TestApiKey(OsfTestCase):
@@ -1823,6 +2005,39 @@ class TestProject(OsfTestCase):
         other_guy_auth.private_key = link.key
         assert_true(self.project.can_view(other_guy_auth))
 
+    def test_is_admin_parent_target_admin(self):
+        assert_true(self.project.is_admin_parent(self.project.creator))
+
+    def test_is_admin_parent_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.is_admin_parent(self.project.creator))
+
+    def test_is_admin_parent_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        assert_false(node.is_admin_parent(self.project.creator))
+
+    def test_has_permission_read_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.has_permission(self.project.creator, 'read'))
+        assert_false(node.has_permission(self.project.creator, 'admin'))
+
+    def test_can_view_parent_admin(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        assert_true(node.can_view(Auth(user=self.project.creator)))
+        assert_false(node.can_edit(Auth(user=self.project.creator)))
+
+    def test_can_view_parent_write(self):
+        user = UserFactory()
+        node = NodeFactory(project=self.project, creator=user)
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        assert_false(node.can_view(Auth(user=self.project.creator)))
+        assert_false(node.can_edit(Auth(user=self.project.creator)))
+
     def test_creator_cannot_edit_project_if_they_are_removed(self):
         creator = UserFactory()
         project = ProjectFactory(creator=creator)
@@ -1851,6 +2066,38 @@ class TestProject(OsfTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_true(self.project.can_view(other_guy_auth))
+
+    def test_parents(self):
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(self.project.parents, [])
+        assert_equal(child1.parents, [self.project])
+        assert_equal(child2.parents, [child1, self.project])
+
+    def test_admin_contributor_ids(self):
+        assert_equal(self.project.admin_contributor_ids, set())
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(child1.admin_contributor_ids, {self.project.creator._id})
+        assert_equal(child2.admin_contributor_ids, {self.project.creator._id, child1.creator._id})
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        assert_equal(child1.admin_contributor_ids, set())
+        assert_equal(child2.admin_contributor_ids, {child1.creator._id})
+
+    def test_admin_contributors(self):
+        assert_equal(self.project.admin_contributors, [])
+        child1 = ProjectFactory(project=self.project)
+        child2 = ProjectFactory(project=child1)
+        assert_equal(child1.admin_contributors, [self.project.creator])
+        assert_equal(
+            child2.admin_contributors,
+            sorted([self.project.creator, child1.creator], key=lambda user: user.family_name)
+        )
+        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.save()
+        assert_equal(child1.admin_contributors, [])
+        assert_equal(child2.admin_contributors, [child1.creator])
 
     def test_is_contributor(self):
         contributor = UserFactory()
@@ -1891,6 +2138,25 @@ class TestProject(OsfTestCase):
         to_reg = ProjectFactory()
         reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
         assert_false(reg.is_registration_of(project))
+
+    def test_raises_permissions_error_if_not_a_contributor(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        with assert_raises(PermissionsError):
+            project.register_node(None, Auth(user=user), '', None)
+
+    def test_admin_can_register_private_children(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.set_permissions(user, ['admin', 'write', 'read'])
+        child = NodeFactory(project=project, is_public=False)
+        assert_false(child.can_edit(auth=Auth(user=user)))  # sanity check
+
+        registration = project.register_node(None, Auth(user=user), '', None)
+
+        # child was registered
+        child_registration = registration.nodes[0]
+        assert_equal(child_registration.registered_from, child)
 
     def test_is_registration_of_no_registered_from(self):
         project = ProjectFactory()
@@ -2415,7 +2681,6 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(len(registration1.registered_meta), 1)
         assert_equal(len(registration1.private_links), 0)
 
-
         # Create a registration from a project
         user2 = UserFactory()
         self.project.add_contributor(user2)
@@ -2516,30 +2781,26 @@ class TestRegisterNode(OsfTestCase):
             assert_not_in(node, self.project.nodes)
             assert_true(node.is_registration)
 
-    def test_partial_contributor_registration(self):
+    def test_private_contributor_registration(self):
 
         # Create some nodes
         self.component = NodeFactory(
             creator=self.user,
             project=self.project,
-            title='Not Registered',
         )
         self.subproject = ProjectFactory(
             creator=self.user,
             project=self.project,
-            title='Not Registered',
         )
 
         # Create some nodes to share
         self.shared_component = NodeFactory(
             creator=self.user,
             project=self.project,
-            title='Registered',
         )
         self.shared_subproject = ProjectFactory(
             creator=self.user,
             project=self.project,
-            title='Registered',
         )
 
         # Share the project and some nodes
@@ -2552,11 +2813,9 @@ class TestRegisterNode(OsfTestCase):
         registration = RegistrationFactory(project=self.project, user=user2)
 
         # The correct subprojects were registered
-        assert_equal(len(registration.nodes), 2)
-        assert_not_in(
-            'Not Registered',
-            [node.title for node in registration.nodes],
-        )
+        assert_equal(len(registration.nodes), len(self.project.nodes))
+        for idx in range(len(registration.nodes)):
+            assert_true(registration.nodes[idx].is_registration_of(self.project.nodes[idx]))
 
     def test_is_registration(self):
         assert_true(self.registration.is_registration)
@@ -3105,6 +3364,69 @@ class TestComments(OsfTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
+
+class TestPrivateLink(OsfTestCase):
+
+    def test_node_scale(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory()
+        comp = NodeFactory(project=project)
+        link.nodes.append(project)
+        link.save()
+        assert_equal(link.node_scale(project), -40)
+        assert_equal(link.node_scale(comp), -20)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_to_json_nodes_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        result = link.to_json()
+        # result doesn't include deleted parent
+        assert_equal(len(result['nodes']), 1)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_node_scale_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        assert_equal(link.node_scale(node), -40)
+
+
+class TestPrivateLink(OsfTestCase):
+
+    def test_node_scale(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory()
+        comp = NodeFactory(project=project)
+        link.nodes.append(project)
+        link.save()
+        assert_equal(link.node_scale(project), -40)
+        assert_equal(link.node_scale(comp), -20)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_to_json_nodes_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        result = link.to_json()
+        # result doesn't include deleted parent
+        assert_equal(len(result['nodes']), 1)
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_node_scale_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(project=project)
+        link.nodes.extend([project, node])
+        link.save()
+        assert_equal(link.node_scale(node), -40)
 
 
 if __name__ == '__main__':

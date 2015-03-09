@@ -2,6 +2,7 @@
  * Knockout models for controlling meta-data; bound to HTML in
  * website/templates/metadata/metadata_*.mako
  */
+var ko = require('knockout');
 
 var MetaData = (function() {
 
@@ -10,7 +11,7 @@ var MetaData = (function() {
     var TPL_REGEX = /{{(.*?)}}/;
 
     ko.bindingHandlers.item = {
-        init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+        init: function(element, valueAccessor) {
             var model = ko.utils.unwrapObservable(valueAccessor());
             ko.renderTemplate(model.type, model, {}, element, 'replaceNode');
         }
@@ -40,8 +41,8 @@ var MetaData = (function() {
         $.extend(self, content);
 
         // Set up each
-        if ('each' in self && content.repeatType == 'each') {
-            if (typeof(self.each) == 'string') {
+        if ('each' in self && content.repeatType === 'each') {
+            if (typeof(self.each) === 'string') {
                 self._contentsObservable = null;
                 self._contentsData = {};
                 self.contents = ko.computed(function() {
@@ -80,12 +81,12 @@ var MetaData = (function() {
         // Impute defaults
         self.displayRules = self.displayRules || {};
         self.canRepeat = self.canRepeat || false;
-        self.minRepeat = typeof(self.minRepeat) != 'undefined' ? self.minRepeat : 1;
+        self.minRepeat = typeof(self.minRepeat) !== 'undefined' ? self.minRepeat : 1;
         self.maxRepeat = self.maxRepeat || null;
 
         $.each(['id', 'title', 'label', 'caption', 'value'], function(idx, field) {
             // todo: recurse over iterables
-            if (self[field] && typeof(self[field]) == 'string' && self[field].match(TPL_REGEX)) {
+            if (self[field] && typeof(self[field]) === 'string' && self[field].match(TPL_REGEX)) {
                 self.contextComputed(field);
             }
         });
@@ -97,7 +98,7 @@ var MetaData = (function() {
             $.each(self.displayRules, function(key, value) {
                 var model = self.getKey(key);
                 var modelValue = model ? model.value() : null;
-                if (modelValue != value) {
+                if (modelValue !== value) {
                     _visible = false;
                     return false;
                 }
@@ -122,18 +123,18 @@ var MetaData = (function() {
                 value = _original;
                 while (match = value.match(TPL_REGEX)) {
                     ctxSplit = match[1].split('.');
-                    if (ctxSplit[0] == '$ctx') {
+                    if (ctxSplit[0] === '$ctx') {
                         cntValue = self;
                         ctxValue = self.$ctx;
                         $.each(ctxSplit.slice(1), function(idx, key) {
-                            if (key == '$parent') {
+                            if (key === '$parent') {
                                 cntValue = cntValue.$parent;
                                 ctxValue = cntValue.$ctx;
                             } else {
                                 ctxValue = ctxValue[key];
                             }
                         });
-                    } else if (ctxSplit[0] == '$svy') {
+                    } else if (ctxSplit[0] === '$svy') {
                         model = self.getKey(ctxSplit[1]);
                         ctxValue = model ? model.value() : '';
                     }
@@ -607,7 +608,7 @@ var MetaData = (function() {
         },
 
         canRemove: function(data) {
-            if (data.$parent.repeatType != 'repeat' || data.disable || this.disable) {
+            if (data.$parent.repeatType !== 'repeat' || data.disable || this.disable) {
                 return false;
             }
             var count = data.$parent.repeatCount ? data.$parent.repeatCount() : null;
@@ -616,7 +617,7 @@ var MetaData = (function() {
         },
 
         canAdd: function(data) {
-            if (data.repeatType != 'repeat' || data.disable || this.disable) {
+            if (data.repeatType !== 'repeat' || data.disable || this.disable) {
                 return false;
             }
             var count = data.repeatCount ? data.repeatCount() : null;
@@ -703,6 +704,8 @@ var MetaData = (function() {
     return {
         ViewModel: ViewModel,
         Content: Content
-    }
+    };
 
 }());
+
+module.exports = MetaData;

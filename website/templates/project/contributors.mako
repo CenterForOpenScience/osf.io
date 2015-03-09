@@ -4,19 +4,24 @@
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
 
-<div class="row">
-    <div class="col-md-12">
+<div class="page-header  visible-xs">
+  <h2 class="text-300">Contributors</h2>
+</div>
 
-        <h2>Contributors</h2>
-            % if 'admin' in user['permissions']:
-                <p>Drag and drop contributors to change listing order.</p>
-            % endif
+<div class="row">
+    <div class="col-md-10 col-md-offset-1">
+
             <div id="manageContributors" class="scripted">
-            <!-- ko if: canEdit -->
-            <a href="#addContributors" data-toggle="modal" class="btn btn-primary">
-                Add Contributors
-            </a>
-            <!-- /ko -->
+                <h3> Contributors
+                    <!-- ko if: canEdit -->
+                        <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+                          <i class="icon icon-plus"> </i>Add
+                        </a>
+                    <!-- /ko -->
+                </h3>
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+                    <p>Drag and drop contributors to change listing order.</p>
+                % endif
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -32,10 +37,10 @@
                                 ></i>
                         </th>
                         <th class="col-md-3">
-                            Visibility
+                            Bibliographic Contributor
                             <i class="icon-question-sign visibility-info"
                                     data-toggle="popover"
-                                    data-title="Visibility Information"
+                                    data-title="Bibliographic Contributor Information"
                                     data-container="body"
                                     data-placement="right"
                                     data-html="true"
@@ -56,13 +61,45 @@
                             }
                         }">
                     </tbody>
-                </table>
+                  </table>
+
+                <div data-bind="if: adminContributors.length">
+                    <h4>
+                      Admins on Parent Projects
+                      <i class="icon-question-sign admin-info"
+                              data-content="These users are not contributors on
+                              this component but can view and register it because they
+                                are administrators on a parent project."
+                              data-toggle="popover"
+                              data-title="Admins on Parent Projects"
+                              data-container="body"
+                              data-placement="right"
+                              data-html="true"
+                          ></i>
+                    </h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="col-md-6"></th>
+                                <th class="col-md-2"></th>
+                                <th class="col-md-3"></th>
+                                <th class="col-md-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="template: {
+                                name: 'contribTpl',
+                                foreach: adminContributors,
+                                as: 'contributor'
+                            }">
+                        </tbody>
+                    </table>
+                </div>
                 ${buttonGroup()}
             </div>
 
 
     % if 'admin' in user['permissions']:
-        <h2>View-only Links</h2>
+        <h3>View-only Links</h3>
         <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
         <div class="scripted" id="linkScope">
 
@@ -95,11 +132,11 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: linkName}" style="width: 200px"></span>
+                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
                             </div>
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
+                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
                                 <span class="icon-copy" ></span>
                             </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
@@ -122,7 +159,10 @@
                             <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
                         </td>
                         <td class="col-sm-1">
-                            <span data-bind="text: anonymousDisplay"></span>
+                            <span data-bind="html: anonymousDisplay"></span>
+                            <!-- ko if: $root.nodeIsPublic && anonymous -->
+                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="icon-question-sign icon-sm"></i>
+                            <!-- /ko -->
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
@@ -153,7 +193,7 @@
             </span>
         </td>
         <td>
-            <!-- ko if: $parent.canEdit -->
+            <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
                     <a href="#" class="permission-editable no-sort" data-type="select"></a>
                 </span>
@@ -161,23 +201,23 @@
                     <span data-bind="text: formatPermission"></span>
                 </span>
             <!-- /ko -->
-            <!-- ko ifnot: $parent.canEdit -->
+            <!-- ko ifnot: contributor.canEdit() -->
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
         <td>
             <input
                     type="checkbox" class="no-sort"
-                    data-bind="checked: visible, enable: $parent.canEdit"
+                    data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
         <td>
-            <!-- ko if: $parent.canEdit -->
+          <!-- ko if: contributor.canEdit() -->
                 <!-- ko ifnot: deleteStaged -->
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
-                            data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
+                            data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
                                 <i class="icon-remove text-danger no-sort"></i>
                     </a>
@@ -187,12 +227,10 @@
                 <!-- /ko -->
             <!-- /ko -->
 
-            <!-- ko ifnot: $parent.canEdit -->
+            <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf"
-                            rel="tooltip"
-                            title="Remove contributor"
+                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="icon-remove text-danger no-sort"></i>
                     </a>
@@ -219,46 +257,13 @@
     <% import json %>
 
     <script type="text/javascript">
-
-    $script(['/static/js/contribAdder.js'], 'contribAdder');
-
-    $('body').on('nodeLoad', function(event, data) {
-        // If user is a contributor, initialize the contributor modal
-        // controller
-        if (data.user.can_edit) {
-            $script.ready('contribAdder', function() {
-                var contribAdder = new ContribAdder(
-                    '#addContributors',
-                    data.node.title,
-                    data.parent_node.id,
-                    data.parent_node.title
-                );
-            });
-        }
-        });
-
-    $script(['/static/js/contribManager.js'], function() {
-        var contributors = ${json.dumps(contributors)};
-        var user = ${json.dumps(user)};
-        var isRegistration = ${json.dumps(node['is_registration'])};
-        var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
-    });
-
-    % if 'admin' in user['permissions']:
-        $script(['/static/js/privateLinkManager.js',
-                 '/static/js/privateLinkTable.js']);
-
-        $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
-            // Controls the modal
-            var configUrl = nodeApiUrl + 'get_editable_children/';
-            var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
-
-            var tableUrl = nodeApiUrl + 'private_link/';
-            var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
-        });
-
-        $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
-    % endif
+      window.contextVars = window.contextVars || {};
+      window.contextVars.user = ${json.dumps(user)};
+      window.contextVars.isRegistration = ${json.dumps(node['is_registration'])};
+      window.contextVars.contributors = ${json.dumps(contributors)};
+      window.contextVars.adminContributors = ${json.dumps(adminContributors)};
 
     </script>
+    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
+
 </%def>

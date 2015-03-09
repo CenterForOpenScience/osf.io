@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer, notemplate
 
 from website.addons.github import views
 
@@ -19,26 +18,6 @@ settings_routes = {
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/github/file/',
-                '/project/<pid>/github/file/<path:path>',
-                '/project/<pid>/node/<nid>/github/file/',
-                '/project/<pid>/node/<nid>/github/file/<path:path>',
-            ],
-            'post',
-            views.crud.github_upload_file,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/github/file/<path:path>',
-                '/project/<pid>/node/<nid>/github/file/<path:path>',
-            ],
-            'delete',
-            views.crud.github_delete_file,
-            json_renderer,
-        ),
         Rule(
             [
                 '/project/<pid>/github/tarball/',
@@ -145,17 +124,6 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/github/hgrid/',
-                '/project/<pid>/node/<nid>/github/hgrid/',
-                '/project/<pid>/github/hgrid/<path:path>/',
-                '/project/<pid>/node/<nid>/github/hgrid/<path:path>/',
-            ],
-            'get',
-            views.hgrid.github_hgrid_data_contents,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/github/hgrid/root/',
                 '/project/<pid>/node/<nid>/github/hgrid/root/',
             ],
@@ -164,40 +132,6 @@ api_routes = {
             json_renderer,
         ),
 
-        ### File Render ###
-        Rule(
-            [
-                '/project/<pid>/github/file/<path:path>/render/',
-                '/project/<pid>/node/<nid>/github/file/<path:path>/render/',
-            ],
-            'get',
-            views.crud.github_get_rendered_file,
-            json_renderer,
-        ),
-
     ],
     'prefix': '/api/v1'
-}
-
-page_routes = {
-    'rules': [
-        Rule(
-            [
-                '/project/<pid>/github/file/<path:path>/',
-                '/project/<pid>/node/<nid>/github/file/<path:path>/',
-            ],
-            'get',
-            views.crud.github_view_file,
-            OsfWebRenderer('../addons/github/templates/github_view_file.mako'),
-        ),
-        Rule(
-            [
-                '/project/<pid>/github/file/<path:path>/download/',
-                '/project/<pid>/node/<nid>/github/file/<path:path>/download/',
-            ],
-            'get',
-            views.crud.github_download_file,
-            notemplate,
-        ),
-    ],
 }

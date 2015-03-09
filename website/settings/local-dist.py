@@ -10,7 +10,6 @@ from . import defaults
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
-# Comment out to use solr in development
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
@@ -25,6 +24,9 @@ USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
+
+# Mailchimp email subscriptions
+ENABLE_EMAIL_SUBSCRIPTIONS = False
 
 # Session
 COOKIE_NAME = 'osf'
@@ -44,12 +46,3 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
-
-# Staging credentials (may be used for development)
-
-# PIWIK_HOST = 'http://162.243.104.66/piwik/'
-# PIWIK_ADMIN_TOKEN = '6e9b2daf6c9dacd2eddbba5083b058fa'
-# PIWIK_SITE_ID = 1
-
-# CHANGE ME if to use Sentry
-SENTRY_DSN = None

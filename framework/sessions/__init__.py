@@ -6,6 +6,7 @@ import urlparse
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
+from weakref import WeakKeyDictionary
 from flask import request
 from framework.flask import app, redirect
 
@@ -22,9 +23,18 @@ def add_key_to_url(url, scheme, key):
     query = request.args.to_dict()
     query['view_only'] = key
     replacements = {'query': urllib.urlencode(query)}
+
     if scheme:
         replacements['scheme'] = scheme
+
     parsed_url = urlparse.urlparse(url)
+
+    if parsed_url.fragment:
+        # Fragments should exists server side so this mean some one set up a # in the url
+        # WSGI sucks and auto unescapes it so we just shove it back into the path with the escaped hash
+        replacements['path'] = '{}%23{}'.format(parsed_url.path, parsed_url.fragment)
+        replacements['fragment'] = ''
+
     parsed_redirect_url = parsed_url._replace(**replacements)
     return urlparse.urlunparse(parsed_redirect_url)
 
@@ -87,7 +97,7 @@ def set_previous_url(url=None):
 
 
 def goback(n=1):
-    next_url = request.form.get('next_url')
+    next_url = request.args.get('next') or request.form.get('next_url')
     if next_url:
         return redirect(next_url)
     if session._get_current_object() is None:
@@ -125,7 +135,6 @@ def create_session(response, data=None):
         return response
 
 
-from weakref import WeakKeyDictionary
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
 

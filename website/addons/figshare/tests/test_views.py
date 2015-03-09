@@ -3,19 +3,20 @@
 
 import mock
 import unittest
-from nose.tools import *
+
+from nose.tools import *  # noqa
 
 import httplib as http
 
 from tests.base import OsfTestCase
-
-from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
+from tests.factories import ProjectFactory, AuthUserFactory
+from tests.test_addons import assert_urls_equal
 
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
-
 from website.addons.figshare.views.config import serialize_settings
+from website.util import api_url_for, web_url_for
 
 from framework.auth import Auth
 
@@ -65,6 +66,16 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.reload()
         is_not_none = settings.user_settings != None
         assert_true(is_not_none)
+
+    def test_cancelled_oauth_request_from_user_settings_page_redirects_correctly(self):
+        res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id), auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        assert_urls_equal(res.headers['location'], web_url_for('user_addons'))
+
+    def test_cancelled_oauth_request_from_node_settings_page_redirects_correctly(self):
+        res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id, nid=self.project._id), auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        assert_urls_equal(res.headers['location'], self.project.web_url_for('node_setting'))
 
     def test_deauthorize(self):
         """Testing figshare_deauthorize to ensure user auth gets removed from
@@ -232,151 +243,6 @@ class TestUtils(OsfTestCase):
         assert_equal(ref, None)
 
 
-class TestViewsCrud(OsfTestCase):
-
-    def setUp(self):
-
-        super(TestViewsCrud, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
-        self.project = ProjectFactory(creator=self.user)
-
-        self.non_authenticator = AuthUserFactory()
-        self.project.add_contributor(
-            contributor=self.non_authenticator,
-            auth=Auth(self.project.creator),
-        )
-
-        self.project.add_addon('figshare', auth=self.consolidated_auth)
-        self.project.creator.add_addon('figshare')
-        self.node_settings = self.project.get_addon('figshare')
-        self.user_settings = self.project.creator.get_addon('figshare')
-        self.user_settings.oauth_access_token = 'legittoken'
-        self.user_settings.oauth_access_token_secret = 'legittoken'
-        self.user_settings.save()
-        self.node_settings.user_settings = self.user_settings
-        self.node_settings.figshare_id = '436'
-        self.node_settings.figshare_type = 'project'
-        self.node_settings.save()
-
-        self.figshare = create_mock_figshare('test')
-
-    # def test_publish_no_category(self):
-    #     url = '/api/v1/project/{0}/figshare/publish/article/9002/'.format(self.project._id)
-    #     rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
-    #     self.node_settings.reload()
-    #     self.project.reload()
-
-    #     assert_equal(rv.status_int, 400)
-
-    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
-    def test_view_missing(self, mock_fig):
-        mock_fig.return_value = self.figshare
-        url = '/project/{0}/figshare/article/564/file/854280423/'.format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth, expect_errors=True).maybe_follow()
-        assert_equal(rv.status_int, http.NOT_FOUND)
-
-    @mock.patch('website.addons.figshare.api.Figshare.create_project')
-    def test_create_project_fail(self, faux_ject):
-        faux_ject.return_value = False
-        url = '/api/v1/project/{0}/figshare/new/project/'.format(self.project._id)
-        rv = self.app.post_json(url, {'project': 'testme'}, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http.BAD_REQUEST)
-
-    @mock.patch('website.addons.figshare.api.Figshare.create_project')
-    def test_create_project_no_name(self, faux_ject):
-        faux_ject.return_value = False
-        url = '/api/v1/project/{0}/figshare/new/project/'.format(self.project._id)
-        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http.BAD_REQUEST)
-
-    @mock.patch('website.addons.figshare.api.Figshare.create_article')
-    def test_create_fileset_no_name(self, faux_ject):
-        faux_ject.return_value = False
-        url = '/api/v1/project/{0}/figshare/new/fileset/'.format(self.project._id)
-        rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http.BAD_REQUEST)
-
-    @mock.patch('website.addons.figshare.api.Figshare.create_article')
-    def test_create_fileset_no_name(self, faux_ject):
-        faux_ject.return_value = False
-        url = '/api/v1/project/{0}/figshare/new/fileset/'.format(self.project._id)
-        rv = self.app.post_json(url, {'name': ''}, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http.BAD_REQUEST)
-
-    @mock.patch('website.addons.figshare.api.Figshare.create_project')
-    def test_create_project_empty_name(self, faux_ject):
-        faux_ject.return_value = False
-        url = '/api/v1/project/{0}/figshare/new/project/'.format(self.project._id)
-        rv = self.app.post_json(url, {'project': ''}, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http.BAD_REQUEST)
-
-    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
-    def test_view_file_returns_urls(self, mock_fig):
-        mock_fig.return_value = self.figshare
-        aid = '564'
-        file_id = '1348803'
-        delete_url = self.project.api_url + 'figshare/article/{aid}/file/{fid}/'.format(aid=aid, fid=file_id)
-        files_page_url = self.project.web_url_for('collect_file_trees')
-
-        url = self.project.web_url_for(
-            'figshare_view_file', aid=aid, fid=file_id
-        )
-        self.app.auth = self.user.auth
-        resp = self.app.get(url, auth=self.app.auth).maybe_follow(auth=self.app.auth)
-
-        assert_equal(resp.status_int, http.OK)
-        assert_in(self.project._id, resp.body)
-        assert_in(self.project.title, resp.body)
-        assert_in(self.project.title, resp.body)
-        assert_in(delete_url, resp.body)
-        assert_in(files_page_url, resp.body)
-
-
-    # TODO Fix me, not logged in?
-    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
-    def test_view_private(self, mock_fig):
-        mock_fig.return_value = self.figshare
-        url = '/project/{0}/figshare/article/564/file/1348803/'.format(self.project._id)
-        self.app.auth = self.user.auth
-        resp = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(resp.status_int, http.OK)
-        assert_true('file is unpublished we cannot render it.' in resp.body)
-
-    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
-    def test_view_file_with_anonymous_link(self, mock_fig):
-        link = PrivateLinkFactory(anonymous=True)
-        link.nodes.append(self.project)
-        link.save()
-        mock_fig.return_value = self.figshare
-        url = self.project.web_url_for(
-            'figshare_view_file', aid='564',fid='1348803'
-        )
-        self.app.auth = self.user.auth
-        resp = self.app.get(url, {'view_only': link.key}).maybe_follow()
-        assert_equal(resp.status_int, http.OK)
-        assert_true('file is unpublished we cannot render it.' in resp.body)
-        assert_not_in('View on Figshare', resp.body)
-
-    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
-    def test_view_bad_file(self, mock_fig):
-        mock_fig.return_value = self.figshare
-        url = '/project/{0}/figshare/article/564/file/958351351/'.format(self.project._id)
-        self.app.auth = self.user.auth
-        resp = self.app.get(url, expect_errors=True).maybe_follow()
-        assert_equal(resp.status_int, http.NOT_FOUND)
-
-    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
-    def test_view_bad_article(self, mock_fig):
-        mock_fig.return_value = self.figshare
-        url = '/project/{0}/figshare/article/543813514/file/9/'.format(self.project._id)
-        self.app.auth = self.user.auth
-        resp = self.app.get(url, expect_errors=True).maybe_follow()
-        assert_equal(resp.status_int, http.NOT_FOUND)
-
-
 class TestViewsAuth(OsfTestCase):
 
     def setUp(self):
@@ -406,7 +272,7 @@ class TestViewsAuth(OsfTestCase):
     @unittest.skip('finish this')
     def test_oauth_fail(self):
         url = '/api/v1/project/{0}/figshare/oauth/'.format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth)
+        self.app.get(url, auth=self.user.auth)
 
     @unittest.skip('finish this')
     def test_oauth_bad_token(self):

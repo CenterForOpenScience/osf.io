@@ -26,7 +26,7 @@
                             <input type="checkbox" data-bind="checked: anonymous"/>
                             <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review).
                             <br>
-                            <i>Ensure the files and registration supplements you have created and uploaded do not contain identifying information.</i>
+                            <i>Ensure the wiki pages, files, and registration supplements you have created do not contain identifying information</i>
                         </label>
                     </div>
 
@@ -41,15 +41,21 @@
 
 
                     <div class="row">
-
                         <div class="col-md-6" >
                             <div class="list-overflow">
                             <input type="checkbox" checked disabled />
+
                             <span data-bind="text:title"></span> (current component
                                 <span data-bind="if: isPublic">, public</span>)
+
                             <div data-bind="foreach:nodes">
                                 <div data-bind="style:{'marginLeft': margin}">
+                                    <!-- ko if: $root.isChildVisible($data) -->
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
+                                    <!-- /ko -->
+                                    <!-- ko ifnot: $root.isChildVisible($data) -->
+                                        <i class="icon-question-sign" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
+                                    <!-- /ko -->
                                     <span data-bind="text:$data.title"></span>
                                     <span data-bind="if: $data.is_public">(public)</span>
                                 </div>

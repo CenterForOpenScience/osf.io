@@ -9,7 +9,7 @@ MODELS = [
 USER_SETTINGS_MODEL = model.AddonGitHubUserSettings
 NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
 
-ROUTES = [routes.api_routes, routes.settings_routes, routes.page_routes]
+ROUTES = [routes.api_routes, routes.settings_routes]
 
 SHORT_NAME = 'github'
 FULL_NAME = 'GitHub'
@@ -24,23 +24,9 @@ CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
-INCLUDE_JS = {
-    'widget': ['jquery.githubRepoWidget.js', 'github-rubeus-cfg.js'],
-    'page': [
-        'hgrid-github.js',
-    ],
-    'files': [
-        'github-rubeus-cfg.js',
-    ]
-}
+INCLUDE_JS = {}
 
-INCLUDE_CSS = {
-    'widget': ['github-rubeus.css'],
-    'page': ['/static/css/hgrid-base.css'],
-    'files': ['github-rubeus.css']
-}
-
-WIDGET_HELP = 'GitHub Add-on Alpha'
+INCLUDE_CSS = {}
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.github_hgrid_data

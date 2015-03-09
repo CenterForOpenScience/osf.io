@@ -1,11 +1,12 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Settings</%def>
 <%def name="content()">
-<h2 class="page-header">Account Settings</h2>
+<% from website import settings %>
+<h2 class="page-header">Profile Information</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
-##    <div class="col-md-6">
+##    <div class="col-sm-6">
 ##        <div class="panel panel-default">
 ##            <div class="panel-heading"><h3 class="panel-title">Merge Accounts</h3></div>
 ##            <div class="panel-body">
@@ -17,16 +18,18 @@
 
 <div class="row">
 
-    <div class="col-md-3">
+    <div class="col-sm-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#">Profile Information</a></li>
+                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
+                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
 
         <div id="userProfile">
 
@@ -37,7 +40,7 @@
                 <li><a href="#schools" data-toggle="tab">Education</a></li>
             </ul>
 
-            <div class="tab-content">
+            <div class="tab-content" id="containDrag">
 
                 <div class="tab-pane active" id="names">
                     <div data-bind="template: {name: 'profileName'}"></div>
@@ -76,31 +79,26 @@
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
+</%def>
 
+<%def name="javascript_bottom()">
 <script type="text/javascript">
-
-    $script(['/static/js/profile.js']);
-    $script.ready('profile', function() {
-        var nameUrls = {
-            crud: '${ api_url_for('serialize_names') }',
-            impute: '${ api_url_for('impute_names') }'
-        };
-        var socialUrls = {
-            crud: '${ api_url_for('serialize_social') }'
-        };
-        var jobsUrls = {
-            crud: '${ api_url_for('serialize_jobs') }'
-        };
-        var schoolsUrls = {
-            crud: '${ api_url_for('serialize_schools') }'
-        };
-        var names = new profile.Names('#names', nameUrls, ['edit']);
-        var social = new profile.Social('#social', socialUrls, ['edit']);
-        var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit']);
-        var schools = new profile.Schools('#schools', schoolsUrls, ['edit']);
-    });
-
+    ## Store mako variables on window so they are accessible from JS
+    ## modules. Not sure if this is a good idea.
+    window.contextVars = window.contextVars || {};
+    window.contextVars.nameUrls = {
+        crud: '${ api_url_for('serialize_names') }',
+        impute: '${ api_url_for('impute_names') }'
+    };
+    window.contextVars.socialUrls = {
+        crud: '${ api_url_for('serialize_social') }'
+    };
+    window.contextVars.jobsUrls = {
+        crud: '${ api_url_for('serialize_jobs') }'
+    };
+    window.contextVars.schoolsUrls = {
+        crud: '${ api_url_for('serialize_schools') }'
+    };
 </script>
-
-
+<script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>
 </%def>

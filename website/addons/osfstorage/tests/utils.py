@@ -9,12 +9,16 @@ import collections
 from framework.auth import Auth
 
 
-Delta = collections.namedtuple('Delta', ['getter', 'checker'])
+identity = lambda value: value
+class Delta(object):
+    def __init__(self, getter, checker=None):
+        self.getter = getter
+        self.checker = checker or identity
 
 
 class AssertDeltas(object):
 
-    def __init__(self, deltas):
+    def __init__(self, *deltas):
         self.deltas = deltas
         self.original = []
 

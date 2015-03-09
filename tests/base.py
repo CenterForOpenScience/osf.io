@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
-import datetime as dt
-import functools
-import logging
 import os
+import re
 import shutil
+import logging
 import unittest
+import functools
+import datetime as dt
 
-from webtest_plus import TestApp
 import blinker
+import httpretty
+from webtest_plus import TestApp
 
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -28,7 +30,6 @@ from website.project.model import (
 )
 from website import settings
 
-from website.addons.osffiles.model import NodeFile
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
@@ -39,10 +40,8 @@ from website.app import init_app
 test_app = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
+test_app.testing = True
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.CRITICAL)
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -59,20 +58,19 @@ for logger_name in SILENT_LOGGERS:
 fake = Factory.create()
 
 # All Models
-MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 
 def teardown_database(client=None, database=None):
     client = client or client_proxy
     database = database or database_proxy
-    if settings.USE_TOKU_MX:
-        try:
-            commands.rollback(database)
-        except OperationFailure as error:
-            message = utils.get_error_message(error)
-            if messages.NO_TRANSACTION_ERROR not in message:
-                raise
+    try:
+        commands.rollback(database)
+    except OperationFailure as error:
+        message = utils.get_error_message(error)
+        if messages.NO_TRANSACTION_ERROR not in message:
+            raise
     client.drop_database(database)
 
 
@@ -89,6 +87,8 @@ class DbTestCase(unittest.TestCase):
         settings.DB_NAME = cls.DB_NAME
         cls._original_piwik_host = settings.PIWIK_HOST
         settings.PIWIK_HOST = None
+        cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
@@ -106,6 +106,7 @@ class DbTestCase(unittest.TestCase):
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
 
 
 class AppTestCase(unittest.TestCase):
@@ -146,7 +147,39 @@ class UploadTestCase(unittest.TestCase):
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase):
+methods = [
+    httpretty.GET,
+    httpretty.PUT,
+    httpretty.HEAD,
+    httpretty.POST,
+    httpretty.PATCH,
+    httpretty.DELETE,
+]
+def kill(*args, **kwargs):
+    raise httpretty.errors.UnmockedError
+
+
+class MockRequestTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(MockRequestTestCase, cls).setUpClass()
+        httpretty.enable()
+        for method in methods:
+            httpretty.register_uri(
+                method,
+                re.compile(r'.*'),
+                body=kill,
+            )
+
+    @classmethod
+    def tearDownClass(cls):
+        super(MockRequestTestCase, cls).tearDownClass()
+        httpretty.disable()
+        httpretty.reset()
+
+
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.

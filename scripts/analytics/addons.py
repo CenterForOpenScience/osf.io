@@ -12,7 +12,6 @@ from .utils import plot_dates, oid_to_datetime, mkdirp
 
 
 log_collection = database['nodelog']
-init_app()
 
 FIG_PATH = os.path.join(settings.ANALYTICS_PATH, 'figs', 'addons')
 mkdirp(FIG_PATH)
@@ -86,6 +85,7 @@ def analyze_addon(name):
 
 
 def main():
+    init_app(routes=False)
     for addon in ADDONS:
         if addon in settings.ADDONS_AVAILABLE_DICT:
             analyze_addon(addon)
@@ -93,4 +93,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

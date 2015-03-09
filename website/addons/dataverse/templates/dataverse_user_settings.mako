@@ -37,14 +37,4 @@
     </div>
 </div>
 
-
-<script>
-    $script(['/static/addons/dataverse/dataverseUserConfig.js'], function() {
-        // Endpoint for Dataverse user settings
-        var url = '/api/v1/settings/dataverse/';
-        // Start up the DataverseConfig manager
-        var dataverse = new DataverseUserConfig('#dataverseAddonScope', url);
-    });
-</script>
-
 <%include file="profile/addon_permissions.mako" />

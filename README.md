@@ -8,7 +8,7 @@
 - Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
 - Docs: http://cosdev.rtfd.org/
 
-> ## Help
+## Help
 
 Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
@@ -32,28 +32,15 @@ $ cp website/settings/local-dist.py website/settings/local.py
     - Install GPG.
     - Install requirements.
     - Create a GPG key.
-    - Install npm
-    - Install bower
-    - Use bower to install Javascript components
+    - Install npm.
+    - Install node and bower packages.
+    - Build assets.
 
 - To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
 ```bash
 $ pip install invoke
 $ invoke setup
-```
-
-
-- Optionally, you may install the requirements for the Modular File Renderer:
-
-```bash
-$ invoke mfr_requirements
-```
-
-and for addons:
-
-```bash
-$ invoke addon_requirements
 ```
 
 - On Linux systems, you may have to install python-pip, TokuMX, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
@@ -90,6 +77,12 @@ $ invoke mongo
 
 ```bash
 $ invoke server
+```
+
+- Run your local sharejs server.
+
+```bash
+$ invoke sharejs
 ```
 
 ## Running the shell
@@ -148,8 +141,6 @@ $ invoke mailserver -p 1025
 TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments.
 TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
 `commitTransaction` commands.
-
-If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
 
 ### Installing with Mac OS
 
@@ -250,21 +241,16 @@ $ invoke migrate_search
 $ invoke elasticsearch
 ```
 
+## NPM
 
-## Using Bower for front-end dependencies
-
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
-be installed with `invoke setup` (above)
-
-To get the bower CLI, you must have Node installed.
+The Node Package Manager (NPM) is required for installing a number of node-based packages.
 
 ```bash
 # For MacOSX
 $ brew update && brew install node
-$ npm install -g bower
 ```
 
-Installing Node and Bower on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+Installing Node on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
 the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
 
 ```bash
@@ -272,28 +258,35 @@ the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify t
 $ sudo apt-get install nodejs
 $ sudo ln -s /usr/bin/nodejs /usr/bin/node
 $ node --version      # v0.10.25
-$ npm install -g bower
 ```
 
-### To update existing front-end dependencies
 
-This will be the most common command you will use with `bower`. It will update all your front-end dependencies to the version required by the OSF. Think of it as the `pip install -r requirements.txt` for front-end assets.
+## Install NPM requirements
+
+To install necessary NPM requiremnts, run:
 
 ```bash
-$ bower install
+$ npm install
 ```
 
-### To add a new front-end library
+In the OSF root directory. This will install a number libraries for both the front-end and for building the assets (e.g. webpack).
 
-Use this command when adding a new front-end dependency
+### To build assets with webpack
+
+Use the following command to update your requirements and build the asset bundles:
 
 ```bash
-$ bower install zeroclipboard --save
+$ inv assets -dw
 ```
 
-The `--save` option automatically adds an entry to the `bower.json` after downloading the library.
+## Downloading citation styles (optional)
 
-This will save the library in `website/static/vendor/bower_components/`, where it can be imported like any other module.
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
 
 ## Setting up addons
 
@@ -319,6 +312,7 @@ invoke mailserver
 invoke rabbitmq
 invoke celery_worker
 invoke elasticsearch
+invoke assets -dw
 invoke server
 ```
 

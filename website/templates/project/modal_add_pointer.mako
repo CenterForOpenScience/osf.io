@@ -37,9 +37,7 @@
                                     <td>
                                         <a
                                                 class="btn btn-default contrib-button"
-                                                data-bind="click:$root.add"
-                                                rel="tooltip"
-                                                title="Add link"
+                                                data-bind="click:$root.add, tooltip: {title: 'Add link'}"
                                             >+</a>
                                     </td>
                                     <td data-bind="text:title"></td>
@@ -60,9 +58,7 @@
                                     <td>
                                         <a
                                                 class="btn btn-default contrib-button"
-                                                data-bind="click:$root.remove"
-                                                rel="tooltip"
-                                                title="Remove link"
+                                                data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
                                             >-</a>
                                     </td>
                                     <td data-bind="text:title"></td>

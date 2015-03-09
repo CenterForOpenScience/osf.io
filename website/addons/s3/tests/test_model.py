@@ -6,7 +6,58 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
-from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
+from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings, S3GuidFile
+
+
+class TestFileGuid(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('s3', auth=Auth(self.user))
+        self.node_addon = self.project.get_addon('s3')
+
+    def test_provider(self):
+        assert_equal('s3', S3GuidFile().provider)
+
+    def test_correct_path(self):
+        guid = S3GuidFile(node=self.project, path='baz/foo/bar')
+
+        assert_equals(guid.path, 'baz/foo/bar')
+        assert_equals(guid.waterbutler_path, '/baz/foo/bar')
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'md5': 'Terran it up'
+                }
+            }
+        }
+
+        guid = S3GuidFile(node=self.project, path='/foo/bar')
+
+        guid.enrich()
+        assert_equals('Terran it up', guid.unique_identifier)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('baz/foo/bar')
+
+        assert_true(created)
+        assert_equal(guid.path, 'baz/foo/bar')
+        assert_equal(guid.waterbutler_path, '/baz/foo/bar')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
 
 
 class TestCallbacks(OsfTestCase):
@@ -95,33 +146,18 @@ class TestCallbacks(OsfTestCase):
         drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
         assert_true('Atticus' in drop_list)
 
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_registration(self, mock_wrapper, mock_bucket):
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-        fork = ProjectFactory()
-        clone, message = self.node_settings.after_register(
-            self.project, fork, self.project.creator,
-        )
-        assert_true(clone.is_registration)
-
     def test_after_remove_contributor(self):
         self.node_settings.after_remove_contributor(
             self.project, self.project.creator
         )
         assert_equal(self.node_settings.user_settings, None)
 
-    @mock.patch('website.addons.s3.model.serialize_bucket')
-    @mock.patch('website.addons.s3.model.S3Wrapper.from_addon')
-    def test_registration_settings(self, mock_wrapper, mock_bucket):
-        mock_wrapper.return_value = None
-        mock_bucket.return_value = {'Not None': 'None'}
-        fork = ProjectFactory()
+    def test_registration_settings(self):
+        registration = ProjectFactory()
         clone, message = self.node_settings.after_register(
-            self.project, fork, self.project.creator,
+            self.project, registration, self.project.creator,
         )
-        assert_true(clone.user_settings)
+        assert_is_none(clone)
 
     def test_before_register_no_settings(self):
         self.node_settings.user_settings = None
@@ -143,3 +179,17 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.bucket is None)
+
+    def test_registration_data_and_deauth(self):
+        self.node_settings.deauthorize()
+        assert_false(self.node_settings.registration_data is None)
+        assert_true(isinstance(self.node_settings.registration_data, dict))
+
+    def test_does_not_get_copied_to_registrations(self):
+        registration = self.project.register_node(
+            schema=None,
+            auth=Auth(user=self.project.creator),
+            template='Template1',
+            data='hodor'
+        )
+        assert_false(registration.has_addon('s3'))

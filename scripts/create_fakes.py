@@ -267,10 +267,11 @@ def parse_args():
     parser.add_argument('-p', '--privacy', dest="privacy", type=str, default='private', choices=['public', 'private'])
     parser.add_argument('-n', '--name', dest='name', type=str, default=None)
     parser.add_argument('-t', '--tags', dest='n_tags', type=int, default=5)
+    parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
     return parser.parse_args()
 
 
-def create_fake_project(creator, n_users, privacy, n_components, name, n_tags):
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name):
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
     project = ProjectFactory.build(title=project_title, description=fake.science_paragraph(), creator=creator)
@@ -279,9 +280,13 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags):
         contrib = create_fake_user()
         project.add_contributor(contrib, auth=auth)
     for _ in range(n_components):
-        NodeFactory(project=project, title=fake.science_sentence(), description=fake.science_paragraph(), creator=creator)
+        NodeFactory(project=project, title=fake.science_sentence(), description=fake.science_paragraph(),
+                    creator=creator)
     for _ in range(n_tags):
         project.add_tag(fake.science_word(), auth=auth)
+    if presentation_name is not None:
+        project.add_tag(presentation_name, auth=auth)
+        project.add_tag('poster', auth=auth)
 
     project.save()
     logger.info('Created project: {0}'.format(project.title))
@@ -293,7 +298,8 @@ def main():
     creator = models.User.find(Q('username', 'eq', args.user))[0]
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
-        create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags)
+        create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags,
+                            args.presentation_name)
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 

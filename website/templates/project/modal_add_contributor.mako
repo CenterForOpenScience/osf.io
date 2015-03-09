@@ -1,5 +1,5 @@
 <div id="addContributors" class="modal fade">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 data-bind="text:pageTitle"></h3>
@@ -63,9 +63,7 @@
                                         <td style="padding-right: 10px;">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.add"
-                                                    rel="tooltip"
-                                                    title="Add contributor"
+                                                    data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
                                                 >+</a>
                                         </td>
                                         <td>
@@ -132,12 +130,12 @@
                             </div>
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
-                            <table>
+                            <table class="table-fixed">
                                 <thead data-bind="visible: selection().length">
-                                    <th></th>
-                                    <th></th>
-                                    <th>Name</th>
-                                    <th>
+                                    <th width="10%"></th>
+                                    <th width="15%"></th>
+                                    <th width="45%">Name</th>
+                                    <th width="30%">
                                         Permissions
                                         <i class="icon-question-sign permission-info"
                                                 data-toggle="popover"
@@ -152,9 +150,7 @@
                                         <td style="padding-right: 10px;">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove"
-                                                    rel="tooltip"
-                                                    title="Remove contributor"
+                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
                                                 >-</a>
                                         </td>
                                         <td>

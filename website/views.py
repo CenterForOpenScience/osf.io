@@ -61,9 +61,12 @@ def _render_node(node, auth=None):
 
     """
     perm = None
-    if auth and auth.user:
+    # NOTE: auth.user may be None if viewing public project while not
+    # logged in
+    if auth and auth.user and node.get_permissions(auth.user):
         perm_list = node.get_permissions(auth.user)
         perm = permissions.reduce_permissions(perm_list)
+
     return {
         'title': node.title,
         'id': node._primary_key,
@@ -93,7 +96,7 @@ def _render_nodes(nodes, auth=None):
 
 
 @collect_auth
-def index(auth, **kwargs):
+def index(auth):
     """Redirect to dashboard if user is logged in, else show homepage.
 
     """
@@ -118,6 +121,7 @@ def find_dashboard(user):
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
     user = auth.user
+
     if nid is None:
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
@@ -130,11 +134,15 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = Node.load(nid)
         dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
         return_value = {'data': dashboard_projects}
+
+    return_value['timezone'] = user.timezone
+    return_value['locale'] = user.locale
     return return_value
+
 
 @must_be_logged_in
 def get_all_projects_smart_folder(auth, **kwargs):
-    #TODO: Unit tests
+    # TODO: Unit tests
     user = auth.user
 
     contributed = user.node__contributed
@@ -171,9 +179,10 @@ def get_all_projects_smart_folder(auth, **kwargs):
     return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
 
+
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
-    #TODO: Unit tests
+    # TODO: Unit tests
     user = auth.user
     contributed = user.node__contributed
 
@@ -209,8 +218,9 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
 
+
 @must_be_logged_in
-def get_dashboard_nodes(auth, **kwargs):
+def get_dashboard_nodes(auth):
     """Get summary information about the current user's dashboard nodes.
 
     :param-query no_components: Exclude components from response.
@@ -328,7 +338,7 @@ def reset_password_form():
     return form_utils.jsonify(ResetPasswordForm())
 
 
-### GUID ###
+# GUID ###
 
 def _build_guid_url(url, prefix=None, suffix=None):
     if not url.startswith('/'):
@@ -357,7 +367,6 @@ def resolve_guid(guid, suffix=None):
     """
     # Get prefix; handles API routes
     prefix = request.path.split(guid)[0].rstrip('/')
-
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
@@ -373,7 +382,6 @@ def resolve_guid(guid, suffix=None):
             )
 
             raise HTTPError(http.NOT_FOUND)
-
         referent = guid_object.referent
         if referent is None:
             logger.error('Referent of GUID {0} not found'.format(guid))

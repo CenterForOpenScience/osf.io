@@ -17,6 +17,10 @@ from website import settings
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+
+
 def get_bin_path():
     """Get parent path of current python binary.
     """
@@ -40,8 +44,8 @@ except Failure:
 def server(host=None, port=5000, debug=True):
     """Run the app server."""
     from website.app import init_app
-    app = init_app(set_backends=True, routes=True)
-    app.run(host=host, port=port, debug=debug)
+    app = init_app(set_backends=True, routes=True, mfr=True)
+    app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 SHELL_BANNER = """
@@ -238,6 +242,29 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
+@task
+def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors_allow_origin=None):
+    """Start a local ShareJS server."""
+    if host:
+        os.environ['SHAREJS_SERVER_HOST'] = host
+    if port:
+        os.environ['SHAREJS_SERVER_PORT'] = port
+    if db_host:
+        os.environ['SHAREJS_DB_HOST'] = db_host
+    if db_port:
+        os.environ['SHAREJS_DB_PORT'] = db_port
+    if db_name:
+        os.environ['SHAREJS_DB_NAME'] = db_name
+    if cors_allow_origin:
+        os.environ['SHAREJS_CORS_ALLOW_ORIGIN'] = cors_allow_origin
+
+    if settings.SENTRY_DSN:
+        os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
+
+    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    run("node {0}".format(share_server))
+
+
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
@@ -282,8 +309,8 @@ def mailserver(port=1025):
     run(bin_prefix(cmd), pty=True)
 
 
-@task
-def flake8():
+@task(aliases=['flake8'])
+def flake():
     run('flake8 .', echo=True)
 
 
@@ -291,12 +318,13 @@ def flake8():
 def requirements(all=False, download_cache=None):
     """Install dependencies."""
     cmd = "pip install --upgrade -r dev-requirements.txt"
+    if WHEELHOUSE_PATH:
+        cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
     run(bin_prefix(cmd), echo=True)
     if all:
         addon_requirements(download_cache=download_cache)
-        mfr_requirements()
 
 
 @task
@@ -340,9 +368,23 @@ def test(all=False):
 @task
 def test_all(flake=False):
     if flake:
-        flake8()
+        flake()
     test_osf()
     test_addons()
+
+
+@task
+def wheelhouse(repo, path):
+    version = '.'.join([str(i) for i in sys.version_info[0:2]])
+    run('pip install wheel --upgrade', pty=False)
+    name = 'wheelhouse-{}.tar.gz'.format(version)
+    url = '{}/archive/{}.tar.gz'.format(repo, version)
+    # download and extract the wheelhouse github repository archive
+    run('mkdir {}'.format(path), pty=False)
+    run('curl -o {} -L {}'.format(name, url), pty=False)
+    run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
+    run('rm -f {}'.format(name), pty=False)
+
 
 @task
 def addon_requirements(download_cache=None):
@@ -355,23 +397,14 @@ def addon_requirements(download_cache=None):
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                if WHEELHOUSE_PATH:
+                    cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
                 if download_cache:
                     cmd += ' --download-cache {0}'.format(download_cache)
                 run(bin_prefix(cmd))
             except IOError:
                 pass
     print('Finished')
-
-
-@task
-def mfr_requirements(download_cache=None):
-    """Install modular file renderer requirements"""
-    print('Installing mfr requirements')
-    cmd = 'pip install --upgrade -r mfr/requirements.txt'
-    if download_cache:
-        cmd += ' --download-cache {0}'.format(download_cache)
-    run(bin_prefix(cmd), echo=True)
-
 
 @task
 def encryption(owner=None):
@@ -466,10 +499,11 @@ def npm_bower():
     run('npm install -g bower', echo=True)
 
 
-@task
+@task(aliases=['bower'])
 def bower_install():
     print('Installing bower-managed packages')
-    run('bower install', echo=True)
+    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} install'.format(bower_bin), echo=True)
 
 
 @task
@@ -479,18 +513,22 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
-    npm_bower()
-    bower_install()
+    assets(develop=True, watch=False)
 
 
 @task
 def analytics():
+    from website.app import init_app
+    import matplotlib
+    matplotlib.use('Agg')
+    init_app()
+    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        logs, addons, comments, links, watch, email_invites,
+        metrics, logs, addons, comments, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -507,6 +545,7 @@ def clear_sessions(months=1, dry_run=False):
 
 @task
 def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
 
@@ -644,6 +683,44 @@ def bundle_certs(domain, cert_path):
     )
     run(cmd)
 
+@task
+def clean_assets():
+    """Remove built JS files."""
+    build_path = os.path.join(HERE,
+                              'website',
+                              'static',
+                              'public',
+                              'js',
+                              '*')
+    run('rm -rf {0}'.format(build_path), echo=True)
+
+
+@task(aliases=['pack'])
+def webpack(clean=False, watch=False, develop=False):
+    """Build static assets with webpack."""
+    if clean:
+        clean_assets()
+    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
+    args = [webpack_bin]
+    if settings.DEBUG_MODE and develop:
+        args += ['--colors']
+    else:
+        args += ['--progress']
+    if watch:
+        args += ['--watch']
+    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    args += ['--config {0}'.format(config_file)]
+    command = ' '.join(args)
+    run(command, echo=True)
+
+@task()
+def assets(develop=False, watch=False):
+    """Install and build static assets."""
+    run('npm install', echo=True)
+    bower_install()
+    # Always set clean=False to prevent possible mistakes
+    # on prod
+    webpack(clean=False, watch=watch, develop=develop)
 
 @task
 def generate_self_signed(domain):
@@ -654,3 +731,9 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
+@task
+def update_citation_styles():
+    from scripts import parse_citation_styles
+    total = parse_citation_styles.main()
+    print("Parsed {} styles".format(total))

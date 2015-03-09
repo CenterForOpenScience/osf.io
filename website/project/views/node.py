@@ -15,23 +15,26 @@ from framework.mongo.utils import from_mongo
 
 from website import language
 
+from website.util import paths
+from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
+    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
 )
+from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes
+from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
-
 
 logger = logging.getLogger(__name__)
 
@@ -150,9 +153,6 @@ def folder_new_post(auth, nid, **kwargs):
         'projectUrl': '/dashboard/',
     }, http.CREATED
 
-
-def rename_folder(**kwargs):
-    pass
 
 @collect_auth
 def add_folder(**kwargs):
@@ -288,42 +288,56 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('write')
-def node_setting(**kwargs):
-
-    auth = kwargs['auth']
+@must_not_be_registration
+@must_be_logged_in
+@must_be_contributor
+def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
-    if not node.can_edit(auth):
-        raise HTTPError(http.FORBIDDEN)
-
-    rv = _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
     addon_enabled_settings = []
 
     for addon in node.get_addons():
-
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 
-    rv['addon_categories'] = settings.ADDON_CATEGORIES
-    rv['addons_available'] = [
+    ret['addon_categories'] = settings.ADDON_CATEGORIES
+    ret['addons_available'] = sorted([
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
-    ]
-    rv['addons_enabled'] = addons_enabled
-    rv['addon_enabled_settings'] = addon_enabled_settings
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ], key=lambda addon: addon.full_name)
 
-    rv['comments'] = {
+    ret['addons_enabled'] = addons_enabled
+    ret['addon_enabled_settings'] = addon_enabled_settings
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+
+    ret['addon_js'] = collect_node_config_js(node.get_addons())
+
+    ret['comments'] = {
         'level': node.comment_level,
     }
 
-    return rv
+    return ret
+
+
+def collect_node_config_js(addons):
+    """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
+    the URLs for each of the JS modules to be included on the node addons config page.
+
+    :param list addons: List of node's addon config records.
+    """
+    js_modules = []
+    for addon in addons:
+        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        if js_path:
+            js_modules.append(js_path)
+    return js_modules
 
 
 @must_have_permission('write')
@@ -336,14 +350,12 @@ def node_choose_addons(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('read')
-def node_contributors(**kwargs):
-
-    auth = kwargs['auth']
+def node_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    rv = _view_project(node, auth, primary=True)
-    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
-    return rv
+    ret = _view_project(node, auth, primary=True)
+    ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
+    return ret
 
 
 @must_have_permission('admin')
@@ -367,19 +379,28 @@ def configure_comments(**kwargs):
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    return rv
+    ret = _view_project(node, auth, primary=primary)
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    # Collect the URIs to the static assets for addons that have widgets
+    ret['addon_widget_js'] = list(collect_addon_js(
+        node,
+        filename='widget-cfg.js',
+        config_entry='widget'
+    ))
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret
 
-#### Expand/Collapse
+
+# Expand/Collapse
 @must_be_valid_project
 @must_be_contributor_or_public
 def expand(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     node_to_use.expand(user=auth.user)
     return {}, 200, None
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -388,8 +409,8 @@ def collapse(auth, **kwargs):
     node_to_use.collapse(user=auth.user)
     return {}, 200, None
 
-# Reorder components
 
+# Reorder components
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission('write')
@@ -590,7 +611,7 @@ def component_remove(**kwargs):
         'url': redirect_url,
     }
 
-#@must_be_valid_project  # injects project
+
 @must_have_permission('admin')
 @must_not_be_registration
 def delete_folder(auth, **kwargs):
@@ -650,12 +671,14 @@ def _render_addon(node):
 
 
 def _should_show_wiki_widget(node, user):
+
+    has_wiki = bool(node.get_addon('wiki'))
+    wiki_page = node.get_wiki_page('home', None)
     if not node.has_permission(user, 'write'):
-        wiki_page = node.get_wiki_page('home', None)
-        return wiki_page and wiki_page.html(node)
+        return has_wiki and wiki_page and wiki_page.html(node)
 
     else:
-        return True
+        return has_wiki
 
 
 def _view_project(node, auth, primary=False):
@@ -665,6 +688,13 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
+    if user:
+        dashboard = find_dashboard(user)
+        dashboard_id = dashboard._id
+        in_dashboard = dashboard.pointing_at(node._primary_key) is not None
+    else:
+        in_dashboard = False
+        dashboard_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     widgets, configs, js, css = _render_addon(node)
@@ -688,11 +718,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url': node.absolute_url,
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
-            'citations': {
-                'apa': node.citation_apa,
-                'mla': node.citation_mla,
-                'chicago': node.citation_chicago,
-            } if not anonymous else '',
+            'in_dashboard': in_dashboard,
             'is_public': node.is_public,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
@@ -743,6 +769,7 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
+            'has_read_permissions': node.has_permission(user, 'read'),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
@@ -751,6 +778,7 @@ def _view_project(node, auth, primary=False):
             'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
+            'dashboard_id': dashboard_id,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -786,6 +814,7 @@ def _get_children(node, auth, indent=0):
                 'title': child.title,
                 'indent': indent,
                 'is_public': child.is_public,
+                'parent_id': child.parent_id,
             })
             children.extend(_get_children(child, auth, indent + 1))
 
@@ -817,7 +846,7 @@ def get_editable_children(auth, **kwargs):
     children = _get_children(node, auth)
 
     return {
-        'node': {'title': node.title, 'is_public': node.is_public},
+        'node': {'id': node._id, 'title': node.title, 'is_public': node.is_public},
         'children': children,
     }
 
@@ -910,11 +939,14 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
 @collect_auth
 @must_be_valid_project
-def get_summary(**kwargs):
-
-    auth = kwargs['auth']
+def get_summary(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')
+    if rescale_ratio is None and request.args.get('rescale_ratio'):
+        try:
+            rescale_ratio = float(request.args.get('rescale_ratio'))
+        except (TypeError, ValueError):
+            raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
@@ -929,15 +961,15 @@ def get_children(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     if request.args.get('permissions'):
         perm = request.args['permissions'].lower().strip()
-        nodes = [node for node in node_to_use.nodes
-                if perm in node.get_permissions(user) and not node.is_deleted]
+        nodes = [node for node in node_to_use.nodes if perm in node.get_permissions(user) and not node.is_deleted]
     else:
         nodes = [
             node
             for node in node_to_use.nodes
             if not node.is_deleted
         ]
-    return _render_nodes(nodes)
+    return _render_nodes(nodes, auth)
+
 
 @must_be_contributor_or_public
 def get_folder_pointers(**kwargs):
@@ -950,21 +982,22 @@ def get_folder_pointers(**kwargs):
         if node is not None and not node.is_deleted and not node.primary
     ]
 
+
 @must_be_contributor_or_public
-def get_forks(**kwargs):
+def get_forks(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
-    return _render_nodes(forks)
+    return _render_nodes(forks, auth)
 
 
 @must_be_contributor_or_public
-def get_registrations(**kwargs):
+def get_registrations(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
-    return _render_nodes(registrations)
+    return _render_nodes(registrations, auth)
 
 
 @must_be_valid_project  # returns project
@@ -1084,6 +1117,7 @@ def _add_pointers(node, pointers, auth):
     if added:
         node.save()
 
+
 @collect_auth
 def move_pointers(auth):
     """Move pointer from one node to another node.
@@ -1124,6 +1158,7 @@ def move_pointers(auth):
 
     return {}, 200, None
 
+
 @collect_auth
 def add_pointer(auth):
     """Add a single pointer to a node using only JSON parameters
@@ -1142,6 +1177,7 @@ def add_pointer(auth):
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -1195,6 +1231,7 @@ def remove_pointer(**kwargs):
 
     node.save()
 
+
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
@@ -1222,6 +1259,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     node.save()
+
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')

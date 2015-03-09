@@ -1,4 +1,3 @@
-<script src="/static/addons/s3/s3-node-settings.js"></script>
 
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
@@ -62,9 +61,8 @@
     % elif node_has_auth and bucket_list is None:
 
         <div>
-            <i class="icon-spinner icon-large icon-spin"></i>
-            <span class="text-info">
-                S3 access keys loading. Please wait a moment and refresh the page.
+            <span class="text-danger">
+                Error loading S3 access keys. Please refresh the page.
             </span>
         </div>
 
@@ -91,60 +89,16 @@
 </form>
 
 <%def name="on_submit()">
-
-    % if not user_has_auth:
-
-        <script type="text/javascript">
-
-          $(document).ready(function() {
-            $('#addonSettings${addon_short_name.capitalize()}').on('submit', function() {
-
-            var $this = $(this);
-            var addon = $this.attr('data-addon');
-            var msgElm = $this.find('.addon-settings-message');
-
-            var url = nodeApiUrl + addon + '/authorize/';
-
-            $.ajax({
-                url: url,
-                data: JSON.stringify(AddonHelper.formToObj($this)),
-                type: 'POST',
-                contentType: 'application/json',
-                dataType: 'json'
-            }).done(function() {
-                msgElm.text('Settings updated')
-                    .removeClass('text-danger').addClass('text-success')
-                    .fadeOut(100).fadeIn();
-                window.location.reload();
-            }).fail(function(xhr) {
-                var message = 'Error: ';
-                var response = JSON.parse(xhr.responseText);
-                if (response && response.message) {
-                    message += response.message;
-                } else {
-                    message += 'Settings not updated.'
-                }
-                msgElm.text(message)
-                    .removeClass('text-success').addClass('text-danger')
-                    .fadeOut(100).fadeIn();
-            });
-
-            return false;
-
-          });
+    <% import json %>
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars,
+        {
+            'currentUser': {
+                'hasAuth': ${json.dumps(user_has_auth)}
+            },
+            's3SettingsSelector': '#addonSettings${addon_short_name.capitalize()}'
 
         });
-
-        </script>
-
-    % else:
-
-        <script type="text/javascript">
-            $(document).ready(function() {
-                $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
-            });
-        </script>
-
-    % endif
-
+    </script>
 </%def>
+

@@ -5,5 +5,10 @@ factory-boy==2.2.1
 webtest-plus
 mock
 fake-factory
-flake8
+
+flake8==2.4.0
+
 responses
+
+# Fork of HTTPretty with pymongo fix
+git+https://github.com/jmcarp/HTTPretty@fix-tests-for-208

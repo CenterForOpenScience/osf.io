@@ -3,25 +3,24 @@
 to the specified project.
 """
 
-import csv
 import datetime
 import collections
 from cStringIO import StringIO
 
-import requests
 from dateutil.relativedelta import relativedelta
 
-from framework.auth import Auth
 from framework.mongo import database
 
 from website import models
 from website.app import app, init_app
-from website.addons.osfstorage import utils as storage_utils
+
+from scripts.analytics import utils
 
 
-NODE_ID = '95nv8'
-USER_ID = 'icpnw'
+NODE_ID = '95nv8'  # Daily updates project
+USER_ID = 'icpnw'  # Josh
 FILE_NAME = 'daily-users.csv'
+CONTENT_TYPE = 'text/csv'
 TIME_DELTA = relativedelta(days=1)
 
 
@@ -36,37 +35,22 @@ def get_emails(query=None):
 
 def get_emails_since(delta):
     return get_emails({
-        'date_confirmed': {
-            '$gte': datetime.datetime.utcnow() - delta,
-        }
+        'is_registered': True,
+        'password': {'$ne': None},
+        'is_merged': {'$ne': True},
+        'date_confirmed': {'$gte': datetime.datetime.utcnow() - delta},
     })
 
 
 def main():
-    init_app()
     node = models.Node.load(NODE_ID)
     user = models.User.load(USER_ID)
     emails = get_emails_since(TIME_DELTA)
     sio = StringIO()
-    writer = csv.writer(sio)
-    writer.writerow(['affiliation', 'count'])
-    writer.writerows(emails)
-    nchar = sio.tell()
-    sio.seek(0)
-    with app.test_request_context():
-        upload_url = storage_utils.get_upload_url(
-            node,
-            user,
-            nchar,
-            'text/csv',
-            FILE_NAME,
-        )
-    requests.put(
-        upload_url,
-        data=sio,
-        headers={'Content-Type': 'text/csv'},
-    )
+    utils.make_csv(sio, emails, ['affiliation', 'count'])
+    utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, node, user)
 
 
 if __name__ == '__main__':
+    init_app()
     main()

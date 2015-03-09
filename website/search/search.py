@@ -1,6 +1,7 @@
 import logging
 
 from website import settings
+from website.search import share_search
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type=None):
-    return search_engine.search(query, index=index, search_type=search_type)
+def search(query, index='website', doc_type=None):
+    return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
 def update_node(node, index='website'):
@@ -50,3 +51,13 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result
+
+def search_share(query, raw=False):
+    return share_search.search(query, raw=raw)
+
+def count_share(query):
+    return share_search.count(query)
+
+def share_stats(query=None):
+    query = query or {}
+    return share_search.stats(query=query)

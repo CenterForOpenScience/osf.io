@@ -1,4 +1,3 @@
-
 <link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
@@ -52,12 +51,12 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-dropbox"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
                                         visible: validCredentials,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-dropbox"><i class="icon-share-alt"></i> Share on Dropbox
+                        class="btn btn-sm btn-addon"><i class="icon-share-alt"></i> Share on Dropbox
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
@@ -70,7 +69,7 @@
 
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="myDropboxGrid"
-                             class="filebrowser hgrid dropbox-folder-picker"></div>
+                             class="filebrowser dropbox-folder-picker"></div>
                     </div>
 
                     <!-- Share -->
@@ -110,10 +109,6 @@
                     <div class="dropbox-confirm-selection"
                         data-bind="visible: currentDisplay() == PICKER && selected()">
                         <form data-bind="submit: submitSettings">
-
-                            <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
-                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
-                            </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
                                         data-bind="click: cancelSelection">
@@ -123,6 +118,9 @@
                                        class="btn btn-primary"
                                        value="Submit" />
                             </div>
+                            <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
+                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                            </h4>
                         </form>
                     </div><!-- end .dropbox-confirm-selection -->
 
@@ -136,16 +134,3 @@
         <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
 </div><!-- end #dropboxScope -->
-
-
-<script>
-    $script.ready('zeroclipboard', function() {
-        ZeroClipboard.config({moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'})
-    });
-    $script(['/static/addons/dropbox/dropboxNodeConfig.js']);
-    $script.ready('dropboxNodeConfig', function() {
-        // TODO(sloria): Remove this dependency on mako variable
-        var url = '${node["api_url"] + "dropbox/config/"}';
-        var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myDropboxGrid');
-    });
-</script>
