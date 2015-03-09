@@ -30,6 +30,8 @@ var ProviderMap = {
     valposcholar: {name: 'Valparaiso University ValpoScholar', link: 'http://scholar.valpo.edu/'},
     vtech: {name: 'Virginia Tech VTechWorks', link: 'https://vtechworks.lib.vt.edu/'},
     waynestate: {name: 'DigitalCommons@WayneState', link: 'http://digitalcommons.wayne.edu/'},
+    tdar: {name: 'The Digital Archaeological Record', link: 'http://www.tdar.org/'},
+    asu: {name: 'Arizona State University Digital Repository', link: 'http://www.asu.edu/'}
 };
 
 var Results = {};
