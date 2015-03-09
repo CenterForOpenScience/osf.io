@@ -204,7 +204,11 @@ class GuidFile(GuidStoredObject):
 
     @property
     def name(self):
-        return self._metadata_cache['name']
+        try:
+            return self._metadata_cache['name']
+        except (TypeError, KeyError):
+            # If name is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute name')
 
     @property
     def file_name(self):
