@@ -177,7 +177,7 @@ MEETING_DATA = {
     },
     'TeaP2015': {
         'name': 'Tagung experimentell arbeitender Psychologen 2015',
-        'info_url': 'http://www.teap.de/index.php/teap/hildesheim',
+        'info_url': None,
         'logo_url': None,
         'active': True,
         'admins': [
