@@ -59,8 +59,8 @@ var ViewModel = function(url, selector) {
     self.canChange = ko.pureComputed(function() {
         return self.userIsOwner() && self.nodeHasAuth();
     });
-    self.allowSelectBucket = ko.pureComputed(function(){
-        return (self.bucketList().length > 0 || self.loadedBucketList())  && (!self.loading());
+    self.allowSelectBucket = ko.pureComputed(function() {
+        return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
 
     self.fetchFromServer();
@@ -117,7 +117,7 @@ ViewModel.prototype.deauthorizeNode = function() {
                     dataType: 'json'
                 }).done(function(response) {
                     self.updateFromData(response);
-                }).fail(function(xhr, status, error){
+                }).fail(function(xhr, status, error) {
                     var message = 'Could not deauthorize S3 at ' +
                         'this time. Please refresh the page. If the problem persists, email ' +
                         '<a href="mailto:support@osf.io">support@osf.io</a>.';
@@ -135,17 +135,54 @@ ViewModel.prototype.deauthorizeNode = function() {
 
 ViewModel.prototype.importAuth = function() {
     var self = this;
-    $osf.postJSON(
-        self.urls().importAuth, {}
-    ).done(function(response) {
-        self.changeMessage('Successfully imported S3 credentials.', 'text-success');
-        self.updateFromData(response);
-    }).fail(function(xhr, status, error){
-        var message = 'Could not import S3 credentials at ' +
+    var onImportConfirm = function() {
+        $osf.postJSON(
+            self.urls().importAuth, {}
+        ).done(function(response) {
+            self.changeMessage('Successfully imported S3 credentials.', 'text-success');
+            self.updateFromData(response);
+        }).fail(function(xhr, status, error) {
+            var message = 'Could not import S3 credentials at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.changeMessage(message, 'text-warning');
+            Raven.captureMessage('Could not import S3 credentials', {
+                url: self.urls().importAuth,
+                textStatus: status,
+                error: error
+            });
+        });
+    };
+
+    bootbox.confirm({
+        title: 'Import S3 credentials?',
+        message: 'Are you sure you want to authorize this project with your S3 credentials?',
+        callback: function(confirmed) {
+            if (confirmed) {
+                onImportConfirm();
+            }
+        }
+    });
+};
+
+ViewModel.prototype.createCredentials = function() {
+    var self = this;
+    $osf.postJSON(
+        self.urls().createAuth, {
+            secret_key: self.secretKey(),
+            access_key: self.accessKey()
+        }
+    ).done(function(response) {
+        self.creatingCredentials(false);
+        self.changeMessage('Successfully added S3 credentials.', 'text-success');
+        self.updateFromData(response);
+    }).fail(function(xhr, status, error) {
+        self.creatingCredentials(false);
+        var message = 'Could not add S3 credentials at ' +
+            'this time. Please refresh the page. If the problem persists, email ' +
+            '<a href="mailto:support@osf.io">support@osf.io</a>.';
         self.changeMessage(message, 'text-warning');
-        Raven.captureMessage('Could not import S3 credentials', {
+        Raven.captureMessage('Could not add S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
             error: error
@@ -153,35 +190,10 @@ ViewModel.prototype.importAuth = function() {
     });
 };
 
-ViewModel.prototype.createCredentials = function() {
-    var self = this;
-    $osf.postJSON(
-        self.urls().createAuth, 
-        {
-            secret_key: self.secretKey(),            
-            access_key: self.accessKey()
-        }
-    ).done(function(response) {
-        self.creatingCredentials(false);
-        self.changeMessage('Successfully added S3 credentials.', 'text-success');
-        self.updateFromData(response);
-    }).fail(function(xhr, status, error){
-        self.creatingCredentials(false);
-        var message = 'Could not add S3 credentials at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
-        Raven.captureMessage('Could not add S3 credentials', {
-            url: self.urls().importAuth,
-            textStatus: status,
-            error: error
-        });
-    });   
-};
-
 ViewModel.prototype.createBucket = function(bucketName) {
     var self = this;
     self.creating(true);
+    bucketName = bucketName.toLowerCase();
     $osf.postJSON(
         self.urls().createBucket, {
             bucket_name: bucketName
@@ -189,9 +201,14 @@ ViewModel.prototype.createBucket = function(bucketName) {
     ).done(function(response) {
         self.creating(false);
         self.updateFromData(response);
-        self.changeMessage('Successfully created bucket \'' + bucketName +'\'. You can now select it from the drop down list.', 'text-success');
+        self.changeMessage('Successfully created bucket \'' + bucketName + '\'. You can now select it from the drop down list.', 'text-success');
         self.bucketList().push(bucketName);
+        if(!self.loadedBucketList()){
+            self.fetchBucketList();
+        }
         self.selectedBucket(bucketName);
+        self.selectedBucket();
+        self.bucketList();
         self.showSelect(true);
     }).fail(function(xhr) {
         var message = JSON.parse(xhr.responseText).message;
@@ -225,12 +242,11 @@ ViewModel.prototype.openCreateBucket = function() {
                 message: 'Sorry, that\'s not a valid bucket name. Try another name?',
                 callback: function(result) {
                     if (result) {
-                        self.openCreateBucket(bucketName);
+                        self.openCreateBucket();
                     }
                 }
             });
         } else {
-            bucketName = bucketName.toLowerCase();
             self.createBucket(bucketName);
         }
     });
@@ -246,6 +262,7 @@ ViewModel.prototype.fetchBucketList = function() {
         .done(function(response) {
             self.bucketList(response.buckets);
             self.loadedBucketList(true);
+            self.selectedBucket(self.currentBucket());
         })
         .fail(function(xhr, status, error) {
             var message = 'Could not retrieve list of S3 buckets at' +
@@ -267,7 +284,6 @@ ViewModel.prototype.updateFromData = function(settings) {
     self.userIsOwner(settings.user_is_owner);
     self.ownerName(settings.owner);
     self.currentBucket(settings.has_bucket ? settings.bucket : 'None');
-    //self.bucketList(settings.bucket_list);
     self.loadedSettings(true);
     if (settings.urls) {
         self.urls(settings.urls);
@@ -284,22 +300,6 @@ ViewModel.prototype.fetchFromServer = function() {
         .done(function(response) {
             var settings = response.result;
             self.updateFromData(settings);
-            /*
-            if (self.nodeHasAuth() && (self.bucketList() === null)) {
-                var message = '';
-                if (self.userIsOwner()) {
-                    message = 'Could not retrieve S3 settings at ' +
-                        'this time. The S3 addon credentials may no longer be valid.' +
-                        ' Try deauthorizing and reauthorizing S3 on your <a href="' +
-                        self.urls().settings + '">account settings page</a>.';
-                } else {
-                    message = 'Could not retrieve S3 settings at ' +
-                        'this time. The S3 addon credentials may no longer be valid.' +
-                        ' Contact ' + self.ownerName() + ' to verify.';
-                }
-                self.changeMessage(message, 'text-warning');
-            }
-            */
         })
         .fail(function(xhr, status, error) {
             var message = 'Could not retrieve S3 settings at ' +

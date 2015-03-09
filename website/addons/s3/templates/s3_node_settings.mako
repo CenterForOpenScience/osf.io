@@ -61,7 +61,7 @@
         <label for="s3Addon">Secret Key</label>
         <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
       </div>
-      <button data-bind="click: createCredentials
+      <button data-bind="click: createCredentials,
                          attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
         Submit
       </button>

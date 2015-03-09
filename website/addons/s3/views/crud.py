@@ -4,7 +4,7 @@ import httplib as http
 
 from flask import request
 
-from boto.exception import S3ResponseError, BotoClientError
+from boto.exception import S3ResponseError, BotoClientError, S3CreateError
 
 from website.addons.s3.api import create_bucket
 from website.project.decorators import must_have_addon
@@ -27,4 +27,6 @@ def create_new_bucket(node_addon, **kwargs):
     except BotoClientError as e:
         return {'message': e.message}, http.NOT_ACCEPTABLE
     except S3ResponseError as e:
+        return {'message': e.message}, http.NOT_ACCEPTABLE
+    except S3CreateError as e:
         return {'message': e.message}, http.NOT_ACCEPTABLE
