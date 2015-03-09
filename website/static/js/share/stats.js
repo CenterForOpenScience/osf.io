@@ -100,7 +100,6 @@ Stats.controller = function(vm) {
     var self = this;
 
     self.vm = vm;
-    self.vm.providers = 26;
 
     self.graphs = {};
 

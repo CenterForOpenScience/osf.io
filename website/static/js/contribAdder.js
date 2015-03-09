@@ -12,8 +12,8 @@ NODE_OFFSET = 25;
 var MAX_RECENT = 5;
 
 /**
-    * The add contributor VM, scoped to the add contributor modal dialog.
-    */
+* The add contributor VM, scoped to the add contributor modal dialog.
+*/
 var AddContributorViewModel = function(title, parentId, parentTitle) {
 
     var self = this;
