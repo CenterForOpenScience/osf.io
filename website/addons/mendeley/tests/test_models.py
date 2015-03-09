@@ -263,6 +263,8 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
             'Fake Folder'
         )
 
+    # TODO: Make these tests generic and move to core
+
     @mock.patch('framework.status.push_status_message')
     def test_remove_contributor_authorizer(self, mock_push_status):
         external_account = ExternalAccountFactory()
@@ -287,6 +289,30 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
         assert_true(self.node_settings.has_auth)
         assert_true(self.user_settings.verify_oauth_access(self.node, external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_by_authorizer(self, mock_push_status):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+
+        fork = self.node.fork_node(auth=Auth(user=self.node.creator))
+
+        assert_true(fork.get_addon('mendeley').has_auth)
+        assert_true(self.user_settings.verify_oauth_access(fork, external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_not_by_authorizer(self, mock_push_status):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        fork = self.node.fork_node(auth=Auth(user=contributor))
+
+        assert_false(fork.get_addon('mendeley').has_auth)
+        assert_false(self.user_settings.verify_oauth_access(fork, external_account))
 
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
