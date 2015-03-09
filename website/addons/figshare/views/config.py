@@ -129,7 +129,6 @@ def serialize_urls(node_settings):
         'contents': node.api_url_for('figshare_hgrid_data_contents'),
         'settings': web_url_for('user_addons')
     }
-    return urls
 
 
 @must_be_valid_project
