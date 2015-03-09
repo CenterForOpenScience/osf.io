@@ -74,6 +74,7 @@ text-align: center;
 .tb-expand-icon-holder > i {
   font-size: 16px;
   padding-left: 2px;
+  cursor: default;
 }
 
 /* File icons */
