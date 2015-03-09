@@ -44,14 +44,14 @@ class CitationsProvider(object):
         except PermissionsError:
             raise HTTPError(http.FORBIDDEN)
 
-        result = self.serializer(node_addon, user).serialized_settings
+        result = self.serializer(node_addon, user).serialized_node_settings
         return {'result': result}
 
     def remove_user_auth(self, node_addon, user):
 
         node_addon.clear_auth()
         node_addon.reload()
-        result = self.serializer(node_addon, user).serialized_settings
+        result = self.serializer(node_addon, user).serialized_node_settings
         return {'result': result}
 
     def widget(self, node_addon):

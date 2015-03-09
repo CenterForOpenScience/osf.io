@@ -39,7 +39,7 @@ class AddonSerializer(object):
         pass
 
     @property
-    def serialized_settings(self):
+    def serialized_node_settings(self):
         node_has_auth = self.node_has_auth
         result = {
             'nodeHasAuth': node_has_auth,
@@ -65,8 +65,8 @@ class StorageAddonSerializer(AddonSerializer):
         pass
 
     @property
-    def serialized_settings(self):
-        result = super(StorageAddonSerializer, self).serialized_settings
+    def serialized_node_settings(self):
+        result = super(StorageAddonSerializer, self).serialized_node_settings
         result['folder'] = self.serialized_folder
         return result
 
@@ -115,8 +115,8 @@ class CitationsAddonSerializer(AddonSerializer):
         return ret
 
     @property
-    def serialized_settings(self):
-        result = super(CitationsAddonSerializer, self).serialized_settings
+    def serialized_node_settings(self):
+        result = super(CitationsAddonSerializer, self).serialized_node_settings
         result['folder'] = self.addon_node_settings.selected_folder_name
         return result
 

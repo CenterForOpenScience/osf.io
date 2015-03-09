@@ -29,7 +29,7 @@ def zotero_get_config(auth, node_addon, **kwargs):
     """
 
     provider = ZoteroCitationsProvider()
-    return provider.serializer(node_addon, auth.user).serialized_settings
+    return provider.serializer(node_addon, auth.user).serialized_node_settings
 
 @must_have_permission('write')
 @must_have_addon('zotero', 'node')
