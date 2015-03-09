@@ -46,7 +46,7 @@ text-align: center;
 	line-height: 14px;
 	background: url('/static/img/hgrid/header-columns-bg.gif');
 	padding: 3px 0px 7px 5px;
-font-size: 13px
+	font-size: 13px
 }
 
 .tb-td {
@@ -63,4 +63,10 @@ font-size: 13px
 #tb-tbody {
 	border-top : none;
 	border: 1px solid #EBEBEB;
+}
+.tb-row .icon-remove {
+	cursor : pointer;
+}
+.tb-notify {
+	white-space: nowrap;
 }

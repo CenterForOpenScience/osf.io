@@ -16,12 +16,6 @@
             ${self.body()}
         </div>
 
-        % if has_page and more:
-            <div>
-                <a href="${node['url']}${short_name}/">More</a>
-            </div>
-        % endif
-
     % else:
 
         <div mod-meta='{

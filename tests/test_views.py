@@ -15,11 +15,10 @@ from modularodm import Q
 from dateutil.parser import parse as parse_date
 
 from framework import auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
-import website.app
 from website import mailchimp_utils
 from website.views import _rescale_ratio
 from website.util import permissions
@@ -39,13 +38,20 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
 
-from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect, assert_datetime_equal
+from tests.base import (
+    OsfTestCase,
+    fake,
+    capture_signals,
+    assert_is_redirect,
+    assert_datetime_equal,
+)
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory
+    ProjectWithAddonFactory,
 )
+
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 
@@ -200,7 +206,6 @@ class TestProjectViews(OsfTestCase):
         my_user.reload()
         dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
-
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -446,6 +451,35 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True, auth=self.auth)
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
+    def test_registered_projects_contributions(self):
+        # register a project
+        self.project.register_node(None, Auth(user=self.project.creator), '', None)
+        # get the first registered project of a project
+        url = self.project.api_url_for('get_registrations')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        pid = data['nodes'][0]['id']
+        url2 = api_url_for('get_summary', pid=pid)
+        # count contributions
+        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        data = res2.json
+        assert_is_not_none(data['summary']['nlogs'])
+
+    def test_forks_contributions(self):
+        # fork a project
+        self.project.fork_node(Auth(user=self.project.creator))
+        # get the first forked project of a project
+        url = self.project.api_url_for('get_forks')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        pid = data['nodes'][0]['id']
+        url2 = api_url_for('get_summary', pid=pid)
+        # count contributions
+        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        data = res2.json
+        assert_is_not_none(data['summary']['nlogs'])
 
     @mock.patch('framework.transactions.commands.begin')
     @mock.patch('framework.transactions.commands.rollback')
@@ -789,7 +823,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_sanitization_of_edit_profile(self):
         url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname', 'value': 'new<b> name</b>'}
+        post_data = {'name': 'fullname', 'value': 'new<b> name</b>     '}
         request = self.app.post(url, post_data, auth=self.user.auth)
         assert_equal('new name', request.json['name'])
 
@@ -936,16 +970,16 @@ class TestUserProfile(OsfTestCase):
             'department': 'a department',
             'degree': 'a degree',
             'startMonth': 1,
-            'startYear': 2001,
+            'startYear': '2001',
             'endMonth': 5,
-            'endYear': 2001,
+            'endYear': '2001',
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'degree': None,
             'startMonth': 5,
-            'startYear': 2001,
+            'startYear': '2001',
             'endMonth': None,
             'endYear': None,
             'ongoing': True,
@@ -970,9 +1004,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
@@ -984,6 +1018,26 @@ class TestUserProfile(OsfTestCase):
         # jobs field is updated
         assert_equal(self.user.jobs, jobs)
 
+    def test_unserialize_names(self):
+        fake_fullname_w_spaces = '    {}    '.format(fake.name())
+        names = {
+            'full': fake_fullname_w_spaces,
+            'given': 'Tea',
+            'middle': 'Gray',
+            'family': 'Pot',
+            'suffix': 'Ms.',
+        }
+        url = api_url_for('unserialize_names')
+        res = self.app.put_json(url, names, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # user is updated
+        assert_equal(self.user.fullname, fake_fullname_w_spaces.strip())
+        assert_equal(self.user.given_name, names['given'])
+        assert_equal(self.user.middle_names, names['middle'])
+        assert_equal(self.user.family_name, names['family'])
+        assert_equal(self.user.suffix, names['suffix'])
+
     def test_unserialize_schools(self):
         schools = [
             {
@@ -991,9 +1045,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'degree': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
@@ -1013,9 +1067,9 @@ class TestUserProfile(OsfTestCase):
                 'department': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
-                'startYear': 2013,
+                'startYear': '2013',
                 'endMonth': 3,
-                'endYear': 2014,
+                'endYear': '2014',
                 'ongoing': False,
             }
         ]
@@ -1065,6 +1119,38 @@ class TestUserProfile(OsfTestCase):
         gravatar_small = res.json['gravatar_url']
         assert_true(gravatar_small is not None)
         assert_not_equal(gravatar_default_size, gravatar_small)
+
+    def test_update_user_timezone(self):
+        assert_equal(self.user.timezone, 'Etc/UTC')
+        payload = {'timezone': 'America/New_York'}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.timezone, 'America/New_York')
+
+    def test_update_user_locale(self):
+        assert_equal(self.user.locale, 'en_US')
+        payload = {'locale': 'de_DE'}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.locale, 'de_DE')
+
+    def test_update_user_locale_none(self):
+        assert_equal(self.user.locale, 'en_US')
+        payload = {'locale': None}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.locale, 'en_US')
+
+    def test_update_user_locale_empty_string(self):
+        assert_equal(self.user.locale, 'en_US')
+        payload = {'locale': ''}
+        url = api_url_for('update_user', uid=self.user._id)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(self.user.locale, 'en_US')
 
 
 class TestUserAccount(OsfTestCase):
@@ -3303,8 +3389,7 @@ class TestDashboardViews(OsfTestCase):
         # Get the All My Projects smart folder from the dashboard
         url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
-
-        assert_equal(len(res.json), 1)
+        assert_equal(len(res.json['data']), 1)
 
     def test_get_dashboard_nodes(self):
         project = ProjectFactory(creator=self.creator)
@@ -3380,7 +3465,7 @@ class TestDashboardViews(OsfTestCase):
         url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
-        assert_equal(len(res.json), 1)
+        assert_equal(len(res.json['data']), 1)
 
     def test_untouched_node_is_collapsed(self):
         found_item = False
@@ -3761,6 +3846,7 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
 
 if __name__ == '__main__':
     unittest.main()

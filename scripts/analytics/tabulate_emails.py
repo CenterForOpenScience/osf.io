@@ -5,10 +5,10 @@ to the specified project.
 
 import datetime
 import collections
+from cStringIO import StringIO
 
 from dateutil.relativedelta import relativedelta
 
-from framework.auth import Auth
 from framework.mongo import database
 
 from website import models
@@ -17,8 +17,8 @@ from website.app import app, init_app
 from scripts.analytics import utils
 
 
-NODE_ID = '95nv8'
-USER_ID = 'icpnw'
+NODE_ID = '95nv8'  # Daily updates project
+USER_ID = 'icpnw'  # Josh
 FILE_NAME = 'daily-users.csv'
 CONTENT_TYPE = 'text/csv'
 TIME_DELTA = relativedelta(days=1)
@@ -35,9 +35,10 @@ def get_emails(query=None):
 
 def get_emails_since(delta):
     return get_emails({
-        'date_confirmed': {
-            '$gte': datetime.datetime.utcnow() - delta,
-        }
+        'is_registered': True,
+        'password': {'$ne': None},
+        'is_merged': {'$ne': True},
+        'date_confirmed': {'$gte': datetime.datetime.utcnow() - delta},
     })
 
 
@@ -45,8 +46,9 @@ def main():
     node = models.Node.load(NODE_ID)
     user = models.User.load(USER_ID)
     emails = get_emails_since(TIME_DELTA)
-    sio, nchar = utils.make_csv(emails, ['affiliation', 'count'])
-    utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, nchar, node, user)
+    sio = StringIO()
+    utils.make_csv(sio, emails, ['affiliation', 'count'])
+    utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, node, user)
 
 
 if __name__ == '__main__':

@@ -39,7 +39,7 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
     self.inviteError = ko.observable('');
     self.numberOfPages = ko.observable(0);
     self.currentPage = ko.observable(0);
-
+    self.totalPages = ko.observable(0);
     self.paginators = ko.observableArray([]);
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
@@ -479,24 +479,24 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         return names.join(', ');
     });
 
-        self.submit = function() {
-            $osf.block();
+    self.submit = function() {
+        $osf.block();
+        $osf.postJSON(
+            nodeApiUrl + 'contributors/',
+            {
+                users: self.selection().map(function(user) {
+                    return ko.toJS(user);
+                }),
+                node_ids: self.nodesToChange()
+            }
+        ).done(function() {
+            window.location.reload();
+        }).fail(function() {
             $('.modal').modal('hide');
-            $osf.postJSON(
-                nodeApiUrl + 'contributors/',
-                {
-                    users: self.selection().map(function(user) {
-                        return ko.toJS(user);
-                    }),
-                    node_ids: self.nodesToChange()
-                }
-            ).done(function() {
-                window.location.reload();
-            }).fail(function() {
-                $osf.unblock();
-                $osf.growl('Error','Add contributor failed.');
-            });
-        };
+            $osf.unblock();
+            $osf.growl('Error','Add contributor failed.');
+        });
+    };
 
     self.clear = function() {
         self.page('whom');

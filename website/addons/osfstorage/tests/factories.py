@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from factory import SubFactory, LazyAttribute, post_generation
+from factory import SubFactory, post_generation
 
 from tests.factories import ModularOdmFactory, AuthUserFactory
 
 import datetime
-
-from dateutil.relativedelta import relativedelta
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import settings

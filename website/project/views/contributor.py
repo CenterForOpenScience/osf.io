@@ -17,6 +17,7 @@ from framework.exceptions import HTTPError
 from framework.auth.signals import user_registered
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
+from framework.transactions.handlers import no_auto_transaction
 
 from website import mails
 from website import language
@@ -360,6 +361,7 @@ def project_contributors_post(**kwargs):
     return {'status': 'success'}, 201
 
 
+@no_auto_transaction
 @must_be_valid_project  # injects project
 @must_have_permission(ADMIN)
 @must_not_be_registration
@@ -625,7 +627,7 @@ def claim_user_form(auth, **kwargs):
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
-            username, password = form.username.data, form.password.data
+            username, password = email, form.password.data
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}

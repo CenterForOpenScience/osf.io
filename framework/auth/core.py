@@ -1,27 +1,27 @@
 # -*- coding: utf-8 -*-
 import re
-import itertools
 import logging
 import urlparse
+import itertools
 import datetime as dt
 
-import pytz
 import bson
+import pytz
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 import framework
-from framework.sessions import session
-from framework.analytics import piwik
-from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import analytics
-from framework.guid.model import GuidStoredObject
-from framework.addons import AddonModelMixin
+from framework.sessions import session
 from framework.auth import utils, signals
-from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
+from framework.sentry import log_exception
+from framework.addons import AddonModelMixin
 from framework.exceptions import PermissionsError
+from framework.guid.model import GuidStoredObject
+from framework.bcrypt import generate_password_hash, check_password_hash
+from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 
 from website import settings, filters, security
 
@@ -31,7 +31,7 @@ name_formatters = {
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
     'initials': lambda user: u'{surname}, {initial}.'.format(
         surname=user.family_name,
-        initial=user.given_name_initial
+        initial=user.given_name_initial,
     ),
 }
 
@@ -57,12 +57,28 @@ def validate_history_item(item):
     startYear = item.get('startYear')
     endMonth = item.get('endMonth')
     endYear = item.get('endYear')
+
+    validate_year(startYear)
+    validate_year(endYear)
+
     if startYear and endYear:
         if endYear < startYear:
             raise ValidationValueError('End date must be later than start date.')
         elif endYear == startYear:
             if endMonth and startMonth and endMonth < startMonth:
                 raise ValidationValueError('End date must be later than start date.')
+
+
+def validate_year(item):
+    if item:
+        try:
+            int(item)
+        except ValueError:
+            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if len(item) != 4:
+                raise ValidationValueError('Please enter a valid year.')
+
 
 validate_url = URLValidator()
 def validate_personal_site(value):
@@ -77,6 +93,7 @@ def validate_personal_site(value):
 def validate_social(value):
     validate_personal_site(value.get('personal'))
 
+# TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
     return User.load(uid)
@@ -176,14 +193,14 @@ class User(GuidStoredObject, AddonModelMixin):
     }
 
     SOCIAL_FIELDS = {
-        'orcid': 'http://orcid.com/{}',
-        'github': 'http://github.com/{}',
-        'scholar': 'http://scholar.google.com/citation?user={}',
-        'twitter': 'http://twitter.com/{}',
-        'personal': '{}',
-        'linkedIn': 'https://www.linkedin.com/profile/view?id={}',
-        'impactStory': 'https://impactstory.org/{}',
-        'researcherId': 'http://researcherid.com/rid/{}',
+        'orcid': u'http://orcid.com/{}',
+        'github': u'http://github.com/{}',
+        'scholar': u'http://scholar.google.com/citation?user={}',
+        'twitter': u'http://twitter.com/{}',
+        'personal': u'{}',
+        'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
+        'impactStory': u'https://impactstory.org/{}',
+        'researcherId': u'http://researcherid.com/rid/{}',
     }
 
     _id = fields.StringField(primary=True)
@@ -204,6 +221,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
+    security_messages = fields.DictionaryField()
 
     # Per-project unclaimed user data:
     # Format: {
@@ -244,6 +262,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Recently added contributors stored via a list of users
     recently_added = fields.ForeignField("user", list=True, backref="recently_added")
+
+    # Attached external accounts (OAuth)
+    external_accounts = fields.ForeignField("externalaccount",
+                                            list=True,
+                                            backref="connected")
 
     # CSL names
     given_name = fields.StringField()
@@ -301,6 +324,12 @@ class User(GuidStoredObject, AddonModelMixin):
     #   'node_id': 'timestamp'
     # }
     comments_viewed_timestamp = fields.DictionaryField()
+
+    # timezone for user's locale (e.g. 'America/New_York')
+    timezone = fields.StringField(default='Etc/UTC')
+
+    # user language and locale data (e.g. 'en_US')
+    locale = fields.StringField(default='en_US')
 
     _meta = {'optimistic': True}
 
@@ -470,6 +499,20 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return check_password_hash(self.password, raw_password)
 
+    @property
+    def csl_given_name(self):
+        parts = [self.given_name]
+        if self.middle_names:
+            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
+        return ' '.join(parts)
+
+    @property
+    def csl_name(self):
+        return {
+            'family': self.family_name,
+            'given': self.csl_given_name,
+        }
+
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
@@ -550,8 +593,13 @@ class User(GuidStoredObject, AddonModelMixin):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
-        if token in self.email_verifications.keys():
-            return self.email_verifications.get(token)['expiration'] > dt.datetime.utcnow()
+        if token in self.email_verifications:
+            verification = self.email_verifications[token]
+            # Not all tokens are guaranteed to have expiration dates
+            if 'expiration' in verification:
+                return verification['expiration'] > dt.datetime.utcnow()
+            else:
+                return True
         return False
 
     def verify_claim_token(self, token, project_id):
@@ -708,20 +756,23 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     def save(self, *args, **kwargs):
+        # Avoid circular import
+        from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
-            try:
-                piwik.create_user(self)
-            except (piwik.PiwikException, ValueError):
-                logger.error("Piwik user creation failed: " + self._id)
+            piwik_tasks.update_user(self._id)
         return ret
 
     def update_search(self):
-        from website.search import search
-        search.update_user(self)
+        from website import search
+        try:
+            search.search.update_user(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     @classmethod
     def find_by_email(cls, email):

@@ -6,7 +6,7 @@ import codecs
 
 from flask import request
 
-from framework.render.tasks import ensure_path, build_rendered_html
+from framework.render.tasks import ensure_path, old_build_rendered_html
 
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
@@ -81,7 +81,7 @@ def get_cache_content(node_settings, cache_file_name, start_render=False,
             ensure_path(temp_file_dir)
             with open(temp_file_path, 'wb') as fp:
                 fp.write(file_content)
-            build_rendered_html(
+            old_build_rendered_html(
                 temp_file_path,
                 cache_dir,
                 cache_file_name,

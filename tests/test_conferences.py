@@ -392,7 +392,7 @@ class TestConferenceEmailViews(OsfTestCase):
 
         # Create conference nodes
         n_conference_nodes = 3
-        conf_nodes = create_fake_conference_nodes(
+        create_fake_conference_nodes(
             n_conference_nodes,
             conference.endpoint,
         )
@@ -402,8 +402,41 @@ class TestConferenceEmailViews(OsfTestCase):
         url = api_url_for('conference_data', meeting=conference.endpoint)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        json = res.json
-        assert_equal(len(json), n_conference_nodes)
+        assert_equal(len(res.json), n_conference_nodes)
+
+    def test_conference_data_url_upper(self):
+        conference = ConferenceFactory()
+
+        # Create conference nodes
+        n_conference_nodes = 3
+        create_fake_conference_nodes(
+            n_conference_nodes,
+            conference.endpoint,
+        )
+        # Create a non-conference node
+        ProjectFactory()
+
+        url = api_url_for('conference_data', meeting=conference.endpoint.upper())
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), n_conference_nodes)
+
+    def test_conference_data_tag_upper(self):
+        conference = ConferenceFactory()
+
+        # Create conference nodes
+        n_conference_nodes = 3
+        create_fake_conference_nodes(
+            n_conference_nodes,
+            conference.endpoint.upper(),
+        )
+        # Create a non-conference node
+        ProjectFactory()
+
+        url = api_url_for('conference_data', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), n_conference_nodes)
 
     def test_conference_results(self):
         conference = ConferenceFactory()
@@ -437,7 +470,7 @@ class TestConferenceIntegration(ContextTestCase):
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
         )
-        res = self.app.post(
+        self.app.post(
             api_url_for('meeting_hook'),
             {
                 'X-Mailgun-Sscore': 0,
@@ -481,7 +514,6 @@ class TestConferenceIntegration(ContextTestCase):
         username = 'deacon@queen.com'
         title = 'good songs'
         body = 'dragon on my back'
-        content = 'dragon attack'
         recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,

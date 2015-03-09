@@ -43,6 +43,7 @@
 
     ${includes_top()}
     ${self.stylesheets()}
+    <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
@@ -67,7 +68,7 @@
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
     <div class="watermarked">
-        <div class="container">
+        <div class="container ${self.container_class()}">
             % if status:
                 <%include file="alert.mako"/>
             % endif
@@ -87,8 +88,8 @@
                 <h1>Start managing your projects on the OSF today.</h1>
                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
-                    <a class="btn btn-primary" href="/login/">Create an Account</a>
-                    <a class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="/login/">Create an Account</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -124,6 +125,18 @@
             ga('linker:autoLink', ['centerforopenscience.org'] );
             ga('send', 'pageview');
             </script>
+        % else:
+            <script>
+                window.ga = function(source) {
+                        console.error('=== Mock ga event called: ===');
+                        console.log('event: ga(' +
+                                    arguments[0] + ', ' +
+                                    arguments[1] + ', ' +
+                                    arguments[2] + ', ' +
+                                    arguments[3] + ')'
+                        );
+                };
+          </script>
         % endif
 
         % if piwik_host:
@@ -138,7 +151,6 @@
             });
         </script>
 
-        <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
 
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
@@ -164,7 +176,7 @@
             </script>
         % endif
 
-        <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
+
         ${self.javascript_bottom()}
     </body>
 </html>
@@ -174,6 +186,10 @@
 
 <%def name="title()">
     ### The page title ###
+</%def>
+
+<%def name="container_class()">
+    ### CSS classes to apply to the "content" div ###
 </%def>
 
 <%def name="description()">
@@ -213,19 +229,19 @@
     <![endif]-->
 
     <!-- Le styles -->
-    ## Don't bundle Bootstrap or else Glyphicons won't work
+    ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
-    ## select2 stylesheet also needs to be here so that it finds the correct images
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
-
-    % for url in css_all:
-    <link rel="stylesheet" href="${url}">
-    % endfor
-    ## <link rel="stylesheet" href="/static/css/site.css">
 
     <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+
+    ## NOTE: We load vendor bundle  at the top of the page because contains
+    ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
+    ## content.
+    <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
+
 </%def>

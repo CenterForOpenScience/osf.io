@@ -15,11 +15,11 @@
                 <h3> Contributors
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                            <i class="icon icon-plus"> Add </i> 
+                          <i class="icon icon-plus"> </i>Add
                         </a>
                     <!-- /ko -->
                 </h3>
-                % if 'admin' in user['permissions']:
+                % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>
                 % endif
                 <table id="manageContributorsTable" class="table">
@@ -37,10 +37,10 @@
                                 ></i>
                         </th>
                         <th class="col-md-3">
-                            Visibility
+                            Bibliographic Contributor
                             <i class="icon-question-sign visibility-info"
                                     data-toggle="popover"
-                                    data-title="Visibility Information"
+                                    data-title="Bibliographic Contributor Information"
                                     data-container="body"
                                     data-placement="right"
                                     data-html="true"
@@ -61,7 +61,39 @@
                             }
                         }">
                     </tbody>
-                </table>
+                  </table>
+
+                <div data-bind="if: adminContributors.length">
+                    <h4>
+                      Admins on Parent Projects
+                      <i class="icon-question-sign admin-info"
+                              data-content="These users are not contributors on
+                              this component but can view and register it because they
+                                are administrators on a parent project."
+                              data-toggle="popover"
+                              data-title="Admins on Parent Projects"
+                              data-container="body"
+                              data-placement="right"
+                              data-html="true"
+                          ></i>
+                    </h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="col-md-6"></th>
+                                <th class="col-md-2"></th>
+                                <th class="col-md-3"></th>
+                                <th class="col-md-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="template: {
+                                name: 'contribTpl',
+                                foreach: adminContributors,
+                                as: 'contributor'
+                            }">
+                        </tbody>
+                    </table>
+                </div>
                 ${buttonGroup()}
             </div>
 
@@ -127,7 +159,10 @@
                             <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
                         </td>
                         <td class="col-sm-1">
-                            <span data-bind="text: anonymousDisplay"></span>
+                            <span data-bind="html: anonymousDisplay"></span>
+                            <!-- ko if: $root.nodeIsPublic && anonymous -->
+                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="icon-question-sign icon-sm"></i>
+                            <!-- /ko -->
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
@@ -158,7 +193,7 @@
             </span>
         </td>
         <td>
-            <!-- ko if: $parent.canEdit -->
+            <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
                     <a href="#" class="permission-editable no-sort" data-type="select"></a>
                 </span>
@@ -166,18 +201,18 @@
                     <span data-bind="text: formatPermission"></span>
                 </span>
             <!-- /ko -->
-            <!-- ko ifnot: $parent.canEdit -->
+            <!-- ko ifnot: contributor.canEdit() -->
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
         <td>
             <input
                     type="checkbox" class="no-sort"
-                    data-bind="checked: visible, enable: $parent.canEdit"
+                    data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
         <td>
-            <!-- ko if: $parent.canEdit -->
+          <!-- ko if: contributor.canEdit() -->
                 <!-- ko ifnot: deleteStaged -->
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
@@ -192,7 +227,7 @@
                 <!-- /ko -->
             <!-- /ko -->
 
-            <!-- ko ifnot: $parent.canEdit -->
+            <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
                     <a
                             data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
@@ -226,6 +261,7 @@
       window.contextVars.user = ${json.dumps(user)};
       window.contextVars.isRegistration = ${json.dumps(node['is_registration'])};
       window.contextVars.contributors = ${json.dumps(contributors)};
+      window.contextVars.adminContributors = ${json.dumps(adminContributors)};
 
     </script>
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>

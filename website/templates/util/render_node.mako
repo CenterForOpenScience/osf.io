@@ -91,6 +91,8 @@
                 Private Registration
             %elif summary['is_fork']:
                 Private Fork
+            %elif not summary['primary']:
+                Private Link
             %else:
                 Private Component
             %endif

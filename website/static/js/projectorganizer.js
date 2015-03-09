@@ -4,14 +4,21 @@
  */
 'use strict';
 
+var Treebeard = require('treebeard');
+
+// CSS
+require('../css/typeahead.css');
+require('../css/fangorn.css');
+require('../css/projectorganizer.css');
+
 var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
+
 
 var $osf = require('osfHelpers');
 
@@ -135,7 +142,7 @@ function createProjectDetailHTMLFromTemplate(theItem) {
 
 function createBlankProjectDetail(message) {
     var text = message || 'Select a row to view further actions.';
-    $detailDiv.html('<div class="row"> <div class="col-xs-12"> <i class="text-muted text-center po-placeholder"> ' + text + ' </i> </div> </div>');
+    $detailDiv.html('<div class="row text-muted "> <div class="col-xs-8"> <i class="text-center po-placeholder"> ' + text + ' </i> </div> <div class="col-xs-4"><i class="po-placeholder pull-right"> No Actions </i> </div>');
 }
 
 function triggerClickOnItem(item, force) {
@@ -166,6 +173,7 @@ function saveExpandState(item, callback) {
         collapseUrl = item.apiURL + 'collapse/';
         postAction = $osf.postJSON(collapseUrl, {});
         postAction.done(function () {
+            item.expand = false;
             if (typeof callback !== 'undefined') {
                 callback();
             }
@@ -175,6 +183,7 @@ function saveExpandState(item, callback) {
         expandUrl = item.apiURL + 'expand/';
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
+            item.expand = false;
             if (typeof callback !== 'undefined') {
                 callback();
             }
@@ -372,6 +381,7 @@ function _showProjectDetails(event, item, col) {
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).hide();
             $('#afc-' + theItem.node_id).show();
+            $('#add-folder-input' + theItem.node_id).focus();
         });
         $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -409,6 +419,7 @@ function _showProjectDetails(event, item, col) {
             $('#findNode' + theItem.node_id).hide();
             $('#nc-' + theItem.node_id).hide();
             $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
+            $('#rename-node-input' + theItem.node_id).focus();
         });
         $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
             var contents = $.trim($(this).val());
@@ -444,9 +455,10 @@ function _showProjectDetails(event, item, col) {
             $('#afc-' + theItem.node_id).hide();
             $('#rnc-' + theItem.node_id).hide();
             $('#findNode' + theItem.node_id).show();
+            $('#input' + theItem.node_id).focus();
         });
     } else {
-        createBlankProjectDetail('Smart folders don\'t have any actions.');
+        createBlankProjectDetail(theItem.name);
     }
 }
 
@@ -474,7 +486,7 @@ function _poActionColumn(item, col) {
     // Build the template for icons
     return buttons.map(function (btn) {
         return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, 'data-toggle' : 'tooltip', title : 'Go to Project', 'data-placement': 'bottom','style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
+            { 'class' : btn.css, 'data-toggle' : 'tooltip', title : 'Go to page', 'data-placement': 'bottom','style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
     });
@@ -673,7 +685,7 @@ function _poResolveToggle(item) {
     var toggleMinus = m('i.icon-minus'),
         togglePlus = m('i.icon-plus'),
         childrenCount = item.data.childrenCount || item.children.length;
-    if (item.kind === 'folder' && childrenCount > 0) {
+    if (item.kind === 'folder' && childrenCount > 0 && item.depth > 1) {
         if (item.open) {
             return toggleMinus;
         }
@@ -839,7 +851,7 @@ function filterRowsNotInParent(rows) {
         return this.multiselected;
     }
     var i, newRows = [],
-        originalRow = this.find(this.selected),
+        originalRow = this.find(this.multiselected[0].id),
         originalParent,
         currentItem;
     if (typeof originalRow !== "undefined") {
@@ -893,7 +905,7 @@ function _poOver(event, ui) {
     var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
         folder = this.find($(event.target).attr('data-id')),
         dragState = dragLogic.call(this, event, items, ui);
-    $('.tb-row').removeClass('tb-h-success po-hover po-hover-multiselect');
+    $('.tb-row').removeClass('tb-h-success po-hover');
     if (dragState !== 'forbidden') {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
     } else {
@@ -1041,7 +1053,7 @@ function dropLogic(event, items, folder) {
         itemParent,
         itemParentNodeID,
         getAction;
-    if (typeof folder !== 'undefined' && folder !== null && folder.data.isFolder) {
+    if (typeof folder !== 'undefined' && !folder.data.isSmartFolder && folder !== null && folder.data.isFolder) {
         theFolderNodeID = folder.data.node_id;
         getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
         sampleItem = items[0];
@@ -1097,7 +1109,14 @@ function dropLogic(event, items, folder) {
                                     tb.updateFolder(null, itemParent);
                                     tb.updateFolder(null, folder);
                                 } else {
-                                    tb.updateFolder(null, outerFolder);
+                                    // if item is closed folder save expand state to be open
+                                    if(!folder.data.expand){
+                                        saveExpandState(folder.data, function(){
+                                            tb.updateFolder(null, outerFolder);
+                                        });
+                                    } else {
+                                        tb.updateFolder(null, outerFolder);
+                                    }
                                 }
                             } else {
                                 tb.updateFolder(null, folder);

@@ -13,10 +13,9 @@ import six
 from elasticsearch import (
     Elasticsearch,
     RequestError,
-    NotFoundError
+    NotFoundError,
+    ConnectionError
 )
-
-from requests.exceptions import ConnectionError
 
 from framework import sentry
 
@@ -87,7 +86,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index='_all', doc_type=None, search_type='count', body=count_query)
+    res = es.search(index='website', doc_type=None, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
@@ -165,10 +164,11 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        'title': result['title'],
+        # TODO: Remove when html safe comes in
+        'title': result['title'].replace('&amp;', '&'),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': parent_info.get('title') if parent_info is not None else None,
+        'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
@@ -232,7 +232,6 @@ def update_node(node, index='website'):
             'contributors': [
                 x.fullname for x in node.visible_contributors
                 if x is not None
-                and x.is_active
             ],
             'contributors_url': [
                 x.profile_url for x in node.visible_contributors

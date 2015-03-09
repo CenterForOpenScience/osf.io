@@ -127,7 +127,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
         if ($item.attr('data-toggle') === 'tooltip') {
             $item.tooltip();
         } else {
-            $item.find('[data-toggle="tooltip"]').tooltip();
+            $item.find('[data-toggle="tooltip"]').tooltip({container: 'body'});
         }
     });
 };
@@ -479,7 +479,7 @@ var init = function(selector, userName, canComment, hasChildren) {
     if (!$elm.length) {
         throw('No results found for selector');
     }
-    ko.applyBindings(viewModel, $elm[0]);
+    osfHelpers.applyBindings(viewModel, $elm[0]);
     viewModel.initListeners();
 
     return viewModel;

@@ -9,21 +9,65 @@ from tests.factories import ProjectFactory
 from website.addons.osfstorage.tests import factories
 from website.addons.osfstorage.tests.utils import StorageTestCase
 
-import os
 import datetime
 
-from dateutil.relativedelta import relativedelta
 from modularodm import exceptions as modm_errors
-
-from framework.auth import Auth
 
 from website.models import NodeLog
 
-from website.addons.osfstorage import logs
 from website.addons.osfstorage import model
-from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
+
+
+class TestFileGuid(OsfTestCase):
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        self.user = factories.AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.node_addon = self.project.get_addon('osfstorage')
+
+    def test_provider(self):
+        assert_equal('osfstorage', model.OsfStorageGuidFile().provider)
+
+    def test_correct_path(self):
+        guid = model.OsfStorageGuidFile(node=self.project, path='baz/foo/bar')
+
+        assert_equals(guid.path, 'baz/foo/bar')
+        assert_equals(guid.waterbutler_path, '/baz/foo/bar')
+
+    @mock.patch('website.addons.base.requests.get')
+    def test_unique_identifier(self, mock_get):
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty',
+                'extra': {
+                    'version': 'Terran it up'
+                }
+            }
+        }
+
+        guid = model.OsfStorageGuidFile(node=self.project, path='/foo/bar')
+
+        guid.enrich()
+        assert_equals('Terran it up', guid.unique_identifier)
+
+    def test_node_addon_get_or_create(self):
+        guid, created = self.node_addon.find_or_create_file_guid('baz/foo/bar')
+
+        assert_true(created)
+        assert_equal(guid.path, 'baz/foo/bar')
+        assert_equal(guid.waterbutler_path, '/baz/foo/bar')
+
+    def test_node_addon_get_or_create_finds(self):
+        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
+        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(guid1, guid2)
 
 
 class TestNodeSettingsModel(StorageTestCase):
@@ -61,6 +105,7 @@ class TestNodeSettingsModel(StorageTestCase):
             '',
             {},
         )
+        assert_true(registration.has_addon('osfstorage'))
         registration_node_settings = registration.get_addon('osfstorage')
         registration_node_settings.reload()
         cloned_record = model.OsfStorageFileRecord.find_by_path(path, registration_node_settings)
@@ -290,7 +335,8 @@ class TestOsfStorageFileRecord(StorageTestCase):
         self.record.versions[0].save()
         self.record.versions[1].save()
         self.record.save()
-        self.record.update_version_metadata(self.record.versions[0].location, {'archive': 'glacier'})
+        self.record.update_version_metadata(self.record.versions[0].location,
+            {'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'})
         assert_in('archive', self.record.versions[0].metadata)
         assert_equal(self.record.versions[0].metadata['archive'], 'glacier')
         assert_not_in('archive', self.record.versions[1].metadata)
@@ -364,7 +410,8 @@ class TestOsfStorageFileVersion(OsfTestCase):
 
     def test_update_metadata(self):
         version = factories.FileVersionFactory()
-        version.update_metadata({'archive': 'glacier'})
+        version.update_metadata({'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'})
+        version.reload()
         assert_in('archive', version.metadata)
         assert_equal(version.metadata['archive'], 'glacier')
 
@@ -403,13 +450,13 @@ class TestStorageObject(OsfTestCase):
         existing = model.OsfStorageGuidFile(node=self.project, path=self.path)
         existing.save()
         n_objs = model.OsfStorageGuidFile.find().count()
-        result = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
+        result, _ = model.OsfStorageGuidFile.get_or_create(node=self.project, path=self.path)
         assert_equal(result, existing)
         assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
 
     def test_get_or_create_does_not_exist(self):
         n_objs = model.OsfStorageGuidFile.find().count()
-        result = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
+        result, _ = model.OsfStorageGuidFile.get_or_create(node=self.project, path=self.path)
         assert_equal(result.node, self.project)
         assert_equal(result.path, self.path)
         assert_equal(n_objs + 1, model.OsfStorageGuidFile.find().count())

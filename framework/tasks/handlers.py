@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import functools
 
 from flask import g
-from celery import group
+from celery import chain
 
 from website import settings
 
@@ -21,7 +22,7 @@ def celery_teardown_request(error=None):
     try:
         tasks = g._celery_tasks
         if tasks:
-            group(*tasks)()
+            chain(*tasks)()
     except AttributeError:
         if not settings.DEBUG_MODE:
             logger.error('Task queue not initialized')
@@ -37,6 +38,22 @@ def enqueue_task(signature):
             g._celery_tasks.append(signature)
     except RuntimeError:
         signature()
+
+
+def queued_task(task):
+    """Decorator that adds the wrapped task to the queue on ``g`` if Celery is
+    enabled, else runs the task synchronously. Can only be applied to Celery
+    tasks; should be used for all tasks fired within a request context that
+    may write to the database to avoid race conditions.
+    """
+    @functools.wraps(task)
+    def wrapped(*args, **kwargs):
+        if settings.USE_CELERY:
+            signature = task.si(*args, **kwargs)
+            enqueue_task(signature)
+        else:
+            task(*args, **kwargs)
+    return wrapped
 
 
 handlers = {

@@ -15,6 +15,7 @@ span.project-organizer-icon-folder {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/folder.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-smart-folder {
@@ -23,6 +24,7 @@ span.project-organizer-icon-smart-folder {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/smart-folder.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-project {
@@ -31,6 +33,7 @@ span.project-organizer-icon-project {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/project.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-project:hover {
@@ -39,6 +42,7 @@ span.project-organizer-icon-project:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/project-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-component {
@@ -47,6 +51,7 @@ span.project-organizer-icon-component {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/component.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-component:hover {
@@ -55,6 +60,7 @@ span.project-organizer-icon-component:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/component-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-pointer {
@@ -63,6 +69,7 @@ span.project-organizer-icon-pointer {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/pointer.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-pointer {
@@ -71,11 +78,13 @@ span.project-organizer-icon-reg-pointer {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-pointer.png');
+    background-repeat: no-repeat;
 }
 
 
 span.project-organizer-icon-reg-pointer:hover {
     background-image: url('/static/img/hgrid/pointer-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-pointer:hover {
@@ -84,6 +93,7 @@ span.project-organizer-icon-pointer:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/pointer-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-project {
@@ -92,6 +102,7 @@ span.project-organizer-icon-reg-project {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-project.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-project:hover {
@@ -100,6 +111,7 @@ span.project-organizer-icon-reg-project:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-project-hover.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-component {
@@ -108,6 +120,7 @@ span.project-organizer-icon-reg-component {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-component.png');
+    background-repeat: no-repeat;
 }
 
 span.project-organizer-icon-reg-component:hover {
@@ -116,6 +129,7 @@ span.project-organizer-icon-reg-component:hover {
     height: 16px;
     vertical-align: middle;
     background-image: url('/static/img/hgrid/reg-component-hover.png');
+    background-repeat: no-repeat;
 }
 
 button.project-organizer-icon-info {
@@ -200,8 +214,6 @@ span.rename-container{
 div.project-details span.title {
     display: inline;
     overflow-x: hidden;
-    padding: 7px;
-    line-height: 29px;
     font-size: 15px;
     overflow-x: hidden;
 }
@@ -374,8 +386,6 @@ h3.category {
     vertical-align: bottom;
     margin-right: 4px;
 }
-
-
 
 
 

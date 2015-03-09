@@ -3,14 +3,52 @@
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
 
+'use strict';
+
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
+var URI = require('URIjs');
 var waterbutler = require('waterbutler');
+
+var $osf = require('osfHelpers');
+
+// CSS
+require('../css/fangorn.css');
 
 var tbOptions;
 
 var tempCounter = 1;
+
+var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
+    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
+    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
+    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
+    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
+    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
+    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
+    'xlsx', 'py'];
+
+var EXTENSION_MAP = {};
+EXTENSIONS.forEach(function(extension) {
+    EXTENSION_MAP[extension] = extension;
+});
+$.extend(EXTENSION_MAP, {
+    gdoc: 'docx',
+    gsheet: 'xlsx'
+});
+
+var ICON_PATH = '/static/img/hgrid/fatcowicons/';
+
+var getExtensionIcon = function(name) {
+    var extension = name.split('.').pop().toLowerCase();
+    var icon = EXTENSION_MAP[extension];
+    if (icon) {
+        return ICON_PATH + 'file_extension_' + icon + '.png';
+    } else {
+        return null;
+    }
+};
 
 /**
  * Returns custom icons for OSF depending on the type of item
@@ -20,17 +58,16 @@ var tempCounter = 1;
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder = m('img', { src : '/static/img/hgrid/fatcowicons/folder_delete.png' }),
+    var privateFolder = m('img', {src: '/static/img/hgrid/fatcowicons/folder_delete.png'}),
         pointerFolder = m('i.icon-link', ' '),
-        openFolder  = m('i.icon-folder-open-alt', ' '),
-        closedFolder = m('i.icon-folder-close-alt', ' '),
-        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,
-        ext,
-        extensions;
+        openFolder  = m('i.icon-folder-open', ' '),
+        closedFolder = m('i.icon-folder-close', ' '),
+        configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
+        icon;
 
     if (item.kind === 'folder') {
         if (item.data.iconUrl) {
-            return m('img', { src : item.data.iconUrl, style: {width: '16px', height: 'auto'} });
+            return m('img', {src: item.data.iconUrl, style: {width: '16px', height: 'auto'}});
         }
         if (!item.data.permissions.view) {
             return privateFolder;
@@ -47,20 +84,12 @@ function _fangornResolveIcon(item) {
         return m('i.fa.' + item.data.icon, ' ');
     }
 
-    ext = item.data.name.split('.').pop().toLowerCase();
-    extensions = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-        'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-        'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-        'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-        'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-        'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-        'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
-        'xlsx', 'py'];
-
-    if (extensions.indexOf(ext) !== -1) {
-        return m('img', { src : '/static/img/hgrid/fatcowicons/file_extension_' + ext + '.png'});
+    icon = getExtensionIcon(item.data.name);
+    if (icon) {
+        return m('img', {src: icon});
+    } else {
+        return m('i.icon-file-alt');
     }
-    return m('i.icon-file-alt');
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
@@ -91,7 +120,7 @@ function getconfig(item, key) {
  * @returns {*} Returns if its a property, runs the function if function, returns null if no option is defined.
  */
 function resolveconfigOption(item, option, args) {
-    var self = this,
+    var self = this,  // jshint ignore:line
         prop = getconfig(item, option);
     if (prop) {
         return typeof prop === 'function' ? prop.apply(self, args) : prop;
@@ -124,7 +153,7 @@ function _fangornResolveToggle(item) {
     var toggleMinus = m('i.icon-minus', ' '),
         togglePlus = m('i.icon-plus', ' ');
     // check if folder has children whether it's lazyloaded or not.
-    if (item.kind === 'folder') {
+    if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
             return '';
         }
@@ -161,7 +190,7 @@ function _fangornToggleCheck(item) {
  * @private
  */
 function _fangornResolveUploadUrl(item, file) {
-    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]);
+    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]); // jshint ignore:line
     return configOption || waterbutler.buildTreeBeardUpload(item, file);
 }
 
@@ -204,18 +233,16 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     if(treebeard.options.placement === 'dashboard'){
         column = null;
-        msgText += file.name + '  : ';
+        msgText += file.name.slice(0,25) + '... : ';
     } else {
         column = 1;
     }
     msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
-        treebeard.options.uploadInProgress = true;
         item.notify.update(msgText, 'success', column, 0);
     } else {
-        item.notify.update(msgText, 'success', column, 3000);
-        treebeard.options.uploadInProgress = false;
+        item.notify.update(msgText, 'success', column, 2000);
     }
 }
 
@@ -250,7 +277,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
  */
 function _fangornAddedFile(treebeard, file) {
     var item = file.treebeardParent;
-    if (!item.data.permissions.edit) {
+    if (!_fangornCanDrop(treebeard, item)) {
         return;
     }
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
@@ -261,7 +288,7 @@ function _fangornAddedFile(treebeard, file) {
     file.url = _fangornResolveUploadUrl(item, file);
     file.method = _fangornUploadMethod(item);
 
-    blankItem = {       // create a blank item that will refill when upload is finished.
+    var blankItem = {       // create a blank item that will refill when upload is finished.
         name: file.name,
         kind: 'file',
         provider: item.data.provider,
@@ -273,10 +300,15 @@ function _fangornAddedFile(treebeard, file) {
         tmpID: tmpID
     };
     treebeard.createItem(blankItem, item.id);
-
-
-
     return configOption || null;
+}
+
+function _fangornCanDrop(treebeard, item) {
+    var canDrop = resolveconfigOption.call(treebeard, item, 'canDrop', [item]);
+    if (canDrop === null) {
+        canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
+    }
+    return canDrop;
 }
 
 /**
@@ -293,7 +325,7 @@ function _fangornDragOver(treebeard, event) {
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
-        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+        if (_fangornCanDrop(treebeard, item)) {
             closestTarget.addClass(dropzoneHoverClass);
         }
     }
@@ -309,6 +341,7 @@ function _fangornDragOver(treebeard, event) {
 function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
+    _fangornOrderFolder.call(treebeard, item);
 }
 
 /**
@@ -325,12 +358,12 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item,
         revisedItem,
         child;
-    for(var i = 0; i < parent.children.length; i++) {
+    for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
-        if(!child.data.tmpID){
+        if (!child.data.tmpID){
             continue;
         }
-        if(child.data.tmpID === file.tmpID) {
+        if (child.data.tmpID === file.tmpID) {
             item = child;
         }
     }
@@ -345,17 +378,17 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item.data = response;
         inheritFromParent(item, item.parent());
     }
-    if(item.data.tmpID) {
+    if (item.data.tmpID) {
         item.data.tmpID = null;
     }
-    // Check and remove duplicates
-    if(parent.children.length  > 0 ) {
-        for (var j = 0; j < parent.children.length; j++){
-            var o = parent.children[j];
-            if(o.data.name === item.data.name && o.id !== item.id){
-                o.removeSelf();
+    // Remove duplicates if file was updated
+    var status = file.xhr.status;
+    if (status === 200) {
+        parent.children.forEach(function(child) {
+            if (child.data.name === item.data.name && child.id !== item.id) {
+                child.removeSelf();
             }
-        }
+        });
     }
     treebeard.redraw();
 }
@@ -367,24 +400,32 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @param message Error message returned
  * @private
  */
+var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
 function _fangornDropzoneError(treebeard, file, message) {
-    var parent = file.treebeardParent;
-    var item,
-        child,
-        msgText = message.message_short || message;
-    for(var i = 0; i < parent.children.length; i++) {
+    // File may either be a webkit Entry or a file object, depending on the browser
+    // On Chrome we can check if a directory is being uploaded
+    var msgText;
+    if (file.isDirectory) {
+        msgText = 'Cannot upload directories, applications, or packages.';
+    } else {
+        msgText = DEFAULT_ERROR_MESSAGE;
+    }
+    var parent = file.treebeardParent || treebeard.dropzoneItemCache;
+    // Parent may be undefined, e.g. in Chrome, where file is an entry object
+    var item;
+    var child;
+    var destroyItem = false;
+    for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
-        if(!child.data.tmpID){
+        if (!child.data.tmpID) {
             continue;
         }
-        if(child.data.tmpID === file.tmpID) {
+        if (child.data.tmpID === file.tmpID) {
             item = child;
+            treebeard.deleteNode(parent.id, item.id);
         }
     }
-    item.notify.type = 'danger';
-    item.notify.message = msgText;
-    item.notify.col = 1;
-    item.notify.selfDestruct(treebeard, item);
+    $osf.growl('Error', msgText);
     treebeard.options.uploadInProgress = false;
 }
 
@@ -396,15 +437,16 @@ function _fangornDropzoneError(treebeard, file, message) {
  * @private
  */
 function _uploadEvent(event, item, col) {
+    var self = this;  // jshint ignore:line
     try {
         event.stopPropagation();
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    this.dropzoneItemCache = item;
-    this.dropzone.hiddenFileInput.click();
-    if(!item.open){
-        this.updateFolder(null, item);
+    self.dropzoneItemCache = item;
+    self.dropzone.hiddenFileInput.click();
+    if (!item.open) {
+        self.updateFolder(null, item);
     }
 }
 
@@ -420,9 +462,6 @@ function _downloadEvent (event, item, col) {
         event.stopPropagation();
     } catch (e) {
         window.event.cancelBubble = true;
-    }
-    if (item.data.provider === 'osfstorage') {
-        item.data.extra.downloads++;
     }
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
@@ -442,16 +481,18 @@ function _removeEvent (event, item, col) {
     }
     var tb = this;
 
-    function cancelDelete () {
+    function cancelDelete() {
         this.modal.dismiss();
     }
-    function runDelete () {
+    function runDelete() {
         var tb = this;
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
+        var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
+        url = url || waterbutler.buildTreeBeardDelete(item);
         $.ajax({
-            url: waterbutler.buildTreeBeardDelete(item),
-            type : 'DELETE'
+            url: url,
+            type: 'DELETE'
         })
         .done(function(data) {
             // delete view
@@ -464,10 +505,9 @@ function _removeEvent (event, item, col) {
         });
     }
 
-
     if (item.data.permissions.edit) {
         var mithrilContent = m('div', [
-                m('h3', 'Delete "' + item.data.name+ '"?'),
+                m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
                 m('p', 'This action is irreversible.')
             ]);
         var mithrilButtons = m('div', [
@@ -496,7 +536,6 @@ function _fangornResolveLazyLoad(item) {
     if (item.data.provider === undefined) {
         return false;
     }
-
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
@@ -535,7 +574,7 @@ function _fangornLazyLoadError (item) {
 
 /**
  * Called when new object data has arrived to be loaded.
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
  * @private
  */
@@ -544,7 +583,23 @@ function _fangornLazyLoadOnLoad (tree) {
         inheritFromParent(item, tree);
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+
+    if (tree.depth > 1) {
+        _fangornOrderFolder.call(this, tree);
+    }
+}
+
+/**
+ * Order contents of a folder without an entire sorting of all the table
+ * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _fangornOrderFolder(tree) {
+    var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+    tree.sortChildren(this, sortDirection, 'text', 0);
+    this.redraw();
 }
 
 /**
@@ -559,6 +614,7 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
+
 /**
  * Defines the contents for the action column, upload and download buttons etc.
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -570,9 +626,10 @@ function _fangornUploadMethod(item) {
 function _fangornActionColumn (item, col) {
     var self = this,
         buttons = [];
-    //
+
     // Upload button if this is a folder
-    if (item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
+    // If File and FileRead are not defined dropzone is not supported and neither is uploads
+    if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             name: '',
             icon: 'icon-upload-alt',
@@ -623,15 +680,9 @@ function _fangornTitleColumn(item, col) {
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span',{
             onclick: function() {
-                var params = $.param(
-                    $.extend({
-                        provider: item.data.provider,
-                        path: item.data.path.substring(1)
-                    },
-                        item.data.extra || {}
-                    )
-                );
-                window.location = item.data.nodeApiUrl + 'waterbutler/files/?' + params;
+                var redir = new URI(item.data.nodeUrl);
+                redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+                window.location = redir.toString() + '/';
             },
             'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
         }, item.data.name);
@@ -650,7 +701,6 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-
     if(item.data.tmpID){
         return [
         {
@@ -770,7 +820,7 @@ function expandStateLoad(item) {
             }
         }
     }
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 }
 
 
@@ -786,9 +836,29 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    title : function() {
+        if(window.contextVars.uploadInstruction) {
+            // If File and FileRead are not defined dropzone is not supported and neither is uploads
+            if (window.File && window.FileReader) {
+                return m('p', {
+                }, [
+                    m('span', 'To Upload: Drag files into a folder OR click the '),
+                    m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
+                    m('span', ' below.')
+                ]);
+            }
+            return m('p', {
+                class: 'text-danger'
+            }, [
+                m('span', 'Your browser does not support file uploads, ', [
+                    m('a', { href: 'http://browsehappy.com' }, 'learn more'),
+                    '.'
+                ])
+            ]);
+        }
+        return undefined;
+    },
     showFilter : true,     // Gives the option to filter by showing the filter box.
-    filterStyle : { 'float' : 'right', 'width' : '50%'},
-    title : false,          // Title of the grid, boolean, string OR function that returns a string.
     allowMove : false,       // Turn moving on or off.
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
@@ -803,11 +873,11 @@ tbOptions = {
             tb.redraw();
         });
 
-        window.onbeforeunload = function(e) {
-            if (tb.options.uploadInProgress) {
+        $(window).on('beforeunload', function() {
+            if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
-        };
+        });
     },
     createcheck : function (item, parent) {
         return true;
@@ -826,7 +896,7 @@ tbOptions = {
         var maxSize;
         var displaySize;
         var msgText;
-        if (item.data.provider && item.kind === 'folder' && item.data.permissions.edit) {
+        if (_fangornCanDrop(treebeard, item)) {
             if (item.data.accept && item.data.accept.maxSize) {
                 size = file.size / 1000000;
                 maxSize = item.data.accept.maxSize;
@@ -842,16 +912,21 @@ tbOptions = {
         return false;
     },
     onscrollcomplete : function(){
-        $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    },
+    onselectrow : function(row) {
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
+    sortDepth : 2,
     dropzone : {                                           // All dropzone options.
         url: function(files) {return files[0].url;},
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 10
+        parallelUploads: 1,
+        acceptDirectories: false,
+        fallback: function(){}
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
@@ -870,8 +945,7 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
-    },
-    uploadInProgress : false
+    }
 };
 
 /**

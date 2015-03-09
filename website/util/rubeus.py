@@ -321,7 +321,8 @@ class NodeProjectCollector(object):
             to_expand = False
 
         return {
-            'name': node.title if can_view else u'Private Component',
+            #TODO Remove the replace when mako html safe comes around
+            'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
             'kind': FOLDER,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
@@ -437,7 +438,8 @@ class NodeFileCollector(object):
         else:
             children = []
         return {
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title)
+            # #TODO Remove the replace when mako html safe comes around
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title.replace('&amp;', '&'))
             if can_view
             else u'Private Component',
             'kind': FOLDER,

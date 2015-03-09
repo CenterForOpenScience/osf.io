@@ -24,13 +24,15 @@ from website.util import paths
 from website.util import sanitize
 from website import landing_pages as landing_page_views
 from website import views as website_views
-from website.assets import env as assets_env
+from website.citations import views as citation_views
 from website.search import views as search_views
+from website.oauth import views as oauth_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.notifications import views as notification_views
 
 
 def get_globals():
@@ -54,7 +56,6 @@ def get_globals():
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
-        'css_all': assets_env['css'].urls(),
         'domain': settings.DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
@@ -203,6 +204,17 @@ def make_url_map(app):
 
     ])
 
+    # Site-wide API routes
+
+    process_rules(app, [
+        Rule(
+            '/citations/styles/',
+            'get',
+            citation_views.list_citation_styles,
+            json_renderer,
+        ),
+    ], prefix='/api/v1')
+
     process_rules(app, [
         Rule(
             [
@@ -220,6 +232,35 @@ def make_url_map(app):
             addon_views.get_addon_user_config,
             json_renderer,
         ),
+    ], prefix='/api/v1')
+
+    # OAuth
+
+    process_rules(app, [
+        Rule(
+            '/oauth/connect/<service_name>/',
+            'get',
+            oauth_views.oauth_connect,
+            json_renderer,
+        ),
+
+        Rule(
+            '/oauth/callback/<service_name>/',
+            'get',
+            oauth_views.oauth_callback,
+            OsfWebRenderer('util/oauth_complete.mako'),
+        ),
+    ])
+
+    process_rules(app, [
+        Rule(
+            [
+                '/oauth/accounts/<external_account_id>/',
+            ],
+            'delete',
+            oauth_views.oauth_disconnect,
+            json_renderer,
+        )
     ], prefix='/api/v1')
 
     process_rules(app, [
@@ -326,6 +367,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/citation/',
+                '/project/<pid>/node/<nid>/citation/',
+            ],
+            'get',
+            citation_views.node_citation,
+            json_renderer,
+        ),
+
     ], prefix='/api/v1')
 
     ### Forms ###
@@ -386,7 +437,8 @@ def make_url_map(app):
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),
-
+        Rule('/login/two-factor/', ['get', 'post'], auth_views.two_factor,
+             OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
         Rule('/forgotpassword/', 'post', auth_views.forgot_password,
@@ -475,6 +527,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
+        Rule('/profile/', 'put', profile_views.update_user, json_renderer),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
 
         # Used by profile.html
@@ -593,6 +646,8 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
+        Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
+        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
 
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
@@ -611,6 +666,8 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
+        Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
+        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -725,6 +782,73 @@ def make_url_map(app):
             OsfWebRenderer('project/files.mako'),
             view_kwargs={'mode': 'page'},
         ),
+        Rule(
+            [
+                '/project/<pid>/files/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
+            ],
+            'get',
+            addon_views.addon_view_or_download_file,
+            OsfWebRenderer('project/view_file.mako')
+        ),
+        Rule(
+            [
+
+                # Legacy Addon view file paths
+                '/project/<pid>/<provider>/files/<path:path>/',
+                '/project/<pid>/node/<nid>/<provider>/files/<path:path>/',
+
+                '/project/<pid>/<provider>/files/<path:path>/download/',
+                '/project/<pid>/node/<nid>/<provider>/files/<path:path>/download/',
+
+                # Legacy routes for `download_file`
+                '/project/<pid>/osffiles/<fid>/download/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/download/',
+
+                # Legacy routes for `view_file`
+                '/project/<pid>/osffiles/<fid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/',
+
+                # Note: Added these old URLs for backwards compatibility with
+                # hard-coded links.
+                '/project/<pid>/osffiles/download/<fid>/',
+                '/project/<pid>/node/<nid>/osffiles/download/<fid>/',
+                '/project/<pid>/files/<fid>/',
+                '/project/<pid>/node/<nid>/files/<fid>/',
+                '/project/<pid>/files/download/<fid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/',
+
+                # Legacy routes for `download_file_by_version`
+                '/project/<pid>/osffiles/<fid>/version/<vid>/download/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/download/',
+                # Note: Added these old URLs for backwards compatibility with
+                # hard-coded links.
+                '/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
+                '/project/<pid>/files/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
+                '/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+
+                # api/v1 Legacy routes for `download_file`
+                '/api/v1/project/<pid>/osffiles/<fid>/',
+                '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',
+                '/api/v1/project/<pid>/files/download/<fid>/',
+                '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/',
+
+                #api/v1 Legacy routes for `download_file_by_version`
+                '/api/v1/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+            ],
+            'get',
+            addon_views.addon_view_or_download_file_legacy,
+            json_renderer
+        ),
+
 
 
     ])
@@ -1111,12 +1235,12 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/waterbutler/files/',
-                '/project/<pid>/node/<nid>/waterbutler/files/',
+                '/project/<pid>/files/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
             'get',
-            addon_views.get_waterbutler_render_url,
-            json_renderer,
+            addon_views.addon_render_file,
+            json_renderer
         ),
         Rule(
             '/settings/addons/',
@@ -1136,6 +1260,30 @@ def make_url_map(app):
             '/settings/notifications/',
             'post',
             profile_views.user_choose_mailing_lists,
+            json_renderer,
+        ),
+
+        Rule(
+            '/subscriptions/',
+            'get',
+            notification_views.get_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/subscriptions/',
+                '/project/<pid>/node/<nid>/subscriptions/'
+            ],
+            'get',
+            notification_views.get_node_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            '/subscriptions/',
+            'post',
+            notification_views.configure_subscription,
             json_renderer,
         ),
 

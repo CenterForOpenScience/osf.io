@@ -99,8 +99,9 @@ def add_poster_by_email(conference, message):
     utils.upload_attachments(user, node, message.attachments)
 
     download_url = node.web_url_for(
-        'osf_storage_view_file',
+        'addon_view_or_download_file',
         path=message.attachments[0].filename,
+        provider='osfstorage',
         action='download',
         _absolute=True,
     )
@@ -121,7 +122,7 @@ def add_poster_by_email(conference, message):
         profile_url=user.absolute_url,
         node_url=node.absolute_url,
         file_url=download_url,
-        presentation_type=message.conference_category,
+        presentation_type=message.conference_category.lower(),
         is_spam=message.is_spam,
     )
 
@@ -135,9 +136,11 @@ def _render_conference_node(node, idx):
             if not each.is_deleted,
         )
         download_count = record.get_download_count()
+
         download_url = node.web_url_for(
-            'osf_storage_view_file',
+            'addon_view_or_download_file',
             path=record.path,
+            provider='osfstorage',
             action='download',
             _absolute=True,
         )
@@ -166,16 +169,16 @@ def conference_data(meeting):
         raise HTTPError(httplib.NOT_FOUND)
 
     nodes = Node.find(
-        Q('tags', 'eq', meeting) &
+        Q('tags', 'iexact', meeting) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
 
-    data = [
+    ret = [
         _render_conference_node(each, idx)
         for idx, each in enumerate(nodes)
     ]
-    return data
+    return ret
 
 
 def conference_results(meeting):
@@ -202,7 +205,7 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         query = (
-            Q('tags', 'eq', conf.endpoint)
+            Q('tags', 'iexact', conf.endpoint)
             & Q('is_public', 'eq', True)
             & Q('is_deleted', 'eq', False)
         )

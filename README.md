@@ -86,6 +86,12 @@ $ invoke mongo
 $ invoke server
 ```
 
+- Run your local sharejs server.
+
+```bash
+$ invoke sharejs
+```
+
 ## Running the shell
 
 To open the interactive Python shell, run:
@@ -142,8 +148,6 @@ $ invoke mailserver -p 1025
 TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments.
 TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
 `commitTransaction` commands.
-
-If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
 
 ### Installing with Mac OS
 
@@ -329,6 +333,15 @@ $ inv pack -dw
 ```bash
 $ inv assets -dw
 ```
+
+## Downloading citation styles (optional)
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
 
 ## Setting up addons
 

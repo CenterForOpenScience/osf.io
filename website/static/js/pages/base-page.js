@@ -3,6 +3,14 @@
  * code goes here.
  */
 'use strict';
+// CSS used on every page
+require('../../vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css');
+require('../../vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css');
+require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
+require('../../css/bootstrap-xl.css');
+require('../../css/animate.css');
+require('../../css/site.css');
+
 
 var $ = require('jquery');
 require('jquery.cookie');
@@ -46,14 +54,13 @@ var SlideInViewModel = function (){
         } catch (e) {
             $.cookie('slide', '0', { expires: 1, path: '/'});
         }
+        self.trackClick('Dismiss');
+    };
+    // Google Analytics click event tracking
+    self.trackClick = function(source) {
+        window.ga('send', 'event', 'button', 'click', source);
     };
 };
-var NO_FOOTER_PATHS = ['/login/', '/getting-started/', '/register/'];
-if ($(sliderSelector).length > 0 &&
-        $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
-    $osf.applyBindings(new SlideInViewModel(), sliderSelector);
-}
-
 
 $(document).on('click', '.project-toggle', function() {
     var widget = $(this).closest('.addon-widget-container');
@@ -63,11 +70,24 @@ $(document).on('click', '.project-toggle', function() {
         up.removeClass('icon-angle-up').addClass('icon-angle-down');
     }
     if(down.length > 0) {
-        down.removeClass('icon-angle-down').addClass('icon-angle-up');            
+        down.removeClass('icon-angle-down').addClass('icon-angle-up');
     }
 
     widget.find('.addon-widget-body').slideToggle();
     return false;
 });
 
-new NavbarControl('.osf-nav-wrapper');
+var NO_FOOTER_PATHS = ['/', '/login/', '/getting-started/', '/register/', '/forgotpassword/', '/share/'];
+$(function() {
+    if(/MSIE 9.0/.test(window.navigator.userAgent) ||
+       /MSIE 8.0/.test(window.navigator.userAgent) ||
+       /MSIE 7.0/.test(window.navigator.userAgent) ||
+       /MSIE 6.0/.test(window.navigator.userAgent)) {
+        $('.placeholder-replace').show();
+    }
+    if ($(sliderSelector).length > 0 &&
+            $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
+        $osf.applyBindings(new SlideInViewModel(), sliderSelector);
+    }
+    new NavbarControl('.osf-nav-wrapper');
+});

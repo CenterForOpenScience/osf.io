@@ -21,6 +21,7 @@ from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
+    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -34,7 +35,6 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
-
 
 logger = logging.getLogger(__name__)
 
@@ -152,10 +152,6 @@ def folder_new_post(auth, nid, **kwargs):
     return {
         'projectUrl': '/dashboard/',
     }, http.CREATED
-
-
-def rename_folder(**kwargs):
-    pass
 
 
 @collect_auth
@@ -293,12 +289,10 @@ def node_forks(**kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission('write')
+@must_be_logged_in
+@must_be_contributor
 def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    if not node.can_edit(auth):
-        raise HTTPError(http.FORBIDDEN)
 
     ret = _view_project(node, auth, primary=True)
 
@@ -306,18 +300,19 @@ def node_setting(auth, **kwargs):
     addon_enabled_settings = []
 
     for addon in node.get_addons():
-
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = [
+    ret['addons_available'] = sorted([
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
-    ]
+    ], key=lambda addon: addon.full_name)
+
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
@@ -329,6 +324,7 @@ def node_setting(auth, **kwargs):
     }
 
     return ret
+
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -354,14 +350,12 @@ def node_choose_addons(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('read')
-def node_contributors(**kwargs):
-
-    auth = kwargs['auth']
+def node_contributors(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    rv = _view_project(node, auth, primary=True)
-    rv['contributors'] = utils.serialize_contributors(node.contributors, node)
-    return rv
+    ret = _view_project(node, auth, primary=True)
+    ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
+    return ret
 
 
 @must_have_permission('admin')
@@ -677,12 +671,14 @@ def _render_addon(node):
 
 
 def _should_show_wiki_widget(node, user):
+
+    has_wiki = bool(node.get_addon('wiki'))
+    wiki_page = node.get_wiki_page('home', None)
     if not node.has_permission(user, 'write'):
-        wiki_page = node.get_wiki_page('home', None)
-        return wiki_page and wiki_page.html(node)
+        return has_wiki and wiki_page and wiki_page.html(node)
 
     else:
-        return True
+        return has_wiki
 
 
 def _view_project(node, auth, primary=False):
@@ -723,11 +719,6 @@ def _view_project(node, auth, primary=False):
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'in_dashboard': in_dashboard,
-            'citations': {
-                'apa': node.citation_apa,
-                'mla': node.citation_mla,
-                'chicago': node.citation_chicago,
-            } if not anonymous else '',
             'is_public': node.is_public,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
@@ -778,6 +769,7 @@ def _view_project(node, auth, primary=False):
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
+            'has_read_permissions': node.has_permission(user, 'read'),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
@@ -946,11 +938,14 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
 @collect_auth
 @must_be_valid_project
-def get_summary(**kwargs):
-
-    auth = kwargs['auth']
+def get_summary(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')
+    if rescale_ratio is None and request.args.get('rescale_ratio'):
+        try:
+            rescale_ratio = float(request.args.get('rescale_ratio'))
+        except (TypeError, ValueError):
+            raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
 
@@ -988,20 +983,20 @@ def get_folder_pointers(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_forks(**kwargs):
+def get_forks(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     forks = node_to_use.node__forked.find(
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
-    return _render_nodes(forks)
+    return _render_nodes(forks, auth)
 
 
 @must_be_contributor_or_public
-def get_registrations(**kwargs):
+def get_registrations(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
-    return _render_nodes(registrations)
+    return _render_nodes(registrations, auth)
 
 
 @must_be_valid_project  # returns project

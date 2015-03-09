@@ -109,12 +109,12 @@ def dataverse_get_studies(node_addon, **kwargs):
     connection = client.connect_from_settings(user_settings)
     dataverse = client.get_dataverse(connection, alias)
     studies, bad_studies = client.get_studies(dataverse)
-    rv = {
+    ret = {
         'studies': [{'title': study.title, 'hdl': study.doi} for study in studies],
         'badStudies': [{'hdl': bad_study.doi, 'url': 'http://dx.doi.org/' + bad_study.doi} for bad_study in bad_studies],
     }
     code = http.PARTIAL_CONTENT if bad_studies else http.OK
-    return rv, code
+    return ret, code
 
 
 @must_be_logged_in

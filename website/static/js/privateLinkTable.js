@@ -1,53 +1,22 @@
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
-require('bootstrap-editable');
 var bootbox = require('bootbox');
-var ZeroClipboard = require('zeroclipboard');
 var $osf = require('osfHelpers');
+var clipboard = require('./clipboard');
 
-// Make sure ZeroClipboard finds the right flash file
-ZeroClipboard.config({
-    swfPath: '/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf'
-});
+require('bootstrap-editable');
 
+var ctx = window.contextVars;
 var LINK_CUTOFF = 2;
-
-var updateClipboard = function(target) {
-
-    var client = new ZeroClipboard( target );
-
-    client.on('load', function(client) {
-
-        client.on('complete', function(client, args) {
-            this.blur();
-        } );
-
-        client.on('mousedown', function(client, args){
-            $(this).addClass('active');
-        });
-
-        client.on('mouseup', function(client, args){
-            $(this).removeClass('active');
-        });
-
-        client.on('mouseover', function(client, args){
-            $(this).tooltip('show');
-        });
-
-        client.on('mouseout', function(client, args){
-            $(this).tooltip('hide');
-        });
-
-    });
-
-};
 
 var setupEditable = function(elm, data) {
     var $elm = $(elm);
     var $editable = $elm.find('.link-name');
     $editable.editable({
         type: 'text',
-        url: nodeApiUrl + 'private_link/edit/',
+        url: ctx.node.urls.api + 'private_link/edit/',
         placement: 'bottom',
         ajaxOptions: {
             type: 'PUT',
@@ -75,10 +44,10 @@ function LinkViewModel(data, $root) {
     self.$root = $root;
     $.extend(self, data);
 
-    self.collapse = "Collapse";
+    self.collapse = 'Collapse';
     self.name = ko.observable(data.name);
-    self.readonly = "readonly";
-    self.selectText = "this.setSelectionRange(0, this.value.length);";
+    self.readonly = 'readonly';
+    self.selectText = 'this.setSelectionRange(0, this.value.length);';
 
     self.collapseNode = ko.observable(false);
     self.dateCreated = new $osf.FormattableDate(data.date_created);
@@ -87,13 +56,26 @@ function LinkViewModel(data, $root) {
     });
     self.nodesList = ko.observableArray(data.nodes.slice(0, LINK_CUTOFF));
     self.moreNode = ko.observable(data.nodes.length > LINK_CUTOFF);
-    self.removeLink = "Remove this link";
+    self.removeLink = 'Remove this link';
     self.hasMoreText = ko.computed(function(){
         return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
     });
 
     self.anonymousDisplay = ko.computed(function() {
-        return data.anonymous ? 'Yes' : 'No';
+        var openTag = '<span>';
+        var closeTag = '</span>';
+        var text;
+        if (data.anonymous) {
+            text = 'Yes';
+            // Strikethrough if node is public
+            if ($root.nodeIsPublic) {
+                openTag = '<del>';
+                closeTag = '</del>';
+            }
+        } else{
+            text = 'No';
+        }
+        return [openTag, text, closeTag].join('');
     });
 
     self.displayAllNodes = function() {
@@ -109,8 +91,9 @@ function LinkViewModel(data, $root) {
 
 }
 
-function ViewModel(url) {
+function ViewModel(url, nodeIsPublic) {
     var self = this;
+    self.nodeIsPublic = nodeIsPublic || false;
     self.url = url;
     self.privateLinks = ko.observableArray();
     self.nodeUrl = ko.observable(null);
@@ -124,10 +107,10 @@ function ViewModel(url) {
     }
 
     function onFetchError() {
-            $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
-                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                    'problem persists.');
-        }
+        $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
+                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'problem persists.');
+    }
 
     function fetch() {
         $.ajax({
@@ -154,7 +137,7 @@ function ViewModel(url) {
                 if(result) {
                     $.ajax({
                     type: 'delete',
-                    url: nodeApiUrl + 'private_link/',
+                    url: ctx.node.urls.api + 'private_link/',
                     contentType: 'application/json',
                     dataType: 'json',
                     data: JSON.stringify(dataToSend)
@@ -169,20 +152,18 @@ function ViewModel(url) {
     };
 
     self.afterRenderLink = function(elm, data) {
-
         var $tr = $(elm);
-        // Add this to client
         var target = $tr.find('.copy-button');
-        updateClipboard(target);
+        clipboard(target[0]);
         $tr.find('.remove-private-link').tooltip();
         setupEditable(elm, data);
     };
 
 }
 
-function PrivateLinkTable (selector, url) {
+function PrivateLinkTable (selector, url, nodeIsPublic) {
     var self = this;
-    self.viewModel = new ViewModel(url);
+    self.viewModel = new ViewModel(url, nodeIsPublic);
     $osf.applyBindings(self.viewModel, selector);
 
 }
