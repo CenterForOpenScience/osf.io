@@ -5,7 +5,7 @@
 'use strict';
 // CSS used on every page
 require('../../vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css');
-require('../../vendor/bower_components/x-editable/dist/bootstrap3-editable/css/bootstrap-editable.css');
+require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
@@ -58,7 +58,7 @@ var SlideInViewModel = function (){
     };
     // Google Analytics click event tracking
     self.trackClick = function(source) {
-        ga('send', 'event', 'button', 'click', source);
+        window.ga('send', 'event', 'button', 'click', source);
     };
 };
 
@@ -79,7 +79,10 @@ $(document).on('click', '.project-toggle', function() {
 
 var NO_FOOTER_PATHS = ['/', '/login/', '/getting-started/', '/register/', '/forgotpassword/', '/share/'];
 $(function() {
-    if(/MSIE 9.0/.test(navigator.userAgent) || /MSIE 8.0/.test(navigator.userAgent) ||/MSIE 7.0/.test(navigator.userAgent) ||/MSIE 6.0/.test(navigator.userAgent)) {
+    if(/MSIE 9.0/.test(window.navigator.userAgent) ||
+       /MSIE 8.0/.test(window.navigator.userAgent) ||
+       /MSIE 7.0/.test(window.navigator.userAgent) ||
+       /MSIE 6.0/.test(window.navigator.userAgent)) {
         $('.placeholder-replace').show();
     }
     if ($(sliderSelector).length > 0 &&

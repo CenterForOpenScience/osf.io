@@ -6,7 +6,7 @@
 
 <div class="row">
 
-    <div class="col-md-3">
+    <div class="col-sm-3">
 
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
@@ -19,7 +19,7 @@
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
 
         <div id="selectAddons" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>

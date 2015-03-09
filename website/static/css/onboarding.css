@@ -140,3 +140,7 @@ img.ob-dropzone-icon{
 .ob-upload-progress {
 	text-align: center;
 }
+
+.resize-vertical{
+    resize:vertical;
+}
