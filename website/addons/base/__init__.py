@@ -584,19 +584,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
     def before_remove_contributor(self, node, removed):
         """
-
         :param Node node:
         :param User removed:
-
         """
         pass
 
     def after_remove_contributor(self, node, removed):
         """
-
         :param Node node:
         :param User removed:
-
         """
         pass
 
@@ -738,6 +734,38 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.external_account = None
         self.user_settings = None
         self.save()
+
+    def before_remove_contributor(self, node, removed):
+        """If contributor to be removed authorized this addon, warn that removing
+        will remove addon authorization.
+        """
+        if self.has_auth and self.user_settings.owner == removed:
+            return (
+                u'The {addon} add-on for this {category} is authenticated by {name}. '
+                u'Removing this user will also remove write access to Dropbox '
+                u'unless another contributor re-authenticates the add-on.'
+            ).format(
+                addon=self.config.full_name,
+                category=node.project_or_component,
+                name=removed.fullname,
+            )
+
+    def after_remove_contributor(self, node, removed):
+        """If removed contributor authorized this addon, remove addon authorization
+        from owner.
+        """
+        if self.has_auth and self.user_settings.owner == removed:
+            self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
+            self.clear_auth()
+            return (
+                u'Because the {addon} add-on for this project was authenticated '
+                u'by {name}, authentication information has been deleted. You '
+                u'can re-authenticate on the <a href="{url}">Settings</a> page.'
+            ).format(
+                addon=self.config.full_name,
+                name=removed.fullname,
+                url=node.web_url_for('node_setting'),
+            )
 
 
 # TODO: No more magicks
