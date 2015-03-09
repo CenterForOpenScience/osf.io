@@ -41,7 +41,7 @@ function resolveIcon(item) {
                 item.kind = 'loading';
                 $.get(item.data.urls.fetch)
                     .done(function(res) {
-                        var Item = self.options.callingParty.treebeard.Item;
+                        var Item = item.constructor;
                         var citations = res.contents;
                         var parent = item.parent();
                         for (var i = 0; i < citations.length; i++) {
