@@ -94,7 +94,7 @@
                     </form>
                 </li>
                 <li>
-                    <a href="${web_url_for('auth_login')}">Forgot Password?</a>
+                    <a href="${web_url_for('_forgot_password')}">Forgot Password?</a>
                 </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
