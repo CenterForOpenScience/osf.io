@@ -20,7 +20,9 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
 from tests.test_features import requires_piwik
+from tests.test_addons import assert_urls_equal
 from website import settings, language
+from website.addons.twofactor.tests import _valid_code
 from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
@@ -97,6 +99,73 @@ class TestAnUnregisteredUser(OsfTestCase):
         )
 
 
+class TestTwoFactor(OsfTestCase):
+
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def setUp(self, mock_push_message):
+        super(TestTwoFactor, self).setUp()
+        self.user = UserFactory()
+        self.user.set_password('science')
+        self.user.save()
+
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+    def test_user_with_two_factor_redirected_to_two_factor_page(self):
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills in log in form with correct username/password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+
+        assert_equal(web_url_for('two_factor'), res.request.path)
+        assert_equal(res.status_code, 200)
+
+    def test_user_with_2fa_failure(self):
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills in log in form with correct username/password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        # Fills in 2FA form with incorrect two factor code
+        form = res.forms['twoFactorSignInForm']
+        form['twoFactorCode'] = 0000000
+        # Submits
+        res = form.submit(expect_errors=True)
+
+        assert_equal(web_url_for('two_factor'), res.request.path)
+        assert_equal(res.status_code, 401)
+
+    def test_user_with_2fa_success(self):
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills in log in form with correct username/password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        # Fills in 2FA form with incorrect two factor code
+        form = res.forms['twoFactorSignInForm']
+        form['twoFactorCode'] = _valid_code(self.user_settings.totp_secret)
+        res = form.submit()
+        res.follow()
+
+        assert_urls_equal(web_url_for('dashboard'), res.location)
+        assert_equal(res.status_code, 302)
+
+
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -159,33 +228,6 @@ class TestAUser(OsfTestCase):
         res = form.submit()
         # Sees a flash message
         assert_in('Log-in failed', res)
-
-    # TODO: Put in separate class?
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
-        # User with two factor enabled is sent to two factor page
-        self.user.add_addon('twofactor')
-        self.user_settings = self.user.get_addon('twofactor')
-        self.user_settings.is_confirmed = True
-        self.user_settings.save()
-
-        # Goes to log in page
-        res = self.app.get('/account/')
-        # Fills the form with correct password
-        form  = res.forms['signinForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        res = form.submit()
-        res = res.follow()
-        assert_equal('/login/two_factor/', res.request.path)
-        assert_equal(res.status_code, 200)
-
-    def test_user_with_2fa_success(self):
-        assert 0, 'todo (hrybacki)'
-
-    def test_user_with_2fa_failure(self):
-        assert 0, 'todo (hrybacki)'
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_access_resource_before_two_factor_authorization(self, mock_push_message):
