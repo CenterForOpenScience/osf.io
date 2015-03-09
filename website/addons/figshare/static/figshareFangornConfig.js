@@ -1,3 +1,5 @@
+'use strict';
+
 var m = require('mithril');
 
 var Fangorn = require('fangorn');
@@ -5,7 +7,7 @@ var Fangorn = require('fangorn');
 
 // Define Fangorn Button Actions
 function _fangornActionColumn (item, col) {
-    var self = this;
+    var self = this;  // jshint ignore:line
     var buttons = [];
 
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
@@ -40,11 +42,11 @@ function _fangornActionColumn (item, col) {
     }
 
     return buttons.map(function(btn) {
-        return m('span', { 'data-col' : item.id }, [ m('i',{ 
-        	'class' : btn.css, 
-        	style : btn.style, 
+        return m('span', { 'data-col' : item.id }, [ m('i',{
+            'class' : btn.css,
+            style : btn.style,
             'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',
-        	'onclick' : function(event){ btn.onclick.call(self, event, item, col); } 
+            onclick: function(event){ btn.onclick.call(self, event, item, col); }
         },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
         ]);

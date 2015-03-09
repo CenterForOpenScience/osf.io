@@ -209,6 +209,11 @@ class PiwikClient(object):
             idSubtable=v.subtable_id,
             period=self.period,
             date=self.date,
+            # Get all results (defaults to a limit of 100)
+            # NOTE: This appears to have an actual limit of 1,000 - the Piwik
+            #       documentation does not specify this.
+            #       http://developer.piwik.org/api-reference/reporting-api
+            filter_limit=-1,
         )
 
     def __call_api(self, method, **kwargs):
