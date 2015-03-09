@@ -71,9 +71,15 @@ text-align: center;
 	white-space: nowrap;
 }
 
+.tb-expand-icon-holder > i {
+  font-size: 16px;
+  padding-left: 2px;
+}
+
 /* File icons */
 .file-extension {
-
+	width: 16px;
+	height: 16px;
 }
 .file-extension._3gp {background: url('/static/img/hgrid/fatcowicons/file_extension_3gp.png');	}
 .file-extension._7z  {background: url('/static/img/hgrid/fatcowicons/file_extension_7z.png'); 	}
@@ -127,6 +133,7 @@ text-align: center;
 .file-extension._m4v {background: url('/static/img/hgrid/fatcowicons/file_extension_m4v.png');	}
 .file-extension._mcd {background: url('/static/img/hgrid/fatcowicons/file_extension_mcd.png');	}
 .file-extension._mdb {background: url('/static/img/hgrid/fatcowicons/file_extension_mdb.png');	}
+.file-extension._md {background: url('/static/img/hgrid/fatcowicons/file_extension_txt.png');	}
 .file-extension._mid {background: url('/static/img/hgrid/fatcowicons/file_extension_mid.png');	}
 .file-extension._mov {background: url('/static/img/hgrid/fatcowicons/file_extension_mov.png');	}
 .file-extension._mp2 {background: url('/static/img/hgrid/fatcowicons/file_extension_mp2.png');	}
