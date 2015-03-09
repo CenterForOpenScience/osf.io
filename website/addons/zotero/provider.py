@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from website.addons.citations import provider
 
-from .model import ZoteroNodeSettings
+from .model import ZoteroNodeSettings, Zotero
 from website.addons.citations.utils import serialize_account, serialize_folder, serialize_urls
+
 
 class ZoteroCitationsProvider(provider.CitationsProvider):
 
@@ -74,3 +75,15 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
     def _folder_id(self, node_addon):
 
         return node_addon.zotero_list_id
+
+    def add_show_more(self, node_addon, contents, list_id, page):
+        contents.append({
+            'name': 'Show more',
+            'kind': 'message',
+            'urls': {
+                'fetch': node_addon.owner.api_url_for('zotero_citation_list', zotero_list_id=list_id, page=(page + 1))
+            }
+        })
+
+    def next_is_truthy(self, next_page):
+        return next_page > 0

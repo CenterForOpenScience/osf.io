@@ -69,3 +69,15 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
     def _folder_id(self, node_addon):
 
         return node_addon.mendeley_list_id
+
+    def add_show_more(self, node_addon, contents, list_id, page):
+        contents.append({
+            'name': 'Show more',
+            'kind': 'message',
+            'urls': {
+                'fetch': node_addon.owner.api_url_for('mendeley_citation_list', zotero_list_id=list_id, page=page)
+            }
+        })
+
+    def next_is_truthy(self, next_page):
+        return next_page is not None

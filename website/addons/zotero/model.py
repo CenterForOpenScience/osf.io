@@ -9,12 +9,13 @@ from website.addons.citations.utils import serialize_folder
 from website.addons.zotero import settings
 from website.oauth.models import ExternalProvider
 
-# TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
-# of citations, requesting the citations may take longer than the UWSGI harakiri time.
-# For now, we load 200 citations max and show a message to the user.
-MAX_CITATION_LOAD = 25
-
 class Zotero(ExternalProvider):
+    # TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
+    # of citations, requesting the citations may take longer than the UWSGI harakiri time.
+    # For now, we load 200 citations max and show a message to the user.
+    MAX_CITATION_LOAD = 100
+    PAGE_SIZE = 100
+
     name = "Zotero"
     short_name = "zotero"
     _oauth_version = 1
@@ -81,40 +82,34 @@ class Zotero(ExternalProvider):
         if list_id:
             citations = []
             more = True
-            offset = (page - 1) * 100
-            while more and len(citations) <= MAX_CITATION_LOAD:
-                page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
-                citations = citations + page
-                if len(page) == 0 or len(page) < 100:
+            offset = (page - 1) * self.PAGE_SIZE
+            while more and len(citations) <= self.MAX_CITATION_LOAD:
+                chunk = self.client.collection_items(list_id, content='csljson', limit=self.PAGE_SIZE, start=offset)
+                citations = citations + chunk
+                if len(chunk) == 0 or len(chunk) < self.PAGE_SIZE:
                     more = False
                 else:
-                    offset = offset + len(page)
+                    offset = offset + len(chunk)
 
-            return self._citations_for_zotero_collection(citations)
+            next_page = (page + 1 if more else -1)
+            return citations, next_page
         else:
-            return self._citations_for_zotero_user()
+            return self._citations_for_zotero_user(page)
 
-    def _citations_for_zotero_collection(self, collection):
-        """Get all the citations in a specified collection
-
-        :param  csljson collection: list of csljson documents
-        :return list of citation objects representing said dicts of said documents.
-        """
-        return collection
-
-    def _citations_for_zotero_user(self):
+    def _citations_for_zotero_user(self, page):
         """Get all the citations from the user """
         citations = []
         more = True
-        offset = 0
+        offset = (page - 1) * self.PAGE_SIZE
         while more and len(citations) <= MAX_CITATION_LOAD:
-            page = self.client.items(content='csljson', limit=100, start=offset)
-            citations = citations + page
-            if len(page) == 0 or len(page) < 100:
+            chunk = self.client.items(content='csljson', limit=self.PAGE_SIZE, start=offset)
+            citations = citations + chunk
+            if len(chunk) == 0 or len(chunk) < self.PAGE_SIZE:
                 more = False
             else:
-                offset = offset + len(page)
-        return citations
+                offset = offset + len(chunk)
+        next_page = (page + 1 if more else -1)
+        return citations, next_page
 
 class ZoteroUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Zotero

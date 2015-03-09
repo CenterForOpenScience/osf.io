@@ -2,6 +2,8 @@
 
 import time
 
+from urlparse import parse_qs
+
 import mendeley
 from modularodm import fields
 
@@ -86,43 +88,72 @@ class Mendeley(ExternalProvider):
         ]
         return [all_documents] + serialized_folders
 
-    def get_list(self, list_id='ROOT'):
+    def _marker_from_page(self, page):
+        if page is None:
+            return None
+        link = page.rsp.links['next']['url']
+        qs = link.split('?')[-1]
+        return parse_qs(qs).get('marker')
+
+    def get_list(self, list_id='ROOT', next_page=None):
         """Get a single CitationList
         :param str list_id: ID for a Mendeley folder. Optional.
         :return CitationList: CitationList for the folder, or for all documents
         """
-        if list_id == 'ROOT':
+        if list_id == 'ROOT' or list_id is None:
             folder = None
         else:
             folder = self.client.folders.get(list_id)
 
+        citations = None
+        page = None
         if folder:
-            return self._citations_for_mendeley_folder(folder)
-        return self._citations_for_mendeley_user()
+            citations, page = self._citations_for_mendeley_folder(folder, next_page)
+        else:
+            citations, page = self._citations_for_mendeley_user(next_page)
+        marker = self._marker_from_page(page)
+        return citations, marker
 
     def _folder_metadata(self, folder_id):
         folder = self.client.folders.get(folder_id)
         return folder
 
-    def _citations_for_mendeley_folder(self, folder):
+    def _citations_for_mendeley_folder(self, folder, next_page):
 
-        document_ids = [
+        documents = folder.documents.list(page_size=100, marker=next_page)
+        if hasattr(next_page, '__call__'):
+            documents = next_page()
+        if next_page is None:
+            documents = folder.documents.list(page_size=100)
+
+        document_ids = set([
             document.id
-            for document in folder.documents.iter(page_size=500)
-        ]
-        citations = {
-            citation['id']: citation
-            for citation in self._citations_for_mendeley_user()
-        }
-        return map(lambda id: citations[id], document_ids)
+            for document in documents.items
+        ])
+        citations = {}
+        next_page = None
+        while len(document_ids - set((citations or {}).keys())) > 0:
+            page, next_page = self._citations_for_mendeley_user(next_page)
+            citations = citations.update({
+                citation['id']: citation
+                for citation in page
+            })
+            if next_page is None:
+                break
+        return map(lambda id: citations[id], document_ids), documents.next_page
 
-    def _citations_for_mendeley_user(self):
+    def _citations_for_mendeley_user(self, next_page):
 
-        documents = self.client.documents.iter(page_size=500)
+        documents = self.client.documents.list(page_size=100, marker=next_page)        
+        if hasattr(next_page, '__call__'):
+            documents = next_page()
+        elif next_page is None:
+            documents = self.client.documents.list(page_size=100)
+
         return [
             self._citation_for_mendeley_document(document)
-            for document in documents
-        ]
+            for document in documents.items
+        ], documents.next_page
 
     def _citation_for_mendeley_document(self, document):
         """Mendeley document to ``website.citations.models.Citation``

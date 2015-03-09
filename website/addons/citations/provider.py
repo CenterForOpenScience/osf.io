@@ -159,7 +159,7 @@ class CitationsProvider(object):
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
 
         contents = []
-        if list_id is None:
+        if list_id is None and page is None:
             contents = [node_addon.root_folder]
         else:
             if show in ('all', 'folders'):
@@ -170,20 +170,13 @@ class CitationsProvider(object):
                 ]
 
             if show in ('all', 'citations'):
-                citations = node_addon.api.get_list(list_id, page)
+                citations, next_page = node_addon.api.get_list(list_id, page)
                 contents += [
                     self._serialize_citation(each)
                     for each in citations
                 ]
-                # TODO deleteme
-                if len(citations) > 20:
-                    contents.append({
-                        'name': 'Show more',
-                        'kind': 'message',
-                        'urls': {
-                            'fetch': node_addon.owner.api_url_for('zotero_citation_list', zotero_list_id=list_id, page=(page + 1))
-                        }
-                    })
+                if self.next_is_truthy(next_page):
+                    self.add_show_more(node_addon, contents, list_id, next_page)
         return {
             'contents': contents
         }

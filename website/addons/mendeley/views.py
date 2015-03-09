@@ -91,4 +91,5 @@ def mendeley_citation_list(auth, node_addon, mendeley_list_id=None, **kwargs):
 
     provider = MendeleyCitationsProvider()
     show = request.args.get('view', 'all')
-    return provider.citation_list(node_addon, auth.user, mendeley_list_id, show)
+    page = request.args.get('page')
+    return provider.citation_list(node_addon, auth.user, mendeley_list_id, show, page)
