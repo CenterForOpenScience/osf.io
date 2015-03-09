@@ -32,14 +32,14 @@ var ViewModel = function() {
         if (!self.isValid()) {
             if (!self.username.isValid()) {
                 $osf.growl(
-                    'Signin Error',
+                    'Error',
                     'Please enter a correct email address.',
                     'danger'
                 );
             }
             if (!self.password.isValid()) {
                 $osf.growl(
-                    'Signin Error',
+                    'Error',
                     'Your password must be more than six characters.',
                     'danger'
                 );
@@ -48,13 +48,13 @@ var ViewModel = function() {
         } else {
             return true;  // Allow form to submit normally
         }
-    }
+    };
 };
 
 
 var SignIn = function(selector, applyBindings) {
     this.viewModel = new ViewModel();
-    if (applyBindings == true) {
+    if (applyBindings === true) {
         $osf.applyBindings(this.viewModel, selector);
     }
 };

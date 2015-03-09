@@ -94,8 +94,7 @@
                     </form>
                 </li>
                 <li>
-                    ## TODO(hrybacki) -- Create a 'GET' endpoint for forgotpassword -- only 'POST' currently exists
-                    <a href="${web_url_for('_forgot_password')}"><span class="navbar-nav navbar-mid">Forgot Password?</span></a>
+                    <a href="${web_url_for('auth_login')}">Forgot Password?</a>
                 </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
@@ -106,8 +105,3 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
-
-<%def name="javascript_bottom()">
-    ${parent.javascript_bottom()}
-</%def>
-
