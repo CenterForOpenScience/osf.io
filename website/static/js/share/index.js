@@ -1,4 +1,4 @@
-require('c3/c3.min.css');
+require('c3/c3.css');
 require('../../css/share-search.css');
 
 var m = require('mithril');
