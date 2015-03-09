@@ -159,7 +159,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     fail_if_private(file_id)
 
     # lazily create a file GUID record
-    file_obj, created = DataverseFile.get_or_create(node=node, path=file_id)
+    file_obj, created = DataverseFile.get_or_create(node=node, file_id=file_id)
 
     redirect_url = check_file_guid(file_obj)
     if redirect_url:

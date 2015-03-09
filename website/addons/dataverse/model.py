@@ -4,13 +4,13 @@ import os
 import logging
 
 import pymongo
-from modularodm import fields, Q
-from modularodm.storage.base import KeyExistsException
+from modularodm import fields
 
 from framework.auth.decorators import Auth
-from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+
 from website.addons.base import GuidFile
 from website.security import encrypt, decrypt
+from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 
 
 logging.getLogger('sword2').setLevel(logging.WARNING)
@@ -41,24 +41,6 @@ class DataverseFile(GuidFile):
         return os.path.join(
             self.node.deep_url, self.file_url,
         )
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        """Get or create a new file record. Return a tuple of the form (obj, created)
-        """
-        try:
-            # Create new
-            obj = cls(node=node, file_id=path)
-            obj.save()
-            created = True
-        except KeyExistsException:
-            obj = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('file_id', 'eq', path)
-            )
-            assert obj is not None
-            created = False
-        return obj, created
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
