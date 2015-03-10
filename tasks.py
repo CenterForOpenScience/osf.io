@@ -1,35 +1,27 @@
-import sys
+import os
 
 from invoke import task, run
 
+WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+
 
 @task
-def install(develop=False, upgrade=False, pip_cache=None, wheel_repo=None):
+def wheelhouse(develop=False):
+    req_file = 'dev-requirements.txt' if develop else 'requirements.txt'
+    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    run(cmd, pty=True)
+
+
+@task
+def install(develop=False, upgrade=False):
     req_file = 'dev-requirements.txt' if develop else 'requirements.txt'
     cmd = 'pip install -r {}'.format(req_file)
 
     if upgrade:
         cmd += ' --upgrade'
-    if pip_cache:
-        cmd += ' --download-cache={}'.format(pip_cache)
-
-    if wheel_repo:
-        run('pip install wheel', pty=False)
-        # current python version, expected git branch name
-        ver = '.'.join([str(i) for i in sys.version_info[0:2]])
-        folder = 'wheelhouse-{}'.format(ver)
-        name = 'wheelhouse-{}.zip'.format(ver)
-        url = '{}/archive/{}.zip'.format(wheel_repo, ver)
-        # download and extract the wheelhouse github repository archive
-        run('curl -o {} -L {}'.format(name, url), pty=False)
-        run('unzip {}'.format(name), pty=False)
-        # run pip install w/ the wheelhouse folder specified
-        run('{} --use-wheel --find-links={}'.format(cmd, folder), pty=False)
-        # cleanup wheelhouse folder and archive file
-        run('rm -rf {}'.format(folder), pty=False)
-        run('rm -f {}'.format(name), pty=False)
-    else:
-        run(cmd, pty=True)
+    if WHEELHOUSE_PATH:
+        cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
+    run(cmd, pty=True)
 
 
 @task

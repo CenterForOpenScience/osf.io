@@ -91,26 +91,16 @@ class S3FolderMetadata(S3Metadata, metadata.BaseFolderMetadata):
 
 
 # TODO dates!
-class S3Revision(S3Metadata, metadata.BaseFileRevisionMetadata):
-
-    def __init__(self, path, raw):
-        self._path = path
-        super().__init__(raw)
+class S3Revision(metadata.BaseFileRevisionMetadata):
 
     @property
-    def path(self):
-        return '/' + self._path
+    def version_identifier(self):
+        return 'version'
 
     @property
-    def content_type(self):
-        return None  # TODO
-
-    @property
-    def size(self):
-        return int(self.raw['Size'])
-
-    @property
-    def revision(self):
+    def version(self):
+        if self.raw['IsLatest'] == 'true':
+            return 'Latest'
         return self.raw['VersionId']
 
     @property

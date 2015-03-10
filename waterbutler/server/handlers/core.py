@@ -14,10 +14,22 @@ from waterbutler.server.identity import get_identity
 
 
 CORS_ACCEPT_HEADERS = [
+    'Range',
     'Content-Type',
     'Cache-Control',
     'X-Requested-With',
 ]
+
+CORS_EXPOSE_HEADERS = [
+    'Accept-Ranges',
+    'Content-Range',
+    'Content-Length',
+    'Content-Encoding',
+]
+
+HTTP_REASONS = {
+    461: 'Unavailable For Legal Reasons'
+}
 
 
 def list_or_value(value):
@@ -39,6 +51,8 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
 
     def set_default_headers(self):
         self.set_header('Access-Control-Allow-Origin', settings.CORS_ALLOW_ORIGIN)
+        self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
+        self.set_header('Access-Control-Expose-Headers', ', '.join(CORS_EXPOSE_HEADERS))
         self.set_header('Cache-control', 'no-store, no-cache, must-revalidate, max-age=0')
 
     def initialize(self):
@@ -46,13 +60,15 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         if method:
             self.request.method = method.upper()
 
+    def set_status(self, code, reason=None):
+        return super().set_status(code, reason or HTTP_REASONS.get(code))
+
     @asyncio.coroutine
     def prepare(self):
         self.arguments = {
             key: list_or_value(value)
             for key, value in self.request.query_arguments.items()
         }
-
         try:
             self.arguments['action'] = self.ACTION_MAP[self.request.method]
         except KeyError:
@@ -70,21 +86,25 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
     def write_error(self, status_code, exc_info):
         self.captureException(exc_info)
         etype, exc, _ = exc_info
-        if issubclass(etype, exceptions.ProviderError):
-            if exc.data:
-                self.set_status(exc.code)
-                self.finish(exc.data)
-                return
 
-        self.finish({
-            'code': status_code,
-            'message': self._reason,
-        })
+        if issubclass(etype, exceptions.ProviderError):
+            self.set_status(exc.code)
+            if exc.data:
+                self.finish(exc.data)
+            else:
+                self.finish({
+                    'code': exc.code,
+                    'message': exc.message
+                })
+        else:
+            self.finish({
+                'code': status_code,
+                'message': self._reason,
+            })
 
     def options(self):
         self.set_status(204)
         self.set_header('Access-Control-Allow-Methods', 'PUT, DELETE'),
-        self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
 
     @utils.async_retry(retries=5, backoff=5)
     def _send_hook(self, action, metadata):

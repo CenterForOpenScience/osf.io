@@ -87,12 +87,24 @@ class GitHubFolderTreeMetadata(BaseGitHubFolderMetadata):
 
 
 # TODO dates!
-class GitHubRevision(BaseGitHubMetadata, metadata.BaseFileRevisionMetadata):
+class GitHubRevision(metadata.BaseFileRevisionMetadata):
 
     @property
-    def size(self):
-        return None
+    def version_identifier(self):
+        return 'ref'
 
     @property
     def modified(self):
         return self.raw['commit']['committer']['date']
+
+    @property
+    def version(self):
+        return self.raw['sha']
+
+    @property
+    def extra(self):
+        return {
+            'user': {
+                'name': self.raw['commit']['committer']['name']
+            }
+        }

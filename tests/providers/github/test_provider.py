@@ -417,11 +417,11 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download_by_ref_sha(self, provider):
+    def test_download_by_file_sha(self, provider):
         ref = hashlib.sha1().hexdigest()
         url = provider.build_repo_url('git', 'blobs', ref)
         aiohttpretty.register_uri('GET', url, body=b'delicious')
-        result = yield from provider.download('', ref=ref)
+        result = yield from provider.download('', fileSha=ref)
         content = yield from result.response.read()
         assert content == b'delicious'
 
@@ -453,7 +453,7 @@ class TestCRUD:
         url = provider.build_repo_url('git', 'blobs', ref)
         aiohttpretty.register_uri('GET', url, body=b'delicious', status=418)
         with pytest.raises(exceptions.DownloadError):
-            yield from provider.download('', ref=ref)
+            yield from provider.download('', fileSha=ref)
 
     # @async
     # @pytest.mark.aiohttpretty

@@ -16,6 +16,7 @@ from waterbutler.providers.osfstorage.tasks import backup
 from waterbutler.providers.osfstorage.tasks import parity
 from waterbutler.providers.osfstorage.metadata import OsfStorageFileMetadata
 from waterbutler.providers.osfstorage.metadata import OsfStorageFolderMetadata
+from waterbutler.providers.osfstorage.metadata import OsfStorageRevisionMetadata
 
 
 QUERY_METHODS = ('GET', 'DELETE')
@@ -33,7 +34,9 @@ class OSFStorageProvider(provider.BaseProvider):
         super().__init__(auth, credentials, settings)
         self.callback_url = settings.get('callback')
         self.metadata_url = settings.get('metadata')
+        self.revisions_url = settings.get('revisions')
         self.provider_name = settings['storage'].get('provider')
+
         self.parity_credentials = credentials.get('parity')
         self.parity_settings = settings.get('parity')
         self.archive_credentials = credentials.get('archive')
@@ -77,6 +80,8 @@ class OSFStorageProvider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
+
+        kwargs.pop('version', None)
 
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
@@ -153,7 +158,7 @@ class OSFStorageProvider(provider.BaseProvider):
         data = yield from response.json()
 
         if settings.RUN_TASKS:
-            version_id = data['version_id']
+            version_id = data['version']
             parity.main(
                 complete_path,
                 self.parity_credentials,
@@ -172,6 +177,7 @@ class OSFStorageProvider(provider.BaseProvider):
         metadata.update({
             'name': name,
             'path': path,
+            'version': data['version'],
             'downloads': data['downloads']
         })
 
@@ -200,15 +206,36 @@ class OSFStorageProvider(provider.BaseProvider):
             params=kwargs,
             expects=(200, )
         )
+        resp_json = yield from resp.json()
+
+        if isinstance(resp_json, dict):
+            return OsfStorageFileMetadata(resp_json).serialized()
 
         ret = []
-        for item in (yield from resp.json()):
+        for item in resp_json:
             if item['kind'] == 'folder':
                 ret.append(OsfStorageFolderMetadata(item).serialized())
             else:
                 ret.append(OsfStorageFileMetadata(item).serialized())
 
         return ret
+
+    @asyncio.coroutine
+    def revisions(self, **kwargs):
+        if kwargs['path'].startswith('/'):
+            kwargs['path'] = kwargs['path'][1:]
+
+        resp = yield from self.make_signed_request(
+            'GET',
+            self.revisions_url,
+            params=kwargs,
+            expects=(200, )
+        )
+
+        return [
+            OsfStorageRevisionMetadata(item).serialized()
+            for item in (yield from resp.json())['revisions']
+        ]
 
     def _create_paths(self):
         try:

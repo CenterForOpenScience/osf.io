@@ -135,12 +135,14 @@ def test_provider_metadata(monkeypatch, provider):
             'name': 'foo',
             'path': '/foo',
             'kind': 'file',
+            'version': 10,
             'downloads': 1,
         },
         {
             'name': 'bar',
             'path': '/bar',
             'kind': 'file',
+            'version': 10,
             'downloads': 1,
         },
         {
@@ -170,7 +172,7 @@ def test_upload_new(monkeypatch, provider_and_mock, file_stream):
     mock_metadata = asyncio.Future()
     provider, inner_provider = provider_and_mock
     basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10})
+    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10, 'version': 8})
 
     mock_metadata.set_result({})
     inner_provider.metadata.return_value = mock_metadata
@@ -182,6 +184,7 @@ def test_upload_new(monkeypatch, provider_and_mock, file_stream):
 
     assert created is False
     assert res['name'] == 'foopath'
+    assert res['extra']['version'] == 8
     assert res['provider'] == 'osfstorage'
     assert res['extra']['downloads'] == 10
 
@@ -196,11 +199,12 @@ def test_upload_existing(monkeypatch, provider_and_mock, file_stream):
     mock_move = asyncio.Future()
     provider, inner_provider = provider_and_mock
     basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10})
+    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10, 'version': 8})
 
     mock_move.set_result({})
     inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
     inner_provider.move.return_value = mock_move
+
     monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
     monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
     monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
@@ -209,6 +213,7 @@ def test_upload_existing(monkeypatch, provider_and_mock, file_stream):
 
     assert created is False
     assert res['name'] == 'foopath'
+    assert res['extra']['version'] == 8
     assert res['provider'] == 'osfstorage'
     assert res['extra']['downloads'] == 10
 
@@ -225,8 +230,7 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream, credentia
     mock_move = asyncio.Future()
     provider, inner_provider = provider_and_mock
     basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=201, body={'version_id': 42, 'downloads': 30})
-
+    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=201, body={'version': 42, 'downloads': 30})
 
     mock_move.set_result({})
     inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
@@ -241,6 +245,7 @@ def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream, credentia
 
     assert created is True
     assert res['name'] == 'foopath'
+    assert res['extra']['version'] == 42
     assert res['provider'] == 'osfstorage'
     assert res['extra']['downloads'] == 30
 
