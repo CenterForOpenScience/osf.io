@@ -5,7 +5,7 @@
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
-var jstz = require('jstz').jstz;
+var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('osfHelpers');
 var ProjectOrganizer = require('../projectorganizer.js');
