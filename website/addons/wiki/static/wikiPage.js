@@ -216,19 +216,21 @@ function ViewModel(options){
         return versionString;
     });
 
+    // Save initial query params, so that we can preserve them when we mutate
+    // window.history.state
+    self.initialQueryParams = $.param($osf.urlParams());
+
     self.currentURL = ko.computed(function() {
         // Do not change URL for incompatible browsers
         if (typeof window.history.replaceState === 'undefined') {
             return;
         }
 
-        // TODO: Revisit this logic. /sloria
         var paramPrefix = '?';
         var url = self.pageURL;
-        // Preserve current query params
-        var queryParams = $.param($osf.urlParams());
-        if (queryParams) {
-            url += paramPrefix + queryParams;
+        // Preserve initial query params
+        if (self.initialQueryParams) {
+            url += paramPrefix + self.initialQueryParams;
             paramPrefix = '&';
         }
 
@@ -260,9 +262,6 @@ function ViewModel(options){
         if (self.menuVis()) {
             url += paramPrefix + 'menu';
         }
-
-        console.log('state is..');
-        console.log(window.history.state);
         window.history.replaceState({}, self.pageTitle, url);
     });
 
