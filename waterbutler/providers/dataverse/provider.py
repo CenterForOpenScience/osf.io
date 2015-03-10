@@ -11,7 +11,8 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import settings
-from waterbutler.providers.dataverse.metadata import DataverseFileMetadata, DataverseStudyMetadata
+from waterbutler.providers.dataverse.metadata import DataverseFileMetadata, DataverseDatasetMetadata
+
 
 def build_dataverse_url(base, *segments, **query):
     url = furl.furl(base)
@@ -39,6 +40,7 @@ class DataversePath(utils.WaterButlerPath):
         def path(self):
             return self._path
 
+
 class DataverseProvider(provider.BaseProvider):
 
     UP_BASE_URL = settings.UP_BASE_URL
@@ -51,66 +53,13 @@ class DataverseProvider(provider.BaseProvider):
         self.doi = self.settings['doi']
 
     @asyncio.coroutine
-    def intra_copy(self, dest_provider, source_options, dest_options):
-        source_path = DataversePath(source_options['path'])
-        dest_path = DataversePath(dest_options['path'])
-        if self == dest_provider:
-            resp = yield from self.make_request(
-                'POST',
-                self.build_url('fileops', 'copy'),
-                data={
-                    'folder': 'auto',
-                    'from_path': source_path.full_path,
-                    'to_path': dest_path.full_path,
-                },
-                expects=(200, 201),
-                throws=exceptions.IntraCopyError,
-            )
-        else:
-            from_ref_resp = yield from self.make_request(
-                'GET',
-                self.build_url('copy_ref', 'auto', source_path.full_path),
-            )
-            from_ref_data = yield from from_ref_resp.json()
-            resp = yield from self.make_request(
-                'POST',
-                data={
-                    'root': 'auto',
-                    'from_copy_ref': from_ref_data['copy_ref'],
-                    'to_path': dest_path,
-                },
-                headers=dest_provider.default_headers,
-                expects=(200, 201),
-                throws=exceptions.IntraCopyError,
-            )
-        data = yield from resp.json()
-        return DataverseFileMetadata(data).serialized()
-
-    @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        source_path = DataversePath(self.folder, source_options['path'])
-        dest_path = DataversePath(self.folder, dest_options['path'])
-        resp = yield from self.make_request(
-            'POST',
-            self.build_url('fileops', 'move'),
-            data={
-                'root': 'auto',
-                'from_path': source_path.full_path,
-                'to_path': dest_path.full_path,
-            },
-            expects=(200, ),
-            throws=exceptions.IntraMoveError,
-        )
-        data = yield from resp.json()
-        return DataverseFileMetadata(data).serialized()
-
-    @asyncio.coroutine
-    def download(self, path, revision=None, **kwargs):
+    def download(self, path, **kwargs):
         resp = yield from self.make_request(
             'GET',
-            os.path.join(settings.DOWN_BASE_URL, path),
+            os.path.join(self.DOWN_BASE_URL, path),
             expects=(200, ),
             throws=exceptions.DownloadError,
+            params={'key': self.token},
         )
         return streams.ResponseStreamReader(resp)
 
@@ -131,7 +80,7 @@ class DataverseProvider(provider.BaseProvider):
         else:
             created = False
 
-        dv_headers= {
+        dv_headers = {
             "Content-Disposition": "filename={0}".format(path),
             "Content-Type": "application/zip",
             "Packaging": "http://purl.org/net/sword/package/SimpleZip",
@@ -170,8 +119,6 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        path = DataversePath(path, self.doi)
-
         url = build_dataverse_url(settings.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
@@ -183,29 +130,7 @@ class DataverseProvider(provider.BaseProvider):
         data = yield from resp.text()
         data = xmltodict.parse(data)
 
-        return DataverseStudyMetadata(data).serialized()
-
-    @asyncio.coroutine
-    def revisions(self, path, **kwargs):
-        path = DataversePath(self.folder, path)
-        response = yield from self.make_request(
-            'GET',
-            self.build_url('revisions', 'auto', path.full_path),
-            expects=(200, ),
-            throws=exceptions.RevisionError
-        )
-        data = yield from response.json()
-
-        return [
-            DropboxRevision(item).serialized()
-            for item in data
-        ]
-
-    def can_intra_copy(self, dest_provider):
-        return type(self) == type(dest_provider)
-
-    def can_intra_move(self, dest_provider):
-        return self.can_intra_copy(dest_provider)
+        return DataverseDatasetMetadata(data).serialized()
 
     def _build_content_url(self, *segments, **query):
         return provider.build_url(settings.BASE_CONTENT_URL, *segments, **query)

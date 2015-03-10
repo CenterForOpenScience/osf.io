@@ -52,7 +52,8 @@ class DataverseFileMetadata(BaseDataverseMetadata):
     def updated(self):
         return self._updated
 
-class DataverseStudyMetadata(BaseDataverseMetadata):
+
+class DataverseDatasetMetadata(BaseDataverseMetadata):
     
     def __init__(self, raw):
         super().__init__(raw)
@@ -76,7 +77,7 @@ class DataverseStudyMetadata(BaseDataverseMetadata):
     def name(self):
         return self.title
 
-    @property 
+    @property
     def path(self):
         return self.build_path(self._id)
 
@@ -87,4 +88,4 @@ class DataverseStudyMetadata(BaseDataverseMetadata):
     def serialized(self):
         if self._entries:
             return [e.serialized() for e in self._entries]
-        return super(DataverseStudyMetadata, self).serialized()
+        return super(DataverseDatasetMetadata, self).serialized()
