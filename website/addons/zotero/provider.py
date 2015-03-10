@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from website.addons.citations import provider
 
-from .model import ZoteroNodeSettings, Zotero
+from .model import ZoteroNodeSettings
 from website.addons.citations.utils import serialize_account, serialize_folder, serialize_urls
-
 
 class ZoteroCitationsProvider(provider.CitationsProvider):
 
