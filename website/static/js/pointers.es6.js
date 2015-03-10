@@ -24,10 +24,7 @@ class AddPointerViewModel extends Paginator {
         this.results = ko.observableArray();
         this.selection = ko.observableArray();
         this.errorMsg = ko.observable('');
-        this.numberOfPages = ko.observable(0);
-        this.currentPage = ko.observable(0);
         this.totalPages = ko.observable(0);
-        this.paginators = ko.observableArray([]);
         this.includePublic = ko.observable(true);
 
         this.foundResults = ko.computed(function() {
