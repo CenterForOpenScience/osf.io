@@ -323,7 +323,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.parentUrl = ko.computed(function(){
         if (self.targetId() === self.rootId()) {
-            return self.rootUrl();
+            return nodeUrl + self.rootUrl();
         }
         return '/' + self.targetId();
     });
