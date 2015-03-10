@@ -195,7 +195,7 @@
         <td>
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                  <select data-bind="options: $root.permissionList, value: initPermission, optionsText: 'text'"></select>
+                  <select data-bind="options: permissionList, value: curPermission, optionsText: 'text'"></select>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>

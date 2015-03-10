@@ -45,6 +45,7 @@ var setupEditable = function(elm, data) {
     });
 };
 
+//TODO: move this inside when setupEditable is deleted.
 var permissionList = [
     {value: 'read', text: 'Read'},
     {value: 'write', text: 'Read + Write'},
@@ -58,6 +59,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
+    self.permissionList = permissionList;
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
@@ -97,19 +99,24 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         return (self.id === pageOwner.id) && !isRegistration;
     });
 
+    self.curPermission = ko.observable();
+
     self.initPermission = ko.computed(function() {
       var permission = self.permission();
+      var index = 0;
       if (permission === 'read') {
-        return permissionList[0];
+        index = 0;
       } else if (permission == 'write') {
-        return permissionList[1];
+        index = 1;
       } else {
-        return permissionList[2]
+        index = 2;
       }
-    });
-    self.change = ko.computed(function(){
-      console.log(self.initPermission().text)
-      return self.curPermission
+      self.curPermission = permissionList[index];
+      self.permission = function(){
+        return permissionList[index].value;
+      };
+      console.log(contributor);
+      return permissionList[index];
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -180,8 +187,6 @@ var MessageModel = function(text, level) {
 var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration) {
 
     var self = this;
-
-    self.permissionList = permissionList;
 
     self.original = ko.observableArray(contributors);
 
