@@ -62,13 +62,13 @@
                 </li>
                 <li>
                     <a href="${web_url_for('user_profile')}">
-                        <span rel="tooltip" data-placement="bottom" title="Settings" class="icon-cog hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Settings" class="fa fa-cog hidden-xs fa-lg"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="icon-signout hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="fa fa-signout hidden-xs fa-lg"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>

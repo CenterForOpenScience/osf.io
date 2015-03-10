@@ -15,7 +15,7 @@
                     <th>
                         % if not node['registered']:
                             <a>
-                                <i class="icon-remove pull-right text-danger ${addon_short_name}-remove-token" node-id="${node['_id']}" title="Deauthorize Project"></i>
+                             <i class="fa fa-times pull-right text-danger ${addon_short_name}-remove-token" node-id="${node['_id']}" title="Deauthorize Project"></i>
                             </a>
                         % endif
                     </th>
@@ -25,8 +25,8 @@
     </div>
     %if len(nodes) > 3:
         <div class="text-center" >
-            <i id="${addon_short_name}-more" class="icon-double-angle-down icon-large collapse-button"></i>
-            <i style="display: none;" id="${addon_short_name}-less" class="icon-double-angle-up icon-large collapse-button"></i>
+            <i id="${addon_short_name}-more" class="fa fa-angle-double-down fa-lg collapse-button"></i>
+            <i style="display: none;" id="${addon_short_name}-less" class="fa fa-angle-double-up fa-lg collapse-button"></i>
         </div>
     %endif
     <script>

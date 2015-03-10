@@ -61,7 +61,7 @@
                         <div class="col-xs-10">
                             <a href="${child['url']}">
                                 % if child['is_pointer']:
-                                    <i class="icon icon-link"></i>
+                            <i class="fa fa-hand-o-right"></i>
                                 % endif
                                 ${child['title'] | n}
                                     % if child['category']:

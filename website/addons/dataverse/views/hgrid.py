@@ -59,7 +59,7 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
     }
 
     buttons = [rubeus.build_addon_button(
-        '<i class="icon-globe"></i> Release Study',
+        '<i class="fa fa-globe"></i> Release Study',
         'releaseStudy')] if state == 'draft' else None
 
     return [rubeus.build_addon_root(

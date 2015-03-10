@@ -15,7 +15,7 @@
                 <h3> Contributors
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                          <i class="icon icon-plus"> </i>Add
+                          <i class="fa fa-plus"> </i>Add
                         </a>
                     <!-- /ko -->
                 </h3>
@@ -28,7 +28,7 @@
                         <th class="col-md-6">Name</th>
                         <th class="col-md-2">
                             Permissions
-                            <i class="icon-question-sign permission-info"
+                            <i class="fa fa-question-circle permission-info"
                                     data-toggle="popover"
                                     data-title="Permission Information"
                                     data-container="body"
@@ -38,7 +38,7 @@
                         </th>
                         <th class="col-md-3">
                             Bibliographic Contributor
-                            <i class="icon-question-sign visibility-info"
+                            <i class="fa fa-question-circle visibility-info"
                                     data-toggle="popover"
                                     data-title="Bibliographic Contributor Information"
                                     data-container="body"
@@ -137,7 +137,7 @@
                             <div class="btn-group">
                             <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
                                     data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                <span class="icon-copy" ></span>
+                                <span class="fa fa-copy" ></span>
                             </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
@@ -166,7 +166,7 @@
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
-                                <i class="icon-remove text-danger"></i>
+                                <i class="fa fa-times text-danger"></i>
                             </a>
                         </td>
                     </tr>

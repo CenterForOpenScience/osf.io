@@ -70,7 +70,7 @@ function Meeting(data) {
                     custom : function() {
                         if(item.data.downloadUrl){
                             return [ m('a', { href : item.data.downloadUrl }, [
-                                m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('i.icon-download-alt icon-white')),
+                                m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('fa fa-download fa-inverse')),
 
                             ] ), item.data.download  ];
                         } else {

@@ -55,8 +55,8 @@
 <li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
         <h3 class="ob-heading list-group-item-heading">Register a project</h3>
-        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-            class="pointer ob-expand-icon icon-large pull-right">
+        <i data-bind="css: {'fa-plus': !isOpen(), 'fa-minus': isOpen()}"
+            class="pointer ob-expand-icon fa fa-lg pull-right">
         </i>
     </div><!-- end ob-header -->
 
@@ -79,8 +79,8 @@
 <li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
         <h3 class="ob-heading list-group-item-heading">Upload file(s)</h3>
-        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-            class="pointer ob-expand-icon icon-large pull-right">
+        <i data-bind="css: {'fa-plus': !isOpen(), 'fa-minus': isOpen()}"
+            class="pointer ob-expand-icon fa fa-lg pull-right">
         </i>
     </div><!-- end ob-header -->
 
@@ -161,8 +161,8 @@
 <li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
         <h3 class="ob-heading list-group-item-heading">Go to my project</h3>
-        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-            class="pointer ob-expand-icon icon-large pull-right">
+        <i data-bind="css: {'fa-plus': !isOpen(), 'fa-minus': isOpen()}"
+            class="pointer ob-expand-icon fa fa-lg pull-right">
         </i>
     </div><!-- end ob-header -->
     <div class="row">
