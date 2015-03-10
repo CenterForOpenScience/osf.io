@@ -13,13 +13,13 @@ sinon.assert.expose(assert, {prefix: ''});
 describe('osfHelpers', () => {
     describe('growl', () => {
         it('calls $.growl with correct arguments', () => {
-            var spy = new sinon.spy($, 'growl');
+            var stub = new sinon.stub($, 'growl');
             $osf.growl('The one', 'the only', 'danger');
-            assert.calledOnce(spy);
+            assert.calledOnce(stub);
 
-            assert.calledWith(spy,
+            assert.calledWith(stub,
                 {title: '<strong>The one<strong><br />', message: 'the only'});
-            spy.restore();
+            stub.restore();
         });
     });
 
@@ -28,29 +28,30 @@ describe('osfHelpers', () => {
             responseJSON: {message_short: 'Oh no!', message_long: 'Something went wrong'}
         };
         it('uses the response body if available', () => {
-            var spy = new sinon.spy($osf, 'growl');
+            var stub = new sinon.stub($osf, 'growl');
             $osf.handleJSONError(response);
-            assert.called(spy);
-            assert.calledWith(spy,
+            assert.called(stub);
+            assert.calledWith(stub,
                               response.responseJSON.message_short,
                               response.responseJSON.message_long);
-            spy.restore();
+            stub.restore();
         });
 
         it('logs error with Raven', () => {
-            var spy = new sinon.spy(Raven, 'captureMessage');
+            new sinon.stub($osf, 'growl');
+            var stub = new sinon.stub(Raven, 'captureMessage');
             $osf.handleJSONError(response);
-            assert.called(spy);
-            spy.restore();
+            assert.called(stub);
+            stub.restore();
         });
     });
 
     describe('block', () => {
         it('calls $.blockUI with correct arguments', () => {
-            var spy = new sinon.spy($, 'blockUI');
+            var stub = new sinon.stub($, 'blockUI');
             $osf.block();
-            assert.calledOnce(spy);
-            assert.calledWith(spy, {
+            assert.calledOnce(stub);
+            assert.calledWith(stub, {
                 css: {
                     border: 'none',
                     padding: '15px',
@@ -67,9 +68,9 @@ describe('osfHelpers', () => {
 
     describe('unblock', () => {
         it('calls unblockUI', () => {
-            var spy = new sinon.spy($, 'unblockUI');
+            var stub = new sinon.stub($, 'unblockUI');
             $osf.unblock();
-            assert.calledOnce(spy);
+            assert.calledOnce(stub);
         });
     });
 
@@ -119,14 +120,12 @@ describe('osfHelpers', () => {
     });
 
     describe('ajax helpers', () => {
-        var spy, xhr;
+        var stub, xhr;
         beforeEach(() => {
-            spy = new sinon.spy($, 'ajax');
-            xhr = sinon.useFakeXMLHttpRequest();
+            stub = new sinon.stub($, 'ajax');
         });
         afterEach(function() {
-            spy.restore();
-            xhr.restore();
+            stub.restore();
         });
 
         describe('postJSON', () => {
@@ -135,8 +134,8 @@ describe('osfHelpers', () => {
                 var payload = {'bar': 42};
                 $osf.postJSON(url, payload);
 
-                assert.calledOnce(spy);
-                assert.calledWith(spy, {
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
                     url: url,
                     type: 'post',
                     data: JSON.stringify(payload),
@@ -152,8 +151,8 @@ describe('osfHelpers', () => {
                 var payload = {'bar': 42};
                 $osf.putJSON(url, payload);
 
-                assert.calledOnce(spy);
-                assert.calledWith(spy, {
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
                     url: url,
                     type: 'put',
                     data: JSON.stringify(payload),
