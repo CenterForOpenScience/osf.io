@@ -101,7 +101,7 @@
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
                         </div>
-                      </div>                    
+                      </div>
                   </div>
                   <div class="wiki-panel-footer">
                       <div class="row">
@@ -153,7 +153,7 @@
                         </div>
                     </div>
                 </div>
-                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
+                <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
 
                 </div>
               </div>
@@ -166,7 +166,6 @@
                   <div class="row">
                       <div class="col-xs-12">
                           <i class="icon-exchange"> </i>  Compare
-                      
                             <!-- Version Picker -->
                           <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                             <select data-bind="value: compareVersion" id="compareVersionSelect">
@@ -192,7 +191,7 @@
   </div>
 </div><!-- end wiki -->
 
-<!-- Wiki modals should also be placed here! --> 
+<!-- Wiki modals should also be placed here! -->
   <%include file="wiki/templates/add_wiki_page.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>

@@ -241,8 +241,6 @@ function ViewModel(options){
             url += paramPrefix + 'menu';
         }
 
-        console.log('state is..');
-        console.log(window.history.state);
         window.history.replaceState({}, self.pageTitle, url);
     });
 
