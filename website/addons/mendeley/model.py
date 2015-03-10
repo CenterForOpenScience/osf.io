@@ -137,7 +137,7 @@ class Mendeley(ExternalProvider):
         citations = {}
         next_page = None
         while len(document_ids - set((citations or {}).keys())) > 0:
-            page, next_page = self._citations_for_mendeley_user(next_page)
+            page, next_page = self._citations_for_mendeley_user(next_page, size=500)
             citations.update({
                 citation['id']: citation
                 for citation in page
@@ -146,14 +146,14 @@ class Mendeley(ExternalProvider):
                 break
         return [citations[id] for id in document_ids], documents
 
-    def _citations_for_mendeley_user(self, next_page):
+    def _citations_for_mendeley_user(self, next_page, size=100):
         documents = None
         if hasattr(next_page, 'next_page'):
             documents = next_page.next_page
         elif next_page is None:
-            documents = self.client.documents.list(page_size=100)
+            documents = self.client.documents.list(page_size=size)
         else:
-            documents = self.client.documents.list(page_size=100, marker=next_page)
+            documents = self.client.documents.list(page_size=size, marker=next_page)
 
         return [
             self._citation_for_mendeley_document(document)
