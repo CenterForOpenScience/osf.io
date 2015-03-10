@@ -96,10 +96,35 @@ $(document).ready(function () {
             // thisbtn = $(this);
             // col = the $() for the column this button links to
 
+
             // Determine if any columns are visible
             var visibleColumns = this.filter(function (i, element) {
                 return $(element).is(':visible');
             });
+
+            var doSingleView = function (){ 
+                // add header class that remove style
+                // add panel class that remove border
+                visibleColumns.each(function(){
+                    var el = $(this);
+                    el.children('.wiki-panel').addClass('no-border');
+                    el.find('.wiki-panel-header').addClass('no-background');
+                    el.find('.wiki-panel-title').hide();
+                    el.find('.compare-version-text').addClass('pull-right');
+                });
+            }
+
+            var undoSingleView = function() {
+                // remove header class that removes style
+                // remove panel class that removes border
+                visibleColumns.each(function(){
+                    var el = $(this);
+                    el.children('.wiki-panel').removeClass('no-border');
+                    el.find('.wiki-panel-header').removeClass('no-background'); 
+                    el.find('.wiki-panel-title').show();
+                    el.find('.compare-version-text').removeClass('pull-right');                    
+                })
+            }
 
             if (visibleColumns.length === 0) {
                 thisbtn.click();
@@ -111,6 +136,15 @@ $(document).ready(function () {
                 buttonState
             ]);
             if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
+
+            if (visibleColumns.length === 1) {
+                doSingleView();
+            }
+
+            if (visibleColumns.length === 2) {
+                undoSingleView();
+            }
+
 
         }
     });
