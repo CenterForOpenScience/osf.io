@@ -97,7 +97,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         return (self.id === pageOwner.id) && !isRegistration;
     });
 
-    self.initPermission = ko.observable(function() {
+    self.initPermission = ko.computed(function() {
       var permission = self.permission();
       if (permission === 'read') {
         return permissionList[0];
