@@ -42,35 +42,34 @@
                      'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                      'problem persists.';
              }),
-             CONFIRM_USER_DEAUTH: ko.pureComputed(function() {
-                 return 'Are you sure you want to unlink your Dataverse ' +
-                     'account? This will revoke access to Dataverse for all ' +
-                     'projects you have authorized.';
-             }),
              CONFIRM_NODE_DEAUTH: ko.pureComputed(function() {
                  return 'Are you sure you want to unlink this Dataverse account? This will ' +
                      'revoke the ability to view, download, modify, and upload files ' +
                      'to studies on the Dataverse from the OSF. This will not remove your ' +
-                     'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
+                     'Dataverse authorization from your <a href="'+ self.urls().settings + '">user settings</a> ' +
                      'page.';
              }),
              CONFIRM_IMPORT_AUTH: ko.pureComputed(function() {
                  return 'Are you sure you want to authorize this project with your Dataverse credentials?';
              }),
              DEAUTH_ERROR: ko.pureComputed(function() {
-                 return 'Could not unlink Dataverse at this time.';
+                 return 'Could not unlink Dataverse at this time. Please refresh the page or ' +
+                     'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                     'problem persists.';
              }),
              DEAUTH_SUCCESS: ko.pureComputed(function() {
-                 return 'Unlinked your Dataverse account.';
+                 return 'Successfully unlinked your Dataverse account.';
              }),
              AUTH_ERROR: ko.pureComputed(function() {
-                 return 'There was a problem connecting to the Dataverse.';
+                 return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
+                     'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                     'problem persists.';
              }),
              AUTH_INVALID: ko.pureComputed(function() {
                  return 'Your Dataverse username or password is invalid.';
              }),
              AUTH_SUCCESS: ko.pureComputed(function() {
-                 return 'Your Dataverse account was linked.';
+                 return 'Successfully linked your Dataverse account';
              }),
              STUDY_DAACCESSIONED: ko.pureComputed(function() {
                  return 'This study has already been deaccessioned on the Dataverse ' +
@@ -82,10 +81,14 @@
                      'development team.';
              }),
              SET_STUDY_ERROR: ko.pureComputed(function() {
-                 return 'Could not connect to this study.';
+                 return 'Could not connect to this study. Please refresh the page or ' +
+                     'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                     'problem persists.';
              }),
              GET_STUDIES_ERROR: ko.pureComputed(function(){
-                 return 'Could not load studies';
+                 return 'Could not load studies. Please refresh the page or ' +
+                     'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                     'problem persists.';
              })
          };
 
@@ -365,8 +368,6 @@
          }, timeout);
      }
  };
-
- }
 
  function DataverseNodeConfig(selector, url) {
      // Initialization code
