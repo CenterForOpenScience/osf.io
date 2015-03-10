@@ -6,7 +6,9 @@ import cachecontrol
 from requests.adapters import HTTPAdapter
 
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError
+from website.addons.github.exceptions import (
+    NotFoundError, EmptyRepoError, GitHubError
+)
 
 
 # Initialize caches
@@ -92,6 +94,32 @@ class GitHub(object):
         if branch:
             return [self.repo(user, repo).branch(branch)]
         return self.repo(user, repo).iter_branches() or []
+
+    def tree(self, user, repo, sha, recursive=True):
+        """Get file tree for a repo.
+
+        :param str user: GitHub user name
+        :param str repo: GitHub repo name
+        :param str sha: Branch name or SHA
+        :param bool recursive: Walk repo recursively
+        :param dict registration_data: Registered commit data
+        :returns: tuple: Tuple of commit ID and tree JSON; see
+            http://developer.github.com/v3/git/trees/
+
+        """
+        try:
+            tree = self.repo(user, repo).tree(sha)
+            if recursive:
+                return tree.recurse()
+            return tree
+        except AttributeError:
+            if not tree:
+                raise EmptyRepoError
+            raise
+        except GitHubError as error:
+            if error.code == 409:
+                raise EmptyRepoError
+            raise
 
     # TODO: Test
     def starball(self, user, repo, archive='tar', ref='master'):

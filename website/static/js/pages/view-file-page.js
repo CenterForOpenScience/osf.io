@@ -25,12 +25,3 @@ if ($comments.length) {
     Comment.init('.commentPane', 'files', id, name, 'pane', userName, canComment, hasChildren);
 }
 
-// If the provider is wrong:
-var $osf = require('osfHelpers');
-var providerWithoutComments = ["box", "dataverse", "googledrive"];
-if (providerWithoutComments.indexOf(window.contextVars.file.provider) >= 0) {
-    if (window.contextVars.currentUser.canComment) {
-        $osf.growl("Comments are not supported for this addon.")
-    }
-}
-
