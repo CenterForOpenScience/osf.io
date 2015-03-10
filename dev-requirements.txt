@@ -6,10 +6,7 @@ webtest-plus
 mock
 fake-factory
 
-pep8>=1.5.7,<1.6.0
-pyflakes>=0.8,<0.9
-mccabe>=0.3,<0.4
-flake8==2.3.0
+flake8==2.4.0
 
 responses
 
