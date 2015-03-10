@@ -166,6 +166,7 @@ function ViewModel(options){
     self.viewVis = ko.observable(options.viewVisible);
     self.compareVis = ko.observable(options.compareVisible);
     self.menuVis = ko.observable(options.menuVisible);
+    // singleVis : checks if the item visible is the only visible column
     self.singleVis = ko.computed(function(){
         var visible = 0;
         var single = undefined;
