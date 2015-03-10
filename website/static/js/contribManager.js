@@ -38,16 +38,18 @@ var setupEditable = function(elm, data) {
     $editable.editable({
         showbuttons: false,
         value: data.permission(),
-        source: [
-            {value: 'read', text: 'Read'},
-            {value: 'write', text: 'Read + Write'},
-            {value: 'admin', text: 'Administrator'}
-        ],
+        source: permissionList,
         success: function(response, value) {
             data.permission(value);
         }
     });
 };
+
+var permissionList = [
+    {value: 'read', text: 'Read'},
+    {value: 'write', text: 'Read + Write'},
+    {value: 'admin', text: 'Administrator'}
+];
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
@@ -93,6 +95,21 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.canRemove = ko.computed(function(){
         return (self.id === pageOwner.id) && !isRegistration;
+    });
+
+    self.initPermission = ko.observable(function() {
+      var permission = self.permission();
+      if (permission === 'read') {
+        return permissionList[0];
+      } else if (permission == 'write') {
+        return permissionList[1];
+      } else {
+        return permissionList[2]
+      }
+    });
+    self.change = ko.computed(function(){
+      console.log(self.initPermission().text)
+      return self.curPermission
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -163,6 +180,8 @@ var MessageModel = function(text, level) {
 var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration) {
 
     var self = this;
+
+    self.permissionList = permissionList;
 
     self.original = ko.observableArray(contributors);
 
