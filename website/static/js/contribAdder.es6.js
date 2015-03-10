@@ -273,6 +273,12 @@ class AddContributorViewModel extends Paginator {
         self.addTips(elm, data);
         self.setupEditable(elm, data);
     };
+    makeAfterRender(){
+        var self = this;
+        return function(elm, data){
+            return self.afterRender(elm, data);
+        };
+    };
     /** Validate the invite form. Returns a string error message or
     *   true if validation succeeds.
     */

@@ -145,7 +145,7 @@
                                             ></i>
                                     </th>
                                 </thead>
-                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: afterRender, options: {containment: 'parent'}}">
+                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: makeAfterRender(), options: {containment: 'parent'}}">
                                     <tr>
                                         <td style="padding-right: 10px;">
                                             <a
