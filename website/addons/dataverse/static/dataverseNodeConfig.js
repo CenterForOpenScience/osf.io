@@ -1,4 +1,4 @@
-/**
+ /**
 * Module that controls the Dataverse node settings. Includes Knockout view-model
 * for syncing data.
 */
@@ -160,13 +160,36 @@ function ViewModel(url) {
             self.savedStudyHdl() !== self.selectedStudyHdl();
     });
 
-    /**
-        * Update the view model from data returned from the server.
-        */
+    // Flashed messages
+    self.message = ko.observable('');
+    self.messageClass = ko.observable('text-info');
 
-    self.updateFromData = function(data) {
-        self.urls(data.urls);
-        self.dataverseUsername(data.dataverseUsername);
+    // Update above observables with data from the server
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        // Update view model
+        self.updateFromData(response.result);
+        self.loadedSettings(true);
+    }).fail(function(xhr, textStatus, error) {
+        self.changeMessage(self.messages.USER_SETTINGS_ERROR, 'text-warning');
+        Raven.captureMessage('Could not GET dataverse settings', {
+            url: url,
+            textStatus: textStatus,
+            error: error
+        });
+    });
+}
+/**
+ * Update the view model from data returned from the server.
+ */
+
+ViewModel.prototype.updateFromData = function(data) {
+    var self = this;
+    self.urls(data.urls);
+    self.dataverseUsername(data.dataverseUsername);
         self.ownerName(data.ownerName);
         self.nodeHasAuth(data.nodeHasAuth);
         self.userHasAuth(data.userHasAuth);
@@ -186,30 +209,9 @@ function ViewModel(url) {
         }
     };
 
-    // Update above observables with data from the server
-    $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        // Update view model
-        self.updateFromData(response.result);
-        self.loadedSettings(true);
-    }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.USER_SETTINGS_ERROR, 'text-warning');
-        Raven.captureMessage('Could not GET dataverse settings', {
-            url: url,
-            textStatus: textStatus,
-            error: error
-        });
-    });
-
-    // Flashed messages
-    self.message = ko.observable('');
-    self.messageClass = ko.observable('text-info');
-
-    self.setInfo = function() {
-        self.submitting(true);
+ViewModel.prototype.setInfo = function() {
+    var self = this;
+    self.submitting(true);
         osfHelpers.postJSON(
             self.urls().set,
             ko.toJS({
@@ -241,7 +243,8 @@ function ViewModel(url) {
         * Looks for study in list of studies when first loaded.
         * This prevents an additional request to the server, but requires additional logic.
         */
-    self.findStudy = function() {
+ViewModel.prototype.findStudy = function() {
+    var self = this;
         for (var i in self.studies()) {
             if (self.studies()[i].hdl === self.savedStudyHdl()) {
                 self.studyWasFound(true);
@@ -250,7 +253,8 @@ function ViewModel(url) {
         }
     };
 
-    self.getStudies = function() {
+ViewModel.prototype.getStudies = function() {
+    var self = this;
         self.studies([]);
         self.badStudies([]);
         self.loadedStudies(false);
@@ -268,51 +272,8 @@ function ViewModel(url) {
         });
     };
 
-    /** Send POST request to authorize Dataverse */
-    self.sendAuth = function() {
-        return osfHelpers.postJSON(
-            self.urls().create,
-            ko.toJS({
-                dataverse_username: self.dataverseUsername,
-                dataverse_password: self.dataversePassword
-            })
-        ).done(function() {
-            // User now has auth
-            authorizeNode();
-        }).fail(function(xhr) {
-            var errorMessage = (xhr.status === 401) ? self.messages.AUTH_INVALID : self.messages.AUTH_ERROR;
-            self.changeMessage(errorMessage, 'text-danger');
-        });
-    };
-
-    /**
-    *  Send PUT request to import access token from user profile.
-    */
-    self.importAuth = function() {
-        bootbox.confirm({
-            title: 'Link to Dataverse Account?',
-            message: self.messages.CONFIRM_IMPORT_AUTH(),
-            callback: function(confirmed) {
-                if (confirmed) {
-                    authorizeNode();
-                }
-            }
-        });
-    };
-
-    self.clickDeauth = function() {
-        bootbox.confirm({
-            title: 'Deauthorize?',
-            message: self.messages.CONFIRM_NODE_DEAUTH(),            
-            callback: function(confirmed) {
-                if (confirmed) {
-                    sendDeauth();
-                }
-            }
-        });
-    };
-
-    function authorizeNode() {
+ViewModel.prototype.authorizeNode = function(){
+    var self = this;
         return osfHelpers.putJSON(
             self.urls().importAuth,
             {}
@@ -322,8 +283,44 @@ function ViewModel(url) {
         }).fail(function() {
             self.changeMessage(self.messages.AUTH_ERROR, 'text-danger');
         });
-    }
+    };
 
+    /** Send POST request to authorize Dataverse */
+ViewModel.prototype.sendAuth = function() {
+    var self = this;
+        return osfHelpers.postJSON(
+            self.urls().create,
+            ko.toJS({
+                dataverse_username: self.dataverseUsername,
+                dataverse_password: self.dataversePassword
+            })
+        ).done(function() {
+            // User now has auth
+            self.authorizeNode();
+        }).fail(function(xhr) {
+            var errorMessage = (xhr.status === 401) ? self.messages.AUTH_INVALID : self.messages.AUTH_ERROR;
+            self.changeMessage(errorMessage, 'text-danger');
+        });
+    };
+
+    /**
+    *  Send PUT request to import access token from user profile.
+    */
+ViewModel.prototype.importAuth = function() {
+    var self = this;
+        bootbox.confirm({
+            title: 'Link to Dataverse Account?',
+            message: self.messages.CONFIRM_IMPORT_AUTH(),
+            callback: function(confirmed) {
+                if (confirmed) {
+                    self.authorizeNode();
+                }
+            }
+        });
+    };
+
+ViewModel.prototype.clickDeauth = function() {
+var self = this;
     function sendDeauth() {
         return $.ajax({
             url: self.urls().deauthorize,
@@ -337,6 +334,18 @@ function ViewModel(url) {
             self.changeMessage(self.messages.DEAUTH_ERROR, 'text-danger');
         });
     }
+
+        bootbox.confirm({
+            title: 'Deauthorize?',
+            message: self.messages.CONFIRM_NODE_DEAUTH(),            
+            callback: function(confirmed) {
+                if (confirmed) {
+                    sendDeauth();
+                }
+            }
+        });
+};
+
 
     /** Change the flashed status message */
     self.changeMessage = function(text, css, timeout) {
