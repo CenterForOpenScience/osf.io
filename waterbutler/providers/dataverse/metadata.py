@@ -29,7 +29,7 @@ class DataverseFileMetadata(BaseDataverseMetadata):
         
         self._raw = raw
         self._content_type = content['@type']
-        self._id = raw['id']
+        self._edit_media_uri = raw['id']
         self._updated = raw['updated']
         
     @property
@@ -38,12 +38,11 @@ class DataverseFileMetadata(BaseDataverseMetadata):
 
     @property
     def id(self):
-        return self._id
+        return self._edit_media_uri.rsplit("/", 2)[-2]
 
-    # TODO remove redundant
     @property
     def name(self):
-        return self.id
+        return self._edit_media_uri.rsplit("/", 1)[-1]
 
     @property 
     def path(self):
@@ -61,8 +60,12 @@ class DataverseStudyMetadata(BaseDataverseMetadata):
         feed = raw['feed']
         
         self._id = feed['id']
-        self._title = feed['title']['#text']         
-        self._entries = [DataverseFileMetadata(e) for e in feed['entry']]
+        self._title = feed['title']['#text']
+        feed = feed.get('entry') or []
+        if isinstance(feed, dict):
+            self._entries = [DataverseFileMetadata(feed)]
+        else:
+            self._entries = [DataverseFileMetadata(e) for e in feed]
         
     @property
     def title(self):
@@ -80,3 +83,8 @@ class DataverseStudyMetadata(BaseDataverseMetadata):
     @property
     def entries(self):
         return self._entries
+
+    def serialized(self):
+        if self._entries:
+            return [e.serialized() for e in self._entries]
+        return super(DataverseStudyMetadata, self).serialized()

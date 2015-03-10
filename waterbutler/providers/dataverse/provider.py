@@ -1,18 +1,9 @@
 import os
 import asyncio
 
-import sys
-import pdb
-import traceback
-
 import furl
 import itertools
 import xmltodict
-
-# TODO deleteme
-import requests as R
-
-from zipstream import ZipFile
 
 from waterbutler.core import utils
 from waterbutler.core import streams
@@ -38,19 +29,15 @@ def build_dataverse_url(base, *segments, **query):
 
 class DataversePath(utils.WaterButlerPath):
 
-    def __init__(self, doi, path, prefix=True, suffix=False):
+    def __init__(self, path, doi=None, prefix=True, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
 
+        self._path = path
         self._doi = doi
-        
-        '''
-        full_path = os.path.join(doi, path.lstrip('/'))
-        self._full_path = self._format_path(full_path)
 
         @property
-        def full_path(self):
-            return self._full_path
-        '''
+        def path(self):
+            return self._path
 
 class DataverseProvider(provider.BaseProvider):
 
@@ -60,8 +47,8 @@ class DataverseProvider(provider.BaseProvider):
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
-        self.api_key = self.credentials['api_key']
-        self.doi = self.settings['study_doi']
+        self.token = self.credentials['token']
+        self.doi = self.settings['doi']
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_options, dest_options):
@@ -119,10 +106,9 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-        path = DataversePath(path)
         resp = yield from self.make_request(
             'GET',
-            self.build_url(path.full_path),
+            os.path.join(settings.DOWN_BASE_URL, path),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -157,7 +143,7 @@ class DataverseProvider(provider.BaseProvider):
             'POST',
             build_dataverse_url(settings.UP_BASE_URL, self.doi),
             headers=dv_headers,
-            auth=(self.api_key, ),
+            auth=(self.token, ),
             data=zip_stream,
             expects=(200, ),
             throws=exceptions.UploadError
@@ -168,7 +154,7 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        path = DataversePath(self.folder, path)
+        path = DataversePath(path, self.doi)
 
         # A metadata call will verify the path specified is actually the
         # requested file or folder.
@@ -177,26 +163,26 @@ class DataverseProvider(provider.BaseProvider):
         yield from self.make_request(
             'POST',
             self.build_url('fileops', 'delete'),
-            data={'root': 'auto', 'path': path.full_path},
+            data={'root': 'auto', 'path': path.path},
             expects=(200, ),
             throws=exceptions.DeleteError,
         )
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        path = DataversePath(self.doi, path)
+        path = DataversePath(path, self.doi)
 
         url = build_dataverse_url(settings.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
             url,
-            auth=(self.api_key, ),
+            auth=(self.token, ),
             expects=(200, ),
             throws=exceptions.MetadataError
         )
         data = yield from resp.text()
         data = xmltodict.parse(data)
-        
+
         return DataverseStudyMetadata(data).serialized()
 
     @asyncio.coroutine
