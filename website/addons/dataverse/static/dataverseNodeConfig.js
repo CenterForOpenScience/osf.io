@@ -60,16 +60,16 @@
              DEAUTH_SUCCESS: ko.pureComputed(function() {
                  return 'Successfully unlinked your Dataverse account.';
              }),
-             AUTH_ERROR: ko.pureComputed(function() {
-                 return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
-                     'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                     'problem persists.';
-             }),
              AUTH_INVALID: ko.pureComputed(function() {
                  return 'Your Dataverse username or password is invalid.';
              }),
-             AUTH_SUCCESS: ko.pureComputed(function() {
+             IMPORT_AUTH_SUCCESS: ko.pureComputed(function() {
                  return 'Successfully linked your Dataverse account';
+             }),
+             IMPORT_AUTH_ERROR: ko.pureComputed(function() {
+                 return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
+                     'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                     'problem persists.';
              }),
              STUDY_DAACCESSIONED: ko.pureComputed(function() {
                  return 'This study has already been deaccessioned on the Dataverse ' +
@@ -79,6 +79,11 @@
                  return 'This study cannot be connected due to forbidden characters ' +
                      'in one or more of the study\'s file names. This issue has been forwarded to our ' +
                      'development team.';
+             }),
+             SET_INFO_SUCCESS: ko.pureComputed(function(){
+                 var filesUrl = window.contextVars.node.urls.web + 'files/';
+                 return 'Successfully linked ' + self.savedStudyTitle() + '. Go to the <a href="' +
+                     filesUrl + '">Files page</a> to view your content.';
              }),
              SET_STUDY_ERROR: ko.pureComputed(function() {
                  return 'Could not connect to this study. Please refresh the page or ' +
@@ -228,7 +233,7 @@
          self.savedStudyHdl(self.selectedStudyHdl());
          self.savedStudyTitle(self.selectedStudyTitle());
          self.studyWasFound(true);
-         self.changeMessage('Settings updated.', 'text-success', 5000);
+         self.changeMessage(self.messages.SET_INFO_SUCCESS, 'text-success');
      }).fail(function(xhr, textStatus, error) {
          self.submitting(false);
          var errorMessage = (xhr.status === 410) ? self.messages.STUDY_DEACCESSIONED :
@@ -283,9 +288,9 @@
          self.urls().importAuth, {}
      ).done(function(response) {
          self.updateFromData(response.result);
-         self.changeMessage(self.messages.AUTH_SUCCESS, 'text-success', 3000);
+         self.changeMessage(self.messages.IMPORT_AUTH_SUCCESS, 'text-success', 3000);
      }).fail(function() {
-         self.changeMessage(self.messages.AUTH_ERROR, 'text-danger');
+         self.changeMessage(self.messages.IMPORTAUTH_ERROR, 'text-danger');
      });
  };
 
@@ -334,7 +339,7 @@
              self.nodeHasAuth(false);
              self.userIsOwner(false);
              self.connected(false);
-             self.changeMessage(self.messages.DEAUTH_SUCCESS, 'text-success', 5000);
+             self.changeMessage(self.messages.DEAUTH_SUCCESS, 'text-success', 3000);
          }).fail(function() {
              self.changeMessage(self.messages.DEAUTH_ERROR, 'text-danger');
          });
