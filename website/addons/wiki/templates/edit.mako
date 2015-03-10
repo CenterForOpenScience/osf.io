@@ -59,7 +59,7 @@
                   <div class="wiki-panel-header">
                     <div class="row">
                       <div class="col-md-6">
-                           <i class="icon-edit"> </i>  Edit
+                           <span class="wiki-panel-title"> <i class="icon-edit"> </i>  Edit </span>
                       </div>
                         <div class="col-md-6">
                           <div class="progress progress-no-margin pointer pull-right"
@@ -134,7 +134,7 @@
                 <div class="wiki-panel-header wiki-panel-header-flex">
                     <div class="row">
                         <div class="col-sm-6">
-                            <i class="icon-eye-open"> </i>  View
+                            <span class="wiki-panel-title"> <i class="icon-eye-open"> </i>  View </span>
                         </div>
                         <div class="col-sm-6">
                             <!-- Version Picker -->
@@ -165,7 +165,7 @@
               <div class="wiki-panel-header wiki-panel-header-flex">
                   <div class="row">
                       <div class="col-xs-12">
-                          <i class="icon-exchange"> </i>  Compare
+                          <span class="wiki-panel-title"> <i class="icon-exchange"> </i>  Compare </span>
                       
                             <!-- Version Picker -->
                           <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
