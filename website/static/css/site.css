@@ -2269,7 +2269,9 @@ span#profileFullname{
     position: relative;
     overflow-x: hidden;
 }
-
+.reset-height {
+    height: auto;
+}
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
@@ -2290,6 +2292,9 @@ span#profileFullname{
 }
 .wiki-panel-header.no-background {
     background: transparent;
+}
+.wiki-panel-header.bottom-border {
+    border-bottom: 1px solid #eee;
 }
 
 .wiki-panel-footer {

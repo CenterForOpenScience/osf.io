@@ -56,7 +56,7 @@
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
                 <div class="wiki-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="wiki-panel-header" data-bind="css: { 'no-background': $root.singleVis() === 'edit' }">
+                  <div class="wiki-panel-header" data-bind="css: { 'no-background bottom-border': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
                            <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'edit'"> <i class="icon-edit"> </i>  Edit </span>
@@ -130,30 +130,36 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="wiki-panel wiki-panel-flex no-border" data-bind="css: { 'no-border': $root.singleVis() === 'view' }">
-                <div class="wiki-panel-header wiki-panel-header-flex no-background" data-bind="css: { 'no-background': $root.singleVis() === 'view' }">
+              <div class="wiki-panel no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'wiki-panel-flex': $root.singleVis() !== 'view' }">
+                <div class="wiki-panel-header no-background" data-bind="css: { 'no-background bottom-border': $root.singleVis() === 'view', 'wiki-panel-header-flex': $root.singleVis() !== 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
                             <span class="wiki-panel-title hidden" data-bind="css: { 'hidden': $root.singleVis() === 'view' }"> <i class="icon-eye-open"> </i>  View </span>
                         </div>
                         <div class="col-sm-6">
-                            <!-- Version Picker -->
-                            <select data-bind="value:viewVersion" id="viewVersionSelect" class="pull-right">
-                                % if user['can_edit']:
-                                    <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
-                                % endif
-                                <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
-                                % if len(versions) > 1:
-                                    <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
-                                % endif
-                                % for version in versions[2:]:
-                                    <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
-                                % endfor
-                            </select>
+
+                            <div class="pull-right">
+                                <span class="wiki-panel-title " data-bind="css: { 'hidden': $root.singleVis() !== 'view'}">   View </span>
+                                <!-- Version Picker -->                            
+                                <select data-bind="value:viewVersion" id="viewVersionSelect">
+                                    % if user['can_edit']:
+                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
+                                    % endif
+                                    <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                    % if len(versions) > 1:
+                                        <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
+                                    % endif
+                                    % for version in versions[2:]:
+                                        <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
+                                    % endfor
+                                </select>
+
+                            </div> 
+
                         </div>
                     </div>
                 </div>
-                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
+                <div id="wikiViewRender" class="wiki-panel-body markdown-it-view wiki-panel-body-flex" data-bind="html: renderedView, mathjaxify: renderedView, css: { 'wiki-panel-body-flex': $root.singleVis() !== 'view' }"  >
 
                 </div>
               </div>
@@ -161,8 +167,8 @@
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel wiki-panel-flex" data-bind="css: { 'no-border': $root.singleVis() === 'compare' }">
-              <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: { 'no-background': $root.singleVis() === 'compare' }">
+            <div class="wiki-panel wiki-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'wiki-panel-flex': $root.singleVis() !== 'compare' }">
+              <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: { 'no-background bottom-border': $root.singleVis() === 'compare', 'wiki-panel-header-flex': $root.singleVis() !== 'compare' }">
                   <div class="row">
                       <div class="col-xs-12">
                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="icon-exchange"> </i>  Compare </span>
@@ -181,7 +187,7 @@
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view wiki-panel-body-flex">
+              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view" data-bind="css: { 'wiki-panel-body-flex': $root.singleVis() !== 'compare' }" >
 
               </div>
             </div>
