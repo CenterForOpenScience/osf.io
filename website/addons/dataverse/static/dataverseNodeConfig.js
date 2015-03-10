@@ -84,25 +84,21 @@
              SET_STUDY_ERROR: ko.pureComputed(function() {
                  return 'Could not connect to this study.';
              }),
-             WIDGET_INVALID: ko.pureComputed(function() {
-                 return 'The Dataverse credentials associated with ' +
-                     'this node appear to be invalid.';
-             }),
-             WIDGET_ERROR: ko.pureComputed(function() {
-                 return 'There was a problem connecting to the Dataverse.';
+             GET_STUDIES_ERROR: ko.pureComputed(function(){
+                 return 'Could not load studies';
              })
          };
 
-         self.savedStudyUrl = ko.computed(function() {
+         self.savedStudyUrl = ko.pureComputed(function() {
              return (self.urls()) ? self.urls().studyPrefix + self.savedStudyHdl() : null;
          });
-         self.savedDataverseUrl = ko.computed(function() {
+         self.savedDataverseUrl = ko.pureComputed(function() {
              return (self.urls()) ? self.urls().dataversePrefix + self.savedDataverseAlias() : null;
          });
 
          self.selectedDataverseAlias = ko.observable();
          self.selectedStudyHdl = ko.observable();
-         self.selectedDataverseTitle = ko.computed(function() {
+         self.selectedDataverseTitle = ko.pureComputed(function() {
              for (var i = 0; i < self.dataverses().length; i++) {
                  var data = self.dataverses()[i];
                  if (data.alias === self.selectedDataverseAlias()) {
@@ -111,7 +107,7 @@
              }
              return null;
          });
-         self.selectedStudyTitle = ko.computed(function() {
+         self.selectedStudyTitle = ko.pureComputed(function() {
              for (var i = 0; i < self.studies().length; i++) {
                  var data = self.studies()[i];
                  if (data.hdl === self.selectedStudyHdl()) {
@@ -120,42 +116,42 @@
              }
              return null;
          });
-         self.dataverseHasStudies = ko.computed(function() {
+         self.dataverseHasStudies = ko.pureComputed(function() {
              return self.studies().length > 0;
          });
 
-         self.showStudySelect = ko.computed(function() {
+         self.showStudySelect = ko.pureComputed(function() {
              return self.loadedStudies() && self.dataverseHasStudies();
          });
-         self.showNoStudies = ko.computed(function() {
+         self.showNoStudies = ko.pureComputed(function() {
              return self.loadedStudies() && !self.dataverseHasStudies();
          });
-         self.showLinkedStudy = ko.computed(function() {
+         self.showLinkedStudy = ko.pureComputed(function() {
              return self.savedStudyHdl();
          });
-         self.showLinkDataverse = ko.computed(function() {
+         self.showLinkDataverse = ko.pureComputed(function() {
              return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
          });
-         self.credentialsChanged = ko.computed(function() {
+         self.credentialsChanged = ko.pureComputed(function() {
              return self.nodeHasAuth() && !self.connected();
          });
-         self.showInputCredentials = ko.computed(function() {
+         self.showInputCredentials = ko.pureComputed(function() {
              return (self.credentialsChanged() && self.userIsOwner()) ||
                  (!self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings());
          });
-         self.hasDataverses = ko.computed(function() {
+         self.hasDataverses = ko.pureComputed(function() {
              return self.dataverses().length > 0;
          });
-         self.hasBadStudies = ko.computed(function() {
+         self.hasBadStudies = ko.pureComputed(function() {
              return self.badStudies().length > 0;
          });
-         self.showNotFound = ko.computed(function() {
+         self.showNotFound = ko.pureComputed(function() {
              return self.savedStudyHdl() && self.loadedStudies() && !self.studyWasFound();
          });
-         self.showSubmitStudy = ko.computed(function() {
+         self.showSubmitStudy = ko.pureComputed(function() {
              return self.nodeHasAuth() && self.connected() && self.userIsOwner();
          });
-         self.enableSubmitStudy = ko.computed(function() {
+         self.enableSubmitStudy = ko.pureComputed(function() {
              return !self.submitting() && self.dataverseHasStudies() &&
                  self.savedStudyHdl() !== self.selectedStudyHdl();
          });
@@ -274,7 +270,7 @@
          self.selectedStudyHdl(self.savedStudyHdl());
          self.findStudy();
      }).fail(function() {
-         self.changeMessage('Could not load studies', 'text-danger');
+         self.changeMessage(self.messages.GET_STUDIES_ERROR, 'text-danger');
      });
  };
 
