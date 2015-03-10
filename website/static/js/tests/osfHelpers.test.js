@@ -31,6 +31,9 @@ describe('osfHelpers', () => {
             var spy = new sinon.spy($osf, 'growl');
             $osf.handleJSONError(response);
             assert.called(spy);
+            assert.calledWith(spy,
+                              response.responseJSON.message_short,
+                              response.responseJSON.message_long);
             spy.restore();
         });
 
