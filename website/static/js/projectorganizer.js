@@ -998,7 +998,10 @@ function dragLogic(event, items, ui) {
  * @param {Object} folder Folder information as _item object, the drop target
  * @returns {boolean} canDrop Whether drop can happen
  */
-function canAcceptDrop(items, folder) {
+function canAcceptDrop(items, folder, theCopyMode) {
+    if(typeof theCopyMode === 'undefined'){
+        theCopyMode = copyMode;
+    }
     var representativeItem,
         itemParentNodeId,
         hasComponents,
@@ -1036,10 +1039,10 @@ function canAcceptDrop(items, folder) {
     if (hasFolders) {
         canDrop = canDrop && folder.data.permissions.acceptsFolders;
     }
-    if (copyMode === 'move') {
+    if (theCopyMode === 'move') {
         canDrop = canDrop && folder.data.permissions.acceptsMoves && movable;
     }
-    if (copyMode === 'copy') {
+    if (theCopyMode === 'copy') {
         canDrop = canDrop && folder.data.permissions.acceptsCopies && copyable;
     }
     return canDrop;
