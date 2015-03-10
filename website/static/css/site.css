@@ -2288,6 +2288,9 @@ span#profileFullname{
     font-size: 16px;
     font-weight: 300;
 }
+.wiki-panel-header.no-background {
+    background: transparent;
+}
 
 .wiki-panel-footer {
     position: absolute;
