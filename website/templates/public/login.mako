@@ -4,75 +4,40 @@
 
 <%def name="content()">
     <div class="row">
-        <div class="col-sm-12">
-            <div class="page-header">
-                <h1>Sign-In</h1>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-4 col-sm-offset-4">
+        <div class="col-sm-4 col-sm-offset-4" data-bind="with: LogInForm">
             <h2>Sign-In</h2>
-            <div mod-meta='{
-                "tpl": "util/render_form.mako",
-                "uri": "/api/v1/forms/signin/",
-                "kwargs": {
-                    "id": "signinForm",
-                    "name": "signin",
-                    "method_string": "POST",
-                    "action_string": "/login/?next=${next_url}",
-                    "form_class": "form-stacked",
-                    "submit_string": "Sign In",
-                    "submit_btn_class": "btn-primary",
-                    "next_url": "${next_url}"
-                },
-                "replace": true
-            }'></div>
-            <hr />
-            <h3>Forgot Password</h3>
-            <div mod-meta='{
-                "tpl": "util/render_form.mako",
-                "uri": "/api/v1/forms/forgot_password/",
-                "kwargs": {
-                    "id": "forgotPassword",
-                    "name": "forgotpassword",
-                    "method_string": "POST",
-                    "action_string": "/forgotpassword/",
-                    "form_class": "form-stacked",
-                    "submit_string": "Reset Password",
-                    "submit_btn_class": "btn-default"
-                },
-                "replace": true
-            }'></div>
+            <form
+                    id="logInForm"
+                    class="form-stacked"
+                    data-bind="submit: submit"
+                    % if next_url:
+                        action="${ web_url_for('auth_login') }?next=${ next_url }"
+                    % else:
+                        action="${ web_url_for('auth_login') }"
+                    % endif
+                    method="POST"
+                    >
+                <fieldset>
+                    <div class="form-group">
+                        <label for="username">Email Address</label>
+                        <span class="help-block"></span>
+                        <input type="text" class="form-control" data-bind="value: username" name="username" placeholder="Username" autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <span class="help-block"></span>
+                        <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Password">
+                    </div>
+                    <div>
+                      <button type="submit" class="btn btn-submit btn-primary m-r-sm">Sign In</button>
+                      <a href="${web_url_for('_forgot_password')}">Forgot Password?</a>
+                    </div>
+                </fieldset>
+            </form>
         </div>
     </div>
-    <div class="modal fade" id="twoFactor">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 style="margin-bottom:0">Two-factor Authentication</h4>
-                </div>
-                <div class="modal-body">
-                    <p>Two-factor authentication helps protect your OSF account by requiring both a password and a code generated on your mobile phone to log in. This addon may be enabled on your account's <a href="${ web_url_for('user_addons') }">addon settings</a>.</p>
-                    <p>If you have enabled two-factor authentication on your account, enter the current verification code from your device in this field.</p>
-                </div>
-                <div class="modal-footer">
-
-                    <a href="#" class="btn btn-default" data-dismiss="modal">OK</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-        $(function() {
-            $('#twoFactorHelpText').wrap('<a data-toggle="modal" href="#twoFactor">');
-            $('#register-password').tooltip({
-                trigger: 'focus',
-                placement: function() { return window.innerWidth<768 ? 'top' : 'right'; },
-                container:'.form-group',
-                title:'Must be at least 6 characters'
-            });
-        });
-    </script>
 </%def>
 
+<%def name="javascript_bottom()">
+    <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
+</%def>

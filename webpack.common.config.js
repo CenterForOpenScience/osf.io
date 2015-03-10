@@ -43,6 +43,7 @@ var entry = {
     'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
+    'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     // Commons chunk
     'vendor': [
