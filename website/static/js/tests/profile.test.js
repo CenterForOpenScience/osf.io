@@ -49,9 +49,12 @@ describe('profile', () => {
 
         describe('NameViewModel', () => {
             var vm;
-            beforeEach(() => {
-                vm = new profile._NameViewModel(nameURLs, ['view', 'edit'], false);
-                server.respond(); // initialization fetches initial data
+
+            // Constructor current sends a request, so need to make beforeEach async
+            beforeEach((done) => {
+                vm = new profile._NameViewModel(nameURLs, ['view', 'edit'], false, function() {
+                    done();
+                });
             });
 
             it('should fetch and update names upon instantiation', (done) => {
@@ -63,16 +66,14 @@ describe('profile', () => {
                     assert.equal(this.suffix(), names.suffix);
                     done();
                 });
-                server.respond();
             });
 
             describe('impute', () => {
                 it('should send request and update imputed names', (done) => {
-                    vm.impute(function() {
+                    vm.impute().done(() => {
                         assert.equal(vm.given(), imputedNames.given);
                         done();
                     });
-                    server.respond();
                 });
             });
 

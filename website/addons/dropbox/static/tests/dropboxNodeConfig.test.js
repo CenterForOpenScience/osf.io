@@ -47,7 +47,6 @@ describe('dropboxNodeConfig', () => {
                 assert.deepEqual(vm.urls(), expected.urls);
                 done();
             });
-            server.respond();
         });
     });
 

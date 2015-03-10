@@ -5,6 +5,12 @@ var assign = require('object-assign');
 /**
  * Utility to create a fake server with sinon.
  *
+ * Sets server.autoRespond = true, so that the server responds
+ * automatically after every request.
+ * Also assumes that responses will be JSON by default, so
+ * no need to JSON.stringify your response.
+ *
+ *
  * See http://sinonjs.org/docs/#fakeServer
  *
  * Example:
@@ -41,6 +47,7 @@ function createServer(sinon, endpoints) {
             ]
         );
     });
+    server.autoRespond = true;
     return server;
 }
 
