@@ -172,23 +172,27 @@
                   <div class="row">
                       <div class="col-xs-12">
                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="icon-exchange"> </i>  Compare </span>
-                      
+                          
+                          <div class="pull-right">
+                            <span class="wiki-panel-title" data-bind="visible: $root.singleVis() === 'compare'"> Compare </span>
                             <!-- Version Picker -->
-                          <span class="compare-version-text" data-bind="css: { 'pull-right': $root.singleVis() === 'compare' }"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
-                            <select data-bind="value: compareVersion" id="compareVersionSelect">
-                                <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
-                                % if len(versions) > 1:
-                                    <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
-                                % endif
-                                % for version in versions[2:]:
-                                    <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
-                                % endfor
-                            </select></span>
+                            <span class="compare-version-text" data-bind="css: { 'pull-right': $root.singleVis() === 'compare' }"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
+                              <select data-bind="value: compareVersion" id="compareVersionSelect">
+                                  <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
+                                  % if len(versions) > 1:
+                                      <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
+                                  % endif
+                                  % for version in versions[2:]:
+                                      <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
+                                  % endfor
+                              </select></span>
+
+                          </div>
+
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view" data-bind="css: { 'wiki-panel-body-flex': $root.singleVis() !== 'compare' }" >
-
+              <div data-bind="html: renderedCompare, css: { 'wiki-panel-body-flex': $root.singleVis() !== 'compare' }" class="wiki-panel-body wiki-compare-view">
               </div>
             </div>
           </div>
