@@ -46,43 +46,8 @@ class TestDisabledUser(OsfTestCase):
 
 class TestAnUnregisteredUser(OsfTestCase):
 
-    def test_can_register(self):
-        # Goes to log in page
-        # @FIXME(hrybacki): No tests written to test landing page sign in
-        res = self.app.get(web_url_for('auth_login')).maybe_follow()
-        # Fills out registration form
-        form = res.forms['registerForm']
-        form['register-fullname'] = 'Nicholas Cage'
-        form['register-username'] = 'nickcage@example.com'
-        form['register-username2'] = 'nickcage@example.com'
-        form['register-password'] = 'example'
-        form['register-password2'] = 'example'
-        # Submits
-        res = form.submit().maybe_follow()
-        # There's a flash messageset
-        assert_in('Registration successful. Please check nickcage@example.com '
-            'to confirm your email address.', res)
-
-    def test_sees_error_if_email_is_already_registered(self):
-        # A user is already registered
-        user = UserFactory(username='foo@bar.com')
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login')).maybe_follow()
-        # Fills out registration form
-        form = res.forms['registerForm']
-        form['register-fullname'] = 'Foo Bar'
-        form['register-username'] = 'foo@bar.com'
-        form['register-username2'] = 'foo@bar.com'
-        form['register-password'] = 'example'
-        form['register-password2'] = 'example'
-        # submits
-        res = form.submit().maybe_follow()
-        # sees error message because email is already registered
-        assert_in('has already been registered.', res)
-
     def test_cant_see_profile(self):
-        """Can't see profile if not logged in.
-        """
+        """Can't see profile if not logged in."""
         res = self.app.get(web_url_for('profile_view'))
         assert_equal(res.status_code, 302)
         res = res.follow(expect_errors=True)
@@ -994,27 +959,6 @@ class TestClaiming(OsfTestCase):
         res2 = self.app.get(project2.url)
         assert_in(name2, res2)
 
-    def test_unregistered_user_can_create_an_account(self):
-        # User is added as an unregistered contributor to a project
-        email, name = fake.email(), fake.name()
-        self.project.add_unregistered_contributor(
-            email=email,
-            fullname=name,
-            auth=Auth(self.referrer)
-        )
-        self.project.save()
-        # Goes to registration page (instead of claiming their email)
-        res = self.app.get('/account/').maybe_follow()
-        form = res.forms['registerForm']
-        form['register-fullname'] = name
-        form['register-username'] = email
-        form['register-username2'] = email
-        form['register-password'] = 'example'
-        form['register-password2'] = 'example'
-        res = form.submit()
-        # registered successfully
-        assert_in(language.REGISTRATION_SUCCESS.format(email=email), res)
-
     def test_cannot_go_to_claim_url_after_setting_password(self):
         name, email = fake.name(), fake.email()
         new_user = self.project.add_unregistered_contributor(
@@ -1169,45 +1113,6 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
             auth=Auth(user=self.referrer)
         )
         self.project.save()
-
-    @mock.patch('website.project.views.contributor.session')
-    def test_user_with_claim_url_registers_new_account(self, mock_session):
-        # Assume that the unregistered user data is already stored in the session
-        mock_session.data = {
-            'unreg_user': {
-                'uid': self.user._primary_key,
-                'pid': self.project._primary_key,
-                'token': self.user.get_unclaimed_record(
-                    self.project._primary_key)['token']
-            }
-        }
-        res2 = self.app.get('/account/')
-        # Fills in Register form
-        form = res2.forms['registerForm']
-        form['register-fullname'] = 'tester'
-        form['register-username'] = 'test@test.com'
-        form['register-username2'] = 'test@test.com'
-        form['register-password'] = 'testing'
-        form['register-password2'] = 'testing'
-        res3 = form.submit()
-
-        assert_in('Registration successful.', res3.body)
-        assert_in('Successfully claimed contributor', res3.body)
-
-        u = User.find(Q('username', 'eq', 'test@test.com'))[0]
-        key = ApiKeyFactory()
-        u.api_keys.append(key)
-        u.save()
-        u.auth = ('test', key._primary_key)
-        self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
-        # Confirms their email address
-        self.project.reload()
-        self.user.reload()
-        u.reload()
-        assert_not_in(self.user._primary_key, self.project.contributors)
-        assert_equal(2, len(self.project.contributors))
-        # user is now a contributor to self.project
-        assert_in(u._primary_key, self.project.contributors)
 
     @mock.patch('website.project.views.contributor.session')
     def test_user_can_log_in_with_a_different_account(self, mock_session):

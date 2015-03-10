@@ -6,31 +6,12 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-header">
-                <h1>Create an Account or Sign-In</h1>
+                <h1>Sign-In</h1>
             </div>
         </div>
     </div>
     <div class="row">
-        <div class="col-sm-5">
-            <h2>Create Account</h2>
-            <div mod-meta='{
-                "tpl": "util/render_form.mako",
-                "uri": "/api/v1/forms/registration/",
-                "kwargs": {
-                    "id": "registerForm",
-                    "name": "registration",
-                    "method_string": "POST",
-                    "action_string": "/register/",
-                    "form_class": "form-stacked",
-                    "submit_string": "Create Account",
-                    "field_name_prefix": "register_",
-                    "submit_btn_class": "btn-success",
-                    "next_url": "${next_url}"
-                },
-                "replace": true
-            }'></div>
-        </div>
-        <div class="col-sm-5 col-sm-offset-2">
+        <div class="col-sm-4 col-sm-offset-4">
             <h2>Sign-In</h2>
             <div mod-meta='{
                 "tpl": "util/render_form.mako",
