@@ -91,7 +91,10 @@ class Mendeley(ExternalProvider):
     def _marker_from_page(self, page):
         if page is None:
             return None
-        link = page.rsp.links['next']['url']
+        next_link = page.rsp.links.get('next')
+        if next_link is None:
+            return None
+        link = next_link['url']
         qs = link.split('?')[-1]
         return parse_qs(qs).get('marker')
 
@@ -119,12 +122,13 @@ class Mendeley(ExternalProvider):
         return folder
 
     def _citations_for_mendeley_folder(self, folder, next_page):
-
-        documents = folder.documents.list(page_size=100, marker=next_page)
-        if hasattr(next_page, '__call__'):
-            documents = next_page()
-        if next_page is None:
+        documents = None
+        if hasattr(next_page, 'next_page'):
+            documents = next_page.next_page
+        elif next_page is None:
             documents = folder.documents.list(page_size=100)
+        else:
+            documents = folder.documents.list(page_size=100, marker=next_page)
 
         document_ids = set([
             document.id
@@ -134,26 +138,27 @@ class Mendeley(ExternalProvider):
         next_page = None
         while len(document_ids - set((citations or {}).keys())) > 0:
             page, next_page = self._citations_for_mendeley_user(next_page)
-            citations = citations.update({
+            citations.update({
                 citation['id']: citation
                 for citation in page
             })
             if next_page is None:
                 break
-        return map(lambda id: citations[id], document_ids), documents.next_page
+        return [citations[id] for id in document_ids], documents
 
     def _citations_for_mendeley_user(self, next_page):
-
-        documents = self.client.documents.list(page_size=100, marker=next_page)        
-        if hasattr(next_page, '__call__'):
-            documents = next_page()
+        documents = None
+        if hasattr(next_page, 'next_page'):
+            documents = next_page.next_page
         elif next_page is None:
             documents = self.client.documents.list(page_size=100)
+        else:
+            documents = self.client.documents.list(page_size=100, marker=next_page)
 
         return [
             self._citation_for_mendeley_document(document)
             for document in documents.items
-        ], documents.next_page
+        ], documents
 
     def _citation_for_mendeley_document(self, document):
         """Mendeley document to ``website.citations.models.Citation``
