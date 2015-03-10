@@ -57,7 +57,6 @@ class DropboxFile(GuidFile):
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)
         """
-        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~', path)
         try:
             new = cls.find_one(
                 Q('node', 'eq', node) &
@@ -340,16 +339,23 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             return list()
         if not connection:
             connection = get_node_addon_client(self)
-        dropbox_files = list()
+        dropbox_files = dict()
         has_more = True
         cursor = None
         while has_more:
             files_data = connection.delta(cursor=cursor, path_prefix=self.folder)
             has_more = files_data['has_more']
             cursor = files_data['cursor']
-            dropbox_file_metadata = map(lambda entry: entry[1], files_data['entries'])
-            for file_metadata in dropbox_file_metadata:
-                if not file_metadata['is_dir']:
+            dropbox_file_data = files_data['entries']
+            for file_data in dropbox_file_data:
+                lowercase_path = file_data[0]
+                file_metadata = file_data[1]
+                if file_metadata is None:
+                    dropbox_files.pop(lowercase_path, None)
+                    for other in dropbox_files.keys():
+                        if other.startswith(lowercase_path + '/'):
+                            del dropbox_files[other]
+                elif not file_metadata['is_dir']:
                     path = clean_path(file_metadata['path'])  # To ensure letter case
                     try:
                         guid = DropboxFile.find_one(
@@ -358,5 +364,5 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                         )
                     except:
                         continue
-                    dropbox_files.append(guid)
-        return dropbox_files
+                    dropbox_files[lowercase_path] = guid
+        return dropbox_files.values()
