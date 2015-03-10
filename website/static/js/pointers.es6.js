@@ -7,14 +7,16 @@ var $ = require('jquery');
 var ko = require('knockout');
 
 var osfHelpers = require('osfHelpers');
-var Pagintor = require('./paginator');
+var Paginator = require('./paginator');
 
 // Grab nodeID from global context (mako)
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
 
-class AddPointerViewModel extends Pagintor {
+class AddPointerViewModel extends Paginator {
     constructor(nodeTitle) {
+        super();
+        var self = this;
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
 
@@ -27,135 +29,123 @@ class AddPointerViewModel extends Pagintor {
         this.totalPages = ko.observable(0);
         this.paginators = ko.observableArray([]);
         this.includePublic = ko.observable(true);
+
         this.foundResults = ko.computed(function() {
-            return this.query() && this.results().length;
+            return self.query() && self.results().length;
         });
 
         this.noResults = ko.computed(function() {
-            return this.query() && !this.results().length;
+            return self.query() && !self.results().length;
         });
-        super();
+    }
+    searchAllProjects() {
+        this.includePublic(true);
+        this.search();
+    }
+    searchMyProjects() {
+        this.includePublic(false);
+        this.search();
+    }
+    search() {
+        var self = this;
+        self.errorMsg('');
+        if (self.query()) {
+            osfHelpers.postJSON(
+                '/api/v1/search/node/', {
+                    query: self.query(),
+                    nodeId: nodeId,
+                    includePublic: self.includePublic(),
+                    page: self.currentPage()
+                }
+            ).done(function(result) {
+                if (!result.nodes.length) {
+                    self.errorMsg('No results found.');
+                }
+                self.results(result.nodes);
+                self.currentPage(result.page);
+                self.numberOfPages(result.pages);
+
+                self.addNewPaginators();
+            }).fail(
+                osfHelpers.handleJSONError
+            );
+        } else {
+            self.results([]);
+            self.currentPage(0);
+            self.totalPages(0);
+        }
+    }
+    addTips(elements) {
+        elements.forEach(function(element) {
+            $(element).find('.contrib-button').tooltip();
+        });
+    }
+    add(data) {
+        this.selection.push(data);
+        // Hack: Hide and refresh tooltips
+        $('.tooltip').hide();
+        $('.contrib-button').tooltip();
+    }
+    remove(data) {
+        var self = this;
+        self.selection.splice(
+            self.selection.indexOf(data), 1
+        );
+        // Hack: Hide and refresh tooltips
+        $('.tooltip').hide();
+        $('.contrib-button').tooltip();
+    }
+    addAll() {
+        var self = this;
+        $.each(self.results(), function(idx, result) {
+            if (self.selection().indexOf(result) === -1) {
+                self.add(result);
+            }
+        });
+    }
+    removeAll() {
+        var self = this;
+        $.each(self.selection(), function(idx, selected) {
+            self.remove(selected);
+        });
+    }
+    selected(data) {
+        var self = this;
+        for (var idx = 0; idx < self.selection().length; idx++) {
+            if (data.id === self.selection()[idx].id) {
+                return true;
+            }
+        }
+        return false;
+    }
+    submit() {
+        var self = this;
+        self.submitEnabled(false);
+        var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
+        osfHelpers.postJSON(
+            nodeApiUrl + 'pointer/', {
+                nodeIds: nodeIds
+            }
+        ).done(function() {
+            window.location.reload();
+        }).fail(function(data) {
+            self.submitEnabled(true);
+            osfHelpers.handleJSONError(data);
+        });
+    }
+    clear() {
+        this.query('');
+        this.results([]);
+        this.selection([]);
+    }
+    authorText(node) {
+        var rv = node.firstAuthor;
+        if (node.etal) {
+            rv += ' et al.';
+        }
+        return rv;
     }
 }
-
-AddPointerViewModel.prototype.searchAllProjects = function() {
-    this.includePublic(true);
-    this.search();
-};
-
-AddPointerViewModel.prototype.searchMyProjects = function() {
-    this.includePublic(false);
-    this.search();
-};
-
-AddPointerViewModel.prototype.search = function() {
-    var self = this;
-    self.errorMsg('');
-    if (self.query()) {
-        osfHelpers.postJSON(
-            '/api/v1/search/node/', {
-                query: self.query(),
-                nodeId: nodeId,
-                includePublic: self.includePublic(),
-                page: self.currentPage()
-            }
-        ).done(function(result) {
-            if (!result.nodes.length) {
-                self.errorMsg('No results found.');
-            }
-            self.results(result.nodes);
-            self.currentPage(result.page);
-            self.numberOfPages(result.pages);
-
-            self.addNewPaginators();
-        }).fail(
-            osfHelpers.handleJSONError
-        );
-    } else {
-        self.results([]);
-        self.currentPage(0);
-        self.totalPages(0);
-    }
-};
-
-AddPointerViewModel.prototype.addTips = function(elements) {
-    elements.forEach(function(element) {
-        $(element).find('.contrib-button').tooltip();
-    });
-};
-
-AddPointerViewModel.prototype.add = function(data) {
-    this.selection.push(data);
-    // Hack: Hide and refresh tooltips
-    $('.tooltip').hide();
-    $('.contrib-button').tooltip();
-};
-
-AddPointerViewModel.prototype.remove = function(data) {
-    var self = this;
-    self.selection.splice(
-        self.selection.indexOf(data), 1
-    );
-    // Hack: Hide and refresh tooltips
-    $('.tooltip').hide();
-    $('.contrib-button').tooltip();
-};
-
-AddPointerViewModel.prototype.addAll = function() {
-    var self = this;
-    $.each(self.results(), function(idx, result) {
-        if (self.selection().indexOf(result) === -1) {
-            self.add(result);
-        }
-    });
-};
-
-AddPointerViewModel.prototype.removeAll = function() {
-    var self = this;
-    $.each(self.selection(), function(idx, selected) {
-        self.remove(selected);
-    });
-};
-
-AddPointerViewModel.prototype.selected = function(data) {
-    var self = this;
-    for (var idx = 0; idx < self.selection().length; idx++) {
-        if (data.id === self.selection()[idx].id) {
-            return true;
-        }
-    }
-    return false;
-};
-
-AddPointerViewModel.prototype.submit = function() {
-    var self = this;
-    self.submitEnabled(false);
-    var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
-    osfHelpers.postJSON(
-        nodeApiUrl + 'pointer/', {
-            nodeIds: nodeIds
-        }
-    ).done(function() {
-        window.location.reload();
-    }).fail(function(data) {
-        self.submitEnabled(true);
-        osfHelpers.handleJSONError(data);
-    });
-};
-
-AddPointerViewModel.prototype.clear = function() {
-    this.query('');
-    this.results([]);
-    this.selection([]);
-};
-
-AddPointerViewModel.prototype.authorText = function(node) {
-    var rv = node.firstAuthor;
-    if (node.etal) {
-        rv += ' et al.';
-    }
-    return rv;
-};
 
 var LinksViewModel = function($elm) {
 
