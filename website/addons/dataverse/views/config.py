@@ -91,10 +91,11 @@ def serialize_urls(node_settings):
         'create': api_url_for('dataverse_set_user_config'),
         'set': node.api_url_for('set_dataverse_and_study'),
         'importAuth': node.api_url_for('dataverse_import_user_auth'),
-        'deauthorize': node.api_url_for('deauthorize_dataverse'),
+        'deauthori3ze': node.api_url_for('deauthorize_dataverse'),
         'getStudies': node.api_url_for('dataverse_get_studies'),
         'studyPrefix': 'http://dx.doi.org/',
         'dataversePrefix': 'http://{0}/dvn/dv/'.format(HOST),
+        'settings': web_url_for('user_addons'),
     }
     return urls
 
