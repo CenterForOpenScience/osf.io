@@ -213,7 +213,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+        raise exceptions.ProviderError({'message': 'figshare does not support file revisions.'}, code=405)
 
 
 class FigshareArticleProvider(BaseFigshareProvider):
@@ -343,4 +343,4 @@ class FigshareArticleProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+        raise exceptions.ProviderError({'message': 'figshare does not support file revisions.'}, code=405)
