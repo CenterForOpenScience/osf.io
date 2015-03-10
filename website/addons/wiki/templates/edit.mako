@@ -173,10 +173,10 @@
                       <div class="col-xs-12">
                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="icon-exchange"> </i>  Compare </span>
                           
-                          <div class="pull-right">
+                          <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <span class="wiki-panel-title" data-bind="visible: $root.singleVis() === 'compare'"> Compare </span>
                             <!-- Version Picker -->
-                            <span class="compare-version-text" data-bind="css: { 'pull-right': $root.singleVis() === 'compare' }"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
+                            <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                               <select data-bind="value: compareVersion" id="compareVersionSelect">
                                   <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                   % if len(versions) > 1:
