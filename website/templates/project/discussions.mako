@@ -7,49 +7,61 @@
 % endif
 
 <div class="col-sm-3">
-    <div class="osf-sidenav hidden-print" role="complementary">
+    <div class="osf-sidenav hidden-print wiki-sidenav" role="complementary">
         <ul class="nav bs-sidenav" style="margin: 0;">
             <!-- Total -->
-            <li>
-                <a href="${node['url']}discussions/">
-                    <h4 style="padding-bottom: 0">Total
-                    % if user['unread_comments']['total'] > 0:
-                        <span class="badge pull-right">${user['unread_comments']['total']}</span>
-                    % endif
-                    </h4>
-                </a>
-                <hr style="margin-top: 0"/>
+            <li ${'class="active"' if comment_target == 'total' else '' | n}>
+                <div class="row">
+                    <a href="${node['url']}discussions/">
+                        <div class="col-xs-12">
+                            <span style="font-size: 16pt; font-weight: bold">Total</span>
+                        </div>
+                    </a>
+                </div>
+                <hr style="margin: 0"/>
             </li>
 
             <!-- Overview -->
-            <li>
-                <a href="${node['url']}discussions/overview">Overview
-                    % if user['unread_comments']['node'] > 0:
-                        <span class="badge pull-right">${user['unread_comments']['node']}</span>
-                    % endif
-                </a>
+            <li ${'class="active"' if comment_target == 'node' else '' | n}>
+                <div class="row">
+                    <a href="${node['url']}discussions/overview">
+                        <div class="col-xs-12">Overview
+                            % if user['unread_comments']['node'] > 0:
+                                <span class="badge pull-right">${user['unread_comments']['node']}</span>
+                            % endif
+                        </div>
+                    </a>
+                </div>
             </li>
 
             <!-- wiki -->
             % if addons:
                 % if 'wiki' in addons_enabled:
-                    <li>
-                        <a href="${node['url']}discussions/wiki">Wiki
-                            % if user['unread_comments']['wiki'] > 0:
-                                <span class="badge pull-right">${user['unread_comments']['wiki']}</span>
-                            % endif
-                        </a>
+                    <li ${'class="active"' if comment_target == 'wiki' else '' | n}>
+                        <div class="row">
+                            <a href="${node['url']}discussions/wiki">
+                                <div class="col-xs-12">Wiki
+                                    % if user['unread_comments']['wiki'] > 0:
+                                        <span class="badge pull-right">${user['unread_comments']['wiki']}</span>
+                                    % endif
+                                </div>
+                            </a>
+                        </div>
                     </li>
                 % endif
             % endif
 
             <!-- files -->
-            <li>
-                <a href="${node['url']}discussions/files">Files
-                    % if user['unread_comments']['files'] > 0:
-                        <span class="badge pull-right">${user['unread_comments']['files']}</span>
-                    % endif
-                </a>
+            <li ${'class="active"' if comment_target == 'files' else '' | n}>
+                <div class="row">
+                    <a href="${node['url']}discussions/files">
+                        <div class="col-xs-12">Files
+                        % if user['unread_comments']['files'] > 0:
+                            <span class="badge pull-right">${user['unread_comments']['files']}</span>
+                        % endif
+                        </div>
+                    </a>
+                </div>
             </li>
         </ul>
     </div>
