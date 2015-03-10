@@ -82,7 +82,7 @@ function ViewModel(url) {
             }),
             SET_INFO_SUCCESS: ko.pureComputed(function() {
                 var filesUrl = window.contextVars.node.urls.web + 'files/';
-                return 'Successfully linked ' + self.savedStudyTitle() + '. Go to the <a href="' +
+                return 'Successfully linked study \'' + self.savedStudyTitle() + '\'. Go to the <a href="' +
                     filesUrl + '">Files page</a> to view your content.';
             }),
             SET_STUDY_ERROR: ko.pureComputed(function() {
@@ -358,6 +358,7 @@ ViewModel.prototype.clickDeauth = function() {
 
 /** Change the flashed status message */
 ViewModel.prototype.changeMessage = function(text, css, timeout) {
+    var self = this;
     if (typeof text === 'function') {
         text = text();
     }
