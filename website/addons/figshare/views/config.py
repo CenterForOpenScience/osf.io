@@ -26,7 +26,7 @@ def figshare_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     return {
         'result': serialize_settings(node_addon, auth.user),
-    }, http.OK
+    }
 
 
 @must_have_permission('write')
@@ -44,12 +44,12 @@ def figshare_config_put(node_addon, auth, **kwargs):
             'linked': {
                 'title': fields.get('title') or '',
                 'id': fields.get('id') or None,
-                'type': fields.get('type') or None
+                'type': fields.get('type') or None,
             },
-            'urls': serialize_urls(node_addon)
+            'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
-    }, http.OK
+    }
 
 
 @must_have_permission('write')
@@ -65,7 +65,7 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
     return {
         'result': serialize_settings(node_addon, user),
         'message': 'Successfully imported access token from profile.',
-    }, http.OK
+    }
 
 
 @must_have_permission('write')
@@ -109,17 +109,14 @@ def serialize_settings(node_settings, current_user, client=None):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
-    urls = {
+    return {
         'config': node.api_url_for('figshare_config_put'),
         'deauthorize': node.api_url_for('figshare_deauthorize'),
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
         'files': node.web_url_for('collect_file_trees'),
-        # Endpoint for fetching only folders (including root)
-        'contents': node.api_url_for('figshare_hgrid_data_contents'),
     }
-    return urls
 
 
 @must_be_valid_project

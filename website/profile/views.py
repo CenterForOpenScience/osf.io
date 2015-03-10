@@ -86,7 +86,12 @@ def update_user(auth):
 
     # TODO: Expand this to support other user attributes
     if 'timezone' in data:
-        user.timezone = data['timezone']
+        if data['timezone']:
+            user.timezone = data['timezone']
+    if 'locale' in data:
+        if data['locale']:
+            locale = data['locale'].replace('-', '_')
+            user.locale = locale
 
     user.save()
 

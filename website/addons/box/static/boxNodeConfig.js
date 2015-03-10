@@ -59,12 +59,15 @@ var ViewModel = function(url, selector, folderPicker) {
     self.loadedFolders = ko.observable(false);
 
     // List of contributor emails as a comma-separated values
-    self.emailList = ko.computed(function() {
+    self.emailList = ko.pureComputed(function() {
         return self.emails().join([', ']);
     });
 
-    self.disableShare = ko.computed(function() {
-        return !self.urls().emails;
+    self.disableShare = ko.pureComputed(function() {       
+        var isRoot = self.folder().path === 'All Files';
+        var notSet = (self.folder().path == null);
+        return !(self.urls().emails) || !self.validCredentials() || isRoot || notSet;
+
     });
 
     /**

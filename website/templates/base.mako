@@ -125,6 +125,18 @@
             ga('linker:autoLink', ['centerforopenscience.org'] );
             ga('send', 'pageview');
             </script>
+        % else:
+            <script>
+                window.ga = function(source) {
+                        console.error('=== Mock ga event called: ===');
+                        console.log('event: ga(' +
+                                    arguments[0] + ', ' +
+                                    arguments[1] + ', ' +
+                                    arguments[2] + ', ' +
+                                    arguments[3] + ')'
+                        );
+                };
+          </script>
         % endif
 
         % if piwik_host:
@@ -222,7 +234,7 @@
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
-    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>

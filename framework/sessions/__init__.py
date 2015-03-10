@@ -97,7 +97,7 @@ def set_previous_url(url=None):
 
 
 def goback(n=1):
-    next_url = request.form.get('next_url')
+    next_url = request.args.get('next') or request.form.get('next_url')
     if next_url:
         return redirect(next_url)
     if session._get_current_object() is None:

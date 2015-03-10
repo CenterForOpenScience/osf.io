@@ -71,6 +71,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     file_tree = fields.ForeignField('OsfStorageFileTree')
 
+    @property
+    def has_auth(self):
+        return True
+
     def find_or_create_file_guid(self, path):
         return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
 
@@ -352,11 +356,12 @@ class OsfStorageFileVersion(StoredObject):
     _id = oid_primary_key
     creator = fields.ForeignField('user', required=True)
 
+    # Date version record was created. This is the date displayed to the user.
     date_created = fields.DateTimeField(auto_now_add=True)
 
     # Dictionary specifying all information needed to locate file on backend
     # {
-    #     'service': 'buttfiles',  # required
+    #     'service': 'cloudfiles',  # required
     #     'container': 'osf',       # required
     #     'object': '20c53b',       # required
     #     'worker_url': '127.0.0.1',
@@ -375,6 +380,9 @@ class OsfStorageFileVersion(StoredObject):
 
     size = fields.IntegerField()
     content_type = fields.StringField()
+    # Date file modified on third-party backend. Not displayed to user, since
+    # this date may be earlier than the date of upload if the file already
+    # exists on the backend
     date_modified = fields.DateTimeField()
 
     @property
@@ -389,7 +397,7 @@ class OsfStorageFileVersion(StoredObject):
         self.content_type = self.metadata.get('contentType', None)
         try:
             self.size = self.metadata['size']
-            self.date_modified = parse_date(self.metadata['modified'])
+            self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
         except KeyError as err:
             raise errors.MissingFieldError(str(err))
         self.save()

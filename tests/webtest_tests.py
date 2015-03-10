@@ -25,7 +25,6 @@ from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
-from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
 from website.util import web_url_for
 
@@ -102,6 +101,7 @@ class TestAUser(OsfTestCase):
     def setUp(self):
         super(TestAUser, self).setUp()
         self.user = UserFactory()
+        # TODO: remove and re-write tests with 'password' as password /hrybacki
         self.user.set_password('science')
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -159,6 +159,47 @@ class TestAUser(OsfTestCase):
         # Sees a flash message
         assert_in('Log-in failed', res)
 
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
+        # User with two factor enabled is sent to two factor page
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+        # Goes to log in page
+        res = self.app.get('/account/')
+        # Fills the form with correct password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        assert_equal('/login/two-factor/', res.request.path)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def test_access_resource_before_two_factor_authorization(self, mock_push_message):
+        # User attempts to access resource after login page but before two factor authentication
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+        # Goes to log in page
+        res = self.app.get('/account/')
+        # Fills the form with correct password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        form.submit()
+        # User attempts to access a protected resource
+        res = self.app.get('/dashboard/')
+        assert_equal(res.status_code, 302)
+        assert_in('login', res.location)
+
     def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
         res = self._login(self.user.username, 'science')
         res = self.app.get('/login/').follow()
@@ -203,9 +244,6 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=u2, is_public=True)
         project.add_contributor(u2)
         auth = Auth(user=u2, api_key=key)
-        # A file was added to the project
-        project.add_file(auth=auth, file_name='test.html',
-                        content='123', size=2, content_type='text/html')
         project.save()
         # User watches the project
         watch_config = WatchConfigFactory(node=project)
@@ -216,7 +254,6 @@ class TestAUser(OsfTestCase):
         # Sees logs for the watched project
         assert_in('Watched Projects', res)  # Watched Projects header
         # The log action is in the feed
-        assert_in('added file test.html', res)
         assert_in(project.title, res)
 
     def test_sees_correct_title_home_page(self):
@@ -797,15 +834,6 @@ class TestShortUrls(OsfTestCase):
             self._url_to_body(self.component.url),
         )
 
-    def _mock_rendered_file(self, component, fobj):
-        node_settings = component.get_addon('osffiles')
-        cache_dir = get_cache_path(node_settings)
-        cache_file = get_cache_file(fobj.filename, fobj.latest_version_number(component))
-        cache_file_path = os.path.join(cache_dir, cache_file)
-        ensure_path(cache_dir)
-        with open(cache_file_path, 'w') as fp:
-            fp.write('test content')
-
     def test_wiki_url(self):
         assert_equal(
             self._url_to_body(self.wiki.deep_url),
@@ -903,7 +931,7 @@ class TestClaiming(OsfTestCase):
         self.project.reload()
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
-        form['username'] = new_user.username
+        #form['username'] = new_user.username #Removed as long as E-mail can't be updated.
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
@@ -985,7 +1013,7 @@ class TestClaiming(OsfTestCase):
         self.project.reload()
         assert_in('Set Password', res)
         form = res.forms['setPasswordForm']
-        form['username'] = new_user.username
+        #form['username'] = new_user.username #Removed as long as the E-mail can't be changed
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow()
@@ -997,6 +1025,7 @@ class TestClaiming(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('already been claimed', res)
 
+    @unittest.skip("as long as E-mails cannot be changed")
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
