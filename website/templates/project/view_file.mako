@@ -1,9 +1,11 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${file_name | h}</%def>
 
-% if (user['can_comment'] or node['has_comments']) and provider in ['github', 'figshare', 'dropbox', 's3', 'osfstorage']:
-    <%include file="include/comment_pane_template.mako"/>
-    <%include file="include/comment_template.mako"/>
+% if (user['can_comment'] or node['has_comments']):
+    % if provider in ['github', 'figshare', 'dropbox', 's3', 'osfstorage']:
+        <%include file="include/comment_pane_template.mako"/>
+        <%include file="include/comment_template.mako"/>
+    % endif
 % endif
 
     <div>
@@ -118,6 +120,7 @@
     </script>
     %endif
     <script type="text/javascript">
+      <% import json %>
       window.contextVars = $.extend(true, {}, window.contextVars, {
     %if rendered is None:
         renderURL: '${render_url | js_str}',
@@ -135,7 +138,8 @@
         node: {
           urls: {
             files: '${files_url | js_str}'
-          }
+          },
+          hasComments: ${json.dumps(node['has_comments'])}
         },
         currentUser: {
           canEdit: ${int(user['can_edit'])}
