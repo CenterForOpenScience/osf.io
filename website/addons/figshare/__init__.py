@@ -35,7 +35,7 @@ INCLUDE_CSS = {
     'page': ['/static/css/hgrid-base.css']
 }
 
-WIDGET_HELP = 'FigShare Add-on Alpha'
+WIDGET_HELP = 'figshare Add-on Alpha'
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.figshare_hgrid_data
