@@ -1135,7 +1135,7 @@ class TestConfirmingNewUsernameEmail(OsfTestCase):
         res = self.app.get(confirmation_url).follow()
         assert_equal(
             res.request.path,
-            '/settings/',
+            web_url_for('user_profile'),
             'redirected to settings page'
         )
         user.reload()

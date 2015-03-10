@@ -176,14 +176,14 @@ def confirm_email_get(**kwargs):
                 # Must send previous username for mailchimp subscriber lookup
                 signals.username_changed.send(user, old_username=old_username)
                 status.push_status_message(language.UPDATED_EMAIL_CONFIRMATION, 'success')
-                response = redirect('/settings/')
+                response = redirect(web_url_for('user_profile'))
                 return framework.auth.authenticate(user, response=response)
             else:  # Confirm and register the user
                 user.date_last_login = datetime.datetime.utcnow()
                 user.save()
                 # Go to settings page
                 status.push_status_message(language.WELCOME_MESSAGE, 'success')
-                response = redirect('/settings/')
+                response = redirect(web_url_for('user_profile'))
                 return framework.auth.authenticate(user, response=response)
         # Return data for the error template
         return {
