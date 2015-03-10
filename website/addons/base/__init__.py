@@ -608,19 +608,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
     def before_remove_contributor(self, node, removed):
         """
-
         :param Node node:
         :param User removed:
-
         """
         pass
 
     def after_remove_contributor(self, node, removed):
         """
-
         :param Node node:
         :param User removed:
-
         """
         pass
 
@@ -768,10 +764,118 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         This method does not remove the node's permission in the user's addon
         settings.
         """
-
         self.external_account = None
         self.user_settings = None
         self.save()
+
+    def before_remove_contributor_message(self, node, removed):
+        """If contributor to be removed authorized this addon, warn that removing
+        will remove addon authorization.
+        """
+        if self.has_auth and self.user_settings.owner == removed:
+            return (
+                u'The {addon} add-on for this {category} is authenticated by {name}. '
+                u'Removing this user will also remove write access to {addon} '
+                u'unless another contributor re-authenticates the add-on.'
+            ).format(
+                addon=self.config.full_name,
+                category=node.project_or_component,
+                name=removed.fullname,
+            )
+
+    # backwards compatibility
+    before_remove_contributor = before_remove_contributor_message
+
+    def after_remove_contributor(self, node, removed):
+        """If removed contributor authorized this addon, remove addon authorization
+        from owner.
+        """
+        if self.has_auth and self.user_settings.owner == removed:
+            self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
+            self.clear_auth()
+            return (
+                u'Because the {addon} add-on for this project was authenticated '
+                u'by {name}, authentication information has been deleted. You '
+                u'can re-authenticate on the <a href="{url}">Settings</a> page.'
+            ).format(
+                addon=self.config.full_name,
+                name=removed.fullname,
+                url=node.web_url_for('node_setting'),
+            )
+
+    def before_fork_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        fork.
+        """
+        if self.user_settings and self.user_settings.owner == user:
+            return (
+                u'Because you have authorized the {addon} add-on for this '
+                u'{category}, forking it will also transfer your authentication token to '
+                u'the forked {category}.'
+            ).format(
+                addon=self.config.full_name,
+                category=node.project_or_component,
+            )
+        return (
+            u'Because the {addon} add-on has been authorized by a different '
+            u'user, forking it will not transfer authentication token to the forked '
+            u'{category}.'
+        ).format(
+            addon=self.config.full_name,
+            category=node.project_or_component,
+        )
+
+    # backwards compatibility
+    before_fork = before_fork_message
+
+    def after_fork(self, node, fork, user, save=True):
+        """After forking, copy user settings if the user is the one who authorized
+        the addon.
+
+        :return: A tuple of the form (cloned_settings, message)
+        """
+        clone, _ = super(AddonOAuthNodeSettingsBase, self).after_fork(
+            node=node,
+            fork=fork,
+            user=user,
+            save=False,
+        )
+        if self.has_auth and self.user_settings.owner == user:
+            clone.set_auth(self.external_account, user)
+            message = '{addon} authorization copied to forked {cat}.'.format(
+                addon=self.config.full_name,
+                cat=fork.project_or_component,
+            )
+        else:
+            message = (
+                u'{addon} authorization not copied to forked {cat}. You may '
+                u'authorize this fork on the <a href="{url}">Settings</a> '
+                u'page.'
+            ).format(
+                addon=self.config.full_name,
+                url=fork.web_url_for('node_setting'),
+                cat=fork.project_or_component,
+            )
+        if save:
+            clone.save()
+        return clone, message
+
+    def before_register_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        registration.
+        """
+        if self.has_auth:
+            return (
+                u'The contents of {addon} add-ons cannot be registered at this time; '
+                u'the {addon} add-on linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(
+                addon=self.config.full_name,
+                cat=node.project_or_component,
+            )
+
+    # backwards compatibility
+    before_register = before_register_message
 
 
 # TODO: No more magicks
