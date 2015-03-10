@@ -55,11 +55,11 @@
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
-                <div class="wiki-panel">
-                  <div class="wiki-panel-header">
+                <div class="wiki-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
+                  <div class="wiki-panel-header" data-bind="css: { 'no-background': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
-                           <span class="wiki-panel-title"> <i class="icon-edit"> </i>  Edit </span>
+                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'edit'"> <i class="icon-edit"> </i>  Edit </span>
                       </div>
                         <div class="col-md-6">
                           <div class="progress progress-no-margin pointer pull-right"
@@ -130,11 +130,11 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="wiki-panel wiki-panel-flex">
-                <div class="wiki-panel-header wiki-panel-header-flex">
+              <div class="wiki-panel wiki-panel-flex no-border" data-bind="css: { 'no-border': $root.singleVis() === 'view' }">
+                <div class="wiki-panel-header wiki-panel-header-flex no-background" data-bind="css: { 'no-background': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
-                            <span class="wiki-panel-title"> <i class="icon-eye-open"> </i>  View </span>
+                            <span class="wiki-panel-title hidden" data-bind="css: { 'hidden': $root.singleVis() === 'view' }"> <i class="icon-eye-open"> </i>  View </span>
                         </div>
                         <div class="col-sm-6">
                             <!-- Version Picker -->
@@ -161,14 +161,14 @@
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel wiki-panel-flex">
-              <div class="wiki-panel-header wiki-panel-header-flex">
+            <div class="wiki-panel wiki-panel-flex" data-bind="css: { 'no-border': $root.singleVis() === 'compare' }">
+              <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: { 'no-background': $root.singleVis() === 'compare' }">
                   <div class="row">
                       <div class="col-xs-12">
-                          <span class="wiki-panel-title"> <i class="icon-exchange"> </i>  Compare </span>
+                          <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="icon-exchange"> </i>  Compare </span>
                       
                             <!-- Version Picker -->
-                          <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
+                          <span class="compare-version-text" data-bind="css: { 'pull-right': $root.singleVis() === 'compare' }"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                             <select data-bind="value: compareVersion" id="compareVersionSelect">
                                 <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                 % if len(versions) > 1:

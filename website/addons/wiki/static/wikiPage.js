@@ -166,6 +166,26 @@ function ViewModel(options){
     self.viewVis = ko.observable(options.viewVisible);
     self.compareVis = ko.observable(options.compareVisible);
     self.menuVis = ko.observable(options.menuVisible);
+    self.singleVis = ko.computed(function(){
+        var visible = 0;
+        var single = undefined;
+        if(self.editVis()){
+            visible++;
+            single = 'edit';
+        }
+        if(self.viewVis()){
+            visible++;
+            single = 'view';
+        }
+        if(self.compareVis()){
+            visible++;
+            single = 'compare'
+        }
+        if(visible === 1){
+            return single;
+        }
+        return undefined;
+    })
 
     self.pageTitle = $(document).find('title').text();
 
