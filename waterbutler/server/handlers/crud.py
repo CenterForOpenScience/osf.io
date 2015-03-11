@@ -73,7 +73,7 @@ class CRUDHandler(core.BaseHandler):
 
         if result.size:
             self.set_header('Content-Length', str(result.size))
-        self.set_header('Content-Disposition', 'attachment; filename=' + display_name)
+        self.set_header('Content-Disposition', 'attachment; filename=' + '"' + display_name + '"')
 
         while True:
             chunk = yield from result.read(settings.CHUNK_SIZE)
