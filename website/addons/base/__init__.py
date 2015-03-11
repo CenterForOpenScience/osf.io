@@ -21,7 +21,7 @@ from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import exceptions
-from website.oauth import utils as oauth_utils
+from website.addons.base import serializer
 from website.project.model import Node
 
 lookup = TemplateLookup(
@@ -493,6 +493,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     #   AddonModelMixin.get_oauth_addons().
     oauth_provider = None
 
+    serializer = serializer.OAuthAddonSerializer
+
     @property
     def has_auth(self):
         return bool(self.external_accounts)
@@ -587,10 +589,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     def to_json(self, user):
         ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
-        ret['accounts'] = [
-            oauth_utils.serialize_external_account(each)
-            for each in self.external_accounts
-        ]
+
+        ret['accounts'] = self.serializer(
+            user_settings=self
+        ).serialized_accounts
+
         return ret
 
     #############

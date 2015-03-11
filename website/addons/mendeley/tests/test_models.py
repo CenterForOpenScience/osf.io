@@ -327,7 +327,8 @@ class MendeleyUserSettingsTestCase(OsfTestCase):
                 {
                     'id': account._id,
                     'provider_id': account.provider_id,
-                    'display_name': account.display_name
+                    'display_name': account.display_name,
+                    'nodes': [],
                 },
                 res['accounts'],
             )
