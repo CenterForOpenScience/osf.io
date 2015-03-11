@@ -1,11 +1,11 @@
-## Setup FigShare for development
+## Setup figshare for development
 
-**Note:** The FigShare account you test with **cannot** be the same as the FigShare account
+**Note:** The figshare account you test with **cannot** be the same as the figshare account
 associated with the API application. Attempting to use the same account will result in errors
 akin to *{"error": "You cannot request an access token for yourself!"}*
 
 1. Copy website/addons/figshare/settings/defaults.py to website/addons/figshare/settings/local.py
-2. Go to the [FigShare website](http://figshare.com)
+2. Go to the [figshare website](http://figshare.com)
 3. *(Optional)* Create an account
 4. Login to your account
 5. Click the dropdown with your name and select **Applications**
