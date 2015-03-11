@@ -11,7 +11,7 @@ NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings
 ROUTES = [routes.settings_routes, routes.api_routes]
 
 SHORT_NAME = 'figshare'
-FULL_NAME = 'FigShare'
+FULL_NAME = 'figshare'
 
 OWNERS = ['user', 'node']
 
