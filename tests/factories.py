@@ -212,6 +212,12 @@ class NodeWikiFactory(ModularOdmFactory):
     user = SubFactory(UserFactory)
     node = SubFactory(NodeFactory)
 
+    @post_generation
+    def set_node_keys(self, create, extracted):
+        self.node.wiki_pages_current[self.page_name] = self._id
+        self.node.wiki_pages_versions[self.page_name] = [self._id]
+        self.node.save()
+
 
 class UnregUserFactory(ModularOdmFactory):
     """Factory for an unregistered user. Uses User.create_unregistered()

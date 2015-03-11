@@ -1,7 +1,7 @@
 <!-- Authorization -->
 <div>
     <h4 class="addon-title">
-        FigShare
+        figshare
         <small class="authorized-by">
             % if authorized:
                     authorized
