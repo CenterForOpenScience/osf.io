@@ -966,6 +966,7 @@ h1.unavailable {
     font-style: italic;
 }
 
+/* Project page has project navigation bar, which is fixed and therefore increases the offset the anchors need */
 .project-page .anchor {
     margin-top: -100px;
     padding-top: 100px;
