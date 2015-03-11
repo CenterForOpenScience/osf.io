@@ -1,3 +1,4 @@
+'use strict';
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var osfHelpers = require('osfHelpers');
@@ -7,8 +8,8 @@ var AddonPermissionsTable = require('addonPermissions');
 // Show capabilities modal on selecting an addon; unselect if user
 // rejects terms
 $('.addon-select').on('change', function() {
-    var that = this,
-        $that = $(that);
+    var that = this;
+    var $that = $(that);
     if ($that.is(':checked')) {
         var name = $that.attr('name');
         var capabilities = $('#capabilities-' + name).html();
@@ -17,7 +18,7 @@ $('.addon-select').on('change', function() {
                 capabilities,
                 function(result) {
                     if (!result) {
-                        $(that).attr('checked', false);
+                        $that.attr('checked', false);
                     }
                 }
             );
