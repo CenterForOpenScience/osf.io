@@ -16,7 +16,7 @@
     "reconnectingWebsocket": "#07669519f8",
     "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
-    "treebeard": "https://github.com/caneruguz/treebeard.git#429317f7fefc5936e7dea9370622d01b6411f92b",
+    "treebeard": "https://github.com/caneruguz/treebeard.git#de1f9f22312e56fee7b3d2d355842f699683c9f9",
     "xhook": "~1.3.0",
     "osf-panel": "https://github.com/caneruguz/osf-panel.git#fda8e05d9f3ba8ed7bd43b46ceffe265b3d73b39",
     "markdown-it-toc": "https://github.com/samchrisinger/markdown-it-toc.git#82c0c364d8e756c6ee00085f8f9069f937243dd7",
