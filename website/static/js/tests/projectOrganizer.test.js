@@ -1,10 +1,7 @@
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 var assert = require('chai').assert;
-var $ = require('jquery');
-var moment = require('moment');
 var Raven = require('raven-js');
-
 var ProjectOrganizer = require('projectOrganizer');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
