@@ -66,7 +66,7 @@
                 <div data-bind="if: adminContributors.length">
                     <h4>
                       Admins on Parent Projects
-                      <i class="icon-question-sign admin-info"
+                      <i class="fa fa-question-sign admin-info"
                               data-content="These users are not contributors on
                               this component but can view and register it because they
                                 are administrators on a parent project."
@@ -161,7 +161,7 @@
                         <td class="col-sm-1">
                             <span data-bind="html: anonymousDisplay"></span>
                             <!-- ko if: $root.nodeIsPublic && anonymous -->
-                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="icon-question-sign icon-sm"></i>
+                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-sign fa fa-sm"></i>
                             <!-- /ko -->
                         </td>
                         <td class="col-sm-0">
@@ -219,7 +219,7 @@
                     <a
                             data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
-                                <i class="icon-remove text-danger no-sort"></i>
+                                <i class="fa fa-remove text-danger no-sort"></i>
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
@@ -232,7 +232,7 @@
                     <a
                             data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
                         >
-                        <i class="icon-remove text-danger no-sort"></i>
+                        <i class="fa fa-remove text-danger no-sort"></i>
                     </a>
                     <!-- /ko -->
             <!-- /ko -->
