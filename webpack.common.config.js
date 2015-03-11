@@ -128,8 +128,7 @@ var resolve = {
         'diffTool': staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js'),
-        'tests': staticPath('js/tests'),
-        'projectOrganizer': staticPath('js/projectorganizer.js')
+        'tests': staticPath('js/tests')
     }
 };
 

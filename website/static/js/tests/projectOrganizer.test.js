@@ -2,7 +2,7 @@
 'use strict';
 var assert = require('chai').assert;
 var Raven = require('raven-js');
-var ProjectOrganizer = require('projectOrganizer');
+var ProjectOrganizer = require('js/projectOrganizer');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
