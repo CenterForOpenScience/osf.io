@@ -15,15 +15,15 @@ if (typeof Object.create !== 'function') {
 /**
  * Usage:
  *
-var Animal = defclass({
-    constructor: function(name) {
-        this.name = name || 'unnamed';
-        this.sleeping = false;
-    },
-    sayHi: function() {
-        console.log('Hi, my name is ' + this.name);
-    }
-});
+ *  var Animal = defclass({
+ *      constructor: function(name) {
+ *          this.name = name || 'unnamed';
+ *          this.sleeping = false;
+ *      },
+ *      sayHi: function() {
+ *          console.log('Hi, my name is ' + this.name);
+ *      }
+ *  });
  */
 function defclass(prototype) {
     var constructor = prototype.hasOwnProperty('constructor') ? prototype.constructor : noop;
