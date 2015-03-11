@@ -90,7 +90,7 @@ function _fangornActionColumn (item, col) {
             {
                 'name' : '',
                 'tooltip' : 'Upload file',
-                'icon' : 'fa fa-upload-alt',
+                'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : _uploadEvent
             },
@@ -107,7 +107,7 @@ function _fangornActionColumn (item, col) {
             {
                 'name' : '',
                 'tooltip' : 'Upload file',
-                'icon' : 'fa fa-upload-alt',
+                'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : _uploadEvent
             }
@@ -116,7 +116,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             name : '',
             'tooltip' : 'Download file',
-            icon : 'fa fa-download-alt',
+            icon : 'fa fa-download',
             css : 'btn btn-info btn-xs',
             onclick: _downloadEvent
         });
