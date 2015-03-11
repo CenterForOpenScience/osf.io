@@ -56,7 +56,7 @@
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
                 <div class="wiki-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="wiki-panel-header" data-bind="css: { 'no-background bottom-border': $root.singleVis() === 'edit' }">
+                  <div class="wiki-panel-header">
                     <div class="row">
                       <div class="col-md-6">
                            <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'edit'"> <i class="icon-edit"> </i>  Edit </span>
@@ -131,7 +131,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="wiki-panel no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'wiki-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="wiki-panel-header no-background" data-bind="css: { 'no-background bottom-border': $root.singleVis() === 'view', 'wiki-panel-header-flex': $root.singleVis() !== 'view' }">
+                <div class="wiki-panel-header" data-bind="css: { 'wiki-panel-header-flex': $root.singleVis() !== 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
                             <span class="wiki-panel-title hidden" data-bind="css: { 'hidden': $root.singleVis() === 'view' }"> <i class="icon-eye-open"> </i>  View </span>
@@ -168,7 +168,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
             <div class="wiki-panel wiki-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'wiki-panel-flex': $root.singleVis() !== 'compare' }">
-              <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: { 'no-background bottom-border': $root.singleVis() === 'compare', 'wiki-panel-header-flex': $root.singleVis() !== 'compare' }">
+              <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() !== 'compare' }">
                   <div class="row">
                       <div class="col-xs-12">
                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="icon-exchange"> </i>  Compare </span>
