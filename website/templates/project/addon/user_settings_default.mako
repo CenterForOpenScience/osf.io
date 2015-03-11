@@ -10,10 +10,11 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Authorized as <em>{{ name }}</em></th>
-                <td><a data-bind="click: $root.askDisconnect" class="text-danger">Delete Access Token</a></td>
+                <th>Authorized as <a href="{{ profileUrl }}"><em>{{ name }}</em></a></th>
+                <th><a data-bind="click: $root.askDisconnect" class="text-danger">Delete Access Token</a></th>
             </tr>
         </thead>
+        <!-- ko if: connectedNodes().length > 0 -->
         <tbody data-bind="foreach: connectedNodes()">
             <tr>
                 <td class="authorized-nodes">
@@ -27,6 +28,7 @@
                 </td>
             </tr>
         </tbody>
+        <!-- /ko -->
     </table>
     <!-- /ko -->
     <!-- Flashed Messages -->
@@ -34,7 +36,3 @@
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
 </div>
-<%def name="submit_btn()">
-</%def>
-<%def name="on_submit()">
-</%def>

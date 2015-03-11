@@ -81,6 +81,7 @@ var ExternalAccount = function(data) {
     var self = this;
     self.name = data.display_name;
     self.id = data.id;
+    self.profileUrl = data.profile_url;
 
     self.connectedNodes = ko.observableArray();
 
@@ -101,8 +102,7 @@ var ExternalAccount = function(data) {
                 url: url, status: status, error: error
             });
         });
-    }
-
+    };
 };
 
 var OAuthAddonSettingsViewModel = function(name, displayName) {
@@ -115,7 +115,7 @@ var OAuthAddonSettingsViewModel = function(name, displayName) {
 
     self.setMessage = function(msg, cls) {
         self.message(msg);
-        self.messageClass(cls || '');
+        self.messageClass(cls || 'text-info');
     };
 
     self.connectAccount = function() {
@@ -143,43 +143,47 @@ var OAuthAddonSettingsViewModel = function(name, displayName) {
 
     self.disconnectAccount = function(account) {
         var url = '/api/v1/oauth/accounts/' + account.id + '/';
-        $.ajax({
+        var response = $.ajax({
             url: url,
             type: 'DELETE'
-        }).done(function(data) {
+        });
+        response.done(function(data) {
             self.updateAccounts();
-        }).fail(function(xhr, status, error) {
+        });
+        response.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
                 url: url, status: status, error: error
             });
         });
+        return response;
     };
 
     self.updateAccounts = function() {
         var url = '/api/v1/settings/' + self.name + '/accounts/';
-        $.get(url).done(function(data) {
+        var response = $.get(url);
+        response.done(function(data) {
             self.accounts(data.accounts.map(function(account) {
                 return new ExternalAccount(account);
             }));
-        }).fail(function(xhr, status, error) {
+        });
+        response.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
                 url: url, status: status, error: error
             });
         });
+        return response;
     };
-
-    self.updateAccounts()
 };
 
 function initAddonSettings() {
     var elements = $('.addon-oauth');
     ko.utils.arrayMap(elements, function(elem) {
-        ko.applyBindings(
-            new OAuthAddonSettingsViewModel(
-                $(elem).data('addon-short-name'),
-                $(elem).data('addon-name')
-            ), elem
+        var viewModel = new OAuthAddonSettingsViewModel(
+            $(elem).data('addon-short-name'),
+            $(elem).data('addon-name')
         );
+        ko.applyBindings(viewModel, elem);
+        viewModel.updateAccounts();
     });
 }
 

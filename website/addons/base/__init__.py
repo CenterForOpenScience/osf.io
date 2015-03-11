@@ -112,14 +112,20 @@ class AddonConfig(object):
             self.user_settings_template = user_settings_template
         elif os.path.exists(addon_user_settings_path):
             # An implicit template exists
-            self.user_settings_template = \
-                '../addons/{0}/templates/{0}_user_settings.mako'.format(
-                    self.short_name
-                )
+            self.user_settings_template = os.path.join(
+                os.path.pardir,
+                'addons',
+                self.short_name,
+                'templates',
+                '{}_user_settings.mako'.format(self.short_name),
+            )
         else:
             # Use the default template (for OAuth addons)
-            self.user_settings_template = \
-                'project/addon/user_settings_default.mako'
+            self.user_settings_template = os.path.join(
+                'project',
+                'addon',
+                'user_settings_default.mako',
+            )
 
         self.node_settings_template = node_settings_template
 
