@@ -262,7 +262,7 @@ function ProjectNotifications(data) {
             return columns;
         },
         sortButtonSelector : {
-            up : 'i.fa fa-chevron-up',
+            up : 'i.fa. fa-chevron-up',
             down : 'i.fa fa-chevron-down'
         },
         showFilter : false,     // Gives the option to filter by showing the filter box.
