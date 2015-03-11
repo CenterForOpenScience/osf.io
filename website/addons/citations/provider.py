@@ -162,7 +162,7 @@ class CitationsProvider(object):
         if list_id is None and self.is_first_page(page):
             contents = [node_addon.root_folder]
         else:
-            if show in ('all', 'folders'):
+            if show in ('all', 'folders') and self.is_first_page(page):
                 contents += [
                     self._serialize_folder(each, node_addon)
                     for each in account_folders
