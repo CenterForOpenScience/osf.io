@@ -81,3 +81,6 @@ class MendeleyCitationsProvider(provider.CitationsProvider):
 
     def next_is_truthy(self, next_page):
         return next_page is not None
+
+    def is_first_page(self, page):
+        return page is None

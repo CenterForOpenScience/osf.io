@@ -86,3 +86,6 @@ class ZoteroCitationsProvider(provider.CitationsProvider):
 
     def next_is_truthy(self, next_page):
         return next_page > 0
+
+    def is_first_page(self, page):
+        return page is None or page == 1
