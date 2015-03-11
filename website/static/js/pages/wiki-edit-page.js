@@ -118,23 +118,22 @@ $(document).ready(function () {
     var panelExpand = $('.panel-expand');
     $('.panel-collapse').on('click', function () {
         var el = $(this).closest('.panel-toggle');
-        el.children('.wiki-panel.hidden-xs').hide();
+        el.children('.wiki-panel.hidden-xs').addClass('hidden-alt');
         panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
         panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
-        el.children('.panel-collapsed').show();
-        $('.wiki-nav').show();
+        el.children('.panel-collapsed').removeClass('hidden-alt');
+        $('.wiki-nav').removeClass('hidden-alt');
 
         bodyElement.trigger('toggleMenu', [false]);
     });
     $('.panel-collapsed .wiki-panel-header').on('click', function () {
         var el = $(this).parent();
         var toggle = el.closest('.panel-toggle');
-        toggle.children('.wiki-panel').show();
-        el.hide();
+        toggle.children('.wiki-panel').removeClass('hidden-alt');
+        el.addClass('hidden-alt');
         panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
         panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
-        $('.wiki-nav').hide();
-
+        $('.wiki-nav').addClass('hidden-alt');
         bodyElement.trigger('toggleMenu', [true]);
     });
 

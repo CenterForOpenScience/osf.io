@@ -2427,3 +2427,6 @@ span#profileFullname{
 .inline {
     display: inline-block;
 }
+.hidden-alt {
+    display: none;
+}
