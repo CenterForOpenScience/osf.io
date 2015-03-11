@@ -23,31 +23,6 @@ function Contributor(data) {
     }
 }
 
-function postInviteRequest(fullname, email) {
-    $osf.postJSON(
-        nodeApiUrl + 'invite_contributor/',
-        {'fullname': fullname, 'email': email}
-    ).done(
-        onInviteSuccess
-    ).fail(
-        onInviteError
-    );
-}
-
-function onInviteSuccess(result) {
-    var self = this;
-    self.query('');
-    self.results([]);
-    self.page('whom');
-    self.add(result.contributor);
-}
-
-function onInviteError(xhr) {
-    var response = JSON.parse(xhr.responseText);
-    // Update error message
-    this.inviteError(response.message);
-}
-
 class AddContributorViewModel extends Paginator {
     constructor(title, parentId, parentTitle) {
         super();
@@ -305,7 +280,7 @@ class AddContributorViewModel extends Paginator {
             self.inviteError(validated);
             return false;
         }
-        return postInviteRequest(self.inviteName(), self.inviteEmail());
+        return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     };
     add(data) {
         data.permission = ko.observable('admin');
@@ -374,7 +349,7 @@ class AddContributorViewModel extends Paginator {
             $osf.unblock();
             $osf.growl('Error','Add contributor failed.');
         });
-    };
+    }
     clear() {
         var self = this;
         self.page('whom');
@@ -384,6 +359,29 @@ class AddContributorViewModel extends Paginator {
         self.nodesToChange([]);
         self.notification(false);
     };
+    postInviteRequest(fullname, email) {
+        var self = this;
+        $osf.postJSON(
+            nodeApiUrl + 'invite_contributor/',
+            {'fullname': fullname, 'email': email}
+        ).done(
+            self.onInviteSuccess.bind(self)
+        ).fail(
+            self.onInviteError.bind(self)
+        );
+    }
+    onInviteSuccess(result) {
+        var self = this;
+        self.query('');
+        self.results([]);
+        self.page('whom');
+        self.add(result.contributor);
+    }
+    onInviteError(xhr) {
+        var response = JSON.parse(xhr.responseText);
+        // Update error message
+        this.inviteError(response.message);
+    }
 }
 
 

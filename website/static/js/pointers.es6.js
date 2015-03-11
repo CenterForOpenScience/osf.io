@@ -61,7 +61,6 @@ class AddPointerViewModel extends Paginator {
                 self.results(result.nodes);
                 self.currentPage(result.page);
                 self.numberOfPages(result.pages);
-
                 self.addNewPaginators();
             }).fail(
                 osfHelpers.handleJSONError
