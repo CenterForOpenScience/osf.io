@@ -124,7 +124,7 @@ function _fangornActionColumn (item, col) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
-                icon: 'fa fa-remove',
+                icon: 'fa fa-times',
                 css: 'm-l-lg text-danger fg-hover-hide',
                 style: 'display:none',
                 onclick: Fangorn.ButtonEvents._removeEvent

@@ -650,7 +650,7 @@ function _fangornActionColumn (item, col) {
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Delete',
-                'icon' : 'fa fa-remove',
+                'icon' : 'fa fa-times',
                 'css' : 'm-l-lg text-danger fg-hover-hide',
                 'style' : 'display:none',
                 'onclick' : _removeEvent
@@ -948,7 +948,7 @@ tbOptions = {
         return m('i.fa.fa-refresh.fa-spin');
     },
     removeIcon : function(){
-        return m('i.fa.fa-times');
+        return m('i.fa.fa fa-times');
     }
 };
 

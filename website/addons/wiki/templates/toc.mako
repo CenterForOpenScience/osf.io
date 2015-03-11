@@ -10,7 +10,7 @@
             <div class="col-xs-2">
                 % if user['can_edit']:
                     <a href="#" data-toggle="modal" data-target="#newWiki">
-                        <i class="fa fa-plus-sign pointer fa-lg" data-toggle="tooltip" title="New" data-placement="left"></i>
+                        <i class="fa fa-plus-circle pointer fa-lg" data-toggle="tooltip" title="New" data-placement="left"></i>
                     </a>
                 % endif
             </div>
@@ -39,7 +39,7 @@
                                     <a href="${page['url']}"><div class="col-xs-10">${page['name']}</div></a>
                                     <div class="col-xs-2">
                                         <a href="#" data-toggle="modal" data-target="#deleteWiki">
-                                            <i class="fa fa-trash text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
+                                            <i class="fa fa-trash-o text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
                                         </a>
                                     </div>
                                 % else:

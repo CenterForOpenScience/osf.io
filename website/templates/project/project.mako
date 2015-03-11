@@ -68,7 +68,7 @@
                             class="btn btn-default disabled"
                         % endif
                             href="#">
-                            <i class="fa fa-eye-open"></i>
+                            <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
                         <a rel="tooltip" title="Duplicate" data-placement="bottom"

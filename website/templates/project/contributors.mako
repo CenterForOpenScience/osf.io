@@ -219,7 +219,7 @@
                     <a
                             data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
-                                <i class="fa fa-remove text-danger no-sort"></i>
+                                <i class="fa fa-times text-danger no-sort"></i>
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
@@ -232,7 +232,7 @@
                     <a
                             data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
                         >
-                        <i class="fa fa-remove text-danger no-sort"></i>
+                        <i class="fa fa-times text-danger no-sort"></i>
                     </a>
                     <!-- /ko -->
             <!-- /ko -->

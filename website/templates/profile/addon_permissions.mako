@@ -15,7 +15,7 @@
                     <th>
                         % if not node['registered']:
                             <a>
-                             <i class="fa fa-times pull-right text-danger ${addon_short_name}-remove-token" node-id="${node['_id']}" title="Deauthorize Project"></i>
+                             <i class="fa fa fa-times pull-right text-danger ${addon_short_name}-remove-token" node-id="${node['_id']}" title="Deauthorize Project"></i>
                             </a>
                         % endif
                     </th>

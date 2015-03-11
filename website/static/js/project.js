@@ -156,12 +156,12 @@ NodeActions._openCloseNode = function(nodeId) {
     body.toggleClass('hide');
 
     if (body.hasClass('hide')) {
-        icon.removeClass('fa-minus');
-        icon.addClass('fa-plus');
+        icon.removeClass('fa.fa-minus');
+        icon.addClass('fa.fa-plus');
         icon.attr('title', 'More');
     } else {
-        icon.removeClass('fa-plus');
-        icon.addClass('fa-minus');
+        icon.removeClass('fa.fa-plus');
+        icon.addClass('fa.fa-minus');
         icon.attr('title', 'Less');
     }
 

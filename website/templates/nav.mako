@@ -68,7 +68,7 @@
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="fa fa-signout hidden-xs fa-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="fa fa-sign-out hidden-xs fa-lg"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>
