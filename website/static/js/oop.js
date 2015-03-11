@@ -1,21 +1,23 @@
 // These are mostly a simplification of
 // augment.js (https://github.com/javascript/augment, MIT Licensed) and
 // Douglas Crockford's protoypical inheritance pattern.
+
+var noop = function() {};
 /**
  * Usage:
  *
- *  var Animal = defclass({
- *      constructor: function(name) {
- *          this.name = name || 'unnamed';
- *          this.sleeping = false;
- *      },
- *      sayHi: function() {
- *          console.log('Hi, my name is ' + this.name);
- *      }
- *  });
+var Animal = defclass({
+    constructor: function(name) {
+        this.name = name || 'unnamed';
+        this.sleeping = false;
+    },
+    sayHi: function() {
+        console.log('Hi, my name is ' + this.name);
+    }
+});
  */
 function defclass(prototype) {
-    var constructor = prototype.constructor;
+    var constructor = prototype.hasOwnProperty('constructor') ? prototype.constructor : noop;
     constructor.prototype = prototype;
     return constructor;
 }
