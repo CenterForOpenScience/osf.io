@@ -943,6 +943,12 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
+    },
+    resolveRefreshIcon : function() {
+        return m('i.fa.fa-refresh.fa-spin');
+    },
+    removeIcon : function(){
+        return m('i.fa.fa-time-circle-o');
     }
 };
 
