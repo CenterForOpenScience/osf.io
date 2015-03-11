@@ -116,7 +116,7 @@ def check_parent(uid, event, node_subscribers, **context):
             for u in subscribed_users:
                 if u not in node_subscribers and node.has_permission(u, 'read'):
                     if notification_type != 'none':
-                        event = 'comment_replies' if target_user else event
+                        event = 'comment_replies' if target_user == u else event
                         send([u._id], notification_type, uid, event, **context)
                     node_subscribers.append(u)
 
