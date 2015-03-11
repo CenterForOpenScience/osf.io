@@ -242,6 +242,7 @@ function ViewModel(options){
         if (self.menuVis()) {
             url += paramPrefix + 'menu';
         }
+
         window.history.replaceState({}, self.pageTitle, url);
     });
 

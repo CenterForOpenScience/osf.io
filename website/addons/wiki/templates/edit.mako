@@ -59,7 +59,7 @@
                   <div class="wiki-panel-header">
                     <div class="row">
                       <div class="col-md-6">
-                           <i class="fa fa-edit"> </i>  Edit
+                           <i class="icon-edit"> </i>  Edit
                       </div>
                         <div class="col-md-6">
                           <div class="progress progress-no-margin pointer pull-right"
@@ -72,7 +72,7 @@
                                   <span class="progress-bar-content">
                                       <span data-bind="text: statusDisplay"></span>
                                       <span class="sharejs-info-btn">
-                                          <i class="fa fa-question-sign fa-large"></i>
+                                          <i class="icon-question-sign icon-large"></i>
                                       </span>
                                   </span>
                               </div>
@@ -134,7 +134,7 @@
                 <div class="wiki-panel-header wiki-panel-header-flex">
                     <div class="row">
                         <div class="col-sm-6">
-                            <i class="fa fa-eye-open"> </i>  View
+                            <i class="icon-eye-open"> </i>  View
                         </div>
                         <div class="col-sm-6">
                             <!-- Version Picker -->
@@ -165,7 +165,7 @@
               <div class="wiki-panel-header wiki-panel-header-flex">
                   <div class="row">
                       <div class="col-xs-12">
-                          <i class="fa fa-exchange"> </i>  Compare
+                          <i class="icon-exchange"> </i>  Compare
                       
                             <!-- Version Picker -->
                           <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
