@@ -3,6 +3,15 @@
 // Douglas Crockford's protoypical inheritance pattern.
 
 var noop = function() {};
+
+// IE8 shim for Object.create
+if (typeof Object.create !== 'function') {
+    Object.create = function (o) {
+        noop.prototype = o;
+        return new noop();
+    };
+}
+
 /**
  * Usage:
  *
