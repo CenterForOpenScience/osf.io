@@ -2,36 +2,37 @@
 'use strict';
 var assert = require('chai').assert;
 var Raven = require('raven-js');
+var $ = require('jquery');
 var ProjectOrganizer = require('js/projectOrganizer');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
 
-var returnTrue = function() {
-    return true;
-};
-
-var returnFalse = function() {
-    return false;
-};
-
-var parentIsFolder = function(){
-    return {
-        data: {
-            node_id: 'normalFolder'
-        }
-    };
-};
-
-var parentIsNotFolder = function(){
-    return {
-        data: {
-            node_id: 'noParent'
-        }
-    };
-};
 
 describe('ProjectOrganizer', () => {
+    var returnTrue = function() {
+        return true;
+    };
+
+    var returnFalse = function() {
+        return false;
+    };
+
+    var parentIsFolder = function(){
+        return {
+            data: {
+                node_id: 'normalFolder'
+            }
+        };
+    };
+
+    var parentIsNotFolder = function(){
+        return {
+            data: {
+                node_id: 'noParent'
+            }
+        };
+    };
     var parent = {
         name: 'Parent',
         isAncestor: returnTrue
@@ -41,6 +42,7 @@ describe('ProjectOrganizer', () => {
         name: 'Child',
         isAncestor: returnFalse
     };
+
 
     describe('whichIsContainer', () => {
         it('says children are contained in parents', () => {
@@ -63,498 +65,170 @@ describe('ProjectOrganizer', () => {
     });
 
     describe('canAcceptDrop', () => {
-        var normalFolder = {
-            data: {
-                isFolder: true,
-                isSmartFolder: false,
-                node_id: 'normalFolder',
-                permissions: {
-                    acceptsComponents: true,
-                    acceptsFolders: true,
-                    acceptsMoves: true,
-                    acceptsCopies: true
-                }
-            }
-        };
 
-        var canCopyOrMoveItem = {
+        // Most permissive, not a component, not a folder, not a smart folder
+        var defaultItem = {
             isAncestor: returnFalse,
-            id: 'canCopyItem',
+            id: 'defaultItem',
             parent: parentIsNotFolder,
             data: {
-                isComponent: false,
-                isFolder: false,
-                permissions: {
-                    copyable: true,
-                    movable: true
+                    isFolder: false,
+                    isSmartFolder: false,
+                    isComponent: false,
+                    node_id: 'defaultItem',
+                    permissions: {
+                        copyable: true,
+                        movable: true
+                    }
                 }
-            }
-        };
-        var cannotCopyOrMoveItem = {
+            };
+
+        // Most permissive, folder, not a smart folder
+        var defaultFolder = {
             isAncestor: returnFalse,
-            id: 'canCopyItem',
+            id: 'defaultFolder',
             parent: parentIsNotFolder,
             data: {
-                isComponent: false,
-                isFolder: false,
+                    isFolder: true,
+                    isSmartFolder: false,
+                    node_id: 'defaultFolder',
+                    permissions: {
+                        acceptsComponents: true,
+                        acceptsFolders: true,
+                        acceptsMoves: true,
+                        acceptsCopies: true,
+                        copyable: true,
+                        movable: true
+                    }
+                }
+            };
+
+        var canCopyOrMoveItem = $.extend({}, defaultItem);
+        var cannotCopyOrMoveItem = $.extend(true, {}, defaultItem, {
+            data: {
                 permissions: {
                     copyable: false,
                     movable: false
                 }
             }
-        };
+        });
+
 
         it('rejects non-folders', () => {
-            var nonFolder = {
-                data: {
-                    isFolder: false,
-                    isSmartFolder: false,
-                    node_id: 'nonFolder',
-                    permissions: {
-                        acceptsComponents: false,
-                        acceptsFolders: false,
-                        acceptsMoves: false,
-                        acceptsCopies: false
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([canCopyOrMoveItem], nonFolder);
+            var result = ProjectOrganizer._canAcceptDrop([canCopyOrMoveItem], cannotCopyOrMoveItem);
             assert.equal(result, false);
         });
 
         it('rejects smart folders', () => {
-            var smartFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: true,
-                    node_id: 'smartFolder',
-                    permissions: {
-                        acceptsComponents: false,
-                        acceptsFolders: false,
-                        acceptsMoves: false,
-                        acceptsCopies: false
-                    }
-                }
-            };
-
+            var smartFolder = $.extend(true, {}, defaultFolder, {data: {isSmartFolder: true}});
             var result = ProjectOrganizer._canAcceptDrop([canCopyOrMoveItem], smartFolder);
-            assert.equal(result, false);
+            assert.isFalse(result);
         });
 
         it('rejects if target is contained by dropped items', () => {
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
 
-            var canCopyOrMoveItem = {
-                isAncestor: returnTrue,
-                id: 'canCopyItem',
-                parent: parentIsNotFolder,
-                    data: {
-                        isComponent: false,
-                        isFolder: false,
-                        permissions: {
-                            copyable: true,
-                            movable: true
-                        }
-                    }
-                };
+            var parentItem = $.extend({}, defaultItem, {
+                isAncestor: returnTrue
+            });
 
-            var result = ProjectOrganizer._canAcceptDrop([canCopyOrMoveItem], normalFolder);
-            assert.equal(result, false);
+            var result = ProjectOrganizer._canAcceptDrop([parentItem], defaultFolder);
+            assert.isFalse(result);
         });
 
         it('rejects dropping on its source folder', () => {
-            var normalCopyableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                data: {
-
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    parent: parentIsNotFolder,
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([normalCopyableFolder], normalCopyableFolder);
-            assert.equal(result, false);
+            var result = ProjectOrganizer._canAcceptDrop([defaultFolder], defaultFolder);
+            assert.isFalse(result);
         });
 
         it('rejects components if target does not accept components', () => {
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: false,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
+            var component = $.extend(true, {}, defaultItem, {
+                data: { isComponent: true }
+            });
 
-            var canCopyOrMoveItem = {
-                isAncestor: returnFalse,
-                id: 'canCopyItem',
-                parent: parentIsNotFolder,
-                data: {
-                    isComponent: true,
-                    isFolder: false,
-                    permissions: {
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
+            var noComponentFolder = $.extend(true, {}, defaultFolder, {
+                data: {permissions: {acceptsComponents: false}}
+            });
 
-            var result = ProjectOrganizer._canAcceptDrop([canCopyOrMoveItem], normalFolder);
-            assert.equal(result, false);
+            var result = ProjectOrganizer._canAcceptDrop([component], noComponentFolder);
+            assert.isFalse(result);
         });
 
         it('accepts components if target accepts components', () => {
             var copyMode = 'copy';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
 
-            var canCopyComponent = {
-                isAncestor: returnFalse,
-                id: 'canCopyItem',
-                parent: parentIsNotFolder,
-                data: {
-                    isComponent: true,
-                    isFolder: false,
-                    permissions: {
-                        copyable: true,
-                        movable: false
-                    }
-                }
-            };
+            var component = $.extend(true, {}, defaultItem, {
+                data: { isComponent: true }
+            });
 
-            var result = ProjectOrganizer._canAcceptDrop([canCopyComponent], normalFolder, copyMode);
-            assert.equal(result, true);
+            var result = ProjectOrganizer._canAcceptDrop([component], defaultFolder, copyMode);
+            assert.isTrue(result);
         });
 
         it('rejects folders if target does not accept folders', () => {
             var copyMode = 'move';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: false,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
 
-            var normalMovableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                parent: parentIsNotFolder,
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
+            var folderDoesNotAcceptFolders = $.extend(true, {}, defaultFolder, {
+                data: {permissions: {acceptsFolders: false}}
+            });
 
-            var result = ProjectOrganizer._canAcceptDrop([normalMovableFolder], normalFolder, copyMode);
-            assert.equal(result, false);
+            var result = ProjectOrganizer._canAcceptDrop([defaultFolder], folderDoesNotAcceptFolders, copyMode);
+            assert.isFalse(result);
         });
 
         it('rejects any folder if target does not accept folders', () => {
             var copyMode = 'move';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: false,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
+            var folderDoesNotAcceptFolders = $.extend(true, {}, defaultFolder, {
+                data: {permissions: {acceptsFolders: false}}
+            });
 
-            var normalMovableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                parent: parentIsNotFolder,
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var canMoveItem = {
-                isAncestor: returnFalse,
-                id: 'canCopyItem',
-                parent: parentIsNotFolder,
-                data: {
-                    isComponent: false,
-                    isFolder: false,
-                    permissions: {
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([canMoveItem, normalMovableFolder, canMoveItem], normalFolder, copyMode);
-            assert.equal(result, false);
+            var result = ProjectOrganizer._canAcceptDrop([defaultItem, defaultFolder, defaultItem], folderDoesNotAcceptFolders, copyMode);
+            assert.isFalse(result);
         });
 
 
         it('accepts folders if target accepts folders', () => {
             var copyMode = 'move';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
+            var normalMovableFolder = $.extend(true, {}, defaultFolder, {
+                id: 'normalMovableFolder',
+                data: {node_id: 'normalMovableFolder'}
+            });
 
-            var normalMovableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                parent: parentIsNotFolder,
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([normalMovableFolder], normalFolder, copyMode);
-            assert.equal(result, true);
+            var result = ProjectOrganizer._canAcceptDrop([normalMovableFolder], defaultFolder, copyMode);
+            assert.isTrue(result);
         });
 
         it('rejects if copyMode is move and target does not accept move', () => {
             var copyMode = 'move';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: false,
-                        acceptsCopies: true
-                    }
-                }
-            };
+            var folderDoesNotAcceptMoves = $.extend(true, {}, defaultFolder, {
+                data: { permissions: {acceptsMoves: false}}
+            });
 
-            var normalMovableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                parent: parentIsNotFolder,
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([normalMovableFolder], normalFolder, copyMode);
-            assert.equal(result, false);
+            var result = ProjectOrganizer._canAcceptDrop([defaultItem], folderDoesNotAcceptMoves, copyMode);
+            assert.isFalse(result);
         });
 
         it('accepts if copyMode is move and target accepts move', () => {
             var copyMode = 'move';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
 
-            var normalMovableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                parent: parentIsNotFolder,
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([normalMovableFolder], normalFolder, copyMode);
+            var result = ProjectOrganizer._canAcceptDrop([defaultItem], defaultFolder, copyMode);
             assert.equal(result, true);
         });
 
         it('rejects if copyMode is copy and target does not accept copy', () => {
             var copyMode = 'copy';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: false
-                    }
-                }
-            };
+            var folderDoesNotAcceptCopies = $.extend(true, {}, defaultFolder, {
+                data: { permissions: {acceptsCopies: false}}
+            });
 
-            var normalMovableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                parent: parentIsNotFolder,
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([normalMovableFolder], normalFolder, copyMode);
-            assert.equal(result, false);
-
-
+            var result = ProjectOrganizer._canAcceptDrop([defaultItem], folderDoesNotAcceptCopies, copyMode);
+            assert.isFalse(result);
         });
 
         it('accepts if copyMode is copy and target accepts copy', () => {
             var copyMode = 'copy';
-            var normalFolder = {
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true
-                    }
-                }
-            };
 
-            var normalMovableFolder = {
-                isAncestor: returnFalse,
-                id: 'normalFolder',
-                parent: parentIsNotFolder,
-                data: {
-                    isFolder: true,
-                    isSmartFolder: false,
-                    node_id: 'normalFolder',
-                    permissions: {
-                        acceptsComponents: true,
-                        acceptsFolders: true,
-                        acceptsMoves: true,
-                        acceptsCopies: true,
-                        copyable: true,
-                        movable: true
-                    }
-                }
-            };
-
-            var result = ProjectOrganizer._canAcceptDrop([normalMovableFolder], normalFolder, copyMode);
-            assert.equal(result, true);
+            var result = ProjectOrganizer._canAcceptDrop([defaultItem], defaultFolder, copyMode);
+            assert.isTrue(result);
 
         });
 
