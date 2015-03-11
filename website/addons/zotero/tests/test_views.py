@@ -21,7 +21,7 @@ from website.util import api_url_for
 from website.addons.zotero import views
 from website.addons.citations.utils import serialize_account
 
-from utils import mock_responses
+from utils import MockZotero
 
 API_URL = 'https://api.zotero.org'
 
@@ -64,6 +64,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.secret_patcher.__get__ = mock.Mock(return_value='1234567890asdf')
         self.id_patcher.start()
         self.secret_patcher.start()
+        self.mock_zotero = MockZotero()
 
     def tearDown(self):
         self.id_patcher.stop()
@@ -239,7 +240,7 @@ class ZoteroViewsTestCase(OsfTestCase):
                 API_URL,
                 'users/{}/collections'.format(self.account.provider_id)
             ),
-            body=mock_responses['folders'],
+            body=self.mock_zotero.folders(),
             content_type='application/json'
         )
 
@@ -261,7 +262,7 @@ class ZoteroViewsTestCase(OsfTestCase):
                 API_URL,
                 'users/{}/collections'.format(self.account.provider_id)
             ),
-            body=mock_responses['folders'],
+            body=self.mock_zotero.folders(),
             content_type='application/json'
         )
 
@@ -271,7 +272,7 @@ class ZoteroViewsTestCase(OsfTestCase):
                 API_URL,
                 'users/{}/items'.format(self.account.provider_id)
             ),
-            body=mock_responses['documents'],
+            body=self.mock_zotero.documents(),
             content_type='application/json'
         )
 
@@ -279,9 +280,8 @@ class ZoteroViewsTestCase(OsfTestCase):
             self.project.api_url_for('zotero_citation_list', zotero_list_id='ROOT'),
             auth=self.user.auth
         )
-
         children = res.json['contents']
-        assert_equal(len(children), 7)
+        assert_equal(len(children), 102)
         assert_equal(children[0]['kind'], 'folder')
         assert_equal(children[1]['kind'], 'file')
         assert_true(children[1].get('csl') is not None)
@@ -301,7 +301,7 @@ class ZoteroViewsTestCase(OsfTestCase):
                 API_URL,
                 'users/{}/collections'.format(self.account.provider_id)
             ),
-            body=mock_responses['folders'],
+            body=self.mock_zotero.folders(),
             content_type='application/json'
         )
 
@@ -311,7 +311,7 @@ class ZoteroViewsTestCase(OsfTestCase):
                 API_URL,
                 'users/{}/items'.format(self.account.provider_id)
             ),
-            body=mock_responses['documents'],
+            body=self.mock_zotero.documents(),
             content_type='application/json'
         )
 
@@ -321,3 +321,33 @@ class ZoteroViewsTestCase(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, 403)
+
+    @responses.activate
+    def test_zotero_citation_list_not_first_page(self):
+
+        responses.add(
+            responses.GET,
+            urlparse.urljoin(
+                API_URL,
+                'users/{}/collections'.format(self.account.provider_id)
+            ),
+            body=self.mock_zotero.folders(),
+            content_type='application/json'
+        )
+
+        responses.add(
+            responses.GET,
+            urlparse.urljoin(
+                API_URL,
+                'users/{}/items'.format(self.account.provider_id)
+            ),
+            body=self.mock_zotero.documents(page=2),
+            content_type='application/json'
+        )
+
+        res = self.app.get(
+            self.project.api_url_for('zotero_citation_list', zotero_list_id='ROOT', page='2'),
+            auth=self.user.auth
+        )
+
+        assert_equal(len(res.json['contents']), 50)

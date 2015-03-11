@@ -157,7 +157,6 @@ class CitationsProvider(object):
                 if ancestor_id is '__':
                     raise HTTPError(http.FORBIDDEN)
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
-
         contents = []
         if list_id is None and self.is_first_page(page):
             contents = [node_addon.root_folder]

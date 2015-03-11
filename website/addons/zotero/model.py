@@ -78,12 +78,12 @@ class Zotero(ExternalProvider):
         """
         if list_id == 'ROOT':
             list_id = None
-
+            
         if list_id:
             citations = []
             more = True
             offset = (page - 1) * self.PAGE_SIZE
-            while more and len(citations) <= self.MAX_CITATION_LOAD:
+            while more and len(citations) < self.MAX_CITATION_LOAD:
                 chunk = self.client.collection_items(list_id, content='csljson', limit=self.PAGE_SIZE, start=offset)
                 citations = citations + chunk
                 if len(chunk) == 0 or len(chunk) < self.PAGE_SIZE:
@@ -101,7 +101,7 @@ class Zotero(ExternalProvider):
         citations = []
         more = True
         offset = (page - 1) * self.PAGE_SIZE
-        while more and len(citations) <= self.MAX_CITATION_LOAD:
+        while more and len(citations) < self.MAX_CITATION_LOAD:
             chunk = self.client.items(content='csljson', limit=self.PAGE_SIZE, start=offset)
             citations = citations + chunk
             if len(chunk) == 0 or len(chunk) < self.PAGE_SIZE:
