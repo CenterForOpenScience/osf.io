@@ -51,7 +51,7 @@ WIKI_PAGE_CANNOT_RENAME_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
 ))
 WIKI_PAGE_CONFLICT_ERROR = HTTPError(http.CONFLICT, data=dict(
     message_short='Page conflict',
-    message_long='A wiki page already exists with the given name.'
+    message_long='A wiki page with that name already exists.'
 ))
 WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
     message_short='Not found',

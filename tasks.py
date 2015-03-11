@@ -499,10 +499,11 @@ def npm_bower():
     run('npm install -g bower', echo=True)
 
 
-@task
+@task(aliases=['bower'])
 def bower_install():
     print('Installing bower-managed packages')
-    run('bower install', echo=True)
+    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} install'.format(bower_bin), echo=True)
 
 
 @task
@@ -512,8 +513,7 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
-    npm_bower()
-    bower_install()
+    assets(develop=True, watch=False)
 
 
 @task
@@ -700,7 +700,8 @@ def webpack(clean=False, watch=False, develop=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
-    args = ['webpack']
+    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
+    args = [webpack_bin]
     if settings.DEBUG_MODE and develop:
         args += ['--colors']
     else:

@@ -1,7 +1,3 @@
-"""
-
-"""
-
 from framework.routing import Rule, json_renderer
 
 from . import views
@@ -36,14 +32,6 @@ settings_routes = {
             '/addons/figshare/callback/<uid>/',
             '/addons/figshare/callback/<uid>/<nid>/',
         ], 'get', views.auth.figshare_oauth_callback, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/new/project/',
-            '/project/<pid>/node/<nid>/figshare/new/project/',
-        ], 'post', views.crud.figshare_create_project, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/new/fileset/',
-            '/project/<pid>/node/<nid>/figshare/new/fileset/',
-        ], 'post', views.crud.figshare_create_fileset, json_renderer)
     ],
     'prefix': '/api/v1',
 }
@@ -86,15 +74,6 @@ api_routes = {
             views.config.figshare_deauthorize,
             json_renderer
         ),
-
-        #######################
-        Rule([
-            '/project/<pid>/figshare/hgrid/',
-            '/project/<pid>/node/<nid>/figshare/hgrid/',
-            '/project/<pid>/figshare/hgrid/<type>/<id>/',
-            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>/',
-
-        ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
     ],
     'prefix': '/api/v1',
 }

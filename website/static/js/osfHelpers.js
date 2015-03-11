@@ -9,9 +9,7 @@ var moment = require('moment');
 // Why?!
 require('koHelpers');
 
-var GrowlBox = require('./growlBox.js');
-
-require('bootstrap-editable');
+var GrowlBox = require('./growlBox');
 
 /**
  * Convenience function to create a GrowlBox
@@ -22,7 +20,7 @@ require('bootstrap-editable');
  *
  */
 var growl = function(title, message, type) {
-    new GrowlBox(title, message, type);
+    new GrowlBox(title, message, type || 'danger');
 };
 
 /**

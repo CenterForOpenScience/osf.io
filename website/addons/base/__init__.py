@@ -449,6 +449,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         'abstract': True,
     }
 
+    # Keeps track of what nodes have been given permission to use external
+    #   accounts belonging to the user.
     oauth_grants = fields.DictionaryField()
     # example:
     # {
@@ -468,12 +470,14 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     @property
     def connected_oauth_accounts(self):
+        """The user's list of ``ExternalAccount`` instances for this provider"""
         return [
             x for x in self.owner.external_accounts
             if x.provider == self.oauth_provider.short_name
         ]
 
     def grant_oauth_access(self, node, external_account, metadata=None):
+        """Give a node permission to use an ``ExternalAccount`` instance."""
         # ensure the user owns the external_account
         if external_account not in self.owner.external_accounts:
             raise PermissionsError()
@@ -495,12 +499,30 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         self.save()
 
     def revoke_oauth_access(self, external_account):
+        """Revoke all access to an ``ExternalAccount``.
+
+        TODO: This should accept node and metadata params in the future, to
+            allow fine-grained revocation of grants. That's not yet been needed,
+            so it's not yet been implemented.
+        """
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
 
         self.save()
 
     def verify_oauth_access(self, node, external_account, metadata=None):
+        """Verify that access has been previously granted.
+
+        If metadata is not provided, this checks only if the node can access the
+        account. This is suitable to check to see if the node's addon settings
+        is still connected to an external account (i.e., the user hasn't revoked
+        it in their user settings pane).
+
+        If metadata is provided, this checks to see that all key/value pairs
+        have been granted. This is suitable for checking access to a particular
+        folder or other resource on an external provider.
+        """
+
         metadata = metadata or {}
 
         # ensure the grant exists
@@ -521,6 +543,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     #############
 
     def on_delete(self):
+        """When the user deactivates the addon, clear auth for connected nodes.
+        """
         super(AddonOAuthUserSettingsBase, self).on_delete()
         nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
@@ -690,9 +714,11 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     }
 
     # TODO: Validate this field to be sure it matches the provider's short_name
+    # NOTE: Do not set this field directly. Use ``set_auth()``
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
 
+    # NOTE: Do not set this field directly. Use ``set_auth()``
     user_settings = fields.AbstractForeignField()
 
     # The existence of this property is used to determine whether or not
@@ -702,6 +728,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
+        """Instance has an external account and *active* permission to use it"""
         if not (self.user_settings and self.external_account):
             return False
 
@@ -712,6 +739,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     def set_auth(self, external_account, user):
         """Connect the node addon to a user's external account.
+
+        This method also adds the permission to use the account in the user's
+        addon settings.
         """
         # tell the user's addon settings that this node is connected to it
         user_settings = user.get_or_add_addon(self.oauth_provider.short_name)
@@ -729,7 +759,11 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.save()
 
     def clear_auth(self):
-        """Disconnect the node settings from the user settings"""
+        """Disconnect the node settings from the user settings.
+
+        This method does not remove the node's permission in the user's addon
+        settings.
+        """
         self.external_account = None
         self.user_settings = None
         self.save()

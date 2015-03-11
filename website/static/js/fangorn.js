@@ -23,7 +23,7 @@ var tempCounter = 1;
 var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
     'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
     'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
+    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'md', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
     'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
     'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
     'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
@@ -40,14 +40,13 @@ $.extend(EXTENSION_MAP, {
 
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
-var getExtensionIcon = function(name) {
+var getExtensionIconClass = function(name) {
     var extension = name.split('.').pop().toLowerCase();
     var icon = EXTENSION_MAP[extension];
     if (icon) {
-        return ICON_PATH + 'file_extension_' + icon + '.png';
-    } else {
-        return null;
+        return '_' + icon;
     }
+    return null;
 };
 
 /**
@@ -58,7 +57,7 @@ var getExtensionIcon = function(name) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder = m('img', {src: '/static/img/hgrid/fatcowicons/folder_delete.png'}),
+    var privateFolder =  m('div.file-extension._folder_delete', ' '),
         pointerFolder = m('i.icon-link', ' '),
         openFolder  = m('i.icon-folder-open', ' '),
         closedFolder = m('i.icon-folder-close', ' '),
@@ -84,12 +83,11 @@ function _fangornResolveIcon(item) {
         return m('i.fa.' + item.data.icon, ' ');
     }
 
-    icon = getExtensionIcon(item.data.name);
+    icon = getExtensionIconClass(item.data.name);
     if (icon) {
-        return m('img', {src: icon});
-    } else {
-        return m('i.icon-file-alt');
+        return m('div.file-extension', { 'class': icon });
     }
+    return m('i.icon-file-alt');
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
@@ -573,6 +571,18 @@ function _fangornLazyLoadError (item) {
 }
 
 /**
+ * Applies the positionining and initialization of tooltips for file names
+ * @private
+ */
+function reapplyTooltips () {
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    $(".title-text [data-toggle=tooltip]").hover(function(event){
+        var mousePosition = event.pageX - 20;
+        $('.tooltip').css('left', mousePosition + 'px');
+    });
+}
+
+/**
  * Called when new object data has arrived to be loaded.
  * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
@@ -583,7 +593,7 @@ function _fangornLazyLoadOnLoad (tree) {
         inheritFromParent(item, tree);
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
-    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    reapplyTooltips();
 
     if (tree.depth > 1) {
         _fangornOrderFolder.call(this, tree);
@@ -684,7 +694,7 @@ function _fangornTitleColumn(item, col) {
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 window.location = redir.toString() + '/';
             },
-            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'right'
+            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'bottom'
         }, item.data.name);
     }
     return m('span', item.data.name);
@@ -820,7 +830,7 @@ function expandStateLoad(item) {
             }
         }
     }
-    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    reapplyTooltips();
 }
 
 
@@ -912,7 +922,7 @@ tbOptions = {
         return false;
     },
     onscrollcomplete : function(){
-        $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+        reapplyTooltips();
     },
     onselectrow : function(row) {
     },
@@ -987,7 +997,8 @@ Fangorn.DefaultColumns = {
 
 Fangorn.Utils = {
     inheritFromParent: inheritFromParent,
-    resolveconfigOption: resolveconfigOption
+    resolveconfigOption: resolveconfigOption,
+    reapplyTooltips : reapplyTooltips
 };
 
 module.exports = Fangorn;
