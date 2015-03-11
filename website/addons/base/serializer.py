@@ -21,10 +21,6 @@ class AddonSerializer(object):
         pass
 
     @abc.abstractproperty
-    def has_valid_credentials(self):
-        pass
-
-    @abc.abstractproperty
     def user_is_owner(self):
         pass
 
@@ -37,7 +33,6 @@ class AddonSerializer(object):
         result = {
             'nodeHasAuth': self.node_settings.has_auth,
             'userIsOwner': self.user_is_owner,
-            'validCredentials': self.has_valid_credentials,
             'urls': self.serialized_urls,
         }
 
@@ -58,19 +53,6 @@ class AddonSerializer(object):
     @property
     def serialized_user_settings(self):
         return {}
-
-
-class StorageAddonSerializer(AddonSerializer):
-
-    @abc.abstractproperty
-    def serialized_folder(self):
-        pass
-
-    @property
-    def serialized_node_settings(self):
-        result = super(StorageAddonSerializer, self).serialized_node_settings
-        result['folder'] = self.serialized_folder
-        return result
 
 
 class OAuthAddonSerializer(AddonSerializer):
@@ -165,11 +147,6 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
         result = super(CitationsAddonSerializer, self).serialized_node_settings
         result['folder'] = self.node_settings.selected_folder_name
         return result
-
-    @property
-    def has_valid_credentials(self):
-        # TODO
-        return True
 
     @property
     def user_is_owner(self):
