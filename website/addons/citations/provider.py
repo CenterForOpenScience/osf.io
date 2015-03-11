@@ -159,7 +159,7 @@ class CitationsProvider(object):
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
 
         contents = []
-        if list_id is None and not self.is_first_page(page):
+        if list_id is None and self.is_first_page(page):
             contents = [node_addon.root_folder]
         else:
             if show in ('all', 'folders'):
