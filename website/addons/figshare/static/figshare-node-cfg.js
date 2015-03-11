@@ -22,10 +22,10 @@ var $osf = require('osfHelpers');
         $('#figshareDelKey').on('click', function() {
             bootbox.confirm({
                 title: 'Remove access key?',
-                message: 'Are you sure you want to remove your Figshare access key? This will ' +
-                'revoke the ability to modify and upload files to Figshare. If ' +
+                message: 'Are you sure you want to remove your figshare access key? This will ' +
+                'revoke the ability to modify and upload files to figshare. If ' +
                 'the associated repo is private, this will also disable viewing ' +
-                'and downloading files from Figshare.',
+                'and downloading files from figshare.',
                 callback: function(result) {
                     if(result) {
                         $.ajax({
