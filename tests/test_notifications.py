@@ -833,6 +833,14 @@ class TestSendEmails(OsfTestCase):
         mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', commenter=self.project.creator, target_user=self.project.creator)
         assert_false(mock_send_mail.called)
 
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply_on_component(self, mock_send):
+        """ Test that comment replies on components that are not direct replies to the subscriber use the
+            "comments" email template.
+        """
+        user = factories.UserFactory()
+        sent_subscribers = emails.notify(self.node._id, 'comments', target_user=user)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments', target_user=user)
 
     # @mock.patch('website.notifications.emails.notify')
     @mock.patch('website.project.views.comment.notify')
