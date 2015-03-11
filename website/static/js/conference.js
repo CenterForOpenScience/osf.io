@@ -70,7 +70,7 @@ function Meeting(data) {
                     custom : function() {
                         if(item.data.downloadUrl){
                             return [ m('a', { href : item.data.downloadUrl }, [
-                                m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('fa fa-download fa-inverse')),
+                                m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('i.fa.fa-download.fa-inverse')),
 
                             ] ), item.data.download  ];
                         } else {
@@ -83,13 +83,13 @@ function Meeting(data) {
             return default_columns;
         },
         sortButtonSelector : {
-            up : 'i.icon-chevron-up',
-            down : 'i.icon-chevron-down'
+            up : 'i.fa.fa-chevron-up',
+            down : 'i.fa.fa-chevron-down'
         },
         showFilter : true,     // Gives the option to filter by showing the filter box.
         filterStyle : { 'float' : 'right', 'width' : '50%'},
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover'
+        hoverClass : 'fangorn-hover',
     };
     var grid = new Treebeard(tbOptions);
 }

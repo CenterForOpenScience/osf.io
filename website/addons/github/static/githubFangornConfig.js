@@ -75,7 +75,7 @@ function _fangornActionColumn (item, col){
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Upload files',
-                'icon' : 'fa fa-upload-alt',
+                'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : Fangorn.ButtonEvents._uploadEvent
             });
@@ -86,7 +86,7 @@ function _fangornActionColumn (item, col){
                 {
                     'name' : '',
                     'tooltip' : 'Download Repository',
-                    'icon' : 'fa fa-download-alt',
+                    'icon' : 'fa fa-download',
                     'css' : 'fangorn-clickable btn btn-info btn-xs',
                     'onclick' : function(){window.location = item.data.urls.zip;}
                 },
@@ -103,7 +103,7 @@ function _fangornActionColumn (item, col){
         buttons.push({
             'name' : '',
             'tooltip' : 'Download file',
-            'icon' : 'fa fa-download-alt',
+            'icon' : 'fa fa-download',
             'css' : 'btn btn-info btn-xs',
             'onclick' : _downloadEvent
         });
