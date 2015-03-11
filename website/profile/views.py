@@ -86,7 +86,12 @@ def update_user(auth):
 
     # TODO: Expand this to support other user attributes
     if 'timezone' in data:
-        user.timezone = data['timezone']
+        if data['timezone']:
+            user.timezone = data['timezone']
+    if 'locale' in data:
+        if data['locale']:
+            locale = data['locale'].replace('-', '_')
+            user.locale = locale
 
     user.save()
 
@@ -231,6 +236,7 @@ def user_addons(auth, **kwargs):
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_js'] = collect_user_config_js(user.get_addons())
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return ret
 
 @must_be_logged_in

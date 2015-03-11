@@ -93,6 +93,7 @@ def validate_personal_site(value):
 def validate_social(value):
     validate_personal_site(value.get('personal'))
 
+# TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
     return User.load(uid)
@@ -326,6 +327,9 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # timezone for user's locale (e.g. 'America/New_York')
     timezone = fields.StringField(default='Etc/UTC')
+
+    # user language and locale data (e.g. 'en_US')
+    locale = fields.StringField(default='en_US')
 
     _meta = {'optimistic': True}
 
@@ -872,6 +876,9 @@ class User(GuidStoredObject, AddonModelMixin):
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
+            # Skip dashboard node
+            if node.is_dashboard:
+                continue
             node.add_contributor(
                 contributor=self,
                 permissions=node.get_permissions(user),
