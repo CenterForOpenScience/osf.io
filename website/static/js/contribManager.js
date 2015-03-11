@@ -6,6 +6,7 @@ var $osf = require('osfHelpers');
 require('knockout-sortable');
 
 var contribsEqual = function(a, b) {
+    console.log(a.permission);
     return a.id === b.id &&
         a.visible === b.visible &&
         a.permission === b.permission &&
@@ -38,19 +39,16 @@ var setupEditable = function(elm, data) {
     $editable.editable({
         showbuttons: false,
         value: data.permission(),
-        source: permissionList,
+        source: [
+            {value: 'read', text: 'Read'},
+            {value: 'write', text: 'Read + Write'},
+            {value: 'admin', text: 'Administrator'}
+        ],
         success: function(response, value) {
             data.permission(value);
         }
     });
 };
-
-//TODO: move this inside when setupEditable is deleted.
-var permissionList = [
-    {value: 'read', text: 'Read'},
-    {value: 'write', text: 'Read + Write'},
-    {value: 'admin', text: 'Administrator'}
-];
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
@@ -59,7 +57,12 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
-    self.permissionList = permissionList;
+    self.permissionList = [
+        {value: 'read', text: 'Read'},
+        {value: 'write', text: 'Read + Write'},
+        {value: 'admin', text: 'Administrator'}
+    ];
+    self.init = 1;
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
@@ -102,21 +105,23 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.curPermission = ko.observable();
 
     self.initPermission = ko.computed(function() {
-      var permission = self.permission();
-      var index = 0;
-      if (permission === 'read') {
-        index = 0;
-      } else if (permission == 'write') {
-        index = 1;
+      if (self.init === 1) {
+        self.init = 0;
+        var permission = self.permission();
+        var index = 0;
+        if (permission === 'read') {
+          index = 0;
+        } else if (permission == 'write') {
+          index = 1;
+        } else {
+          index = 2;
+        }
+        self.curPermission = self.permissionList[index];
       } else {
-        index = 2;
+        self.permission(self.curPermission().value);
       }
-      self.curPermission = permissionList[index];
-      self.permission = function(){
-        return permissionList[index].value;
-      };
-      console.log(contributor);
-      return permissionList[index];
+      console.log(self.permission())
+      return self.permissionList[index];
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
