@@ -60,7 +60,7 @@ function _fangornResolveIcon(item) {
     var privateFolder =  m('div.file-extension._folder_delete', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
-        closedFolder = m('i.fa.fa-folder-close', ' '),
+        closedFolder = m('i.fa.fa-folder', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         icon;
 
