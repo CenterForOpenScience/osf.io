@@ -50,14 +50,14 @@
 <p>Once you have authorized Amazon Simple Storage then you need to either select a buckets from the dropdown or create one.</p>
 
 <span id="figshare" class="anchor"></span>
-<p class="gs-header">FigShare</p>
-<p><a href="http://figshare.com/">Figshare</a> is an online digital repository that allows researchers to preserve and share their research outputs.</p>
-<p>Currently, the OSF only supports linking FigShare projects to an OSF project-not individual files or articles.</p>
+<p class="gs-header">figshare</p>
+<p><a href="http://figshare.com/">figshare</a> is an online digital repository that allows researchers to preserve and share their research outputs.</p>
+<p>Currently, the OSF only supports linking figshare projects to an OSF project-not individual files or articles.</p>
 
-<p>To link a FigShare project to an OSF project, first visit your profile settings by clicking the gear in the top right of the page. Check "FigShare" under "Select Add-on."</p>
-<p>Next, authenticate FigShare by clicking "Create Access Token" and following the instructions on the FigShare website. Once you have enabled FigShare in your user settings, you won't need to do those previous steps again. </p>
-<p>To associate a FigShare project with an OSF project, visit the project you want to add the FigShare project to. Go to "Settings" in the grey navigation bar. Select the FigShare add-on under "Select Add-ons" and click "OK" on the pop-up. Then, submit your new settings.</p>
-<p>Still in your project settings, now click the authorize button for FigShare under "Configure Add-ons" and then select the project you want to add.</p>
+<p>To link a figshare project to an OSF project, first visit your profile settings by clicking the gear in the top right of the page. Check "figshare" under "Select Add-on."</p>
+<p>Next, authenticate figshare by clicking "Create Access Token" and following the instructions on the figshare website. Once you have enabled figshare in your user settings, you won't need to do those previous steps again. </p>
+<p>To associate a figshare project with an OSF project, visit the project you want to add the figshare project to. Go to "Settings" in the grey navigation bar. Select the figshare add-on under "Select Add-ons" and click "OK" on the pop-up. Then, submit your new settings.</p>
+<p>Still in your project settings, now click the authorize button for figshare under "Configure Add-ons" and then select the project you want to add.</p>
 
 <span id="dataverse" class="anchor"></span>
 <p class="gs-header">Dataverse</p>
