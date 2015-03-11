@@ -752,22 +752,30 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """If removed contributor authorized this addon, remove addon authorization
         from owner.
         """
         if self.has_auth and self.user_settings.owner == removed:
+
+            # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
             self.clear_auth()
-            return (
-                u'Because the {addon} add-on for this project was authenticated '
-                u'by {name}, authentication information has been deleted. You '
-                u'can re-authenticate on the <a href="{url}">Settings</a> page.'
-            ).format(
+            message = 'Because the {addon} add-on for {category} "{title}" was authenticated ' \
+                      'by {user}, authentication information has been deleted.'\
+                .format(
                 addon=self.config.full_name,
-                name=removed.fullname,
-                url=node.web_url_for('node_setting'),
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
             )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += ' You can re-authenticate on the ' \
+                           '<a href="{url}">Settings</a> page.'.format(url=url)
+            #
+            return message
 
     def before_fork_message(self, node, user):
         """Return warning text to display if user auth will be copied to a
