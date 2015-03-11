@@ -155,11 +155,15 @@ var isEmail = function(value) {
 
 /**
   * Get query string arguments as an object.
-  * From getQueryParameters plugin by Nicholas Ortenzio.
-  *
+  * If `str` is falsy, return {}.
+  * Modified from getQueryParameters plugin by Nicholas Ortenzio (MIT Licensed).
   */
 var urlParams = function(str) {
-    return (str || document.location.search).replace(/(^\?)/,'').split('&')
+    var stringToParse = str || document.location.search;
+    if (!stringToParse) {
+        return {};
+    }
+    return (stringToParse).replace(/(^\?)/,'').split('&')
         .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
 };
 

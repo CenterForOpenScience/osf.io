@@ -815,10 +815,24 @@ class TestSendEmails(OsfTestCase):
         assert_false(send.called)
 
     @mock.patch('website.notifications.emails.send')
-    def test_notify_sends_comment_reply_event_if_comment_is_reply(self, mock_send):
+    def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_send):
+        sent_subscribers = emails.notify(self.project._id, 'comments', target_user=self.project.creator)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', target_user=self.project.creator)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_send):
         user = factories.UserFactory()
         sent_subscribers = emails.notify(self.project._id, 'comments', target_user=user)
-        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', target_user=user)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comments', target_user=user)
+
+    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_send, mock_send_mail):
+        user = factories.UserFactory()
+        sent_subscribers = emails.notify(self.project._id, 'comments', commenter=self.project.creator, target_user=self.project.creator)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', commenter=self.project.creator, target_user=self.project.creator)
+        assert_false(mock_send_mail.called)
+
 
     # @mock.patch('website.notifications.emails.notify')
     @mock.patch('website.project.views.comment.notify')
