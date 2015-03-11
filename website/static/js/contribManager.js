@@ -6,7 +6,7 @@ var $osf = require('osfHelpers');
 require('knockout-sortable');
 
 var contribsEqual = function(a, b) {
-    console.log(a.permission);
+    //console.log(a.permission);
     return a.id === b.id &&
         a.visible === b.visible &&
         a.permission === b.permission &&
@@ -57,11 +57,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
-    self.permissionList = [
+    self.permissionList = ko.observableArray([
         {value: 'read', text: 'Read'},
         {value: 'write', text: 'Read + Write'},
         {value: 'admin', text: 'Administrator'}
-    ];
+    ]);
     self.init = 1;
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
@@ -104,7 +104,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.curPermission = ko.observable();
 
-    self.initPermission = ko.computed(function() {
+    ko.computed(function() {
+      current = ko.unwrap(self.curPermissions);
       if (self.init === 1) {
         self.init = 0;
         var permission = self.permission();
@@ -116,12 +117,13 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         } else {
           index = 2;
         }
-        self.curPermission = self.permissionList[index];
-      } else {
-        self.permission(self.curPermission().value);
+        self.curPermission(self.permissionList()[index]);
       }
-      console.log(self.permission())
-      return self.permissionList[index];
+      return self.curPermission;
+    });
+
+    ko.computed(function() {
+      self.permission(self.curPermission().value);
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl

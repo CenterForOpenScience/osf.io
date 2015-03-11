@@ -195,10 +195,11 @@
         <td>
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                  <select data-bind="
+                  <select class="form-control" data-bind="
                       options: permissionList,
                       value: curPermission,
-                      optionsText: 'text'"></select>
+                      optionsText: 'text'">
+                  </select>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>
