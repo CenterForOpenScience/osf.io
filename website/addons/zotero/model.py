@@ -78,7 +78,7 @@ class Zotero(ExternalProvider):
         """
         if list_id == 'ROOT':
             list_id = None
-            
+
         if list_id:
             citations = []
             more = True
