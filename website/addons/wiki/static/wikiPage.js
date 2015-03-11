@@ -217,9 +217,14 @@ function ViewModel(options){
         return versionString;
     });
 
-    // Save initial query params, so that we can preserve them when we mutate
-    // window.history.state
-    self.initialQueryParams = $.param($osf.urlParams());
+    // Save initial query params (except for the "mode" query params, which are handled
+    // by self.currentURL), so that we can preserve them when we mutate window.history.state
+    var initialParams = $osf.urlParams();
+    delete initialParams.view;
+    delete initialParams.edit;
+    delete initialParams.compare;
+    delete initialParams.menu;
+    self.initialQueryParams = $.param(initialParams);
 
     self.currentURL = ko.computed(function() {
         // Do not change URL for incompatible browsers
@@ -263,6 +268,7 @@ function ViewModel(options){
         if (self.menuVis()) {
             url += paramPrefix + 'menu';
         }
+
         window.history.replaceState({}, self.pageTitle, url);
     });
 

@@ -101,7 +101,7 @@
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
                         </div>
-                      </div>                    
+                      </div>
                   </div>
                   <div class="wiki-panel-footer">
                       <div class="row">
@@ -160,7 +160,11 @@
                     </div>
                 </div>
                 <div id="wikiViewRender" class="wiki-panel-body markdown-it-view wiki-panel-body-flex" data-bind="html: renderedView, mathjaxify: renderedView, css: { 'wiki-panel-body-flex': $root.singleVis() !== 'view' }"  >
-
+                    % if wiki_content:
+                        ${wiki_content | n}
+                    % else:
+                        <p><em>No wiki content</em></p>
+                    % endif
                 </div>
               </div>
           </div>
@@ -202,7 +206,7 @@
   </div>
 </div><!-- end wiki -->
 
-<!-- Wiki modals should also be placed here! --> 
+<!-- Wiki modals should also be placed here! -->
   <%include file="wiki/templates/add_wiki_page.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>

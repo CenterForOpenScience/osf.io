@@ -1,4 +1,4 @@
-FIGSHARE = 'FigShare'
+FIGSHARE = 'figshare'
 
 # MODEL MESSAGES :model.py
 BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS = 'Warnings: This OSF {category} is private but ' + FIGSHARE + ' project {project_id} may contain some public files or filesets. '
@@ -30,9 +30,9 @@ FIGSHARE_VIEW_FILE_PRIVATE = 'Since this ' + FIGSHARE + ' file is unpublished we
 FIGSHARE_VIEW_FILE_OVERSIZED = 'This ' + FIGSHARE + ' file is too large to render; <a href="{url}">download file</a> to view it. '
 
 '''
-Publishing this article is an irreversible operation. Once a FigShare article is published it can never be deleted. Proceed with caution.
+Publishing this article is an irreversible operation. Once a figshare article is published it can never be deleted. Proceed with caution.
 <br /><br />
-Also, FigShare requires some additional info before this article can be published: <br />
+Also, figshare requires some additional info before this article can be published: <br />
 <form id='figsharePublishForm' action='${nodeApiUrl}figshare/publish/article/${parent_id}/'>
     <h3><label><Title></label></h3>
     <input name='title' type='text' value='${figshare_title}'>
@@ -45,6 +45,6 @@ Also, FigShare requires some additional info before this article can be publishe
 </form>
 '''
 
-OAUTH_INVALID = 'Your OAuth key for FigSahre is no longer valid. Please re-authenticate. '
+OAUTH_INVALID = 'Your OAuth key for figshare is no longer valid. Please re-authenticate. '
 
 # END MFR MESSAGES
