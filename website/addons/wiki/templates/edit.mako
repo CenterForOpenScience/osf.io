@@ -154,7 +154,11 @@
                     </div>
                 </div>
                 <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
-
+                    % if wiki_content:
+                        ${wiki_content | n}
+                    % else:
+                        <p><em>No wiki content</em></p>
+                    % endif
                 </div>
               </div>
           </div>
