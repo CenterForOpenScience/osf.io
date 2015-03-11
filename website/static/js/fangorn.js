@@ -58,9 +58,9 @@ var getExtensionIconClass = function(name) {
  */
 function _fangornResolveIcon(item) {
     var privateFolder =  m('div.file-extension._folder_delete', ' '),
-        pointerFolder = m('i.icon-link', ' '),
-        openFolder  = m('i.icon-folder-open', ' '),
-        closedFolder = m('i.icon-folder-close', ' '),
+        pointerFolder = m('i.fa.fa-link', ' '),
+        openFolder  = m('i.fa.fa-folder-open', ' '),
+        closedFolder = m('i.fa.fa-folder', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         icon;
 
@@ -87,7 +87,7 @@ function _fangornResolveIcon(item) {
     if (icon) {
         return m('div.file-extension', { 'class': icon });
     }
-    return m('i.icon-file-alt');
+    return m('i.fa.fa-file-text-o');
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
@@ -148,8 +148,8 @@ function inheritFromParent(item, parent, fields) {
  * @private
  */
 function _fangornResolveToggle(item) {
-    var toggleMinus = m('i.icon-minus', ' '),
-        togglePlus = m('i.icon-plus', ' ');
+    var toggleMinus = m('i.fa.fa-minus', ' '),
+        togglePlus = m('i.fa.fa-plus', ' ');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
@@ -630,7 +630,7 @@ function _fangornActionColumn (item, col) {
     if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             name: '',
-            icon: 'icon-upload-alt',
+            icon: 'fa fa-upload',
             'tooltip' : 'Upload files',
 
             css: 'fangorn-clickable btn btn-default btn-xs',
@@ -642,7 +642,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Download file',
-            'icon' : 'icon-download-alt',
+            'icon' : 'fa fa-download',
             'css' : 'btn btn-info btn-xs',
             'onclick' : _downloadEvent
         });
@@ -650,7 +650,7 @@ function _fangornActionColumn (item, col) {
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Delete',
-                'icon' : 'icon-remove',
+                'icon' : 'fa fa-remove',
                 'css' : 'm-l-lg text-danger fg-hover-hide',
                 'style' : 'display:none',
                 'onclick' : _removeEvent
@@ -841,7 +841,7 @@ tbOptions = {
                 return m('p', {
                 }, [
                     m('span', 'To Upload: Drag files into a folder OR click the '),
-                    m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
+                    m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('i.fa.fa-upload')]),
                     m('span', ' below.')
                 ]);
             }
@@ -861,8 +861,8 @@ tbOptions = {
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
     sortButtonSelector : {
-        up : 'i.icon-chevron-up',
-        down : 'i.icon-chevron-down'
+        up : 'i.fa.fa-chevron-up',
+        down : 'i.fa.fa-chevron-down'
     },
     onload : function () {
         var tb = this;
@@ -943,6 +943,12 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
+    },
+    resolveRefreshIcon : function() {
+        return m('i.fa.fa-refresh.fa-spin');
+    },
+    removeIcon : function(){
+        return m('i.fa.fa-times');
     }
 };
 

@@ -15,7 +15,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Upload files',
-            'icon' : 'fa fa-upload-alt',
+            'icon' : 'fa fa-upload',
             'css' : 'fangorn-clickable btn btn-default btn-xs',
             'onclick' : Fangorn.ButtonEvents._uploadEvent
         });
@@ -24,7 +24,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Download file',
-            'icon' : 'fa fa-download-alt',
+            'icon' : 'fa fa-download',
             'css' : 'btn btn-info btn-xs',
             'onclick' : Fangorn.ButtonEvents._downloadEvent
         });
