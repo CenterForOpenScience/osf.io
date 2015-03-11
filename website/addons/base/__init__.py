@@ -764,11 +764,11 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             message = 'Because the {addon} add-on for {category} "{title}" was authenticated ' \
                       'by {user}, authentication information has been deleted.'\
                 .format(
-                addon=self.config.full_name,
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
-            )
+                    addon=self.config.full_name,
+                    category=node.category_display,
+                    title=node.title,
+                    user=removed.fullname
+                )
 
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
