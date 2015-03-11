@@ -153,8 +153,12 @@
                         </div>
                     </div>
                 </div>
-                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
-
+                <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
+                    % if wiki_content:
+                        ${wiki_content | n}
+                    % else:
+                        <p><em>No wiki content</em></p>
+                    % endif
                 </div>
               </div>
           </div>
@@ -166,7 +170,6 @@
                   <div class="row">
                       <div class="col-xs-12">
                           <i class="icon-exchange"> </i>  Compare
-                      
                             <!-- Version Picker -->
                           <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                             <select data-bind="value: compareVersion" id="compareVersionSelect">
