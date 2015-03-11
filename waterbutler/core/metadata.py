@@ -73,7 +73,6 @@ class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
 
     def __init__(self, raw):
         self.raw = raw
-
     def serialized(self):
         return {
             'extra': self.extra,

@@ -1,4 +1,5 @@
 import os
+import http
 import asyncio
 
 from waterbutler.core import utils
@@ -31,7 +32,6 @@ class DropboxPath(utils.WaterButlerPath):
 class DropboxProvider(provider.BaseProvider):
 
     BASE_URL = settings.BASE_URL
-    BASE_CONTENT_URL = settings.BASE_CONTENT_URL
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
@@ -168,19 +168,17 @@ class DropboxProvider(provider.BaseProvider):
         # Dropbox will match a file or folder by name within the requested path
         if path.is_file and data['is_dir']:
             raise exceptions.MetadataError(
-                'Could not retrieve file \'{0}\''.format(path),
-                code=404,
+                "Could not retrieve file '{}'".format(path),
+                code=http.client.NOT_FOUND,
             )
 
         if data.get('is_deleted'):
-            if data['is_dir']:
-                raise exceptions.MetadataError(
-                    'Could not retrieve folder \'{0}\''.format(path),
-                    code=404,
-                )
             raise exceptions.MetadataError(
-                'Could not retrieve file \'{0}\''.format(path),
-                code=404,
+                "Could not retrieve {kind} '{path}'".format(
+                    kind='folder' if data['is_dir'] else 'file',
+                    path=path,
+                ),
+                code=http.client.NOT_FOUND,
             )
 
         if data['is_dir']:
