@@ -89,8 +89,9 @@ def notify(uid, event, **context):
             node_subscribers.extend(subscribed_users)
 
             if subscribed_users and notification_type != 'none':
-                event = 'comment_replies' if context.get('target_user') else event
-                send([u._id for u in subscribed_users], notification_type, uid, event, **context)
+                for user in subscribed_users:
+                    event = 'comment_replies' if context.get('target_user') == user else event
+                    send([user._id], notification_type, uid, event, **context)
 
     return check_parent(uid, event, node_subscribers, **context)
 
