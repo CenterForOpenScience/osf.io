@@ -15,7 +15,7 @@ class FigshareIsDraftError(AddonEnrichmentError):
     def renderable_error(self):
         return '''
         <div class="alert alert-info" role="alert">
-        The file "{name}" is still a draft on Figshare. <br>
-        To view it  on the OSF <a href="http://figshare.com/faqs">publish</a> it on Figshare.
+        The file "{name}" is still a draft on figshare. <br>
+        To view it  on the OSF <a href="http://figshare.com/faqs">publish</a> it on figshare.
         </div>
         '''.format(name=escape_html(self.file_guid.name))
