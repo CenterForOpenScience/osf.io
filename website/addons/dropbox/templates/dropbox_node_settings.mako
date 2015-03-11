@@ -51,7 +51,7 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-addon"><i class="fa-pencil-square-o"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="fa fa-pencil-square-o"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
                                         visible: validCredentials,
                                         click: toggleShare,
