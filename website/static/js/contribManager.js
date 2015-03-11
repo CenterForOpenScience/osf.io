@@ -33,23 +33,6 @@ var sortMap = {
     }
 };
 
-var setupEditable = function(elm, data) {
-    var $elm = $(elm);
-    var $editable = $elm.find('.permission-editable');
-    $editable.editable({
-        showbuttons: false,
-        value: data.permission(),
-        source: [
-            {value: 'read', text: 'Read'},
-            {value: 'write', text: 'Read + Write'},
-            {value: 'admin', text: 'Administrator'}
-        ],
-        success: function(response, value) {
-            data.permission(value);
-        }
-    });
-};
-
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
 var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
@@ -57,16 +40,26 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
-    self.permissionList = ko.observableArray([
+    self.permissionList = [
         {value: 'read', text: 'Read'},
         {value: 'write', text: 'Read + Write'},
         {value: 'admin', text: 'Administrator'}
-    ]);
-    self.init = 1;
+    ];
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
+    // Maps the current permission to permissionList
+    var index = 0;
+    if (self.permission() === 'read') {
+        index = 0;
+    } else if (self.permission() == 'write') {
+        index = 1;
+    } else {
+        index = 2;
+    }
+    //gives the permission to current.
+    self.curPermission = ko.observable(self.permissionList[index]);
     self.deleteStaged = ko.observable(contributor.deleteStaged || false);
     self.removeContributor = 'Remove contributor';
     self.pageOwner = pageOwner;
@@ -101,29 +94,9 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.canRemove = ko.computed(function(){
         return (self.id === pageOwner.id) && !isRegistration;
     });
-
-    self.curPermission = ko.observable();
-
-    ko.computed(function() {
-      current = ko.unwrap(self.curPermissions);
-      if (self.init === 1) {
-        self.init = 0;
-        var permission = self.permission();
-        var index = 0;
-        if (permission === 'read') {
-          index = 0;
-        } else if (permission == 'write') {
-          index = 1;
-        } else {
-          index = 2;
-        }
-        self.curPermission(self.permissionList()[index]);
-      }
-      return self.curPermission;
-    });
-
-    ko.computed(function() {
-      self.permission(self.curPermission().value);
+    //tracks the change in the select permissions
+    self.change = ko.computed(function() {
+        self.permission(self.curPermission().value);
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -320,10 +293,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.init();
     self.initListeners();
-
-    self.setupEditable = function(elm, data) {
-        setupEditable(elm, data);
-    };
 
     self.sort = function() {
         if (self.sortOrder() === 0) {

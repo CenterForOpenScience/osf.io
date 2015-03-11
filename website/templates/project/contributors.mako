@@ -55,7 +55,6 @@
                             data: contributors,
                             as: 'contributor',
                             isEnabled: canEdit,
-                            afterRender: setupEditable,
                             options: {
                               containment: '#manageContributors'
                             }
