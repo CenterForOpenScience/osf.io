@@ -1,6 +1,6 @@
 'use strict';
 
-require('../../css/user-addon-settings.css');
+require('css/user-addon-settings.css');
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -175,16 +175,12 @@ var OAuthAddonSettingsViewModel = function(name, displayName) {
     };
 };
 
-function initAddonSettings() {
-    var elements = $('.addon-oauth');
-    ko.utils.arrayMap(elements, function(elem) {
-        var viewModel = new OAuthAddonSettingsViewModel(
-            $(elem).data('addon-short-name'),
-            $(elem).data('addon-name')
-        );
-        ko.applyBindings(viewModel, elem);
-        viewModel.updateAccounts();
-    });
-}
 
-initAddonSettings();
+$('.addon-oauth').each(function(index, elem) {
+    var viewModel = new OAuthAddonSettingsViewModel(
+        $(elem).data('addon-short-name'),
+        $(elem).data('addon-name')
+    );
+    ko.applyBindings(viewModel, elem);
+    viewModel.updateAccounts();
+});
