@@ -1,3 +1,6 @@
+// These are mostly a simplification of
+// augment.js (https://github.com/javascript/augment, MIT Licensed) and
+// Douglas Crockford's protoypical inheritance pattern.
 /**
  * Usage:
  *
