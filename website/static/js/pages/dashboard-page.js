@@ -8,7 +8,7 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('osfHelpers');
-var projectOrganizer = require('js/projectOrganizer');
+var projectOrganizer = require('js/projectorganizer');
 var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
 
 var LogFeed = require('../logFeed.js');
