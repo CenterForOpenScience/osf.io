@@ -1073,7 +1073,7 @@ class TestSendEmails(OsfTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_timezone(self):
@@ -1085,7 +1085,7 @@ class TestSendEmails(OsfTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_locale(self):
@@ -1097,7 +1097,19 @@ class TestSendEmails(OsfTestCase):
         locale = Locale('en')
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
+
+    def test_localize_timestamp_handles_unicode(self):
+        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        self.user.timezone = 'Europe/Moscow'
+        self.user.locale = 'ru_RU'
+        self.user.save()
+        tz = dates.get_timezone(self.user.timezone)
+        locale = Locale(self.user.locale)
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
+        formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
 
