@@ -1,14 +1,11 @@
-import re
 import asyncio
 
-import tornado.concurrent
 import tornado.ioloop
+import tornado.concurrent
 
 
-def parse_disposition_name(disposition):
-    if disposition:
-        match = re.search(r'filename="(.*?)"', disposition)
-        return match.groups()[0] if match else None
+def make_disposition(filename):
+    return 'attachment;filename="{}"'.format(filename.replace('"', '\\"'))
 
 
 # Running Tornado on asyncio's event loop, including 'yield from' support in request handlers
