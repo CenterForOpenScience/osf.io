@@ -24,6 +24,27 @@ var growl = function(title, message, type) {
 };
 
 /**
+  * Sends a DELETE request containing JSON data.
+  *
+  * Example:
+  *     osf.deleteJSON('/foo', {'email': 'bar@baz.com'})
+  *
+  * @param  {String} url  The url for the request
+  * @param  {Object} data  JSON data to send to the endpoint
+  * @return {jQuery xhr}
+  */
+var deleteJSON = function(url, data) {
+    var ajaxOpts = {
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        dataType: 'json',
+        method: 'delete',
+        url: url
+    };
+    return $.ajax(ajaxOpts);
+};
+
+/**
 * Posts JSON data.
 *
 * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
@@ -348,6 +369,7 @@ var htmlEscape = function(text) {
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
+    deleteJSON: deleteJSON,
     postJSON: postJSON,
     putJSON: putJSON,
     handleJSONError: handleJSONError,

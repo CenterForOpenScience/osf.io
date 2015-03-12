@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import hashlib
 import logging
 import operator
 import httplib as http
@@ -94,6 +95,24 @@ def update_user(auth):
             user.locale = locale
 
     user.save()
+
+    return {}
+
+
+@must_be_logged_in
+def deactivate_user(auth):
+    """Deactivate the user's account"""
+    correct_hash = hashlib.md5(auth.user._id).hexdigest()
+    received_hash = request.get_json().get('verificationHash')
+
+    if correct_hash != received_hash:
+        raise HTTPError(
+            code=http.BAD_REQUEST,
+            data={'message_short': 'Incorrect or missing verification hash'}
+        )
+
+    auth.user.is_disabled = True
+    auth.user.save()
 
     return {}
 
