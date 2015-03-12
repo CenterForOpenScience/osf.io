@@ -57,7 +57,6 @@ def get_bucket_drop_down(user_settings):
 
 def create_osf_user(access_key, secret_key, name):
 
-    import ipdb; ipdb.set_trace()
     connection = IAMConnection(access_key, secret_key)
 
     user_name = u'osf-{0}'.format(ObjectId())

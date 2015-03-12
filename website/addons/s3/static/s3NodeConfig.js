@@ -11,7 +11,7 @@ var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
-var noop = function(){};
+var noop = function() {};
 
 var ViewModel = function(url, selector) {
     var self = this;
@@ -77,7 +77,7 @@ ViewModel.prototype.selectBucket = function() {
     var self = this;
     self.loading(true);
     return $osf.postJSON(
-            self.urls().setBucket, {
+            self.urls().set_bucket, {
                 's3_bucket': self.selectedBucket()
             }
         )
@@ -168,7 +168,7 @@ ViewModel.prototype.importAuth = function() {
 ViewModel.prototype.createCredentials = function() {
     var self = this;
     return $osf.postJSON(
-        self.urls().createAuth, {
+        self.urls().create_auth, {
             secret_key: self.secretKey(),
             access_key: self.accessKey()
         }
@@ -255,16 +255,15 @@ ViewModel.prototype.openCreateBucket = function() {
 ViewModel.prototype.fetchBucketList = function() {
     var self = this;
     return $.ajax({
-            url: self.urls().bucketList,
-            type: 'GET',
-            dataType: 'json'
-        })
-        .done(function(response) {
+        url: self.urls().bucket_list,
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
             self.bucketList(response.buckets);
             self.loadedBucketList(true);
             self.selectedBucket(self.currentBucket());
-        })
-        .fail(function(xhr, status, error) {
+        },
+        error: function(xhr, status, error) {
             var message = 'Could not retrieve list of S3 buckets at' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
@@ -274,7 +273,8 @@ ViewModel.prototype.fetchBucketList = function() {
                 textStatus: status,
                 error: error
             });
-        });
+        }
+    });
 };
 
 ViewModel.prototype.updateFromData = function(settings) {
@@ -293,25 +293,25 @@ ViewModel.prototype.updateFromData = function(settings) {
 ViewModel.prototype.fetchFromServer = function(callback) {
     var self = this;
     return $.ajax({
-        url: self.url,
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            var settings = response.result;
-            self.updateFromData(settings);
-        },
-        error: function(xhr, status, error){
-            var message = 'Could not retrieve S3 settings at ' +
+            url: self.url,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                var settings = response.result;
+                self.updateFromData(settings);
+            },
+            error: function(xhr, status, error) {
+                var message = 'Could not retrieve S3 settings at ' +
                     'this time. Please refresh the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
-            Raven.captureMessage('Could not GET s3 settings', {
-                url: self.url,
-                textStatus: status,
-                error: error
-            });
-        }
-    })
+                self.changeMessage(message, 'text-warning');
+                Raven.captureMessage('Could not GET s3 settings', {
+                    url: self.url,
+                    textStatus: status,
+                    error: error
+                });
+            }
+        })
         .done(callback || noop);
 };
 

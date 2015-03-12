@@ -68,7 +68,6 @@ def s3_authorize_node(auth, node_addon, **kwargs):
     if user_settings is None:
         user.add_addon('s3')
         user_settings = user.get_addon('s3')
-        
     if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
         return {'message': 'Incorrect credentials'}, http.BAD_REQUEST
 
