@@ -293,20 +293,6 @@ class TestCRUD:
         content = yield from result.response.read()
         assert content == body
 
-    # disabled due to figshare not sending https url's when download files form their service.
-    # @async
-    # @pytest.mark.aiohttpretty
-    # def test_project_article_download_accept_url(self, project_provider, list_project_articles, article_metadata, file_metadata):
-    #     article_id = str(list_project_articles[0]['id'])
-    #     file_id = file_metadata['id']
-    #     path = '/{0}/{1}'.format(article_id, file_id)
-    #     list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
-    #     article_metadata_url = project_provider.build_url('articles', article_id)
-    #     aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
-    #     aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
-    #     result = yield from project_provider.download(path, accept_url=True)
-    #     assert result == file_metadata['download_url']
-
     @async
     @pytest.mark.aiohttpretty
     def test_project_article_download_not_found(self, project_provider, list_project_articles, article_metadata, file_metadata):
@@ -351,6 +337,24 @@ class TestCRUD:
         result = yield from project_provider.delete(path)
         assert result is None
         assert aiohttpretty.has_call(method='DELETE', uri=article_delete_url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_project_article_delete_public(self, project_provider, list_project_articles, article_metadata, file_metadata):
+        article_id = str(list_project_articles[0]['id'])
+        file_id = str(file_metadata['id'])
+        path = '/{0}/{1}'.format(article_id, file_id)
+        article_metadata['items'][0]['status'] = 'Public'
+        list_articles_url = project_provider.build_url('projects', project_provider.project_id, 'articles')
+        article_metadata_url = project_provider.build_url('articles', article_id)
+        article_delete_url = project_provider.build_url('articles', article_id, 'files', file_id)
+        aiohttpretty.register_json_uri('GET', list_articles_url, body=list_project_articles)
+        aiohttpretty.register_json_uri('GET', article_metadata_url, body=article_metadata)
+        aiohttpretty.register_uri('DELETE', article_delete_url)
+        with pytest.raises(exceptions.DeleteError) as exc_info:
+            yield from project_provider.delete(path)
+        assert exc_info.value.code == 403
+        assert not aiohttpretty.has_call(method='DELETE', uri=article_delete_url)
 
     @async
     @pytest.mark.aiohttpretty
