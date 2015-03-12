@@ -24,7 +24,7 @@
     "imports-loader": "^0.6.3",
     "jquery.cookie": "^1.4.1",
     "jstimezonedetect": "^1.0.5",
-    "knockout": "^3.3.0",
+    "knockout": "~3.2.0",
     "livedb": "~0.4.8",
     "livedb-mongo": "~0.4.1",
     "markdown-it": "~3.0.5",

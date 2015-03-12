@@ -384,6 +384,28 @@ class TestAddonFileViewHelpers(OsfFileTestCase):
             views.get_or_start_render(file_guid)
         )
 
+    def test_key_error_raises_attr_error_for_name(self):
+        class TestGuidFile(GuidFile):
+            pass
+
+        with assert_raises(AttributeError):
+            TestGuidFile().name
+
+    def test_getattrname_catches(self):
+        class TestGuidFile(GuidFile):
+            pass
+
+        assert_equals(getattr(TestGuidFile(), 'name', 'foo'), 'foo')
+
+    def test_getattrname(self):
+        class TestGuidFile(GuidFile):
+            pass
+
+        guid = TestGuidFile()
+        guid._metadata_cache = {'name': 'test'}
+
+        assert_equals(getattr(guid, 'name', 'foo'), 'test')
+
 
 class TestAddonFileViews(OsfTestCase):
 
