@@ -135,7 +135,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             'trashed = false',
         ]
         if title:
-            queries.append("title = '{}'".format(title.replace('"', '\\"').replace('\'', '\\\'')))
+            queries.append("title = '{}'".format(title.replace("'", "\\'")))
         return ' and '.join(queries)
 
     @asyncio.coroutine
