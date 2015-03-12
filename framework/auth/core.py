@@ -884,6 +884,9 @@ class User(GuidStoredObject, AddonModelMixin):
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
+            # Skip dashboard node
+            if node.is_dashboard:
+                continue
             node.add_contributor(
                 contributor=self,
                 permissions=node.get_permissions(user),
