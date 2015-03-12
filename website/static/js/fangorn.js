@@ -948,7 +948,7 @@ tbOptions = {
         return m('i.fa.fa-refresh.fa-spin');
     },
     removeIcon : function(){
-        return m('i.fa.fa fa-times');
+        return m('i.fa.fa-times-circle');
     }
 };
 
