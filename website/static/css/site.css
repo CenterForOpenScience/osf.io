@@ -1424,6 +1424,7 @@ dl.activity-log dd {
 
 .overflow {
     word-wrap: break-word;
+    word-break: break-all;
     max-width: 100%;
 }
 
