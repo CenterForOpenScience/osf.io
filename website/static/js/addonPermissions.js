@@ -3,10 +3,12 @@
  * on the user settings page. Also handles revoking addon access from these
  * projects/components.
  */
+'use strict';
 
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
+
+var $osf = require('js/osfHelpers');
 
 var AddonPermissionsTable = {
     init: function(addonShortName, addonFullname) {
@@ -24,14 +26,14 @@ var AddonPermissionsTable = {
 
                             success: function (response) {
 
-                                $("#" + addonShortName + "-" + nodeId + "-auth-row").hide();
-                                var numNodes = $("#" + addonShortName + "-auth-table tr:visible").length;
+                                $('#' + addonShortName + '-' + nodeId + '-auth-row').hide();
+                                var numNodes = $('#' + addonShortName + '-auth-table tr:visible').length;
                                 if (numNodes === 1) {
-                                    $("#" + addonShortName + "-auth-table").hide();
+                                    $('#' + addonShortName + '-auth-table').hide();
                                 }
                                 if (numNodes === 4) {
-                                    $("#" + addonShortName + "-more").hide();
-                                    $("#" + addonShortName+ "-less").hide();
+                                    $('#' + addonShortName + '-more').hide();
+                                    $('#' + addonShortName+ '-less').hide();
                                 }
                             },
 
@@ -58,6 +60,4 @@ var AddonPermissionsTable = {
     }
 };
 
-// Needs to be in the global scope because AddonPermissionsTable
-// is initialized in addon_permissions.mako
 module.exports = AddonPermissionsTable;
