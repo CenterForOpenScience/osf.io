@@ -7,7 +7,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
@@ -62,22 +62,20 @@ var ViewModel = function(url, selector) {
     self.allowSelectBucket = ko.pureComputed(function() {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
-
-    self.fetchFromServer();
 };
 
 ViewModel.prototype.toggleSelect = function() {
     this.showSelect(!this.showSelect());
     if (!this.loadedBucketList()) {
-        this.fetchBucketList();
+        return this.fetchBucketList();
     }
 };
 
 ViewModel.prototype.selectBucket = function() {
     var self = this;
     self.loading(true);
-    $osf.postJSON(
-            self.urls().setBucket, {
+    return $osf.postJSON(
+        self.urls().setBucket, {
                 's3_bucket': self.selectedBucket()
             }
         )
@@ -110,7 +108,7 @@ ViewModel.prototype.deauthorizeNode = function() {
         message: 'Are you sure you want to remove this S3 authorization?',
         callback: function(confirm) {
             if (confirm) {
-                $.ajax({
+                return $.ajax({
                     type: 'DELETE',
                     url: self.urls().deauthorize,
                     contentType: 'application/json',
@@ -136,7 +134,7 @@ ViewModel.prototype.deauthorizeNode = function() {
 ViewModel.prototype.importAuth = function() {
     var self = this;
     var onImportConfirm = function() {
-        $osf.postJSON(
+        return $osf.postJSON(
             self.urls().importAuth, {}
         ).done(function(response) {
             self.changeMessage('Successfully imported S3 credentials.', 'text-success');
@@ -159,7 +157,7 @@ ViewModel.prototype.importAuth = function() {
         message: 'Are you sure you want to authorize this project with your S3 credentials?',
         callback: function(confirmed) {
             if (confirmed) {
-                onImportConfirm();
+                return onImportConfirm();
             }
         }
     });
@@ -167,7 +165,7 @@ ViewModel.prototype.importAuth = function() {
 
 ViewModel.prototype.createCredentials = function() {
     var self = this;
-    $osf.postJSON(
+    return $osf.postJSON(
         self.urls().createAuth, {
             secret_key: self.secretKey(),
             access_key: self.accessKey()
@@ -194,7 +192,7 @@ ViewModel.prototype.createBucket = function(bucketName) {
     var self = this;
     self.creating(true);
     bucketName = bucketName.toLowerCase();
-    $osf.postJSON(
+    return $osf.postJSON(
         self.urls().createBucket, {
             bucket_name: bucketName
         }
@@ -254,8 +252,8 @@ ViewModel.prototype.openCreateBucket = function() {
 
 ViewModel.prototype.fetchBucketList = function() {
     var self = this;
-    $.ajax({
-            url: self.urls().bucketList,
+    return $.ajax({
+        url: self.urls().bucketList,
             type: 'GET',
             dataType: 'json'
         })
@@ -292,7 +290,7 @@ ViewModel.prototype.updateFromData = function(settings) {
 
 ViewModel.prototype.fetchFromServer = function() {
     var self = this;
-    var request = $.ajax({
+    return $.ajax({
             url: self.url,
             type: 'GET',
             dataType: 'json'
@@ -332,6 +330,10 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 var S3Config = function(selector, url) {
     var viewModel = new ViewModel(url, selector);
     $osf.applyBindings(viewModel, selector);
+    viewModel.fetchFromServer();
 };
 
-module.exports = S3Config;
+module.exports = {
+    S3Config: S3Config,
+    _S3ConfigViewModel: ViewModel
+};
