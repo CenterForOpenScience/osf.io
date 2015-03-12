@@ -8,6 +8,7 @@ from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import settings
 from waterbutler.providers.dataverse.metadata import DataverseFileMetadata, DataverseDatasetMetadata
+from waterbutler.providers.dataverse import utils as dataverse_utils
 
 
 class DataversePath(utils.WaterButlerPath):
@@ -53,35 +54,47 @@ class DataverseProvider(provider.BaseProvider):
             result = yield from f
             return result
 
-        path = DataversePath(self.doi, path)
-
-        try:
-            yield from self.metadata(str(path))
-        except exceptions.MetadataError:
-            created = True
-        else:
-            created = False
-
+        # zip_stream = streams.ZipStreamReader(stream)
+        stream.__class__ = streams.ZipStreamReader
+        stream.initialize()
+        # import ipdb; ipdb.set_trace()
         dv_headers = {
-            "Content-Disposition": "filename={0}".format(path),
+            "Content-Disposition": "filename=temp.zip",
             "Content-Type": "application/zip",
             "Packaging": "http://purl.org/net/sword/package/SimpleZip",
             "Content-Length": str(stream.size),
         }
-        zip_stream = streams.ZipStreamReader(stream)
-        import pdb; pdb.set_trace()
-        resp = yield from self.make_request(
+        yield from self.make_request(
             'POST',
             provider.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
             headers=dv_headers,
             auth=(self.token, ),
-            data=zip_stream,
-            expects=(200, ),
+            data=stream,
+            expects=(201, ),
             throws=exceptions.UploadError
         )
-        
-        data = yield from resp.json()
-        return DataverseFileMetadata(data, self.folder).serialized(), created
+
+        # Find appropriate version of file from metadata url
+        data = yield from self.metadata()
+        filename, version = dataverse_utils.unpack_filename(path.strip('/'))
+
+        # Reduce to files of the same base name of the same/higher version
+        data = sorted([
+            f for f in data
+            if f['extra']['original'] == filename
+            and f['extra']['version'] >= version
+        ], key=lambda f: f['extra']['version'])
+
+        # Find highest version from original without a gap in between
+        for item in data:
+            if item['extra']['version'] == version:
+                highest_compatible = item
+                version += 1
+            else:
+                break
+
+        return highest_compatible, True
+
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -94,7 +107,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path, **kwargs):
+    def metadata(self, **kwargs):
         url = provider.build_url(settings.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',

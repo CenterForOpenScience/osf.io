@@ -1,5 +1,5 @@
 from waterbutler.core import metadata
-
+from waterbutler.providers.dataverse import utils as dataverse_utils
 
 class BaseDataverseMetadata(metadata.BaseMetadata):
 
@@ -17,6 +17,10 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
         super().__init__(raw)
         self._content = raw['content']
         self._edit_media_uri = self._content['@src']
+
+        original_name, version = dataverse_utils.unpack_filename(self.name)
+        self.original_name = original_name
+        self.version = version
         
     @property
     def content_type(self):
@@ -41,6 +45,13 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
     @property
     def size(self):
         pass
+
+    @property
+    def extra(self):
+        return {
+            'original': self.original_name,
+            'version': self.version
+        }
 
 
 class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadata):

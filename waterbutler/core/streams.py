@@ -4,7 +4,10 @@ import uuid
 import asyncio
 
 from io import BytesIO
+# TODO: Probably switch off of zipstream
+# from zipstream import ZipFile
 from zipfile import ZipFile
+
 
 class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
@@ -89,21 +92,34 @@ class ZipStreamReader(RequestStreamReader):
         
     def __init__(self, request_stream):
         super().__init__(request_stream.request)
-        self._cursor = 0
+        self.sio = None
+        self.zf = None
+        self.zg = None
 
-    @asyncio.coroutine
-    def read(self, size=-1):
-        eof = self.at_eof()
-        data = yield from self._read(size)
-        zf = ZipFile(self._buffer, mode='ab', compression=0)
-        zf.writestr(a)        
-        data = zf.read()
-        if not eof:
-            for reader in self.readers.values():
-                reader.feed_data(data)
-            for writer in self.writers.values():
-                writer.write(data)
-        return data
+    def initialize(self):
+        self.sio = BytesIO()
+        self.zf = ZipFile(self.sio, mode='w')
+        self.zg = self.zip_generator()
+
+    def zip_generator(self):
+        # TODO: This does not work
+        for chunk in self.zf:
+            yield bytes(chunk)
+
+    # @asyncio.coroutine
+    # def read(self, size=-1):
+    #     _next = next
+    #     eof = self.at_eof()
+    #     unzipped_data = yield from self._read(size)
+    #     # import ipdb; ipdb.set_trace()
+    #     self.zf.writestr('temp.txt', unzipped_data)
+    #     data = next(self.zg)
+    #     if not eof:
+    #         for reader in self.readers.values():
+    #             reader.feed_data(data)
+    #         for writer in self.writers.values():
+    #             writer.write(data)
+    #     return data
 
 
 class FileStreamReader(BaseStream):
