@@ -2,6 +2,7 @@ import os
 
 from waterbutler.core import metadata
 
+
 class BaseDataverseMetadata(metadata.BaseMetadata):
 
     def __init__(self, raw):
@@ -11,30 +12,17 @@ class BaseDataverseMetadata(metadata.BaseMetadata):
     def provider(self):
         return 'dataverse'
 
-    # TODO why?
-    @property
-    def kind(self):
-        pass
 
-    def build_path(self, path):
-        return path
-
-
-class DataverseFileMetadata(BaseDataverseMetadata):
+class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
     
     def __init__(self, raw):
         super().__init__(raw)
-        
-        content = raw['content']
-        
-        self._raw = raw
-        self._content_type = content['@type']
-        self._edit_media_uri = raw['id']
-        self._updated = raw['updated']
+        self._content = raw['content']
+        self._edit_media_uri = self.content['@src']
         
     @property
     def content_type(self):
-        return self._content_type
+        return self._content['@type']
 
     @property
     def id(self):
@@ -49,11 +37,15 @@ class DataverseFileMetadata(BaseDataverseMetadata):
         return self.build_path(self.id)
 
     @property
-    def updated(self):
-        return self._updated
+    def modified(self):
+        return self.raw['updated']
+
+    @property
+    def size(self):
+        pass
 
 
-class DataverseDatasetMetadata(BaseDataverseMetadata):
+class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadata):
     
     def __init__(self, raw):
         super().__init__(raw)
