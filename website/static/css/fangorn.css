@@ -35,6 +35,11 @@ color: #F00;
 text-align: center;
 }
 
+.tb-head {
+	background: #EFEFEF;
+  margin: 0 0 5px 0;
+  padding: 7px;
+}
 .tb-td .btn {
 	margin-right: 5px;
 }

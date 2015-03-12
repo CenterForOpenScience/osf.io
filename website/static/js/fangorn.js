@@ -838,7 +838,8 @@ tbOptions = {
         if(window.contextVars.uploadInstruction) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
             if (window.File && window.FileReader) {
-                return m('p', {
+                return m('p', { 
+                    'style' : 'margin: 0; line-height: 34px;'
                 }, [
                     m('span', 'To Upload: Drag files into a folder OR click the '),
                     m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('span.icon-upload-alt')]),
