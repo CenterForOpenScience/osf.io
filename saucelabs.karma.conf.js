@@ -77,6 +77,7 @@ module.exports = function(config) {
       webpackServer:{
           noInfo: true // don't spam the console
       },
+      singleRun: true,
 
       // Avoid DISCONNECTED messages
       // See https://github.com/karma-runner/karma/issues/598

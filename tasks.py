@@ -386,7 +386,7 @@ def karma(single=False, browsers=None):
     # what's specified in karma.conf.js
     if browsers:
         if browsers == 'SauceLabs':
-            cmd = '{} start'.format(karma_bin) + ' saucelabs.karma.conf.js'
+            cmd = '{} start'.format(karma_bin) + ' karma.saucelabs.conf.js'
         else:
             cmd += ' --browsers {}'.format(browsers)
     run(cmd, echo=True)
