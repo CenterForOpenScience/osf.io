@@ -191,7 +191,7 @@
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        <td>
+        <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
                   <select class="form-control" data-bind="
@@ -210,7 +210,7 @@
         </td>
         <td>
             <input
-                    type="checkbox" class="no-sort"
+                    type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
