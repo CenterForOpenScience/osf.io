@@ -85,6 +85,10 @@ text-align: center;
 	padding-left: 2px;
 }
 
+.tb-multimodal-inner {
+	background: #B8ECC0;
+}
+
 /* File icons */
 .file-extension {
 	width: 16px;
