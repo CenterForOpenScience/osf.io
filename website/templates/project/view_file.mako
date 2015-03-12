@@ -1,5 +1,10 @@
 <%inherit file="project/project_base.mako"/>
+
+## Use full page width
+<%def name="container_class()">container-xxl</%def>
+
 <%def name="title()">${file_name | h}</%def>
+
     <div>
         <h2 class="break-word">
             ${file_name | h}
@@ -12,7 +17,11 @@
 
     <div id="file-container" class="row">
 
-      <div class="col-md-8">
+    <div class="col-md-3">
+        <div id="grid"></div>
+    </div>
+    <div class="col-md-6">
+
         <div id="fileRendered" class="mfr mfr-file">
           % if rendered is not None:
             ${rendered}
@@ -22,7 +31,7 @@
         </div>
       </div>
 
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div id="fileRevisions" class="scripted">
           <ol class="breadcrumb">
             <li><a href="{{ node.urls.files }}" data-bind="text: node.title"></a></li>
