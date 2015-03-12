@@ -228,10 +228,9 @@ class TestRemoveContributor(OsfTestCase):
         assert_not_in(self.node.creator, self.node_subscription.email_transactional)
 
     def test_removed_contributor_admin_on_parent_not_removed_from_node_subscription(self):
-        """ Admin on parent project is removed as a contributor on a component. Check
-            that admin is not removed from component subscriptions, as the admin
-            now has read-only access.
-        """
+        # Admin on parent project is removed as a contributor on a component. Check
+        #     that admin is not removed from component subscriptions, as the admin
+        #     now has read-only access.
         assert_in(self.project.creator, self.node_subscription.email_transactional)
         self.node.remove_contributor(self.project.creator, auth=Auth(self.project.creator))
         assert_not_in(self.project.creator, self.node.contributors)
