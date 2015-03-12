@@ -49,6 +49,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
+    //keeps original permission to diff against
+    self.original = self.permission();
     // Maps the current permission to permissionList
     var index = 0;
     if (self.permission() === 'read') {
@@ -97,6 +99,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     //tracks the change in the select permissions
     self.change = ko.computed(function() {
         self.permission(self.curPermission().value);
+        var current_val = self.curPermission().value;
+        if (current_val === self.original) {
+            return true;
+        }
+        return false;
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl

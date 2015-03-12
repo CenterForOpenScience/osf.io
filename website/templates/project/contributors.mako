@@ -197,7 +197,8 @@
                   <select class="form-control" data-bind="
                       options: permissionList,
                       value: curPermission,
-                      optionsText: 'text'">
+                      optionsText: 'text',
+                      style: { font-weight: change() ? 'normal' : 'bold' }">
                   </select>
                 </span>
                 <span data-bind="visible: deleteStaged">
