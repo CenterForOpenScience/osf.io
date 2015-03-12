@@ -54,6 +54,7 @@ var ViewModel = function() {
 
 var SignIn = function(selector) {
     this.viewModel = new ViewModel();
+    $osf.applyBindings(this.viewModel, selector);
 };
 
 module.exports = {
