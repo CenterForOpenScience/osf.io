@@ -213,7 +213,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+        raise exceptions.ProviderError({'message': 'figshare does not support file revisions.'}, code=405)
 
 
 class FigshareArticleProvider(BaseFigshareProvider):
@@ -272,20 +272,32 @@ class FigshareArticleProvider(BaseFigshareProvider):
         return metadata_class(item, **metadata_kwargs).serialized()
 
     @asyncio.coroutine
-    def download(self, path, accept_url=False, **kwargs):
+    def download(self, path, **kwargs):
+        """Download a file. Note: Although Figshare may return a download URL,
+        the `accept_url` parameter is ignored here, since Figshare does not
+        support HTTPS for downloads.
+
+        :param str path: Path to the key you want to download
+        :rtype ResponseWrapper:
+        """
         file_metadata = yield from self.metadata(path)
         download_url = file_metadata['extra']['downloadUrl']
         if download_url is None:
-            raise exceptions.DownloadError('Cannot download private files', code=403)
-        # if accept_url:
-        #     return download_url
-
+            raise exceptions.DownloadError(
+                'Cannot download private files',
+                code=http.client.FORBIDDEN,
+            )
         resp = yield from aiohttp.request('GET', download_url)
-
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
+        metadata = yield from self.metadata(path)
+        if metadata['extra']['status'].lower() != 'drafts':
+            raise exceptions.DeleteError(
+                'Cannot delete public files',
+                code=http.client.FORBIDDEN,
+            )
         figshare_path = FigshareArticlePath(path)
         yield from self.make_request(
             'DELETE',
@@ -331,4 +343,4 @@ class FigshareArticleProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+        raise exceptions.ProviderError({'message': 'figshare does not support file revisions.'}, code=405)
