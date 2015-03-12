@@ -228,10 +228,9 @@ class TestRemoveContributor(OsfTestCase):
         assert_not_in(self.node.creator, self.node_subscription.email_transactional)
 
     def test_removed_contributor_admin_on_parent_not_removed_from_node_subscription(self):
-        """ Admin on parent project is removed as a contributor on a component. Check
-            that admin is not removed from component subscriptions, as the admin
-            now has read-only access.
-        """
+        # Admin on parent project is removed as a contributor on a component. Check
+        #     that admin is not removed from component subscriptions, as the admin
+        #     now has read-only access.
         assert_in(self.project.creator, self.node_subscription.email_transactional)
         self.node.remove_contributor(self.project.creator, auth=Auth(self.project.creator))
         assert_not_in(self.project.creator, self.node.contributors)
@@ -833,6 +832,14 @@ class TestSendEmails(OsfTestCase):
         mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', commenter=self.project.creator, target_user=self.project.creator)
         assert_false(mock_send_mail.called)
 
+    @mock.patch('website.notifications.emails.send')
+    def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply_on_component(self, mock_send):
+        """ Test that comment replies on components that are not direct replies to the subscriber use the
+            "comments" email template.
+        """
+        user = factories.UserFactory()
+        sent_subscribers = emails.notify(self.node._id, 'comments', target_user=user)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments', target_user=user)
 
     # @mock.patch('website.notifications.emails.notify')
     @mock.patch('website.project.views.comment.notify')
@@ -1066,7 +1073,7 @@ class TestSendEmails(OsfTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_timezone(self):
@@ -1078,7 +1085,7 @@ class TestSendEmails(OsfTestCase):
         locale = Locale(self.user.locale)
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_locale(self):
@@ -1090,7 +1097,19 @@ class TestSendEmails(OsfTestCase):
         locale = Locale('en')
         formatted_date = dates.format_date(timestamp, format='full', locale=locale)
         formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
-        formatted_datetime = '{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+        assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
+
+    def test_localize_timestamp_handles_unicode(self):
+        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        self.user.timezone = 'Europe/Moscow'
+        self.user.locale = 'ru_RU'
+        self.user.save()
+        tz = dates.get_timezone(self.user.timezone)
+        locale = Locale(self.user.locale)
+        formatted_date = dates.format_date(timestamp, format='full', locale=locale)
+        formatted_time = dates.format_time(timestamp, format='short', tzinfo=tz, locale=locale)
+        formatted_datetime = u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
 
