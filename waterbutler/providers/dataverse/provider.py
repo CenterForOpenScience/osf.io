@@ -25,7 +25,7 @@ class DataversePath(utils.WaterButlerPath):
 
 class DataverseProvider(provider.BaseProvider):
 
-    UP_BASE_URL = settings.UP_BASE_URL
+    EDIT_MEDIA_BASE_URL = settings.EDIT_MEDIA_BASE_URL
     DOWN_BASE_URL = settings.DOWN_BASE_URL
     METADATA_BASE_URL = settings.METADATA_BASE_URL
 
@@ -72,7 +72,7 @@ class DataverseProvider(provider.BaseProvider):
         import pdb; pdb.set_trace()
         resp = yield from self.make_request(
             'POST',
-            provider.build_url(settings.UP_BASE_URL, self.doi),
+            provider.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
             headers=dv_headers,
             auth=(self.token, ),
             data=zip_stream,
@@ -85,17 +85,11 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        path = DataversePath(path, self.doi)
-
-        # A metadata call will verify the path specified is actually the
-        # requested file or folder.
-        yield from self.metadata(str(path))
-
         yield from self.make_request(
-            'POST',
-            self.build_url('fileops', 'delete'),
-            data={'root': 'auto', 'path': path.path},
-            expects=(200, ),
+            'DELETE',
+            provider.build_url(self.EDIT_MEDIA_BASE_URL, 'file', path),
+            auth=(self.token, ),
+            expects=(204, ),
             throws=exceptions.DeleteError,
         )
 
