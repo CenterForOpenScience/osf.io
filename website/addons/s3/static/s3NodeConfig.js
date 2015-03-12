@@ -11,6 +11,8 @@ var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
+var noop = function(){};
+
 var ViewModel = function(url, selector) {
     var self = this;
 
@@ -288,28 +290,29 @@ ViewModel.prototype.updateFromData = function(settings) {
     }
 };
 
-ViewModel.prototype.fetchFromServer = function() {
+ViewModel.prototype.fetchFromServer = function(callback) {
     var self = this;
     return $.ajax({
-            url: self.url,
-            type: 'GET',
-            dataType: 'json'
-        })
-        .done(function(response) {
+        url: self.url,
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
             var settings = response.result;
             self.updateFromData(settings);
-        })
-        .fail(function(xhr, status, error) {
+        },
+        error: function(xhr, status, error){
             var message = 'Could not retrieve S3 settings at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    'this time. Please refresh the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.changeMessage(message, 'text-warning');
             Raven.captureMessage('Could not GET s3 settings', {
                 url: self.url,
                 textStatus: status,
                 error: error
             });
-        });
+        }
+    })
+        .done(callback || noop);
 };
 
 /** Change the flashed message. */
