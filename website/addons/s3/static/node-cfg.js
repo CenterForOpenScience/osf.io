@@ -1,4 +1,4 @@
-var S3Config = require('./s3NodeSettings');
+var S3NodeConfig = require('./s3NodeSettings').S3NodeConfig;
 
 var url = window.contextVars.node.urls.api + 's3/settings/';
 new S3Config('#s3Scope', url);

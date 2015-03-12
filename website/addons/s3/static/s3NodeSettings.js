@@ -75,7 +75,7 @@ ViewModel.prototype.selectBucket = function() {
     var self = this;
     self.loading(true);
     return $osf.postJSON(
-        self.urls().setBucket, {
+            self.urls().setBucket, {
                 's3_bucket': self.selectedBucket()
             }
         )
@@ -201,7 +201,7 @@ ViewModel.prototype.createBucket = function(bucketName) {
         self.updateFromData(response);
         self.changeMessage('Successfully created bucket \'' + bucketName + '\'. You can now select it from the drop down list.', 'text-success');
         self.bucketList().push(bucketName);
-        if(!self.loadedBucketList()){
+        if (!self.loadedBucketList()) {
             self.fetchBucketList();
         }
         self.selectedBucket(bucketName);
@@ -253,7 +253,7 @@ ViewModel.prototype.openCreateBucket = function() {
 ViewModel.prototype.fetchBucketList = function() {
     var self = this;
     return $.ajax({
-        url: self.urls().bucketList,
+            url: self.urls().bucketList,
             type: 'GET',
             dataType: 'json'
         })
@@ -334,6 +334,6 @@ var S3Config = function(selector, url) {
 };
 
 module.exports = {
-    S3Config: S3Config,
-    _S3ConfigViewModel: ViewModel
+    S3NodeConfig: S3Config,
+    _S3NodeConfigViewModel: ViewModel
 };
