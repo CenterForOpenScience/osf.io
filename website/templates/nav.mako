@@ -73,7 +73,7 @@
                     </a>
                 </li>
                 % elif allow_login:
-                <li data-bind="with: $root.signIn.viewModel">
+                <li data-bind="with: $root.signIn">
                     <form
                             id="signInForm"
                             class="navbar-form navbar-right"
