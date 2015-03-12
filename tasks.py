@@ -374,20 +374,20 @@ def test_all(flake=False):
     karma(single=True, browsers='PhantomJS')
 
 @task
-def karma(single=False, browsers=None):
+def karma(single=False, sauce=False, browsers=None):
     """Run JS tests with Karma. Requires Chrome to be installed."""
     karma_bin = os.path.join(
         HERE, 'node_modules', 'karma', 'bin', 'karma'
     )
     cmd = '{} start'.format(karma_bin)
-    if single:
-        cmd += ' --single-run'
-    # Use browsers if specified on the command-line, otherwise default
-    # what's specified in karma.conf.js
-    if browsers:
-        if browsers == 'SauceLabs':
-            cmd = '{} start'.format(karma_bin) + ' karma.saucelabs.conf.js'
-        else:
+    if sauce:
+        cmd += ' karma.saucelabs.conf.js'
+    else:
+        if single:
+            cmd += ' --single-run'
+        # Use browsers if specified on the command-line, otherwise default
+        # what's specified in karma.conf.js
+        if browsers:
             cmd += ' --browsers {}'.format(browsers)
     run(cmd, echo=True)
 
