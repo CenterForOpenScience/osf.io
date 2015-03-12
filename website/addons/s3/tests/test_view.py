@@ -10,7 +10,7 @@ from tests.factories import ProjectFactory, AuthUserFactory
 
 from website.addons.s3.utils import validate_bucket_name
 
-from utils import create_mock_wrapper, create_mock_key
+from utils import create_mock_wrapper
 
 
 class TestS3ViewsConfig(OsfTestCase):
@@ -105,12 +105,10 @@ class TestS3ViewsConfig(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
-    def test_s3_set_bucket_registered(self, mock_from_addon, mock_wrapped_key):
+    def test_s3_set_bucket_registered(self, mock_from_addon):
 
         mock_from_addon.return_value = create_mock_wrapper()
-        mock_wrapped_key.return_value = create_mock_key()
 
         registration = self.project.register_node(
             None, self.consolidated_auth, '', ''
@@ -213,58 +211,6 @@ class TestS3ViewsConfig(OsfTestCase):
         assert_true('mybucket' in rv.body)
 
 
-class TestS3ViewsHgrid(OsfTestCase):
-
-    def setUp(self):
-
-        super(TestS3ViewsHgrid, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
-        self.project = ProjectFactory(creator=self.user)
-
-        self.project.add_addon('s3', auth=self.consolidated_auth)
-        self.project.creator.add_addon('s3')
-
-        self.user_settings = self.user.get_addon('s3')
-        self.user_settings.access_key = 'We-Will-Rock-You'
-        self.user_settings.secret_key = 'Idontknowanyqueensongs'
-        self.user_settings.save()
-
-        self.node_settings = self.project.get_addon('s3')
-        self.node_settings.bucket = 'Sheer-Heart-Attack'
-        self.node_settings.user_settings = self.project.creator.get_addon('s3')
-
-        self.node_settings.save()
-
-    def test_data_contents_no_user_settings(self):
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = "/api/v1/project/{0}/s3/hgrid/".format(self.project._id)
-        rv = self.app.get(url, expect_errors=True, auth=self.user.auth)
-        assert_equals(rv.status_int, http.BAD_REQUEST)
-
-    def test_dummy_folder(self):
-        url = "/api/v1/project/{0}/s3/hgrid/dummy/".format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth)
-        assert_true(self.node_settings.bucket in rv.body)
-
-    def test_dummy_folder_no_user_settings(self):
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = "/api/v1/project/{0}/s3/hgrid/dummy/".format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth)
-        assert_equals(rv.body, 'null')
-
-    def test_dummy_folder_no_bucket(self):
-        self.node_settings.bucket = None
-        self.node_settings.save()
-        url = "/api/v1/project/{0}/s3/hgrid/dummy/".format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth)
-        assert_equals(rv.body, 'null')
-
-
 class TestCreateBucket(OsfTestCase):
 
     def setUp(self):
@@ -309,9 +255,9 @@ class TestCreateBucket(OsfTestCase):
     def test_create_bucket_pass(self, mock_make):
         mock_make.return_value = True
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
-        rv = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(rv.status_int, http.OK)
+        assert_equals(ret.status_int, http.OK)
 
     @mock.patch('website.addons.s3.views.crud.create_bucket')
     def test_create_bucket_fail(self, mock_make):
@@ -320,9 +266,6 @@ class TestCreateBucket(OsfTestCase):
         mock_make.side_effect = error
 
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
-        rv = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(rv.body, '{"message": "This should work"}')
-#TODO
-#removed access key
-#
+        assert_equals(ret.body, '{"message": "This should work"}')

@@ -47,9 +47,11 @@ var entry = {
     'vendor': [
         // Vendor libraries
         'knockout',
+        'moment',
         'knockout-validation',
         'bootstrap',
         'bootbox',
+        'bootstrap-editable',
         'select2',
         'knockout-punches',
         'dropzone',
@@ -81,6 +83,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
+    extensions: ['', '.es6.js', '.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -90,13 +93,12 @@ var resolve = {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.js'),
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
-        'bootstrap-editable': staticPath('vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.js'),
+        'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
-        'jquery.cookie': staticPath('vendor/bower_components/jquery.cookie/jquery.cookie.js'),
-        'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
+        'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
@@ -110,7 +112,6 @@ var resolve = {
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
-        'c3': staticPath('vendor/bower_components/c3/c3.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
@@ -127,7 +128,7 @@ var resolve = {
         'diffTool': staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js'),
-        'jstz': staticPath('vendor/bower_components/jsTimezoneDetect/index.js')
+        'tests': staticPath('js/tests')
     }
 };
 
@@ -175,6 +176,7 @@ module.exports = {
     output: output,
     module: {
         loaders: [
+            {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},

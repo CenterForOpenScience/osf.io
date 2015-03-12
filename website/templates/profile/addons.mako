@@ -6,7 +6,7 @@
 
 <div class="row">
 
-    <div class="col-md-3">
+    <div class="col-sm-3">
 
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
@@ -19,7 +19,7 @@
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
 
         <div id="selectAddons" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
@@ -44,6 +44,7 @@
                                         <input
                                             type="checkbox"
                                             name="${addon.short_name}"
+                                            class="addon-select"
                                             ${'checked' if (addon.short_name in addons_enabled) else ''}
                                         />
                                         ${addon.full_name}
@@ -86,6 +87,11 @@
     </div>
 
 </div>
+
+
+% for name, capabilities in addon_capabilities.iteritems():
+    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+% endfor
 
 </%def>
 

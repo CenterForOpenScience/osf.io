@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import time
 import mock
 import unittest
-import time
 from nose.tools import *  # noqa
 
 import webtest
@@ -384,6 +384,28 @@ class TestAddonFileViewHelpers(OsfFileTestCase):
             views.get_or_start_render(file_guid)
         )
 
+    def test_key_error_raises_attr_error_for_name(self):
+        class TestGuidFile(GuidFile):
+            pass
+
+        with assert_raises(AttributeError):
+            TestGuidFile().name
+
+    def test_getattrname_catches(self):
+        class TestGuidFile(GuidFile):
+            pass
+
+        assert_equals(getattr(TestGuidFile(), 'name', 'foo'), 'foo')
+
+    def test_getattrname(self):
+        class TestGuidFile(GuidFile):
+            pass
+
+        guid = TestGuidFile()
+        guid._metadata_cache = {'name': 'test'}
+
+        assert_equals(getattr(guid, 'name', 'foo'), 'test')
+
 
 class TestAddonFileViews(OsfTestCase):
 
@@ -391,8 +413,27 @@ class TestAddonFileViews(OsfTestCase):
         super(TestAddonFileViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
+
+        self.user.add_addon('github')
         self.project.add_addon('github', auth=Auth(self.user))
+
+        self.user_addon = self.user.get_addon('github')
         self.node_addon = self.project.get_addon('github')
+        self.oauth = AddonGitHubOauthSettings(
+            github_user_id='denbarell',
+            oauth_access_token='Truthy'
+        )
+
+        self.oauth.save()
+
+        self.user_addon.oauth_settings = self.oauth
+        self.user_addon.save()
+
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.save()
+
+        # self.node_addon.user_settings = 'Truthy'
+        # setattr(self.node_addon, 'has_auth', True)
 
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
@@ -486,6 +527,24 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(guid)
         assert_false(created)
         assert_equals(guid.waterbutler_path, '/' + path)
+
+    def test_unauthorized_addons_raise(self):
+        path = 'cloudfiles'
+        self.node_addon.user_settings = None
+        self.node_addon.save()
+
+        resp = self.app.get(
+            self.project.web_url_for(
+                'addon_view_or_download_file',
+                path=path,
+                provider='github',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 403)
 
     @mock.patch('website.addons.base.views.request')
     @mock.patch('website.addons.base.views.requests.get')
