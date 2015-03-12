@@ -123,7 +123,6 @@ var resolve = {
         'addonHelper': staticPath('js/addonHelper.js'),
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
-        'addonSettings': staticPath('js/addonSettings.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
         'markdown': staticPath('js/markdown.js'),
         'diffTool': staticPath('js/diffTool.js'),

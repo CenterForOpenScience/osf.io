@@ -5,9 +5,9 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('addonPermissions');
-var addonSettings = require('addonSettings');
+var addonSettings = require('js/addonSettings');
 
 ko.punches.enableAll();
 
