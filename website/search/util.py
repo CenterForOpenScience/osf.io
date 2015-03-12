@@ -56,6 +56,6 @@ def calculate_distance_between_colors(color1, color2):
 def get_new_colors(colors_used):
     new_colors = []
     for i in xrange(len(colors_used) - 1):
-        new_colors.append(calculate_distance_between_colors(colors_used[i], colors_used[i+1]))
+        new_colors.append(calculate_distance_between_colors(colors_used[i], colors_used[i + 1]))
 
     return new_colors
