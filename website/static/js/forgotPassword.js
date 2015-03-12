@@ -5,7 +5,6 @@
 
 var ko = require('knockout');
 require('knockout-validation');
-var $ = require('jquery');
 
 var $osf = require('osfHelpers');
 
@@ -18,31 +17,27 @@ var ViewModel = function() {
         email: true
     });
 
-    self.isValid = ko.computed(function() {
-        return self.username.isValid();
-    });
-
     self.submit = function() {
         // Show errors if invalid
-        if (!self.isValid()) {
+        if (!self.username.isValid()) {
             $osf.growl(
                 'Error',
                 'Please enter a correctly formatted email address.',
                 'warning'
             );
-            $('[name="forgot_password-email"]').focus();
             return false; // Stop form submission
         }
         return true; // Allow form to submit normally
-    }
+    };
 };
 
 
-var ForgotPassword = function(selector, applyBindings) {
+var ForgotPassword = function(selector) {
     this.viewModel = new ViewModel();
-    if (applyBindings) {  // Apply bindings if viewmodel is not a child component
-        $osf.applyBindings(this.viewModel, selector);
-    }
+    $osf.applyBindings(this.viewModel, selector);
 };
 
-module.exports = ForgotPassword;  // webpack export
+module.exports = {
+    ForgotPassword: ForgotPassword,
+    ViewModel: ViewModel
+};
