@@ -25,7 +25,6 @@ from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
-from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
 from website.util import web_url_for
 
@@ -261,9 +260,6 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=u2, is_public=True)
         project.add_contributor(u2)
         auth = Auth(user=u2, api_key=key)
-        # A file was added to the project
-        project.add_file(auth=auth, file_name='test.html',
-                        content='123', size=2, content_type='text/html')
         project.save()
         # User watches the project
         watch_config = WatchConfigFactory(node=project)
@@ -274,7 +270,6 @@ class TestAUser(OsfTestCase):
         # Sees logs for the watched project
         assert_in('Watched Projects', res)  # Watched Projects header
         # The log action is in the feed
-        assert_in('added file test.html', res)
         assert_in(project.title, res)
 
     def test_sees_correct_title_home_page(self):
@@ -341,13 +336,24 @@ class TestAUser(OsfTestCase):
         # Can see log event
         assert_in('created', res)
 
-    @unittest.skip('"No wiki content" replaced with javascript handling')
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in('No wiki content', res)
+
+    def test_wiki_content(self):
+        project = ProjectFactory(creator=self.user)
+        wiki_page = 'home'
+        wiki_content = 'Kittens'
+        NodeWikiFactory(user=self.user, node=project, content=wiki_content, page_name=wiki_page)
+        res = self.app.get('/{0}/wiki/{1}/'.format(
+            project._primary_key,
+            wiki_page,
+        ), auth=self.auth)
+        assert_not_in('No wiki content', res)
+        assert_in(wiki_content, res)
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
@@ -368,7 +374,6 @@ class TestAUser(OsfTestCase):
         # Should not see wiki widget (since non-contributor and no content)
         assert_not_in('No wiki content', res)
 
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
         res = self.app.get('/{0}/wiki/{1}/'.format(
@@ -854,15 +859,6 @@ class TestShortUrls(OsfTestCase):
             self._url_to_body(self.component.deep_url),
             self._url_to_body(self.component.url),
         )
-
-    def _mock_rendered_file(self, component, fobj):
-        node_settings = component.get_addon('osffiles')
-        cache_dir = get_cache_path(node_settings)
-        cache_file = get_cache_file(fobj.filename, fobj.latest_version_number(component))
-        cache_file_path = os.path.join(cache_dir, cache_file)
-        ensure_path(cache_dir)
-        with open(cache_file_path, 'w') as fp:
-            fp.write('test content')
 
     def test_wiki_url(self):
         assert_equal(

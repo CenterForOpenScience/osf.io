@@ -51,7 +51,7 @@ WIKI_PAGE_CANNOT_RENAME_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
 ))
 WIKI_PAGE_CONFLICT_ERROR = HTTPError(http.CONFLICT, data=dict(
     message_short='Page conflict',
-    message_long='A wiki page already exists with the given name.'
+    message_long='A wiki page with that name already exists.'
 ))
 WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
     message_short='Not found',
@@ -80,7 +80,7 @@ def _get_wiki_versions(node, name, anonymous=False):
         {
             'version': version.version,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
-            'date': version.date.replace(microsecond=0),
+            'date': version.date.replace(microsecond=0).isoformat(),
         }
         for version in reversed(versions)
     ]

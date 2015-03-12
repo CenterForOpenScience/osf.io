@@ -7,7 +7,7 @@ var ko = require('knockout');
 require('knockout-validation').init({insertMessages: false});  // override default DOM insertions
 var $ = require('jquery');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 var ViewModel = function() {
 
@@ -23,7 +23,7 @@ var ViewModel = function() {
         maxLength: 35
     });
 
-    self.isValid = ko.computed(function() {
+    self.isValid = ko.pureComputed(function() {
         return self.username.isValid() && self.password.isValid();
     });
 
@@ -33,7 +33,7 @@ var ViewModel = function() {
             if (!self.username.isValid()) {
                 $osf.growl(
                     'Error',
-                    'Please enter a correct email address.',
+                    'Please enter a valid email address.',
                     'danger'
                 );
             }
@@ -52,11 +52,12 @@ var ViewModel = function() {
 };
 
 
-var SignIn = function(selector, applyBindings) {
+var SignIn = function(selector) {
     this.viewModel = new ViewModel();
-    if (applyBindings === true) {
-        $osf.applyBindings(this.viewModel, selector);
-    }
+    $osf.applyBindings(this.viewModel, selector);
 };
 
-module.exports = SignIn;
+module.exports = {
+    SignIn: SignIn,
+    ViewModel: ViewModel
+};

@@ -64,7 +64,7 @@ def get_globals():
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
-        'waterbutler_url': settings.WATERBUTLER_URL
+        'waterbutler_url': settings.WATERBUTLER_URL,
     }
 
 
@@ -650,7 +650,6 @@ def make_url_map(app):
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
         Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
-
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(

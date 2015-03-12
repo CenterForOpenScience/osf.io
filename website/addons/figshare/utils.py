@@ -11,13 +11,6 @@ def options_to_hgrid(node, fs_options):
         fid = int(parts[1])
         o['name'] = o['label']
         o[rubeus.KIND] = rubeus.FOLDER
-        o['urls'] = {
-            'fetch': node.api_url_for(
-                'figshare_hgrid_data_contents',
-                type=ftype,
-                id=fid,
-                foldersOnly=1)
-        }
         o['permissions'] = permissions
         o['addon'] = 'figshare'
         o['type'] = ftype

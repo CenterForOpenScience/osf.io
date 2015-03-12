@@ -25,7 +25,6 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent,
 )
-from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
 from website.addons.wiki.exceptions import (
@@ -140,7 +139,6 @@ class TestUserValidation(OsfTestCase):
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
-
 
     def test_validate_schools_bad_end_date(self):
         # end year is < start year
@@ -791,6 +789,13 @@ class TestMergingUsers(OsfTestCase):
         self.master.merge_user(self.dupe)
         self.master.save()
 
+    def test_dashboard_nodes_arent_merged(self):
+        dashnode = ProjectFactory(creator=self.dupe, is_dashboard=True)
+
+        self._merge_dupe()
+
+        assert_not_in(dashnode, self.master.node__contributed)
+
     def test_dupe_is_merged(self):
         self._merge_dupe()
         assert_true(self.dupe.is_merged)
@@ -862,35 +867,6 @@ class TestGUID(OsfTestCase):
                 record_guid.referent,
                 record
             )
-
-
-class TestNodeFile(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeFile, self).setUp()
-        # Create a project with a NodeFile
-        self.node = ProjectFactory()
-        self.node_file = NodeFile(node=self.node, path='foo.py', filename='foo.py', size=128)
-        self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
-        self.node.save()
-
-    def test_url(self):
-        assert_equal(
-            self.node_file.api_url(self.node),
-            '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
-        )
-
-    def test_clean(self):
-        assert_equal(self.node_file.clean_filename, 'foo_py')
-
-    def test_latest_version_number(self):
-        assert_equal(self.node_file.latest_version_number(self.node), 1)
-
-    def test_download_url(self):
-        assert_equal(
-            self.node_file.download_url(self.node),
-            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
-        )
 
 
 class TestApiKey(OsfTestCase):

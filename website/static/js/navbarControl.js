@@ -17,13 +17,11 @@ var NavbarViewModel = function() {
     self.showClose = true;
 
     self.onSearchPage = ko.computed(function() {
-        var path = window.location.pathname;
-        var indexOfSearch = path.indexOf('search');
-        return indexOfSearch === 1;
+        return window.contextVars.search
     });
 
     // signIn viewmodel component
-    self.signIn = new signIn('#signInForm', false);
+    self.signIn = new signIn.ViewModel();
 
     self.toggleSearch = function(){
         if(self.showSearch()){

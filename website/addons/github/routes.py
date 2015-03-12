@@ -124,17 +124,6 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/github/hgrid/',
-                '/project/<pid>/node/<nid>/github/hgrid/',
-                '/project/<pid>/github/hgrid/<path:path>/',
-                '/project/<pid>/node/<nid>/github/hgrid/<path:path>/',
-            ],
-            'get',
-            views.hgrid.github_hgrid_data_contents,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/github/hgrid/root/',
                 '/project/<pid>/node/<nid>/github/hgrid/root/',
             ],

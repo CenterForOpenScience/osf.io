@@ -13,7 +13,7 @@
                             onSelected: onSelectedProject
                         },
                         value: projectInput,
-                        attr: {disabled: hasSelectedProject(),
+                        attr: {readonly: hasSelectedProject(),
                             placeholder: projectPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
@@ -35,7 +35,7 @@
                             clearOn: cleared
                         },
                     value: componentInput,
-                    attr: {disabled: hasSelectedComponent(),
+                    attr: {readonly: hasSelectedComponent(),
                             placeholder: componentPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
@@ -140,7 +140,7 @@
             <br />
 
             <label>Description (Optional)</label>
-            <textarea data-bind="value: description"class="form-control" name="description"
+            <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
                 ></textarea>
             <br />
             <label>Template (Optional)</label>
