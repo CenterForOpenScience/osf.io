@@ -1,8 +1,4 @@
-import os
 import asyncio
-
-import furl
-import itertools
 import xmltodict
 
 from waterbutler.core import utils
@@ -12,20 +8,6 @@ from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import settings
 from waterbutler.providers.dataverse.metadata import DataverseFileMetadata, DataverseDatasetMetadata
-
-
-def build_dataverse_url(base, *segments, **query):
-    url = furl.furl(base)
-    segments = filter(
-        lambda segment: segment,
-        map(
-            lambda segment: segment.strip('/'),
-            itertools.chain(url.path.segments, segments)
-        )
-    )
-    url.path = os.path.join(*segments)
-    url.args = query
-    return url.url
 
 
 class DataversePath(utils.WaterButlerPath):
@@ -56,7 +38,7 @@ class DataverseProvider(provider.BaseProvider):
     def download(self, path, **kwargs):
         resp = yield from self.make_request(
             'GET',
-            os.path.join(self.DOWN_BASE_URL, path),
+            provider.build_url(self.DOWN_BASE_URL, path),
             expects=(200, ),
             throws=exceptions.DownloadError,
             params={'key': self.token},
@@ -90,7 +72,7 @@ class DataverseProvider(provider.BaseProvider):
         import pdb; pdb.set_trace()
         resp = yield from self.make_request(
             'POST',
-            build_dataverse_url(settings.UP_BASE_URL, self.doi),
+            provider.build_url(settings.UP_BASE_URL, self.doi),
             headers=dv_headers,
             auth=(self.token, ),
             data=zip_stream,
@@ -119,7 +101,7 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        url = build_dataverse_url(settings.METADATA_BASE_URL, self.doi)
+        url = provider.build_url(settings.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
             url,
@@ -131,6 +113,3 @@ class DataverseProvider(provider.BaseProvider):
         data = xmltodict.parse(data)
 
         return DataverseDatasetMetadata(data).serialized()
-
-    def _build_content_url(self, *segments, **query):
-        return provider.build_url(settings.BASE_CONTENT_URL, *segments, **query)

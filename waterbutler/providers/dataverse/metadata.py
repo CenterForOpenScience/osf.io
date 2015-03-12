@@ -1,5 +1,3 @@
-import os
-
 from waterbutler.core import metadata
 
 
@@ -18,7 +16,7 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
     def __init__(self, raw):
         super().__init__(raw)
         self._content = raw['content']
-        self._edit_media_uri = self.content['@src']
+        self._edit_media_uri = self._content['@src']
         
     @property
     def content_type(self):
@@ -49,29 +47,23 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
     
     def __init__(self, raw):
         super().__init__(raw)
-
-        feed = raw['feed']
-        
-        self._id = feed['id']
-        self._title = feed['title']['#text']
-        feed = feed.get('entry') or []
-        if isinstance(feed, dict):
-            self._entries = [DataverseFileMetadata(feed)]
+        entry_feed = raw['feed'].get('entry') or []
+        if isinstance(entry_feed, dict):
+            self._entries = [DataverseFileMetadata(entry_feed)]
         else:
-            self._entries = [DataverseFileMetadata(e) for e in feed]
-        
-    @property
-    def title(self):
-        return self._title
+            self._entries = [DataverseFileMetadata(e) for e in entry_feed]
 
-    # TODO remove redundant
+    @property
+    def id(self):
+        return self.raw['feed']['id']
+
     @property
     def name(self):
-        return self.title
+        return self.raw['feed']['title']['#text']
 
     @property
     def path(self):
-        return self.build_path(self._id)
+        return self.build_path(self.id)
 
     @property
     def entries(self):
