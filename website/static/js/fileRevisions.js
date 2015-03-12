@@ -121,9 +121,9 @@ RevisionsViewModel.prototype.fetch = function() {
             // so dont allow downloads and set a fake current version
             $.ajax({
                 method: 'GET',
-                url: self.urls.metadata,
+                url: self.urls.metadata
             }).done(function(resp) {
-                self.editable(resp.data.extra.status === 'drafts');
+                self.editable(resp.data.extra.canDelete);
             }).fail(function(xhr) {
                 self.editable(false);
             });
