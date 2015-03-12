@@ -31,12 +31,19 @@ var projectOrganizer = {};
 
 // Templates load once
 var detailTemplateSource = $('#project-detail-template').html();
-var detailTemplate = Handlebars.compile(detailTemplateSource);
+if(detailTemplateSource) {
+    var detailTemplate = Handlebars.compile(detailTemplateSource);
+}
 
 var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
-var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+if(multiItemDetailTemplateSource) {
+    var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+}
+
 var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-no-action').html();
-var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
+if(multiItemDetailTemplateSourceNoAction) {
+    var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
+}
 
 
 var $detailDiv = $('.project-details');
@@ -991,7 +998,10 @@ function dragLogic(event, items, ui) {
  * @param {Object} folder Folder information as _item object, the drop target
  * @returns {boolean} canDrop Whether drop can happen
  */
-function canAcceptDrop(items, folder) {
+function canAcceptDrop(items, folder, theCopyMode) {
+    if(typeof theCopyMode === 'undefined'){
+        theCopyMode = copyMode;
+    }
     var representativeItem,
         itemParentNodeId,
         hasComponents,
@@ -1029,10 +1039,10 @@ function canAcceptDrop(items, folder) {
     if (hasFolders) {
         canDrop = canDrop && folder.data.permissions.acceptsFolders;
     }
-    if (copyMode === 'move') {
+    if (theCopyMode === 'move') {
         canDrop = canDrop && folder.data.permissions.acceptsMoves && movable;
     }
-    if (copyMode === 'copy') {
+    if (theCopyMode === 'copy') {
         canDrop = canDrop && folder.data.permissions.acceptsCopies && copyable;
     }
     return canDrop;
@@ -1273,4 +1283,8 @@ ProjectOrganizer.prototype = {
     }
 };
 
-module.exports = ProjectOrganizer;
+module.exports = {
+    ProjectOrganizer: ProjectOrganizer,
+    _whichIsContainer: whichIsContainer,
+    _canAcceptDrop: canAcceptDrop
+};
