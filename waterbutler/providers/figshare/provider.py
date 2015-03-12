@@ -213,7 +213,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+        raise exceptions.ProviderError({'message': 'figshare does not support file revisions.'}, code=405)
 
 
 class FigshareArticleProvider(BaseFigshareProvider):
@@ -255,7 +255,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
         )
         return (yield from resp.json())
 
-    def _serialize_item(self, item, parent=None):
+    def _serialize_item(self, item, parent):
         defined_type = item.get('defined_type')
         files = item.get('files')
         if defined_type == 'fileset':
@@ -272,16 +272,22 @@ class FigshareArticleProvider(BaseFigshareProvider):
         return metadata_class(item, **metadata_kwargs).serialized()
 
     @asyncio.coroutine
-    def download(self, path, accept_url=False, **kwargs):
+    def download(self, path, **kwargs):
+        """Download a file. Note: Although Figshare may return a download URL,
+        the `accept_url` parameter is ignored here, since Figshare does not
+        support HTTPS for downloads.
+
+        :param str path: Path to the key you want to download
+        :rtype ResponseWrapper:
+        """
         file_metadata = yield from self.metadata(path)
         download_url = file_metadata['extra']['downloadUrl']
         if download_url is None:
-            raise exceptions.DownloadError('Cannot download private files', code=403)
-        # if accept_url:
-        #     return download_url
-
+            raise exceptions.DownloadError(
+                'Cannot download private files',
+                code=http.client.FORBIDDEN,
+            )
         resp = yield from aiohttp.request('GET', download_url)
-
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
@@ -331,4 +337,4 @@ class FigshareArticleProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Figshare does not support file revisions.'}, code=405)
+        raise exceptions.ProviderError({'message': 'figshare does not support file revisions.'}, code=405)
