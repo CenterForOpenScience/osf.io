@@ -8,9 +8,7 @@ from elasticsearch import Elasticsearch
 
 from website import settings
 
-# from util import source_to_color
 from util import generate_color
-
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
