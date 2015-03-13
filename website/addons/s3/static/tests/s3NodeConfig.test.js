@@ -10,23 +10,23 @@ var faker = require('faker');
 var s3NodeConfigVM = require('../s3NodeConfig')._S3NodeConfigViewModel;
 
 var API_BASE = '/api/v1/12345/s3';
+var SETTINGS_URL = [API_BASE, 'settings', ''].join('/');
+var URLS = {
+    create_bucket: [API_BASE, 'newbucket', ''].join('/'),
+    import_auth: [API_BASE, 'import-auth', ''].join('/'),
+    create_auth: [API_BASE, 'authorize', ''].join('/'),
+    deauthorize: SETTINGS_URL,
+    bucket_list: [API_BASE, 'buckets', ''].join('/'),
+    set_bucket: SETTINGS_URL,
+    settings: '/settings/addons/'
+};
 var makeSettingsEndpoint = function(result, urls) {
-    var settingsUrl = [API_BASE, 'settings', ''].join('/');
     return {
         method: 'GET',
-        url: settingsUrl,
+        url: SETTINGS_URL,
         response: {
             result: $.extend({}, {
-                current_bucket: faker.internet.domainWord(),
-                urls: $.extend({}, {
-                    create_bucket: [API_BASE, 'newbucket', ''].join('/'),
-                    import_auth: [API_BASE, 'import-auth', ''].join('/'),
-                    create_auth: [API_BASE, 'authorize', ''].join('/'),
-                    deauthorize: settingsUrl,
-                    bucket_list: [API_BASE, 'buckets', ''].join('/'),
-                    set_bucket: settingsUrl,
-                    settings: '/settings/addons/'
-                }, urls)
+                urls: $.extend({}, URLS, urls)
             }, result)
         }
     };
@@ -44,14 +44,15 @@ var APITestCase = function(cfg) {
     $.extend(this.expected, cfg.data || {});
 };
 APITestCase.prototype.run = function(test) {
+    var tc = this;
     var server;
-    this.before = function() {
-        server = utils.createServer(sinon, [this.endpoint]);
-    }.bind(this);
-    this.after = function() {
+    tc.before = () => {
+        server = utils.createServer(sinon, [tc.endpoint]);
+    };
+    tc.after = () => {
         server.restore();
-    }.bind(this);
-    test(this);
+    };
+    test(tc);
 };
 var APITestCases = function(test, cases) {
     for (var i = 0; i < cases.length; i++) {
@@ -60,6 +61,13 @@ var APITestCases = function(test, cases) {
 };
 
 describe('s3NodeConfigViewModel', () => {
+    window.contextVars = {
+        node: {
+            urls: {
+                web: '/12345'
+            }
+        }
+    };
     describe('#fetchFromServer', () => {
         new APITestCases(
             function(tc) {
@@ -75,7 +83,7 @@ describe('s3NodeConfigViewModel', () => {
                             assert.equal(vm.ownerName(), expected.owner);
                             assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
                             assert.equal(vm.userHasAuth(), expected.user_has_auth);
-                            assert.equal(vm.currentBucket(), (expected.current_bucket === null) ? 'None' : '');
+                            assert.equal(vm.currentBucket(), (expected.bucket === null) ? 'None' : '');
                             assert.deepEqual(vm.urls(), expected.urls);
                             done();
                         });
@@ -133,13 +141,13 @@ describe('s3NodeConfigViewModel', () => {
                     });
                 });
             }, [{
-                description: 'when Node is unauthorized and User is unauthorized',
+                description: 'Node is unauthorized and User is unauthorized',
                 endpoint: makeSettingsEndpoint({
                     node_has_auth: false,
                     user_has_auth: false,
                     user_is_owner: false,
                     owner: null,
-                    current_bucket: null
+                    bucket: null
                 }),
                 data: {
                     showSettings: false,
@@ -151,13 +159,13 @@ describe('s3NodeConfigViewModel', () => {
                     allowSelectBucket: false
                 }
             }, {
-                description: 'when Node is authorized and User not auth owner',
+                description: 'Node is authorized and User not auth owner',
                 endpoint: makeSettingsEndpoint({
                     node_has_auth: true,
                     user_has_auth: false,
                     user_is_owner: false,
                     owner: faker.name.findName(),
-                    current_bucket: null,
+                    bucket: null,
                     allowSelectBucket: false
                 }),
                 data: {
@@ -170,13 +178,13 @@ describe('s3NodeConfigViewModel', () => {
                     allowSelectBucket: false
                 }
             }, {
-                description: 'when Node is unauthorized and User has auth',
+                description: 'Node is unauthorized and User has auth',
                 endpoint: makeSettingsEndpoint({
                     node_has_auth: false,
                     user_has_auth: true,
                     user_is_owner: true,
                     owner: faker.name.findName(),
-                    current_bucket: null
+                    bucket: null
                 }),
                 data: {
                     showSettings: false,
@@ -188,13 +196,13 @@ describe('s3NodeConfigViewModel', () => {
                     allowSelectBucket: false
                 }
             }, {
-                description: 'when Node is authorized and User is auth owner',
+                description: 'Node is authorized and User is auth owner',
                 endpoint: makeSettingsEndpoint({
                     node_has_auth: true,
                     user_has_auth: true,
                     user_is_owner: true,
                     owner: faker.name.findName(),
-                    current_bucket: null
+                    bucket: null
                 }),
                 data: {
                     showSettings: true,
@@ -209,39 +217,196 @@ describe('s3NodeConfigViewModel', () => {
     });
     describe('#toggleBucket', () => {
         var server;
-        var endpoints = [
-            {
+        var endpoints = [{
                 method: 'GET',
-                url: '/api/v1/12345/s3/buckets/',
+                url: URLS.bucket_list,
                 response: {
                     buckets: new Array(10).map(faker.internet.password)
                 }
-            }, 
-            makeSettingsEndpoint()];        
+            },
+            makeSettingsEndpoint()
+        ];
         before(() => {
-            server = utils.createServer(sinon, endpoints);            
+            server = utils.createServer(sinon, endpoints);
         });
         after(() => {
             server.restore();
         });
-        it('shows the bucket selector when disabled and if buckets aren\'t loaded fetches buckets', (done) => {
+        it('shows the bucket selector when disabled and if buckets aren\'t loaded fetches the list of buckets', (done) => {
             var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
             vm.fetchFromServer(function() {
                 vm.showSelect(false);
                 vm.loadedBucketList(false);
+                var spy = sinon.spy(vm, 'fetchBucketList');
                 var promise = vm.toggleSelect();
-                if(typeof promise === 'undefined'){
-                    assert(false, true);
-                }
-                else{
+                promise.always(function() {
+                    assert.isTrue(vm.showSelect());
+                    assert.isTrue(vm.loadedBucketList());
+                    assert.isAbove(vm.bucketList().length, 0);
+                    assert(spy.calledOnce);
+                    done();
+                });
+            });
+        });
+    });
+    describe('#selectBucket', () => {
+        var postEndpoint = makeSettingsEndpoint();
+        postEndpoint.method = 'POST';
+        postEndpoint.response = postEndpoint.response.result;
+        var bucket = faker.internet.domainWord();
+        postEndpoint.response.bucket = bucket;
+        postEndpoint.response.has_bucket = true;
+        var endpoints = [
+            postEndpoint,
+            makeSettingsEndpoint()
+        ];
+        var server;
+        before(() => {
+            server = utils.createServer(sinon, endpoints);
+        });
+        after(() => {
+            server.restore();
+        });
+        it('submits the selected bucket to the server, and updates data on success', (done) => {
+            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+            vm.fetchFromServer(function() {
+                vm.selectedBucket(bucket);
+                var promise = vm.selectBucket();
+                promise.always(function() {
+                    assert.equal(vm.currentBucket(), bucket);
+                    done();
+                });
+            });
+        });
+    });
+    describe('Authorization/Authentication: ', () => {
+        var deleteEndpoint = makeSettingsEndpoint({
+            user_has_auth: true,
+            user_is_owner: true,
+            node_has_auth: false
+        });
+        deleteEndpoint.method = 'DELETE';
+        deleteEndpoint.response = deleteEndpoint.response.result;
+        var importEndpoint = makeSettingsEndpoint({
+            node_has_auth: true,
+            user_has_auth: true,
+            user_is_owner: true
+        });
+        importEndpoint.method = 'POST';
+        importEndpoint.url = URLS.import_auth;
+        importEndpoint.response = importEndpoint.response.result;
+        var createEndpoint = makeSettingsEndpoint({
+            node_has_auth: true,
+            user_has_auth: true,
+            user_is_owner: true
+        });
+        createEndpoint.method = 'POST';
+        createEndpoint.url = URLS.create_auth;
+        createEndpoint.response = createEndpoint.response.result;
+        var endpoints = [
+            makeSettingsEndpoint({
+                user_has_auth: true,
+                user_is_owner: true,
+                node_has_auth: true
+            }),
+            deleteEndpoint,
+            importEndpoint,
+            createEndpoint
+        ];
+        var server;
+        beforeEach(() => {
+            server = utils.createServer(sinon, endpoints);
+        });
+        afterEach(() => {
+            server.restore();
+        });
+
+        describe('#_deauthorizeNodeConfirm', () => {
+            it('makes a delete request to the server and updates settings on success', (done) => {
+                var expected = endpoints[1].response;
+                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                vm.fetchFromServer(function() {
+                    var promise = vm._deauthorizeNodeConfirm();
                     promise.always(function() {
-                        assert(vm.showSelect(), true);
-                        assert(vm.loadedBucketList(), true);
-                        assert(vm.bucketList().length > 0, true);                    
+                        assert.equal(vm.userHasAuth(), expected.user_has_auth);
+                        assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                        assert.isFalse(vm.showSettings());
+                        assert.isTrue(vm.showImport());
                         done();
                     });
-                }
+                });
             });
+        });
+        describe('#_importAuthConfirm', () => {
+            before(() => {
+                // Prepare settings endpoint for next test
+                endpoints[0].response.result.node_has_auth = false;
+            });
+            it('makes a POST request to import auth and updates settings on success', (done) => {
+                var expected = endpoints[2].response;
+                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                vm.fetchFromServer(function() {
+                    var promise = vm._importAuthConfirm();
+                    promise.always(function() {
+                        assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                        assert.isTrue(vm.showSettings());
+                        done();
+                    });
+                });
+            });
+        });
+        describe('#createCredentials', () => {
+            before(() => {
+                // Prepare settings endpoint for next test
+                endpoints[0].response.result.node_has_auth = false;
+                endpoints[0].response.result.user_has_auth = false;
+                endpoints[0].response.result.user_is_owner = false;
+                // temporarily disable mock server autoRespond
+                server.autoRespond = false;
+            });
+            after(() => {
+                // restore fake server autoRespond
+                server.autoRespond = true;
+            });
+            var expected = endpoints[0].response;
+            it('makes a POST request to create auth and updates settings on success', (done) => {
+                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                vm.fetchFromServer(function() {
+                    var promise = vm.createCredentials();
+                    assert.isTrue(vm.creatingCredentials());
+                    assert.isFalse(vm.userHasAuth());
+                    server.respond();
+                    promise.always(function() {
+                        assert.isFalse(vm.creatingCredentials());
+                        assert.isTrue(vm.userHasAuth());
+                        done();
+                    });
+                });
+            });
+        });
+    });
+    describe('#createBucket', () => {
+        var createEndpoint = makeSettingsEndpoint({
+            buckets: new Array(10).map(faker.internet.password)
+        });
+        createEndpoint.method = 'POST';
+        createEndpoint.url = URLS.create_bucket;
+        createEndpoint.response = createEndpoint.response.result;
+        var endpoints = [
+            makeSettingsEndpoint(),
+            createEndpoint
+        ];
+
+        var server;
+        before(() => {
+            server = utils.createServer(sinon, endpoints);
+        });
+        after(() => {
+            server.restore();
+        });
+
+        it('', () => {
+
         });
     });
 });

@@ -1,5 +1,4 @@
 'use strict';
-
 var ko = require('knockout');
 require('knockout-punches');
 require('knockout-mapping');
@@ -71,6 +70,7 @@ ViewModel.prototype.toggleSelect = function() {
     if (!this.loadedBucketList()) {
         return this.fetchBucketList();
     }
+    return new $.Deferred().promise();
 };
 
 ViewModel.prototype.selectBucket = function() {
@@ -102,64 +102,70 @@ ViewModel.prototype.selectBucket = function() {
         });
 };
 
+ViewModel.prototype._deauthorizeNodeConfirm = function() {
+    var self = this;
+    return $.ajax({
+        type: 'DELETE',
+        url: self.urls().deauthorize,
+        contentType: 'application/json',
+        dataType: 'json'
+    }).done(function(response) {
+        self.updateFromData(response);
+    }).fail(function(xhr, status, error) {
+        var message = 'Could not deauthorize S3 at ' +
+            'this time. Please refresh the page. If the problem persists, email ' +
+            '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not remove S3 authorization.', {
+            url: self.urls().deauthorize,
+            textStatus: status,
+            error: error
+        });
+    });
+};
+
 ViewModel.prototype.deauthorizeNode = function() {
     var self = this;
-
     bootbox.confirm({
         title: 'Deauthorize S3?',
         message: 'Are you sure you want to remove this S3 authorization?',
         callback: function(confirm) {
             if (confirm) {
-                return $.ajax({
-                    type: 'DELETE',
-                    url: self.urls().deauthorize,
-                    contentType: 'application/json',
-                    dataType: 'json'
-                }).done(function(response) {
-                    self.updateFromData(response);
-                }).fail(function(xhr, status, error) {
-                    var message = 'Could not deauthorize S3 at ' +
-                        'this time. Please refresh the page. If the problem persists, email ' +
-                        '<a href="mailto:support@osf.io">support@osf.io</a>.';
-                    self.changeMessage(message, 'text-warning');
-                    Raven.captureMessage('Could not remove S3 authorization.', {
-                        url: self.urls().deauthorize,
-                        textStatus: status,
-                        error: error
-                    });
-                });
+                self._deauthorizeNodeConfirm();
             }
         }
     });
 };
 
+ViewModel.prototype._importAuthConfirm = function() {
+    var self = this;
+    return $osf.postJSON(
+        self.urls().import_auth, {}
+    ).done(function(response) {
+        self.changeMessage('Successfully imported S3 credentials.', 'text-success');
+        self.updateFromData(response);
+    }).fail(function(xhr, status, error) {
+        var message = 'Could not import S3 credentials at ' +
+            'this time. Please refresh the page. If the problem persists, email ' +
+            '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not import S3 credentials', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
+    });
+
+};
+
 ViewModel.prototype.importAuth = function() {
     var self = this;
-    var onImportConfirm = function() {
-        return $osf.postJSON(
-            self.urls().importAuth, {}
-        ).done(function(response) {
-            self.changeMessage('Successfully imported S3 credentials.', 'text-success');
-            self.updateFromData(response);
-        }).fail(function(xhr, status, error) {
-            var message = 'Could not import S3 credentials at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
-            Raven.captureMessage('Could not import S3 credentials', {
-                url: self.urls().importAuth,
-                textStatus: status,
-                error: error
-            });
-        });
-    };
-
     bootbox.confirm({
         title: 'Import S3 credentials?',
         message: 'Are you sure you want to authorize this project with your S3 credentials?',
         callback: function(confirmed) {
             if (confirmed) {
-                return onImportConfirm();
+                return self._importAuthConfirm();
             }
         }
     });
@@ -167,6 +173,7 @@ ViewModel.prototype.importAuth = function() {
 
 ViewModel.prototype.createCredentials = function() {
     var self = this;
+    self.creatingCredentials(true);
     return $osf.postJSON(
         self.urls().create_auth, {
             secret_key: self.secretKey(),
