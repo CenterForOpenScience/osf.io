@@ -273,7 +273,6 @@ function _fangornSending(treebeard, file, xhr, formData) {
     ]);
     treebeard.multimodal.height = 45;
     treebeard.multimodal.update(mithrilContent);
-
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -413,7 +412,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @private
  */
 var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
-function _fangornDropzoneError(treebeard, file, message) {
+function _fangornDropzoneError(tb, file, message) {
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;
@@ -422,7 +421,7 @@ function _fangornDropzoneError(treebeard, file, message) {
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
-    var parent = file.treebeardParent || treebeard.dropzoneItemCache;
+    var parent = file.treebeardParent || tb.dropzoneItemCache;
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
     var item;
     var child;
@@ -434,14 +433,17 @@ function _fangornDropzoneError(treebeard, file, message) {
         }
         if (child.data.tmpID === file.tmpID) {
             item = child;
-            treebeard.deleteNode(parent.id, item.id);
+            tb.deleteNode(parent.id, item.id);
         }
     }
-    if (!treebeard.uploadsAreCancelled){
+    if (!tb.uploadsAreCancelled){
         $osf.growl('Error', msgText);
     }
-    treebeard.options.uploadInProgress = false;
-    treebeard.multimodal.dismiss();
+    tb.options.uploadInProgress = false;
+    tb.multimodal.dismiss();
+    if (tb.dropzone.getUploadingFiles().length === 0 && tb.dropzone.getQueuedFiles().length === 0) {
+        tb.uploadsAreCancelled = false;
+      }
 
 }
 
