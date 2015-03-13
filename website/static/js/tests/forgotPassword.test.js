@@ -3,7 +3,7 @@
 var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 
-var forgotPassword = require('../forgotPassword');
+var forgotPassword = require('js/forgotPassword');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});

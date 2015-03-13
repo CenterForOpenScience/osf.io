@@ -1,12 +1,12 @@
 /*
  * forgot password view model
  */
-'use srict';
+'use strict';
 
 var ko = require('knockout');
 require('knockout-validation');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 var ViewModel = function() {
 
