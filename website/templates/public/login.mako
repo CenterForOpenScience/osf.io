@@ -1,41 +1,49 @@
 <%inherit file="base.mako"/>
 
-<%def name="title()">Sign up or Log in</%def>
+<%def name="title()">Sign In</%def>
 
 <%def name="content()">
-    <div class="row">
-        <div class="col-sm-4 col-sm-offset-4" data-bind="with: LogInForm">
-            <h2>Sign-In</h2>
-            <form
-                    id="logInForm"
-                    class="form-stacked"
-                    data-bind="submit: submit"
-                    % if next_url:
-                        action="${ web_url_for('auth_login') }?next=${ next_url }"
-                    % else:
-                        action="${ web_url_for('auth_login') }"
-                    % endif
-                    method="POST"
-                    >
-                <fieldset>
-                    <div class="form-group">
-                        <label for="username">Email Address</label>
-                        <span class="help-block"></span>
-                        <input type="text" class="form-control" data-bind="value: username" name="username" placeholder="Username" autofocus>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <span class="help-block"></span>
-                        <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Password">
-                    </div>
-                    <div>
-                      <button type="submit" class="btn btn-submit btn-primary m-r-sm">Sign In</button>
-                      <a href="${web_url_for('_forgot_password')}">Forgot Password?</a>
-                    </div>
-                </fieldset>
-            </form>
+    ## TODO refactor base.mako to inherit from another, higher level
+    ## template with just the assets to avoid this css magic /hrybacki
+    <style>
+          .footer, .copyright, .osf-nav-wrapper  {
+            display: none;
+          }
+    </style>
+
+    <form
+            id="logInForm"
+            class="form col-sm-4 col-sm-offset-4"
+            % if next_url:
+                action="${ web_url_for('auth_login') }?next=${ next_url }"
+            % else:
+                action="${ web_url_for('auth_login') }"
+            % endif
+            method="POST"
+            data-bind="submit: submit"
+
+        >
+            <div class="panel panel-primary">
+            <div class="panel-heading">Sign In</div>
+                <div class="panel-body">
+                    <label for="username">Email Address</label>
+                    <input type="email" class="form-control" data-bind="value: username" name="username" placeholder="Enter your username" autofocus/>
+                    <label class="m-t-md" for="password">Password</label>
+                    <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Enter your password">
+
+                    <fieldset class="pull-right">
+                        <button type="submit" class="btn btn-success m-t-md">Sign In</button>
+
+                    </fieldset>
+                </div>
         </div>
-    </div>
+        <hr class="m-t-lg m-b-sm"/>
+        <h6 class="text-center text-muted text-300">
+            <a href="${ web_url_for('index') }">Back to OSF</a>
+            <a class="m-l-xl" href="${ web_url_for('_forgot_password') }">Forgot Your Password?</a>
+        </h6>
+    </form>
+
 </%def>
 
 <%def name="javascript_bottom()">
