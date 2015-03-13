@@ -261,6 +261,19 @@ function _fangornSending(treebeard, file, xhr, formData) {
     xhr.send = function() {
         _send.call(xhr, file);
     };
+    var mithrilContent = m('div', [
+        m('span', 'Uploads in progress'),
+        m('.btn.btn-xs.m-l-sm.btn-warning', {
+            'onclick' : function() { 
+                treebeard.uploadsAreCancelled = true;
+                treebeard.dropzone.removeAllFiles(true); 
+
+            } 
+        }, 'Cancel All Uploads')
+    ]);
+    treebeard.multimodal.height = 45;
+    treebeard.multimodal.update(mithrilContent);
+
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -388,6 +401,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
+    treebeard.multimodal.dismiss();
     treebeard.redraw();
 }
 
@@ -423,8 +437,12 @@ function _fangornDropzoneError(treebeard, file, message) {
             treebeard.deleteNode(parent.id, item.id);
         }
     }
-    $osf.growl('Error', msgText);
+    if (!treebeard.uploadsAreCancelled){
+        $osf.growl('Error', msgText);
+    }
     treebeard.options.uploadInProgress = false;
+    treebeard.multimodal.dismiss();
+
 }
 
 /**
@@ -636,7 +654,23 @@ function _fangornActionColumn (item, col) {
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
         });
+        buttons.push({
+            name: '',
+            icon: 'icon-pencil',
+            'tooltip' : 'Multimodal',
+
+            css: 'fangorn-clickable btn btn-default btn-xs',
+            onclick: function(event, item){
+                this.multimodal.css = ''
+                var mithrilContent = m('div', [
+                    m('b.break-word', 'This:' + item.data.name+ '"?'),
+                    m('span', 'This action is irreversible.')
+                ]);
+                this.multimodal.update(mithrilContent);
+            }
+        });
     }
+
     //Download button if this is an item
     if (item.kind === 'file') {
         buttons.push({
