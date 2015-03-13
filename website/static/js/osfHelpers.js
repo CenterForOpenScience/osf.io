@@ -4,6 +4,7 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var bootbox = require('bootbox');
 var iconmap = require('js/iconmap');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -597,6 +598,126 @@ function humanFileSize(bytes, si) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
+
+/**
+ * Determines if an object is a function
+  * @param {object} obj
+ */
+var isFunction = function (obj) {
+    return (typeof(obj) === 'function' && typeof(obj.call) === 'function' && typeof(obj.apply) === 'function');
+};
+
+/**
+*  returns a random name from this list to use as a confirmation string
+*/
+var _confirmationString = function() {
+    // TODO: Generate a random string here instead of using pre-set values
+    //       per Jeff, use ~10 characters
+    var scientists = [
+        'Anning',
+        'Banneker',
+        'Cannon',
+        'Carver',
+        'Chappelle',
+        'Curie',
+        'Divine',
+        'Emeagwali',
+        'Fahlberg',
+        'Forssmann',
+        'Franklin',
+        'Herschel',
+        'Hodgkin',
+        'Hopper',
+        'Horowitz',
+        'Jemison',
+        'Julian',
+        'Kovalevsky',
+        'Lamarr',
+        'Lavoisier',
+        'Lovelace',
+        'Massie',
+        'McClintock',
+        'Meitner',
+        'Mitchell',
+        'Morgan',
+        'Odum',
+        'Pasteur',
+        'Pauling',
+        'Payne',
+        'Pearce',
+        'Pollack',
+        'Rillieux',
+        'Sanger',
+        'Somerville',
+        'Tesla',
+        'Tyson',
+        'Turing'
+    ];
+
+    return scientists[Math.floor(Math.random() * scientists.length)];
+};
+
+/**
+  * Confirm a dangerous action by requiring the user to enter specific text
+  *
+  * This is an abstraction over bootbox, and passes most options through to
+  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * if the user correctly confirms the action.
+  *
+  * @param  {Object} options
+  */
+var confirmDangerousAction = function (options) {
+    // TODO: Refactor this to be more interactive - use a ten-key-like interface
+    //       and display one character at a time for the user to enter. Once
+    //       they enter that character, display another. This will require more
+    //       sustained attention and will prevent the user from copy/pasting a
+    //       random string.
+
+    if (typeof(options) === 'undefined') {
+        options = {};
+    }
+
+    // set default values
+    if (!options.title) { options.title = 'Confirm Action'; }
+    if (!options.message) { options.message = ''; }
+    if (!options.confirmText) { options.confirmText = _confirmationString(); }
+
+    // build end of message, that tells the user to enter text.
+    options.message += '<p>Type the following to continue: <strong>';
+    options.message += options.confirmText;
+    options.message += '</strong></p>';
+    options.message += '<input id="bbConfirmText" class="form-control">';
+
+    // keep the users' callback for re-use; we'll pass ours to bootbox
+    var callback = options.callback;
+    delete options.callback;
+
+    // this is our callback
+    var handleConfirmAttempt = function () {
+        var verified = ($('#bbConfirmText').val() === options.confirmText);
+
+        if (verified) {
+            callback();
+        } else {
+            growl('Verification failed', 'Strings did not match');
+        }
+    };
+
+    options.buttons = {
+        cancel: {
+            label: 'Cancel',
+            className: 'btn-default'
+        },
+        success: {
+            label: 'Confirm',
+            className: 'btn-success',
+            callback: handleConfirmAttempt
+        }
+    };
+
+    bootbox.dialog(options);
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -621,5 +742,6 @@ module.exports = window.$.osf = {
     htmlEscape: htmlEscape,
     htmlDecode: htmlDecode,
     tableResize: tableResize,
-    humanFileSize: humanFileSize
+    humanFileSize: humanFileSize,
+    confirmDangerousAction: confirmDangerousAction
 };
