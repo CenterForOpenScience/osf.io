@@ -4,12 +4,10 @@ from nose.tools import *  # noqa
 
 import responses
 import mock
-import unittest
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
-import json
 import urlparse
 
 from website.addons.zotero.tests.factories import (
@@ -106,21 +104,6 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['folders'])
         assert_true(res.json['urls']['importAuth'])
         assert_true(res.json['urls']['settings'])
-
-    def test_user_folders(self):
-        # JSON: a list of user's Zotero folders"
-        res = self.app.get(
-            api_url_for('list_zotero_accounts_user'),
-            auth=self.user.auth,
-        )
-        expected = {
-            'accounts': [
-                serialize_account(each)
-                for each in self.user.external_accounts
-                if each.provider == 'zotero'
-            ]
-        }
-        assert_equal(res.json, expected)
 
     def test_set_auth(self):
 
