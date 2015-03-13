@@ -40,7 +40,7 @@ var entry = {
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
-    'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
+    'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     // Commons chunk
