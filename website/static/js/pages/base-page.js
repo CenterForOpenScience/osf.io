@@ -77,7 +77,6 @@ $(document).on('click', '.project-toggle', function() {
     return false;
 });
 
-var NO_FOOTER_PATHS = ['/', '/login/', '/getting-started/', '/register/', '/forgotpassword/', '/share/'];
 $(function() {
     if(/MSIE 9.0/.test(window.navigator.userAgent) ||
        /MSIE 8.0/.test(window.navigator.userAgent) ||
@@ -85,8 +84,10 @@ $(function() {
        /MSIE 6.0/.test(window.navigator.userAgent)) {
         $('.placeholder-replace').show();
     }
-    if ($(sliderSelector).length > 0 &&
-            $.inArray(window.location.pathname, NO_FOOTER_PATHS) === -1) {
+    if (
+        $(sliderSelector).length > 0 &&
+        window.contextVars.node
+    ) {
         $osf.applyBindings(new SlideInViewModel(), sliderSelector);
     }
     new NavbarControl('.osf-nav-wrapper');

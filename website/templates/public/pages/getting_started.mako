@@ -43,7 +43,7 @@
                             <li><a href="#dropbox"><i class="icon-chevron-right"></i> Dropbox</a></li>
                             <li><a href="#github"><i class="icon-chevron-right"></i> GitHub</a></li>
                             <li><a href="#amazon"><i class="icon-chevron-right"></i> Amazon S3</a></li>
-                            <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
+                            <li><a href="#figshare"><i class="icon-chevron-right"></i> figshare</a></li>
                             <li><a href="#dataverse"><i class="icon-chevron-right"></i> Dataverse</a></li>
                             <li><a href="#twofactor"><i class="icon-chevron-right"></i> Two-factor Authentication</a></li>
                         </ul>

@@ -1,7 +1,7 @@
 <div id="figshareScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
-    	Figshare
+    	figshare
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
@@ -79,7 +79,7 @@
                                        value="Submit" />
                             </div>
                             <h4 data-bind="if: selected" class="figshare-confirm-dlg">
-                                Connect Figshare {{selectedFolderType}} &ldquo;{{ selectedFolderName }}&rdquo;?
+                                Connect figshare {{selectedFolderType}} &ldquo;{{ selectedFolderName }}&rdquo;?
                             </h4>
                         </form>
                     </div><!-- end .figshare-confirm-selection -->
