@@ -7,14 +7,14 @@
             <li data-toggle="tooltip" title="New" data-placement="right" data-container="body">
                 <a id="openNewWiki" href="#" data-toggle="modal" data-target="#newWiki">
                     <span class="wiki-nav-closed">
-                        <i class="icon-plus-sign"></i>
+                        <i class="fa fa-plus-circle"></i>
                     </span> 
                 </a>
             </li>
                 % if wiki_id and wiki_name != 'home':
                 <li data-toggle="tooltip" title="Delete" data-placement="right" data-container="body">
                     <a href="#" data-toggle="modal" data-target="#deleteWiki">
-                    <span class="wiki-nav-closed"><i class="icon icon-trash text-danger"> </i></span>
+                    <span class="wiki-nav-closed"><i class="fa-trash-o text-danger"> </i></span>
                     </a>
                 </li>
                 % endif
