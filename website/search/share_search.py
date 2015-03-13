@@ -37,6 +37,21 @@ def count(query):
     }
 
 
+def providers():
+
+    provider_map = share_es.search(index='share_providers', doc_type=None, body={
+        'query': {
+            'match_all': {}
+        },
+        'size': 10000
+    })
+
+    return {
+        'providerMap': {
+            hit['_source']['short_name']: hit['_source'] for hit in provider_map['hits']['hits']
+        }
+    }
+
 def stats(query=None):
     query = query or {"query": {"match_all": {}}}
     three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
