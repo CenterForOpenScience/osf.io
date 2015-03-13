@@ -1,6 +1,7 @@
 /**
  *
  */
+var fs = require('fs');
 
 var commonConfig = require('./karma.common.conf.js');
 var assign = require('object-assign');
@@ -41,6 +42,17 @@ var browsers = {
     version: '9'
   }
 };
+
+// Use ENV vars on Travis and sauce.json locally to get credentials
+  if (!process.env.SAUCE_USERNAME) {
+    if (!fs.existsSync('local-sauce.json')) {
+      console.log('Create a sauce.json with your credentials based on the sauce-sample.json file.');
+      process.exit(1);
+    } else {
+      process.env.SAUCE_USERNAME = require('./local-sauce').username;
+      process.env.SAUCE_ACCESS_KEY = require('./local-sauce').accessKey;
+    }
+  }
 
 module.exports = function(config) {
   config.set(assign(commonConfig, {
