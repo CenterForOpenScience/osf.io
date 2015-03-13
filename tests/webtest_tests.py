@@ -73,7 +73,7 @@ class TestAUser(OsfTestCase):
 
     def _login(self, username, password):
         '''Log in a user via at the login page.'''
-        res = self.app.get('/account/').maybe_follow()
+        res = self.app.get(web_url_for('auth_login')).maybe_follow()
         # Fills out login info
         form = res.forms['logInForm']  # Get the form from its ID
         form['username'] = username
@@ -615,7 +615,7 @@ class TestMergingAccounts(OsfTestCase):
 
     def _login(self, username, password):
         '''Log in a user via at the login page.'''
-        res = self.app.get('/account/').maybe_follow()
+        res = self.app.get(web_url_for('auth_login')).maybe_follow()
         # Fills out login info
         form = res.forms['logInForm']
         form['username'] = self.user.username
@@ -1072,7 +1072,7 @@ class TestConfirmingEmail(OsfTestCase):
         self.user.set_password('bicycle')
         self.user.save()
         # Goes to log in page
-        res = self.app.get('/account/').maybe_follow()
+        res = self.app.get(web_url_for('auth_login')).maybe_follow()
         # Fills the form with correct password
         form = res.forms['logInForm']
         form['username'] = self.user.username
