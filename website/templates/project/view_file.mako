@@ -18,7 +18,15 @@
     <div id="file-container" class="row">
 
     <div class="col-md-3">
-        <div id="grid"></div>
+        <div class="wiki-panel wiki-panel-flex hidden-xs">
+            <div class="wiki-panel-header wiki-panel-header-flex"><i class="icon icon-file"></i>  Project Files
+                <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
+            </div>
+            <div class="wiki-panel-body wiki-panel-body-flex file-page">
+                <div id="grid"></div>
+            </div>
+        </div>
+
     </div>
     <div class="col-md-6">
 
