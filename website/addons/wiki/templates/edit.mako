@@ -19,11 +19,11 @@
   <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="wiki-panel hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu
+        <div class="wiki-panel wiki-panel-flex hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
+            <div class="wiki-panel-header wiki-panel-header-flex"> <i class="icon-list"> </i>  Menu
                 <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
             </div>
-            <div class="wiki-panel-body">
+            <div class="wiki-panel-body wiki-panel-body-flex">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
@@ -101,18 +101,18 @@
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
                         </div>
-                      </div>                    
+                      </div>
                   </div>
                   <div class="wiki-panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
                               <button id="revert-button"
-                                      class="btn btn-success"
+                                      class="btn btn-danger"
                                       data-bind="click: revertChanges"
                                       >Revert</button>
                               <input type="submit"
-                                     class="btn btn-primary"
+                                     class="btn btn-success"
                                      value="Save"
                                      onclick=$(window).off('beforeunload')>
                           </div>
@@ -130,8 +130,8 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="wiki-panel">
-                <div class="wiki-panel-header">
+              <div class="wiki-panel wiki-panel-flex">
+                <div class="wiki-panel-header wiki-panel-header-flex">
                     <div class="row">
                         <div class="col-sm-6">
                             <i class="icon-eye-open"> </i>  View
@@ -153,23 +153,25 @@
                         </div>
                     </div>
                 </div>
-                <div id = "wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view">
-
+                <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
+                    % if wiki_content:
+                        ${wiki_content | n}
+                    % else:
+                        <p><em>No wiki content</em></p>
+                    % endif
                 </div>
               </div>
           </div>
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel">
-              <div class="wiki-panel-header">
+            <div class="wiki-panel wiki-panel-flex">
+              <div class="wiki-panel-header wiki-panel-header-flex">
                   <div class="row">
-                      <div class="col-sm-6">
+                      <div class="col-xs-12">
                           <i class="icon-exchange"> </i>  Compare
-                      </div>
-                      <div class="col-sm-6">
                             <!-- Version Picker -->
-                          <span class="compare-version-text pull-right"><span data-bind="text: viewVersionDisplay"></span> to
+                          <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                             <select data-bind="value: compareVersion" id="compareVersionSelect">
                                 <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                 % if len(versions) > 1:
@@ -182,7 +184,7 @@
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view">
+              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view wiki-panel-body-flex">
 
               </div>
             </div>
@@ -193,7 +195,7 @@
   </div>
 </div><!-- end wiki -->
 
-<!-- Wiki modals should also be placed here! --> 
+<!-- Wiki modals should also be placed here! -->
   <%include file="wiki/templates/add_wiki_page.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>

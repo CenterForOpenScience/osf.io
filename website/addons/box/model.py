@@ -100,7 +100,7 @@ class BoxOAuthSettings(StoredObject):
         if self._is_loaded:
             try:
                 self.reload()
-            except AttributeError:
+            except:
                 pass
         if self._needs_refresh() or force:
             token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
@@ -329,6 +329,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
+        try:
+            full_path = metadata['extra']['fullPath']
+        except KeyError:
+            full_path = None
         self.owner.add_log(
             'box_{0}'.format(action),
             auth=auth,
@@ -336,11 +340,13 @@ class BoxNodeSettings(AddonNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': os.path.join(self.folder_id, path),
+                'name': os.path.split(metadata['path'])[-1],
                 'folder': self.folder_id,
                 'urls': {
                     'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=path),
                     'download': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='download', path=path),
                 },
+                'fullPath': full_path
             },
         )
 

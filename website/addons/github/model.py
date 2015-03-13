@@ -13,9 +13,10 @@ from framework.auth import Auth
 from framework.mongo import StoredObject
 
 from website import settings
+from website.util import web_url_for
+from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
-from website.addons.base import GuidFile
 
 from website.addons.github import utils
 from website.addons.github.api import GitHub
@@ -145,13 +146,13 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
 
     def to_json(self, user):
-        rv = super(AddonGitHubUserSettings, self).to_json(user)
-        rv.update({
+        ret = super(AddonGitHubUserSettings, self).to_json(user)
+        ret.update({
             'authorized': self.has_auth,
             'authorized_github_user': self.github_user_name if self.github_user_name else '',
             'show_submit': False,
         })
-        return rv
+        return ret
 
     def revoke_token(self):
         connection = GitHub.from_settings(self)
@@ -164,8 +165,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
                     'were unable to revoke your access token from GitHub. Your '
                     'GitHub credentials may no longer be valid.'
                 )
-            else:
-                raise
+            raise
 
     def clear_auth(self, auth=None, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
@@ -174,7 +174,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         # if there is only one osf user linked to this github user oauth, revoke the token,
         # otherwise, disconnect the osf user from the addongithuboauthsettings
         if self.oauth_settings:
-            if len(self.oauth_settings.addongithubusersettings__accessed) < 2:
+            if len(self.oauth_settings.addongithubusersettings__accessed) <= 1:
                 self.revoke_token()
 
         # Clear tokens on oauth_settings
@@ -199,6 +199,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     )
 
     registration_data = fields.DictionaryField()
+
+    @property
+    def has_auth(self):
+        return bool(self.user_settings and self.user_settings.has_auth)
 
     def find_or_create_file_guid(self, path):
         try:
@@ -274,13 +278,14 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
-        rv = super(AddonGitHubNodeSettings, self).to_json(user)
+        ret = super(AddonGitHubNodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
-        rv.update({
+        ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
         })
         if self.user_settings and self.user_settings.has_auth:
+            valid_credentials = False
             owner = self.user_settings.owner
             if user_settings and user_settings.owner == owner:
                 connection = GitHub.from_settings(user_settings)
@@ -288,15 +293,19 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 # Since /user/repos excludes organization repos to which the
                 # current user has push access, we have to make extra requests to
                 # find them
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-                repo_names = [
-                    '{0} / {1}'.format(repo.owner.login, repo.name)
-                    for repo in repos
-                ]
-                rv.update({
-                    'repo_names': repo_names,
-                })
-            rv.update({
+                valid_credentials = True
+                try:
+                    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                    repo_names = [
+                        '{0} / {1}'.format(repo.owner.login, repo.name)
+                        for repo in repos
+                    ]
+                except GitHubError as error:
+                    if error.code == http.UNAUTHORIZED:
+                        repo_names = []
+                        valid_credentials = False
+                ret.update({'repo_names': repo_names})
+            ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
                 'github_repo': self.repo or '',
@@ -307,8 +316,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'github_user_name': self.user_settings.github_user_name,
                 'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
                 'is_owner': owner == user,
+                'valid_credentials': valid_credentials,
+                'addons_url': web_url_for('user_addons'),
             })
-        return rv
+        return ret
 
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
@@ -364,7 +375,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param Node node:
         :param User user:
         :return str: Alert message
-
         """
         messages = []
 
@@ -384,7 +394,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         try:
             repo = connect.repo(self.user, self.repo)
-        except ApiError:
+        except (ApiError, GitHubError):
             return
 
         node_permissions = 'public' if node.is_public else 'private'
@@ -629,15 +639,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     def delete_hook(self, save=True):
         """
-
         :return bool: Hook was deleted
-
         """
         if self.user_settings and self.hook_id:
             connection = GitHub.from_settings(self.user_settings)
             try:
                 response = connection.delete_hook(self.user, self.repo, self.hook_id)
-            except NotFoundError:
+            except (GitHubError, NotFoundError):
                 return False
             if response:
                 self.hook_id = None

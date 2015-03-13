@@ -45,10 +45,21 @@ body {
     font-size: 12px;
     padding: 4px 0 4px 15px;
     opacity: 0.8;
+}/* nested navs */
+.gs-sidebar .nav .nav {
+    display: none;
+}
+/* nested active navs */
+.gs-sidebar .nav .active .nav {
+    display: block;
 }
 /* nested link icons */
 .gs-sidebar .nav .nav>li>a i {
     display: none;
+}
+/* nested active link icons */
+.gs-sidebar .nav .nav>.active>a i {
+    display: inline-block;
 }
 /* active & hover links */
 .gs-sidebar .nav>.active>a,
@@ -61,10 +72,6 @@ body {
 .gs-sidebar .nav .nav>.active:hover>a,
 .gs-sidebar .nav .nav>.active:focus>a {
     font-weight: bold;
-}
-/* nested active link icons */
-.gs-sidebar .nav .nav>.active>a i {
-    display: inline-block;
 }
 /* affixed sidebar */
 .gs-sidebar,
@@ -393,9 +400,9 @@ li.pointer {
     border-width: 1px;
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;  
-    -webkit-flex: 0 0 auto;       
-    -ms-flex: 0 0 auto;           
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px; /* this will get overwritten by flex box */
 }
@@ -760,10 +767,13 @@ li.list-group-item-node {
 
 li .project-meta {
     position: absolute;
-    top: 10px;
     right: 10px;
     font-weight: normal;
     font-style: italic;
+}
+
+li .project-meta.pull-right {
+    text-align:right;
 }
 
 /*****************************************************/
@@ -817,6 +827,7 @@ h1.node-title, h1.node-parent-title {
 
 .compare-version-text{
     margin-right: 5px;
+    margin-left: 5px;
 }
 
 .wiki-title {
@@ -849,10 +860,11 @@ h1.node-title, h1.node-parent-title {
 
 .wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
     cursor: pointer;
-} 
+}
 .wiki-panel-header .icon-list {
     color: #808080;
 }
+
 
 
 .wiki-panel-body .superlist li {
@@ -1133,9 +1145,9 @@ div.search-result  {
 .wmd-panel
 {
     width: 100%;
-    display: -webkit-box;  
-    display: -ms-flexbox;  
-    display: -webkit-flex; 
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
     display: flex;
     height: 620px;
     -webkit-align-content: flex-start;
@@ -1156,9 +1168,9 @@ div.search-result  {
 .wmd-panel .list-inline {
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;  
-    -webkit-flex: 0 0 auto;       
-    -ms-flex: 0 0 auto;           
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
 
@@ -1171,9 +1183,9 @@ div.search-result  {
 #wmd-button-bar{
     width: 100%;
     margin: auto;
-    -webkit-box-flex: 0 0 auto;  
-    -webkit-flex: 0 0 auto;       
-    -ms-flex: 0 0 auto;           
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
 
@@ -1400,6 +1412,7 @@ dl.activity-log dd {
 
 .overflow {
     word-wrap: break-word;
+    word-break: break-all;
     max-width: 100%;
 }
 
@@ -1935,7 +1948,6 @@ span#profileFullname{
 }
 .addon-widget-header {
     padding: 0 10px;
-    border-bottom: 1px solid #ddd;
     background-color: #efefef;
     width: 100%;
 }
@@ -1953,6 +1965,7 @@ span#profileFullname{
 .addon-widget-body {
     padding: 15px;
     background-color: white;
+    border-top: 1px solid #ddd;
 }
 .addon-widget-body .list-group-item {
     border: none;
@@ -2173,10 +2186,80 @@ span#profileFullname{
 .break-word {
     word-wrap: break-word;
 }
+.table-fixed {
+    table-layout: fixed;
+    width: 100%;
+    word-wrap: break-word;
+}
 .modal-backdrop {
     position: fixed;
 }
 
+/* Minimal Treebeard for Configure Notifications in project and user settings */
+.osf-treebeard-minimal #tb-tbody {
+    border: none;
+    max-height: 500px;
+    height: inherit;
+    margin-top: 10px;
+}
+.osf-treebeard-minimal .tb-row {
+    padding-left: 10px;
+}
+
+.osf-treebeard-minimal .tb-row-titles {
+    border: none;
+}
+.osf-treebeard-minimal .tb-td {
+    padding-top: 4px;
+}
+.osf-treebeard-minimal .title-text {
+    line-height: 25px;
+}
+.osf-treebeard-minimal .tb-head {
+    display: none;
+}
+
+.osf-treebeard-minimal .form-control {
+    height: 26px;
+    padding: 0px;
+}
+
+.tb-no-icon .tb-expand-icon-holder {
+    width : 0;
+}
+
+
+.alert-notify-success {
+    padding: 5px;
+    color: #3C763D;
+}
+.alert-notify-danger {
+    padding: 5px;
+    color: #A94442;
+}
+.notifications-loading {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 200;
+    padding: 20px;
+}
+.notifications-spin {
+    -webkit-animation: spin 2s infinite linear;
+    animation: spin 2s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
 /* Wiki additions */
 .wiki-panel {
     border: 1px solid #ccc;
@@ -2186,6 +2269,7 @@ span#profileFullname{
     position: relative;
     overflow-x: hidden;
 }
+
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
@@ -2275,10 +2359,60 @@ span#profileFullname{
 }
 
 
+.wiki-panel-flex {
+    width: 100%;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    height: 750px;
+    -webkit-align-content: flex-start;
+    -ms-align-content: flex-start;
+    align-content: flex-start;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: stretch;
+    -webkit-align-items: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.wiki-panel-header-flex {
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
+    flex: 0 0 auto;
+}
+.wiki-panel-body-flex{
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
+    flex: 3 0 auto;
+    height: 500px;
+}
+
+/* scroll fix for wherever treebeard is used */
+#tb-tbody::-webkit-scrollbar  {
+    z-index: 9;
+    background-color: #f5f5f5;
+    width: 10px;
+}
+#tb-tbody::-webkit-scrollbar-thumb {
+    background-color: #999;
+    border-radius: 5px;
+    width: 6px;
+ }
 
 .container-xxl {
   width : 100%;
   padding-left: 20px;
   padding-right: 20px;
-
 }

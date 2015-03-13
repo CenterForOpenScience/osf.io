@@ -32,22 +32,15 @@ $ cp website/settings/local-dist.py website/settings/local.py
     - Install GPG.
     - Install requirements.
     - Create a GPG key.
-    - Install npm
-    - Install bower
-    - Use bower to install Javascript components
+    - Install npm.
+    - Install node and bower packages.
+    - Build assets.
 
 - To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
 ```bash
 $ pip install invoke
 $ invoke setup
-```
-
-
-- Optionally, you may install the requirements for addons:
-
-```bash
-$ invoke addon_requirements
 ```
 
 - On Linux systems, you may have to install python-pip, TokuMX, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
@@ -105,13 +98,44 @@ $ invoke shell
 To run all tests:
 
 ```bash
-$ invoke test
+$ invoke test --all
 ```
 
 To run a certain test method
 
 ```bash
 $ nosetests tests/test_module.py:TestClass.test_method
+```
+
+Run OSF Python tests only:
+
+```bash
+$ inv test_osf
+```
+
+Run addons Python tests only:
+
+```bash
+$ inv test_addons
+```
+
+Run Javascript tests:
+
+```bash
+$ inv karma
+```
+
+By default, `inv karma` will start a Karma process which will re-run your tests every time a JS file is changed. To do a single run of the JS tests:
+
+
+```bash
+$ inv karma --single
+```
+
+By default, Karma will run tests using a PhantomJS headless browser. You can run tests in other browsers like so:
+
+```bash
+$ inv karma -b Firefox
 ```
 
 ### Testing Addons
@@ -148,8 +172,6 @@ $ invoke mailserver -p 1025
 TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments.
 TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
 `commitTransaction` commands.
-
-If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
 
 ### Installing with Mac OS
 
@@ -278,59 +300,11 @@ To install necessary NPM requiremnts, run:
 $ npm install
 ```
 
-In the OSF root directory.
-
-## Using Bower to install front-end dependencies
-
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
-be installed with `invoke setup` (above)
-
-To get the bower CLI, you must have `npm` installed.
-
-```bash
-$ npm install -g bower
-```
-
-### To update existing front-end dependencies
-
-This will be the most common command you will use with `bower`. It will update all your front-end dependencies to the version required by the OSF. Think of it as the `pip install -r requirements.txt` for front-end assets.
-
-```bash
-$ bower install
-```
-
-### To add a new front-end library
-
-Use this command when adding a new front-end dependency
-
-```bash
-$ bower install zeroclipboard --save
-```
-
-The `--save` option automatically adds an entry to the `bower.json` after downloading the library.
-
-This will save the library in `website/static/vendor/bower_components/`, where it can be imported like any other module.
-
-## Using webpack for asset bundling and minification
-
-We use [webpack](https://webpack.github.io/docs/) to bundle and minify our static assets.
-
-To get the webpack CLI, you must have `npm` installed.
-
-```bash
-$ npm install -g webpack
-```
+In the OSF root directory. This will install a number libraries for both the front-end and for building the assets (e.g. webpack).
 
 ### To build assets with webpack
 
-```bash
-# Make sure dependencies are up to date
-$ bower install && npm install
-# Run webpack in debug mode and watch for changes
-$ inv pack -dw
-```
-
-**The above commands can be run in one step with**:
+Use the following command to update your requirements and build the asset bundles:
 
 ```bash
 $ inv assets -dw
@@ -369,8 +343,7 @@ invoke mailserver
 invoke rabbitmq
 invoke celery_worker
 invoke elasticsearch
-bower install
-invoke pack -w
+invoke assets -dw
 invoke server
 ```
 

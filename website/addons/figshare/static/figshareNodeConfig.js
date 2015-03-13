@@ -70,12 +70,12 @@ var ViewModel = function(url, selector, folderPicker) {
                 self.loadedSettings(true);
             },
             error: function(xhr, textStatus, error) {
-                self.changeMessage('Could not retrieve Figshare settings at ' +
+                self.changeMessage('Could not retrieve figshare settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.',
                     'text-warning');
-                Raven.captureMessage('Could not GET Figshare settings', {
+                Raven.captureMessage('Could not GET figshare settings', {
                     url: url,
                     textStatus: textStatus,
                     error: error
@@ -191,7 +191,7 @@ var ViewModel = function(url, selector, folderPicker) {
                 self.nodeHasAuth(false);
                 self.cancelSelection();
                 self.currentDisplay(null);
-                self.changeMessage('Deauthorized Figshare.', 'text-warning', 3000);
+                self.changeMessage('Deauthorized figshare.', 'text-warning', 3000);
             },
             error: function() {
                 self.changeMessage('Could not deauthorize because of an error. Please try again later.',
@@ -205,8 +205,8 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     self.deauthorize = function() {
         bootbox.confirm({
-            title: 'Deauthorize Figshare?',
-            message: 'Are you sure you want to remove this Figshare authorization?',
+            title: 'Deauthorize figshare?',
+            message: 'Are you sure you want to remove this figshare authorization?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return sendDeauth();
@@ -234,8 +234,8 @@ var ViewModel = function(url, selector, folderPicker) {
      */
     self.importAuth = function() {
         bootbox.confirm({
-            title: 'Import Figshare Access Token?',
-            message: 'Are you sure you want to authorize this project with your Figshare access token?',
+            title: 'Import figshare Access Token?',
+            message: 'Are you sure you want to authorize this project with your figshare access token?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return $osf.putJSON(self.urls().importAuth, {})
@@ -266,7 +266,7 @@ var ViewModel = function(url, selector, folderPicker) {
         $(self.folderPicker).folderpicker({
             onPickFolder: onPickFolder,
             initialFolderName : self.folderName(),
-            initialFolderPath : undefined,
+            initialFolderPath : '__NONE__',
             // Fetch Figshare folders with AJAX
             filesData: self.urls().options, // URL for fetching folders
             // Lazy-load each folder's contents
@@ -281,9 +281,9 @@ var ViewModel = function(url, selector, folderPicker) {
             ajaxOptions: {
                error: function(xhr, textStatus, error) {
                     self.loading(false);
-                    self.changeMessage('Could not connect to Figshare at this time. ' +
+                    self.changeMessage('Could not connect to figshare at this time. ' +
                                         'Please try again later.', 'text-warning');
-                    Raven.captureMessage('Could not GET Figshare contents', {
+                    Raven.captureMessage('Could not GET figshare contents', {
                         textStatus: textStatus,
                         error: error
                     });

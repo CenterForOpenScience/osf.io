@@ -21,6 +21,7 @@ from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import exceptions
+from website.addons.base import serializer
 from website.project.model import Node
 
 lookup = TemplateLookup(
@@ -48,6 +49,7 @@ class AddonConfig(object):
                  widget_help=None, views=None, configs=None, models=None,
                  has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
                  accept_extensions=True,
+                 node_settings_template=None, user_settings_template=None,
                  **kwargs):
 
         self.models = models
@@ -97,6 +99,35 @@ class AddonConfig(object):
             )
         else:
             self.template_lookup = None
+
+        # Provide the path the the user_settings template
+        self.user_settings_template = user_settings_template
+        addon_user_settings_path = os.path.join(
+            template_path,
+            '{}_user_settings.mako'.format(self.short_name)
+        )
+
+        if user_settings_template:
+            # If USER_SETTINGS_TEMPLATE is defined, use that path.
+            self.user_settings_template = user_settings_template
+        elif os.path.exists(addon_user_settings_path):
+            # An implicit template exists
+            self.user_settings_template = os.path.join(
+                os.path.pardir,
+                'addons',
+                self.short_name,
+                'templates',
+                '{}_user_settings.mako'.format(self.short_name),
+            )
+        else:
+            # Use the default template (for OAuth addons)
+            self.user_settings_template = os.path.join(
+                'project',
+                'addon',
+                'user_settings_default.mako',
+            )
+
+        self.node_settings_template = node_settings_template
 
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
@@ -204,7 +235,11 @@ class GuidFile(GuidStoredObject):
 
     @property
     def name(self):
-        return self._metadata_cache['name']
+        try:
+            return self._metadata_cache['name']
+        except (TypeError, KeyError):
+            # If name is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute name')
 
     @property
     def file_name(self):
@@ -433,6 +468,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
                     'url': node.url,
                     'title': node.title,
                     'registered': node.is_registration,
+                    'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
             ]
@@ -445,6 +481,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         'abstract': True,
     }
 
+    # Keeps track of what nodes have been given permission to use external
+    #   accounts belonging to the user.
     oauth_grants = fields.DictionaryField()
     # example:
     # {
@@ -462,14 +500,22 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     #   AddonModelMixin.get_oauth_addons().
     oauth_provider = None
 
+    serializer = serializer.OAuthAddonSerializer
+
     @property
-    def connected_oauth_accounts(self):
+    def has_auth(self):
+        return bool(self.external_accounts)
+
+    @property
+    def external_accounts(self):
+        """The user's list of ``ExternalAccount`` instances for this provider"""
         return [
             x for x in self.owner.external_accounts
             if x.provider == self.oauth_provider.short_name
         ]
 
     def grant_oauth_access(self, node, external_account, metadata=None):
+        """Give a node permission to use an ``ExternalAccount`` instance."""
         # ensure the user owns the external_account
         if external_account not in self.owner.external_accounts:
             raise PermissionsError()
@@ -491,12 +537,30 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         self.save()
 
     def revoke_oauth_access(self, external_account):
+        """Revoke all access to an ``ExternalAccount``.
+
+        TODO: This should accept node and metadata params in the future, to
+            allow fine-grained revocation of grants. That's not yet been needed,
+            so it's not yet been implemented.
+        """
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
 
         self.save()
 
     def verify_oauth_access(self, node, external_account, metadata=None):
+        """Verify that access has been previously granted.
+
+        If metadata is not provided, this checks only if the node can access the
+        account. This is suitable to check to see if the node's addon settings
+        is still connected to an external account (i.e., the user hasn't revoked
+        it in their user settings pane).
+
+        If metadata is provided, this checks to see that all key/value pairs
+        have been granted. This is suitable for checking access to a particular
+        folder or other resource on an external provider.
+        """
+
         metadata = metadata or {}
 
         # ensure the grant exists
@@ -512,11 +576,40 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         return True
 
+    def get_nodes_with_oauth_grants(self, external_account):
+        # Generator of nodes which have grants for this external account
+        return (
+            Node.load(node_id)
+            for node_id, grants in self.oauth_grants.iteritems()
+            if external_account._id in grants.keys()
+        )
+
+    def get_attached_nodes(self, external_account):
+        for node in self.get_nodes_with_oauth_grants(external_account):
+            node_settings = node.get_addon(self.oauth_provider.short_name)
+
+            if node_settings is None:
+                continue
+
+            if node_settings.external_account == external_account:
+                yield node
+
+    def to_json(self, user):
+        ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
+
+        ret['accounts'] = self.serializer(
+            user_settings=self
+        ).serialized_accounts
+
+        return ret
+
     #############
     # Callbacks #
     #############
 
     def on_delete(self):
+        """When the user deactivates the addon, clear auth for connected nodes.
+        """
         super(AddonOAuthUserSettingsBase, self).on_delete()
         nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
@@ -532,6 +625,11 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     _meta = {
         'abstract': True,
     }
+
+    @property
+    def has_auth(self):
+        """Whether the node has added credentials for this addon."""
+        return False
 
     def to_json(self, user):
         ret = super(AddonNodeSettingsBase, self).to_json(user)
@@ -575,19 +673,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
     def before_remove_contributor(self, node, removed):
         """
-
         :param Node node:
         :param User removed:
-
         """
         pass
 
     def after_remove_contributor(self, node, removed):
         """
-
         :param Node node:
         :param User removed:
-
         """
         pass
 
@@ -685,9 +779,11 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     }
 
     # TODO: Validate this field to be sure it matches the provider's short_name
+    # NOTE: Do not set this field directly. Use ``set_auth()``
     external_account = fields.ForeignField('externalaccount',
                                            backref='connected')
 
+    # NOTE: Do not set this field directly. Use ``set_auth()``
     user_settings = fields.AbstractForeignField()
 
     # The existence of this property is used to determine whether or not
@@ -697,6 +793,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
+        """Instance has an external account and *active* permission to use it"""
         if not (self.user_settings and self.external_account):
             return False
 
@@ -707,6 +804,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     def set_auth(self, external_account, user):
         """Connect the node addon to a user's external account.
+
+        This method also adds the permission to use the account in the user's
+        addon settings.
         """
         # tell the user's addon settings that this node is connected to it
         user_settings = user.get_or_add_addon(self.oauth_provider.short_name)
@@ -724,11 +824,123 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.save()
 
     def clear_auth(self):
-        """Disconnect the node settings from the user settings"""
+        """Disconnect the node settings from the user settings.
 
+        This method does not remove the node's permission in the user's addon
+        settings.
+        """
         self.external_account = None
         self.user_settings = None
         self.save()
+
+    def before_remove_contributor_message(self, node, removed):
+        """If contributor to be removed authorized this addon, warn that removing
+        will remove addon authorization.
+        """
+        if self.has_auth and self.user_settings.owner == removed:
+            return (
+                u'The {addon} add-on for this {category} is authenticated by {name}. '
+                u'Removing this user will also remove write access to {addon} '
+                u'unless another contributor re-authenticates the add-on.'
+            ).format(
+                addon=self.config.full_name,
+                category=node.project_or_component,
+                name=removed.fullname,
+            )
+
+    # backwards compatibility
+    before_remove_contributor = before_remove_contributor_message
+
+    def after_remove_contributor(self, node, removed):
+        """If removed contributor authorized this addon, remove addon authorization
+        from owner.
+        """
+        if self.has_auth and self.user_settings.owner == removed:
+            self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
+            self.clear_auth()
+            return (
+                u'Because the {addon} add-on for this project was authenticated '
+                u'by {name}, authentication information has been deleted. You '
+                u'can re-authenticate on the <a href="{url}">Settings</a> page.'
+            ).format(
+                addon=self.config.full_name,
+                name=removed.fullname,
+                url=node.web_url_for('node_setting'),
+            )
+
+    def before_fork_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        fork.
+        """
+        if self.user_settings and self.user_settings.owner == user:
+            return (
+                u'Because you have authorized the {addon} add-on for this '
+                u'{category}, forking it will also transfer your authentication token to '
+                u'the forked {category}.'
+            ).format(
+                addon=self.config.full_name,
+                category=node.project_or_component,
+            )
+        return (
+            u'Because the {addon} add-on has been authorized by a different '
+            u'user, forking it will not transfer authentication token to the forked '
+            u'{category}.'
+        ).format(
+            addon=self.config.full_name,
+            category=node.project_or_component,
+        )
+
+    # backwards compatibility
+    before_fork = before_fork_message
+
+    def after_fork(self, node, fork, user, save=True):
+        """After forking, copy user settings if the user is the one who authorized
+        the addon.
+
+        :return: A tuple of the form (cloned_settings, message)
+        """
+        clone, _ = super(AddonOAuthNodeSettingsBase, self).after_fork(
+            node=node,
+            fork=fork,
+            user=user,
+            save=False,
+        )
+        if self.has_auth and self.user_settings.owner == user:
+            clone.set_auth(self.external_account, user)
+            message = '{addon} authorization copied to forked {cat}.'.format(
+                addon=self.config.full_name,
+                cat=fork.project_or_component,
+            )
+        else:
+            message = (
+                u'{addon} authorization not copied to forked {cat}. You may '
+                u'authorize this fork on the <a href="{url}">Settings</a> '
+                u'page.'
+            ).format(
+                addon=self.config.full_name,
+                url=fork.web_url_for('node_setting'),
+                cat=fork.project_or_component,
+            )
+        if save:
+            clone.save()
+        return clone, message
+
+    def before_register_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        registration.
+        """
+        if self.has_auth:
+            return (
+                u'The contents of {addon} add-ons cannot be registered at this time; '
+                u'the {addon} add-on linked to this {category} will not be included '
+                u'as part of this registration.'
+            ).format(
+                addon=self.config.full_name,
+                cat=node.project_or_component,
+            )
+
+    # backwards compatibility
+    before_register = before_register_message
 
 
 # TODO: No more magicks

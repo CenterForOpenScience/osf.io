@@ -20,6 +20,8 @@ from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
 
+BOX_SHARE_URL_TEMPLATE = 'https://app.box.com/files/0/f/{0}'
+
 @must_have_addon('box', 'node')
 @must_have_permission(permissions.WRITE)
 def box_config_get(node_addon, auth, **kwargs):
@@ -35,7 +37,7 @@ def serialize_folder(metadata):
     """
     # if path is root
     if metadata['path'] == '' or metadata['path'] == '/':
-        name = 'All Files'
+        name = '/ (Full Box)'
     else:
         name = 'Box' + metadata['path']
     return {
@@ -51,7 +53,7 @@ def get_folders(client):
     metadata = client.metadata('/', list=True)
     # List each folder, including the root
     root = {
-        'name': 'All Files',
+        'name': '/ (Full Box)',
         'path': '',
     }
     folders = [root] + [
@@ -70,6 +72,7 @@ def serialize_urls(node_settings):
         'config': node.api_url_for('box_config_put'),
         'files': node.web_url_for('collect_file_trees'),
         'emails': node.api_url_for('box_get_share_emails'),
+        'share': BOX_SHARE_URL_TEMPLATE.format(node_settings.folder_id),
         'deauthorize': node.api_url_for('box_deauthorize'),
         'importAuth': node.api_url_for('box_import_user_auth'),
         # Endpoint for fetching only folders (including root)
@@ -142,7 +145,7 @@ def box_config_put(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': path,
+                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Box)',
                 'path': path,
             },
             'urls': serialize_urls(node_addon),

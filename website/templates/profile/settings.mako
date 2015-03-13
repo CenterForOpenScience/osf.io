@@ -6,7 +6,7 @@
 
 ## TODO: Review and un-comment
 ##<div class="row">
-##    <div class="col-md-6">
+##    <div class="col-sm-6">
 ##        <div class="panel panel-default">
 ##            <div class="panel-heading"><h3 class="panel-title">Merge Accounts</h3></div>
 ##            <div class="panel-body">
@@ -18,20 +18,18 @@
 
 <div class="row">
 
-    <div class="col-md-3">
+    <div class="col-sm-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                %if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-                    <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                %endif
+                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
 
         <div id="userProfile">
 
@@ -85,7 +83,7 @@
 
 <%def name="javascript_bottom()">
 <script type="text/javascript">
-    ## Store mako variables on window so they are accessible from JS 
+    ## Store mako variables on window so they are accessible from JS
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.nameUrls = {

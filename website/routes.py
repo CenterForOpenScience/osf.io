@@ -32,6 +32,7 @@ from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.notifications import views as notification_views
 
 
 def get_globals():
@@ -63,7 +64,7 @@ def get_globals():
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
-        'waterbutler_url': settings.WATERBUTLER_URL
+        'waterbutler_url': settings.WATERBUTLER_URL,
     }
 
 
@@ -436,7 +437,8 @@ def make_url_map(app):
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),
-
+        Rule('/login/two-factor/', ['get', 'post'], auth_views.two_factor,
+             OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
         Rule('/forgotpassword/', 'post', auth_views.forgot_password,
@@ -525,6 +527,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
+        Rule('/profile/', 'put', profile_views.update_user, json_renderer),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
 
         # Used by profile.html
@@ -645,7 +648,6 @@ def make_url_map(app):
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
         Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
-
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(
@@ -1257,6 +1259,30 @@ def make_url_map(app):
             '/settings/notifications/',
             'post',
             profile_views.user_choose_mailing_lists,
+            json_renderer,
+        ),
+
+        Rule(
+            '/subscriptions/',
+            'get',
+            notification_views.get_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/subscriptions/',
+                '/project/<pid>/node/<nid>/subscriptions/'
+            ],
+            'get',
+            notification_views.get_node_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            '/subscriptions/',
+            'post',
+            notification_views.configure_subscription,
             json_renderer,
         ),
 
