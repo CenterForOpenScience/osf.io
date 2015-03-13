@@ -17,7 +17,7 @@
 
     <div id="file-container" class="row">
 
-    <div class="col-md-3">
+    <div class="panel-toggle col-md-3">
         <div class="wiki-panel wiki-panel-flex hidden-xs">
             <div class="wiki-panel-header wiki-panel-header-flex"><i class="icon icon-file"></i>  Project Files
                 <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
@@ -27,8 +27,17 @@
             </div>
         </div>
 
+    <!-- Menu toggle closed -->
+        <div class="wiki-panel panel-collapsed hidden-xs text-center">
+          <div class="wiki-panel-header">
+            <i class="icon icon-file"> </i>
+            <i class="icon icon-angle-right"> </i>
+          </div>
+        </div>
+
     </div>
-    <div class="col-md-6">
+
+    <div class="panel-expand col-md-6">
 
         <div id="fileRendered" class="mfr mfr-file">
           % if rendered is not None:
@@ -37,7 +46,7 @@
             <img src="/static/img/loading.gif">
           % endif
         </div>
-      </div>
+    </div>
 
       <div class="col-md-3">
         <div id="fileRevisions" class="scripted">

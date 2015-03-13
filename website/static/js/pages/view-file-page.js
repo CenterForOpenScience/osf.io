@@ -69,4 +69,24 @@ $(document).ready(function() {
             };
             var filebrowser = new Fangorn(fangornOpts);
         });
+
+    var panelToggle = $('.panel-toggle');
+    var panelExpand = $('.panel-expand');
+    $('.panel-collapse').on('click', function () {
+        var el = $(this).closest('.panel-toggle');
+        el.children('.wiki-panel.hidden-xs').hide();
+        panelToggle.removeClass('col-md-3').addClass('col-md-1');
+        panelExpand.removeClass('col-md-6').addClass('col-md-8');
+        el.children('.panel-collapsed').show();
+
+    });
+    $('.panel-collapsed .wiki-panel-header').on('click', function () {
+        var el = $(this).parent();
+        var toggle = el.closest('.panel-toggle');
+        toggle.children('.wiki-panel').show();
+        el.hide();
+        panelToggle.removeClass('col-md-1').addClass('col-md-3');
+        panelExpand.removeClass('col-md-8').addClass('col-md-6');
+
+    });
 });
