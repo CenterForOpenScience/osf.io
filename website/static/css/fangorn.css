@@ -87,7 +87,12 @@ text-align: center;
 
 .tb-multimodal-inner {
 	background: #B8ECC0;
+	text-align: center;
 }
+.tb-multimodal-dismiss {
+	font-size: 17px;
+}
+
 
 /* File icons */
 .file-extension {
