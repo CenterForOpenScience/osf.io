@@ -702,13 +702,11 @@ def bundle_certs(domain, cert_path):
 @task
 def clean_assets():
     """Remove built JS files."""
-    build_path = os.path.join(HERE,
-                              'website',
-                              'static',
-                              'public',
-                              'js',
-                              '*')
-    run('rm -rf {0}'.format(build_path), echo=True)
+    public_path = os.path.join(HERE, 'website', 'static', 'public')
+    js_path = os.path.join(public_path, 'js')
+    mfr_path = os.path.join(public_path, 'mfr')
+    run('rm -rf {0}'.format(js_path), echo=True)
+    run('rm -rf {0}'.format(mfr_path), echo=True)
 
 
 @task(aliases=['pack'])
