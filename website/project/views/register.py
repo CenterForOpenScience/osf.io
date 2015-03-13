@@ -2,7 +2,6 @@
 import json
 import httplib as http
 
-
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -10,7 +9,9 @@ from modularodm.exceptions import NoResultsFound
 from framework.exceptions import HTTPError
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.mongo.utils import to_mongo
+from framework.transactions.handlers import no_auto_transaction
 
+from website import settings
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission, must_not_be_registration
@@ -19,6 +20,9 @@ from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import ADMIN
 from website.models import MetaSchema
 from website import language
+
+from website.identifiers.client import EzidClient
+from website.identifiers.client import ClientError
 
 from .node import _view_project
 from .. import clean_template_name
@@ -96,7 +100,7 @@ def node_register_template_page(auth, **kwargs):
 
     # TODO: Notify if some components will not be registered
 
-    rv = {
+    ret = {
         'template_name': template_name,
         'schema': json.dumps(schema),
         'metadata_version': meta_schema.metadata_version,
@@ -105,8 +109,8 @@ def node_register_template_page(auth, **kwargs):
         'payload': payload,
         'children_ids': node.nodes._to_primary_keys(),
     }
-    rv.update(_view_project(node, auth, primary=True))
-    return rv
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
 
 
 @must_be_valid_project  # returns project
@@ -153,3 +157,53 @@ def node_register_template_page_post(auth, **kwargs):
         'status': 'success',
         'result': register.url,
     }, http.CREATED
+
+
+def _get_or_create_identifiers(doi, metadata):
+    client = EzidClient('apitest', 'apitest')
+    try:
+        resp = client.create_identifier(doi, metadata)
+        return dict(
+            pair.strip().split(':')
+            for pair in resp['success'].split('|')
+        )
+    except ClientError as error:
+        if 'identifier already exists' not in error.message.lower():
+            raise
+        resp = client.get_identifier(doi)
+        doi = resp['success']
+        suffix = doi.strip(settings.DOI_NAMESPACE)
+        return {
+            'doi': doi,
+            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE, suffix),
+        }
+
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_identifiers(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    if not node.is_registration or not node.is_public or node.parent_node:
+        raise HTTPError(http.BAD_REQUEST)
+    if request.method == 'GET':
+        return {
+            'doi': node.get_identifier_value('doi'),
+            'ark': node.get_identifier_value('ark'),
+        }
+    elif request.method == 'POST':
+        if node.get_identifier('doi') or node.get_identifier('ark'):
+            raise HTTPError(http.BAD_REQUEST)
+        doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
+        metadata = {
+            'datacite.creator': node.creator.fullname,
+            'datacite.title': node.title,
+            'datacite.publisher': 'Open Science Framework',
+            'datacite.publicationyear': str(node.registered_date.year),
+        }
+        try:
+            identifiers = _get_or_create_identifiers(doi, metadata)
+        except ClientError:
+            raise HTTPError(http.BAD_REQUEST)
+        for category, value in identifiers.iteritems():
+            node.set_identifier(category, value)
+        return identifiers, http.CREATED

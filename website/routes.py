@@ -1149,6 +1149,16 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'post', project_views.register.node_register_template_page_post, json_renderer),
 
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            ['get', 'post'],
+            project_views.register.node_identifiers,
+            json_renderer,
+        ),
+
         # Statistics
         Rule([
             '/project/<pid>/statistics/',

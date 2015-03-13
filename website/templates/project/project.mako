@@ -115,6 +115,18 @@
                 <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 | Last Updated:
                 <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                <!-- ko if: canHaveIdentifiers -->
+                    <br />
+                    Identifiers:
+                    <span data-bind="text: JSON.stringify(hasIdentifiers)"></span>
+                    <span data-bind="if: hasIdentifiers">
+                        DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
+                        ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                    </span>
+                    <span data-bind="ifnot: hasIdentifiers">
+                        <a data-bind="click: askCreateIdentifiers">Create DOI / ARK</a>
+                    </span>
+                <!-- /ko -->
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:

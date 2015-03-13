@@ -42,10 +42,12 @@ from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
 from website.citations.utils import datetime_to_csl
+from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
+
 
 html_parser = HTMLParser()
 
@@ -482,6 +484,7 @@ def get_pointer_parent(pointer):
     assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
     return parent_refs[0]
 
+
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
     categories defined in CATEGORY_MAP.
@@ -507,7 +510,7 @@ def validate_user(value):
     return True
 
 
-class Node(GuidStoredObject, AddonModelMixin):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     redirect_mode = 'proxy'
     #: Whether this is a pointer or not
