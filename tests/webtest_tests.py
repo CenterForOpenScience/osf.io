@@ -67,7 +67,7 @@ class TestAnUnregisteredUser(OsfTestCase):
 
     def test_sees_error_if_email_is_already_registered(self):
         # A user is already registered
-        user = UserFactory(username='foo@bar.com')
+        UserFactory(username='foo@bar.com')
         # Goes to home page
         res = self.app.get('/').maybe_follow()
         # Clicks sign in button
