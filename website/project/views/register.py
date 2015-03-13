@@ -18,6 +18,7 @@ from website.project.decorators import (
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import ADMIN
 from website.models import MetaSchema
+from website.models import NodeLog
 from website import language
 
 from website.identifiers.client import EzidClient
@@ -205,4 +206,13 @@ def node_identifiers(auth, **kwargs):
             raise HTTPError(http.BAD_REQUEST)
         for category, value in identifiers.iteritems():
             node.set_identifier(category, value)
+        node.add_log(
+            NodeLog.EXTERNAL_IDS_ADDED,
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'identifiers': identifiers,
+            },
+            auth=auth,
+        )
         return identifiers, http.CREATED
