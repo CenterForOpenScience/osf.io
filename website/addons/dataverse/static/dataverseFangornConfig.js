@@ -170,7 +170,11 @@ function _fangornDataverseTitle(item, col) {
             m('dataverse-name', {
                 onclick: function() {
                     window.location = item.data.urls.view;
-                }}, item.data.name
+                },
+                'data-toggle': 'tooltip',
+                title: 'View file',
+                'data-placement': 'bottom'
+            }, item.data.name
              )
         ]);
     }

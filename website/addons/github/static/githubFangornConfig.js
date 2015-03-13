@@ -180,7 +180,7 @@ function _fangornGithubTitle(item, col)  {
                     },
                     'data-toggle': 'tooltip',
                     title: 'View file',
-                    'data-placement': 'right'
+                    'data-placement': 'bottom'
                 }, item.data.name)]);
         } else {
             return m('span', item.data.name);
