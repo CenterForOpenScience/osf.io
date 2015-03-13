@@ -1,7 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
-    <link href="/website/static/vendor/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <div id="searchControls" class="scripted">
         <%include file='./search_bar.mako' />
         <div class="row">
