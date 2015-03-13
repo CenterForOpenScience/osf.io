@@ -179,10 +179,10 @@ module.exports = {
             {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?minetype=application/font-woff" },
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'}
