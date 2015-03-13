@@ -38,11 +38,12 @@ describe('osfHelpers', () => {
         });
 
         it('logs error with Raven', () => {
-            new sinon.stub($osf, 'growl');
+            var growlStub = new sinon.stub($osf, 'growl');
             var stub = new sinon.stub(Raven, 'captureMessage');
             $osf.handleJSONError(response);
             assert.called(stub);
             stub.restore();
+            growlStub.restore();
         });
     });
 
