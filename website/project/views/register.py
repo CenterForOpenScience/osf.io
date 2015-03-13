@@ -205,7 +205,7 @@ def node_identifiers(auth, **kwargs):
         except ClientError:
             raise HTTPError(http.BAD_REQUEST)
         for category, value in identifiers.iteritems():
-            node.set_identifier(category, value)
+            node.set_identifier_value(category, value)
         node.add_log(
             NodeLog.EXTERNAL_IDS_ADDED,
             params={
