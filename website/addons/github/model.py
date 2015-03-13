@@ -285,6 +285,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             'is_registration': self.owner.is_registration,
         })
         if self.user_settings and self.user_settings.has_auth:
+            valid_credentials = False
             owner = self.user_settings.owner
             if user_settings and user_settings.owner == owner:
                 connection = GitHub.from_settings(user_settings)
