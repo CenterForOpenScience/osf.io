@@ -943,6 +943,9 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile
+    },
+    removeIcon : function(){
+        return m('i.icon-remove-sign');
     }
 };
 

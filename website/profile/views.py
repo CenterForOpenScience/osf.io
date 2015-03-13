@@ -243,6 +243,7 @@ def user_addons(auth, **kwargs):
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['user_addons_enabled'] = user_addons_enabled
     ret['addon_js'] = collect_user_config_js(user.get_addons())
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return ret
 
 @must_be_logged_in

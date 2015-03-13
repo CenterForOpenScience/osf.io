@@ -1,5 +1,4 @@
 'use strict';
-
 require('css/user-addon-settings.css');
 var $ = require('jquery');
 var ko = require('knockout');
@@ -11,7 +10,28 @@ var addonSettings = require('js/addonSettings');
 
 ko.punches.enableAll();
 
-// Set up submission for addon selection form
+
+// Show capabilities modal on selecting an addon; unselect if user
+// rejects terms
+$('.addon-select').on('change', function() {
+    var that = this;
+    var $that = $(that);
+    if ($that.is(':checked')) {
+        var name = $that.attr('name');
+        var capabilities = $('#capabilities-' + name).html();
+        if (capabilities) {
+            bootbox.confirm(
+                capabilities,
+                function(result) {
+                    if (!result) {
+                        $that.attr('checked', false);
+                    }
+                }
+            );
+        }
+    }
+});
+
 var checkedOnLoad = $('#selectAddonsForm input:checked');
 
 // TODO: Refactor into a View Model
