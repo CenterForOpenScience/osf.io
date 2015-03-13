@@ -30,7 +30,8 @@ function Meeting(data) {
                 {
                     title: "Category",
                     width : "15%",
-                    sort : false
+                    sortType : "text",
+                    sort : true
                 },
                 {
                     title: "Downloads",

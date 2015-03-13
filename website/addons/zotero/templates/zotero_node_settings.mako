@@ -41,8 +41,7 @@
 
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner()">
-                    <button data-bind="visible: validCredentials,
-                                        click: togglePicker,
+                    <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-addon"><i class="fa fa-pencil-square-o"></i> Change</button>
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
