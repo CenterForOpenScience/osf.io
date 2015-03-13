@@ -8,6 +8,7 @@ import logging
 from elasticsearch import helpers
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
+from website import settings
 from framework.auth import User
 from website.models import Node
 from website.app import init_app
@@ -46,52 +47,52 @@ def migrate_users(index):
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 
-def migrate(delete):
+def migrate(delete, index=settings.ELASTIC_INDEX):
 
     script_utils.add_file_logger(logger, __file__)
     ctx = app.test_request_context()
     ctx.push()
-    index = set_up_index()
+    new_index = set_up_index(index)
 
-    migrate_nodes(index)
-    migrate_users(index)
+    migrate_nodes(new_index)
+    migrate_users(new_index)
 
-    set_up_alias(index)
+    set_up_alias(index, new_index)
 
     if delete:
-        delete_old(index)
+        delete_old(new_index)
 
     ctx.pop()
 
 
-def set_up_index():
-    alias = es.indices.get_aliases(index='website')
+def set_up_index(idx):
+    alias = es.indices.get_aliases(index=idx)
 
-    if not alias or not alias.keys() or 'website' in alias.keys():
+    if not alias or not alias.keys() or idx in alias.keys():
         # Deal with empty indices or the first migration
-        index = 'website_v1'
+        index = '{}_v1'.format(idx)
         search.create_index(index=index)
-        logger.info("Reindexing website to website_v1")
-        helpers.reindex(es, 'website', index)
-        logger.info("Deleting website index")
-        es.indices.delete(index='website')
-        es.indices.put_alias('website', index)
+        logger.info("Reindexing {0} to {1}_v1".format(idx, idx))
+        helpers.reindex(es, idx, index)
+        logger.info("Deleting {} index".format(idx))
+        es.indices.delete(index=idx)
+        es.indices.put_alias(idx, index)
     else:
         # Increment version
         version = int(alias.keys()[0][-1]) + 1
         logger.info("Incrementing index version to {}".format(version))
-        index = 'website_v{}'.format(version)
+        index = '{0}_v{1}'.format(idx, version)
         search.create_index(index=index)
         logger.info("{} index created".format(index))
     return index
 
 
-def set_up_alias(index):
-    alias = es.indices.get_aliases(index='website')
+def set_up_alias(old_index, index):
+    alias = es.indices.get_aliases(index=old_index)
     if alias:
         logger.info("Removing old aliases...")
-        es.indices.delete_alias(index='website', name='_all', ignore=404)
-    es.indices.put_alias('website', index)
+        es.indices.delete_alias(index=old_index, name='_all', ignore=404)
+    es.indices.put_alias(old_index, index)
 
 
 def delete_old(index):
