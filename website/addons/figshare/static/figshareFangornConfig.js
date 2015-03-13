@@ -30,14 +30,17 @@ function _fangornActionColumn (item, col) {
         });
     }
 
-    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public' && item.data.permissions.edit) {
+    // Files can be deleted if private or if parent contains more than one child
+    var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
+        item.parent().children.length > 1;
+    if (item.kind === 'file' && privateOrSiblings) {
         buttons.push({
-            'name' : '',
-            'icon' : 'icon-remove',
-            'tooltip' : 'Delete',
-            'css' : 'm-l-lg text-danger fg-hover-hide',
-            'style' : 'display:none',
-            'onclick' : Fangorn.ButtonEvents._removeEvent
+            name: '',
+            icon: 'icon-remove',
+            tooltip: 'Delete',
+            css: 'm-l-lg text-danger fg-hover-hide',
+            style: 'display:none',
+            onclick: Fangorn.ButtonEvents._removeEvent
         });
     }
 
