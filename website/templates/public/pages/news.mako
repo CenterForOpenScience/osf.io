@@ -13,7 +13,7 @@
                 March 2014
             </td>
             <td  class="table-description">
-                Many new features were introduced to the OSF in March, including commenting, a FigShare add-on, re-ordering of contributors, and contributor permissions. For information on using these features, visit our <a href="https://osf.io/getting-started/">Getting Started page</a>.
+                Many new features were introduced to the OSF in March, including commenting, a figshare add-on, re-ordering of contributors, and contributor permissions. For information on using these features, visit our <a href="https://osf.io/getting-started/">Getting Started page</a>.
             </td>
         </tr>
         <tr class="spacer"></tr>

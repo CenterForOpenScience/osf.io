@@ -1,4 +1,4 @@
-# FigShare application credentials
+# figshare application credentials
 # from http://figshare.com/
 
 CLIENT_ID = 'changeme'
