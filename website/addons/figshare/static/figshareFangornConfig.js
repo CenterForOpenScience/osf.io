@@ -15,7 +15,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Upload files',
-            'icon' : 'icon-upload-alt',
+            'icon' : 'fa fa-upload',
             'css' : 'fangorn-clickable btn btn-default btn-xs',
             'onclick' : Fangorn.ButtonEvents._uploadEvent
         });
@@ -24,7 +24,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Download file',
-            'icon' : 'icon-download-alt',
+            'icon' : 'fa fa-download',
             'css' : 'btn btn-info btn-xs',
             'onclick' : Fangorn.ButtonEvents._downloadEvent
         });
@@ -35,12 +35,12 @@ function _fangornActionColumn (item, col) {
         item.parent().children.length > 1;
     if (item.kind === 'file' && privateOrSiblings) {
         buttons.push({
-            name: '',
-            icon: 'icon-remove',
-            tooltip: 'Delete',
-            css: 'm-l-lg text-danger fg-hover-hide',
-            style: 'display:none',
-            onclick: Fangorn.ButtonEvents._removeEvent
+            'name' : '',
+            'icon' : 'fa fa-times',
+            'tooltip' : 'Delete',
+            'css' : 'm-l-lg text-danger fg-hover-hide',
+            'style' : 'display:none',
+            'onclick' : Fangorn.ButtonEvents._removeEvent
         });
     }
 
