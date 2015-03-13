@@ -10,7 +10,7 @@ require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 require('../../css/site.css');
-
+require('font-awesome-webpack');
 
 var $ = require('jquery');
 require('jquery.cookie');
