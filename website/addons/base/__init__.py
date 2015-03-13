@@ -843,19 +843,19 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         )
         if self.has_auth and self.user_settings.owner == user:
             clone.set_auth(self.external_account, user)
-            message = '{addon} authorization copied to forked {cat}.'.format(
+            message = '{addon} authorization copied to forked {category}.'.format(
                 addon=self.config.full_name,
-                cat=fork.project_or_component,
+                category=fork.project_or_component,
             )
         else:
             message = (
-                u'{addon} authorization not copied to forked {cat}. You may '
+                u'{addon} authorization not copied to forked {category}. You may '
                 u'authorize this fork on the <a href="{url}">Settings</a> '
                 u'page.'
             ).format(
                 addon=self.config.full_name,
                 url=fork.web_url_for('node_setting'),
-                cat=fork.project_or_component,
+                category=fork.project_or_component,
             )
         if save:
             clone.save()
@@ -872,7 +872,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
                 u'as part of this registration.'
             ).format(
                 addon=self.config.full_name,
-                cat=node.project_or_component,
+                category=node.project_or_component,
             )
 
     # backwards compatibility

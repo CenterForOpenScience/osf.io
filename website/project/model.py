@@ -1752,6 +1752,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'URL': self.display_absolute_url,
         }
 
+        doi = self.get_identifier_value('doi')
+        if doi:
+            csl['DOI'] = doi
+
         if self.logs:
             csl['issued'] = datetime_to_csl(self.logs[-1].date)
 

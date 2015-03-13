@@ -7,9 +7,8 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from framework.exceptions import HTTPError
-from framework.forms.utils import process_payload, unprocess_payload
 from framework.mongo.utils import to_mongo
-from framework.transactions.handlers import no_auto_transaction
+from framework.forms.utils import process_payload, unprocess_payload
 
 from website import settings
 from website.project.decorators import (
@@ -35,7 +34,7 @@ def node_register_page(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
-    out = {
+    ret = {
         'options': [
             {
                 'template_name': metaschema['name'],
@@ -44,8 +43,8 @@ def node_register_page(auth, **kwargs):
             for metaschema in OSF_META_SCHEMAS
         ]
     }
-    out.update(_view_project(node, auth, primary=True))
-    return out
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
 
 
 @must_be_valid_project
