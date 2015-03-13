@@ -6,7 +6,7 @@
 
 <div class="row">
 
-    <div class="col-md-3">
+    <div class="col-sm-3">
 
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
@@ -19,7 +19,7 @@
 
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
 
         <div id="selectAddons" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
@@ -70,9 +70,8 @@
                 <div class="panel-body">
 
                     % for name in addon_enabled_settings:
-
                         <div mod-meta='{
-                                "tpl": "../addons/${name}/templates/${name}_user_settings.mako",
+                                "tpl": "${user_addons_enabled[name]['urls']['user_settings']}",
                                 "uri": "${user_api_url}${name}/settings/"
                             }'></div>
                         % if not loop.last:
@@ -97,7 +96,7 @@
    <script type="text/javascript">
         window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': ${json.dumps(addon_enabled_settings)}});
     </script>
-    <script src="${"/static/public/js/user-addon-cfg-page.js" | webpack_asset}"></script>
+    <script src="${"/static/public/js/profile-settings-addons-page.js" | webpack_asset}"></script>
 
     ## Webpack bundles
     % for js_asset in addon_js:

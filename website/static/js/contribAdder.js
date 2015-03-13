@@ -12,8 +12,8 @@ NODE_OFFSET = 25;
 var MAX_RECENT = 5;
 
 /**
-    * The add contributor VM, scoped to the add contributor modal dialog.
-    */
+* The add contributor VM, scoped to the add contributor modal dialog.
+*/
 var AddContributorViewModel = function(title, parentId, parentTitle) {
 
     var self = this;
@@ -479,24 +479,24 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         return names.join(', ');
     });
 
-        self.submit = function() {
-            $osf.block();
+    self.submit = function() {
+        $osf.block();
+        $osf.postJSON(
+            nodeApiUrl + 'contributors/',
+            {
+                users: self.selection().map(function(user) {
+                    return ko.toJS(user);
+                }),
+                node_ids: self.nodesToChange()
+            }
+        ).done(function() {
+            window.location.reload();
+        }).fail(function() {
             $('.modal').modal('hide');
-            $osf.postJSON(
-                nodeApiUrl + 'contributors/',
-                {
-                    users: self.selection().map(function(user) {
-                        return ko.toJS(user);
-                    }),
-                    node_ids: self.nodesToChange()
-                }
-            ).done(function() {
-                window.location.reload();
-            }).fail(function() {
-                $osf.unblock();
-                $osf.growl('Error','Add contributor failed.');
-            });
-        };
+            $osf.unblock();
+            $osf.growl('Error','Add contributor failed.');
+        });
+    };
 
     self.clear = function() {
         self.page('whom');

@@ -28,7 +28,7 @@
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
                     <ul class="dropdown-menu">
-                        <li><a href="/explore">Collaborator Network</a></li>
+                        <li><a href="/search/?q=*&filter=registration">Registry</a></li>
                         <li><a href="/explore/activity">Public Activity</a></li>
                     </ul><!-- end dropdown-menu -->
                 </li><!-- end dropdown -->

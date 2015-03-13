@@ -9,17 +9,16 @@ def serialize_account(account):
         'provider_id': account.provider_id,
         'display_name': account.display_name,
     }
-
 def serialize_folder(name, parent_id=None, list_id=None, id=None):
-    retval = {
+    ret = {
         'name': name,
         'provider_list_id': list_id,
         'id': id
     }
     if parent_id:
-        retval['parent_list_id'] = parent_id
+        ret['parent_list_id'] = parent_id
 
-    return retval
+    return ret
 
 def serialize_urls(node_addon):
     """Collects and serializes urls needed for AJAX calls"""

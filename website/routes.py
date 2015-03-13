@@ -437,7 +437,8 @@ def make_url_map(app):
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),
-
+        Rule('/login/two-factor/', ['get', 'post'], auth_views.two_factor,
+             OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
         Rule('/forgotpassword/', 'post', auth_views.forgot_password,
@@ -647,7 +648,6 @@ def make_url_map(app):
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
         Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
-
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(

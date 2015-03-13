@@ -6,6 +6,7 @@ from pyzotero import zotero
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.citations.utils import serialize_folder
+from website.addons.zotero import serializer
 from website.addons.zotero import settings
 from website.oauth.models import ExternalProvider
 
@@ -115,28 +116,15 @@ class Zotero(ExternalProvider):
                 offset = offset + len(page)
         return citations
 
+
 class ZoteroUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Zotero
+    serializer = serializer.ZoteroSerializer
 
-    def _get_connected_accounts(self):
-        """Get user's connected Zotero accounts"""
-        return [
-            x for x in self.owner.external_accounts if x.provider == 'zotero'
-        ]
-
-    def to_json(self, user):
-        rv = super(ZoteroUserSettings, self).to_json(user)
-        rv['accounts'] = [
-            {
-                'id': account._id,
-                'provider_id': account.provider_id,
-                'display_name': account.display_name,
-            } for account in self._get_connected_accounts()
-        ]
-        return rv
 
 class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = Zotero
+    serializer = serializer.ZoteroSerializer
 
     zotero_list_id = fields.StringField()
 
