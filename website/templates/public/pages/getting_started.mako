@@ -25,6 +25,7 @@
                             <li><a href="#forks"><i class="icon-chevron-right"></i> Forks</a></li>
                             <li><a href="#registrations"><i class="icon-chevron-right"></i> Registrations</a></li>
                             <li><a href="#organizer"><i class="icon-chevron-right"></i> Project Organizer and Folders</a></li>
+                            <li><a href="#wiki"><i class="icon-chevron-right"></i> Collaborative Wiki</a></li>
                         </ul>
                     </li>
                     <li>
@@ -46,6 +47,10 @@
                             <li><a href="#figshare"><i class="icon-chevron-right"></i> figshare</a></li>
                             <li><a href="#dataverse"><i class="icon-chevron-right"></i> Dataverse</a></li>
                             <li><a href="#twofactor"><i class="icon-chevron-right"></i> Two-factor Authentication</a></li>
+                            <li><a href="#box"><i class="icon-chevron-right"></i> Box </a></li>
+                            <li><a href="#drive"><i class="icon-chevron-right"></i> Google Drive</a></li>
+                            <li><a href="#mendeley"><i class="icon-chevron-right"></i> Mendeley</a></li>
+                            <li><a href="#zotero"><i class="icon-chevron-right"></i> Zotero</a></li>
                         </ul>
                     </li>
                     <li>
@@ -174,6 +179,23 @@
                     <p>Folders can be rearranged by dragging and dropping them wherever you like. Folders can be renamed by clicking on the “info” icon adjacent to the folder, and then clicking on the pencil icon next to the folder name. Projects and components can be renamed in this way too. Folders can be deleted by clicking on the “info” icon and choosing “Delete Folder.”</p>
                 </div>
             </div>
+            
+            <span id="wiki" class="anchor"></span>
+                    <p class="gs-header">Collaborative Wiki</p>
+                    <p><strong>The wiki is a versatile tool for interacting with your team or the people who view your work.</strong>Each project and component has a wiki and you can add more pages depending on your needs. You can also turn the wiki off completely in the “Select Add-Ons” section of your project settings.
+</p>
+                    <div class="gs-video embed-responsive embed-responsive-16by9">
+                        <div class="embed-responsive-item youtube-loader" id="BWlRGvg3Ro4"></div>
+                    </div>
+                    <p>The wiki supports collaborative editing. Your entire team can get online and write together.</p>
+                    <p>One benefit of using the wiki for writing is version control. You can always go back to previous versions of your wiki, and you compare your current wiki with previous versions.</p>
+                    <p><strong>Here are two links that you might find helpful for formatting your wiki with markdown and TeX.</strong></p>
+                   <uo>
+                   <li><a href="http://assemble.io/docs/Cheatsheet-Markdown.html">Markdown</a></li>
+                   <li><a href="http://en.wikibooks.org/wiki/LaTeX/Mathematics ">Inline Mathematics</a></li>
+                   
+                    
+                    
             <div class="row" style="margin-bottom: 70px;">
                 <div class="col-sm-12">
                     <p class="subHeadFour text-center anchor" id="sharing">Sharing Your Work:</p>
