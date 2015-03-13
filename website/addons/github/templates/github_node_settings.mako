@@ -71,7 +71,7 @@
                 may no longer be valid. Try deauthorizing and reauthorizing GitHub on your
                 <a href="${addons_url}">account settings page</a>.
             % else:
-                Could not retrieve GitHub settings at this time. The GitHuh addon credentials
+                Could not retrieve GitHub settings at this time. The GitHub addon credentials
                 may no longer be valid. Contact ${auth_osf_name} to verify.
             % endif
         </div>
