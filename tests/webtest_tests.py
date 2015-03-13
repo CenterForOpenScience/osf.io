@@ -75,7 +75,7 @@ class TestAUser(OsfTestCase):
         '''Log in a user via at the login page.'''
         res = self.app.get('/account/').maybe_follow()
         # Fills out login info
-        form = res.forms['signinForm']  # Get the form from its ID
+        form = res.forms['logInForm']  # Get the form from its ID
         form['username'] = username
         form['password'] = password
         # submits
@@ -111,7 +111,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get('/account/').maybe_follow()
         # Fills the form with incorrect password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'thisiswrong'
         # Submits
@@ -130,7 +130,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills the form with correct password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -171,7 +171,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills the form with correct password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -356,10 +356,10 @@ class TestAUser(OsfTestCase):
         # A registered user
         user = UserFactory()
         # goes to the login page
-        url = web_url_for('auth_login')
+        url = web_url_for('_forgot_password')
         res = self.app.get(url)
         # and fills out forgot password form
-        form = res.forms['forgotPassword']
+        form = res.forms['forgotPasswordForm']
         form['forgot_password-email'] = user.username
         # submits
         res = form.submit()
@@ -607,7 +607,7 @@ class TestMergingAccounts(OsfTestCase):
         '''Log in a user via at the login page.'''
         res = self.app.get('/account/').maybe_follow()
         # Fills out login info
-        form = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # submits
@@ -1064,7 +1064,7 @@ class TestConfirmingEmail(OsfTestCase):
         # Goes to log in page
         res = self.app.get('/account/').maybe_follow()
         # Fills the form with correct password
-        form = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'bicycle'
         res = form.submit().maybe_follow()
@@ -1141,7 +1141,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         # Taken to login/register page
         res2 = res.click(linkid='signOutLink', auth=lab_user.auth)
         # Fills in log in form
-        form = res2.forms['signinForm']
+        form = res2.forms['logInForm']
         form['username'] = right_user.username
         form['password'] = 'science'
         # submits
