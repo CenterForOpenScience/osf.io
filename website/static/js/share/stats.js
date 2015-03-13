@@ -92,9 +92,6 @@ Stats.view = function(ctrl) {
     ];
 };
 
-
-
-
 Stats.controller = function(vm) {
     var self = this;
 
