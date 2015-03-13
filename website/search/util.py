@@ -1,4 +1,8 @@
+import copy
 import webcolors
+
+
+
 
 COLORBREWER_COLORS = [(166, 206, 227), (31, 120, 180), (178, 223, 138), (51, 160, 44), (251, 154, 153), (227, 26, 28), (253, 191, 111), (255, 127, 0), (202, 178, 214), (106, 61, 154), (255, 255, 153), (177, 89, 40)]
 
@@ -32,7 +36,8 @@ def build_query_string(q):
 
 
 def generate_color():
-    colors_to_generate = COLORBREWER_COLORS
+    # TODO - this might not be the optimal way - copy is expensive
+    colors_to_generate = copy.copy(COLORBREWER_COLORS)
     colors_used = []
 
     while True:
@@ -43,7 +48,6 @@ def generate_color():
             new_colors = get_new_colors(colors_used)
             colors_to_generate = new_colors
             colors_used = []
-
         yield webcolors.rgb_to_hex(color)
 
 
