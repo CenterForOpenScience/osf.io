@@ -73,8 +73,29 @@
                     </a>
                 </li>
                 % elif allow_login:
+                <li data-bind="with: $root.signIn">
+                    <form
+                            id="signInForm"
+                            class="navbar-form navbar-right"
+                            data-bind="submit: submit"
+                            % if next_url:
+                                action="/login/?next=${next_url}"
+                            % else:
+                                action="/login/"
+                            % endif
+                            method="POST"
+                        >
+                        <div class="form-group">
+                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Username">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-success">Sign In</button>
+                    </form>
+                </li>
                 <li>
-                    <a class="btn btn-primary" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
+                    <a href="${web_url_for('auth_login')}">Forgot Password?</a>
                 </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
@@ -85,4 +106,3 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
-
