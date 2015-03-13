@@ -1,8 +1,6 @@
 import re
 from bson import ObjectId
 
-from dateutil.parser import parse
-
 from boto.iam import IAMConnection
 from boto.s3.cors import CORSConfiguration
 from boto.exception import BotoServerError
