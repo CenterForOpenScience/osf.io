@@ -274,9 +274,10 @@ CitationsFolderPickerViewModel.prototype.submitSettings = function() {
 
 
     $osf.putJSON(self.urls().config, {
-            external_account_id: self.userAccountId(),
-            external_list_id: self.selected().id
-        })
+        external_account_id: self.userAccountId(),
+        external_list_id: self.selected().id,
+        external_folder_name: self.selected().name
+    })
         .done(onSubmitSuccess)
         .fail(onSubmitError);
 };
@@ -451,6 +452,14 @@ CitationsFolderPickerViewModel.prototype.activatePicker = function() {
             folderPickerOnload: function() {
                 // Hide loading indicator
                 self.loading(false);
+            },
+            ondataloaderror: function(xhr){
+                self.loading(false);
+                self.changeMessage(self.messages.CONNECT_ERROR(), 'text-warning');
+                Raven.captureMessage('Could not GET get ' + self.properName + ' contents.', {
+                    textStatus: xhr.responseText,
+                    error: xhr.status
+                });
             }
         });
     }
