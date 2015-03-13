@@ -108,11 +108,11 @@
                         <div class="col-xs-12">
                            <div class="pull-right">
                               <button id="revert-button"
-                                      class="btn btn-success"
+                                      class="btn btn-danger"
                                       data-bind="click: revertChanges"
                                       >Revert</button>
                               <input type="submit"
-                                     class="btn btn-primary"
+                                     class="btn btn-success"
                                      value="Save"
                                      onclick=$(window).off('beforeunload')>
                           </div>
