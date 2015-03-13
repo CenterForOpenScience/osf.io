@@ -115,5 +115,5 @@ var OAuthAddonSettingsViewModel = function(name, displayName) {
 module.exports = {
     ConnectedProject: ConnectedProject,
     ExternalAccount: ExternalAccount,
-    OAuthAddonSettingsViewModel: OAuthAddonSettingsViewModel,
-}
+    OAuthAddonSettingsViewModel: OAuthAddonSettingsViewModel
+};

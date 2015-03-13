@@ -19,7 +19,7 @@
             <tr>
                 <td class="authorized-nodes">
                     <!-- ko if: title --><a href="{{ urls.view }}">{{ title }}</a><!-- /ko -->
-                    <!-- ko if: !title --><em>private project</em><!-- /ko -->
+                    <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                 </td>
                 <td>
                     <a data-bind="click: $parent.deauthorizeNode">
