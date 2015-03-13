@@ -28,7 +28,10 @@ $(document).ready(function() {
                 title: undefined,
                 hideColumnTitles: true,
                 columnTitles: function () {
-                    return [];
+                    return [{
+                        title: 'Name',
+                        width: '100%'
+                    }];
                 },
                 resolveRows: function (item) {
                     var defaultColumns = [
