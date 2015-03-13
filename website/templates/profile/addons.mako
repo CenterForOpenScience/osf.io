@@ -44,6 +44,7 @@
                                         <input
                                             type="checkbox"
                                             name="${addon.short_name}"
+                                            class="addon-select"
                                             ${'checked' if (addon.short_name in addons_enabled) else ''}
                                         />
                                         ${addon.full_name}
@@ -86,6 +87,11 @@
     </div>
 
 </div>
+
+
+% for name, capabilities in addon_capabilities.iteritems():
+    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+% endfor
 
 </%def>
 

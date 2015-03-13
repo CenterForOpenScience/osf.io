@@ -2,6 +2,7 @@
 import logging
 
 from flask import request
+from github3 import GitHubError
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -55,7 +56,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
             sha=kwargs.get('sha'),
             connection=connection,
         )
-    except NotFoundError:
+    except (NotFoundError, GitHubError):
         # TODO: Show an alert or change GitHub configuration?
         logger.error('GitHub repo not found')
         return
