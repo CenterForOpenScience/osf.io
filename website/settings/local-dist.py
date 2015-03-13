@@ -12,6 +12,7 @@ DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
+ELASTIC_INDEX = 'website'
 
 # Comment out to use celery in development
 USE_CELERY = False
