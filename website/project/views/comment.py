@@ -343,6 +343,7 @@ def list_comments(auth, **kwargs):
             serialize_comment(comment, auth, anonymous)
             for comment in getattr(node, 'comment_owner', [])
         ]
+        # todo fix
     elif root_id == 'None':  # Overview/Files/Wiki page on discussion page
         serialized_comments = list_total_comments(node, auth, page)
     else:
