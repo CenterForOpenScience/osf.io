@@ -17,11 +17,28 @@ var browsers = {
     browserName: 'firefox',
     version: '30'
   },
+  sl_safari: {
+    base: 'SauceLabs',
+    browserName: 'safari',
+    version: '8'
+  },
   sl_ie_11: {
     base: 'SauceLabs',
     browserName: 'internet explorer',
     platform: 'Windows 8.1',
     version: '11'
+  },
+  sl_ie_10: {
+    base: 'SauceLabs',
+    browserName: 'internet explorer',
+    platform: 'Windows 8',
+    version: '10'
+  },
+  sl_ie_9: {
+    base: 'SauceLabs',
+    browserName: 'internet explorer',
+    platform: 'Windows 7',
+    version: '9'
   }
 };
 
@@ -31,10 +48,5 @@ module.exports = function(config) {
       browsers: Object.keys(browsers),
       customLaunchers: browsers,
       singleRun: true,
-
-      // Avoid DISCONNECTED messages
-      // See https://github.com/karma-runner/karma/issues/598
-      browserDisconnectTimeout : 100000, // default 2000
-      browserNoActivityTimeout : 600000 //default 10000
   }));
 };

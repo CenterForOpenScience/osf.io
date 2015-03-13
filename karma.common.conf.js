@@ -53,5 +53,10 @@ module.exports = {
     webpackMiddleware: {noInfo: true},
     webpackServer: {
         noInfo: true // don't spam the console
-    }
+    },
+
+    // Avoid DISCONNECTED messages
+    // See https://github.com/karma-runner/karma/issues/598
+    browserDisconnectTimeout : 100000, // default 2000
+    browserNoActivityTimeout : 600000 //default 10000
 }
