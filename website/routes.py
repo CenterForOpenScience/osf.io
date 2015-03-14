@@ -1154,8 +1154,18 @@ def make_url_map(app):
                 '/project/<pid>/identifiers/',
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
-            ['get', 'post'],
-            project_views.register.node_identifiers,
+            'get',
+            project_views.register.node_identifiers_get,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'post',
+            project_views.register.node_identifiers_post,
             json_renderer,
         ),
 

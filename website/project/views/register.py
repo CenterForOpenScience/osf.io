@@ -160,7 +160,7 @@ def node_register_template_page_post(auth, **kwargs):
 
 
 def _get_or_create_identifiers(doi, metadata):
-    client = EzidClient('apitest', 'apitest')
+    client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
     try:
         resp = client.create_identifier(doi, metadata)
         return dict(
@@ -174,45 +174,51 @@ def _get_or_create_identifiers(doi, metadata):
         doi = resp['success']
         suffix = doi.strip(settings.DOI_NAMESPACE)
         return {
-            'doi': doi,
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE, suffix),
+            'doi': doi.strip('doi:'),
+            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.strip('ark:'), suffix),
         }
 
 
 @must_be_valid_project
-@must_have_permission(ADMIN)
-def node_identifiers(auth, **kwargs):
+@must_be_contributor_or_public
+def node_identifiers_get(**kwargs):
     node = kwargs['node'] or kwargs['project']
     if not node.is_registration or not node.is_public or node.parent_node:
         raise HTTPError(http.BAD_REQUEST)
-    if request.method == 'GET':
-        return {
-            'doi': node.get_identifier_value('doi'),
-            'ark': node.get_identifier_value('ark'),
-        }
-    elif request.method == 'POST':
-        if node.get_identifier('doi') or node.get_identifier('ark'):
-            raise HTTPError(http.BAD_REQUEST)
-        doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
-        metadata = {
-            'datacite.creator': node.creator.fullname,
-            'datacite.title': node.title,
-            'datacite.publisher': 'Open Science Framework',
-            'datacite.publicationyear': str(node.registered_date.year),
-        }
-        try:
-            identifiers = _get_or_create_identifiers(doi, metadata)
-        except ClientError:
-            raise HTTPError(http.BAD_REQUEST)
-        for category, value in identifiers.iteritems():
-            node.set_identifier_value(category, value)
-        node.add_log(
-            NodeLog.EXTERNAL_IDS_ADDED,
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'identifiers': identifiers,
-            },
-            auth=auth,
-        )
-        return identifiers, http.CREATED
+    return {
+        'doi': node.get_identifier_value('doi'),
+        'ark': node.get_identifier_value('ark'),
+    }
+
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_identifiers_post(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    if not node.is_registration or not node.is_public or node.parent_node:
+        raise HTTPError(http.BAD_REQUEST)
+    if node.get_identifier('doi') or node.get_identifier('ark'):
+        raise HTTPError(http.BAD_REQUEST)
+    doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
+    metadata = {
+        'datacite.creator': node.creator.fullname,
+        'datacite.title': node.title,
+        'datacite.publisher': 'Open Science Framework',
+        'datacite.publicationyear': str(node.registered_date.year),
+    }
+    try:
+        identifiers = _get_or_create_identifiers(doi, metadata)
+    except ClientError:
+        raise HTTPError(http.BAD_REQUEST)
+    for category, value in identifiers.iteritems():
+        node.set_identifier_value(category, value)
+    node.add_log(
+        NodeLog.EXTERNAL_IDS_ADDED,
+        params={
+            'project': node.parent_id,
+            'node': node._id,
+            'identifiers': identifiers,
+        },
+        auth=auth,
+    )
+    return identifiers, http.CREATED

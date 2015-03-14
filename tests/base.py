@@ -170,6 +170,7 @@ class MockRequestTestCase(unittest.TestCase):
                 method,
                 re.compile(r'.*'),
                 body=kill,
+                priority=-1,
             )
 
     @classmethod
