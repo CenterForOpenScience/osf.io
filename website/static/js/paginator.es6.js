@@ -1,9 +1,10 @@
 var ko = require('knockout');
+var oop = require('js/oop');
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;    
 
-class Paginator {
+var Paginator = oop.defclass({
     constructor() {
         this.numberOfPages = ko.observable(0);
         this.currentPage = ko.observable(0);
@@ -11,7 +12,7 @@ class Paginator {
         if (!this.search){
             throw new Error('Subclasses of Paginator must implement a \'search\' function');
         }
-    }
+    },
     addNewPaginators() {
         var self = this;
         self.paginators.removeAll();
@@ -108,14 +109,14 @@ class Paginator {
                 text: '&gt;'
             });
         }
-    }
+    },
     nextPage(){
         this.currentPage(this.currentPage() + 1);
         this.search();
-    }
+    },
     previousPage(){
         this.currentPage(this.currentPage() - 1);
         this.search();
     }
-}
+});
 module.exports = Paginator;

@@ -6,7 +6,9 @@ var ko = require('knockout');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 var Paginator = require('./paginator');
+
 require('bootstrap-editable');
+var oop = require('js/oop');
 
 var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show
@@ -23,9 +25,9 @@ function Contributor(data) {
     }
 }
 
-class AddContributorViewModel extends Paginator {
+var AddContributorViewModel = oop.extend (Paginator, {
     constructor(title, parentId, parentTitle) {
-        super();
+        this.super.constructor();
         var self = this;
 
         self.permissions = ['read', 'write', 'admin'];
@@ -77,23 +79,23 @@ class AddContributorViewModel extends Paginator {
         });
         return names.join(', ');
     });
-    }
+    },
     selectWhom() {
         this.page('whom');
-    };
+    },
     selectWhich() {
         this.page('which');
-    };
+    },
     gotoInvite() {
         var self = this;
         self.inviteName(self.query());
         self.inviteError('');
         self.inviteEmail('');
         self.page('invite');
-    };
+    },
     goToPage (page) {
         this.page(page);
-    };
+    },
     /**
         * A simple Contributor model that receives data from the
         * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
@@ -103,7 +105,7 @@ class AddContributorViewModel extends Paginator {
     startSearch() {
         this.currentPage(0);
         this.search();
-    };
+    },
     search() {
         var self = this;
         self.notification(false);
@@ -130,7 +132,7 @@ class AddContributorViewModel extends Paginator {
             self.currentPage(0);
             self.totalPages(0);
         }
-    };
+    },
     importFromParent() {
         self.notification(false);
         $.getJSON(
@@ -146,7 +148,7 @@ class AddContributorViewModel extends Paginator {
                 self.results(result.contributors);
             }
         );
-    };
+    },
     recentlyAdded() {
         var self = this;
         self.notification(false);
@@ -182,7 +184,7 @@ class AddContributorViewModel extends Paginator {
                 error: error
             });
         });
-    };
+    },
     mostInCommon() {
         var self = this;
         self.notification(false);
@@ -218,12 +220,12 @@ class AddContributorViewModel extends Paginator {
                 error: error
             });
         });
-    };
+    },
     addTips(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
-    };
+    },
     setupEditable(elm, data) {
         var $elm = $(elm);
         var $editable = $elm.find('.permission-editable');
@@ -239,18 +241,18 @@ class AddContributorViewModel extends Paginator {
                 data.permission(value);
             }
         });
-    };
+    },
     afterRender(elm, data) {
         var self = this;
         self.addTips(elm, data);
         self.setupEditable(elm, data);
-    };
+    },
     makeAfterRender(){
         var self = this;
         return function(elm, data){
             return self.afterRender(elm, data);
         };
-    };
+    },
     /** Validate the invite form. Returns a string error message or
     *   true if validation succeeds.
     */
@@ -271,7 +273,7 @@ class AddContributorViewModel extends Paginator {
             }
         }
         return true;
-    };
+    },
     postInvite() {
         var self = this;
         self.inviteError('');
@@ -281,7 +283,7 @@ class AddContributorViewModel extends Paginator {
             return false;
         }
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
-    };
+    },
     add(data) {
         data.permission = ko.observable('admin');
         // All manually added contributors are visible
@@ -290,7 +292,7 @@ class AddContributorViewModel extends Paginator {
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    };
+    },
     remove(data) {
         this.selection.splice(
             this.selection.indexOf(data), 1
@@ -298,31 +300,31 @@ class AddContributorViewModel extends Paginator {
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    };
+    },
     addAll() {
         $.each(this.results(), function(idx, result) {
             if (this.selection().indexOf(result) === -1) {
                 this.add(result);
             }
         });
-    };
+    },
     removeAll() {
         $.each(this.selection(), function(idx, selected) {
             this.remove(selected);
         });
-    };
+    },
     cantSelectNodes() {
         return this.nodesToChange().length === this.nodes().length;
-    };
+    },
     cantDeselectNodes() {
         return this.nodesToChange().length === 0;
-    };
+    },
     selectNodes() {
         this.nodesToChange($osf.mapByProperty(this.nodes(), 'id'));
-    };
+    },
     deselectNodes() {
         this.nodesToChange([]);
-    };
+    },
     selected(data) {
         for (var idx=0; idx < this.selection().length; idx++) {
             if (data.id === this.selection()[idx].id){
@@ -330,7 +332,7 @@ class AddContributorViewModel extends Paginator {
             }
         }
         return false;
-    };
+    },
     submit() {
         var self = this;
         $osf.block();
@@ -349,7 +351,7 @@ class AddContributorViewModel extends Paginator {
             $osf.unblock();
             $osf.growl('Error','Add contributor failed.');
         });
-    }
+    },
     clear() {
         var self = this;
         self.page('whom');
@@ -358,7 +360,7 @@ class AddContributorViewModel extends Paginator {
         self.selection([]);
         self.nodesToChange([]);
         self.notification(false);
-    };
+    },
     postInviteRequest(fullname, email) {
         var self = this;
         $osf.postJSON(
@@ -369,20 +371,20 @@ class AddContributorViewModel extends Paginator {
         ).fail(
             self.onInviteError.bind(self)
         );
-    }
+    },
     onInviteSuccess(result) {
         var self = this;
         self.query('');
         self.results([]);
         self.page('whom');
         self.add(result.contributor);
-    }
+    },
     onInviteError(xhr) {
         var response = JSON.parse(xhr.responseText);
         // Update error message
         this.inviteError(response.message);
     }
-}
+});
 
 
 ////////////////

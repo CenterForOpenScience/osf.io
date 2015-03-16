@@ -8,14 +8,15 @@ var ko = require('knockout');
 
 var osfHelpers = require('osfHelpers');
 var Paginator = require('./paginator');
+var oop = require('js/oop');
 
 // Grab nodeID from global context (mako)
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
 
-class AddPointerViewModel extends Paginator {
+var AddPointerViewModel = oop.extend(Paginator, {
     constructor(nodeTitle) {
-        super();
+        this.super.constructor();
         var self = this;
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
@@ -34,15 +35,15 @@ class AddPointerViewModel extends Paginator {
         this.noResults = ko.computed(function() {
             return self.query() && !self.results().length;
         });
-    }
+    },
     searchAllProjects() {
         this.includePublic(true);
         this.search();
-    }
+    },
     searchMyProjects() {
         this.includePublic(false);
         this.search();
-    }
+    },
     search() {
         var self = this;
         self.errorMsg('');
@@ -70,18 +71,18 @@ class AddPointerViewModel extends Paginator {
             self.currentPage(0);
             self.totalPages(0);
         }
-    }
+    },
     addTips(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
-    }
+    },
     add(data) {
         this.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    }
+    },
     remove(data) {
         var self = this;
         self.selection.splice(
@@ -90,7 +91,7 @@ class AddPointerViewModel extends Paginator {
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    }
+    },
     addAll() {
         var self = this;
         $.each(self.results(), function(idx, result) {
@@ -98,13 +99,13 @@ class AddPointerViewModel extends Paginator {
                 self.add(result);
             }
         });
-    }
+    },
     removeAll() {
         var self = this;
         $.each(self.selection(), function(idx, selected) {
             self.remove(selected);
         });
-    }
+    },
     selected(data) {
         var self = this;
         for (var idx = 0; idx < self.selection().length; idx++) {
@@ -113,7 +114,7 @@ class AddPointerViewModel extends Paginator {
             }
         }
         return false;
-    }
+    },
     submit() {
         var self = this;
         self.submitEnabled(false);
@@ -128,12 +129,12 @@ class AddPointerViewModel extends Paginator {
             self.submitEnabled(true);
             osfHelpers.handleJSONError(data);
         });
-    }
+    },
     clear() {
         this.query('');
         this.results([]);
         this.selection([]);
-    }
+    },
     authorText(node) {
         var rv = node.firstAuthor;
         if (node.etal) {
@@ -141,7 +142,7 @@ class AddPointerViewModel extends Paginator {
         }
         return rv;
     }
-}
+});
 
 var LinksViewModel = function($elm) {
 
@@ -153,7 +154,7 @@ var LinksViewModel = function($elm) {
             $.ajax({
                 type: 'GET',
                 url: nodeApiUrl + 'pointer/',
-                dataType: 'json',
+                dataType: 'json'
             }).done(function(response) {
                 self.links(response.pointed);
             }).fail(function() {
