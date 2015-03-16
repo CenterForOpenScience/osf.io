@@ -28,7 +28,7 @@
         </div>
 
     <!-- Menu toggle closed -->
-        <div class="wiki-panel panel-collapsed hidden-xs text-center">
+        <div class="wiki-panel panel-collapsed hidden-xs text-center"  style="display: none">
           <div class="wiki-panel-header">
             <i class="icon icon-file"> </i>
             <i class="icon icon-angle-right"> </i>
