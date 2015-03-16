@@ -1,7 +1,7 @@
 'use strict';
 var $ = require('jquery');
 var ContribManager = require('../contribManager.js');
-var ContribAdder = require('../contribAdder.js');
+var ContribAdder = require('../contribAdder.es6.js');
 
 var PrivateLinkManager = require('../privateLinkManager.js');
 var PrivateLinkTable = require('../privateLinkTable.js');

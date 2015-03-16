@@ -221,3 +221,7 @@ def search_share_stats():
     query = build_query(q, 0, 0) if q else {}
 
     return search.share_stats(query=query)
+
+
+def search_share_providers():
+    return search.share_providers()
