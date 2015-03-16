@@ -367,63 +367,47 @@ var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
 };
 
-
 /**
- * Determines if an object is a function
-  * @param {object} obj
- */
-var isFunction = function (obj) {
-    return (typeof(obj) === 'function' && typeof(obj.call) === 'function' && typeof(obj.apply) === 'function');
-};
+  * Return a random string of arbitrary length
+  *
+  * @param  {int} length
+  * @param  {Object} options
+  */
+var randomString = function (length, options) {
 
-/**
-*  returns a random name from this list to use as a confirmation string
-*/
-var _confirmationString = function() {
-    // TODO: Generate a random string here instead of using pre-set values
-    //       per Jeff, use ~10 characters
-    var scientists = [
-        'Anning',
-        'Banneker',
-        'Cannon',
-        'Carver',
-        'Chappelle',
-        'Curie',
-        'Divine',
-        'Emeagwali',
-        'Fahlberg',
-        'Forssmann',
-        'Franklin',
-        'Herschel',
-        'Hodgkin',
-        'Hopper',
-        'Horowitz',
-        'Jemison',
-        'Julian',
-        'Kovalevsky',
-        'Lamarr',
-        'Lavoisier',
-        'Lovelace',
-        'Massie',
-        'McClintock',
-        'Meitner',
-        'Mitchell',
-        'Morgan',
-        'Odum',
-        'Pasteur',
-        'Pauling',
-        'Payne',
-        'Pearce',
-        'Pollack',
-        'Rillieux',
-        'Sanger',
-        'Somerville',
-        'Tesla',
-        'Tyson',
-        'Turing'
-    ];
+    // set defaults
+    if (typeof(length) === 'undefined') { length = 8 };
+    if (typeof(options) === 'undefined') {
+        options = {
+            lowerCase: true,
+            upperCase: true,
+            numbers: true,
+            punctuation: false,
+            space: false
+        };
+    } else {
+        if (typeof(options.lowerCase) === 'undefined') { options.lowerCase = true; }
+        if (typeof(options.upperCase) === 'undefined') { options.upperCase = true; }
+        if (typeof(options.numbers) === 'undefined') { options.numbers = true; }
+        if (typeof(options.punctuation) === 'undefined') { options.punctuation = true; }
+        if (typeof(options.space) === 'undefined') { options.space = true; }
+    }
 
-    return scientists[Math.floor(Math.random() * scientists.length)];
+    // build the set of possible characters
+    var chars = '';
+    if (options.lowerCase) { chars += 'abcdefghijklmnopqrstuvwxyz'; }
+    if (options.upperCase) { chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; }
+    if (options.numbers) { chars += '0123456789'; }
+    if (options.punctuation) { chars += '~`!@#$%^&*()_+-={}[]:";\'<>?,./|\\'; }
+    if (options.space) { chars += ' '; }
+
+    // build the string
+    var result = '';
+    for (var i=0; i < length; i++) {
+        result += chars[Math.round(Math.random() * (chars.length - 1))];
+    }
+
+    return result;
 };
 
 /**
@@ -449,7 +433,7 @@ var confirmDangerousAction = function (options) {
     // set default values
     if (!options.title) { options.title = 'Confirm Action'; }
     if (!options.message) { options.message = ''; }
-    if (!options.confirmText) { options.confirmText = _confirmationString(); }
+    if (!options.confirmText) { options.confirmText = randomString(); }
 
     // build end of message, that tells the user to enter text.
     options.message += '<p>Type the following to continue: <strong>';
@@ -508,5 +492,6 @@ module.exports = window.$.osf = {
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
+    randomString: randomString,
     confirmDangerousAction: confirmDangerousAction
 };
