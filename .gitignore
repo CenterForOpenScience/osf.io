@@ -67,7 +67,7 @@ website/mfrtemp/
 website/osfstoragecache/
 website/gpg/
 webpack-assets.json
-local-sauce.json
+sauce.json
 
 # Built log templates
 website/templates/_log_templates.mako

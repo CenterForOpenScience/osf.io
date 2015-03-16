@@ -10,18 +10,15 @@ var browsers = {
     sl_chrome: {
         base: 'SauceLabs',
         browserName: 'chrome',
-        platform: 'Windows 7',
-        version: '35'
+        version: '40'
     },
     sl_firefox: {
         base: 'SauceLabs',
         browserName: 'firefox',
-        version: '30'
     },
     sl_safari: {
         base: 'SauceLabs',
         browserName: 'safari',
-        version: '8'
     },
     sl_ie_11: {
         base: 'SauceLabs',
@@ -41,19 +38,19 @@ var browsers = {
     //    browserName: 'internet explorer',
     //    platform: 'Windows 7',
     //    version: '9'
-    }
+    //}
 };
 
 // Use ENV vars on Travis and sauce.json locally to get credentials
-  if (!process.env.SAUCE_USERNAME) {
-    if (!fs.existsSync('local-sauce.json')) {
-      console.log('Create a sauce.json with your credentials based on the sauce-sample.json file.');
-      process.exit(1);
+if (!process.env.SAUCE_USERNAME) {
+    if (!fs.existsSync('sauce.json')) {
+        console.log('Create a sauce.json with your credentials based on the sauce-sample.json file.');
+        process.exit(1);
     } else {
-      process.env.SAUCE_USERNAME = require('./local-sauce').username;
-      process.env.SAUCE_ACCESS_KEY = require('./local-sauce').accessKey;
+        process.env.SAUCE_USERNAME = require('./sauce').username;
+        process.env.SAUCE_ACCESS_KEY = require('./sauce').accessKey;
     }
-  }
+}
 
 module.exports = function(config) {
   config.set(assign(commonConfig, {

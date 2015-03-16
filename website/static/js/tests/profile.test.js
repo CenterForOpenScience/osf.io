@@ -47,7 +47,7 @@ describe('profile', () => {
         });
 
 
-        describe.only('NameViewModel', () => {
+        describe('NameViewModel', () => {
             var vm;
 
             // Constructor current sends a request, so need to make beforeEach async
