@@ -11,8 +11,6 @@ BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS = 'Users can view the contents of this p
 
 BEFORE_REMOVE_CONTRIBUTOR = 'The ' + FIGSHARE + ' add-on for this {category} is authenticated by {user}. Removing this user will also remove write access to the {category} unless another contributor re-authenticates. '
 
-AFTER_REMOVE_CONTRIBUTOR = 'Because the ' + FIGSHARE + ' add-on for this {category} was authenticated by {user}, authentication information has been deleted. You can re-authenticate on the <a href="{url}settings/">Settings</a> page. '
-
 BEFORE_FORK_OWNER = 'Because you have authenticated the ' + FIGSHARE + ' add-on for this {category}, forking it will also transfer your authorization to the forked {category}. '
 
 BEFORE_FORK_NOT_OWNER = 'Because this ' + FIGSHARE + ' add-on has been authenticated by a different user, forking it will not transfer authentication to the forked {category}. '

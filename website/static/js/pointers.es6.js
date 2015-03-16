@@ -1,126 +1,148 @@
 /**
-* Controls the "Add Links" modal.
-*/
+ * Controls the "Add Links" modal.
+ */
 'use strict';
 
 var $ = require('jquery');
 var ko = require('knockout');
 
 var osfHelpers = require('osfHelpers');
-
+var Paginator = require('js/paginator');
+var oop = require('js/oop');
 
 // Grab nodeID from global context (mako)
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
 
-var AddPointerViewModel = function(nodeTitle) {
+var AddPointerViewModel = oop.extend(Paginator, {
+    constructor(nodeTitle) {
+        this.super.constructor();
+        var self = this;
+        this.nodeTitle = nodeTitle;
+        this.submitEnabled = ko.observable(true);
 
-    var self = this;
+        this.query = ko.observable();
+        this.results = ko.observableArray();
+        this.selection = ko.observableArray();
+        this.errorMsg = ko.observable('');
+        this.totalPages = ko.observable(0);
+        this.includePublic = ko.observable(true);
 
-    self.nodeTitle = nodeTitle;
-    self.submitEnabled = ko.observable(true);
+        this.foundResults = ko.computed(function() {
+            return self.query() && self.results().length;
+        });
 
-    self.query = ko.observable();
-    self.results = ko.observableArray();
-    self.selection = ko.observableArray();
-    self.errorMsg = ko.observable('');
-
-    self.search = function(includePublic) {
-        self.results([]);
+        this.noResults = ko.computed(function() {
+            return self.query() && !self.results().length;
+        });
+    },
+    searchAllProjects() {
+        this.includePublic(true);
+        this.search();
+    },
+    searchMyProjects() {
+        this.includePublic(false);
+        this.search();
+    },
+    search() {
+        var self = this;
         self.errorMsg('');
-        osfHelpers.postJSON(
-            '/api/v1/search/node/',
-            {
-                query: self.query(),
-                nodeId: nodeId,
-                includePublic: includePublic,
-            }
-        ).done(function(result) {
-            if (!result.nodes.length) {
-                self.errorMsg('No results found.');
-            }
-            self.results(result.nodes);
-        }).fail(
-            osfHelpers.handleJSONError
-        );
-    };
-
-    self.addTips = function(elements) {
+        if (self.query()) {
+            osfHelpers.postJSON(
+                '/api/v1/search/node/', {
+                    query: self.query(),
+                    nodeId: nodeId,
+                    includePublic: self.includePublic(),
+                    page: self.currentPage()
+                }
+            ).done(function(result) {
+                if (!result.nodes.length) {
+                    self.errorMsg('No results found.');
+                }
+                self.results(result.nodes);
+                self.currentPage(result.page);
+                self.numberOfPages(result.pages);
+                self.addNewPaginators();
+            }).fail(
+                osfHelpers.handleJSONError
+            );
+        } else {
+            self.results([]);
+            self.currentPage(0);
+            self.totalPages(0);
+        }
+    },
+    addTips(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
-    };
-
-    self.add = function(data) {
-        self.selection.push(data);
+    },
+    add(data) {
+        this.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    };
-
-    self.remove = function(data) {
+    },
+    remove(data) {
+        var self = this;
         self.selection.splice(
             self.selection.indexOf(data), 1
         );
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    };
-
-    self.addAll = function() {
+    },
+    addAll() {
+        var self = this;
         $.each(self.results(), function(idx, result) {
             if (self.selection().indexOf(result) === -1) {
                 self.add(result);
             }
         });
-    };
-
-    self.removeAll = function() {
+    },
+    removeAll() {
+        var self = this;
         $.each(self.selection(), function(idx, selected) {
             self.remove(selected);
         });
-    };
-
-    self.selected = function(data) {
-        for (var idx=0; idx < self.selection().length; idx++) {
+    },
+    selected(data) {
+        var self = this;
+        for (var idx = 0; idx < self.selection().length; idx++) {
             if (data.id === self.selection()[idx].id) {
                 return true;
             }
         }
         return false;
-    };
-
-    self.submit = function() {
+    },
+    submit() {
+        var self = this;
         self.submitEnabled(false);
         var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
         osfHelpers.postJSON(
-            nodeApiUrl + 'pointer/',
-            {nodeIds: nodeIds}
+            nodeApiUrl + 'pointer/', {
+                nodeIds: nodeIds
+            }
         ).done(function() {
             window.location.reload();
         }).fail(function(data) {
-                self.submitEnabled(true);
-                osfHelpers.handleJSONError(data);
-            }
-        );
-    };
-
-    self.clear = function() {
-        self.query('');
-        self.results([]);
-        self.selection([]);
-    };
-
-    self.authorText = function(node) {
+            self.submitEnabled(true);
+            osfHelpers.handleJSONError(data);
+        });
+    },
+    clear() {
+        this.query('');
+        this.results([]);
+        this.selection([]);
+    },
+    authorText(node) {
         var rv = node.firstAuthor;
         if (node.etal) {
             rv += ' et al.';
         }
         return rv;
-    };
-
-};
-
+    }
+});
 
 var LinksViewModel = function($elm) {
 
@@ -132,12 +154,12 @@ var LinksViewModel = function($elm) {
             $.ajax({
                 type: 'GET',
                 url: nodeApiUrl + 'pointer/',
-                dataType: 'json',
+                dataType: 'json'
             }).done(function(response) {
                 self.links(response.pointed);
             }).fail(function() {
                 $elm.modal('hide');
-                osfHelpers.growl('Error:','Could not get links');
+                osfHelpers.growl('Error:', 'Could not get links');
             });
         }
     });
