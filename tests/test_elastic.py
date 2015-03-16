@@ -490,13 +490,13 @@ class TestSearchMigration(SearchTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestSearchMigration, cls).tearDownClass()
-        search.create_index(elastic_search.INDEX)
+        search.create_index('test')
 
     def setUp(self):
         super(TestSearchMigration, self).setUp()
         self.es = search.search_engine.es
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
+        search.delete_index('test')
+        search.create_index('test')
         self.user = UserFactory(fullname='David Bowie')
         self.project = ProjectFactory(
             title='TEST',
