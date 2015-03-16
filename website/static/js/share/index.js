@@ -3,8 +3,8 @@ require('../../css/share-search.css');
 
 var m = require('mithril');
 var $osf = require('osfHelpers');
-var utils = require('../share/utils.js');
 var Stats = require('../share/stats.js');
+var utils = require('../share/utils.js');
 var Results = require('../share/results.js');
 var History = require('exports?History!history');
 var SearchBar = require('../share/searchBar.js');

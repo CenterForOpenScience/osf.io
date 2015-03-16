@@ -64,7 +64,6 @@ var search = function(vm) {
 
     vm.page = 0;
     vm.results = [];
-    // vm.showStats = false;
 
     History.pushState({query: vm.query()}, 'OSF | SHARE', '?q=' + vm.query());
 
