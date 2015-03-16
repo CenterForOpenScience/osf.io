@@ -304,7 +304,7 @@ function NodeControl (selector, data, options) {
 
 NodeControl.prototype.init = function() {
     var self = this;
-    ko.applyBindings(self.viewModel, self.$element[0]);
+    $.osf.applyBindings(self.viewModel, self.$element[0]);
 };
 
 module.exports = {

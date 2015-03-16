@@ -5,7 +5,7 @@
     is_project = node['node_type'] == 'project'
 %>
 
-<div id="projectScope">
+<div id="projectScope" class="scripted">
     <header class="subhead" id="overview">
         <div class="row">
             <div class="col-sm-6 col-md-7 cite-container">
