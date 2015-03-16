@@ -6,7 +6,6 @@ var $osf = require('osfHelpers');
 require('knockout-sortable');
 
 var contribsEqual = function(a, b) {
-    //console.log(a.permission);
     return a.id === b.id &&
         a.visible === b.visible &&
         a.permission === b.permission &&
@@ -40,6 +39,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
+    //if this is somewhere accessible, please remove.
     self.permissionList = [
         {value: 'read', text: 'Read'},
         {value: 'write', text: 'Read + Write'},
@@ -347,7 +347,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             message: 'Are you sure you want to save these changes?',
             callback: function(result) {
                 if (result) {
-                    console.log(self.serialize());
                     $osf.postJSON(
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()}
