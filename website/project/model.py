@@ -499,15 +499,6 @@ def validate_title(value):
     return True
 
 
-def validated_retracted_justification(value):
-    """Validator for Node#retraction_justifcation. Ensures that the
-    value is not none if is_retracted is True.
-    """
-    if value is None or not value.strip():
-        raise ValidationValueError('Registration retraction justification cannot be blank.')
-    return True
-
-
 def validate_user(value):
     if value != {}:
         user_id = value.iterkeys().next()
@@ -584,7 +575,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
     is_retracted = fields.BooleanField(default=False)
-    retracted_justification = fields.StringField(validate=validated_retracted_justification)
+    retracted_justification = fields.StringField()
     retraction_date = fields.DateTimeField()
     retracted_by = fields.ForeignField('user', backref='retracted_registration')
 
@@ -2436,12 +2427,13 @@ class Node(GuidStoredObject, AddonModelMixin):
             'is_registration': self.is_registration
         }
 
-    def retract_registration(self, user, justification):
+    def retract_registration(self, user, justification=None):
 
         if not self.is_public or not self.is_registration:
             raise ValidationTypeError
 
-        self.retracted_justification = justification
+        if justification:
+            self.retracted_justification = justification
         self.is_retracted = True
         self.retraction_date = datetime.datetime.utcnow()
         self.retracted_by = user

@@ -58,16 +58,6 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_is_none(self.registration.retracted_by)
         assert_is_none(self.registration.retraction_date)
 
-    def test_retract_invalid_justification_throw_value_error(self):
-        self.registration.is_public = True
-        with assert_raises(ValidationValueError):
-            self.registration.retract_registration(self.user, "")
-        self.registration.reload()
-        assert_false(self.registration.is_retracted)
-        assert_is_none(self.registration.retracted_justification)
-        assert_is_none(self.registration.retracted_by)
-        assert_is_none(self.registration.retraction_date)
-
 
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
@@ -106,18 +96,17 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_false(self.registration.is_retracted)
         assert_is_none(self.registration.retracted_justification)
 
-    def test_retract_without_justification_raises_400(self):
+    def test_retract_without_justification_raises_200(self):
         res = self.app.post_json(
             self.retraction_url,
              {'justification': ''},
              auth=self.auth,
-             expect_errors=True,
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 200)
         self.registration.reload()
-        assert_false(self.registration.is_retracted)
-        assert_is_none(self.registration.retracted_justification)
+        assert_true(self.registration.is_retracted)
+        assert_equal(self.registration.retracted_justification, u'')
 
     def test_redirect_if_retracted(self):
         expected_redirect_url = self.registration.web_url_for('view_project')

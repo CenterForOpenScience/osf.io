@@ -33,9 +33,11 @@ var RegistrationRetractionViewModel = function(submitUrl) {
     self.submit = function() {
         // Show errors if invalid
         if (!self.confirmationText.isValid()) {
-            var errors = ko.validation.group(self);
-            errors.showAllMessages();
-
+            $osf.growl(
+                'Error',
+                'Please enter the registration title before clicking Retract Registration',
+                'warning'
+            );
             return false;
         } else {
             // Else Submit
@@ -45,8 +47,6 @@ var RegistrationRetractionViewModel = function(submitUrl) {
             ).done(function (response) {
                     $(location).attr("href", response.redirectUrl);
                 }
-            ).fail(
-                console.log('Unsuccessful submission')
             );
         }
     };
