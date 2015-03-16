@@ -55,13 +55,13 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
 
     self.messages = {
         INVALID_CRED_OWNER: ko.pureComputed(function() {
-            return 'Could not retrieve ' + self.properName + ' settings at ' +
+            return 'Could not retrieve ' + self.properName + ' content at ' +
                 'this time. The ' + self.properName + ' addon credentials may no longer be valid.' +
                 ' Try deauthorizing and reauthorizing ' + self.properName + ' on your <a href="' +
                 self.urls().settings + '">account settings page</a>.';
         }),
         INVALID_CRED_NOT_OWNER: ko.pureComputed(function() {
-            return 'Could not retrieve ' + self.properName + ' settings at ' +
+            return 'Could not retrieve ' + self.properName + ' content at ' +
                 'this time. The ' + self.properName + ' addon credentials may no longer be valid.' +
                 ' Contact ' + self.ownerName() + ' to verify.';
         }),
@@ -106,6 +106,15 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
             return 'Could not connect to ' + self.properName + ' at this time. Please try again later.';
         })
     };
+    self.messages.INVALID_CRED = ko.pureComputed(function() {
+        if (self.userIsOwner()){
+            return self.messages.INVALID_CRED_OWNER();
+        }
+        else {
+            return self.messages.INVALID_CRED_NOT_OWNER();
+        }
+    });
+    
 
     /**
      * Whether or not to show the Import Access Token Button
@@ -439,27 +448,19 @@ CitationsFolderPickerViewModel.prototype.activatePicker = function() {
                 odd: 'addon-folderpicker-odd',
                 even: 'addon-folderpicker-even'
             },
-            ajaxOptions: {
-                error: function(xhr, textStatus, error) {
-                    self.loading(false);
-                    self.changeMessage(self.messages.CONNECT_ERROR(), 'text-warning');
-                    Raven.captureMessage('Could not GET get ' + self.properName + ' contents.', {
-                        textStatus: textStatus,
-                        error: error
-                    });
-                }
-            },
             folderPickerOnload: function() {
                 // Hide loading indicator
                 self.loading(false);
             },
             ondataloaderror: function(xhr){
                 self.loading(false);
-                self.changeMessage(self.messages.CONNECT_ERROR(), 'text-warning');
+                self.currentDisplay(null);
+                self.changeMessage(self.messages.INVALID_CRED(), 'text-warning');
                 Raven.captureMessage('Could not GET get ' + self.properName + ' contents.', {
                     textStatus: xhr.responseText,
                     error: xhr.status
                 });
+                return false;
             }
         });
     }
