@@ -25,7 +25,7 @@ function Contributor(data) {
     }
 }
 
-var AddContributorViewModel = oop.extend (Paginator, {
+var AddContributorViewModel = oop.extend(Paginator, {
     constructor(title, parentId, parentTitle) {
         this.super.constructor();
         var self = this;

@@ -5,13 +5,13 @@
 var ko = require('knockout');
 var oop = require('js/oop');
 var MAX_PAGES_ON_PAGINATOR = 7;
-var MAX_PAGES_ON_PAGINATOR_SIDE = 5;    
+var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 
 var Paginator = oop.defclass({
     constructor() {
         this.numberOfPages = ko.observable(0);
         this.currentPage = ko.observable(0);
-        this.paginators = ko.observableArray([])；
+        this.paginators = ko.observableArray([]);
     },
     addNewPaginators() {
         var self = this;
