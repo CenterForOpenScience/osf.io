@@ -441,7 +441,9 @@ def make_url_map(app):
         Rule('/login/two-factor/', ['get', 'post'], auth_views.two_factor,
              OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-
+        # TODO(hrybacki): combining the get/posts into a single rule is causing a build error and needs debugging
+        Rule('/forgotpassword/', 'get', auth_views._forgot_password,
+             OsfWebRenderer('public/forgot_password.mako')),
         Rule('/forgotpassword/', 'post', auth_views.forgot_password,
              OsfWebRenderer('public/login.mako')),
 
@@ -668,7 +670,9 @@ def make_url_map(app):
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
         Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
-        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer)
+        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
+        Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
+
     ], prefix='/api/v1')
 
     # Project

@@ -269,3 +269,7 @@ def search_share_atom(**kwargs):
         url=atom_url,
         to_atom=share_search.to_atom
     )
+
+
+def search_share_providers():
+    return search.share_providers()

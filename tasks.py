@@ -297,10 +297,11 @@ def elasticsearch():
         print("Your system is not recognized, you will have to start elasticsearch manually")
 
 @task
-def migrate_search(python='python'):
+def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
     '''Migrate the search-enabled models.'''
-    cmd = '{0} -m website.search_migration.migrate'.format(python)
-    run(bin_prefix(cmd))
+    from website.search_migration.migrate import migrate
+    migrate(delete, index=index)
+
 
 @task
 def mailserver(port=1025):
