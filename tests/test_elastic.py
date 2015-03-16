@@ -490,7 +490,7 @@ class TestSearchMigration(SearchTestCase):
     def setUp(self):
         super(TestSearchMigration, self).setUp()
         self.es = search.search_engine.es
-        search.delete_index(elastic_search.INDEX)
+        search.delete_index(elastic_search.INDEX, ignore=[404])
         search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='David Bowie')
         self.project = ProjectFactory(
