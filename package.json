@@ -21,6 +21,7 @@
     "livedb-mongo": "~0.4.1",
     "markdown-it": "~3.0.5",
     "markdown-it-video": "~0.1.6",
+    "markdown-it-toc": "~1.0.4",
     "morgan": "^1.5.1",
     "object-assign": "^2.0.0",
     "raven": "^0.7.2",
