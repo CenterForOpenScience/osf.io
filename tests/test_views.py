@@ -2269,7 +2269,7 @@ class TestPublicViews(OsfTestCase):
     def test_forgot_password_get(self):
         res = self.app.get(web_url_for('_forgot_password'))
         assert_equal(res.status_code, 200)
-        assert_in("Forgot Password", res.body)
+        assert_in('Forgot Password', res.body)
 
 
 class TestAuthViews(OsfTestCase):
@@ -2422,10 +2422,6 @@ class TestAuthViews(OsfTestCase):
 
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')
-        assert_equal(res.status_code, 200)
-
-    def test_forgot_password_get(self):
-        res = self.app.get(web_url_for('_forgot_password'))
         assert_equal(res.status_code, 200)
 
     def test_confirm_email_clears_unclaimed_records_and_revokes_token(self):
