@@ -34,11 +34,17 @@ $(document).ready(function() {
                     }];
                 },
                 resolveRows: function (item) {
+                    var selectClass = '';
+                    if (item.data.kind === 'file' && item.data.name === window.contextVars.file.name && item.data.provider === window.contextVars.file.provider) {
+                        selectClass = 'fangorn-hover';
+                    }
+
                     var defaultColumns = [
                         {
                             data: 'name',
                             folderIcons: true,
                             filter: true,
+                            css: selectClass,
                             custom: Fangorn.DefaultColumns._fangornTitleColumn
                         }
                     ];
