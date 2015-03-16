@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from time import gmtime
 from calendar import timegm
 from datetime import datetime
