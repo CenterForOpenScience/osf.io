@@ -1,64 +1,9 @@
-var webpack = require('webpack');
-var webpackCommon = require('./webpack.common.config.js');
-
-// A subset of the app webpack config
-var webpackTestConfig = {
-    devtool: 'inline-source-map',
-    plugins: [
-        new webpack.ResolverPlugin(
-            new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-        ),
-
-        // Make sure that CommonJS is always used
-        new webpack.DefinePlugin({
-            'define.amd': false
-        }),
-
-        new webpack.ProvidePlugin({
-            $: 'jquery',
-            jQuery: 'jquery',
-            'window.jQuery': 'jquery',
-            'window.$': 'jquery'
-        }),
-    ],
-    resolve: webpackCommon.resolve,
-    externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
-    module: {
-        loaders: webpackCommon.module.loaders.concat([
-            // Assume test files are ES6
-            {test: /\.test\.js$/, loader: 'babel-loader'},
-        ])
-    }
-};
-
+var commonConfig = require('./karma.common.conf.js');
+var assign = require('object-assign');
 
 module.exports = function (config) {
-    config.set({
+    config.set(assign(commonConfig, {
         browsers: ['PhantomJS'],
-        frameworks: ['mocha', 'sinon'],
-        files: [
-            // Mimics loading jquery and jquery-ui with script tags
-            'website/static/vendor/bower_components/jquery/dist/jquery.js',
-            'website/static/vendor/bower_components/jquery-ui/ui/jquery-ui.js',
-            // Only need to target one file, which will load all files in tests/ that
-            // match *.test.js, including addons tests
-            'website/static/js/tests/tests.webpack.js',
-        ],
         reporters: ['spec'],
-        preprocessors: {
-            // add webpack as preprocessor
-            'website/static/js/tests/tests.webpack.js': ['webpack', 'sourcemap'],
-        },
-        webpack: webpackTestConfig,
-        webpackMiddleware: {noInfo: true},
-        webpackServer: {
-            noInfo: true // don't spam the console
-        },
-
-        // Avoid DISCONNECTED messages
-        // See https://github.com/karma-runner/karma/issues/598
-        browserDisconnectTimeout : 10000, // default 2000
-        browserDisconnectTolerance : 1, // default 0
-        browserNoActivityTimeout : 60000 //default 10000
-    });
+    }));
 };
