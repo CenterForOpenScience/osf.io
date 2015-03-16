@@ -69,7 +69,7 @@ describe('nodeControl', () => {
                 vm.doi('24601');
                 vm.ark('24601');
                 assert.equal(vm.doiUrl(), 'http://ezid.cdlib.org/id/doi:24601');
-                assert.equal(vm.arkUrl(), 'http://ezid.cdlib.org/id/ark:24601');
+                assert.equal(vm.arkUrl(), 'http://ezid.cdlib.org/id/ark:/24601');
             });
             it('creates new identifiers', (done) => {
                 vm.createIdentifiers().done(() => {
