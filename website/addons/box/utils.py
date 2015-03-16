@@ -4,9 +4,111 @@ import logging
 
 from framework.exceptions import HTTPError
 
-from website.util import rubeus
+from website.util import rubeus, web_url_for
+
+from box.client import BoxClientException
+
 
 logger = logging.getLogger(__name__)
+
+BOX_SHARE_URL_TEMPLATE = 'https://app.box.com/files/0/f/{0}'
+
+
+def serialize_folder(metadata):
+    """Serializes metadata to a dict with the display name and path
+    of the folder.
+    """
+    # if path is root
+    if metadata['path'] == '' or metadata['path'] == '/':
+        name = '/ (Full Box)'
+    else:
+        name = 'Box' + metadata['path']
+    return {
+        'name': name,
+        'path': metadata['path'],
+    }
+
+
+def get_folders(client):
+    """Gets a list of folders in a user's Box, including the root.
+    Each folder is represented as a dict with its display name and path.
+    """
+    metadata = client.metadata('/', list=True)
+    # List each folder, including the root
+    root = {
+        'name': '/ (Full Box)',
+        'path': '',
+    }
+    folders = [root] + [
+        serialize_folder(each)
+        for each in metadata['contents'] if each['is_dir']
+    ]
+    return folders
+
+
+def serialize_urls(node_settings):
+    node = node_settings.owner
+
+    urls = {
+        'settings': web_url_for('user_addons'),
+        'auth': node.api_url_for('box_oauth_start'),
+        'config': node.api_url_for('box_config_put'),
+        'files': node.web_url_for('collect_file_trees'),
+        'emails': node.api_url_for('box_get_share_emails'),
+        'share': BOX_SHARE_URL_TEMPLATE.format(node_settings.folder_id),
+        'deauthorize': node.api_url_for('box_deauthorize'),
+        'importAuth': node.api_url_for('box_import_user_auth'),
+        # Endpoint for fetching only folders (including root)
+        'folders': node.api_url_for('box_list_folders'),
+    }
+    return urls
+
+
+def serialize_settings(node_settings, current_user, client=None):
+    """View helper that returns a dictionary representation of a
+    BoxNodeSettings record. Provides the return value for the
+    box config endpoints.
+    """
+    valid_credentials = True
+    user_settings = node_settings.user_settings
+    current_user_settings = current_user.get_addon('box')
+    user_is_owner = user_settings is not None and user_settings.owner == current_user
+
+    if user_settings:
+        try:
+            client = client or user_settings.oauth_settings.get_client
+            client.get_user_info()
+        except BoxClientException:
+            valid_credentials = False
+
+    result = {
+        'userIsOwner': user_is_owner,
+        'nodeHasAuth': node_settings.has_auth,
+        'urls': serialize_urls(node_settings),
+        'validCredentials': valid_credentials,
+        'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
+    }
+
+    if node_settings.has_auth:
+        # Add owner's profile URL
+        result['urls']['owner'] = web_url_for(
+            'profile_view_id',
+            uid=user_settings.owner._id
+        )
+        result['ownerName'] = user_settings.owner.fullname
+        # Show available folders
+        # path = node_settings.folder
+
+        if node_settings.folder_id is None:
+            result['folder'] = {'name': None, 'path': None}
+        elif valid_credentials:
+            path = node_settings.fetch_full_folder_path()
+
+            result['folder'] = {
+                'path': path,
+                'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full Box)'
+            }
+    return result
 
 
 class BoxNodeLogger(object):

@@ -5,109 +5,68 @@ from framework.routing import Rule, json_renderer
 from website.addons.box import views
 
 
-auth_routes = {
-    'rules': [
-
-        ##### OAuth #####
-
-        Rule(
-            '/oauth/connect/box/',
-            'get',
-            views.auth.box_oauth_start,  # Use same view func as node oauth start
-            json_renderer,
-            endpoint_suffix='_user'          # but add a suffix for url_for
-        ),
-
-        Rule(
-            '/oauth/callback/box/',
-            'get',
-            views.auth.box_oauth_finish,
-            json_renderer,
-        ),
-
-        Rule(
-            '/oauth/accounts/box/',
-            'delete',
-            views.auth.box_oauth_delete_user,
-            json_renderer,
-        ),
-    ],
-}
-
-
 api_routes = {
     'rules': [
-
-        ##### OAuth #####
-
-        # avoid nginx rewrite (lack of 307 support)
         Rule(
             [
-                '/project/<pid>/oauth/connect/box/',
-                '/project/<pid>/node/<nid>/oauth/connect/box/',
+                '/settings/box/accounts/',
             ],
             'get',
-            views.auth.box_oauth_start,
+            views.box_get_user_settings,
             json_renderer,
         ),
-
-        #### Profile settings ###
-
         Rule(
-            '/settings/box/',
+            [
+                '/project/<pid>/box/config/',
+                '/project/<pid>/node/<nid>/box/config/'
+            ],
             'get',
-            views.auth.box_user_config_get,
-            json_renderer,
-        ),
-
-        ##### Node settings #####
-
-        Rule(
-            ['/project/<pid>/box/config/',
-            '/project/<pid>/node/<nid>/box/config/'],
-            'get',
-            views.config.box_config_get,
+            views.box_get_config,
             json_renderer
         ),
-
         Rule(
-            ['/project/<pid>/box/config/',
-            '/project/<pid>/node/<nid>/box/config/'],
+            [
+                '/project/<pid>/box/config/',
+                '/project/<pid>/node/<nid>/box/config/'
+            ],
             'put',
-            views.config.box_config_put,
+            views.box_set_config,
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/box/config/',
-            '/project/<pid>/node/<nid>/box/config/'],
+            [
+                '/project/<pid>/box/user_auth/',
+                '/project/<pid>/node/<nid>/box/user_auth/'
+            ],
+            'put',
+            views.box_add_user_auth,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/box/config/',
+                '/project/<pid>/node/<nid>/box/config/'
+            ],
             'delete',
-            views.config.box_deauthorize,
+            views.box_remove_user_auth,
             json_renderer
         ),
-
         Rule(
-            ['/project/<pid>/box/config/import-auth/',
-            '/project/<pid>/node/<nid>/box/config/import-auth/'],
-            'put',
-            views.config.box_import_user_auth,
-            json_renderer
-        ),
-
-        Rule(
-            ['/project/<pid>/box/config/share/',
-            '/project/<pid>/node/<nid>/box/config/share/'],
+            [
+                '/project/<pid>/box/config/share/',
+                '/project/<pid>/node/<nid>/box/config/share/'
+            ],
             'get',
-            views.config.box_get_share_emails,
+            views.box_get_share_emails,
             json_renderer
         ),
-
         Rule(
             [
                 '/project/<pid>/box/folders/',
                 '/project/<pid>/node/<nid>/box/folders/',
             ],
             'get',
-            views.config.box_list_folders,
+            views.box_folder_list,
             json_renderer
         ),
     ],
