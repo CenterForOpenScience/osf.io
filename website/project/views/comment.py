@@ -339,11 +339,7 @@ def list_comments(auth, **kwargs):
     if page == 'total' and root_id == 'None':  # "Total" on discussion page
         serialized_comments = list_total_comments(node, auth, 'total')
     elif page == 'total':  # Discussion widget on overview's page
-        serialized_comments = [
-            serialize_comment(comment, auth, anonymous)
-            for comment in getattr(node, 'comment_owner', [])
-        ]
-        # todo fix
+        serialized_comments = list_total_comments_widget(node, auth)
     elif root_id == 'None':  # Overview/Files/Wiki page on discussion page
         serialized_comments = list_total_comments(node, auth, page)
     else:
@@ -361,6 +357,27 @@ def list_comments(auth, **kwargs):
         'comments': serialized_comments,
         'nUnread': n_unread
     }
+
+
+def list_total_comments_widget(node, auth):
+    anonymous = has_anonymous_link(node, auth)
+    comments = Comment.find(Q('node', 'eq', node) &
+                            Q('is_hidden', 'eq', False) &
+                            Q('page', 'ne', 'files')).get_keys()
+    serialized_comments = []
+    for cid in comments:
+        cmt = Comment.load(cid)
+        serialized_comments.append(cmt)
+    files = get_all_files(node)
+    for file_obj in files:
+        for comment in getattr(file_obj, 'comment_target', []):
+            if comment.is_hidden:  # File is already deleted
+                break
+            serialized_comments.append(comment)
+    return [
+        serialize_comment(comment, auth, anonymous)
+        for comment in  serialized_comments[:5]
+    ]
 
 
 def list_total_comments(node, auth, page):
