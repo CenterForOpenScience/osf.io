@@ -13,6 +13,7 @@ DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 SEARCH_ENGINE = 'elastic'
+
 USE_EMAIL = False
 USE_CELERY = False
 USE_GNUPG = False

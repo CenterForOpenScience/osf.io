@@ -140,7 +140,6 @@ class TestUserValidation(OsfTestCase):
         with assert_raises(ValidationValueError):
             self.user.save()
 
-
     def test_validate_schools_bad_end_date(self):
         # end year is < start year
         self.user.schools = [{
@@ -789,6 +788,13 @@ class TestMergingUsers(OsfTestCase):
         '''Do the actual merge.'''
         self.master.merge_user(self.dupe)
         self.master.save()
+
+    def test_dashboard_nodes_arent_merged(self):
+        dashnode = ProjectFactory(creator=self.dupe, is_dashboard=True)
+
+        self._merge_dupe()
+
+        assert_not_in(dashnode, self.master.node__contributed)
 
     def test_dupe_is_merged(self):
         self._merge_dupe()
@@ -1628,7 +1634,7 @@ class TestAddonCallbacks(OsfTestCase):
         for addon in self.node.addons:
             callback = addon.after_remove_contributor
             callback.assert_called_once_with(
-                self.node, user2
+                self.node, user2, self.consolidate_auth
             )
 
     def test_set_privacy_callback(self):

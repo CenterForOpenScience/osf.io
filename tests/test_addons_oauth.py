@@ -181,13 +181,13 @@ class TestUserSettings(OsfTestCase):
         self.user.external_accounts = []
 
         assert_equal(
-            self.user_settings.connected_oauth_accounts,
+            self.user_settings.external_accounts,
             []
         )
 
     def test_connected_accounts(self):
         assert_equal(
-            self.user_settings.connected_oauth_accounts,
+            self.user_settings.external_accounts,
             [self.external_account]
         )
 

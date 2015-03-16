@@ -21,6 +21,7 @@ from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import exceptions
+from website.addons.base import serializer
 from website.project.model import Node
 
 lookup = TemplateLookup(
@@ -48,6 +49,7 @@ class AddonConfig(object):
                  widget_help=None, views=None, configs=None, models=None,
                  has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
                  accept_extensions=True,
+                 node_settings_template=None, user_settings_template=None,
                  **kwargs):
 
         self.models = models
@@ -97,6 +99,35 @@ class AddonConfig(object):
             )
         else:
             self.template_lookup = None
+
+        # Provide the path the the user_settings template
+        self.user_settings_template = user_settings_template
+        addon_user_settings_path = os.path.join(
+            template_path,
+            '{}_user_settings.mako'.format(self.short_name)
+        )
+
+        if user_settings_template:
+            # If USER_SETTINGS_TEMPLATE is defined, use that path.
+            self.user_settings_template = user_settings_template
+        elif os.path.exists(addon_user_settings_path):
+            # An implicit template exists
+            self.user_settings_template = os.path.join(
+                os.path.pardir,
+                'addons',
+                self.short_name,
+                'templates',
+                '{}_user_settings.mako'.format(self.short_name),
+            )
+        else:
+            # Use the default template (for OAuth addons)
+            self.user_settings_template = os.path.join(
+                'project',
+                'addon',
+                'user_settings_default.mako',
+            )
+
+        self.node_settings_template = node_settings_template
 
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
@@ -437,6 +468,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
                     'url': node.url,
                     'title': node.title,
                     'registered': node.is_registration,
+                    'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
             ]
@@ -468,8 +500,14 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     #   AddonModelMixin.get_oauth_addons().
     oauth_provider = None
 
+    serializer = serializer.OAuthAddonSerializer
+
     @property
-    def connected_oauth_accounts(self):
+    def has_auth(self):
+        return bool(self.external_accounts)
+
+    @property
+    def external_accounts(self):
         """The user's list of ``ExternalAccount`` instances for this provider"""
         return [
             x for x in self.owner.external_accounts
@@ -537,6 +575,33 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 return False
 
         return True
+
+    def get_nodes_with_oauth_grants(self, external_account):
+        # Generator of nodes which have grants for this external account
+        return (
+            Node.load(node_id)
+            for node_id, grants in self.oauth_grants.iteritems()
+            if external_account._id in grants.keys()
+        )
+
+    def get_attached_nodes(self, external_account):
+        for node in self.get_nodes_with_oauth_grants(external_account):
+            node_settings = node.get_addon(self.oauth_provider.short_name)
+
+            if node_settings is None:
+                continue
+
+            if node_settings.external_account == external_account:
+                yield node
+
+    def to_json(self, user):
+        ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
+
+        ret['accounts'] = self.serializer(
+            user_settings=self
+        ).serialized_accounts
+
+        return ret
 
     #############
     # Callbacks #
@@ -613,7 +678,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
         :param Node node:
         :param User removed:
@@ -786,22 +851,32 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """If removed contributor authorized this addon, remove addon authorization
         from owner.
         """
         if self.has_auth and self.user_settings.owner == removed:
+
+            # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
             self.clear_auth()
-            return (
-                u'Because the {addon} add-on for this project was authenticated '
-                u'by {name}, authentication information has been deleted. You '
-                u'can re-authenticate on the <a href="{url}">Settings</a> page.'
+            message = (
+                u'Because the {addon} add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
             ).format(
                 addon=self.config.full_name,
-                name=removed.fullname,
-                url=node.web_url_for('node_setting'),
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
             )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def before_fork_message(self, node, user):
         """Return warning text to display if user auth will be copied to a
