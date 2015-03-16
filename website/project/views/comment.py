@@ -374,9 +374,13 @@ def list_total_comments_widget(node, auth):
             if comment.is_hidden:  # File is already deleted
                 break
             serialized_comments.append(comment)
+    serialized_comments.sort(
+        key=lambda item: item.date_created,
+        reverse=False
+    )
     return [
         serialize_comment(comment, auth, anonymous)
-        for comment in  serialized_comments[:5]
+        for comment in serialized_comments[-5:]
     ]
 
 
