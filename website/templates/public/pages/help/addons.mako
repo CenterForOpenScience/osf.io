@@ -1,12 +1,12 @@
 
 <span id="Add Ons" class="anchor"></span>
 <p class="gs-header">Add-Ons</p>
- <p>The OSF makes integrating your various research workflows easy. We are always developing Add-On connections to services you already use. 
+ <p>The OSF makes integrating your various research workflows easy. We are always developing Add-On connections to services you already use.
  </p>
- <p> Some Add-Ons can be added to the entire user account, like Two-Factor Authentication. To access these, navigate to your user settings using the gear in the top right corner. Then select "Configure Add-Ons". Here you can choose which Add-Ons to apply. 
+ <p> Some Add-Ons can be added to the entire user account, like Two-Factor Authentication. To access these, navigate to your user settings using the gear in the top right corner. Then select "Configure Add-Ons". Here you can choose which Add-Ons to apply.
  </p>
  <p> Other Add-Ons only apply to individual projects. The wiki and external links Add-On are examples of this. They can only be accessed and applied from your project's settings. </p>
- 
+
 <p>Most Add-Ons require both account authentication as well as project application. The easiest way to do this is directly from the project page. First, navigate to the project's settings. Then select the Add-Ons that you want to incorporate into your project. A pop-up with information about the Add-On will show up, click okay, and then click submit. </p>
 
 <p>After clicking submit, you will notice a box labled "Configure Add-Ons" beneath the "Select Add-Ons" box. Go to the "Configure Add-Ons" box and create an access token for the Add-On, this authorizes the Add-On for the entire OSF account. Then configure the Add-On and click submit to apply the Add-On to the individual project. Once you've authorized an Add-On, you never have to do it again. However, you always need to apply the Add-On to your individual projects. </p>
@@ -16,13 +16,6 @@
 </div>
 
 
-<span id="twofactor" class="anchor"></span>
-<p class="gs-header">Two-factor Authentication</p>
- <p>Two factor identification protects your account with both your password and your mobile phone. Make sure nobody can log into your account even if they have access to your password or your email.</p>
-<p>You will need a mobile phone with an app like Google Authenticator, navigate to "Configure Add-Ons" in your account settings. Select "Two-Factor Authentication" from the list of Add-Ons. To configure, input your secret key or bar code into your phone. Your phone will return with a six figure code that you put into the account. Now that you have authenticated your account, you will need to input a code every time you log in. The code on your phone will change every minute or less.</p>
-<div class="gs-video embed-responsive embed-responsive-16by9">
-    <div class="embed-responsive-item youtube-loader" id="mSJWqP48ZLE"></div>
-</div>
 
 <h3> Storage Options </h3>
 <span id="dropbox" class="anchor"></span>
@@ -87,14 +80,6 @@
     <div class="embed-responsive-item youtube-loader" id="2RVJS7nYX8k"></div>
 </div>
 
-
-<span id="zotero" class="anchor"></span>
-<p class="gs-header">Zotero </p>
-<p><strong><a href="http://zotero.com/">Zotero</a> is a free tool that helps you collect, cite, share, and organize your research sources.</strong>By Adding Zotero to your OSF projects you can view, copy, and download your citations.</p>
-<p>First, visit the project to which you want to add Zotero, then navigate to settings. Go to "Select Add-Ons", select Zotero, and then click submit. You will be asked to input your zotero information to create an access token.
-</p>
-<p>Next, go to "Configure Add-Ons" and click "Import Access Token", now you will be able to pick which folders you want to incorporate into your project. Click submit, and go to your project overview page to see your new Zotero widget!</p>
-
 <span id="mendeley" class="anchor"></span>
 <p class="gs-header">Mendeley </p>
 <p><strong><a href="http://mendeley.com/">Mendeley</a> is a free reference and PDF manager.</strong> By Adding Mendeley to your OSF projects you can view, copy, and download your citations.</p>
@@ -103,7 +88,18 @@
 </p>
 <p>Next, go to "Configure Add-Ons" and click "Import Access Token." Now you will be able to pick which folders you want to incorporate into your project. Click submit and go to your project overview page to see your new Mendeley widget!</p>
 
+<span id="zotero" class="anchor"></span>
+<p class="gs-header">Zotero </p>
+<p><strong><a href="http://zotero.com/">Zotero</a> is a free tool that helps you collect, cite, share, and organize your research sources.</strong>By Adding Zotero to your OSF projects you can view, copy, and download your citations.</p>
+<p>First, visit the project to which you want to add Zotero, then navigate to settings. Go to "Select Add-Ons", select Zotero, and then click submit. You will be asked to input your zotero information to create an access token.
+</p>
+<p>Next, go to "Configure Add-Ons" and click "Import Access Token", now you will be able to pick which folders you want to incorporate into your project. Click submit, and go to your project overview page to see your new Zotero widget!</p>
 
-
-
-
+<h3>Security</h3>
+<span id="twofactor" class="anchor"></span>
+<p class="gs-header">Two-factor Authentication</p>
+ <p>Two factor identification protects your account with both your password and your mobile phone. Make sure nobody can log into your account even if they have access to your password or your email.</p>
+<p>You will need a mobile phone with an app like Google Authenticator, navigate to "Configure Add-Ons" in your account settings. Select "Two-Factor Authentication" from the list of Add-Ons. To configure, input your secret key or bar code into your phone. Your phone will return with a six figure code that you put into the account. Now that you have authenticated your account, you will need to input a code every time you log in. The code on your phone will change every minute or less.</p>
+<div class="gs-video embed-responsive embed-responsive-16by9">
+    <div class="embed-responsive-item youtube-loader" id="mSJWqP48ZLE"></div>
+</div>

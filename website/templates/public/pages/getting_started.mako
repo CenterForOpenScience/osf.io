@@ -46,11 +46,11 @@
                             <li><a href="#amazon"><i class="fa fa-chevron-right"></i> Amazon S3</a></li>
                             <li><a href="#figshare"><i class="fa fa-chevron-right"></i> figshare</a></li>
                             <li><a href="#dataverse"><i class="fa fa-chevron-right"></i> Dataverse</a></li>
-                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
                             <li><a href="#box"><i class="fa fa-chevron-right"></i> Box </a></li>
                             <li><a href="#drive"><i class="fa fa-chevron-right"></i> Google Drive</a></li>
                             <li><a href="#mendeley"><i class="fa fa-chevron-right"></i> Mendeley</a></li>
                             <li><a href="#zotero"><i class="fa fa-chevron-right"></i> Zotero</a></li>
+                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
                         </ul>
                     </li>
                     <li>
