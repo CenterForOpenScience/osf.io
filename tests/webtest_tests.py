@@ -38,16 +38,14 @@ class TestDisabledUser(OsfTestCase):
         self.user.is_disabled = True
         self.user.save()
 
-    def test_profile_disabled(self):
-        """Disabled user profiles return 401 (GONE)"""
+    def test_profile_disabled_returns_401(self):
         res = self.app.get(self.user.url, expect_errors=True)
         assert_equal(res.status_code, 410)
 
 
 class TestAnUnregisteredUser(OsfTestCase):
 
-    def test_cant_see_profile(self):
-        """Can't see profile if not logged in."""
+    def test_cant_see_profile_if_not_logged_in(self):
         res = self.app.get(web_url_for('profile_view'))
         assert_equal(res.status_code, 302)
         res = res.follow(expect_errors=True)
@@ -63,7 +61,6 @@ class TestAUser(OsfTestCase):
     def setUp(self):
         super(TestAUser, self).setUp()
         self.user = UserFactory()
-        # TODO: remove and re-write tests with 'password' as password /hrybacki
         self.user.set_password('science')
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -121,7 +118,6 @@ class TestAUser(OsfTestCase):
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
-        # User with two factor enabled is sent to two factor page
         self.user.add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
         self.user_settings.is_confirmed = True
@@ -141,7 +137,6 @@ class TestAUser(OsfTestCase):
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_user_with_two_factor_redirected_to_two_factor_page_from_navbar_login(self, mock_push_message):
-        # User with two factor enabled is sent to two factor page
         self.user.add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
         self.user_settings.is_confirmed = True
