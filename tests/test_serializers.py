@@ -9,16 +9,25 @@ from tests.factories import (
     NodeFactory,
     NodeLogFactory,
     FolderFactory,
+    ExternalAccountFactory,
 )
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary, _view_project, _serialize_node_search
-from website.views import _render_node
 from website.profile import utils
-from website.views import serialize_log
+from website.project.views.node import (
+    _get_summary,
+    _serialize_node_search,
+    _view_project,
+)
+from website.serializers.log import LogSerializer
+from website.serializers.node import NodeSerializer
+from website.serializers.oauth import ExternalAccountSerializer
+from website.serializers.user import UserSerializer
 from website.util import permissions
+from website.views import _render_node
+from website.views import serialize_log
 
 
 class TestNodeSerializers(OsfTestCase):
@@ -26,7 +35,6 @@ class TestNodeSerializers(OsfTestCase):
     # Regression test for #489
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489
     def test_get_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
-        user = UserFactory()
         # user cannot see this node
         node = ProjectFactory(public=False)
         result = _get_summary(
@@ -187,6 +195,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['is_public'], node.is_public)
         assert_equal(d['is_registration'], node.is_registration)
 
+
 class TestAddContributorJson(OsfTestCase):
 
     def setUp(self):
@@ -277,3 +286,226 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['active'], True)
         assert_in('secure.gravatar.com', user_info['gravatar_url'])
         assert_equal(user_info['profile_url'], self.profile)
+
+
+class TestUserSerializer(OsfTestCase):
+
+    # Enumerate all fields that SHOULD be in the export.
+    EXPORT_FIELDS = {
+        '_id',
+        'aka',
+        'date_confirmed',
+        'date_registered',
+        'emails',
+        'external_accounts',
+        'family_name',
+        'fullname',
+        'given_name',
+        'is_claimed',
+        'is_registered',
+        'jobs',  # ?
+        'merged_by',
+        'middle_names',
+        'schools',
+        'security_messages',  # ?
+        'social',
+        'suffix',
+        'unclaimed_records',  # ?
+        'username',
+    }
+
+    def setUp(self):
+        super(TestUserSerializer, self).setUp()
+        self.user = UserFactory()
+        self.serializer = UserSerializer(self.user)
+
+    def test_export(self):# Since all expected fields are enumerated, adding new fields will make
+        #   this test fail. If the field should be included in an account export
+        #   the developer should add it to EXPORT_FIELDS. If it should be
+        #   excluded, UserSerializer should be modified.
+        assert_equal(
+            set(self.serializer.export().keys()),
+            self.EXPORT_FIELDS
+        )
+
+        expected = {
+            k: v
+            for k, v in self.user.to_storage().iteritems()
+            if k in self.EXPORT_FIELDS
+        }
+
+        assert_equal(
+            self.serializer.export(),
+            expected,
+        )
+
+    def test_for_export_external_accounts(self):
+        self.user.external_accounts = [
+            ExternalAccountFactory(),
+            ExternalAccountFactory(),
+            ExternalAccountFactory(),
+        ]
+
+        # External accounts should use their own serializer
+        assert_equal(
+            self.serializer.export()['external_accounts'],
+            [
+                ExternalAccountSerializer(external_account).export()
+                for external_account in self.user.external_accounts
+            ]
+        )
+
+
+class TestExternalAccountSerializer(OsfTestCase):
+
+    # Enumerate all fields that SHOULD be in the export.
+    EXPORT_FIELDS = {
+        '_id',
+        'provider',
+        'provider_id',
+        'display_name',
+        'profile_url',
+        'scopes',
+    }
+
+    def setUp(self):
+        super(TestExternalAccountSerializer, self).setUp()
+        self.external_account = ExternalAccountFactory()
+
+    def test_export(self):
+        serializer = ExternalAccountSerializer(self.external_account)
+
+        # Since all expected fields are enumerated, adding new fields will make
+        #   this test fail. If the field should be included in an account export
+        #   the developer should add it to EXPORT_FIELDS. If it should be
+        #   excluded, UserSerializer should be modified.
+        assert_equal(
+            set(serializer.export().keys()),
+            self.EXPORT_FIELDS
+        )
+
+        expected = {
+            k: v
+            for k, v in self.external_account.to_storage().iteritems()
+            if k in self.EXPORT_FIELDS
+        }
+
+        assert_equal(
+            serializer.export(),
+            expected,
+        )
+
+
+class TestLogSerializer(OsfTestCase):
+
+    # Enumerate all fields that SHOULD be in the export.
+    EXPORT_FIELDS = {
+        '_id',
+        'action',
+        'date',
+        'foreign_user',
+        'params',
+        'user',
+    }
+
+    def setUp(self):
+        super(TestLogSerializer, self).setUp()
+        self.project = ProjectFactory()
+
+    def test_export(self):
+
+        serializer = LogSerializer(self.project.logs[0])
+
+        # Since all expected fields are enumerated, adding new fields will make
+        #   this test fail. If the field should be included in an account export
+        #   the developer should add it to EXPORT_FIELDS. If it should be
+        #   excluded, UserSerializer should be modified.
+        assert_equal(
+            set(serializer.export().keys()),
+            self.EXPORT_FIELDS
+        )
+
+        expected = {
+            k: v
+            for k, v in self.project.logs[0].to_storage().iteritems()
+            if k in self.EXPORT_FIELDS
+        }
+
+        assert_equal(
+            serializer.export(),
+            expected,
+        )
+
+
+class TestNodeSerializer(OsfTestCase):
+
+    # Enumerate all fields that SHOULD be in the export.
+    EXPORT_FIELDS = {
+        '_id',
+        'logs',
+        'contributors',
+        'creator',
+        'forked_date',
+        'registered_date',
+        'comment_level',
+        'visible_contributor_ids',
+        'title',
+        'registered_meta',
+        'registered_user',
+        'is_registration',
+        'category',
+        'description',
+        'tags',
+        'template_node',
+        'registered_from',
+        'is_public',
+        'registered_schema',
+        'is_fork',
+        'forked_from',
+        'date_created',
+        'parent_node',  # Derived field
+    }
+
+    def setUp(self):
+        super(TestNodeSerializer, self).setUp()
+        self.project = ProjectFactory()
+
+    def test_export(self):
+
+        serializer = NodeSerializer(self.project)
+
+
+        import logging
+        from pprint import pformat
+        logger = logging.getLogger(__name__)
+        logger.critical(pformat(serializer.export()))
+
+        # Since all expected fields are enumerated, adding new fields will make
+        #   this test fail. If the field should be included in an account export
+        #   the developer should add it to EXPORT_FIELDS. If it should be
+        #   excluded, UserSerializer should be modified.
+        assert_equal(
+            set(serializer.export().keys()),
+            self.EXPORT_FIELDS
+        )
+
+        expected = {
+            k: v
+            for k, v in self.project.to_storage().iteritems()
+            if k in self.EXPORT_FIELDS
+        }
+        # Added fields, not in to_storage()
+        parent_node = self.project.parent_node
+        expected['parent_node'] = parent_node._id if parent_node else None
+
+        expected['logs'] = [
+            LogSerializer(log).export()
+            for log in self.project.logs
+        ]
+
+        assert_equal(
+            serializer.export(),
+            expected,
+        )
+
+    # TODO: Test parent_node not None

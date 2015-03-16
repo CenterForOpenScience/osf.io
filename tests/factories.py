@@ -382,6 +382,8 @@ class ExternalAccountFactory(ModularOdmFactory):
 
     provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
+    display_name = 'Mock User'
+    profile_url = 'http://mock2.com/mock_user/'
 
 
 class MockOAuth2Provider(ExternalProvider):
