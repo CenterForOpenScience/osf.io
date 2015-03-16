@@ -9,7 +9,7 @@ var m = require('mithril');
 var Fangorn = require('fangorn');
 
 var LogFeed = require('../logFeed.js');
-var pointers = require('../pointers.js');
+var pointers = require('../pointers.es6.js');
 
 var Comment = require('../comment.js');
 var Raven = require('raven-js');
