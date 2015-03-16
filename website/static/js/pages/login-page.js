@@ -2,6 +2,6 @@
  * Login page
  */
 
-var LogInForm = require('../signIn.js');
+var LogInForm = require('js/signIn.js');
 
-new LogInForm('#logInForm', true);
+new LogInForm.SignIn('#logInForm', true);

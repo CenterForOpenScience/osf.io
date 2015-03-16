@@ -130,7 +130,8 @@ var resolve = {
         'diffTool': staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js'),
-        'tests': staticPath('js/tests')
+        'tests': staticPath('js/tests'),
+        'formViewModel': staticPath('js/formViewModel.js')
     }
 };
 

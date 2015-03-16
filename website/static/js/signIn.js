@@ -5,11 +5,14 @@
 
 var ko = require('knockout');
 require('knockout-validation').init({insertMessages: false});  // override default DOM insertions
-var $ = require('jquery');
 
 var $osf = require('osfHelpers');
+var $formViewModel = require('formViewModel');
 
-var ViewModel = function() {
+
+var SignInViewModel = function() {
+    // Call constructor for superclass
+    $formViewModel.FormViewModel.call(this);
 
     var self = this;
 
@@ -22,41 +25,46 @@ var ViewModel = function() {
         minLength: 6,
         maxLength: 35
     });
-
-    self.isValid = ko.computed(function() {
-        return self.username.isValid() && self.password.isValid();
-    });
-
-    self.submit = function() {
-        // Show errors if invalid
-        if (!self.isValid()) {
-            if (!self.username.isValid()) {
-                $osf.growl(
-                    'Error',
-                    'Please enter a correct email address.',
-                    'danger'
-                );
-            }
-            if (!self.password.isValid()) {
-                $osf.growl(
-                    'Error',
-                    'Your password must be more than six characters.',
-                    'danger'
-                );
-            }
-            return false; // Stop form submission
-        } else {
-            return true;  // Allow form to submit normally
-        }
-    };
 };
 
+SignInViewModel.prototype = Object.create($formViewModel.FormViewModel.prototype);
+// Set the "constructor property" to refer to FormViewModel
+SignInViewModel.prototype.constructor = $formViewModel.FormViewModel;
+
+// Subclass methods for ForgotPasswordViewModel
+SignInViewModel.prototype.isValid = function() {
+    var validationErrors = [];
+    if (!this.username.isValid()) {
+        validationErrors.push(
+            new $formViewModel.ValidationError(
+                'Error',
+                'Please enter a valid email address.'
+            )
+        );
+    }
+    if (!this.password.isValid()) {
+        validationErrors.push(
+            new $formViewModel.ValidationError(
+                'Error',
+                'Your password must be more than six but fewer than 36 characters.'
+            )
+        );
+    }
+    if (validationErrors.length > 0) {
+        throw validationErrors;
+    } else {
+        return true;
+    }
+};
 
 var SignIn = function(selector, applyBindings) {
-    this.viewModel = new ViewModel();
+    this.viewModel = new SignInViewModel();
     if (applyBindings === true) {
         $osf.applyBindings(this.viewModel, selector);
     }
 };
 
-module.exports = SignIn;
+module.exports = {
+    SignIn: SignIn,
+    ViewModel: SignInViewModel
+};
