@@ -66,7 +66,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.removeContributor = 'Remove contributor';
     self.pageOwner = pageOwner;
     self.serialize = function() {
-        return ko.toJS(self);
+        return JSON.parse(ko.toJSON(self));
     };
 
     self.canEdit = ko.computed(function() {
@@ -328,7 +328,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                 return !contributor.deleteStaged();
             }),
             function(contributor) {
-                return contributor.serialize();
+                var temp = contributor.serialize();
+                var minInfo = {id: temp.id, permission: temp.permission, registered: temp.registered, visible: temp.visible};
+                return minInfo;
             }
         );
     };
@@ -345,6 +347,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             message: 'Are you sure you want to save these changes?',
             callback: function(result) {
                 if (result) {
+                    console.log(self.serialize());
                     $osf.postJSON(
                         nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()}
@@ -357,6 +360,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                         }
                     }).fail(function(xhr) {
                         self.init();
+                        //var response = JSON.parse(xhr.responseText);
                         var response = xhr.responseJSON;
                         self.messages.push(
                             new MessageModel(
