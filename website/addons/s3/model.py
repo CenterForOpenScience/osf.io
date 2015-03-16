@@ -304,7 +304,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 bucket=self.bucket
             )
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:
@@ -317,15 +317,18 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             self.bucket = None
             self.save()
 
-            return (
-                'Because the Amazon Simple Storage add-on for this project was authenticated '
-                'by {user}, authentication information has been deleted. You '
-                'can re-authenticate on the <a href="{url}settings/">'
-                'Settings</a> page.'.format(
-                    user=removed.fullname,
-                    url=node.url,
-                )
-            )
+            message = (
+                u'Because the Amazon Simple Storage add-on for {category} "{title}" was '
+                u'authenticated by {user}, authentication information has been deleted.'
+            ).format(category=node.category_display, title=node.title, user=removed.fullname)
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True, save=True)
