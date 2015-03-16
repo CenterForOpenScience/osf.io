@@ -24,7 +24,8 @@
                             <li><a href="#links"><i class="fa fa-chevron-right"></i> Links</a></li>
                             <li><a href="#forks"><i class="fa fa-chevron-right"></i> Forks</a></li>
                             <li><a href="#registrations"><i class="fa fa-chevron-right"></i> Registrations</a></li>
-                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer</a></li>
+                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer and Folders</a></li>
+                            <li><a href="#wiki"><i class="fa fa-chevron-right"></i> Collaborative Wiki</a></li>
                         </ul>
                     </li>
                     <li>
@@ -43,8 +44,12 @@
                             <li><a href="#dropbox"><i class="fa fa-chevron-right"></i> Dropbox</a></li>
                             <li><a href="#github"><i class="fa fa-chevron-right"></i> GitHub</a></li>
                             <li><a href="#amazon"><i class="fa fa-chevron-right"></i> Amazon S3</a></li>
-                            <li><a href="#figshare"><i class="fa fa-chevron-right"></i> FigShare</a></li>
+                            <li><a href="#figshare"><i class="fa fa-chevron-right"></i> figshare</a></li>
                             <li><a href="#dataverse"><i class="fa fa-chevron-right"></i> Dataverse</a></li>
+                            <li><a href="#box"><i class="fa fa-chevron-right"></i> Box </a></li>
+                            <li><a href="#drive"><i class="fa fa-chevron-right"></i> Google Drive</a></li>
+                            <li><a href="#mendeley"><i class="fa fa-chevron-right"></i> Mendeley</a></li>
+                            <li><a href="#zotero"><i class="fa fa-chevron-right"></i> Zotero</a></li>
                             <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
                         </ul>
                     </li>
@@ -104,7 +109,7 @@
                         <div class="embed-responsive-item youtube-loader" id="Qx4MNTz3HMk"></div>
                     </div>
                     <p>When you click on a project to open it, you are taken to the Project Overview page. This page provides access to the features of the project via a gray navigation bar, as well as an overview of the components, files, tags, history, and wiki associated with the project.</p>
-            
+
                     <span id="components" class="anchor"></span>
                     <p class="gs-header">Components</p>
                     <p>Components are like folders in your project. You can assign a component a category upon its creation (data, materials, projects, etc.). A component that is categorized as a project can have more components added within it.</p>
@@ -117,7 +122,7 @@
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="N1Jk7ax2UHs"></div>
                     </div>
-                    
+
                     <span id="files" class="anchor"></span>
                     <p class="gs-header">Files</p>
                     <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful groups like datasets or background research.</p>
@@ -130,7 +135,7 @@
                     <p>You can delete files by clicking  the ‘X’ that appears when you hover over the file.</p>
                     <p>Only contributors of that component with writing privileges can add or delete a file. If a component is set to be private, then no one will be able to see the enclosed files, but public components and projects allow anyone to download their materials.</p>
                     <span id="links" class="anchor"></span>
-                   
+
                     <p class="gs-header">Links</p>
                     <p>Links are an alternative to building a component within a project. Adding a link to a project means that instead of building a component within the parent project, the component exists separately and is only being pointed to from the present project.</p>
                     <p>Any existing public project can be a link.</p>
@@ -139,9 +144,9 @@
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="zqZfScxCWLg"></div>
                     </div>
-                   
+
                     <span id="forks" class="anchor"></span>
-                    
+
                     <p class="gs-header">Forks</p>
                     <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
                     <p>Forks will automatically reference the original project as a functional citation.  Over time, the network of forks trace the evolution of project materials.</p>
@@ -150,9 +155,9 @@
                         <div class="embed-responsive-item youtube-loader" id="RVFTg0iT2gg"></div>
                     </div>
                     <p>A <a href="#links">linked</a> project can also easily be turned into a fork. If you were originally linking to a project but would like to make edits to the linked project, from your project dashboard you can find the linked project and hit the small fork button.</p>
-                    
+
                     <span id="registrations" class="anchor"></span>
-                    
+
                     <p class="gs-header">Registrations</p>
                     <p>Registrations are permanent, read only copies of a project. Registration saves the state of a project at a particular point in time - such as right before data collection, or right when a manuscript is submitted.</p>
                     <p>To register a project, click on the button in the grey navigation bar. Click on "New Registration", select a meta-data template, fill it out, and then confirm the registration.</p>
@@ -160,7 +165,7 @@
                         <div class="embed-responsive-item youtube-loader" id="rj89AgTdIvA"></div>
                     </div>
                     <p>A registration exists at a separate, permanent URL that is linked to the project.  Then, you can continue editing and revising the project.</p>
-                   
+
                     <span id="organizer" class="anchor"></span>
                     <p class="gs-header">Project Organizer and Folders</p>
                     <p> The Project Organizer displays your projects, components, and registrations; and makes it easy for you to arrange your projects and components into folders that make sense for your application. Your projects and registrations will be all be shown in Smart Folders called “All My Registrations” and “All My Projects.” Other folders can be created to help you organize projects or components you might like to see grouped in a different way. For example, you may have many projects and find the list overwhelming. It will be helpful for you to have a folder containing only projects or components you work with most often. Alternatively, you might want to be able to easily access all of your analysis scripts from all of your projects. You can create a folder and add to it only analysis scripts components. </p>
@@ -174,6 +179,23 @@
                     <p>Folders can be rearranged by dragging and dropping them wherever you like. Folders can be renamed by clicking on the “info” icon adjacent to the folder, and then clicking on the pencil icon next to the folder name. Projects and components can be renamed in this way too. Folders can be deleted by clicking on the “info” icon and choosing “Delete Folder.”</p>
                 </div>
             </div>
+
+            <span id="wiki" class="anchor"></span>
+                    <p class="gs-header">Collaborative Wiki</p>
+                    <p><strong>The wiki is a versatile tool for interacting with your team or the people who view your work.</strong>Each project and component has a wiki and you can add more pages depending on your needs. You can also turn the wiki off completely in the "Select Add-Ons" section of your project settings.
+</p>
+                    <div class="gs-video embed-responsive embed-responsive-16by9">
+                        <div class="embed-responsive-item youtube-loader" id="BWlRGvg3Ro4"></div>
+                    </div>
+                    <p>The wiki supports collaborative editing. Your entire team can get online and write together.</p>
+                    <p>One benefit of using the wiki for writing is version control. You can always go back to previous versions of your wiki, and you compare your current wiki with previous versions.</p>
+                    <p><strong>Here are two links that you might find helpful for formatting your wiki with markdown and TeX.</strong></p>
+                   <uo>
+                   <li><a href="http://assemble.io/docs/Cheatsheet-Markdown.html">Markdown</a></li>
+                   <li><a href="http://en.wikibooks.org/wiki/LaTeX/Mathematics">Inline Mathematics</a></li></uo>
+
+
+
             <div class="row" style="margin-bottom: 70px;">
                 <div class="col-sm-12">
                     <p class="subHeadFour text-center anchor" id="sharing">Sharing Your Work:</p>
@@ -207,14 +229,14 @@
                     </div>
                     <p>You may find that you can view comments but not leave one. That is the administrator's choice, and it reflects their decision to only allow contributors to comment on the project.</p>
                     <p>To change your project's comment settings, visit "Settings" in the grey navigation bar below the project title. Select your preference under "Configure Commenting" and submit your changes. </p>
-                    
+
                     <span id="notifications" class="anchor"></span>
                     <p class="gs-header">Notifications</p>
                     <p>Notifications can be enabled for any OSF project or component. To be notified via email when a new comment is added to a project or component, visit the settings page on the project. You can choose to receive an email every time a comment is added or in a daily digest. You can also choose to receive email notifications when someone replies to your comment on a project; configure this in your account settings.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="iOkb9OH4x5k"></div>
                     </div>
-                
+
                 </div>
             </div>
             <div class="row" style="margin-bottom: 70px;">
