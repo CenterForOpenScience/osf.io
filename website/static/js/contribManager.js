@@ -39,7 +39,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
-    //if this is somewhere accessible, please remove.
+    //if this is somewhere accessible, please remove, thanks.
     self.permissionList = [
         {value: 'read', text: 'Read'},
         {value: 'write', text: 'Read + Write'},
