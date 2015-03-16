@@ -8,7 +8,7 @@ var ko = require('knockout');
 require('knockout-validation');
 var $ = require('jquery');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 var RegistrationRetractionViewModel = function(submitUrl) {
 
@@ -24,22 +24,15 @@ var RegistrationRetractionViewModel = function(submitUrl) {
     ko.validation.registerExtenders();
 
     self.registrationTitle = ko.observable(contextVars.node.title);
-    self.justification = ko.observable().extend({
-        required: true,
-        minLength: 10
-    });
+    self.justification = ko.observable('');
     self.confirmationText = ko.observable().extend({
         required: true,
         mustEqual: self.registrationTitle
     });
 
-    self.isValid = ko.computed(function() {
-        return self.justification.isValid() && self.confirmationText.isValid();
-    });
-
     self.submit = function() {
         // Show errors if invalid
-        if (!self.isValid()) {
+        if (!self.confirmationText.isValid()) {
             var errors = ko.validation.group(self);
             errors.showAllMessages();
 
@@ -64,4 +57,7 @@ var RegistrationRetraction = function(selector, submitUrl) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
-module.exports = RegistrationRetraction;
+module.exports = {
+    RegistrationRetraction: RegistrationRetraction,
+    ViewModel: RegistrationRetractionViewModel
+};
