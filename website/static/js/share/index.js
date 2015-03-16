@@ -18,6 +18,13 @@ ShareApp.ViewModel = function() {
     self.count = 0;
     self.results = [];
     self.query = m.prop($osf.urlParams().q || '');
+    m.request({
+        method: 'get',
+        background: true,
+        url: '/api/v1/share/providers/'
+    }).then(function(data) {
+        self.ProviderMap = data.providerMap
+    });
 };
 
 
