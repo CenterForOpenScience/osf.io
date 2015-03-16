@@ -7,7 +7,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 
 var osfHelpers = require('osfHelpers');
-var Paginator = require('./paginator');
+var Paginator = require('js/paginator');
 var oop = require('js/oop');
 
 // Grab nodeID from global context (mako)

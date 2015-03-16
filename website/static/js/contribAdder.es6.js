@@ -5,7 +5,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-var Paginator = require('./paginator');
+var Paginator = require('js/paginator');
 
 require('bootstrap-editable');
 var oop = require('js/oop');
