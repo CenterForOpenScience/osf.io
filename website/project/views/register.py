@@ -161,7 +161,25 @@ def node_register_template_page_post(auth, **kwargs):
     }, http.CREATED
 
 
-def _get_or_create_identifiers(doi, metadata):
+def _build_ezid_metadata(node):
+    doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
+    metadata = {
+        '_target': node.absolute_url,
+        'datacite.creator': node.creator.fullname,
+        'datacite.title': node.title,
+        'datacite.publisher': 'Open Science Framework',
+        'datacite.publicationyear': str(node.registered_date.year),
+    }
+    return doi, metadata
+
+
+def _get_or_create_identifiers(node):
+    """
+    Note: ARKs include a leading slash. This is stripped here to avoid multiple
+    consecutive slashes in internal URLs (e.g. /ids/ark/<ark>/). Frontend code
+    that build ARK URLs is responsible for adding the leading slash.
+    """
+    doi, metadata = _build_ezid_metadata(node)
     client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
     try:
         resp = client.create_identifier(doi, metadata)
@@ -201,16 +219,8 @@ def node_identifiers_post(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)
-    doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
-    metadata = {
-        '_target': node.absolute_url,
-        'datacite.creator': node.creator.fullname,
-        'datacite.title': node.title,
-        'datacite.publisher': 'Open Science Framework',
-        'datacite.publicationyear': str(node.registered_date.year),
-    }
     try:
-        identifiers = _get_or_create_identifiers(doi, metadata)
+        identifiers = _get_or_create_identifiers(node)
     except ClientError:
         raise HTTPError(http.BAD_REQUEST)
     for category, value in identifiers.iteritems():
