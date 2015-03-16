@@ -1,8 +1,15 @@
 'use strict';
+require('css/user-addon-settings.css');
 var $ = require('jquery');
+var ko = require('knockout');
 var bootbox = require('bootbox');
-var osfHelpers = require('osfHelpers');
-var AddonPermissionsTable = require('addonPermissions');
+var Raven = require('raven-js');
+
+var $osf = require('js/osfHelpers');
+var AddonPermissionsTable = require('js/addonPermissions');
+var addonSettings = require('js/addonSettings');
+
+ko.punches.enableAll();
 
 
 // Show capabilities modal on selecting an addon; unselect if user
@@ -40,7 +47,7 @@ $('#selectAddonsForm').on('submit', function() {
     var unchecked = checkedOnLoad.filter($('#selectAddonsForm input:not(:checked)'));
 
     var submit = function() {
-        var request = osfHelpers.postJSON('/api/v1/settings/addons/', formData);
+        var request = $osf.postJSON('/api/v1/settings/addons/', formData);
         request.done(function() {
             window.location.reload();
         });
@@ -81,3 +88,16 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
                                       window.contextVars.addonsWithNodes[addonName].fullName);
    }
 }
+
+/***************
+* OAuth addons *
+****************/
+
+$('.addon-oauth').each(function(index, elem) {
+    var viewModel = new addonSettings.OAuthAddonSettingsViewModel(
+        $(elem).data('addon-short-name'),
+        $(elem).data('addon-name')
+    );
+    ko.applyBindings(viewModel, elem);
+    viewModel.updateAccounts();
+});
