@@ -23,6 +23,8 @@ class ProviderError(Exception):
 class CopyError(ProviderError):
     pass
 
+class CreateFolderError(ProviderError):
+    pass
 
 class DeleteError(ProviderError):
     pass
