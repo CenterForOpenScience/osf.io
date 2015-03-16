@@ -125,7 +125,7 @@ class ExternalProvider(object):
     @abc.abstractproperty
     def auth_url_base(self):
         """The base URL to begin the OAuth dance"""
-        raise NotImplementedError
+        pass
 
     @property
     def auth_url(self):
@@ -181,29 +181,29 @@ class ExternalProvider(object):
     @abc.abstractproperty
     def callback_url(self):
         """The provider URL to exchange the code for a token"""
-        raise NotImplementedError()
+        pass
 
     @abc.abstractproperty
     def client_id(self):
         """OAuth Client ID. a/k/a: Application ID"""
-        raise NotImplementedError()
+        pass
 
     @abc.abstractproperty
     def client_secret(self):
         """OAuth Client Secret. a/k/a: Application Secret, Application Key"""
-        raise NotImplementedError()
+        pass
 
     default_scopes = list()
 
     @abc.abstractproperty
     def name(self):
         """Human-readable name of the service. e.g.: ORCiD, GitHub"""
-        raise NotImplementedError()
+        pass
 
     @abc.abstractproperty
     def short_name(self):
         """Name of the service to be used internally. e.g.: orcid, github"""
-        raise NotImplementedError()
+        pass
 
     def auth_callback(self, user):
         """Exchange temporary credentials for permanent credentials
@@ -337,10 +337,11 @@ class ExternalProvider(object):
 
             return values
 
+    @abc.abstractmethod
     def handle_callback(self, response):
         """Hook for allowing subclasses to parse information from the callback.
 
-        Most subclasses should implement this method to provide `provider_id`
+        Subclasses should implement this method to provide `provider_id`
         and `profile_url`.
 
         Values provided by ``self._default_handle_callback`` can be over-ridden
@@ -350,4 +351,4 @@ class ExternalProvider(object):
         :param response: The JSON returned by the provider during the exchange
         :return dict:
         """
-        return {}
+        pass

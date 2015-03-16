@@ -1942,7 +1942,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After remove callback
         for addon in self.get_addons():
-            message = addon.after_remove_contributor(self, contributor)
+            message = addon.after_remove_contributor(self, contributor, auth)
             if message:
                 status.push_status_message(message)
 
