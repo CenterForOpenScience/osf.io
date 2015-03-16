@@ -58,5 +58,6 @@ module.exports = {
     // Avoid DISCONNECTED messages
     // See https://github.com/karma-runner/karma/issues/598
     browserDisconnectTimeout : 100000, // default 2000
+    browserDisconnectTolerance : 1, // default 0
     browserNoActivityTimeout : 600000 //default 10000
 }
