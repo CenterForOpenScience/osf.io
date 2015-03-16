@@ -51,12 +51,12 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="fa fa-pencil-square-o"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
                                         visible: validCredentials,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-addon"><i class="icon-share-alt"></i> Share on Dropbox
+                        class="btn btn-sm btn-addon"><i class="fa-share-square-o"></i> Share on Dropbox
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
@@ -95,13 +95,13 @@
                             <span data-clipboard-target="contribEmails"
                                 class="input-group-addon pointer"
                                 id="copyBtn">
-                                <i class="icon-paste"></i>
+                                <i class="fa-clipboard"></i>
                             </span>
                         </div>
 
                         <div class="input-group pull-right">
                             <a target="_blank" data-bind="attr.href: urls().share"
-                                class="btn btn-link"><i class="icon-share-alt"></i> Continue to Dropbox...</a>
+                                class="btn btn-link"><i class="fa-share-square-o"></i> Continue to Dropbox...</a>
                         </div>
                     </div>
 

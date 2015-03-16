@@ -42,11 +42,11 @@ QUnit.module( "Fangorn API Tests" );
         item.data.icon = "pnggg";
         var publicSpecificDataItem = filebrowser.options.resolveIcon(item);
 
-        assert.deepEqual(publicOpenFolder, m('i.icon-folder-open-alt', ' '), 'when item is folder and open returns with open folder icon.');
-        assert.deepEqual(publicClosedFolder, m('i.icon-folder-close-alt', ' '), 'when item is folder and closed returns with closed folder sign.');
-        assert.deepEqual(pointerFolder, m('i.icon-hand-right', ' '), 'when item is folder and isPointer is true returns pointer folder.');
+        assert.deepEqual(publicOpenFolder, m('i.fa-folder-open-o', ' '), 'when item is folder and open returns with open folder icon.');
+        assert.deepEqual(publicClosedFolder, m('i.fa-folder-close-o', ' '), 'when item is folder and closed returns with closed folder sign.');
+        assert.deepEqual(pointerFolder, m('i.fa-hand-o-right', ' '), 'when item is folder and isPointer is true returns pointer folder.');
         assert.deepEqual(privateFolder, m('img', { src : "/static/img/hgrid/fatcowicons/folder_delete.png" }), 'when item is folder and edit permission is false returns private folder.');
-        assert.deepEqual(publicItem, m('i.icon-file-alt'), 'when item is item and public returns with generic icon.');
+        assert.deepEqual(publicItem, m('i.fa-file-o'), 'when item is item and public returns with generic icon.');
         assert.deepEqual(publicSpecificItem, m('img', { src : '/static/img/hgrid/fatcowicons/file_extension_txt.png'}), 'when item is item and public returns with respective icon.');
         assert.deepEqual(publicSpecificDataItem, m('i.fa.' + item.data.icon, ' '), 'when item is item and public returns with specific icon.');
     });
@@ -69,8 +69,8 @@ QUnit.module( "Fangorn API Tests" );
         item.open = true;
         var resultItemTrue =  filebrowser.options.resolveToggle(item);
 
-        assert.deepEqual(resultFalse, m('i.icon-plus', ' '), 'when item is folder and open is false returns with plus sign.');
-        assert.deepEqual(resultTrue, m('i.icon-minus', ' '), 'when item is folder and open is true returns with minus sign.');
+        assert.deepEqual(resultFalse, m('i.fa.fa-plus', ' '), 'when item is folder and open is false returns with plus sign.');
+        assert.deepEqual(resultTrue, m('i.fa.fa-minus', ' '), 'when item is folder and open is true returns with minus sign.');
         assert.equal(resultItemFalse, '', 'when item is folder and open is false returns "".');
         assert.equal(resultItemTrue, '', 'when item is folder and open is false returns "".');
     });
