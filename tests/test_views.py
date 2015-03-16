@@ -3780,6 +3780,10 @@ class TestStaticFileViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_in('image/vnd.microsoft.icon', res.headers['Content-Type'])
 
+    def test_getting_started_page(self):
+        res = self.app.get('/getting-started/')
+        assert_equal(res.status_code, 200)
+
 
 class TestUserConfirmSignal(OsfTestCase):
 
