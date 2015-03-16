@@ -4,7 +4,7 @@
                 <h4>${full_name}</h4>
                 <div class="pull-right">
                     % if has_page:
-                       <a href="${node['url']}${short_name}/" class="btn">  <i class="icon icon-external-link"></i> </a>
+                       <a href="${node['url']}${short_name}/" class="btn">  <i class="fa fa-external-link"></i> </a>
                    % endif
 
                 </div>

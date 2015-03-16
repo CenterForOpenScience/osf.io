@@ -10,8 +10,8 @@ require('../css/fangorn.css');
 
 // TODO: Refactor out shared utility code between this module, folder picker, and fangorn.js
 function resolveToggle(item) {
-    var toggleMinus = m('i.icon-minus', ' '),
-        togglePlus = m('i.icon-plus', ' ');
+    var toggleMinus = m('i.fa.fa-minus', ' '),
+        togglePlus = m('i.fa.fa-plus', ' ');
 
     if (item.children.length > 0) {
         if (item.open) {
@@ -26,9 +26,9 @@ function resolveToggle(item) {
 function resolveIcon(item) {
     if (item.children.length > 0) {
         if (item.open) {
-            return m('i.icon.icon-folder-open', ' ');
+            return m('i.fa.fa-folder-open', ' ');
         }
-        return m('i.icon.icon-folder-close', ' ');
+        return m('i.fa.fa-folder', ' ');
     }
 }
 
@@ -262,12 +262,15 @@ function ProjectNotifications(data) {
             return columns;
         },
         sortButtonSelector : {
-            up : 'i.icon-chevron-up',
-            down : 'i.icon-chevron-down'
+            up : 'i.fa.fa-chevron-up',
+            down : 'i.fa.fa-chevron-down'
         },
         showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover'
+        hoverClass : 'fangorn-hover',
+        resolveRefreshIcon : function() {
+          return m('i.fa.fa-refresh.fa-spin');
+        }
     };
     var grid = new Treebeard(tbOptions);
     expandOnLoad.call(grid.tbController);

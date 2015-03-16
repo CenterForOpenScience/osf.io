@@ -2,7 +2,7 @@
 
     <div class="cp-handle" data-bind="click:removeCount">
         <p data-bind="text: displayCount" class="unread-comments-count"></p>
-        <i class="icon-comments-alt icon-white icon-2x comment-handle-icon" style=""></i>
+        <i class="fa fa-comments-o fa-inverse fa-2x comment-handle-icon" style=""></i>
     </div>
     <div class="cp-bar"></div>
 
@@ -22,8 +22,8 @@
                     <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
-                    <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
+                    <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
+                    <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                     <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                 </div>
                 <div class="comment-error">{{errorMessage}}</div>
@@ -111,8 +111,8 @@
                                 <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
                             <div class="form-inline">
-                                <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="icon-check"></i> Save</a>
-                                <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
+                                <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="fa fa-check-square-o"></i> Save</a>
+                                <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="fa fa-undo"></i> Cancel</a>
                                 <span data-bind="text: editErrorMessage" class="comment-error"></span>
                             </div>
                         </div>
@@ -128,13 +128,13 @@
                         <!-- Action bar -->
                         <div data-bind="ifnot: editing" class="comment-actions pull-right">
                             <span data-bind="if: $root.canComment, click: showReply">
-                                <i class="icon-reply"></i>
+                                <i class="fa fa-reply"></i>
                             </span>
                             <span data-bind="if: canReport, click: reportAbuse">
-                                <i class="icon-warning-sign"></i>
+                                <i class="fa fa-warning"></i>
                             </span>
                             <span data-bind="if: canEdit, click: startDelete">
-                                <i class="icon-trash"></i>
+                                <i class="fa-trash-o"></i>
                             </span>
 
                         </div>
@@ -146,13 +146,13 @@
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="icon-check"></i> Report</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="fa fa-check-square-o"></i> Report</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="fa fa-undo"></i> Cancel</a>
                     </div>
 
                     <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="icon-check"></i> Delete</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="fa fa-check-square-o"></i> Delete</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="fa fa-undo"></i> Cancel</a>
                     </div>
 
                 </div>
@@ -171,8 +171,8 @@
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
-                        <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
+                        <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
                 </div>

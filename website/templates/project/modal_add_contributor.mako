@@ -137,7 +137,7 @@
                                     <th width="45%">Name</th>
                                     <th width="30%">
                                         Permissions
-                                        <i class="icon-question-sign permission-info"
+                                        <i class="fa fa-question-sign permission-info"
                                                 data-toggle="popover"
                                                 data-title="Permission Information"
                                                 data-container="#addContributors"
