@@ -75,7 +75,7 @@ function _fangornActionColumn (item, col){
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Upload files',
-                'icon' : 'icon-upload-alt',
+                'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : Fangorn.ButtonEvents._uploadEvent
             });
@@ -86,14 +86,14 @@ function _fangornActionColumn (item, col){
                 {
                     'name' : '',
                     'tooltip' : 'Download Repository',
-                    'icon' : 'icon-download-alt',
+                    'icon' : 'fa fa-download',
                     'css' : 'fangorn-clickable btn btn-info btn-xs',
                     'onclick' : function(){window.location = item.data.urls.zip;}
                 },
                 {
                     'name' : '',
                     'tooltip' : 'Go to repository webpage',
-                    'icon' : 'icon-external-link',
+                    'icon' : 'fa fa-external-link',
                     'css' : 'btn btn-primary btn-xs',
                     'onclick' : function(){window.location = item.data.urls.repo;}//GO TO EXTERNAL PAGE
                 }
@@ -103,7 +103,7 @@ function _fangornActionColumn (item, col){
         buttons.push({
             'name' : '',
             'tooltip' : 'Download file',
-            'icon' : 'icon-download-alt',
+            'icon' : 'fa fa-download',
             'css' : 'btn btn-info btn-xs',
             'onclick' : _downloadEvent
         });
@@ -112,7 +112,7 @@ function _fangornActionColumn (item, col){
             buttons.push({
                 'name' : '',
                 'tooltip' : 'Delete',
-                'icon' : 'icon-remove',
+                'icon' : 'fa fa-times',
                 'css' : 'm-l-lg text-danger fg-hover-hide',
                 'style' : 'display:none',
                 'onclick' : _removeEvent
@@ -180,7 +180,7 @@ function _fangornGithubTitle(item, col)  {
                     },
                     'data-toggle': 'tooltip',
                     title: 'View file',
-                    'data-placement': 'right'
+                    'data-placement': 'bottom'
                 }, item.data.name)]);
         } else {
             return m('span', item.data.name);

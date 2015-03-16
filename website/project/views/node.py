@@ -772,6 +772,7 @@ def _view_project(node, auth, primary=False):
         },
         'user': {
             'is_contributor': node.is_contributor(user),
+            'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
             'has_read_permissions': node.has_permission(user, 'read'),
