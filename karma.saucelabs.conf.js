@@ -31,7 +31,7 @@ var browsers = {
         browserName: 'internet explorer',
         platform: 'Windows 8',
         version: '10'
-    },
+    }
     // TODO: Sinon faker is not compatible with IE 9. Github issue: https://github.com/cjohansen/Sinon.JS/issues/715
     //sl_ie_9: {
     //    base: 'SauceLabs',
@@ -53,10 +53,10 @@ if (!process.env.SAUCE_USERNAME) {
 }
 
 module.exports = function(config) {
-  config.set(assign(commonConfig, {
-      reporters: ['saucelabs', 'spec'],
-      browsers: Object.keys(browsers),
-      customLaunchers: browsers,
-      singleRun: true
-  }));
+    config.set(assign(commonConfig, {
+        reporters: ['saucelabs', 'spec'],
+        browsers: Object.keys(browsers),
+        customLaunchers: browsers,
+        singleRun: true
+    }));
 };
