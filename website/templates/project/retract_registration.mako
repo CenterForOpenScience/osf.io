@@ -4,6 +4,14 @@
 <legend class="text-center">Retract Registration</legend>
 
     <div id="registrationRetraction" class="col-md-6 col-md-offset-3">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                Retracting a registration will remove its content from the OSF, but leave basic meta-data behind.
+                The title of a retracted registration and its contributor list will remain, as will justification or
+                explanation of the retraction, should you wish to provide it. Retracted registrations will be marked
+                with a "retracted" tag. <strong>This action is irreversible.</strong>
+            </div>
+        </div>
         <form id="registration_retraction_form" role="form">
 
             <div class="form-group">
@@ -12,8 +20,8 @@
                         class="form-control"
                         data-bind="textInput: justification"
                         id="justificationInput"
+                        autofocus
                         >
-
                 </textarea>
             </div>
 
@@ -25,7 +33,6 @@
                         class="form-control"
                         data-bind="textInput: confirmationText"
                         >
-
                 </textarea>
             </div>
             <button type="submit" class="btn btn-danger" data-bind="click: submit, visible: true">Retract Registration</button>
