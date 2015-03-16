@@ -487,10 +487,15 @@ class TestSearchMigration(SearchTestCase):
     Verify that the correct indices are created/deleted during migration
     """
 
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSearchMigration, cls).tearDownClass()
+        search.create_index(elastic_search.INDEX)
+
     def setUp(self):
         super(TestSearchMigration, self).setUp()
         self.es = search.search_engine.es
-        search.delete_index(elastic_search.INDEX, ignore=[404])
+        search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='David Bowie')
         self.project = ProjectFactory(
