@@ -9,7 +9,6 @@ import bleach
 from flask import request
 
 from modularodm import Q
-
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
@@ -189,3 +188,36 @@ def search_contributor(auth):
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
+
+
+def search_share():
+    tick = time.time()
+    results = {}
+
+    count = request.args.get('count') is not None
+    raw = request.args.get('raw') is not None
+
+    if request.method == 'POST':
+        query = request.get_json()
+    elif request.method == 'GET':
+        query = build_query(
+            request.args.get('q', '*'),
+            request.args.get('from'),
+            request.args.get('size'),
+            sort=request.args.get('sort')
+        )
+
+    if count:
+        results = search.count_share(query)
+    else:
+        results = search.search_share(query, raw)
+
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+def search_share_stats():
+    q = request.args.get('q')
+    query = build_query(q, 0, 0) if q else {}
+
+    return search.share_stats(query=query)

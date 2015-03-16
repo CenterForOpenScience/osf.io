@@ -119,7 +119,13 @@ class TestUploadFileHook(HookTestCase):
             'hashes': {},
             'worker': '',
             'settings': {storage_settings.WATERBUTLER_RESOURCE: 'osf'},
-            'metadata': {'provider': 'osfstorage', 'service': 'cloud', 'name': 'file'},
+            'metadata': {
+                'provider': 'osfstorage',
+                'service': 'cloud',
+                'name': 'file',
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+            },
         }
         payload.update(kwargs)
         return payload
@@ -178,8 +184,9 @@ class TestUpdateMetadataHook(HookTestCase):
         self.record.versions = [self.version]
         self.record.save()
         self.payload = {
-            'metadata': {'archive': 'glacier'},
+            'metadata': {'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'},
             'version': self.version._id,
+            'size': 123,
         }
 
     def send_metadata_hook(self, payload=None, **kwargs):
@@ -201,6 +208,8 @@ class TestUpdateMetadataHook(HookTestCase):
             payload={
                 'metadata': {'archive': 'glacier'},
                 'version': self.version._id[::-1],
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
             },
             expect_errors=True,
         )

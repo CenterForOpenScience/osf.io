@@ -8,8 +8,6 @@ import os
 import json
 import hashlib
 
-
-
 os_env = os.environ
 
 def parent_dir(path):
@@ -51,6 +49,7 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
+SHARE_ELASTIC_URI = ELASTIC_URI
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
@@ -63,6 +62,9 @@ DEBUG_MODE = False
 
 # TODO: Remove after migration to OSF Storage
 COPY_GIT_REPOS = False
+
+# Change if using `scripts/cron.py` to manage crontab
+CRON_USER = None
 
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
@@ -102,7 +104,6 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
-USE_TOKU_MX = True
 DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
@@ -172,10 +173,10 @@ CELERY_IMPORTS = (
     'framework.render.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
+    'scripts.send_digest'
 )
 
 # Add-ons
-
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_REQUESTED = json.load(fp)['addons']
@@ -186,6 +187,7 @@ ADDON_CATEGORIES = [
     'bibliography',
     'other',
     'security',
+    'citations',
 ]
 
 SYSTEM_ADDED_ADDONS = {

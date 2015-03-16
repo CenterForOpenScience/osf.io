@@ -1,0 +1,3 @@
+# OAuth app keys
+ZOTERO_CLIENT_ID = None
+ZOTERO_CLIENT_SECRET = None

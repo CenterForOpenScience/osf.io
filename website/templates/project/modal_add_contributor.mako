@@ -1,5 +1,5 @@
 <div id="addContributors" class="modal fade">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 data-bind="text:pageTitle"></h3>
@@ -130,14 +130,14 @@
                             </div>
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
-                            <table>
+                            <table class="table-fixed">
                                 <thead data-bind="visible: selection().length">
-                                    <th></th>
-                                    <th></th>
-                                    <th>Name</th>
-                                    <th>
+                                    <th width="10%"></th>
+                                    <th width="15%"></th>
+                                    <th width="45%">Name</th>
+                                    <th width="30%">
                                         Permissions
-                                        <i class="icon-question-sign permission-info"
+                                        <i class="fa fa-question-sign permission-info"
                                                 data-toggle="popover"
                                                 data-title="Permission Information"
                                                 data-container="#addContributors"

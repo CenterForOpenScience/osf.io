@@ -12,7 +12,7 @@
                 % if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
-                            <a href="${parent_node['url']}">${parent_node['title']}</a> <i class="icon icon-level-down icon-dark-lg"> </i>
+                            <a href="${parent_node['url']}">${parent_node['title']}</a> <i class="fa fa-level-down fa fa-dark-lg"> </i>
                         </h2>
                     % else:
                         <h2 class="node-parent-title unavailable">
@@ -45,15 +45,15 @@
                         <!-- ko ifnot: inDashboard -->
                            <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
                             placement: 'bottom'}" class="btn btn-default">
-                               <i class="icon-folder-open"></i>
-                               <i class="icon-plus"></i>
+                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
                            <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
                             placement: 'bottom'}" class="btn btn-default">
-                               <i class="icon-folder-open"></i>
-                               <i class="icon-minus"></i>
+                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-minus"></i>
                            </a>
                         <!-- /ko -->
 
@@ -68,7 +68,7 @@
                             class="btn btn-default disabled"
                         % endif
                             href="#">
-                            <i class="icon-eye-open"></i>
+                            <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
                         <a rel="tooltip" title="Duplicate" data-placement="bottom"
@@ -80,7 +80,7 @@
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
                             <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
-                                <i class="icon-plus"></i> Award
+                                <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
                     % endif
@@ -143,20 +143,34 @@
 
     <div class="col-sm-6 osf-dash-col">
 
-        % if addons:
+        %if user['show_wiki_widget']:
+            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
+            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+            "uri": "${node['api_url']}wiki/widget/"
+        }'></div>
+        %endif
 
+        <div class="addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Files</h4>
+                <div class="pull-right">
+                   <a href="${node['url']}files/" class="btn"> <i class="fa fa-external-link"></i> </a>
+                </div>
+            </div>
+            <div class="addon-widget-body">
+                <div id="treeGrid">
+                    <div class="fangorn-loading">
+                        <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        % if addons:
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
-                    %if addon == 'wiki':
-                        %if user['show_wiki_widget']:
-                            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                            "uri": "${node['api_url']}wiki/widget/"
-                        }'></div>
-                        %endif
-
-                    %else:
+                    %if addon != 'wiki': ## We already show the wiki widget at the top
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
@@ -164,28 +178,11 @@
                     %endif
                 % endif
             % endfor
-
         % else:
             <!-- If no widgets, show components -->
             ${children()}
-
         % endif
 
-        <div class="addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Files</h4>
-                <div class="pull-right">
-                   <a href="${node['url']}files/" class="btn"> <i class="icon icon-external-link"></i> </a>
-                </div>
-            </div>
-            <div class="addon-widget-body">
-                <div id="treeGrid">
-                    <div class="fangorn-loading">
-                        <i class="icon-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="col-sm-6 osf-dash-col">
@@ -197,7 +194,7 @@
             <div class="addon-widget-header clearfix">
                 <h4>Citation</h4>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="icon icon-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="fa fa-angle-down"></i></a>
                 </div>
             </div>
             <div class="addon-widget-body" style="display:none">
@@ -210,7 +207,7 @@
                         <dd class="citation-text" data-bind="text: chicago"></dd>
                 </dl>
                 <p><strong>More</strong></p>
-                <div id="citation-style-panel">
+                <div id="citationStylePanel" class="citation-picker">
                     <input id="citationStyleInput" type="hidden" />
                 </div>
                 <pre id="citationText" class="formatted-citation"></pre>

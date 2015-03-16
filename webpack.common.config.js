@@ -10,6 +10,12 @@ var root = path.join(__dirname, 'website', 'static');
 var staticPath = function(dir) {
     return path.join(root, dir);
 };
+var nodePath = function(dir) {
+    return path.join(__dirname, 'node_modules', dir);
+};
+var addonsPath = function(dir) {
+    return path.join(__dirname, 'website', 'addons', dir);
+};
 
 /**
  * Each JS module for a page on the OSF is webpack entry point. These are built
@@ -24,7 +30,6 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
-    'wiki-view-page': staticPath('js/pages/wiki-view-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
@@ -34,23 +39,31 @@ var entry = {
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
-    'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
-    'notifications-config-page': staticPath('js/notifications-config-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
+    'share-search-page': staticPath('js/pages/share-search-page.js'),
+    'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
+    'twofactor-page': staticPath('js/pages/twofactor-page.js'),
+    'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     // Commons chunk
     'vendor': [
+        // Vendor libraries
         'knockout',
+        'moment',
         'knockout-validation',
         'bootstrap',
         'bootbox',
+        'bootstrap-editable',
         'select2',
-        'osfHelpers',
         'knockout-punches',
         'dropzone',
         'knockout-sortable',
         'treebeard',
         'jquery.cookie',
-        'citations'
+        'URIjs',
+        // Common internal modules
+        'fangorn',
+        'citations',
+        'osfHelpers'
     ]
 };
 
@@ -71,6 +84,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
+    extensions: ['', '.es6.js', '.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -80,24 +94,26 @@ var resolve = {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.js'),
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
-        'bootstrap-editable': staticPath('vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.js'),
+        'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
-        'jquery.cookie': staticPath('vendor/bower_components/jquery.cookie/jquery.cookie.js'),
-        'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
+        'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
         'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
+        'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
         'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
         'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
         'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
-        'pagedown-ace-converter': staticPath('vendor/pagedown-ace/Markdown.Converter.js'),
-        'pagedown-ace-sanitizer': staticPath('vendor/pagedown-ace/Markdown.Sanitizer.js'),
-        'pagedown-ace-editor': staticPath('vendor/pagedown-ace/Markdown.Editor.js'),
+        'pagedown-ace-converter': addonsPath('wiki/static/pagedown-ace/Markdown.Converter.js'),
+        'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
+        'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
+        'wikiPage': addonsPath('wiki/static/wikiPage.js'),
+        'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
         'waterbutler': staticPath('js/waterbutler.js'),
@@ -109,8 +125,11 @@ var resolve = {
         'koHelpers': staticPath('js/koHelpers.js'),
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
+        'markdown': staticPath('js/markdown.js'),
+        'diffTool': staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
-        'citations': staticPath('js/citations.js')
+        'citations': staticPath('js/citations.js'),
+        'tests': staticPath('js/tests')
     }
 };
 
@@ -158,12 +177,13 @@ module.exports = {
     output: output,
     module: {
         loaders: [
+            {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?minetype=application/font-woff" },
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'}

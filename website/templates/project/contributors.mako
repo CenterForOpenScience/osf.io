@@ -15,7 +15,7 @@
                 <h3> Contributors
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                          <i class="icon icon-plus"> </i>Add
+                          <i class="fa fa-plus"> </i>Add
                         </a>
                     <!-- /ko -->
                 </h3>
@@ -28,7 +28,7 @@
                         <th class="col-md-6">Name</th>
                         <th class="col-md-2">
                             Permissions
-                            <i class="icon-question-sign permission-info"
+                            <i class="fa fa-question-circle permission-info"
                                     data-toggle="popover"
                                     data-title="Permission Information"
                                     data-container="body"
@@ -38,7 +38,7 @@
                         </th>
                         <th class="col-md-3">
                             Bibliographic Contributor
-                            <i class="icon-question-sign visibility-info"
+                            <i class="fa fa-question-circle visibility-info"
                                     data-toggle="popover"
                                     data-title="Bibliographic Contributor Information"
                                     data-container="body"
@@ -64,19 +64,19 @@
                   </table>
 
                 <div data-bind="if: adminContributors.length">
-                    <h3>
-                      Users with Read Access
-                      <i class="icon-question-sign admin-info"
+                    <h4>
+                      Admins on Parent Projects
+                      <i class="fa fa-question-sign admin-info"
                               data-content="These users are not contributors on
-                                this component but can view it because they
+                              this component but can view and register it because they
                                 are administrators on a parent project."
                               data-toggle="popover"
-                              data-title="Visibility Information"
+                              data-title="Admins on Parent Projects"
                               data-container="body"
                               data-placement="right"
                               data-html="true"
                           ></i>
-                    </h3>
+                    </h4>
                     <table class="table">
                         <thead>
                             <tr>
@@ -137,7 +137,7 @@
                             <div class="btn-group">
                             <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
                                     data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                <span class="icon-copy" ></span>
+                                <span class="fa fa-copy" ></span>
                             </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
@@ -161,12 +161,12 @@
                         <td class="col-sm-1">
                             <span data-bind="html: anonymousDisplay"></span>
                             <!-- ko if: $root.nodeIsPublic && anonymous -->
-                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="icon-question-sign icon-sm"></i>
+                            <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-sign fa fa-sm"></i>
                             <!-- /ko -->
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
-                                <i class="icon-remove text-danger"></i>
+                                <i class="fa fa-times text-danger"></i>
                             </a>
                         </td>
                     </tr>
@@ -224,7 +224,7 @@
                     <a
                             data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
-                                <i class="icon-remove text-danger no-sort"></i>
+                                <i class="fa fa-times text-danger no-sort"></i>
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
@@ -237,7 +237,7 @@
                     <a
                             data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
                         >
-                        <i class="icon-remove text-danger no-sort"></i>
+                        <i class="fa fa-times text-danger no-sort"></i>
                     </a>
                     <!-- /ko -->
             <!-- /ko -->

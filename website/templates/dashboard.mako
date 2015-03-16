@@ -58,8 +58,8 @@
                                     class="ob-heading list-group-item-heading">
                                     Create a project
                                 </h3>
-                                <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-                                    class="pointer ob-expand-icon icon-large pull-right">
+                                <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
+                                    class="pointer ob-expand-icon fa-lg pull-right fa">
                                 </i>
                             </div><!-- end ob-header -->
                             <div data-bind="visible: isOpen()" id="obRevealNewProject">
@@ -112,6 +112,13 @@
 
 <%def name="javascript_bottom()">
 
+<script>
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        currentUser: {
+            'id': '${user_id}'
+        }
+    });
+</script>
 <script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
 
 </%def>

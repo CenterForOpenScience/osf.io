@@ -13,8 +13,6 @@ import datetime
 
 from modularodm import exceptions as modm_errors
 
-from framework.auth import Auth
-
 from website.models import NodeLog
 
 from website.addons.osfstorage import model
@@ -337,7 +335,8 @@ class TestOsfStorageFileRecord(StorageTestCase):
         self.record.versions[0].save()
         self.record.versions[1].save()
         self.record.save()
-        self.record.update_version_metadata(self.record.versions[0].location, {'archive': 'glacier'})
+        self.record.update_version_metadata(self.record.versions[0].location,
+            {'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'})
         assert_in('archive', self.record.versions[0].metadata)
         assert_equal(self.record.versions[0].metadata['archive'], 'glacier')
         assert_not_in('archive', self.record.versions[1].metadata)
@@ -411,7 +410,8 @@ class TestOsfStorageFileVersion(OsfTestCase):
 
     def test_update_metadata(self):
         version = factories.FileVersionFactory()
-        version.update_metadata({'archive': 'glacier'})
+        version.update_metadata({'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'})
+        version.reload()
         assert_in('archive', version.metadata)
         assert_equal(version.metadata['archive'], 'glacier')
 

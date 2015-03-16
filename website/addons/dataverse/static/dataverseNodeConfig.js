@@ -230,8 +230,8 @@ function ViewModel(url) {
     };
 
     /**
-        * Send PUT request to import access token from user profile.
-        */
+    *  Send PUT request to import access token from user profile.
+    */
     self.importAuth = function() {
         bootbox.confirm({
             title: 'Link to Dataverse Account?',

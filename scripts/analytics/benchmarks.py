@@ -3,6 +3,7 @@
 
 import os
 import datetime
+import collections
 
 import tabulate
 from modularodm import Q
@@ -93,47 +94,68 @@ def count_file_downloads():
     return downloads_unique, downloads_total
 
 
+LogCounter = collections.namedtuple('LogCounter', ['label', 'delta'])
+
+log_counters = [
+    LogCounter('total', None),
+    LogCounter('last-3m', relativedelta(months=3)),
+    LogCounter('last-1m', relativedelta(months=1)),
+    LogCounter('last-1w', relativedelta(weeks=1)),
+    LogCounter('last-1d', relativedelta(days=1)),
+]
+
+log_thresholds = [1, 11]
+
+
+def get_log_counts(users):
+    rows = []
+    for counter in log_counters:
+        counts = count_users_logs(
+            users,
+            (
+                Q('date', 'gte', datetime.datetime.utcnow() - counter.delta)
+                if counter.delta
+                else None
+            ),
+        )
+        for threshold in log_thresholds:
+            thresholded = count_at_least(counts, threshold)
+            rows.append([
+                'logs-gte-{0}-{1}'.format(threshold, counter.label),
+                thresholded,
+            ])
+    return rows
+
+
 def main():
     active_users = get_active_users()
     dropbox_metrics = get_dropbox_metrics()
     extended_profile_counts = profile.get_profile_counts()
     private_links = get_private_links()
+    downloads_unique, downloads_total = count_file_downloads()
 
     node_counts = count_user_nodes(active_users)
     nodes_at_least_1 = count_at_least(node_counts, 1)
     nodes_at_least_3 = count_at_least(node_counts, 3)
 
-    log_counts = count_users_logs(active_users)
-    logs_at_least_1 = count_at_least(log_counts, 1)
-    logs_at_least_11 = count_at_least(log_counts, 11)
+    rows = [
+        ['active-users', active_users.count()],
+        ['dropbox-users-enabled', len(dropbox_metrics['enabled'])],
+        ['dropbox-users-authorized', len(dropbox_metrics['authorized'])],
+        ['dropbox-users-linked', len(dropbox_metrics['linked'])],
+        ['profile-edits', extended_profile_counts['any']],
+        ['view-only-links', private_links.count()],
+        ['downloads-unique', downloads_unique],
+        ['downloads-total', downloads_total],
+        ['nodes-gte-1', nodes_at_least_1],
+        ['nodes-gte-3', nodes_at_least_3],
+    ]
 
-    log_counts_3months = count_users_logs(
-        active_users,
-        Q('date', 'gte', datetime.datetime.now() - relativedelta(months=3)),
-    )
-    logs_at_least_1_3months = count_at_least(log_counts_3months, 1)
-    logs_at_least_11_3months = count_at_least(log_counts_3months, 11)
-
-    downloads_unique, downloads_total = count_file_downloads()
+    rows.extend(get_log_counts(active_users))
 
     table = tabulate.tabulate(
-        [
-            ['active-users', active_users.count()],
-            ['dropbox-users-enabled', len(dropbox_metrics['enabled'])],
-            ['dropbox-users-authorized', len(dropbox_metrics['authorized'])],
-            ['dropbox-users-linked', len(dropbox_metrics['linked'])],
-            ['profile-edits', extended_profile_counts['any']],
-            ['view-only-links', private_links.count()],
-            ['nodes-gte-1', nodes_at_least_1],
-            ['nodes-gte-3', nodes_at_least_3],
-            ['logs-gte-1', logs_at_least_1],
-            ['logs-gte-11', logs_at_least_11],
-            ['logs-gte-1-last-3m', logs_at_least_1_3months],
-            ['logs-gte-11-last-3m', logs_at_least_11_3months],
-            ['downloads-unique', downloads_unique],
-            ['downloads-total', downloads_total],
-        ],
-        headers=['label', 'value']
+        rows,
+        headers=['label', 'value'],
     )
 
     with open(os.path.join(settings.ANALYTICS_PATH, 'main.txt'), 'w') as fp:

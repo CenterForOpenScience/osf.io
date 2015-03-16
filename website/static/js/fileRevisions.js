@@ -21,6 +21,10 @@ var Revision = function(data, index, file, node) {
         options.branch = urlParams.branch;
     }
     options[self.versionIdentifier] = self.version;
+    // Note: Google Drive version identifiers often begin with the same sequence
+    self.displayVersion = file.provider === 'googledrive' ?
+        self.version.substring(self.version.length - 8) :
+        self.version.substring(0, 8);
 
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
@@ -59,13 +63,20 @@ var RevisionsViewModel = function(node, file, editable) {
 
     self.node = node;
     self.file = file;
-    self.editable = ko.observable(editable);
+    self.path = file.provider !== 'googledrive' ?
+        file.path.split('/') :
+        file.path.split('/').map(decodeURIComponent);
+
+    // Hack: Set Figshare files to uneditable by default, then update after
+    // fetching file metadata after revisions request fails
+    self.editable = ko.observable(editable && file.provider !== 'figshare');
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
         download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
         metadata: waterbutler.buildMetadataUrl(file.path, file.provider, node.id, revisionsOptions),
         revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id, revisionsOptions)
     };
+
     self.errorMessage = ko.observable('');
     self.currentVersion = ko.observable({});
     self.revisions = ko.observableArray([]);
@@ -110,13 +121,9 @@ RevisionsViewModel.prototype.fetch = function() {
             // so dont allow downloads and set a fake current version
             $.ajax({
                 method: 'GET',
-                url: self.urls.metadata,
-            }).done(function(data) {
-                if (data.data.extra.status === 'drafts') {
-                    self.editable(true);
-                } else {
-                    self.editable(false);
-                }
+                url: self.urls.metadata
+            }).done(function(resp) {
+                self.editable(resp.data.extra.canDelete);
             }).fail(function(xhr) {
                 self.editable(false);
             });

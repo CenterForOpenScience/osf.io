@@ -11,9 +11,9 @@
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
                         <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
+                        <span class="fa fa-bar"></span>
+                        <span class="fa fa-bar"></span>
+                        <span class="fa fa-bar"></span>
                     </button>
                     <a class="navbar-brand visible-xs" href="${node['url']}">
                         ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
@@ -23,9 +23,9 @@
                     <ul class="nav navbar-nav">
                     % if parent_node['id']:
                         % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
-                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 13px 17px;"> <i class="icon icon-level-down rotate-180"></i>  </a></li>
+                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 13px 17px;"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
                         % else:
-                            <li><a href="#"> <i class="icon icon-level-up text-muted"></i>  </a></li>
+                            <li><a href="#"> <i class="fa fa-level-up text-muted"></i>  </a></li>
                         % endif
                     % endif
                         <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>

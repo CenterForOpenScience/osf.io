@@ -15,6 +15,7 @@ from flask import make_response
 
 from framework.auth import Auth
 from framework.sessions import Session
+from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
@@ -159,8 +160,12 @@ def get_auth(**kwargs):
     if not provider_settings:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    credentials = provider_settings.serialize_waterbutler_credentials()
-    settings = provider_settings.serialize_waterbutler_settings()
+    try:
+        credentials = provider_settings.serialize_waterbutler_credentials()
+        settings = provider_settings.serialize_waterbutler_settings()
+    except exceptions.AddonError:
+        log_exception()
+        raise HTTPError(httplib.BAD_REQUEST)
 
     return {
         'auth': make_auth(user),
@@ -274,6 +279,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path or not node_addon:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not node_addon.has_auth:
+        raise HTTPError(httplib.FORBIDDEN)
+
     if not path.startswith('/'):
         path = '/' + path
 
@@ -331,6 +339,9 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     if not path or not node_addon:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    if not node_addon.has_auth:
+        raise HTTPError(httplib.UNAUTHORIZED)
 
     if not path.startswith('/'):
         path = '/' + path

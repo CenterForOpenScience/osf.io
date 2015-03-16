@@ -2,6 +2,32 @@
 Changelog
 *********
 
+0.28.0 (2015-02-28)
+===================
+
+- Add email notifications. Can subscribe to new comments made on projects and
+components. Emails can be sent in "transactional" or "digest" mode.
+
+0.27.0 (2015-02-27)
+===================
+
+- Add Mendeley addon.
+- Add Zotero addon.
+- Add Google Drive addon.
+- Add Box.com addon.
+- New wiki layout with toggle-able columns.
+- New client-side markdown renderer, with support for table of contents
+(@[toc](Table of Contents)) and embedded YouTube and Vimeo videos
+(@[youtube](<video_id>) or @[vimeo](<video_id>)). NOTE: Wiki versions created before this
+release date will still use the older renderer. Update your wikis to use the new
+renderer.
+
+0.26.0 (2015-02-20)
+===================
+
+- Change to permissions model: Admins on a project are able to view and
+register private subprojects and components.
+
 0.25.0 (2015-02-15)
 ===================
 

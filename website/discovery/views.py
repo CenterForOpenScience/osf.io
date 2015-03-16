@@ -1,3 +1,5 @@
+import datetime
+
 from website import settings
 from website.project import Node
 
@@ -5,11 +7,15 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.analytics.piwik import PiwikClient
 
+
 def activity():
 
     popular_public_projects = []
     popular_public_registrations = []
     hits = {}
+
+    # get the date for exactly one week ago
+    target_date = datetime.date.today() - datetime.timedelta(weeks=1)
 
     if settings.PIWIK_HOST:
         client = PiwikClient(
@@ -17,8 +23,9 @@ def activity():
             auth_token=settings.PIWIK_ADMIN_TOKEN,
             site_id=settings.PIWIK_SITE_ID,
             period='week',
-            date='today',
+            date=target_date.strftime('%Y-%m-%d'),
         )
+
         popular_project_ids = [
             x for x in client.custom_variables if x.label == 'Project ID'
         ][0].values
@@ -50,10 +57,6 @@ def activity():
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
-
-    # Temporary bug fix: Skip projects with empty contributor lists
-    # Todo: Fix underlying bug and remove this selector
-    recent_query = recent_query & Q('contributors', 'ne', [])
 
     recent_public_projects = Node.find(
         recent_query &

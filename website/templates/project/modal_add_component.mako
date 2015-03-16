@@ -8,12 +8,6 @@
                     <h3 class="modal-title">Add Component</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
-                    <div class="alert alert-info">
-                      Note: Beginning on 2015/02/20, project administrators will have read-only
-                      access to all sub-components of the project, even if they are not listed as
-                      a contributor.
-                    </div>
-                    <div id="alert" style="padding-bottom:10px;color:blue"></div>
                     <div class="form-group">
                         <input id="title" placeholder="Component Title" name="title" type="text" class='form-control'>
                     </div>

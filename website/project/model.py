@@ -4,20 +4,14 @@ import re
 import uuid
 import urllib
 import logging
-import hashlib
-import calendar
 import datetime
 import urlparse
-import subprocess
-import unicodedata
-from HTMLParser import HTMLParser
 from collections import OrderedDict
 
 import pytz
 import blinker
 from flask import request
-from dulwich.repo import Repo
-from dulwich.object_store import tree_lookup_path
+from HTMLParser import HTMLParser
 
 from modularodm import Q
 from modularodm import fields
@@ -30,6 +24,7 @@ from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
+from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
@@ -57,24 +52,12 @@ html_parser = HTMLParser()
 logger = logging.getLogger(__name__)
 
 
-def utc_datetime_to_timestamp(dt):
-    return float(
-        str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
-    )
-
-
-def normalize_unicode(ustr):
-    return unicodedata.normalize('NFKD', ustr)\
-        .encode('ascii', 'ignore')
-
-
 def has_anonymous_link(node, auth):
     """check if the node is anonymous to the user
 
     :param Node node: Node which the user wants to visit
     :param str link: any view-only link in the current url
     :return bool anonymous: Whether the node is anonymous to the user or not
-
     """
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     if not view_only_link:
@@ -113,10 +96,13 @@ def ensure_schemas(clear=True):
     database first.
 
     :param clear: Clear schema database before import
-
     """
     if clear:
-        MetaSchema.remove()
+        try:
+            MetaSchema.remove()
+        except AttributeError:
+            if not settings.DEBUG_MODE:
+                raise
     for schema in OSF_META_SCHEMAS:
         try:
             MetaSchema.find_one(
@@ -253,7 +239,6 @@ class Comment(GuidStoredObject):
         :param dict kwargs: Report details
         :raises: ValueError if the user submitting abuse is the same as the
             user who posted the comment
-
         """
         if user == self.user:
             raise ValueError
@@ -267,7 +252,6 @@ class Comment(GuidStoredObject):
         :param User user: User who submitted the report
         :param bool save: Save changes
         :raises: ValueError if user has not reported comment as abuse
-
         """
         try:
             self.reports.pop(user._id)
@@ -566,7 +550,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('data', 'Data'),
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
-        ('other', 'Other')
+        ('other', 'Other'),
     ])
 
     _id = fields.StringField(primary=True)
@@ -615,8 +599,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
 
-    files_current = fields.DictionaryField()
-    files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -643,6 +625,10 @@ class Node(GuidStoredObject, AddonModelMixin):
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
+
+    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
+    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
+    child_node_subscriptions = fields.DictionaryField(default=dict)
 
     _meta = {
         'optimistic': True,
@@ -699,7 +685,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param Auth auth: Auth object to check
         :param User user: User object to check
         :returns: Whether user has permission to edit this node.
-
         """
         if not auth and not user:
             raise ValueError('Must pass either `auth` or `user`')
@@ -738,7 +723,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param User user: User object to check
         :returns: Boolean if the folder is expanded.
-
         """
         if user._id in self.expanded:
             return self.expanded[user._id]
@@ -775,7 +759,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param str permission: Permission to grant
         :param bool save: Save changes
         :raises: ValueError if user already has permission
-
         """
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
@@ -793,7 +776,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param str permission: Permission to revoke
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
-
         """
         try:
             self.permissions[user._id].remove(permission)
@@ -808,7 +790,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param User user: User to revoke permission from
         :param bool save: Save changes
         :raises: ValueError if user not in permissions
-
         """
         try:
             self.permissions.pop(user._id)
@@ -840,6 +821,22 @@ class Node(GuidStoredObject, AddonModelMixin):
             return True
         if permission == 'read' and check_parent:
             return self.is_admin_parent(user)
+        return False
+
+    def can_read_children(self, user):
+        """Checks if the given user has read permissions on any child nodes
+            that are not registrations or deleted
+        """
+        if self.has_permission(user, 'read'):
+            return True
+
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.can_read_children(user):
+                return True
+
         return False
 
     def get_permissions(self, user):
@@ -897,7 +894,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Update the order of `visible_contributor_ids`. Updating on making
         a contributor visible is more efficient than recomputing order on
         accessing `visible_contributors`.
-
         """
         self.visible_contributor_ids = [
             contributor._id
@@ -1054,8 +1050,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.visible_contributor_ids = []
 
         # Clear quasi-foreign fields
-        new.files_current = {}
-        new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
         new.wiki_private_uuids = {}
@@ -1133,7 +1127,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param Auth auth: Consolidated authorization
         :param bool save: Save changes
         :return: Created pointer
-
         """
         # Fail if node already in nodes / pointers. Note: cast node and node
         # to primary keys to test for conflicts with both nodes and pointers
@@ -1240,7 +1233,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     def has_pointers_recursive(self):
         """Recursively checks whether the current node or any of its nodes
         contains a pointer.
-
         """
         if self.nodes_pointer:
             return True
@@ -1258,7 +1250,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param Node pointed_node_id: The node id of the node being pointed at.
         :return: pointer_id
-
         """
         for pointer in self.nodes_pointer:
             node_id = pointer.node._id
@@ -1293,7 +1284,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param Auth auth:
         :param bool save:
         :return: Forked node
-
         """
         # Fail if pointer not contained in `nodes`
         try:
@@ -1344,7 +1334,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         order.
 
         :param int n: Number of logs to retrieve
-
         """
         return list(reversed(self.logs)[:n])
 
@@ -1363,7 +1352,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
-
         """
         if title is None or not title.strip():
             raise ValidationValueError('Title cannot be blank.')
@@ -1390,7 +1378,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param str description: The new description
         :param auth: All the auth informtion including user, API key.
         :param bool save: Save self after updating.
-
         """
         original = self.description
         self.description = description
@@ -1426,7 +1413,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
         :type date: `datetime.datetime` or `None`
-
         """
         # TODO: rename "date" param - it's shadowing a global
 
@@ -1479,6 +1465,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.deleted_date = date
         self.save()
 
+        auth_signals.node_deleted.send(self)
+
         return True
 
     def fork_node(self, auth, title='Fork of '):
@@ -1487,7 +1475,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param Auth auth: Consolidated authorization
         :param str title: Optional text to prepend to forked title
         :return: Forked node
-
         """
         user = auth.user
 
@@ -1495,17 +1482,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not (self.is_public or self.has_permission(user, 'read')):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
-        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
 
-        # Note: Cloning a node copies its `files_current` and
-        # `wiki_pages_current` fields, but does not clone the underlying
+        # Note: Cloning a node copies its `wiki_pages_current` and
+        # `wiki_pages_versions` fields, but does not clone the underlying
         # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its file and wiki objects to
-        # build the correct URLs to that content.
+        # the cloned node must pass itself to its wiki objects to build the
+        # correct URLs to that content.
         forked = original.clone()
 
         forked.logs = self.logs
@@ -1558,11 +1543,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             if message:
                 status.push_status_message(message)
 
-        # TODO: Remove after migration to OSF Storage
-        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
-            folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
-            Repo(folder_old).clone(folder_new)
-
         return forked
 
     def register_node(self, schema, auth, template, data):
@@ -1582,7 +1562,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 
-        folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
         template = urllib.unquote_plus(template)
         template = to_mongo(template)
 
@@ -1590,11 +1569,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         original = self.load(self._primary_key)
 
-        # Note: Cloning a node copies its `files_current` and
-        # `wiki_pages_current` fields, but does not clone the underlying
+        # Note: Cloning a node copies its `wiki_pages_current` and
+        # `wiki_pages_versions` fields, but does not clone the underlying
         # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its file and wiki objects to
-        # build the correct URLs to that content.
+        # the cloned node must pass itself to its wiki objects to build the
+        # correct URLs to that content.
         registered = original.clone()
 
         registered.is_registration = True
@@ -1620,11 +1599,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
-
-        # TODO: Remove after migration to OSF Storage
-        if settings.COPY_GIT_REPOS and os.path.exists(folder_old):
-            folder_new = os.path.join(settings.UPLOADS_PATH, registered._primary_key)
-            Repo(folder_old).clone(folder_new)
 
         registered.nodes = []
 
@@ -1690,258 +1664,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             if save:
                 self.save()
 
-    # TODO: Move to NodeFile
-    def read_file_object(self, file_object):
-        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-        repo = Repo(folder_name)
-        tree = repo.commit(file_object.git_commit).tree
-        mode, sha = tree_lookup_path(repo.get_object, tree, file_object.path)
-        return repo[sha].data, file_object.content_type
-
-    def get_file(self, path, version):
-        #folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-        file_object = self.get_file_object(path, version)
-        return self.read_file_object(file_object)
-
-    def get_file_object(self, path, version=None):
-        """Return the :class:`NodeFile` object at the given path.
-
-        :param str path: Path to the file.
-        :param int version: Version number, 0-indexed.
-        """
-        # TODO: Fix circular imports
-        from website.addons.osffiles.model import NodeFile
-        from website.addons.osffiles.exceptions import (
-            InvalidVersionError,
-            VersionNotFoundError,
-        )
-        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-        err_msg = 'Upload directory is not a git repo'
-        assert os.path.exists(os.path.join(folder_name, ".git")), err_msg
-        try:
-            file_versions = self.files_versions[path.replace('.', '_')]
-            # Default to latest version
-            version = version if version is not None else len(file_versions) - 1
-        except (AttributeError, KeyError):
-            raise ValueError('Invalid path: {}'.format(path))
-        if version < 0:
-            raise InvalidVersionError('Version number must be >= 0.')
-        try:
-            file_id = file_versions[version]
-        except IndexError:
-            raise VersionNotFoundError('Invalid version number: {}'.format(version))
-        except TypeError:
-            raise InvalidVersionError('Invalid version type. Version number'
-                    'must be an integer >= 0.')
-        return NodeFile.load(file_id)
-
-    def remove_file(self, auth, path):
-        '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
-
-        :param auth: All the auth informtion including user, API key.
-        :param path:
-
-        :raises: website.osffiles.exceptions.FileNotFoundError if file is not found.
-        '''
-        from website.addons.osffiles.model import NodeFile
-        from website.addons.osffiles.exceptions import FileNotFoundError
-        from website.addons.osffiles.utils import urlsafe_filename
-
-        file_name_key = urlsafe_filename(path)
-
-        repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-
-        # TODO make sure it all works, otherwise rollback as needed
-        # Do a git delete, which also removes from working filesystem.
-        try:
-            subprocess.check_output(
-                ['git', 'rm', path],
-                cwd=repo_path,
-                shell=False
-            )
-
-            repo = Repo(repo_path)
-
-            message = '{path} deleted'.format(path=path)
-            committer = self._get_committer(auth)
-
-            repo.do_commit(message, committer)
-        except subprocess.CalledProcessError as error:
-            if error.returncode == 128:
-                raise FileNotFoundError('File {0!r} was not found'.format(path))
-            raise
-
-        if file_name_key in self.files_current:
-            nf = NodeFile.load(self.files_current[file_name_key])
-            nf.is_deleted = True
-            nf.save()
-            self.files_current.pop(file_name_key, None)
-
-        if file_name_key in self.files_versions:
-            for i in self.files_versions[file_name_key]:
-                nf = NodeFile.load(i)
-                nf.is_deleted = True
-                nf.save()
-            self.files_versions.pop(file_name_key)
-
-        self.add_log(
-            action=NodeLog.FILE_REMOVED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'path': path
-            },
-            auth=auth,
-            log_date=nf.date_modified,
-            save=False,
-        )
-
-        # Updates self.date_modified
-        self.save()
-
-    @staticmethod
-    def _get_committer(auth):
-
-        user = auth.user
-        api_key = auth.api_key
-
-        if api_key:
-            commit_key_msg = ':{}'.format(api_key.label)
-            if api_key.user:
-                commit_name = api_key.user.fullname
-                commit_id = api_key.user._primary_key
-                commit_category = 'user'
-            if api_key.node:
-                commit_name = api_key.node.title
-                commit_id = api_key.node._primary_key
-                commit_category = 'node'
-
-        elif user:
-            commit_key_msg = ''
-            commit_name = user.fullname
-            commit_id = user._primary_key
-            commit_category = 'user'
-
-        else:
-            raise Exception('Must provide either user or api_key.')
-
-        committer = u'{name}{key_msg} <{category}-{id}@osf.io>'.format(
-            name=commit_name,
-            key_msg=commit_key_msg,
-            category=commit_category,
-            id=commit_id,
-        )
-
-        committer = normalize_unicode(committer)
-
-        return committer
-
-    def add_file(self, auth, file_name, content, size, content_type):
-        """
-        Instantiates a new NodeFile object, and adds it to the current Node as
-        necessary.
-        """
-        from website.addons.osffiles.model import NodeFile
-        from website.addons.osffiles.exceptions import FileNotModified
-        # TODO: Reading the whole file into memory is not scalable. Fix this.
-
-        # This node's folder
-        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-
-        # TODO: This should be part of the build phase, not here.
-        # verify the upload root exists
-        if not os.path.isdir(settings.UPLOADS_PATH):
-            os.mkdir(settings.UPLOADS_PATH)
-
-        # Make sure the upload directory contains a git repo.
-        if os.path.exists(folder_name):
-            if os.path.exists(os.path.join(folder_name, ".git")):
-                repo = Repo(folder_name)
-            else:
-                # ... or create one
-                repo = Repo.init(folder_name)
-        else:
-            # if the Node's folder isn't there, create it.
-            os.mkdir(folder_name)
-            repo = Repo.init(folder_name)
-
-        # Is this a new file, or are we updating an existing one?
-        file_is_new = not os.path.exists(os.path.join(folder_name, file_name))
-
-        if not file_is_new:
-            # Get the hash of the old file
-            old_file_hash = hashlib.md5()
-            with open(os.path.join(folder_name, file_name), 'rb') as f:
-                for chunk in iter(
-                        lambda: f.read(128 * old_file_hash.block_size),
-                        b''
-                ):
-                    old_file_hash.update(chunk)
-
-            # If the file hasn't changed
-            if old_file_hash.digest() == hashlib.md5(content).digest():
-                raise FileNotModified()
-
-        # Write the content of the temp file into a new file
-        with open(os.path.join(folder_name, file_name), 'wb') as f:
-            f.write(content)
-
-        # Deal with git
-        repo.stage([str(file_name)])
-
-        committer = self._get_committer(auth)
-
-        commit_id = repo.do_commit(
-            message=unicode(file_name +
-                            (' added' if file_is_new else ' updated')),
-            committer=committer,
-        )
-
-        # Deal with creating a NodeFile in the database
-        node_file = NodeFile(
-            path=file_name,
-            filename=file_name,
-            size=size,
-            node=self,
-            uploader=auth.user,
-            git_commit=commit_id,
-            content_type=content_type,
-        )
-        node_file.save()
-
-        # Add references to the NodeFile to the Node object
-        file_name_key = node_file.clean_filename
-
-        # Reference the current file version
-        self.files_current[file_name_key] = node_file._primary_key
-
-        # Create a version history if necessary
-        if file_name_key not in self.files_versions:
-            self.files_versions[file_name_key] = []
-
-        # Add reference to the version history
-        self.files_versions[file_name_key].append(node_file._primary_key)
-
-        self.add_log(
-            action=NodeLog.FILE_ADDED if file_is_new else NodeLog.FILE_UPDATED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'path': node_file.path,
-                'version': len(self.files_versions),
-                'urls': {
-                    'view': node_file.url(self),
-                    'download': node_file.download_url(self),
-                },
-            },
-            auth=auth,
-            log_date=node_file.date_uploaded,
-            save=False,
-        )
-        self.save()
-
-        return node_file
-
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
@@ -1993,7 +1715,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def absolute_url(self):
         if not self.url:
-            logger.error("Node {0} has a parent that is not a project".format(self._id))
+            logger.error('Node {0} has a parent that is not a project'.format(self._id))
             return None
         return urlparse.urljoin(settings.DOMAIN, self.url)
 
@@ -2078,7 +1800,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         property is named `parent_node` rather than `parent` to avoid a
         conflict with the `parent` back-reference created by the `nodes`
         field on this schema.
-
         """
         try:
             if not self.node__parent[0].is_deleted:
@@ -2117,7 +1838,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param Auth auth: Consolidated authorization object
         :param bool log: Add a log after adding the add-on
         :return: A boolean, whether the addon was added
-
         """
         ret = AddonModelMixin.add_addon(self, addon_name, auth=auth,
                                         *args, **kwargs)
@@ -2145,10 +1865,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             in the application, or else projects will be allowed to delete
             mandatory add-ons!
         :return bool: Add-on was deleted
-
         """
-        rv = super(Node, self).delete_addon(addon_name, auth, _force)
-        if rv:
+        ret = super(Node, self).delete_addon(addon_name, auth, _force)
+        if ret:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_REMOVED,
@@ -2162,7 +1881,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
             self.save()
             # TODO: save here or outside the conditional? @mambocab
-        return rv
+        return ret
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -2170,7 +1889,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param str callback: Name of callback method to invoke
         :param bool recursive: Apply callback recursively over nodes
         :return list: List of callback messages
-
         """
         messages = []
 
@@ -2212,7 +1930,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth information including user, API key.
-
         """
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
@@ -2257,6 +1974,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         self.save()
 
+        #send signal to remove this user from project subscriptions
+        auth_signals.contributor_removed.send(contributor, node=self)
+
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -2300,7 +2020,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
             no admin contributors remaining
-
         """
         with TokuTransaction():
             users = []
@@ -2392,7 +2111,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
         :returns: Whether contributor was added
-
         """
         MAX_RECENT_LENGTH = 15
 
@@ -2444,7 +2162,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
         :param log: Add log to self
         :param save: Save after adding contributor
-
         """
         for contrib in contributors:
             self.add_contributor(
@@ -2476,9 +2193,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
         :returns: The added contributor
-
         :raises: DuplicateEmailError if user with given email is already in the database.
-
         """
         # Create a new user record
         contributor = User.create_unregistered(fullname=fullname, email=email)
@@ -2509,7 +2224,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth informtion including user, API key.
-
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
@@ -2545,10 +2259,14 @@ class Node(GuidStoredObject, AddonModelMixin):
             name = (name or '').strip()
             key = to_mongo_key(name)
             try:
-                if version:
-                    id = self.wiki_pages_versions[key][version - 1]
-                else:
+                if version and (isinstance(version, int) or version.isdigit()):
+                    id = self.wiki_pages_versions[key][int(version) - 1]
+                elif version == 'previous':
+                    id = self.wiki_pages_versions[key][-2]
+                elif version == 'current' or version is None:
                     id = self.wiki_pages_current[key]
+                else:
+                    return None
             except (KeyError, IndexError):
                 return None
         return NodeWikiPage.load(id)
@@ -2560,7 +2278,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
-
         """
         from website.addons.wiki.model import NodeWikiPage
 

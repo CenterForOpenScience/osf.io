@@ -157,7 +157,7 @@ class TestCallbacks(OsfTestCase):
         clone, message = self.node_settings.after_register(
             self.project, registration, self.project.creator,
         )
-        assert_false(clone.user_settings)
+        assert_is_none(clone)
 
     def test_before_register_no_settings(self):
         self.node_settings.user_settings = None

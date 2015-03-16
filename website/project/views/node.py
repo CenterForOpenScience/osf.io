@@ -21,6 +21,7 @@ from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
+    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -34,7 +35,6 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
-
 
 logger = logging.getLogger(__name__)
 
@@ -289,12 +289,10 @@ def node_forks(**kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission('write')
+@must_be_logged_in
+@must_be_contributor
 def node_setting(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
-    if not node.can_edit(auth):
-        raise HTTPError(http.FORBIDDEN)
 
     ret = _view_project(node, auth, primary=True)
 
@@ -302,18 +300,19 @@ def node_setting(auth, **kwargs):
     addon_enabled_settings = []
 
     for addon in node.get_addons():
-
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
             addon_enabled_settings.append(addon.to_json(auth.user))
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = [
+    ret['addons_available'] = sorted([
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
-    ]
+    ], key=lambda addon: addon.full_name)
+
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
@@ -325,6 +324,7 @@ def node_setting(auth, **kwargs):
     }
 
     return ret
+
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -671,12 +671,14 @@ def _render_addon(node):
 
 
 def _should_show_wiki_widget(node, user):
+
+    has_wiki = bool(node.get_addon('wiki'))
+    wiki_page = node.get_wiki_page('home', None)
     if not node.has_permission(user, 'write'):
-        wiki_page = node.get_wiki_page('home', None)
-        return wiki_page and wiki_page.html(node)
+        return has_wiki and wiki_page and wiki_page.html(node)
 
     else:
-        return True
+        return has_wiki
 
 
 def _view_project(node, auth, primary=False):
@@ -767,8 +769,10 @@ def _view_project(node, auth, primary=False):
         },
         'user': {
             'is_contributor': node.is_contributor(user),
+            'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
+            'has_read_permissions': node.has_permission(user, 'read'),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
@@ -813,6 +817,7 @@ def _get_children(node, auth, indent=0):
                 'title': child.title,
                 'indent': indent,
                 'is_public': child.is_public,
+                'parent_id': child.parent_id,
             })
             children.extend(_get_children(child, auth, indent + 1))
 
@@ -844,7 +849,7 @@ def get_editable_children(auth, **kwargs):
     children = _get_children(node, auth)
 
     return {
-        'node': {'title': node.title, 'is_public': node.is_public},
+        'node': {'id': node._id, 'title': node.title, 'is_public': node.is_public},
         'children': children,
     }
 
