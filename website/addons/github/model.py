@@ -461,14 +461,20 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             # Delete OAuth tokens
             self.user_settings = None
             self.save()
-            message = 'Because the GitHub add-on for {category} "{title}" was authenticated ' \
-                      'by {user}, authentication information has been deleted.'\
-                .format(category=node.category_display, title=node.title, user=removed.fullname)
+            message = (
+                u'Because the GitHub add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
+            )
 
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
-                message += ' You can re-authenticate on the ' \
-                           '<a href="{url}">Settings</a> page.'.format(url=url)
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
             #
             return message
 

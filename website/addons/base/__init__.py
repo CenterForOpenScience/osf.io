@@ -762,19 +762,21 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
             self.clear_auth()
-            message = 'Because the {addon} add-on for {category} "{title}" was authenticated ' \
-                      'by {user}, authentication information has been deleted.'\
-                .format(
-                    addon=self.config.full_name,
-                    category=node.category_display,
-                    title=node.title,
-                    user=removed.fullname
-                )
+            message = (
+                u'Because the {addon} add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                addon=self.config.full_name,
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
+            )
 
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
-                message += ' You can re-authenticate on the ' \
-                           '<a href="{url}">Settings</a> page.'.format(url=url)
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
             #
             return message
 
