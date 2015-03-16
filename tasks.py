@@ -382,13 +382,12 @@ def karma(single=False, sauce=False, browsers=None):
     cmd = '{} start'.format(karma_bin)
     if sauce:
         cmd += ' karma.saucelabs.conf.js'
-    else:
-        if single:
-            cmd += ' --single-run'
-        # Use browsers if specified on the command-line, otherwise default
-        # what's specified in karma.conf.js
-        if browsers:
-            cmd += ' --browsers {}'.format(browsers)
+    elif single:
+        cmd += ' --single-run'
+    # Use browsers if specified on the command-line, otherwise default
+    # what's specified in karma.conf.js
+    if browsers:
+        cmd += ' --browsers {}'.format(browsers)
     run(cmd, echo=True)
 
 
