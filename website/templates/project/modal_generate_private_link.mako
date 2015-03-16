@@ -54,7 +54,7 @@
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <!-- /ko -->
                                     <!-- ko ifnot: $root.isChildVisible($data) -->
-                                        <i class="icon-question-sign" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
+                                        <i class="fa fa-question-sign" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
                                     <!-- /ko -->
                                     <span data-bind="text:$data.title"></span>
                                     <span data-bind="if: $data.is_public">(public)</span>
