@@ -3,6 +3,7 @@ import json
 import httplib as http
 
 from flask import request
+from flask import redirect
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
@@ -15,6 +16,7 @@ from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission, must_not_be_registration
 )
+from website.identifiers.model import Identifier
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import ADMIN
 from website.models import MetaSchema
@@ -164,7 +166,7 @@ def _get_or_create_identifiers(doi, metadata):
     try:
         resp = client.create_identifier(doi, metadata)
         return dict(
-            pair.strip().split(':')
+            [each.strip('/') for each in pair.strip().split(':')]
             for pair in resp['success'].split('|')
         )
     except ClientError as error:
@@ -223,3 +225,16 @@ def node_identifiers_post(auth, **kwargs):
         auth=auth,
     )
     return identifiers, http.CREATED
+
+
+def get_referent_by_identifier(category, value):
+    try:
+        identifier = Identifier.find_one(
+            Q('category', 'eq', category) &
+            Q('value', 'eq', value)
+        )
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if identifier.referent.url:
+        return redirect(identifier.referent.url)
+    raise HTTPError(http.NOT_FOUND)

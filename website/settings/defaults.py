@@ -237,7 +237,7 @@ WATERBUTLER_ADDRS = ['127.0.0.1']
 
 # Test identifier namespaces
 DOI_NAMESPACE = 'doi:10.5072/FK2'
-ARK_NAMESPACE = 'ark:/99999/fk4'
+ARK_NAMESPACE = 'ark:99999/fk4'
 
 EZID_USERNAME = 'changeme'
 EZID_PASSWORD = 'changeme'

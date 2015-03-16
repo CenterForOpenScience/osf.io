@@ -760,6 +760,13 @@ def make_url_map(app):
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
 
+        Rule(
+            '/ids/<category>/<path:value>/',
+            'get',
+            project_views.register.get_referent_by_identifier,
+            notemplate,
+        ),
+
         # Statistics
         Rule([
             '/project/<pid>/statistics/',

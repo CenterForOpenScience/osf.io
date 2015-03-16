@@ -8,6 +8,7 @@ from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
 from tests.factories import ModularOdmFactory
 from tests.factories import RegistrationFactory
+from tests.test_addons import assert_urls_equal
 
 import furl
 from modularodm.storage.base import KeyExistsException
@@ -145,3 +146,37 @@ class TestIdentifierViews(OsfTestCase):
             '{0}{1}'.format(settings.ARK_NAMESPACE.strip('ark:'), identifier),
         )
         assert_equal(res.status_code, 201)
+
+    def test_get_by_identifier(self):
+        self.node.set_identifier_value('doi', 'FK424601')
+        self.node.set_identifier_value('ark', 'fk224601')
+        res_doi = self.app.get(
+            self.node.web_url_for(
+                'get_referent_by_identifier',
+                category='doi',
+                value=self.node.get_identifier_value('doi'),
+            ),
+        )
+        assert_equal(res_doi.status_code, 302)
+        assert_urls_equal(res_doi.headers['Location'], self.node.absolute_url)
+        res_ark = self.app.get(
+            self.node.web_url_for(
+                'get_referent_by_identifier',
+                category='ark',
+                value=self.node.get_identifier_value('ark'),
+            ),
+        )
+        assert_equal(res_ark.status_code, 302)
+        assert_urls_equal(res_ark.headers['Location'], self.node.absolute_url)
+
+    def test_get_by_identifier_not_found(self):
+        self.node.set_identifier_value('doi', 'FK424601')
+        res = self.app.get(
+            self.node.web_url_for(
+                'get_referent_by_identifier',
+                category='doi',
+                value='fakedoi',
+            ),
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)

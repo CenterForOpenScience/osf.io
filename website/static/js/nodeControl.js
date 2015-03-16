@@ -253,7 +253,7 @@ var ProjectViewModel = function(data) {
     });
 
     self.arkUrl = ko.computed(function() {
-        return self.ark() ? 'http://ezid.cdlib.org/id/ark:' + self.ark() : null;
+        return self.ark() ? 'http://ezid.cdlib.org/id/ark:/' + self.ark() : null;
     });
 
     self.askCreateIdentifiers = function() {
