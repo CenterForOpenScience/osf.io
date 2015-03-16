@@ -15,11 +15,13 @@ from .provider import MendeleyCitationsProvider
 
 
 @must_be_logged_in
-def list_mendeley_accounts_user(auth):
+def mendeley_get_user_settings(auth):
     """ Returns the list of all of the current user's authorized Mendeley accounts """
 
     provider = MendeleyCitationsProvider()
-    return provider.user_accounts(auth.user)
+    return provider.serializer(
+        user_settings=auth.user.get_addon('mendeley')
+    ).serialized_user_settings
 
 
 @must_have_permission('read')
@@ -28,9 +30,8 @@ def mendeley_get_config(auth, node_addon, **kwargs):
     """ Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
-
     provider = MendeleyCitationsProvider()
-    return provider.serialize_settings(node_addon, auth.user)
+    return provider.serializer(node_addon, auth.user.get_addon('mendeley')).serialized_node_settings
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')

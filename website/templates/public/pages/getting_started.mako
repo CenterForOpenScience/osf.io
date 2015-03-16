@@ -8,50 +8,51 @@
                     <li>
                         <a href="#start">Getting Started</a>
                         <ul class="nav">
-                            <li><a href="#start-one"><i class="icon-chevron-right"></i> Creating a Project</a></li>
-                            <li><a href="#start-two"><i class="icon-chevron-right"></i> Contributors and Citations</a></li>
-                            <li><a href="#start-three"><i class="icon-chevron-right"></i> Revisions, Preservation,<br />and Registration</a></li>
+                            <li><a href="#start-one"><i class="fa fa-chevron-right"></i> Creating a Project</a></li>
+                            <li><a href="#start-two"><i class="fa fa-chevron-right"></i> Contributors and Citations</a></li>
+                            <li><a href="#start-three"><i class="fa fa-chevron-right"></i> Revisions, Preservation,<br />and Registration</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#structure">Structure</a>
                         <ul class="nav">
-                            <li><a href="#dashboards"><i class="icon-chevron-right"></i> Dashboard</a></li>
-                            <li><a href="#userprofile"><i class="icon-chevron-right"></i> User Profile</a></li>
-                            <li><a href="#projects"><i class="icon-chevron-right"></i> Projects</a></li>
-                            <li><a href="#components"><i class="icon-chevron-right"></i> Components</a></li>
-                            <li><a href="#files"><i class="icon-chevron-right"></i> Files</a></li>
-                            <li><a href="#links"><i class="icon-chevron-right"></i> Links</a></li>
-                            <li><a href="#forks"><i class="icon-chevron-right"></i> Forks</a></li>
-                            <li><a href="#registrations"><i class="icon-chevron-right"></i> Registrations</a></li>
-                            <li><a href="#organizer"><i class="icon-chevron-right"></i> Project Organizer and Folders</a></li>
+                            <li><a href="#dashboards"><i class="fa fa-chevron-right"></i> Dashboard</a></li>
+                            <li><a href="#userprofile"><i class="fa fa-chevron-right"></i> User Profile</a></li>
+                            <li><a href="#projects"><i class="fa fa-chevron-right"></i> Projects</a></li>
+                            <li><a href="#components"><i class="fa fa-chevron-right"></i> Components</a></li>
+                            <li><a href="#files"><i class="fa fa-chevron-right"></i> Files</a></li>
+                            <li><a href="#links"><i class="fa fa-chevron-right"></i> Links</a></li>
+                            <li><a href="#forks"><i class="fa fa-chevron-right"></i> Forks</a></li>
+                            <li><a href="#registrations"><i class="fa fa-chevron-right"></i> Registrations</a></li>
+                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#sharing">Sharing</a>
                         <ul class="nav">
-                            <li><a href="#contributors"><i class="icon-chevron-right"></i> Contributors</a></li>
-                            <li><a href="#privacy"><i class="icon-chevron-right"></i> Privacy</a></li>
-                            <li><a href="#viewonly"><i class="icon-chevron-right"></i> View-only Links</a></li>
-                            <li><a href="#comments"><i class="icon-chevron-right"></i> Comments</a></li>
+                            <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
+                            <li><a href="#privacy"><i class="fa fa-chevron-right"></i> Privacy</a></li>
+                            <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only Links</a></li>
+                            <li><a href="#comments"><i class="fa fa-chevron-right"></i> Comments</a></li>
+                            <li><a href="#notifications"><i class="fa fa-chevron-right"></i> Notifications</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#addons">Add-ons</a>
                         <ul class="nav">
-                            <li><a href="#dropbox"><i class="icon-chevron-right"></i> Dropbox</a></li>
-                            <li><a href="#github"><i class="icon-chevron-right"></i> GitHub</a></li>
-                            <li><a href="#amazon"><i class="icon-chevron-right"></i> Amazon S3</a></li>
-                            <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
-                            <li><a href="#dataverse"><i class="icon-chevron-right"></i> Dataverse</a></li>
-                            <li><a href="#twofactor"><i class="icon-chevron-right"></i> Two-factor Authentication</a></li>
+                            <li><a href="#dropbox"><i class="fa fa-chevron-right"></i> Dropbox</a></li>
+                            <li><a href="#github"><i class="fa fa-chevron-right"></i> GitHub</a></li>
+                            <li><a href="#amazon"><i class="fa fa-chevron-right"></i> Amazon S3</a></li>
+                            <li><a href="#figshare"><i class="fa fa-chevron-right"></i> FigShare</a></li>
+                            <li><a href="#dataverse"><i class="fa fa-chevron-right"></i> Dataverse</a></li>
+                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#metrics">Metrics</a>
                         <ul class="nav">
-                            <li><a href="#citations"><i class="icon-chevron-right"></i> Citations</a></li>
-                            <li><a href="#statistics"><i class="icon-chevron-right"></i> Statistics</a></li>
+                            <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
+                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Statistics</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -206,6 +207,14 @@
                     </div>
                     <p>You may find that you can view comments but not leave one. That is the administrator's choice, and it reflects their decision to only allow contributors to comment on the project.</p>
                     <p>To change your project's comment settings, visit "Settings" in the grey navigation bar below the project title. Select your preference under "Configure Commenting" and submit your changes. </p>
+                    
+                    <span id="notifications" class="anchor"></span>
+                    <p class="gs-header">Notifications</p>
+                    <p>Notifications can be enabled for any OSF project or component. To be notified via email when a new comment is added to a project or component, visit the settings page on the project. You can choose to receive an email every time a comment is added or in a daily digest. You can also choose to receive email notifications when someone replies to your comment on a project; configure this in your account settings.</p>
+                    <div class="gs-video embed-responsive embed-responsive-16by9">
+                        <div class="embed-responsive-item youtube-loader" id="iOkb9OH4x5k"></div>
+                    </div>
+                
                 </div>
             </div>
             <div class="row" style="margin-bottom: 70px;">

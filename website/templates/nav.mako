@@ -4,14 +4,14 @@
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
                 <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
+                <span class="fa fa-bar"></span>
+                <span class="fa fa-bar"></span>
+                <span class="fa fa-bar"></span>
             </button>
             <!-- ko ifnot: onSearchPage -->
             <span class="visible-xs" data-bind="click : toggleSearch, css: searchCSS">
                 <a class="osf-xs-search pull-right" >
-                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
+                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg" ></span>
                 </a>
             </span>
             <!-- /ko -->
@@ -28,7 +28,7 @@
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
                     <ul class="dropdown-menu">
-                        <li><a href="/explore">Collaborator Network</a></li>
+                        <li><a href="/search/?q=*&filter=registration">Registry</a></li>
                         <li><a href="/explore/activity">Public Activity</a></li>
                     </ul><!-- end dropdown-menu -->
                 </li><!-- end dropdown -->
@@ -47,7 +47,7 @@
                 <!-- ko ifnot: onSearchPage -->
                 <li class="hidden-xs" data-bind="click : toggleSearch, css: searchCSS">
                     <a class="" >
-                        <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
+                        <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg" ></span>
                     </a>
                 </li>
                 <!-- /ko -->
@@ -62,19 +62,40 @@
                 </li>
                 <li>
                     <a href="${web_url_for('user_profile')}">
-                        <span rel="tooltip" data-placement="bottom" title="Settings" class="icon-cog hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Settings" class="fa fa-cog hidden-xs fa-lg"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="icon-signout hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="fa fa-sign-out hidden-xs fa-lg"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>
                 % elif allow_login:
+                <li data-bind="with: $root.signIn">
+                    <form
+                            id="signInForm"
+                            class="navbar-form navbar-right"
+                            data-bind="submit: submit"
+                            % if next_url:
+                                action="/login/?next=${next_url}"
+                            % else:
+                                action="/login/"
+                            % endif
+                            method="POST"
+                        >
+                        <div class="form-group">
+                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Username">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-success">Sign In</button>
+                    </form>
+                </li>
                 <li>
-                    <a class="btn btn-primary" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
+                    <a href="${web_url_for('auth_login')}">Forgot Password?</a>
                 </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
@@ -85,4 +106,3 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
-

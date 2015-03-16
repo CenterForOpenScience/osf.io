@@ -371,6 +371,22 @@ def test_all(flake=False):
         flake()
     test_osf()
     test_addons()
+    karma(single=True, browsers='PhantomJS')
+
+@task
+def karma(single=False, browsers=None):
+    """Run JS tests with Karma. Requires Chrome to be installed."""
+    karma_bin = os.path.join(
+        HERE, 'node_modules', 'karma', 'bin', 'karma'
+    )
+    cmd = '{} start'.format(karma_bin)
+    if single:
+        cmd += ' --single-run'
+    # Use browsers if specified on the command-line, otherwise default
+    # what's specified in karma.conf.js
+    if browsers:
+        cmd += ' --browsers {}'.format(browsers)
+    run(cmd, echo=True)
 
 
 @task
@@ -499,10 +515,11 @@ def npm_bower():
     run('npm install -g bower', echo=True)
 
 
-@task
+@task(aliases=['bower'])
 def bower_install():
     print('Installing bower-managed packages')
-    run('bower install', echo=True)
+    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} install'.format(bower_bin), echo=True)
 
 
 @task
@@ -512,8 +529,7 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
-    npm_bower()
-    bower_install()
+    assets(develop=True, watch=False)
 
 
 @task
@@ -686,13 +702,11 @@ def bundle_certs(domain, cert_path):
 @task
 def clean_assets():
     """Remove built JS files."""
-    build_path = os.path.join(HERE,
-                              'website',
-                              'static',
-                              'public',
-                              'js',
-                              '*')
-    run('rm -rf {0}'.format(build_path), echo=True)
+    public_path = os.path.join(HERE, 'website', 'static', 'public')
+    js_path = os.path.join(public_path, 'js')
+    mfr_path = os.path.join(public_path, 'mfr')
+    run('rm -rf {0}'.format(js_path), echo=True)
+    run('rm -rf {0}'.format(mfr_path), echo=True)
 
 
 @task(aliases=['pack'])
@@ -700,7 +714,8 @@ def webpack(clean=False, watch=False, develop=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
-    args = ['webpack']
+    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
+    args = [webpack_bin]
     if settings.DEBUG_MODE and develop:
         args += ['--colors']
     else:
@@ -715,7 +730,10 @@ def webpack(clean=False, watch=False, develop=False):
 @task()
 def assets(develop=False, watch=False):
     """Install and build static assets."""
-    run('npm install', echo=True)
+    npm = 'npm install'
+    if not develop:
+        npm += ' --production'
+    run(npm, echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod

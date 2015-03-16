@@ -51,13 +51,12 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-box"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-box"><i class="fa fa-pencil-square-o"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
-                                        visible: validCredentials,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-box"><i class="icon-share-alt"></i> Share on Box
-                            <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
+                        class="btn btn-sm btn-box"><i class="fa-share"></i> Share on Box
+                            <span data-bind="visible: folder().path === 'All Files'">(Cannot share root folder)</span>
                         </button>
                 </div>
 
@@ -95,13 +94,13 @@
                             <span data-clipboard-target="contribEmails"
                                 class="input-group-addon pointer"
                                 id="copyBtn">
-                                <i class="icon-paste"></i>
+                                <i class="fa-clipboard"></i>
                             </span>
                         </div>
 
                         <div class="input-group pull-right">
                             <a target="_blank" data-bind="attr.href: urls().share"
-                                class="btn btn-link"><i class="icon-share-alt"></i> Continue to Box...</a>
+                                class="btn btn-link"><i class="fa-share"></i> Continue to Box...</a>
                         </div>
                     </div>
 

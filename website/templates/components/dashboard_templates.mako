@@ -13,7 +13,7 @@
                             onSelected: onSelectedProject
                         },
                         value: projectInput,
-                        attr: {disabled: hasSelectedProject(),
+                        attr: {readonly: hasSelectedProject(),
                             placeholder: projectPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
@@ -35,7 +35,7 @@
                             clearOn: cleared
                         },
                     value: componentInput,
-                    attr: {disabled: hasSelectedComponent(),
+                    attr: {readonly: hasSelectedComponent(),
                             placeholder: componentPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
@@ -55,8 +55,8 @@
 <li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
         <h3 class="ob-heading list-group-item-heading">Register a project</h3>
-        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-            class="pointer ob-expand-icon icon-large pull-right">
+        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
+            class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
     </div><!-- end ob-header -->
 
@@ -79,8 +79,8 @@
 <li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
         <h3 class="ob-heading list-group-item-heading">Upload file(s)</h3>
-        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-            class="pointer ob-expand-icon icon-large pull-right">
+        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
+            class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
     </div><!-- end ob-header -->
 
@@ -140,7 +140,7 @@
             <br />
 
             <label>Description (Optional)</label>
-            <textarea data-bind="value: description"class="form-control" name="description"
+            <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
                 ></textarea>
             <br />
             <label>Template (Optional)</label>
@@ -161,8 +161,8 @@
 <li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
         <h3 class="ob-heading list-group-item-heading">Go to my project</h3>
-        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-            class="pointer ob-expand-icon icon-large pull-right">
+        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
+            class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
     </div><!-- end ob-header -->
     <div class="row">

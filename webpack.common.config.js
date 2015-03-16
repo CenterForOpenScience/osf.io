@@ -40,15 +40,18 @@ var entry = {
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
-    'user-addon-cfg-page': staticPath('js/pages/user-addon-cfg-page.js'),
+    'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
+    'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
         'knockout',
+        'moment',
         'knockout-validation',
         'bootstrap',
         'bootbox',
+        'bootstrap-editable',
         'select2',
         'knockout-punches',
         'dropzone',
@@ -80,6 +83,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
+    extensions: ['', '.es6.js', '.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -89,13 +93,12 @@ var resolve = {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.js'),
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
-        'bootstrap-editable': staticPath('vendor/bower_components/x-editable/dist/bootstrap3-editable/js/bootstrap-editable.js'),
+        'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
-        'jquery.cookie': staticPath('vendor/bower_components/jquery.cookie/jquery.cookie.js'),
-        'history': staticPath('vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'),
+        'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
         // Dropzone doesn't have a proper 'main' entry in its bower.json
@@ -109,7 +112,6 @@ var resolve = {
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
-        'c3': staticPath('vendor/bower_components/c3/c3.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'fangorn': staticPath('js/fangorn.js'),
@@ -123,10 +125,10 @@ var resolve = {
         'addonPermissions': staticPath('js/addonPermissions.js'),
         'navbar-control': staticPath('js/navbarControl.js'),
         'markdown': staticPath('js/markdown.js'),
-        "diffTool": staticPath('js/diffTool.js'),
+        'diffTool': staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js'),
-        'jstz': staticPath('vendor/bower_components/jsTimezoneDetect/index.js')
+        'tests': staticPath('js/tests')
     }
 };
 
@@ -174,12 +176,13 @@ module.exports = {
     output: output,
     module: {
         loaders: [
+            {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, loaders: ['style', 'css']},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?minetype=application/font-woff" },
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'}

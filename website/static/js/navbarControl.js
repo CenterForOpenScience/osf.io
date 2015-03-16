@@ -2,6 +2,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
+var signIn = require('./signIn.js');
 
 /**
     * The NavbarViewModel, for OSF wide navigation.
@@ -16,16 +17,16 @@ var NavbarViewModel = function() {
     self.showClose = true;
 
     self.onSearchPage = ko.computed(function() {
-        var path = window.location.pathname;
-        var indexOfSearch = path.indexOf('search');
-        return indexOfSearch === 1;
+        return window.contextVars.search
     });
 
+    // signIn viewmodel component
+    self.signIn = new signIn.ViewModel();
 
     self.toggleSearch = function(){
         if(self.showSearch()){
             self.showSearch(false);
-            self.searchCSS('');            
+            self.searchCSS('');
         } else {
             self.showSearch(true);
             self.searchCSS('active');

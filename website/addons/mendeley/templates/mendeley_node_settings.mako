@@ -44,7 +44,7 @@
                     <button data-bind="visible: validCredentials,
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
-                            class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                            class="btn btn-sm btn-addon"><i class="fa fa-pencil-square-o"></i> Change</button>
                             <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
