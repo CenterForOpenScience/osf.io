@@ -4,6 +4,7 @@
 var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
+require('bootstrap-editable');
 
 var m = require('mithril');
 var Fangorn = require('fangorn');
@@ -14,7 +15,7 @@ var pointers = require('../pointers.js');
 var Comment = require('../comment.js');
 var Raven = require('raven-js');
 
-var NodeControl = require('../nodeControl.js');
+var nodeControl = require('../nodeControl.js');
 
 var CitationList = require('../citationList.js');
 var CitationWidget = require('../citationWidget.js');
@@ -33,7 +34,7 @@ new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
-    new NodeControl('#projectScope', data);
+    new nodeControl.NodeControl('#projectScope', data);
 });
 
 // Initialize comment pane w/ it's viewmodel

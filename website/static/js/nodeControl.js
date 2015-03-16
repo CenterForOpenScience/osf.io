@@ -8,11 +8,9 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-require('bootstrap-editable');
 require('knockout-punches');
 ko.punches.enableAll();
 
-$.ajaxSetup({ cache: false });
 var osfHelpers = require('osfHelpers');
 var NodeActions = require('./project.js');
 
@@ -251,11 +249,11 @@ var ProjectViewModel = function(data) {
     });
 
     self.doiUrl = ko.computed(function() {
-        return 'http://ezid.cdlib.org/id/doi:' + self.doi();
+        return self.doi() ? 'http://ezid.cdlib.org/id/doi:' + self.doi() : null;
     });
 
     self.arkUrl = ko.computed(function() {
-        return 'http://ezid.cdlib.org/id/ark:' + self.ark();
+        return self.ark() ? 'http://ezid.cdlib.org/id/ark:' + self.ark() : null;
     });
 
     self.askCreateIdentifiers = function() {
@@ -274,12 +272,13 @@ var ProjectViewModel = function(data) {
     };
 
     self.createIdentifiers = function() {
-        $.post(
+        return $.post(
             self.apiUrl + 'identifiers/'
         ).done(function(resp) {
             self.doi(resp.doi);
             self.ark(resp.ark);
         }).fail(function() {
+            osfHelpers.growl('Error', 'Could not create identifiers.', 'danger');
             Raven.captureMessage('Could not create identifiers');
         });
     };
@@ -308,4 +307,7 @@ NodeControl.prototype.init = function() {
     ko.applyBindings(self.viewModel, self.$element[0]);
 };
 
-module.exports = NodeControl;
+module.exports = {
+    _ProjectViewModel: ProjectViewModel,
+    NodeControl: NodeControl
+};

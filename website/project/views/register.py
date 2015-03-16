@@ -201,6 +201,7 @@ def node_identifiers_post(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
     metadata = {
+        '_target': node.absolute_url,
         'datacite.creator': node.creator.fullname,
         'datacite.title': node.title,
         'datacite.publisher': 'Open Science Framework',
