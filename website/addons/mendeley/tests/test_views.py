@@ -192,7 +192,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         # JSON: everything a widget needs
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
-        self.node_addon.set_target_folder('ROOT')
+        self.node_addon.set_target_folder('ROOT', 'Root')
         res = views.mendeley_widget(node_addon=self.node_addon,
                                     project=self.project,
                                     node=self.node,
