@@ -221,7 +221,8 @@ def node_identifiers_post(auth, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
     """
     node = kwargs['node'] or kwargs['project']
-    if not node.is_registration or not node.is_public:
+    # TODO: Fail if `node` is retracted
+    if not node.is_registration or not node.is_public:  # or node.is_retracted:
         raise HTTPError(http.BAD_REQUEST)
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)
