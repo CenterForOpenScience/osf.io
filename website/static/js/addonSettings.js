@@ -4,7 +4,6 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var ADDON_NAMES = require('js/addonNames');
 
 var ConnectedProject = function(data) {
     var self = this;
@@ -29,7 +28,7 @@ var ExternalAccount = function(data) {
     self.deauthorizeNode = function(node) {
         bootbox.confirm({
             title: 'Remove addon?',
-            message: 'Are you sure you want to remove the ' + ADDON_NAMES[self.provider_name] + ' authorization from this project?',
+            message: 'Are you sure you want to remove the ' + self.provider_name + ' authorization from this project?',
             callback: function (confirm) {
                 if (confirm) {
                     var url = node.urls.deauthorize;
