@@ -5,7 +5,7 @@ import httplib
 import logging
 
 import requests
-from flask import request, make_response
+from flask import make_response
 
 from framework.auth import Auth
 from framework.flask import redirect
@@ -16,7 +16,6 @@ from framework.transactions.handlers import no_auto_transaction
 
 from website.models import User
 from website.project.decorators import (
-    must_be_contributor_or_public,
     must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
@@ -228,19 +227,6 @@ def download_file(path, node_addon, version_query, **query):
         return response
 
 
-@must_be_contributor_or_public
-@must_have_addon('osfstorage', 'node')
-def osf_storage_view_file(auth, path, node_addon, **kwargs):
-    action = request.args.get('action', 'view')
-    version_idx = request.args.get('version')
-    if action == 'download':
-        mode = request.args.get('mode')
-        return download_file(path, node_addon, version_idx, mode=mode)
-    # if action == 'view':
-    #     return view_file(auth, path, node_addon, version_idx)
-    raise HTTPError(httplib.BAD_REQUEST)
-
-
 def update_analytics(node, path, version_idx):
     """
     :param Node node: Root node to update
@@ -328,3 +314,18 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
         ],
         'more': more,
     }
+
+
+@must_be_signed
+@must_have_addon('osfstorage', 'node')
+def osf_storage_create_folder(payload, node_addon, **kwargs):
+    path = payload.get('path')
+
+    if not path:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    tree, created = model.OsfStorageFileTree.get_or_create(path, node_addon)
+
+    if not created:
+        raise HTTPError(httplib.CONFLICT)
+
