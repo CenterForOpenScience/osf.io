@@ -240,7 +240,6 @@ def update_analytics(node, path, version_idx):
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
-    node = node_addon.owner
     path = payload.get('path', '')
 
     if path.endswith('/') or not path:
@@ -249,9 +248,9 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
             if path == '':
                 return []
             raise HTTPError(httplib.NOT_FOUND)
-        # TODO: Handle nested folders
+
         return [
-            utils.serialize_metadata_hgrid(item, node)
+            utils.serialize_metadata(item)
             for item in list(file_tree.children)
             if not item.is_deleted
         ]
@@ -263,7 +262,7 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
         if file_record.is_deleted:
             raise HTTPError(httplib.GONE)
 
-        return utils.serialize_metadata_hgrid(file_record, node)
+        return utils.serialize_metadata(file_record)
 
 
 def osf_storage_root(node_settings, auth, **kwargs):
@@ -324,8 +323,11 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    path = path.strip('/')
+
     tree, created = model.OsfStorageFileTree.get_or_create(path, node_addon)
 
     if not created:
         raise HTTPError(httplib.CONFLICT)
 
+    return utils.serialize_metadata(tree)

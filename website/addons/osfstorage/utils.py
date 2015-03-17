@@ -41,12 +41,10 @@ def get_item_kind(item):
     raise TypeError('Value must be instance of `FileTree` or `FileRecord`')
 
 
-def serialize_metadata_hgrid(item, node):
-    """Build HGrid JSON for folder or file. Note: include node URLs for client-
-    side URL creation for uploaded files.
+def serialize_metadata(item):
+    """Build Treebeard JSON for folder or file.
 
     :param item: `FileTree` or `FileRecord` to serialize
-    :param Node node: Root node to which the item is attached
     :param dict permissions: Permissions data from `get_permissions`
     """
     ret = {
