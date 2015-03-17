@@ -33,7 +33,7 @@
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     % else:
-                        % if 'admin' in user['permissions']:
+                        % if 'admin' in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
