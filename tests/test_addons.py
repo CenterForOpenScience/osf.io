@@ -546,6 +546,60 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 403)
 
+    def test_nonexistant_addons_raise(self):
+        path = 'cloudfiles'
+        self.project.delete_addon('github', Auth(self.user))
+        self.project.save()
+
+        resp = self.app.get(
+            self.project.api_url_for(
+                'addon_render_file',
+                path=path,
+                provider='github',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
+
+    def test_unauth_addons_raise(self):
+        path = 'cloudfiles'
+        self.node_addon.user_settings = None
+        self.node_addon.save()
+
+        resp = self.app.get(
+            self.project.api_url_for(
+                'addon_render_file',
+                path=path,
+                provider='github',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 401)
+
+    def test_unconfigured_addons_raise(self):
+        path = 'cloudfiles'
+        self.node_addon.repo = None
+        self.node_addon.save()
+
+        resp = self.app.get(
+            self.project.api_url_for(
+                'addon_render_file',
+                path=path,
+                provider='github',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
+
     @mock.patch('website.addons.base.views.request')
     @mock.patch('website.addons.base.views.requests.get')
     @mock.patch('website.addons.base.requests.get')
