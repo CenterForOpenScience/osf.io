@@ -70,8 +70,10 @@ var search = function(vm) {
     loadMore(vm);
 };
 
-var appendSearch = function(vm, addendum) {
-    vm.query(vm.query() + (vm.query().trim().length > 0 ? ' AND ' : '') + addendum);
+var buildQuery = function(vm){
+    filterString = vm.optionalFilters.join([separator=' OR ']) + ' AND ' + vm.requiredFilters.join([separator=' AND ']);
+    filterString = filterString.replace(/(^\s*AND\s+)|(\s+AND\s*$)|(^\s*OR\s+)|(\s+OR\s*$)/g, '');
+    vm.query(filterString);
     $(document.body).scrollTop(0);
     search(vm);
 };
@@ -87,6 +89,29 @@ var maybeQuashEvent = function(event) {
     }
 };
 
+var addFilter = function(vm, filter, required){
+    required = required || false;
+    console.log(filter);
+    if (required === true && vm.requiredFilters.indexOf(filter) === -1){
+        vm.requiredFilters.push(filter);
+    } else if (vm.optionalFilters.indexOf(filter) === -1){
+        vm.optionalFilters.push(filter);
+    }
+    buildQuery(vm);
+};
+
+var removeFilter = function(vm, filter){
+    var reqIndex = vm.requiredFilters.indexOf(filter);
+    var optIndex = vm.optionalFilters.indexOf(filter);
+    if (reqIndex > -1) {
+        vm.requiredFilters.splice(reqIndex, 1);
+    }
+    if (optIndex > -1) {
+        vm.optionalFilters.splice(optIndex, 1);
+    }
+    buildQuery(vm);
+};
+
 
 module.exports = {
     search: search,
@@ -94,6 +119,8 @@ module.exports = {
     loadMore: loadMore,
     loadingIcon: loadingIcon,
     formatNumber: formatNumber,
-    appendSearch: appendSearch,
-    maybeQuashEvent: maybeQuashEvent
+    maybeQuashEvent: maybeQuashEvent,
+    buildQuery: buildQuery,
+    addFilter: addFilter,
+    removeFilter: removeFilter
 };

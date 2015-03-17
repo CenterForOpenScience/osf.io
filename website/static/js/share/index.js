@@ -5,6 +5,7 @@ var m = require('mithril');
 var $osf = require('osfHelpers');
 var Stats = require('../share/stats.js');
 var utils = require('../share/utils.js');
+var SideBar = require('../share/sideBar.js');
 var Results = require('../share/results.js');
 var History = require('exports?History!history');
 var SearchBar = require('../share/searchBar.js');
@@ -25,7 +26,7 @@ ShareApp.ViewModel = function() {
         background: true,
         url: '/api/v1/share/providers/'
     }).then(function(data) {
-        self.ProviderMap = data.providerMap
+        self.ProviderMap = data.providerMap;
     });
 };
 
@@ -36,9 +37,16 @@ ShareApp.view = function(ctrl) {
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
             m('br'),
-            Results.view(ctrl.resultsController),
+            m('.row', [
+               m('.col-md-2', [
+                    SideBar.view(ctrl.sideBarController)
+                ]),
+                m('.col-md-10', [
+                    Results.view(ctrl.resultsController)
+                ])
+            ]),
             m('.row', m('.col-md-12', {style: 'padding-top: 30px;'}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
-        ])
+        ]),
     ]);
 };
 
@@ -49,6 +57,7 @@ ShareApp.controller = function() {
     self.statsController = new Stats.controller(self.vm);
     self.resultsController = new Results.controller(self.vm);
     self.searchBarController = new SearchBar.controller(self.vm);
+    self.sideBarController = new SideBar.controller(self.vm)
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
