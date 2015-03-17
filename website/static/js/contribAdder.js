@@ -109,7 +109,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.notification(false);
         if (self.query()) {
-            $.getJSON(
+            return $.getJSON(
                 '/api/v1/user/search/', {
                     query: self.query(),
                     excludeNode: nodeId,
@@ -150,7 +150,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
-        $.getJSON(
+        return $.getJSON(
             url, {},
             function(result) {
                 if (!result.contributors.length) {
@@ -184,7 +184,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
-        $.getJSON(
+        return $.getJSON(
             url, {},
             function(result) {
                 if (!result.contributors.length) {
@@ -334,7 +334,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     submit: function() {
         var self = this;
         $osf.block();
-        $osf.postJSON(
+        return $osf.postJSON(
             nodeApiUrl + 'contributors/', {
                 users: self.selection().map(function(user) {
                     return ko.toJS(user);
@@ -360,7 +360,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     },
     postInviteRequest: function(fullname, email) {
         var self = this;
-        $osf.postJSON(
+        return $osf.postJSON(
             nodeApiUrl + 'invite_contributor/', {
                 'fullname': fullname,
                 'email': email
