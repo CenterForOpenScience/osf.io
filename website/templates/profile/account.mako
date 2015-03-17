@@ -1,4 +1,3 @@
-
 <%inherit file="base.mako"/>
 
 <%def name="title()">Account Settings</%def>
@@ -38,6 +37,30 @@
                     </form>
                 </div>
             </div>
+            <div id="deactivateAccount" class="panel panel-default">
+                <div class="panel-heading"><h3 class="panel-title">Deactivate Account</h3></div>
+                <div class="panel-body">
+                    <p>If you choose to deactivate your OSF account: </p>
+                        <ul>
+                            <li>You will not be visible in search.</li>
+                            <li>Your profile page will be deleted.</li>
+                            <li>You will not be able to access private resources available to your account.</li>
+                            <li>New accounts may not be registered for any email associated with your account.</li>
+                        </ul>
+                    <p></p>
+                    <p class="alert alert-danger"><strong>Warning:</strong> Deactivating your OSF account should be considered a permanent action.</p>
+                    <div class="form-group">
+                        <label for="verifyAccountId">Please verify your account ID (<code>{{ accountId }}</code>):</label>
+                        <input data-bind="value: verifyId" name="verifyAccountId" class="form-control">
+                    </div>
+                    <a data-bind="click: submit" class="btn btn-danger">Deactivate Account</a>
+                </div>
+            </div>
         </div>
     </div>
+</%def>
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+<script src="${"profile-settings-account-page" | webpack_asset}"></script>
 </%def>

@@ -4,6 +4,7 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var bootbox = require('bootbox');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -21,6 +22,27 @@ var GrowlBox = require('./growlBox');
  */
 var growl = function(title, message, type) {
     new GrowlBox(title, message, type || 'danger');
+};
+
+/**
+  * Sends a DELETE request containing JSON data.
+  *
+  * Example:
+  *     osf.deleteJSON('/foo', {'email': 'bar@baz.com'})
+  *
+  * @param  {String} url  The url for the request
+  * @param  {Object} data  JSON data to send to the endpoint
+  * @return {jQuery xhr}
+  */
+var deleteJSON = function(url, data) {
+    var ajaxOpts = {
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        dataType: 'json',
+        method: 'delete',
+        url: url
+    };
+    return $.ajax(ajaxOpts);
 };
 
 /**
@@ -345,9 +367,114 @@ var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
 };
 
+/**
+  * Return a random string of arbitrary length
+  *
+  * @param  {int} length
+  * @param  {Object} options
+  */
+var randomString = function (length, options) {
+
+    // set defaults
+    if (typeof(length) === 'undefined') { length = 8 };
+    if (typeof(options) === 'undefined') {
+        options = {
+            lowerCase: true,
+            upperCase: true,
+            numbers: true,
+            punctuation: false,
+            space: false
+        };
+    } else {
+        if (typeof(options.lowerCase) === 'undefined') { options.lowerCase = true; }
+        if (typeof(options.upperCase) === 'undefined') { options.upperCase = true; }
+        if (typeof(options.numbers) === 'undefined') { options.numbers = true; }
+        if (typeof(options.punctuation) === 'undefined') { options.punctuation = true; }
+        if (typeof(options.space) === 'undefined') { options.space = true; }
+    }
+
+    // build the set of possible characters
+    var chars = '';
+    if (options.lowerCase) { chars += 'abcdefghijklmnopqrstuvwxyz'; }
+    if (options.upperCase) { chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; }
+    if (options.numbers) { chars += '0123456789'; }
+    if (options.punctuation) { chars += '~`!@#$%^&*()_+-={}[]:";\'<>?,./|\\'; }
+    if (options.space) { chars += ' '; }
+
+    // build the string
+    var result = '';
+    for (var i=0; i < length; i++) {
+        result += chars[Math.round(Math.random() * (chars.length - 1))];
+    }
+
+    return result;
+};
+
+/**
+  * Confirm a dangerous action by requiring the user to enter specific text
+  *
+  * This is an abstraction over bootbox, and passes most options through to
+  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * if the user correctly confirms the action.
+  *
+  * @param  {Object} options
+  */
+var confirmDangerousAction = function (options) {
+    // TODO: Refactor this to be more interactive - use a ten-key-like interface
+    //       and display one character at a time for the user to enter. Once
+    //       they enter that character, display another. This will require more
+    //       sustained attention and will prevent the user from copy/pasting a
+    //       random string.
+
+    if (typeof(options) === 'undefined') {
+        options = {};
+    }
+
+    // set default values
+    if (!options.title) { options.title = 'Confirm Action'; }
+    if (!options.message) { options.message = ''; }
+    if (!options.confirmText) { options.confirmText = randomString(); }
+
+    // build end of message, that tells the user to enter text.
+    options.message += '<p>Type the following to continue: <strong>';
+    options.message += options.confirmText;
+    options.message += '</strong></p>';
+    options.message += '<input id="bbConfirmText" class="form-control">';
+
+    // keep the users' callback for re-use; we'll pass ours to bootbox
+    var callback = options.callback;
+    delete options.callback;
+
+    // this is our callback
+    var handleConfirmAttempt = function () {
+        var verified = ($('#bbConfirmText').val() === options.confirmText);
+
+        if (verified) {
+            callback();
+        } else {
+            growl('Verification failed', 'Strings did not match');
+        }
+    };
+
+    options.buttons = {
+        cancel: {
+            label: 'Cancel',
+            className: 'btn-default'
+        },
+        success: {
+            label: 'Confirm',
+            className: 'btn-success',
+            callback: handleConfirmAttempt
+        }
+    };
+
+    bootbox.dialog(options);
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
+    deleteJSON: deleteJSON,
     postJSON: postJSON,
     putJSON: putJSON,
     handleJSONError: handleJSONError,
@@ -364,5 +491,7 @@ module.exports = window.$.osf = {
     FormattableDate: FormattableDate,
     throttle: throttle,
     debounce: debounce,
-    htmlEscape: htmlEscape
+    htmlEscape: htmlEscape,
+    randomString: randomString,
+    confirmDangerousAction: confirmDangerousAction
 };

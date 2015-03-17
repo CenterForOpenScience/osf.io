@@ -530,6 +530,7 @@ def make_url_map(app):
 
         Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
         Rule('/profile/', 'put', profile_views.update_user, json_renderer),
+        Rule('/profile/', 'delete', profile_views.deactivate_user, json_renderer),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
 
         # Used by profile.html
