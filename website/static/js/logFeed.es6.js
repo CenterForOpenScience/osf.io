@@ -8,6 +8,8 @@ var $ = require('jquery');
 var moment = require('moment');
 require('knockout-punches');
 var $osf = require('osfHelpers');
+var Paginator = require('js/paginator');
+var oop = require('js/oop');
 
 ko.punches.enableAll();  // Enable knockout punches
 /**
@@ -74,24 +76,20 @@ var Log = function(params) {
 /**
   * View model for a log list.
   * @param {Log[]} logs An array of Log model objects to render.
-  * @param hasMoreLogs boolean value if there are more logs or not
   * @param url the url ajax request post to
   */
-var LogsViewModel = function(logs, hasMoreLogs, url) {
+var LogsViewModel = function(logs, url) {
     var self = this;
-    self.enableMoreLogs = ko.observable(hasMoreLogs);
     self.logs = ko.observableArray(logs);
-    var pageNum=  0;
     self.url = url;
 
     //send request to get more logs when the more button is clicked
     self.moreLogs = function(){
-        pageNum+=1;
         $.ajax({
             type: 'get',
             url: self.url,
             data:{
-                pageNum: pageNum
+                page: self.currentPage()
             },
             cache: false
         }).done(function(response) {
@@ -100,7 +98,9 @@ var LogsViewModel = function(logs, hasMoreLogs, url) {
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
-            self.enableMoreLogs(response.has_more_logs);
+            self.currentPage(response.page);
+            self.numberOfPages(response.pages);
+            self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
         );
@@ -154,9 +154,9 @@ var defaults = {
 };
 
 
-var initViewModel = function(self, logs, hasMoreLogs, url){
+var initViewModel = function(self, logs, url){
     self.logs = createLogs(logs);
-    self.viewModel = new LogsViewModel(self.logs, hasMoreLogs, url);
+    self.viewModel = new LogsViewModel(self.logs, url);
     self.init();
 };
 
@@ -173,10 +173,10 @@ function LogFeed(selector, data, options) {
     self.options = $.extend({}, defaults, options);
     self.$progBar = $(self.options.progBar);
     if (Array.isArray(data)) { // data is an array of log object from server
-        initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
+        initViewModel(self, data, self.options.url);
     } else { // data is an URL
         $.getJSON(data, function(response) {
-            initViewModel(self, response.logs, response.has_more_logs, data);
+            initViewModel(self, response.logs, data);
         });
     }
 }

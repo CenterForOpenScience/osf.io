@@ -7,7 +7,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var LogFeed = require('./logFeed.js');
+var LogFeed = require('js/logFeed.es6.js');
 var $osf = require('osfHelpers');
 
 var ctx = window.contextVars;

@@ -8,7 +8,7 @@ require('jquery-tagsinput');
 var m = require('mithril');
 var Fangorn = require('fangorn');
 
-var LogFeed = require('../logFeed.js');
+var LogFeed = require('../logFeed.es6.js');
 var pointers = require('../pointers.es6.js');
 
 var Comment = require('../comment.js');
