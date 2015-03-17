@@ -181,7 +181,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
         assert_is_none(self.node_settings.mendeley_list_id)
 
-        self.node_settings.set_target_folder('fake-folder-id')
+        self.node_settings.set_target_folder('fake-folder-id', 'Fake')
 
         # instance was updated
         assert_equal(
@@ -245,22 +245,6 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_equal(
             self.node_settings.selected_folder_name,
             ''
-        )
-
-    @mock.patch('website.addons.mendeley.model.Mendeley._folder_metadata')
-    def test_selected_folder_name(self, mock_folder_metadata):
-        # Mock the return from api call to get the folder's name
-        mock_folder = mock.Mock()
-        mock_folder.name = 'Fake Folder'
-
-        # Add the mocked return object to the mocked api client
-        mock_folder_metadata.return_value = mock_folder
-
-        self.node_settings.mendeley_list_id = 'fake-list-id'
-
-        assert_equal(
-            self.node_settings.selected_folder_name,
-            'Fake Folder'
         )
 
     # TODO: Make these tests generic and move to core
