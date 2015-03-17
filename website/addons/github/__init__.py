@@ -26,13 +26,7 @@ CATEGORIES = ['storage']
 
 INCLUDE_JS = {}
 
-INCLUDE_CSS = {
-    'widget': ['github-rubeus.css'],
-    'page': ['/static/css/hgrid-base.css'],
-    'files': ['github-rubeus.css']
-}
-
-WIDGET_HELP = 'GitHub Add-on Alpha'
+INCLUDE_CSS = {}
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.github_hgrid_data

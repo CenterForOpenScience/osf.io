@@ -9,9 +9,7 @@ var moment = require('moment');
 // Why?!
 require('koHelpers');
 
-var GrowlBox = require('./growlBox.js');
-
-require('bootstrap-editable');
+var GrowlBox = require('./growlBox');
 
 /**
  * Convenience function to create a GrowlBox
@@ -22,7 +20,7 @@ require('bootstrap-editable');
  *
  */
 var growl = function(title, message, type) {
-    new GrowlBox(title, message, type);
+    new GrowlBox(title, message, type || 'danger');
 };
 
 /**
@@ -32,8 +30,8 @@ var growl = function(title, message, type) {
 * interface (using the `done` and `fail` methods of a jqXHR).
 *
 * Example:
-*     var osf = require('./osf-helpers');
-*     var request = osf.postJSON('/foo', {'email': 'bar@baz.com'});
+*     var $osf = require('./osf-helpers');
+*     var request = $osf.postJSON('/foo', {'email': 'bar@baz.com'});
 *     request.done(function(response) {
 *         // ...
 *     })
@@ -296,6 +294,30 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
         $(elem).tooltip(valueAccessor());
+    }
+};
+
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements 
+ * Example:
+ * <span data-bind="anchorScroll"></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        console.log( valueAccessor());
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            if(!$item.attr('data-model') && $item.attr('href') !== "#") {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href'),
+                    offset = $(target).offset();
+                $(element).scrollTop(offset.top - buffer);
+            }
+        });
     }
 };
 

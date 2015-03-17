@@ -49,6 +49,7 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
+ELASTIC_INDEX = 'website'
 SHARE_ELASTIC_URI = ELASTIC_URI
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
@@ -177,7 +178,6 @@ CELERY_IMPORTS = (
 )
 
 # Add-ons
-
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_REQUESTED = json.load(fp)['addons']

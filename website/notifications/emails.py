@@ -1,5 +1,4 @@
-import pytz
-
+from babel import dates, core, Locale
 from mako.lookup import Template
 
 from website import mails
@@ -90,8 +89,9 @@ def notify(uid, event, **context):
             node_subscribers.extend(subscribed_users)
 
             if subscribed_users and notification_type != 'none':
-                event = 'comment_replies' if context.get('target_user') else event
-                send([u._id for u in subscribed_users], notification_type, uid, event, **context)
+                for user in subscribed_users:
+                    event = 'comment_replies' if context.get('target_user') == user else event
+                    send([user._id], notification_type, uid, event, **context)
 
     return check_parent(uid, event, node_subscribers, **context)
 
@@ -116,7 +116,7 @@ def check_parent(uid, event, node_subscribers, **context):
             for u in subscribed_users:
                 if u not in node_subscribers and node.has_permission(u, 'read'):
                     if notification_type != 'none':
-                        event = 'comment_replies' if target_user else event
+                        event = 'comment_replies' if target_user == u else event
                         send([u._id], notification_type, uid, event, **context)
                     node_subscribers.append(u)
 
@@ -166,7 +166,16 @@ def get_settings_url(uid, user):
 
 def localize_timestamp(timestamp, user):
     try:
-        user_timezone = pytz.timezone(user.timezone)
-    except pytz.UnknownTimeZoneError:
-        user_timezone = pytz.timezone('Etc/UTC')
-    return timestamp.astimezone(user_timezone).strftime(LOCALTIME_FORMAT)
+        user_timezone = dates.get_timezone(user.timezone)
+    except LookupError:
+        user_timezone = dates.get_timezone('Etc/UTC')
+
+    try:
+        user_locale = Locale(user.locale)
+    except core.UnknownLocaleError:
+        user_locale = 'en'
+
+    formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
+    formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
+
+    return u'{time} on {date}'.format(time=formatted_time, date=formatted_date)

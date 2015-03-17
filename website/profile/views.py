@@ -86,7 +86,12 @@ def update_user(auth):
 
     # TODO: Expand this to support other user attributes
     if 'timezone' in data:
-        user.timezone = data['timezone']
+        if data['timezone']:
+            user.timezone = data['timezone']
+    if 'locale' in data:
+        if data['locale']:
+            locale = data['locale'].replace('-', '_')
+            user.locale = locale
 
     user.save()
 
@@ -212,6 +217,7 @@ def user_addons(auth, **kwargs):
     addons.sort(key=operator.attrgetter("full_name"), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
+    user_addons_enabled = {}
 
     # sort addon_enabled_settings alphabetically by category
     for category in settings.ADDON_CATEGORIES:
@@ -220,6 +226,11 @@ def user_addons(auth, **kwargs):
                 addons_enabled.append(addon_config.short_name)
                 if 'user' in addon_config.configs:
                     addon_enabled_settings.append(addon_config.short_name)
+                    user_addons_enabled[addon_config.short_name] = {
+                        'urls': {
+                            'user_settings': addon_config.user_settings_template
+                        }
+                    }
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [
@@ -230,7 +241,9 @@ def user_addons(auth, **kwargs):
     ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
+    ret['user_addons_enabled'] = user_addons_enabled
     ret['addon_js'] = collect_user_config_js(user.get_addons())
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return ret
 
 @must_be_logged_in
