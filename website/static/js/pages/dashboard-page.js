@@ -5,10 +5,12 @@
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
-var jstz = require('jstz').jstz;
+var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('osfHelpers');
-var ProjectOrganizer = require('../projectorganizer.js');
+var projectOrganizer = require('js/projectorganizer');
+var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
+
 var LogFeed = require('../logFeed.js');
 // Knockout components for the onboarder
 require('../onboarder.js');
@@ -47,18 +49,22 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-var ensureUserTimezone = function(savedTimezone) {
+var ensureUserTimezone = function(savedTimezone, savedLocale) {
     var clientTimezone = jstz.determine().name();
+    var clientLocale = window.navigator.userLanguage || window.navigator.language;
 
-    if (savedTimezone != clientTimezone) {
+    if (savedTimezone !== clientTimezone || savedLocale !== clientLocale) {
         var url = '/api/v1/profile/';
 
         var request = $osf.putJSON(
             url,
-            {'timezone': clientTimezone}
+            {
+                'timezone': clientTimezone,
+                'locale': clientLocale
+            }
         );
         request.fail(function(xhr, textStatus, error) {
-            Raven.captureMessage('Could not set user timezone offset', {
+            Raven.captureMessage('Could not set user timezone or locale', {
                 url: url,
                 textStatus: textStatus,
                 error: error
@@ -81,7 +87,7 @@ $(document).ready(function() {
             multiselect : true
         });
 
-        ensureUserTimezone(data.timezone);
+        ensureUserTimezone(data.timezone, data.locale);
     });
     request.fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Failed to populate user dashboard', {

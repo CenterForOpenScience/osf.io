@@ -167,7 +167,7 @@ function ViewModel(options){
     self.compareVis = ko.observable(options.compareVisible);
     self.menuVis = ko.observable(options.menuVisible);
 
-    self.pageTitle = $(document).find("title").text();
+    self.pageTitle = $(document).find('title').text();
 
     self.compareVersion = ko.observable(options.compareVersion);
     self.viewVersion = ko.observable(options.viewVersion);
@@ -196,22 +196,34 @@ function ViewModel(options){
         return versionString;
     });
 
-    self.currentURL = ko.computed(function() {
+    // Save initial query params (except for the "mode" query params, which are handled
+    // by self.currentURL), so that we can preserve them when we mutate window.history.state
+    var initialParams = $osf.urlParams();
+    delete initialParams.view;
+    delete initialParams.edit;
+    delete initialParams.compare;
+    delete initialParams.menu;
+    self.initialQueryParams = $.param(initialParams);
 
+    self.currentURL = ko.computed(function() {
         // Do not change URL for incompatible browsers
         if (typeof window.history.replaceState === 'undefined') {
             return;
         }
 
+        var paramPrefix = '?';
         var url = self.pageURL;
+        // Preserve initial query params
+        if (self.initialQueryParams) {
+            url += paramPrefix + self.initialQueryParams;
+            paramPrefix = '&';
+        }
 
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
             window.history.replaceState({}, '', url);
             return;
         }
-
-        var paramPrefix = '?';
 
         if (self.editVis()) {
             url += paramPrefix + 'edit';

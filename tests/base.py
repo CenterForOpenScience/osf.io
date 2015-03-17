@@ -30,7 +30,6 @@ from website.project.model import (
 )
 from website import settings
 
-from website.addons.osffiles.model import NodeFile
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
@@ -59,20 +58,19 @@ for logger_name in SILENT_LOGGERS:
 fake = Factory.create()
 
 # All Models
-MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 
 def teardown_database(client=None, database=None):
     client = client or client_proxy
     database = database or database_proxy
-    if settings.USE_TOKU_MX:
-        try:
-            commands.rollback(database)
-        except OperationFailure as error:
-            message = utils.get_error_message(error)
-            if messages.NO_TRANSACTION_ERROR not in message:
-                raise
+    try:
+        commands.rollback(database)
+    except OperationFailure as error:
+        message = utils.get_error_message(error)
+        if messages.NO_TRANSACTION_ERROR not in message:
+            raise
     client.drop_database(database)
 
 

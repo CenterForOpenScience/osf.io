@@ -73,7 +73,7 @@
                     <div class="col-md-2">
                         % if metric == 'hits':
                             <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
-                                ${ hits[node._id].get('hits') } views (in the past week)
+                                ${ hits[node._id].get('hits') }&nbsp;views (last&nbsp;week)
                             </span>
                         % elif metric == 'date_created':
                             <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>

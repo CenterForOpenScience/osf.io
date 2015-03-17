@@ -1,4 +1,4 @@
-var pointers = require('../pointers.js');
+var pointers = require('../pointers.es6.js');
 var AccountClaimer = require('../accountClaimer.js');
 var $osf = require('osfHelpers');
 

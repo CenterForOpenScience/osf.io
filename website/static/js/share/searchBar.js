@@ -40,7 +40,7 @@ SearchBar.view = function(ctrl) {
                         onchange: m.withAttr('value', ctrl.vm.query),
                     }),
                     m('span.input-group-btn', [
-                        m('button.btn.osf-search-btn', m('i.icon-search.icon-lg')),
+                        m('button.btn.osf-search-btn', m('i.fa.fa-search.fa-lg')),
                     ])
                 ])
             ])
@@ -55,7 +55,7 @@ SearchBar.controller = function(vm) {
     self.vm = vm;
 
     self.vm.totalCount = 0;
-    self.vm.providers = 26;
+    self.vm.providers = 28;
     self.vm.latestDate = undefined;
     self.vm.showStats = true;
 

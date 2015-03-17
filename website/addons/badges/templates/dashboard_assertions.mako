@@ -38,7 +38,7 @@ $script.ready('hgrid', function() {
         };
         var revokeColumn = {
             text: 'revoke',
-            itemView: '<button class="btn btn-xs btn-danger revoke-badge" aid="{{ assertion_id }}" url="{{ node_api_url }}"><i class="icon-minus"></i></button>',
+            itemView: '<button class="btn btn-xs btn-danger revoke-badge" aid="{{ assertion_id }}" url="{{ node_api_url }}"><i class="fa fa-minus"></i></button>',
             sortable: false
         };
         var grid = new HGrid('#assertionGrid', {

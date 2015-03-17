@@ -15,8 +15,8 @@ require('../vendor/bower_components/treebeard/dist/treebeard.css');
 require('../css/fangorn.css');
 
 function resolveToggle(item) {
-    var toggleMinus = m('i.icon-minus', ' ');
-    var togglePlus = m('i.icon-plus', ' ');
+    var toggleMinus = m('i.fa.fa-minus', ' ');
+    var togglePlus = m('i.fa.fa-plus', ' ');
     if (item.kind === 'folder') {
         return item.open ? toggleMinus : togglePlus;
     } else {
@@ -28,8 +28,8 @@ function resolveIcon(item) {
     var privateFolder = m('img', {
         src: '/static/img/hgrid/fatcowicons/folder_delete.png'
     });
-    var openFolder = m('i.icon-folder-open', ' ');
-    var closedFolder = m('i.icon-folder-close', ' ');
+    var openFolder = m('i.fa fa-folder-open', ' ');
+    var closedFolder = m('i.fa fa-folder', ' ');
 
     if (item.kind === 'folder') {
         return item.open ? openFolder : closedFolder;
@@ -38,7 +38,7 @@ function resolveIcon(item) {
     } else if (item.data.icon) {
         return m('i.fa.' + item.data.icon, ' ');
     } else {
-        return m('i.icon-file-alt');
+        return m('i.fa fa-file-o');
     }
 }
 
@@ -173,7 +173,7 @@ var renderActions = function(item, col) {
     if (item.kind === 'file') {
         buttons.push({
             name: '',
-            icon: 'icon-copy',
+            icon: 'fa fa-file-o',
             css: 'btn btn-default btn-xs',
             tooltip: 'Copy citation',
             clipboard: self.getCitation(item),
@@ -184,7 +184,7 @@ var renderActions = function(item, col) {
         if (externalUrl) {
             buttons.push({
                 name: '',
-                icon: 'icon-external-link',
+                icon: 'fa fa-external-link',
                 css: 'btn btn-default btn-xs',
                 tooltip: 'View original document',
                 onclick: function(event) {
@@ -196,7 +196,7 @@ var renderActions = function(item, col) {
         if (item.data.serviceUrl) {
             buttons.push({
                 name: '',
-                icon: 'icon-link',
+                icon: 'fa fa-link',
                 css: 'btn btn-default btn-xs',
                 tooltip: 'View on ' + self.provider,
                 onclick: function(event) {
@@ -207,7 +207,7 @@ var renderActions = function(item, col) {
     } else if (item.kind === 'folder' && item.open && item.children.length) {
         buttons.push({
             name: '',
-            icon: 'icon-copy',
+            icon: 'fa fa-file-o',
             css: 'btn btn-default btn-xs',
             tooltip: 'Copy citations',
             config: makeClipboardConfig(function() {
@@ -216,7 +216,7 @@ var renderActions = function(item, col) {
         });
         buttons.push({
             name: '',
-            icon: 'icon-download',
+            icon: 'fa fa-arrow-circle-o-down',
             css: 'btn btn-default btn-xs',
             tooltip: 'Download citations',
             config: function(elm, isInit, ctx) {

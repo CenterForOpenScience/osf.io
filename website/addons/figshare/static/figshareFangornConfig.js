@@ -1,3 +1,5 @@
+'use strict';
+
 var m = require('mithril');
 
 var Fangorn = require('fangorn');
@@ -5,7 +7,7 @@ var Fangorn = require('fangorn');
 
 // Define Fangorn Button Actions
 function _fangornActionColumn (item, col) {
-    var self = this;
+    var self = this;  // jshint ignore:line
     var buttons = [];
 
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
@@ -13,7 +15,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Upload files',
-            'icon' : 'icon-upload-alt',
+            'icon' : 'fa fa-upload',
             'css' : 'fangorn-clickable btn btn-default btn-xs',
             'onclick' : Fangorn.ButtonEvents._uploadEvent
         });
@@ -22,16 +24,19 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Download file',
-            'icon' : 'icon-download-alt',
+            'icon' : 'fa fa-download',
             'css' : 'btn btn-info btn-xs',
             'onclick' : Fangorn.ButtonEvents._downloadEvent
         });
     }
 
-    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public' && item.data.permissions.edit) {
+    // Files can be deleted if private or if parent contains more than one child
+    var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
+        item.parent().children.length > 1;
+    if (item.kind === 'file' && privateOrSiblings) {
         buttons.push({
             'name' : '',
-            'icon' : 'icon-remove',
+            'icon' : 'fa fa-times',
             'tooltip' : 'Delete',
             'css' : 'm-l-lg text-danger fg-hover-hide',
             'style' : 'display:none',
@@ -40,11 +45,11 @@ function _fangornActionColumn (item, col) {
     }
 
     return buttons.map(function(btn) {
-        return m('span', { 'data-col' : item.id }, [ m('i',{ 
-        	'class' : btn.css, 
-        	style : btn.style, 
+        return m('span', { 'data-col' : item.id }, [ m('i',{
+            'class' : btn.css,
+            style : btn.style,
             'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',
-        	'onclick' : function(event){ btn.onclick.call(self, event, item, col); } 
+            onclick: function(event){ btn.onclick.call(self, event, item, col); }
         },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
         ]);

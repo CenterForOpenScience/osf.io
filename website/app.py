@@ -2,6 +2,7 @@
 
 import os
 import importlib
+from collections import OrderedDict
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
@@ -30,7 +31,7 @@ def init_addons(settings, routes=True):
     :param bool routes: Add each addon's routing rules to the URL map.
     """
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
-    settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', {})
+    settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
         try:
             addon = init_addon(app, addon_name, routes=routes)
@@ -52,8 +53,7 @@ def attach_handlers(app, settings):
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
     add_handlers(app, task_handlers.handlers)
-    if settings.USE_TOKU_MX:
-        add_handlers(app, transaction_handlers.handlers)
+    add_handlers(app, transaction_handlers.handlers)
 
     # Attach handler for checking view-only link keys.
     # NOTE: This must be attached AFTER the TokuMX to avoid calling
