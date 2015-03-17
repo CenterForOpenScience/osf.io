@@ -316,4 +316,7 @@ function GoogleDriveNodeConfig(selector, url, folderPicker) {
     $.osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports = GoogleDriveNodeConfig;
+module.exports = {
+    _ViewModel: ViewModel,
+    GoogleDriveNodeConfig: GoogleDriveNodeConfig
+};
