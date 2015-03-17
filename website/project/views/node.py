@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+import math
+from itertools import islice
 
 from flask import request
 from modularodm import Q
@@ -768,6 +770,7 @@ def _view_project(node, auth, primary=False):
         },
         'user': {
             'is_contributor': node.is_contributor(user),
+            'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
             'has_read_permissions': node.has_permission(user, 'read'),
@@ -1151,7 +1154,11 @@ def search_node(**kwargs):
     auth = kwargs['auth']
     node = Node.load(request.json.get('nodeId'))
     include_public = request.json.get('includePublic')
+    size = float(request.json.get('size', '5').strip())
+    page = request.json.get('page', 0)
     query = request.json.get('query', '').strip()
+
+    start = (page * size)
     if not query:
         return {'nodes': []}
 
@@ -1172,15 +1179,19 @@ def search_node(**kwargs):
             Q('_id', 'nin', nin)
         )
 
-    # TODO: Parameterize limit; expose pagination
-    cursor = Node.find(odm_query).limit(20)
+    nodes = Node.find(odm_query)
+    count = nodes.count()
+    pages = math.ceil(count / size)
 
     return {
         'nodes': [
             _serialize_node_search(each)
-            for each in cursor
+            for each in islice(nodes, start, start + size)
             if each.contributors
-        ]
+        ],
+        'total': count,
+        'pages': pages,
+        'page': page
     }
 
 

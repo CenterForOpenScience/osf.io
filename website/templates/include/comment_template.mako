@@ -105,8 +105,8 @@
                                 <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
                             <div class="form-inline">
-                                <a class="btn btn-primary" data-bind="click: submitEdit, visible: editNotEmpty"><i class="icon-check"></i> Save</a>
-                                <a class="btn btn-default" data-bind="click: cancelEdit"><i class="icon-undo"></i> Cancel</a>
+                                <a class="btn btn-primary" data-bind="click: submitEdit, visible: editNotEmpty"><i class="fa fa-check-square-o"></i> Save</a>
+                                <a class="btn btn-default" data-bind="click: cancelEdit"><i class="fa fa-undo"></i> Cancel</a>
                                 <span data-bind="text: editErrorMessage" class="comment-error"></span>
                             </div>
                         </div>
@@ -123,16 +123,16 @@
                         <div data-bind="ifnot: mode === 'widget'" style="display: inline">
                             <div data-bind="ifnot: editing, event: {mouseover: setupToolTips('i')}" class="comment-actions pull-right">
                                 <a data-bind="attr:{href: '/'+id()}" style="color: #000000">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="icon-link"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="fa fa-link"></i>
                                 </a>
                                 <span data-bind="if: $root.canComment, click: showReply">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Reply" class="icon-reply"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Reply" class="fa fa-reply"></i>
                                 </span>
                                 <span data-bind="if: canReport, click: reportAbuse">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Report" class="icon-warning-sign"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Report" class="fa fa-warning"></i>
                                 </span>
                                 <span data-bind="if: canEdit, click: startDelete">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Delete" class="icon-trash"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Delete" class="fa fa-trash-o"></i>
                                 </span>
                             </div>
                         </div>
@@ -144,13 +144,13 @@
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="icon-check"></i> Report</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="fa fa-check-square-o"></i> Report</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="fa fa-undo"></i> Cancel</a>
                     </div>
 
                     <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="icon-check"></i> Delete</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="fa fa-check-square-o"></i> Delete</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="fa fa-undo"></i> Cancel</a>
                     </div>
 
                 </div>
@@ -169,8 +169,8 @@
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-primary" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
-                        <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
+                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
+                        <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
                 </div>

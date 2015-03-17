@@ -4,7 +4,7 @@
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
-        <i class="icon-comments-alt icon-2x comment-handle-icon" style="color: #428bca"></i>
+        <i class="fa fa-comments-o fa-2x comment-handle-icon" style="color: #428bca"></i>
     </div>
     <div class="cp-bar"></div>
 
@@ -46,8 +46,8 @@
                     </span>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-primary" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="icon-check"></i> {{saveButtonText}}</a>
-                    <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="icon-undo"></i> Cancel</a>
+                    <a class="btn btn-primary" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
+                    <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                     <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                 </div>
                 <div class="comment-error">{{errorMessage}}</div>
