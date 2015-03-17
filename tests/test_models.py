@@ -1634,7 +1634,7 @@ class TestAddonCallbacks(OsfTestCase):
         for addon in self.node.addons:
             callback = addon.after_remove_contributor
             callback.assert_called_once_with(
-                self.node, user2
+                self.node, user2, self.consolidate_auth
             )
 
     def test_set_privacy_callback(self):

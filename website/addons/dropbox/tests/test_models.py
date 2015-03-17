@@ -352,12 +352,22 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_in(self.user.fullname, message)
         assert_in(self.project.project_or_component, message)
 
-    def test_after_remove_authorized_dropbox_user(self):
+    def test_after_remove_authorized_dropbox_user_self(self):
+        auth = Auth(user=self.user_settings.owner)
         message = self.node_settings.after_remove_contributor(
-            self.project, self.user_settings.owner)
+            self.project, self.user_settings.owner, auth)
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
+        assert_not_in("You can re-authenticate", message)
+
+    def test_after_remove_authorized_dropbox_user_not_self(self):
+        message = self.node_settings.after_remove_contributor(
+            node=self.project, removed=self.user_settings.owner)
+        self.node_settings.save()
+        assert_is_none(self.node_settings.user_settings)
+        assert_true(message)
+        assert_in("You can re-authenticate", message)
 
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))
