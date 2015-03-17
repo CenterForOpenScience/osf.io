@@ -11,7 +11,7 @@ api_routes = {
                 '/settings/mendeley/accounts/',
             ],
             'get',
-            views.list_mendeley_accounts_user,
+            views.mendeley_get_user_settings,
             json_renderer,
         ),
         Rule(
@@ -69,9 +69,7 @@ api_routes = {
             'get',
             views.mendeley_citation_list,
             json_renderer,
-
         ),
-
     ],
     'prefix': '/api/v1',
 }

@@ -53,13 +53,13 @@
 
           <span data-bind="if: currentVersion">
             <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
-              Download <i class="icon-download-alt"></i>
+              Download <i class="fa fa-download"></i>
             </a>
           </span>
 
           <span data-bind="if: editable">
             <button class="btn btn-danger btn-md file-delete" data-bind="click: askDelete">
-              Delete <i class="icon-trash"></i>
+              Delete <i class="fa fa-trash-o"></i>
             </button>
           </span>
 
@@ -102,7 +102,7 @@
                 <td>
                   <a class="btn btn-primary btn-sm file-download" href="{{ revision.osfDownloadUrl }}"
                     data-bind="click: revision.download">
-                    <i class="icon-download-alt"></i>
+                    <i class="fa fa-download"></i>
                   </a>
                 </td>
               </tr>
