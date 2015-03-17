@@ -497,7 +497,7 @@ class TestSearchMigration(SearchTestCase):
         User.remove()
 
         self.es = search.search_engine.es
-        search.delete_index('test')
+        search.delete_index('test*')
         search.create_index('test')
         self.user = UserFactory(fullname='David Bowie')
         self.project = ProjectFactory(
@@ -508,7 +508,7 @@ class TestSearchMigration(SearchTestCase):
 
     def tearDown(self):
         super(TestSearchMigration, self).tearDown()
-        search.delete_index('test')
+        search.delete_index('test*')
         Node.remove()
         User.remove()
 
