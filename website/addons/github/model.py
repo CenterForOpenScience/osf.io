@@ -448,7 +448,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 url=node.api_url + 'github/tarball/'
             )
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:
@@ -461,17 +461,22 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             # Delete OAuth tokens
             self.user_settings = None
             self.save()
-
-            #
-            return (
-                'Because the GitHub add-on for this project was authenticated '
-                'by {user}, authentication information has been deleted. You '
-                'can re-authenticate on the <a href="{url}settings/">'
-                'Settings</a> page.'.format(
-                    user=removed.fullname,
-                    url=node.url,
-                )
+            message = (
+                u'Because the GitHub add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
             )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def after_set_privacy(self, node, permissions):
         """

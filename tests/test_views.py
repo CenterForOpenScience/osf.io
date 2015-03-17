@@ -2266,6 +2266,11 @@ class TestPublicViews(OsfTestCase):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
 
+    def test_forgot_password_get(self):
+        res = self.app.get(web_url_for('_forgot_password'))
+        assert_equal(res.status_code, 200)
+        assert_in('Forgot Password', res.body)
+
 
 class TestAuthViews(OsfTestCase):
 

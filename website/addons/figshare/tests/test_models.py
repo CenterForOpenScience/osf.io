@@ -252,9 +252,10 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    def test_after_remove_contributor_authenticator(self):
+    def test_after_remove_contributor_authenticator_not_self(self):
+        auth = Auth(user=self.non_authenticator)
         msg = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator
+            self.project, self.project.creator, auth
         )
 
         assert_in(
@@ -265,6 +266,22 @@ class TestCallbacks(OsfTestCase):
             self.node_settings.user_settings,
             None
         )
+        assert_in("You can re-authenticate", msg)
+
+    def test_after_remove_contributor_authenticator_self(self):
+        msg = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, self.consolidated_auth
+        )
+
+        assert_in(
+            self.project.title,
+            msg
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            None
+        )
+        assert_not_in("You can re-authenticate", msg)
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
