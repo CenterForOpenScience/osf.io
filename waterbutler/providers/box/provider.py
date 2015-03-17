@@ -18,11 +18,14 @@ class BoxPath(utils.WaterButlerPath):
 
     def __init__(self, path, prefix=False, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
-        if path != '/':
-            self._id = path.split('/')[1]
-        else:
-            self._id = None
 
+        split = path.split('/')[1:]
+        if not split:
+            self._id = '0'
+        elif not split[-1] and len(split) == 2:
+            self._id = None
+        else:
+            self._id = split[0]
 
 class BoxProvider(provider.BaseProvider):
 
@@ -129,7 +132,7 @@ class BoxProvider(provider.BaseProvider):
             data={
                 'name': path.name,
                 'parent': {
-                    'id': path._id or self.folders
+                    'id': path._id or self.folder
                 }
             },
             expects=(201, ),
