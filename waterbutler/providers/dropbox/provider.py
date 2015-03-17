@@ -208,6 +208,33 @@ class DropboxProvider(provider.BaseProvider):
             if not item.get('is_deleted')
         ]
 
+    @asyncio.coroutine
+    def create_folder(self, path, **kwargs):
+        """
+        :param str path: The path to create a folder at
+        """
+        path = DropboxPath(self.folder, path)
+        super()._validate_folder(path)
+
+        response = yield from self.make_request(
+            'POST',
+            self.build_url('fileops', 'create_folder'),
+            params={
+                'root': 'auto',
+                'path': path.full_path
+            },
+            expects=(200, 403),
+            throws=exceptions.CreateFolderError
+        )
+
+        if response.status == 403:
+            raise exceptions.CreateFolderError('Folder {} already exists'.format(path.path), code=409)
+
+        return DropboxFolderMetadata(
+            (yield from response.json()),
+            self.folder
+        ).serialized()
+
     def can_intra_copy(self, dest_provider):
         return type(self) == type(dest_provider)
 
