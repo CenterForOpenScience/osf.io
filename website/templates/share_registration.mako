@@ -1,9 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">SHARE</%def>
 <%def name="content()">
-  <div id="shareRegistration"></div>
-</%def>
-
-<%def name="javascript_bottom()">
-    ## <script src=${"/static/public/js/share-search-page.js" | webpack_asset}></script>
+    <div style="height: 100%; padding-top: 25px;">
+        <iframe src="http://localhost:8000/provider_registration/pre_register/" style="border: 0; width: 100%; height: 1700px; display:block;"></iframe>
+    </div>
 </%def>
