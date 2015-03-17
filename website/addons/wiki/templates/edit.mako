@@ -19,30 +19,30 @@
   <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="wiki-panel wiki-panel-flex hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel-header wiki-panel-header-flex"> <i class="fa fa-list"> </i>  Menu
+        <div class="osf-panel osf-panel-flex hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
+            <div class="osf-panel-header osf-panel-header-flex"> <i class="fa fa-list"> </i>  Menu
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div></div>
             </div>
-            <div class="wiki-panel-body wiki-panel-body-flex">
+            <div class="osf-panel-body osf-panel-body-flex">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
 
         <!-- Menu with toggle collapsed -->
-        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="${'display: none' if 'menu' in panels_used else '' | n}">
-          <div class="wiki-panel-header">
+        <div class="osf-panel panel-collapsed hidden-xs text-center" style="${'display: none' if 'menu' in panels_used else '' | n}">
+          <div class="osf-panel-header">
             <i class="fa fa-list"> </i>
             <i class="fa fa-angle-right"> </i>
           </div>
-          <div class="wiki-panel-body">
+          <div class="osf-panel-body">
               <%include file="wiki/templates/nav.mako"/>
            </div>
         </div>
 
         <!-- Menu without toggle in XS size only -->
-        <div class="wiki-panel visible-xs">
-            <div class="wiki-panel-header"> <i class="fa fa-list"> </i>  Menu </div>
-            <div class="wiki-panel-body ">
+        <div class="osf-panel visible-xs">
+            <div class="osf-panel-header"> <i class="fa fa-list"> </i>  Menu </div>
+            <div class="osf-panel-body ">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
@@ -55,8 +55,8 @@
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
-                <div class="wiki-panel">
-                  <div class="wiki-panel-header">
+                <div class="osf-panel">
+                  <div class="osf-panel-header">
                     <div class="row">
                       <div class="col-md-6">
                            <i class="fa fa-pencil-square-o"> </i>  Edit
@@ -83,7 +83,7 @@
                     </div>
                   </div>
                   <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                  <div class="wiki-panel-body">
+                  <div class="osf-panel-body">
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
@@ -103,7 +103,7 @@
                         </div>
                       </div>                    
                   </div>
-                  <div class="wiki-panel-footer">
+                  <div class="osf-panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
@@ -130,8 +130,8 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="wiki-panel wiki-panel-flex">
-                <div class="wiki-panel-header wiki-panel-header-flex">
+              <div class="osf-panel osf-panel-flex">
+                <div class="osf-panel-header osf-panel-header-flex">
                     <div class="row">
                         <div class="col-sm-6">
                             <i class="fa fa-eye"> </i>  View
@@ -153,7 +153,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
+                <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="osf-panel-body markdown-it-view osf-panel-body-flex">
                     % if wiki_content:
                         ${wiki_content | n}
                     % else:
@@ -165,8 +165,8 @@
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel wiki-panel-flex">
-              <div class="wiki-panel-header wiki-panel-header-flex">
+            <div class="osf-panel osf-panel-flex">
+              <div class="osf-panel-header osf-panel-header-flex">
                   <div class="row">
                       <div class="col-xs-12">
                           <i class="fa fa-exchange"> </i>  Compare
@@ -184,7 +184,7 @@
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view wiki-panel-body-flex">
+              <div data-bind="html: renderedCompare" class="osf-panel-body wiki-compare-view osf-panel-body-flex">
 
               </div>
             </div>

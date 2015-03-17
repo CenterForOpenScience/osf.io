@@ -858,16 +858,18 @@ h1.node-title, h1.node-parent-title {
     }
 }
 
-.wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
+.osf-panel-header .fa-angle-right, .osf-panel-header .fa-angle-left {
     cursor: pointer;
 }
-.wiki-panel-header .fa-list {
+.osf-panel-header .fa-list {
     color: #808080;
 }
 
+.osf-panel-header .fa-file {
+    color: #808080;
+}
 
-
-.wiki-panel-body .superlist li {
+.osf-panel-body .superlist li {
     display: block;
     font-size: 20px;
 }
@@ -2266,7 +2268,7 @@ span#profileFullname{
     to {transform:rotate(360deg);}
 }
 /* Wiki additions */
-.wiki-panel {
+.osf-panel {
     border: 1px solid #ccc;
     height: 750px;
     overflow: auto;
@@ -2279,22 +2281,22 @@ span#profileFullname{
     background: #EFEFEF;
     font-weight: bold;
 }
-.wiki-panel-body {
+.osf-panel-body {
     overflow: auto;
     overflow-x: hidden;
 }
-.wiki-panel-body .navbar-collapse {
+.osf-panel-body .navbar-collapse {
     background: #F5F5F5;
     padding: 0px;
 }
-.wiki-panel-header {
+.osf-panel-header {
     background: #efefef;
     padding: 10px;
     font-size: 16px;
     font-weight: 300;
 }
 
-.wiki-panel-footer {
+.osf-panel-footer {
     position: absolute;
     bottom : 0;
     left: 0;
@@ -2317,7 +2319,7 @@ span#profileFullname{
 }
 
 @media (max-width: 991px) {
-    .wiki-panel {
+    .osf-panel {
         margin-bottom: 20px;
     }
 }
@@ -2364,7 +2366,7 @@ span#profileFullname{
 }
 
 
-.wiki-panel-flex {
+.osf-panel-flex {
     width: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -2386,7 +2388,7 @@ span#profileFullname{
     flex-wrap: wrap;
 }
 
-.wiki-panel-header-flex {
+.osf-panel-header-flex {
     width: 100%;
     margin: auto;
     -webkit-box-flex: 0 0 auto;
@@ -2394,7 +2396,7 @@ span#profileFullname{
     -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
-.wiki-panel-body-flex{
+.osf-panel-body-flex {
     width: 100%;
     margin: auto;
     -webkit-box-flex: 3 0 auto;

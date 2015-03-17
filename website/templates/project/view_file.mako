@@ -18,20 +18,20 @@
     <div id="file-container" class="row">
 
     <div class="panel-toggle col-md-3">
-        <div class="wiki-panel wiki-panel-flex hidden-xs">
-            <div class="wiki-panel-header wiki-panel-header-flex"><i class="icon icon-file"></i>  Project Files
-                <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
+        <div class="osf-panel osf-panel-flex hidden-xs">
+            <div class="osf-panel-header osf-panel-header-flex"><i class="fa fa-file"></i>  Project Files
+                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div></div>
             </div>
-            <div class="wiki-panel-body wiki-panel-body-flex file-page">
+            <div class="osf-panel-body osf-panel-body-flex file-page">
                 <div id="grid"></div>
             </div>
         </div>
 
     <!-- Menu toggle closed -->
-        <div class="wiki-panel panel-collapsed hidden-xs text-center"  style="display: none">
-          <div class="wiki-panel-header">
-            <i class="icon icon-file"> </i>
-            <i class="icon icon-angle-right"> </i>
+        <div class="osf-panel panel-collapsed hidden-xs text-center"  style="display: none">
+          <div class="osf-panel-header">
+            <i class="fa fa-file"> </i>
+            <i class="fa fa-angle-right"> </i>
           </div>
         </div>
 
