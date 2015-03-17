@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
+import itertools
 
 from flask import request
 
@@ -106,14 +107,14 @@ def github_get_config(auth, node_addon, **kwargs):
     return {'result': result}
 
 @must_have_permission('write')
-@must_have_addon('s3', 'node')
+@must_have_addon('github', 'node')
 @must_not_be_registration
 def github_remove_node_settings(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return node_addon.to_json(auth.user)
 
 @must_be_logged_in
-@must_have_addon('s3', 'user')
+@must_have_addon('github', 'user')
 def github_remove_user_settings(user_addon, **kwargs):
     success = user_addon.revoke_auth(save=True)
     if not success:
@@ -124,16 +125,34 @@ def github_remove_user_settings(user_addon, **kwargs):
         )
         return {'message': 'reload'}, http.BAD_REQUEST
 
-# @must_be_logged_in
-# @must_have_addon('github', 'node')
-# @must_have_addon('github', 'user')
-# @must_have_permission('write')
-# @must_not_be_registration
-# def github_repo_list(auth, node_addon, user_addon, **kwargs):
-#
-#     return {
-#         'buckets': get_repo_drop_down(user_addon)
-#     }
+
+# WIP, need to get repo_list stuff from model.py into here
+@must_be_logged_in
+@must_have_addon('github', 'node')
+@must_have_addon('github', 'user')
+@must_have_permission('write')
+@must_not_be_registration
+def github_repo_list(auth, node_addon, user_addon, **kwargs):
+    node = node_addon.owner
+    user = auth.user
+    user_settings = node_addon.user_settings
+
+    # If authorized, only owner can change settings
+    if user_settings and user_settings.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    #need to make sense of this
+    connection = GitHub.from_settings(user_settings)
+    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+    repo_names = [
+        '{0} / {1}'.format(repo.owner.login, repo.name)
+        for repo in repos
+    ]
+
+
+
+
+
 
 
 @must_have_permission('write')
