@@ -262,7 +262,7 @@ BaseViewModel.prototype.handleSuccess = function() {
 
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
-    var msg = response.responseJSON.message_long || defaultMsg;
+    var msg = response.message_long || defaultMsg;
     this.changeMessage(
         msg,
         'text-danger',
