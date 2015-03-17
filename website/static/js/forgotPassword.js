@@ -6,13 +6,13 @@
 var ko = require('knockout');
 require('knockout-validation');
 
-var $osf = require('osfHelpers');
-var $formViewModel = require('formViewModel');
+var $osf = require('js/osfHelpers');
+var formViewModel = require('js/formViewModel');
 
 
 var ForgotPasswordViewModel = function() {
     // Call constructor for superclass
-    $formViewModel.FormViewModel.call(this);
+    formViewModel.FormViewModel.call(this);
 
     var self = this;
     self.username = ko.observable('').extend({
@@ -21,22 +21,22 @@ var ForgotPasswordViewModel = function() {
     });
 };
 
-ForgotPasswordViewModel.prototype = Object.create($formViewModel.FormViewModel.prototype);
+ForgotPasswordViewModel.prototype = Object.create(formViewModel.FormViewModel.prototype);
 // Set the "constructor property" to refer to FormViewModel
-ForgotPasswordViewModel.prototype.constructor = $formViewModel.FormViewModel;
+ForgotPasswordViewModel.prototype.constructor = formViewModel.FormViewModel;
 
 // Subclass methods for ForgotPasswordViewModel
 ForgotPasswordViewModel.prototype.isValid = function() {
     if (!this.username.isValid()) {
         var validationErrors = [
-            new $formViewModel.ValidationError(
+            new formViewModel.ValidationError(
                 'Error',
                 'Please enter a valid email address.'
             )
         ];
         throw validationErrors;
     } else {
-        return true
+        return true;
     }
 };
 

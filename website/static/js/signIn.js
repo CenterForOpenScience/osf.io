@@ -6,13 +6,13 @@
 var ko = require('knockout');
 require('knockout-validation').init({insertMessages: false});  // override default DOM insertions
 
-var $osf = require('osfHelpers');
-var $formViewModel = require('formViewModel');
+var $osf = require('js/osfHelpers');
+var formViewModel = require('   js/formViewModel');
 
 
 var SignInViewModel = function() {
     // Call constructor for superclass
-    $formViewModel.FormViewModel.call(this);
+    formViewModel.FormViewModel.call(this);
 
     var self = this;
 
@@ -27,16 +27,16 @@ var SignInViewModel = function() {
     });
 };
 
-SignInViewModel.prototype = Object.create($formViewModel.FormViewModel.prototype);
+SignInViewModel.prototype = Object.create(formViewModel.FormViewModel.prototype);
 // Set the "constructor property" to refer to FormViewModel
-SignInViewModel.prototype.constructor = $formViewModel.FormViewModel;
+SignInViewModel.prototype.constructor = formViewModel.FormViewModel;
 
 // Subclass methods for ForgotPasswordViewModel
 SignInViewModel.prototype.isValid = function() {
     var validationErrors = [];
     if (!this.username.isValid()) {
         validationErrors.push(
-            new $formViewModel.ValidationError(
+            new formViewModel.ValidationError(
                 'Error',
                 'Please enter a valid email address.'
             )
@@ -44,7 +44,7 @@ SignInViewModel.prototype.isValid = function() {
     }
     if (!this.password.isValid()) {
         validationErrors.push(
-            new $formViewModel.ValidationError(
+            new formViewModel.ValidationError(
                 'Error',
                 'Your password must be more than six but fewer than 36 characters.'
             )
