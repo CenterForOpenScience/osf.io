@@ -117,6 +117,7 @@ var ProjectViewModel = function(data) {
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
+    self.userPermissions = data.user.permissions;
     self.description = data.node.description;
     self.title = data.node.title;
     self.category = data.node.category;
@@ -240,12 +241,15 @@ var ProjectViewModel = function(data) {
         NodeActions.forkNode();
     };
 
-    self.canHaveIdentifiers = self.isRegistration &&
-        self.nodeIsPublic &&
-        self.parent.id === '';
-
     self.hasIdentifiers = ko.pureComputed(function() {
         return !!(self.doi() && self.ark());
+    });
+
+    self.canCreateIdentifiers = ko.pureComputed(function() {
+        return !self.hasIdentifiers() &&
+            self.isRegistration &&
+            self.nodeIsPublic &&
+            self.userPermissions.indexOf('admin') !== -1;
     });
 
     self.doiUrl = ko.pureComputed(function() {
