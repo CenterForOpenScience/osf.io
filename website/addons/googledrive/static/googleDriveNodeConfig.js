@@ -43,7 +43,6 @@ var ViewModel = function(url, selector, folderPicker) {
     self.folderPicker =  folderPicker;
     self.selected = ko.observable(null);
     self.showFileTypes = ko.observable(false);
-    self.cancelSelection = ko.observable();
     self.loadedSettings = ko.observable(false);
     self.selectedFileTypeOption = ko.observable('');
 
@@ -293,6 +292,7 @@ var ViewModel = function(url, selector, folderPicker) {
         'text-success', 5000);
         // Update folder in ViewModel
         self.urls(response.result.urls);
+        self.cancelSelection();
     }
 
     function onSubmitError() {
