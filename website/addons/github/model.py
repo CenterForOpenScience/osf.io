@@ -269,13 +269,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             return '/'.join([self.user, self.repo])
 
     @property
-    def complete(self):
-        return (
-            self.user and self.repo and
-            self.user_settings and self.user_settings.has_auth
-        )
-
-    @property
     def is_private(self):
         connection = GitHub.from_settings(self.user_settings)
         return connection.repo(user=self.user, repo=self.repo).private
