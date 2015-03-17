@@ -24,7 +24,6 @@ from website.models import NodeLog
 from website import language
 
 from website.identifiers.client import EzidClient
-from website.identifiers.client import ClientError
 
 from .node import _view_project
 from .. import clean_template_name
@@ -162,6 +161,9 @@ def node_register_template_page_post(auth, **kwargs):
 
 
 def _build_ezid_metadata(node):
+    """Build metadata for submission to EZID using the DataCite profile. See
+    http://ezid.cdlib.org/doc/apidoc.html for details.
+    """
     doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
     metadata = {
         '_target': node.absolute_url,
@@ -187,7 +189,7 @@ def _get_or_create_identifiers(node):
             [each.strip('/') for each in pair.strip().split(':')]
             for pair in resp['success'].split('|')
         )
-    except ClientError as error:
+    except HTTPError as error:
         if 'identifier already exists' not in error.message.lower():
             raise
         resp = client.get_identifier(doi)
@@ -202,6 +204,9 @@ def _get_or_create_identifiers(node):
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_identifiers_get(**kwargs):
+    """Retrieve identifiers for a node. Node must be a public registration with
+    no parents.
+    """
     node = kwargs['node'] or kwargs['project']
     if not node.is_registration or not node.is_public or node.parent_node:
         raise HTTPError(http.BAD_REQUEST)
@@ -214,6 +219,9 @@ def node_identifiers_get(**kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def node_identifiers_post(auth, **kwargs):
+    """Create identifier pair for a node. Node must be a public registration
+    with no parents.
+    """
     node = kwargs['node'] or kwargs['project']
     if not node.is_registration or not node.is_public or node.parent_node:
         raise HTTPError(http.BAD_REQUEST)
@@ -221,7 +229,7 @@ def node_identifiers_post(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     try:
         identifiers = _get_or_create_identifiers(node)
-    except ClientError:
+    except HTTPError:
         raise HTTPError(http.BAD_REQUEST)
     for category, value in identifiers.iteritems():
         node.set_identifier_value(category, value)
@@ -238,6 +246,9 @@ def node_identifiers_post(auth, **kwargs):
 
 
 def get_referent_by_identifier(category, value):
+    """Look up identifier by `category` and `value` and redirect to its referent
+    if found.
+    """
     try:
         identifier = Identifier.find_one(
             Q('category', 'eq', category) &

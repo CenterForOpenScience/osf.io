@@ -1,7 +1,6 @@
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 var assert = require('chai').assert;
-var assign = require('object-assign');
 var $ = require('jquery');
 
 var utils = require('./utils');
@@ -45,22 +44,22 @@ describe('nodeControl', () => {
                 assert.isTrue(vm.hasIdentifiers());
             });
             it('can have identifiers when public, registered, and parent', () => {
-                var data = assign({}, nodeData);
-                data.node = assign(data.node, {is_registration: true, is_public: true});
+                var data = $.extend({}, nodeData);
+                data.node = $.extend(data.node, {is_registration: true, is_public: true});
                 var vm = new nodeControl._ProjectViewModel(data);
                 assert.isTrue(vm.canHaveIdentifiers);
             });
             it('cannot have identifiers when private, not registered, or not parent', () => {
                 var vm;
-                var data = assign({}, nodeData);
-                data.node = assign(data.node, {is_registration: true, is_public: false});
+                var data = $.extend({}, nodeData);
+                data.node = $.extend(data.node, {is_registration: true, is_public: false});
                 vm = new nodeControl._ProjectViewModel(data);
                 assert.isFalse(vm.canHaveIdentifiers);
-                data.node = assign(data.node, {is_registration: false, is_public: true});
+                data.node = $.extend(data.node, {is_registration: false, is_public: true});
                 vm = new nodeControl._ProjectViewModel(data);
                 assert.isFalse(vm.canHaveIdentifiers);
-                data = assign(data, {parent_node: {id: '24602'}});
-                data.node = assign(data.node, {is_registration: true, is_public: true});
+                data = $.extend(data, {parent_node: {id: '24602'}});
+                data.node = $.extend(data.node, {is_registration: true, is_public: true});
                 vm = new nodeControl._ProjectViewModel(data);
                 assert.isFalse(vm.canHaveIdentifiers);
             });

@@ -125,14 +125,14 @@ var ProjectViewModel = function(data) {
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
     // The button text to display (e.g. "Watch" if not watching)
-    self.watchButtonDisplay = ko.computed(function() {
+    self.watchButtonDisplay = ko.pureComputed(function() {
         return self.watchedCount().toString();
     });
-    self.watchButtonAction = ko.computed(function() {
+    self.watchButtonAction = ko.pureComputed(function() {
         return self.userIsWatching() ? 'Unwatch' : 'Watch';
     });
 
-    self.canBeOrganized = ko.computed(function() {
+    self.canBeOrganized = ko.pureComputed(function() {
         return !!(self.user.username && (self.nodeIsPublic || self.user.is_contributor));
     });
 
@@ -244,15 +244,15 @@ var ProjectViewModel = function(data) {
         self.nodeIsPublic &&
         self.parent.id === '';
 
-    self.hasIdentifiers = ko.computed(function() {
+    self.hasIdentifiers = ko.pureComputed(function() {
         return !!(self.doi() && self.ark());
     });
 
-    self.doiUrl = ko.computed(function() {
+    self.doiUrl = ko.pureComputed(function() {
         return self.doi() ? 'http://ezid.cdlib.org/id/doi:' + self.doi() : null;
     });
 
-    self.arkUrl = ko.computed(function() {
+    self.arkUrl = ko.pureComputed(function() {
         return self.ark() ? 'http://ezid.cdlib.org/id/ark:/' + self.ark() : null;
     });
 

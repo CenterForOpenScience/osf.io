@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import furl
-import requests
+
+from website.util.client import BaseClient
 
 from . import utils
 
 
-class ClientError(Exception):
-    def __init__(self, message, response=None, code=None):
-        super(ClientError, self).__init__(message)
-        self.response = response
-        self.code = code
-
-
-class EzidClient(object):
+class EzidClient(BaseClient):
 
     BASE_URL = 'https://ezid.cdlib.org'
 
@@ -34,15 +28,6 @@ class EzidClient(object):
     @property
     def _default_headers(self):
         return {'Content-Type': 'text/plain; charset=UTF-8'}
-
-    def _make_request(self, method, url, *args, **kwargs):
-        auth = kwargs.pop('auth', None) or self._auth
-        headers = utils.merge_dicts(self._default_headers, kwargs.pop('headers', {}))
-        expects = kwargs.pop('expects', None)
-        resp = requests.request(method, url, auth=auth, headers=headers, *args, **kwargs)
-        if expects and resp.status_code not in expects:
-            raise ClientError(resp.content, response=resp, code=resp.status_code)
-        return resp
 
     def get_identifier(self, identifier):
         resp = self._make_request(
