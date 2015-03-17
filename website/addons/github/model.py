@@ -204,6 +204,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def complete(self):
+        return self.has_auth and self.repo is not None and self.user is not None
+
     def find_or_create_file_guid(self, path):
         try:
             return GithubGuidFile.find_one(
