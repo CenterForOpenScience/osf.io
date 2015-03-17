@@ -100,7 +100,29 @@ class TestShareAtom(OsfTestCase):
         xml_content = response.xml
         assert_equal(xml_content.tag, '{http://www.w3.org/2005/Atom}feed')
 
-    # def test_page_one_rel_next_link(self):
-    #     response = self.app.get('/share/atom/')
-    #     xml_content = response.xml
-    #     import ipdb; ipdb.set_trace()
+    def test_first_link_rel_self(self):
+        response = self.app.get('/share/atom/')
+        xml_content = response.xml
+        rel = xml_content.find('{http://www.w3.org/2005/Atom}link')
+        assert_equal(rel.attrib['rel'], 'self')
+
+    def test_page_5_has_correct_links(self):
+        response = self.app.get('/share/atom/', params={
+            'page': 5
+        })
+        links = response.xml.findall('{http://www.w3.org/2005/Atom}link')
+        assert_equal(len(links), 4)
+        attribs = [link.attrib for link in links]
+        assert_equal(attribs[1]['href'], 'http://localhost:5000/share/atom/?page=1')
+        assert_equal(attribs[1]['rel'], 'first')
+        assert_equal(attribs[2]['href'], 'http://localhost:5000/share/atom/?page=6')
+        assert_equal(attribs[2]['rel'], 'next')
+        assert_equal(attribs[3]['href'], 'http://localhost:5000/share/atom/?page=4')
+        assert_equal(attribs[3]['rel'], 'previous')
+
+    def test_title_updates_with_query(self):
+        response = self.app.get('/share/atom/', params={
+            'q': 'cats'
+        })
+        title = response.xml.find('{http://www.w3.org/2005/Atom}title')
+        assert_equal(title.text, 'SHARE: Atom Feed for query: "cats"')
