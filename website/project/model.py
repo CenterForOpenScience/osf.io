@@ -285,8 +285,8 @@ class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    date = fields.DateTimeField(default=datetime.datetime.utcnow)
-    action = fields.StringField()
+    date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
+    action = fields.StringField(index=True)
     params = fields.DictionaryField()
 
     user = fields.ForeignField('user', backref='created')

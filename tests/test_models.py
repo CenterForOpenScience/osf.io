@@ -224,6 +224,8 @@ class TestUser(OsfTestCase):
         u.save()
         assert_equal(u.username, email)
         assert_false(u.is_registered)
+        assert_false(u.is_claimed)
+        assert_true(u.is_invited)
         assert_true(email in u.emails)
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
