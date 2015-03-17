@@ -34,6 +34,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.parentId = parentId;
         self.parentTitle = parentTitle;
 
+        self.permissionList = [
+            {value: 'read', text: 'Read'},
+            {value: 'write', text: 'Read + Write'},
+            {value: 'admin', text: 'Administrator'}
+        ];
+
         self.page = ko.observable('whom');
         self.pageTitle = ko.computed(function() {
             return {
@@ -224,26 +230,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
             $(element).find('.contrib-button').tooltip();
         });
     },
-    setupEditable(elm, data) {  //remove
-        var $elm = $(elm);
-        var $editable = $elm.find('.permission-editable');
-        $editable.editable({
-            showbuttons: false,
-            value: 'admin',
-            source: [
-                {value: 'read', text: 'Read'},
-                {value: 'write', text: 'Read + Write'},
-                {value: 'admin', text: 'Administrator'}
-            ],
-            success: function(response, value) {
-                data.permission(value);
-            }
-        });
-    },
     afterRender(elm, data) {
         var self = this;
         self.addTips(elm, data);
-        self.setupEditable(elm, data); //remove
     },
     makeAfterRender(){
         var self = this;
@@ -283,16 +272,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
     add(data) {
-        self.permissionList = [
-            {value: 'read', text: 'Read'},
-            {value: 'write', text: 'Read + Write'},
-            {value: 'admin', text: 'Administrator'}
-        ];
-        self.curPermission = ko.observable(self.permissionList[2]);
-        data.permission = ko.observable('admin');
-        self.change = ko.computed( function() {
-            data.permission(self.curPermission().value);
-        });
+        data.permission = ko.observable('read');
         // All manually added contributors are visible
         data.visible = true;
         this.selection.push(data);
@@ -347,7 +327,10 @@ var AddContributorViewModel = oop.extend(Paginator, {
             nodeApiUrl + 'contributors/',
             {
                 users: self.selection().map(function(user) {
-                    return ko.toJS(user);
+                    var permission = user.permission().value; //removes the value from the object
+                    var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
+                    tUser.permission = permission; //shoving the permission value into permission
+                    return tUser; //user with simplified permissions
                 }),
                 node_ids: self.nodesToChange()
             }
