@@ -607,9 +607,12 @@ function _fangornLazyLoadOnLoad (tree) {
  * @private
  */
 function _fangornOrderFolder(tree) {
-    var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-    tree.sortChildren(this, sortDirection, 'text', 0);
-    this.redraw();
+    // Checking if this column does in fact have sorting
+    if (this.isSorted[0]) {
+        var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+        tree.sortChildren(this, sortDirection, 'text', 0);
+        this.redraw();        
+    }
 }
 
 /**
