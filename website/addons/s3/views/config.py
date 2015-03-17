@@ -14,7 +14,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.s3.api import has_access, does_bucket_exist
-from website.addons.s3.utils import create_osf_user, serialize_urls, get_bucket_drop_down
+from website.addons.s3.utils import create_osf_user, serialize_urls, get_bucket_drop_down, adjust_cors  #noqa
 
 def add_s3_auth(access_key, secret_key, user_settings):
 
