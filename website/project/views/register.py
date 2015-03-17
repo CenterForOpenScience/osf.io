@@ -196,19 +196,18 @@ def _get_or_create_identifiers(node):
         doi = resp['success']
         suffix = doi.strip(settings.DOI_NAMESPACE)
         return {
-            'doi': doi.strip('doi:'),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.strip('ark:'), suffix),
+            'doi': doi.replace('doi:', ''),
+            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
 
 
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_identifiers_get(**kwargs):
-    """Retrieve identifiers for a node. Node must be a public registration with
-    no parents.
+    """Retrieve identifiers for a node. Node must be a public registration.
     """
     node = kwargs['node'] or kwargs['project']
-    if not node.is_registration or not node.is_public or node.parent_node:
+    if not node.is_registration or not node.is_public:
         raise HTTPError(http.BAD_REQUEST)
     return {
         'doi': node.get_identifier_value('doi'),
@@ -219,11 +218,10 @@ def node_identifiers_get(**kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def node_identifiers_post(auth, **kwargs):
-    """Create identifier pair for a node. Node must be a public registration
-    with no parents.
+    """Create identifier pair for a node. Node must be a public registration.
     """
     node = kwargs['node'] or kwargs['project']
-    if not node.is_registration or not node.is_public or node.parent_node:
+    if not node.is_registration or not node.is_public:
         raise HTTPError(http.BAD_REQUEST)
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)

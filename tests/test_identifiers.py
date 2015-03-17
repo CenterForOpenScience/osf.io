@@ -139,11 +139,11 @@ class TestIdentifierViews(OsfTestCase):
         )
         assert_equal(
             res.json['doi'],
-            '{0}{1}'.format(settings.DOI_NAMESPACE.strip('doi:'), identifier)
+            '{0}{1}'.format(settings.DOI_NAMESPACE.replace('doi:', ''), identifier)
         )
         assert_equal(
             res.json['ark'],
-            '{0}{1}'.format(settings.ARK_NAMESPACE.strip('ark:'), identifier),
+            '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), identifier),
         )
         assert_equal(res.status_code, 201)
 
