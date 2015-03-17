@@ -9,35 +9,35 @@ var oop = require('js/oop');
 
 describe('paginator', () => {
 
-    var returnTrue = function() {
-        return true;
+    var numberofPages = function(){
+        return 5;
     };
 
-    var returnFalse = function() {
-        return false;
+    var currentPage = function(){
+        return 1;
     };
 
-    var parentIsFolder = function(){
-        return {
-            data: {
-                node_id: 'normalFolder'
-            }
-        };
+    var paginators = function(){
+        return [];
     };
 
-    var parentIsNotFolder = function(){
-        return {
-            data: {
-                node_id: 'noParent'
-            }
-        };
-    };
-    var parent = {
-        name: 'Parent',
-        isAncestor: returnTrue
-    };
+    it('nextPage', () => {
+        var newCurrentPage = Paginator.nextPage();
+        assert.equal(newCurrentPage, currentPage + 1);
+    });
 
-    var child = {
-        name: 'Child',
-        isAncestor: returnFalse
-    };
+    it('previousPage', () => {
+        var newCurrentPage = Paginator.previousPage();
+        assert.equal(newCurrentPage, currentPage - 1);
+    });
+
+    it('search', () => {
+        var error = Paginator.previousPage();
+        assert.equal(error, 'Paginator subclass must define a "search" method.');
+    });
+
+    it('addNewPaginator', () => {
+        var newPaginator = Paginator.addNewPaginators();
+        assert.equal(paginators.length(), 1);
+    });
+});
