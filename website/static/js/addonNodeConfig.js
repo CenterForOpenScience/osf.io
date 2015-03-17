@@ -17,7 +17,7 @@ var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
 
-var FolderPickerViewModel = function(addonName, url, selector, folderPicker, opts) {
+var ViewModel = function(addonName, url, selector, folderPicker, opts) {
     var self = this;
 
     self.url = url;
@@ -188,15 +188,12 @@ var FolderPickerViewModel = function(addonName, url, selector, folderPicker, opt
     };
     // Overrides
     self.options = $.extend(self.options, opts);
-
-    // Initial fetch from server
-    self.fetchFromServer();
 };
 
 /**
  *  Update the view model from data returned from the server.
  */
-FolderPickerViewModel.prototype.updateFromData = function(data) {
+ViewModel.prototype.updateFromData = function(data) {
     this.ownerName(data.ownerName);
     this.nodeHasAuth(data.nodeHasAuth);
     this.userIsOwner(data.userIsOwner);
@@ -211,7 +208,7 @@ FolderPickerViewModel.prototype.updateFromData = function(data) {
     this.urls(data.urls);
 };
 
-FolderPickerViewModel.prototype.fetchFromServer = function() {
+ViewModel.prototype.fetchFromServer = function(cb) {
     var self = this;
     var request = $.ajax({
             url: this.url,
@@ -236,11 +233,12 @@ FolderPickerViewModel.prototype.fetchFromServer = function() {
                 textStatus: textStatus,
                 error: error
             });
-        });
+        })
+        .always(cb);
     return request;
 };
 
-FolderPickerViewModel.prototype.toggleShare = function() {
+ViewModel.prototype.toggleShare = function() {
     if (this.currentDisplay() === this.SHARE) {
         this.currentDisplay(null);
     } else {
@@ -251,7 +249,7 @@ FolderPickerViewModel.prototype.toggleShare = function() {
     }
 };
 
-FolderPickerViewModel.prototype.activateShare = function() {
+ViewModel.prototype.activateShare = function() {
     var self = this;
 
     function onGetEmailsSuccess(response) {
@@ -275,7 +273,7 @@ FolderPickerViewModel.prototype.activateShare = function() {
 /**
  * Send a PUT request to change the linked folder.
  */
-FolderPickerViewModel.prototype.submitSettings = function() {
+ViewModel.prototype.submitSettings = function() {
     var self = this;
 
     function onSubmitSuccess(response) {
@@ -298,12 +296,12 @@ FolderPickerViewModel.prototype.submitSettings = function() {
 /**
  *  Must be used to update radio buttons and knockout view model simultaneously
  */
-FolderPickerViewModel.prototype.cancelSelection = function() {
+ViewModel.prototype.cancelSelection = function() {
     this.selected(null);
 };
 
 /** Change the flashed message. */
-FolderPickerViewModel.prototype.changeMessage = function(text, css, timeout) {
+ViewModel.prototype.changeMessage = function(text, css, timeout) {
     var self = this;
     self.message(text);
     var cssClass = css || 'text-info';
@@ -320,7 +318,7 @@ FolderPickerViewModel.prototype.changeMessage = function(text, css, timeout) {
 /** Pop up a confirmation to deauthorize this node.
  *   Send DELETE request if confirmed.
  */
-FolderPickerViewModel.prototype.deauthorize = function() {
+ViewModel.prototype.deauthorize = function() {
     var self = this;
 
     //  Send DELETE request to deauthorize this node.
@@ -360,7 +358,7 @@ FolderPickerViewModel.prototype.deauthorize = function() {
 /**
  * Send PUT request to import access token from user profile.
  */
-FolderPickerViewModel.prototype.importAuth = function() {
+ViewModel.prototype.importAuth = function() {
     var self = this;
 
     // Callback for when PUT request to import user access token
@@ -397,7 +395,7 @@ FolderPickerViewModel.prototype.importAuth = function() {
 /**
  *  Activates the HGrid folder picker.
  */
-FolderPickerViewModel.prototype.activatePicker = function() {
+ViewModel.prototype.activatePicker = function() {
     var self = this;
 
     self.currentDisplay(self.PICKER);
@@ -442,7 +440,7 @@ FolderPickerViewModel.prototype.activatePicker = function() {
 /**
  *  Toggles the visibility of the folder picker.
  */
-FolderPickerViewModel.prototype.togglePicker = function() {
+ViewModel.prototype.togglePicker = function() {
     // Toggle visibility of folder picker
     var shown = this.currentDisplay() === this.PICKER;
     if (!shown) {
@@ -463,8 +461,12 @@ function AddonNodeConfig(addonName, selector, url, folderPicker, opts) {
     if (typeof opts === 'undefined') {
         opts = {};
     }
-    self.viewModel = new FolderPickerViewModel(addonName, url, selector, folderPicker, opts);
+    self.viewModel = new ViewModel(addonName, url, selector, folderPicker, opts);
+    self.fetchFromServer();    
     $osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports = AddonNodeConfig;
+module.exports = {
+    AddonNodeConfig: AddonNodeConfig,
+    _AddonNodeConfigViewModel: ViewModel
+};

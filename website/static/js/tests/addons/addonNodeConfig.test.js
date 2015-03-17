@@ -4,13 +4,13 @@ var assert = require('chai').assert;
 
 var utils = require('tests/utils');
 var faker = require('faker');
-var dropboxNodeConfig = require('../dropboxNodeConfig');
+var AddonNodeConfigVM = require('js/addonNodeConfig')._AddonNodeConfigViewModel;
 
-describe('dropboxNodeConfig', () => {
+describe('addonNodeConfig', () => {
     var endpoints = [
         {
             method: 'GET',
-            url: '/api/v1/12345/dropbox/config/',
+            url: '/api/v1/12345/addon/config/',
             response: {
                 result: {
                     ownerName: faker.name.findName(),
@@ -20,7 +20,7 @@ describe('dropboxNodeConfig', () => {
                     nodeHasAuth: true,
                     urls: {
                         owner: '/abc123/',
-                        config: '/api/v1/12345/dropbox/config/'
+                        config: '/api/v1/12345/addon/config/'
                     }
                 }
             }
@@ -38,7 +38,8 @@ describe('dropboxNodeConfig', () => {
 
     describe('ViewModel', () => {
         it('fetches data from the server on initialization', (done) => {
-            var vm = new dropboxNodeConfig._ViewModel('/api/v1/12345/dropbox/config/', '', '', function() {
+            var vm = new AddonNodeConfigVM('addon', '/api/v1/12345/addon/config/', '', '');
+            vm.fetchFromServer(function() {
                 // VM is updated with data from the fake server
                 var expected = endpoints[0].response.result;
                 assert.equal(vm.ownerName(), expected.ownerName);
