@@ -11,7 +11,7 @@ NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings
 ROUTES = [routes.settings_routes, routes.api_routes]
 
 SHORT_NAME = 'figshare'
-FULL_NAME = 'FigShare'
+FULL_NAME = 'figshare'
 
 OWNERS = ['user', 'node']
 
@@ -23,19 +23,8 @@ CONFIGS = ['user', 'node']
 
 CATEGORIES = ['storage']
 
-INCLUDE_JS = {
-    'widget': [],
-    'page': [],
-    'files': [],
-}
-
-
-INCLUDE_CSS = {
-    'widget': [],
-    'page': ['/static/css/hgrid-base.css']
-}
-
-WIDGET_HELP = 'FigShare Add-on Alpha'
+INCLUDE_JS = {}
+INCLUDE_CSS = {}
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.figshare_hgrid_data

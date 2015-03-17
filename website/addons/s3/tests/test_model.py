@@ -146,11 +146,22 @@ class TestCallbacks(OsfTestCase):
         drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
         assert_true('Atticus' in drop_list)
 
-    def test_after_remove_contributor(self):
-        self.node_settings.after_remove_contributor(
-            self.project, self.project.creator
+    def test_after_remove_contributor_self(self):
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, self.consolidated_auth
         )
         assert_equal(self.node_settings.user_settings, None)
+        assert_true(message)
+        assert_not_in("You can re-authenticate", message)
+
+    def test_after_remove_contributor_not_self(self):
+        auth = Auth(user=self.non_authenticator)
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, auth
+        )
+        assert_equal(self.node_settings.user_settings, None)
+        assert_true(message)
+        assert_in("You can re-authenticate", message)
 
     def test_registration_settings(self):
         registration = ProjectFactory()

@@ -16,7 +16,10 @@ function get_source_length(elastic_data) {
     return source_names.length;
 }
 
-function donutGraph (data) {
+function donutGraph (data, vm) {
+    data.charts.shareDonutGraph.onclick = function (d, element) {
+        utils.appendSearch(vm, 'source:' + d['name']);
+    };
     return c3.generate({
         bindto: '#shareDonutGraph',
         size: {
@@ -56,8 +59,7 @@ function timeGraph (data) {
         },
         legend: {
             show: false
-        },
-
+        }
     });
 }
 
@@ -84,20 +86,16 @@ Stats.view = function(ctrl) {
             m('col-md-12', m('a.stats-expand', {
                 onclick: function() {ctrl.vm.showStats = !ctrl.vm.showStats;}
             },
-                ctrl.vm.showStats ? m('i.icon-angle-up') : m('i.icon-angle-down')
+                ctrl.vm.showStats ? m('i.fa.fa-angle-up') : m('i.fa.fa-angle-down')
             ))
         ])
     ];
 };
 
-
-
-
 Stats.controller = function(vm) {
     var self = this;
 
     self.vm = vm;
-    self.vm.providers = 26;
 
     self.graphs = {};
 
@@ -109,7 +107,7 @@ Stats.controller = function(vm) {
     self.drawGraph = function(divId, graphFunction) {
         return m('div', {id: divId, config: function(e, i) {
             if (i) return;
-            self.graphs[divId] = graphFunction(self.vm.statsData);
+            self.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
         }});
     };
 

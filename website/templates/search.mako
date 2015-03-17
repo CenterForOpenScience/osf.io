@@ -1,7 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     <div id="searchControls" class="scripted">
         <%include file='./search_bar.mako' />
         <div class="row">
@@ -307,7 +306,11 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            search:true
+        });
+    </script>
 
     <script src=${"/static/public/js/search-page.js" | webpack_asset}></script>
 

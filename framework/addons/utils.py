@@ -1,5 +1,5 @@
-
 import os
+from json import load as load_json
 from mako.lookup import TemplateLookup
 
 CLASS_MAP = {
@@ -8,51 +8,46 @@ CLASS_MAP = {
     'none': 'danger',
 }
 
+CAPABILITY_SET = [
+    'Permissions',
+    'View / download file versions',
+    'Add / update files',
+    'Delete files',
+    'Logs',
+    'Forking',
+    'Registering'
+]
+
 def read_capabilities(filename):
 
-    lines = open(filename).readlines()
-    lines = [
-        line.rstrip().split('\t')
-        for line in lines
-    ]
+    data_file = open(filename, 'r')
+    data = load_json(data_file)
 
-    addons = [
-        (col, cell.strip())
-        for col, cell in enumerate(lines[1])
-        if cell
-    ]
-    caps = [
-        (row, line[0].strip())
-        for row, line in enumerate(lines)
-        if line[0].strip()
-    ]
+    addons = data['addons']
+    disclaimers = data['disclaimers']
 
-    rv = {}
+    ret = {}
 
-    for col, addon in addons:
+    for addon_name, info in addons.iteritems():
         infos = []
-        for row, cap in caps:
-            status = lines[row][col]
-            if status.strip(' ') == 'NA':
+        for cap in CAPABILITY_SET:
+            status = info[cap].get('status') or ''
+            text = info[cap].get('text') or ''
+            if status == 'NA':
                 continue
-            split = status.split(' | ')
             infos.append({
                 'function': cap,
-                'status': split[0],
-                'detail': split[1] if len(split) > 1 else '',
-                'class': CLASS_MAP[split[0]],
+                'status': status,
+                'detail': text,
+                'class': CLASS_MAP[status],
             })
-        terms = [
-            line[col]
-            for line in lines[row + 1:]
-            if len(line) > col
-        ]
-        rv[addon] = {
+        ret[addon_name] = {
             'capabilities': infos,
-            'terms': terms,
+            'terms': disclaimers,
         }
 
-    return rv
+    data_file.close()
+    return ret
 
 here, _ = os.path.split(__file__)
 here = os.path.abspath(here)
@@ -62,7 +57,7 @@ lookup = TemplateLookup(
 )
 template = lookup.get_template('capabilities.mako')
 
-CAPABILITIES = read_capabilities(os.path.join(here, 'data', 'addons.tsv'))
+CAPABILITIES = read_capabilities(os.path.join(here, 'data', 'addons.json'))
 
 def render_addon_capabilities(addons_available):
 

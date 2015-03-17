@@ -3,14 +3,15 @@
 import mock
 from nose.tools import *  # noqa
 
+from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.mendeley.tests.factories import (
-    MendeleyAccountFactory, MendeleyUserSettingsFactory,
+    MendeleyAccountFactory,
+    MendeleyUserSettingsFactory,
     ExternalAccountFactory,
-    MendeleyNodeSettingsFactory
 )
 from website.addons.mendeley.provider import MendeleyCitationsProvider
 
@@ -262,30 +263,59 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
             'Fake Folder'
         )
 
+    # TODO: Make these tests generic and move to core
+
+    @mock.patch('framework.status.push_status_message')
+    def test_remove_contributor_authorizer(self, mock_push_status):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        self.node.remove_contributor(self.node.creator, auth=Auth(user=contributor))
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.user_settings.verify_oauth_access(self.node, external_account))
+
+    def test_remove_contributor_not_authorizer(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        self.node.remove_contributor(contributor, auth=Auth(user=self.node.creator))
+
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.user_settings.verify_oauth_access(self.node, external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_by_authorizer(self, mock_push_status):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+
+        fork = self.node.fork_node(auth=Auth(user=self.node.creator))
+
+        assert_true(fork.get_addon('mendeley').has_auth)
+        assert_true(self.user_settings.verify_oauth_access(fork, external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_not_by_authorizer(self, mock_push_status):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        fork = self.node.fork_node(auth=Auth(user=contributor))
+
+        assert_false(fork.get_addon('mendeley').has_auth)
+        assert_false(self.user_settings.verify_oauth_access(fork, external_account))
+
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
-    def test_get_connected_accounts(self):
-        # Get all Mendeley accounts for user
-        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
-        user = UserFactory(external_accounts=user_accounts)
-        user_addon = MendeleyUserSettingsFactory(owner=user)
-        assert_equal(user_addon._get_connected_accounts(), user_accounts)
-
-    def test_to_json(self):
-        # All values are passed to the user settings view
-        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
-        user = UserFactory(external_accounts=user_accounts)
-        user_addon = MendeleyUserSettingsFactory(owner=user)
-        res = user_addon.to_json(user)
-        for account in user_accounts:
-            assert_in(
-                {
-                    'id': account._id,
-                    'provider_id': account.provider_id,
-                    'display_name': account.display_name
-                },
-                res['accounts'],
-            )
 
     def _prep_oauth_case(self):
         self.node = ProjectFactory()

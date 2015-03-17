@@ -40,9 +40,9 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     secret_key = fields.StringField()
 
     def to_json(self, user):
-        rv = super(AddonS3UserSettings, self).to_json(user)
-        rv['has_auth'] = self.has_auth
-        return rv
+        ret = super(AddonS3UserSettings, self).to_json(user)
+        ret['has_auth'] = self.has_auth
+        return ret
 
     @property
     def has_auth(self):
@@ -66,12 +66,12 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def revoke_auth(self, save=False):
         for node_settings in self.addons3nodesettings__authorized:
             node_settings.deauthorize(save=True)
-        rv = self.remove_iam_user() if self.has_auth else True
+        ret = self.remove_iam_user() if self.has_auth else True
         self.s3_osf_user, self.access_key, self.secret_key = None, None, None
 
         if save:
             self.save()
-        return rv
+        return ret
 
     def delete(self, save=True):
         self.revoke_auth(save=False)
@@ -172,11 +172,11 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         )
 
     def to_json(self, user):
-        rv = super(AddonS3NodeSettings, self).to_json(user)
+        ret = super(AddonS3NodeSettings, self).to_json(user)
 
         user_settings = user.get_addon('s3')
 
-        rv.update({
+        ret.update({
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
             'user_is_owner': (
@@ -190,12 +190,12 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         })
 
         if self.has_auth:
-            rv['owner'] = self.user_settings.owner.fullname
-            rv['owner_url'] = self.user_settings.owner.url
-            rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
-            rv['node_has_auth'] = True
+            ret['owner'] = self.user_settings.owner.fullname
+            ret['owner_url'] = self.user_settings.owner.url
+            ret['bucket_list'] = get_bucket_drop_down(self.user_settings)
+            ret['node_has_auth'] = True
 
-        return rv
+        return ret
 
     @property
     def is_registration(self):
@@ -203,7 +203,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        return self.user_settings and self.user_settings.has_auth
+        return bool(self.user_settings and self.user_settings.has_auth)
         #TODO Update callbacks
 
     def before_register(self, node, user):
@@ -304,7 +304,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                 bucket=self.bucket
             )
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:
@@ -317,15 +317,18 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             self.bucket = None
             self.save()
 
-            return (
-                'Because the Amazon Simple Storage add-on for this project was authenticated '
-                'by {user}, authentication information has been deleted. You '
-                'can re-authenticate on the <a href="{url}settings/">'
-                'Settings</a> page.'.format(
-                    user=removed.fullname,
-                    url=node.url,
-                )
-            )
+            message = (
+                u'Because the Amazon Simple Storage add-on for {category} "{title}" was '
+                u'authenticated by {user}, authentication information has been deleted.'
+            ).format(category=node.category_display, title=node.title, user=removed.fullname)
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True, save=True)

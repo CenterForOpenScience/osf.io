@@ -90,14 +90,14 @@ function _fangornActionColumn (item, col) {
             {
                 'name' : '',
                 'tooltip' : 'Upload file',
-                'icon' : 'icon-upload-alt',
+                'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : _uploadEvent
             },
             {
                 'name' : ' Release Study',
                 'tooltip' : '',
-                'icon' : 'icon-globe',
+                'icon' : 'fa fa-globe',
                 'css' : 'btn btn-primary btn-xs',
                 'onclick' : dataverseRelease
             }
@@ -107,7 +107,7 @@ function _fangornActionColumn (item, col) {
             {
                 'name' : '',
                 'tooltip' : 'Upload file',
-                'icon' : 'icon-upload-alt',
+                'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : _uploadEvent
             }
@@ -116,7 +116,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             name : '',
             'tooltip' : 'Download file',
-            icon : 'icon-download-alt',
+            icon : 'fa fa-download',
             css : 'btn btn-info btn-xs',
             onclick: _downloadEvent
         });
@@ -124,7 +124,7 @@ function _fangornActionColumn (item, col) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
-                icon: 'icon-remove',
+                icon: 'fa fa-times',
                 css: 'm-l-lg text-danger fg-hover-hide',
                 style: 'display:none',
                 onclick: Fangorn.ButtonEvents._removeEvent
@@ -170,7 +170,11 @@ function _fangornDataverseTitle(item, col) {
             m('dataverse-name', {
                 onclick: function() {
                     window.location = item.data.urls.view;
-                }}, item.data.name
+                },
+                'data-toggle': 'tooltip',
+                title: 'View file',
+                'data-placement': 'bottom'
+            }, item.data.name
              )
         ]);
     }

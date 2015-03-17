@@ -9,7 +9,6 @@ import bleach
 from flask import request
 
 from modularodm import Q
-
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
@@ -222,3 +221,7 @@ def search_share_stats():
     query = build_query(q, 0, 0) if q else {}
 
     return search.share_stats(query=query)
+
+
+def search_share_providers():
+    return search.share_providers()

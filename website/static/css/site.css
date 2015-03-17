@@ -45,10 +45,21 @@ body {
     font-size: 12px;
     padding: 4px 0 4px 15px;
     opacity: 0.8;
+}/* nested navs */
+.gs-sidebar .nav .nav {
+    display: none;
+}
+/* nested active navs */
+.gs-sidebar .nav .active .nav {
+    display: block;
 }
 /* nested link icons */
 .gs-sidebar .nav .nav>li>a i {
     display: none;
+}
+/* nested active link icons */
+.gs-sidebar .nav .nav>.active>a i {
+    display: inline-block;
 }
 /* active & hover links */
 .gs-sidebar .nav>.active>a,
@@ -61,10 +72,6 @@ body {
 .gs-sidebar .nav .nav>.active:hover>a,
 .gs-sidebar .nav .nav>.active:focus>a {
     font-weight: bold;
-}
-/* nested active link icons */
-.gs-sidebar .nav .nav>.active>a i {
-    display: inline-block;
 }
 /* affixed sidebar */
 .gs-sidebar,
@@ -760,10 +767,13 @@ li.list-group-item-node {
 
 li .project-meta {
     position: absolute;
-    top: 10px;
     right: 10px;
     font-weight: normal;
     font-style: italic;
+}
+
+li .project-meta.pull-right {
+    text-align:right;
 }
 
 /*****************************************************/
@@ -851,7 +861,7 @@ h1.node-title, h1.node-parent-title {
 .wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
     cursor: pointer;
 }
-.wiki-panel-header .icon-list {
+.wiki-panel-header .fa-list {
     color: #808080;
 }
 
@@ -1409,6 +1419,7 @@ dl.activity-log dd {
 
 .overflow {
     word-wrap: break-word;
+    word-break: break-all;
     max-width: 100%;
 }
 
@@ -1944,7 +1955,6 @@ span#profileFullname{
 }
 .addon-widget-header {
     padding: 0 10px;
-    border-bottom: 1px solid #ddd;
     background-color: #efefef;
     width: 100%;
 }
@@ -1962,6 +1972,7 @@ span#profileFullname{
 .addon-widget-body {
     padding: 15px;
     background-color: white;
+    border-top: 1px solid #ddd;
 }
 .addon-widget-body .list-group-item {
     border: none;
@@ -2182,10 +2193,14 @@ span#profileFullname{
 .break-word {
     word-wrap: break-word;
 }
+.table-fixed {
+    table-layout: fixed;
+    width: 100%;
+    word-wrap: break-word;
+}
 .modal-backdrop {
     position: fixed;
 }
-
 
 /* Minimal Treebeard for Configure Notifications in project and user settings */
 .osf-treebeard-minimal #tb-tbody {

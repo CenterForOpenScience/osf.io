@@ -89,7 +89,7 @@
 <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 128 mb. If you have larger files to upload, you might consider utilizing add-ons.</p>
 
 <h3>Does the OSF issue DOIs?</h3>
-<p>At the present time, the OSF does not mint DOIs. Every user, project, component, and file on the OSF is issued a <b>unique, persistent identifier</b> that enables content to be cited. For users who desire a DOI specifically, we recommend connecting your OSF account to an add-on that does mint DOIs, like Dataverse or FigShare.</p>
+<p>At the present time, the OSF does not mint DOIs. Every user, project, component, and file on the OSF is issued a <b>unique, persistent identifier</b> that enables content to be cited. For users who desire a DOI specifically, we recommend connecting your OSF account to an add-on that does mint DOIs, like Dataverse or figshare.</p>
 
 <h3>How do I rename a project?</h3>
 <p>You can rename a project or a component by clicking on the project title in the project or component overview page.</p>

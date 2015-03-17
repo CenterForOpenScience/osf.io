@@ -244,7 +244,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             clone.save()
         return clone, message
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """If the removed contributor was the user who authorized the Dataverse
         addon, remove the auth credentials from this node.
         Return the message text that will be displayed to the user.
@@ -252,12 +252,23 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
             self.user_settings = None
             self.save()
-            name = removed.fullname
-            url = node.web_url_for('node_setting')
-            return ('Because the Dataverse add-on for this project was authenticated'
-                    'by {name}, authentication information has been deleted. You '
-                    'can re-authenticate on the <a href="{url}">Settings</a> page'
-                    ).format(**locals())
+
+            message = (
+                u'Because the Dataverse add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
+            )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)

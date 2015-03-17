@@ -9,9 +9,7 @@ var moment = require('moment');
 // Why?!
 require('koHelpers');
 
-var GrowlBox = require('./growlBox.js');
-
-require('bootstrap-editable');
+var GrowlBox = require('./growlBox');
 
 /**
  * Convenience function to create a GrowlBox
@@ -22,7 +20,7 @@ require('bootstrap-editable');
  *
  */
 var growl = function(title, message, type) {
-    new GrowlBox(title, message, type);
+    new GrowlBox(title, message, type || 'danger');
 };
 
 /**
@@ -32,8 +30,8 @@ var growl = function(title, message, type) {
 * interface (using the `done` and `fail` methods of a jqXHR).
 *
 * Example:
-*     var osf = require('./osf-helpers');
-*     var request = osf.postJSON('/foo', {'email': 'bar@baz.com'});
+*     var $osf = require('./osf-helpers');
+*     var request = $osf.postJSON('/foo', {'email': 'bar@baz.com'});
 *     request.done(function(response) {
 *         // ...
 *     })
@@ -157,11 +155,15 @@ var isEmail = function(value) {
 
 /**
   * Get query string arguments as an object.
-  * From getQueryParameters plugin by Nicholas Ortenzio.
-  *
+  * If `str` is falsy, return {}.
+  * Modified from getQueryParameters plugin by Nicholas Ortenzio (MIT Licensed).
   */
 var urlParams = function(str) {
-    return (str || document.location.search).replace(/(^\?)/,'').split('&')
+    var stringToParse = str || document.location.search;
+    if (!stringToParse) {
+        return {};
+    }
+    return (stringToParse).replace(/(^\?)/,'').split('&')
         .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
 };
 
