@@ -56,7 +56,7 @@
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
                 <div class="wiki-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="wiki-panel-header">
+                  <div class="wiki-panel-header" data-bind="css: { 'single-view': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
                            <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'edit'"> <i class="fa fa-pencil-square-o"> </i>   Edit </span>
@@ -131,7 +131,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="wiki-panel no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'wiki-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="wiki-panel-header" data-bind="css: { 'wiki-panel-header-flex': $root.singleVis() !== 'view' }">
+                <div class="wiki-panel-header" data-bind="css: { 'wiki-panel-header-flex': $root.singleVis() !== 'view', 'single-view': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
                             <span class="wiki-panel-title hidden" data-bind="css: { 'hidden': $root.singleVis() === 'view' }"> <i class="fa fa-eye"> </i>  View</span>
@@ -172,7 +172,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
             <div class="wiki-panel wiki-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'wiki-panel-flex': $root.singleVis() !== 'compare' }">
-              <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() !== 'compare' }">
+              <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() !== 'compare', 'single-view': $root.singleVis() === 'compare' }">
                   <div class="row">
                       <div class="col-xs-12">
                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="fa fa-exchange"> </i>   Compare </span>                        
