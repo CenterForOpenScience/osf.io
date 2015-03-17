@@ -118,6 +118,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
                 'osf_storage_get_revisions',
                 _absolute=True,
             ),
+            'createFolder': self.owner.api_url_for(
+                'osf_storage_create_folder',
+                _absolute=True,
+            ),
         }
         ret.update(settings.WATERBUTLER_SETTINGS)
         return ret
@@ -250,6 +254,10 @@ class OsfStorageFileTree(BaseFileObject):
         )
         # Updating MongoDB directly means the cache is wrong; reload manually
         self.reload()
+
+    @property
+    def is_deleted(self):
+        return False
 
 
 class OsfStorageFileRecord(BaseFileObject):
