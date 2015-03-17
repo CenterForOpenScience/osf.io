@@ -10,7 +10,7 @@ var $ = require('jquery');
 
 var $osf = require('js/osfHelpers');
 
-var RegistrationRetractionViewModel = function(submitUrl) {
+var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
 
     var self = this;
 
@@ -23,7 +23,7 @@ var RegistrationRetractionViewModel = function(submitUrl) {
     };
     ko.validation.registerExtenders();
 
-    self.registrationTitle = ko.observable(contextVars.node.title);
+    self.registrationTitle = registrationTitle;
     self.justification = ko.observable('');
     self.confirmationText = ko.observable().extend({
         required: true,
@@ -52,8 +52,8 @@ var RegistrationRetractionViewModel = function(submitUrl) {
     };
 };
 
-var RegistrationRetraction = function(selector, submitUrl) {
-    this.viewModel = new RegistrationRetractionViewModel(submitUrl);
+var RegistrationRetraction = function(selector, submitUrl, registrationTitle) {
+    this.viewModel = new RegistrationRetractionViewModel(submitUrl, registrationTitle);
     $osf.applyBindings(this.viewModel, selector);
 };
 
