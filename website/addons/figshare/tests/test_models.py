@@ -122,6 +122,41 @@ class TestFileGuid(OsfTestCase):
         assert_false(other_created)
         assert_equal(guid, other)
 
+class TestNodeSettings(OsfTestCase):
+    def setUp(self):
+        super(TestNodeSettings, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.project.add_addon('figshare', auth=Auth(self.user))
+        self.project.creator.add_addon('figshare')
+        self.node_settings = self.project.get_addon('figshare')
+        self.user_settings = self.project.creator.get_addon('figshare')
+        self.user_settings.oauth_access_token = 'legittoken'
+        self.user_settings.oauth_access_token_secret = 'legittoken'
+        self.user_settings.save()
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.figshare_id = '123456'
+        self.node_settings.figshare_type = 'project'
+        self.node_settings.figshare_title = 'singlefile'
+        self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.figshare_id = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
 class TestCallbacks(OsfTestCase):
 
     def setUp(self):
