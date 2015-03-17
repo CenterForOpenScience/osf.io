@@ -294,17 +294,15 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**extras)
 
+    if request.method == 'HEAD':
+        download_url = furl.furl(file_guid.download_url)
+        download_url.args.update(extras)
+        download_url.args['accept_url'] = 'false'
+        return make_response(('', 200, {'Location': file_guid.download_url}))
+
     if action == 'download':
         download_url = furl.furl(file_guid.download_url)
         download_url.args.update(extras)
-        if extras.get('mode') == 'render':
-            # Temp fix for IE, return a redirect to s3 or cloudfiles (one hop)
-            # Or just send back the entire body
-            resp = requests.get(download_url, allow_redirects=False)
-            if resp.status_code == 302:
-                return redirect(resp.headers['Location'])
-            else:
-                return make_response(resp.content)
 
         return redirect(download_url.url)
 
