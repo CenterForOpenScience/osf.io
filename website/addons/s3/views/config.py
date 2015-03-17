@@ -175,4 +175,3 @@ def s3_remove_user_settings(user_addon, **kwargs):
         return {'message': 'reload'}, http.BAD_REQUEST
 
     return {}
-# comment to rerun build
