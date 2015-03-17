@@ -4,6 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var ADDON_NAMES = require('js/addonNames');
 
 var ConnectedProject = function(data) {
     var self = this;
@@ -17,6 +18,7 @@ var ExternalAccount = function(data) {
     self.name = data.display_name;
     self.id = data.id;
     self.profileUrl = data.profile_url;
+    self.provider_name = data.provider_name;
 
     self.connectedNodes = ko.observableArray();
 
@@ -25,20 +27,28 @@ var ExternalAccount = function(data) {
     });
 
     self.deauthorizeNode = function(node) {
-        var url = node.urls.deauthorize;
-        var request = $.ajax({
-            url: url,
-            type: 'DELETE'
+        bootbox.confirm({
+            title: 'Remove addon?',
+            message: 'Are you sure you want to remove the ' + ADDON_NAMES[self.provider_name] + ' authorization from this project?',
+            callback: function (confirm) {
+                if (confirm) {
+                    var url = node.urls.deauthorize;
+                    var request = $.ajax({
+                        url: url,
+                        type: 'DELETE'
+                    });
+                    request.done(function(data) {
+                        self.connectedNodes.remove(node);
+                    });
+                    request.fail(function(xhr, status, error) {
+                        Raven.captureMessage('Error deauthorizing node: ' + node.id, {
+                            url: url, status: status, error: error
+                        });
+                    });
+                    return request;
+                }
+            }
         });
-        request.done(function(data) {
-            self.connectedNodes.remove(node);
-        });
-        request.fail(function(xhr, status, error) {
-            Raven.captureMessage('Error deauthorizing node: ' + node.id, {
-                url: url, status: status, error: error
-            });
-        });
-        return request;
     };
 };
 
