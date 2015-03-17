@@ -8,6 +8,7 @@ from box.client import BoxClientException
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
+from framework.auth.decorators import must_be_logged_in
 
 from website.util import permissions
 from website.project.decorators import (
@@ -15,10 +16,14 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
-#from website.addons.box.client import get_node_client
-from website.addons.box.utils import (
-    serialize_settings, serialize_urls
-)
+from website.addons.box.serializer import BoxSerializer
+
+
+@must_be_logged_in
+def box_get_user_settings(auth):
+    """ Returns the list of all of the current user's authorized Box accounts """
+    serializer = BoxSerializer(user_settings=auth.user.get_addon('box'))
+    return serializer.serialized_user_settings
 
 
 @must_have_addon('box', 'node')
@@ -26,7 +31,7 @@ from website.addons.box.utils import (
 def box_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     return {
-        'result': serialize_settings(node_addon, auth.user),
+        'result': BoxSerializer.serialize_settings(node_addon, auth.user),
     }
 
 
@@ -38,6 +43,7 @@ def box_get_config(node_addon, auth, **kwargs):
 def box_set_config(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked box folder."""
     folder = request.json.get('selected')
+    serializer = BoxSerializer(node_settings=node_addon)
 
     uid = folder['id']
     path = folder['path']
@@ -50,7 +56,7 @@ def box_set_config(node_addon, user_addon, auth, **kwargs):
                 'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Box)',
                 'path': path,
             },
-            'urls': serialize_urls(node_addon),
+            'urls': serializer.addon_serialized_urls,
         },
         'message': 'Successfully updated settings.',
     }
@@ -62,11 +68,12 @@ def box_set_config(node_addon, user_addon, auth, **kwargs):
 def box_add_user_auth(auth, node_addon, user_addon, **kwargs):
     """Import box credentials from the currently logged-in user to a node.
     """
+    serializer = BoxSerializer
     node_addon.set_user_auth(user_addon)
     node_addon.save()
 
     return {
-        'result': serialize_settings(node_addon, auth.user),
+        'result': serializer.serialize_settings(node_addon, auth.user),
         'message': 'Successfully imported access token from profile.',
     }
 

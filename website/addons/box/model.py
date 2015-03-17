@@ -31,6 +31,7 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 
 from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger
+from website.addons.box.serializer import BoxSerializer
 from website.oauth.models import ExternalProvider
 from website.addons.box.utils import handle_box_error
 
@@ -343,6 +344,8 @@ class BoxUserSettings(AddonOAuthUserSettingsBase):
         'boxoauthsettings', backref='accessed'
     )
 
+    serializer = BoxSerializer
+
     @property
     def user_id(self):
         if self.oauth_settings:
@@ -435,6 +438,7 @@ class BoxUserSettings(AddonOAuthUserSettingsBase):
 
 class BoxNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = Box
+    serializer = BoxSerializer
 
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
