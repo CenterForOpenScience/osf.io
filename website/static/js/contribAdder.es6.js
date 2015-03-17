@@ -30,8 +30,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.super.constructor();
         var self = this;
 
-        self.permissions = ['read', 'write', 'admin'];
-
         self.title = title;
         self.parentId = parentId;
         self.parentTitle = parentTitle;
@@ -226,7 +224,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             $(element).find('.contrib-button').tooltip();
         });
     },
-    setupEditable(elm, data) {
+    setupEditable(elm, data) {  //remove
         var $elm = $(elm);
         var $editable = $elm.find('.permission-editable');
         $editable.editable({
@@ -245,7 +243,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     afterRender(elm, data) {
         var self = this;
         self.addTips(elm, data);
-        self.setupEditable(elm, data);
+        self.setupEditable(elm, data); //remove
     },
     makeAfterRender(){
         var self = this;
@@ -285,7 +283,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
     add(data) {
+        self.permissionList = [
+            {value: 'read', text: 'Read'},
+            {value: 'write', text: 'Read + Write'},
+            {value: 'admin', text: 'Administrator'}
+        ];
+        self.curPermission = ko.observable(self.permissionList[2]);
         data.permission = ko.observable('admin');
+        self.change = ko.computed( function() {
+            data.permission(self.curPermission().value);
+        });
         // All manually added contributors are visible
         data.visible = true;
         this.selection.push(data);
