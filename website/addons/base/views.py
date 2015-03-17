@@ -7,7 +7,6 @@ import httplib
 import functools
 
 import furl
-import requests
 import itsdangerous
 from flask import request
 from flask import redirect
