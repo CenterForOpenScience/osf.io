@@ -9,7 +9,7 @@
             </h2>
         </div>
 
-        <div id="registrationMetaData" class="row" style="line-height:25px">
+        <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
                 Contributors:
                 % if node['anonymous'] and not node['is_public']:
