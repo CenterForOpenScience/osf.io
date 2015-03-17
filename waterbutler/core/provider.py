@@ -126,7 +126,18 @@ class BaseProvider(metaclass=abc.ABCMeta):
         """Create a folder in the current provider
         returns True if the folder was created; False if it already existed
 
-        :rtype Bool:
+        :rtype FolderMetadata:
         :raises: waterbutler.ProviderError
         """
         raise exceptions.ProviderError({'message': 'Folder creation not supported.'}, code=405)
+
+    def _validate_folder(self, path):
+        """Raise CreateFolderErrors if the folder path is invalid
+        :rtype NoneType:
+        :raises: waterbutler.CreateFolderError
+        """
+        if not path.is_dir:
+            raise exceptions.CreateFolderError('Path must be a directory', code=400)
+
+        if path.path == '/':
+            raise exceptions.CreateFolderError('Path can not be root', code=400)
