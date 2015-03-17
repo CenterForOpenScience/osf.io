@@ -77,7 +77,8 @@ class OAuthAddonSerializer(AddonSerializer):
         return {
             'id': external_account._id,
             'provider_id': external_account.provider_id,
-            'provider_name': external_account.provider,
+            'provider_name': external_account.provider_name,
+            'provider_short_name': external_account.provider,
             'display_name': external_account.display_name,
             'profile_url': external_account.profile_url,
             'nodes': [
