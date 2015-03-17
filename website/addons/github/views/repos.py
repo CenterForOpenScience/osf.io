@@ -17,7 +17,8 @@ from ..api import GitHub
 @must_have_addon('github', 'user')
 def github_create_repo(**kwargs):
 
-    repo_name = request.json.get('name')
+    repo_name = request.json.get('repo_name')
+
     if not repo_name:
         raise HTTPError(http.BAD_REQUEST)
 

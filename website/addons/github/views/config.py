@@ -5,11 +5,13 @@ import httplib as http
 from flask import request
 
 from framework.auth.decorators import must_be_logged_in
+from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
+from website.addons.github.utils import serialize_urls
 
 from ..api import GitHub
 
@@ -93,6 +95,45 @@ def github_set_config(**kwargs):
         node_settings.save()
 
     return {}
+
+@must_be_logged_in
+@must_have_addon('github', 'node')
+@must_have_permission('write')
+@must_not_be_registration
+def github_get_config(auth, node_addon, **kwargs):
+    result = node_addon.to_json(auth.user)
+    result['urls'] = serialize_urls(node_addon, auth.user)
+    return {'result': result}
+
+@must_have_permission('write')
+@must_have_addon('s3', 'node')
+@must_not_be_registration
+def github_remove_node_settings(auth, node_addon, **kwargs):
+    node_addon.deauthorize(auth=auth, save=True)
+    return node_addon.to_json(auth.user)
+
+@must_be_logged_in
+@must_have_addon('s3', 'user')
+def github_remove_user_settings(user_addon, **kwargs):
+    success = user_addon.revoke_auth(save=True)
+    if not success:
+        push_status_message(
+            'Your Amazon credentials were removed from the OSF, but we were '
+            'unable to revoke your OSF information from Amazon. Your Amazon '
+            'credentials may no longer be valid.'
+        )
+        return {'message': 'reload'}, http.BAD_REQUEST
+
+# @must_be_logged_in
+# @must_have_addon('github', 'node')
+# @must_have_addon('github', 'user')
+# @must_have_permission('write')
+# @must_not_be_registration
+# def github_repo_list(auth, node_addon, user_addon, **kwargs):
+#
+#     return {
+#         'buckets': get_repo_drop_down(user_addon)
+#     }
 
 
 @must_have_permission('write')
