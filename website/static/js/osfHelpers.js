@@ -305,17 +305,22 @@ ko.bindingHandlers.tooltip = {
  */
 ko.bindingHandlers.anchorScroll = {
     init: function(elem, valueAccessor) {
-        console.log( valueAccessor());
         var buffer = valueAccessor().buffer || 100;
         var element = valueAccessor().elem || elem;
         $(element).on('click', 'a[href^="#"]', function (event) {
             var $item = $(this);
+            var $element = $(element);
             if(!$item.attr('data-model') && $item.attr('href') !== "#") {
                 event.preventDefault();
                 // get location of the target
                 var target = $item.attr('href'),
                     offset = $(target).offset();
-                $(element).scrollTop(offset.top - buffer);
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.height() ) {
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    $(window).scrollTop(offset.top - 100);
+                }
             }
         });
     }
