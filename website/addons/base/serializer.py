@@ -77,6 +77,7 @@ class OAuthAddonSerializer(AddonSerializer):
         return {
             'id': external_account._id,
             'provider_id': external_account.provider_id,
+            'provider_name': external_account.provider,
             'display_name': external_account.display_name,
             'profile_url': external_account.profile_url,
             'nodes': [
@@ -84,7 +85,7 @@ class OAuthAddonSerializer(AddonSerializer):
                 for node in self.user_settings.get_attached_nodes(
                     external_account=external_account
                 )
-            ]
+            ],
         }
 
     @collect_auth
