@@ -20,8 +20,8 @@
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
         <div class="wiki-panel hidden-xs ${'' if 'menu' in panels_used else 'hidden-alt' | n}" data-bind="css: {  'wiki-panel-flex': $root.singleVis() === undefined, reset-height : $root.singleVis() !== undefined }">
-            <div class="wiki-panel-header" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() === undefined }"> <i class="icon-list"> </i>  Menu
-                <div class="pull-right"> <div class="panel-collapse"> <i class="icon icon-angle-left"> </i> </div></div>
+            <div class="wiki-panel-header" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() === undefined }"> <i class="fa fa-list"> </i>  Menu
+                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div></div>
             </div>
             <div class="wiki-panel-body" data-bind="css: {  'wiki-panel-body-flex': $root.singleVis() === undefined }">
                 <%include file="wiki/templates/toc.mako"/>
@@ -31,8 +31,8 @@
         <!-- Menu with toggle collapsed -->
         <div class="wiki-panel panel-collapsed hidden-xs text-center ${'hidden-alt' if 'menu' in panels_used else '' | n}" >
           <div class="wiki-panel-header">
-            <i class="icon-list"> </i>
-            <i class="icon icon-angle-right"> </i>
+            <i class="fa fa-list"> </i>
+            <i class="fa fa-angle-right"> </i>
           </div>
           <div class="wiki-panel-body">
               <%include file="wiki/templates/nav.mako"/>
@@ -41,7 +41,7 @@
 
         <!-- Menu without toggle in XS size only -->
         <div class="wiki-panel visible-xs">
-            <div class="wiki-panel-header"> <i class="icon-list"> </i>  Menu </div>
+            <div class="wiki-panel-header"> <i class="fa fa-list"> </i>  Menu </div>
             <div class="wiki-panel-body ">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
@@ -59,7 +59,7 @@
                   <div class="wiki-panel-header">
                     <div class="row">
                       <div class="col-md-6">
-                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'edit'"> <i class="icon-edit"> </i>  Edit </span>
+                           <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'edit'"> <i class="fa fa-pencil-square-o"> </i>   Edit </span>
                       </div>
                         <div class="col-md-6">
                           <div class="progress progress-no-margin pointer pull-right"
@@ -72,7 +72,7 @@
                                   <span class="progress-bar-content">
                                       <span data-bind="text: statusDisplay"></span>
                                       <span class="sharejs-info-btn">
-                                          <i class="icon-question-sign icon-large"></i>
+                                          <i class="fa fa-question-circle fa-large"></i>
                                       </span>
                                   </span>
                               </div>
@@ -101,18 +101,18 @@
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
                         </div>
-                      </div>
+                      </div>                    
                   </div>
                   <div class="wiki-panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
                               <button id="revert-button"
-                                      class="btn btn-success"
+                                      class="btn btn-danger"
                                       data-bind="click: revertChanges"
                                       >Revert</button>
                               <input type="submit"
-                                     class="btn btn-primary"
+                                     class="btn btn-success"
                                      value="Save"
                                      onclick=$(window).off('beforeunload')>
                           </div>
@@ -134,7 +134,7 @@
                 <div class="wiki-panel-header" data-bind="css: { 'wiki-panel-header-flex': $root.singleVis() !== 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
-                            <span class="wiki-panel-title hidden" data-bind="css: { 'hidden': $root.singleVis() === 'view' }"> <i class="icon-eye-open"> </i>  View </span>
+                            <span class="wiki-panel-title hidden" data-bind="css: { 'hidden': $root.singleVis() === 'view' }"> <i class="fa fa-eye"> </i>  View</span>
                         </div>
                         <div class="col-sm-6">
 
@@ -175,8 +175,7 @@
               <div class="wiki-panel-header wiki-panel-header-flex" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() !== 'compare' }">
                   <div class="row">
                       <div class="col-xs-12">
-                          <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="icon-exchange"> </i>  Compare </span>
-                          
+                          <span class="wiki-panel-title" data-bind="visible: $root.singleVis() !== 'compare'"> <i class="fa fa-exchange"> </i>   Compare </span>                        
                           <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <span class="wiki-panel-title" data-bind="visible: $root.singleVis() === 'compare'"> Compare </span>
                             <!-- Version Picker -->
@@ -206,7 +205,7 @@
   </div>
 </div><!-- end wiki -->
 
-<!-- Wiki modals should also be placed here! -->
+<!-- Wiki modals should also be placed here! --> 
   <%include file="wiki/templates/add_wiki_page.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>

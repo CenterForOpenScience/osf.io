@@ -98,13 +98,50 @@ $ invoke shell
 To run all tests:
 
 ```bash
-$ invoke test
+$ invoke test --all
 ```
 
 To run a certain test method
 
 ```bash
 $ nosetests tests/test_module.py:TestClass.test_method
+```
+
+Run OSF Python tests only:
+
+```bash
+$ inv test_osf
+```
+
+Run addons Python tests only:
+
+```bash
+$ inv test_addons
+```
+
+Run Javascript tests:
+
+```bash
+$ inv karma
+```
+
+By default, `inv karma` will start a Karma process which will re-run your tests every time a JS file is changed. To do a single run of the JS tests:
+
+
+```bash
+$ inv karma --single
+```
+
+By default, Karma will run tests using a PhantomJS headless browser. You can run tests in other browsers like so:
+
+```bash
+$ inv karma -b Firefox
+```
+
+If you want to run cross browser tests with SauceLabs, use "sauce" parameter:
+
+```bash
+$ inv karma --sauce
 ```
 
 ### Testing Addons

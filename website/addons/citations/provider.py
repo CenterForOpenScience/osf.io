@@ -6,61 +6,24 @@ from framework.exceptions import PermissionsError
 
 from website.oauth.models import ExternalAccount
 
-from . import utils
-
 class CitationsProvider(object):
 
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, provider_name):
-
         self.provider_name = provider_name
 
-    @abc.abstractmethod
-    def _serialize_urls(self, node_addon):
-
-        return {}
-
-    @abc.abstractmethod
-    def _serialize_model(self, node_addon, user):
-
-        return {}
-
-    def serialize_settings(self, node_settings, current_user):
-        """Serializes parameters for building UI for widget and settings pages
-        """
-        node_account = node_settings.external_account
-        user_accounts = [account for account in current_user.external_accounts
-                         if account.provider == self.provider_name]
-
-        user_settings = current_user.get_addon(self.provider_name)
-
-        user_settings = current_user.get_addon(self.provider_name)
-        user_has_auth = bool(user_settings and user_accounts)
-
-        node_has_auth = node_settings.has_auth
-        user_is_owner = (node_has_auth and (node_account in user_accounts)) or bool(len(user_accounts))
-
-        result = {
-            'nodeHasAuth': node_has_auth,
-            'userIsOwner': user_is_owner,
-            'userHasAuth': user_has_auth,
-            'urls': self._serialize_urls(node_settings),
-            'validCredentials': True
-        }
-
-        if node_account is not None:
-            result['folder'] = node_settings.selected_folder_name
-            result['ownerName'] = node_account.display_name
-
-        result.update(self._serialize_model(node_settings, current_user))
-        return result
+    @abc.abstractproperty
+    def serializer(self):
+        pass
 
     def user_accounts(self, user):
         """ Gets a list of the accounts authorized by 'user' """
         return {
             'accounts': [
-                utils.serialize_account(each)
+                self.serializer(
+                    user_settings=user.get_addon(self.provider_name)
+                ).serialize_account(each)
                 for each in user.external_accounts
                 if each.provider == self.provider_name
             ]
@@ -83,14 +46,20 @@ class CitationsProvider(object):
         except PermissionsError:
             raise HTTPError(http.FORBIDDEN)
 
-        result = self.serialize_settings(node_addon, user)
+        result = self.serializer(
+            node_settings=node_addon,
+            user_settings=user.get_addon(self.provider_name),
+        ).serialized_node_settings
         return {'result': result}
 
     def remove_user_auth(self, node_addon, user):
 
         node_addon.clear_auth()
         node_addon.reload()
-        result = self.serialize_settings(node_addon, user)
+        result = self.serializer(
+            node_settings=node_addon,
+            user_settings=user.get_addon(self.provider_name),
+        ).serialized_node_settings
         return {'result': result}
 
     def widget(self, node_addon):
@@ -101,23 +70,20 @@ class CitationsProvider(object):
         })
         return ret
 
-    @abc.abstractmethod
-    def _extract_folder(self, data):
-
-        return {}
-
-    @abc.abstractmethod
-    def _serialize_folder(self, folder):
-
-        return {}
-
-    def _serialize_citation(self, citation):
-
-        return {
-            'csl': citation,
-            'kind': 'file',
-            'id': citation['id'],
+    def _extract_folder(self, folder):
+        folder = self._folder_to_dict(folder)
+        ret = {
+            'name': folder['name'],
+            'provider_list_id': folder['list_id'],
+            'id': folder['id'],
         }
+        if folder['parent_id']:
+            ret['parent_list_id'] = folder['parent_id']
+        return ret
+
+    @abc.abstractmethod
+    def _folder_to_dict(self, data):
+        pass
 
     @abc.abstractmethod
     def _folder_id(self):
@@ -163,14 +129,20 @@ class CitationsProvider(object):
         else:
             if show in ('all', 'folders'):
                 contents += [
-                    self._serialize_folder(each, node_addon)
+                    self.serializer(
+                        node_settings=node_addon,
+                        user_settings=user.get_addon(self.provider_name),
+                    ).serialize_folder(each)
                     for each in account_folders
                     if each.get('parent_list_id') == list_id
                 ]
 
             if show in ('all', 'citations'):
                 contents += [
-                    self._serialize_citation(each)
+                    self.serializer(
+                        node_settings=node_addon,
+                        user_settings=user.get_addon(self.provider_name),
+                    ).serialize_citation(each)
                     for each in node_addon.api.get_list(list_id)
                 ]
 
