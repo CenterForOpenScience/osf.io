@@ -14,4 +14,3 @@ if __name__ == '__main__':
         port = int(port)
 
     app.run(host=host, port=port, extra_files=[settings.ASSET_HASH_PATH])
-comment
