@@ -21,7 +21,7 @@ class BoxPath(utils.WaterButlerPath):
         if path != '/':
             self._id = path.split('/')[1]
         else:
-            self._id = path
+            self._id = None
 
 
 class BoxProvider(provider.BaseProvider):
@@ -38,6 +38,13 @@ class BoxProvider(provider.BaseProvider):
         return {
             'Authorization': 'Bearer {}'.format(self.token),
         }
+
+    @asyncio.coroutine
+    def make_request(self, *args, **kwargs):
+        if isinstance(kwargs.get('data'), dict):
+            kwargs['data'] = json.dumps(kwargs['data'])
+
+        return super().make_request(*args, **kwargs)
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
@@ -110,6 +117,29 @@ class BoxProvider(provider.BaseProvider):
             BoxRevision(each).serialized()
             for each in [curr] + revisions
         ]
+
+    @asyncio.coroutine
+    def create_folder(self, path, **kwargs):
+        path = BoxPath(path)
+        super()._validate_folder(path)
+
+        resp = yield from self.make_request(
+            'POST',
+            self.build_url('folders'),
+            data={
+                'name': path.name,
+                'parent': {
+                    'id': path._id or self.folders
+                }
+            },
+            expects=(201, ),
+            throws=exceptions.CreateFolderError,
+        )
+
+        return BoxFolderMetadata(
+            (yield from resp.json()),
+            self.folder
+        ).serialized()
 
     def _assert_child(self, paths, target=None):
         if self.folder == 0:

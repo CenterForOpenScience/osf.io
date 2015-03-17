@@ -209,6 +209,31 @@ class S3Provider(provider.BaseProvider):
         return (yield from self._metadata_file(path))
 
     @asyncio.coroutine
+    def create_folder(self, path, **kwargs):
+        """
+        :param str path: The path to create a folder at
+        """
+        path = S3Path(path)
+        super()._validate_folder(path)
+
+        try:
+            yield from self.metadata(str(path))
+            raise exceptions.CreateFolderError('Folder {} already exists'.format(path.path), code=409)
+        except exceptions.MetadataError:
+            pass
+
+        resp = yield from self.make_request(
+            'PUT',
+            self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'PUT'),
+            expects=(200, 201),
+            throws=exceptions.CreateFolderError
+        )
+
+        return S3FolderMetadata({
+            'Prefix': path.path
+        }).serialized()
+
+    @asyncio.coroutine
     def _metadata_file(self, path):
         url = self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD')
         resp = yield from self.make_request(
