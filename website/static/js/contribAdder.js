@@ -1,6 +1,6 @@
 /**
-* Controller for the Add Contributor modal.
-*/
+ * Controller for the Add Contributor modal.
+ */
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
@@ -53,8 +53,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
         $.getJSON(
-            nodeApiUrl + 'get_editable_children/',
-            {},
+            nodeApiUrl + 'get_editable_children/', {},
             function(result) {
                 $.each(result.children || [], function(idx, child) {
                     child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
@@ -76,9 +75,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.addingSummary = ko.computed(function() {
             var names = $.map(self.selection(), function(result) {
                 return result.fullname;
+            });
+            return names.join(', ');
         });
-        return names.join(', ');
-    });
     },
     selectWhom: function() {
         this.page('whom');
@@ -97,11 +96,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.page(page);
     },
     /**
-        * A simple Contributor model that receives data from the
-        * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
-        * attribute which is the human-readable display of the number of projects the
-        * currently logged-in user has in common with the contributor.
-        */
+     * A simple Contributor model that receives data from the
+     * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
+     * attribute which is the human-readable display of the number of projects the
+     * currently logged-in user has in common with the contributor.
+     */
     startSearch: function() {
         this.currentPage(0);
         this.search();
@@ -111,8 +110,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.notification(false);
         if (self.query()) {
             $.getJSON(
-                '/api/v1/user/search/',
-                {
+                '/api/v1/user/search/', {
                     query: self.query(),
                     excludeNode: nodeId,
                     page: self.currentPage
@@ -136,8 +134,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     importFromParent: function() {
         self.notification(false);
         $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/',
-            {},
+            nodeApiUrl + 'get_contributors_from_parent/', {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -154,8 +151,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.notification(false);
         var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
         $.getJSON(
-            url,
-            {},
+            url, {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -165,16 +161,15 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 }
                 var contribs = [];
                 var numToDisplay = result.contributors.length;
-                for (var i=0; i< numToDisplay; i++) {
+                for (var i = 0; i < numToDisplay; i++) {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
                 self.numberOfPages(1);
             }
-        ).fail(function (xhr, textStatus, error) {
+        ).fail(function(xhr, textStatus, error) {
             self.notification({
-                'message':
-                    'OSF was unable to resolve your request. If this issue persists, ' +
+                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
                 'level': 'warning'
             });
@@ -190,8 +185,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.notification(false);
         var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
         $.getJSON(
-            url,
-            {},
+            url, {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -201,16 +195,15 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 }
                 var contribs = [];
                 var numToDisplay = result.contributors.length;
-                for (var i=0; i< numToDisplay; i++) {
+                for (var i = 0; i < numToDisplay; i++) {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
                 self.numberOfPages(1);
             }
-        ).fail(function (xhr, textStatus, error) {
+        ).fail(function(xhr, textStatus, error) {
             self.notification({
-                'message':
-                    'OSF was unable to resolve your request. If this issue persists, ' +
+                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
                 'level': 'warning'
             });
@@ -232,11 +225,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $editable.editable({
             showbuttons: false,
             value: 'admin',
-            source: [
-                {value: 'read', text: 'Read'},
-                {value: 'write', text: 'Read + Write'},
-                {value: 'admin', text: 'Administrator'}
-            ],
+            source: [{
+                value: 'read',
+                text: 'Read'
+            }, {
+                value: 'write',
+                text: 'Read + Write'
+            }, {
+                value: 'admin',
+                text: 'Administrator'
+            }],
             success: function(response, value) {
                 data.permission(value);
             }
@@ -247,16 +245,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.addTips(elm, data);
         self.setupEditable(elm, data);
     },
-    makeAfterRender: function(){
+    makeAfterRender: function() {
         var self = this;
-        return function(elm, data){
+        return function(elm, data) {
             return self.afterRender(elm, data);
         };
     },
     /** Validate the invite form. Returns a string error message or
-    *   true if validation succeeds.
-    */
-    validateInviteForm: function(){
+     *   true if validation succeeds.
+     */
+    validateInviteForm: function() {
         var self = this;
         // Make sure Full Name is not blank
         if (!self.inviteName().trim().length) {
@@ -266,7 +264,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             return 'Not a valid email address.';
         }
         // Make sure that entered email is not already in selection
-        for (var i=0, contrib; contrib = self.selection()[i]; ++i){
+        for (var i = 0, contrib; contrib = self.selection()[i]; ++i) {
             var contribEmail = contrib.email.toLowerCase().trim();
             if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
                 return self.inviteEmail() + ' is already in queue.';
@@ -326,8 +324,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.nodesToChange([]);
     },
     selected: function(data) {
-        for (var idx=0; idx < this.selection().length; idx++) {
-            if (data.id === this.selection()[idx].id){
+        for (var idx = 0; idx < this.selection().length; idx++) {
+            if (data.id === this.selection()[idx].id) {
                 return true;
             }
         }
@@ -337,8 +335,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         $osf.block();
         $osf.postJSON(
-            nodeApiUrl + 'contributors/',
-            {
+            nodeApiUrl + 'contributors/', {
                 users: self.selection().map(function(user) {
                     return ko.toJS(user);
                 }),
@@ -349,7 +346,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function() {
             $('.modal').modal('hide');
             $osf.unblock();
-            $osf.growl('Error','Add contributor failed.');
+            $osf.growl('Error', 'Add contributor failed.');
         });
     },
     clear: function() {
@@ -364,8 +361,10 @@ var AddContributorViewModel = oop.extend(Paginator, {
     postInviteRequest: function(fullname, email) {
         var self = this;
         $osf.postJSON(
-            nodeApiUrl + 'invite_contributor/',
-            {'fullname': fullname, 'email': email}
+            nodeApiUrl + 'invite_contributor/', {
+                'fullname': fullname,
+                'email': email
+            }
         ).done(
             self.onInviteSuccess.bind(self)
         ).fail(
@@ -391,7 +390,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder (selector, nodeTitle, nodeId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
