@@ -229,12 +229,21 @@ class S3Provider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
+
         contents = yield from resp.read_and_close()
 
         parsed = xmltodict.parse(contents)['ListBucketResult']
 
         contents = parsed.get('Contents', [])
         prefixes = parsed.get('CommonPrefixes', [])
+
+        if not contents and not prefixes:
+            yield from self.make_request(
+                'HEAD',
+                self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD'),
+                expects=(200, ),
+                throws=exceptions.MetadataError,
+            )
 
         if isinstance(contents, dict):
             contents = [contents]
