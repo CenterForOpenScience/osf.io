@@ -353,8 +353,8 @@ def addon_render_file(auth, path, provider, **kwargs):
         })
 
     if not node_addon.complete:
-        raise HTTPError(httplib.UNAUTHORIZED, {
-            'message_short': 'Unauthorized',
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
             'message_long': 'The add-on containing this file is no longer configured.'
         })
 
