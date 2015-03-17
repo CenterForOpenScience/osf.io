@@ -41,7 +41,21 @@
                 % elif node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${ node['description'] }</span>
                 % endif
-                <br /><span id="justification">Justification for retraction: ${ node['retracted_justification'] }</span>
+            </div>
+        </div>
+
+        <div id="justification" class="row">
+            <div class="col-sm-6">
+                <div id="justificationWidget" class="addon-widget-container">
+                    <div class="addon-widget" name="justification">
+                        <div class="addon-widget-header clearfix">
+                            <h4>Justification for Retraction</h4>
+                        </div>
+                        <div class="addon-widget-body">
+                            ${ node['retracted_justification'] }
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
