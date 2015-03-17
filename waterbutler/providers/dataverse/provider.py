@@ -54,9 +54,10 @@ class DataverseProvider(provider.BaseProvider):
             result = yield from f
             return result
 
-        # zip_stream = streams.ZipStreamReader(stream)
-        stream.__class__ = streams.ZipStreamReader
-        stream.initialize()
+        stream.make_header()
+        stream.make_data_descriptor(b'foo')
+        stream.make_footer()
+        # TODO: Something with the stream
         # import ipdb; ipdb.set_trace()
         dv_headers = {
             "Content-Disposition": "filename=temp.zip",

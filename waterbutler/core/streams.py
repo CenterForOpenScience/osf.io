@@ -1,12 +1,16 @@
 import os
 import abc
 import uuid
+import struct
+import time
+import binascii
 import asyncio
 
 from io import BytesIO
 # TODO: Probably switch off of zipstream
-# from zipstream import ZipFile
-from zipfile import ZipFile
+from zipstream import ZipFile
+import zipfile
+# from zipfile import ZipFile, ZipInfo
 
 
 class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
@@ -88,38 +92,99 @@ class RequestStreamReader(BaseStream):
         return (yield from asyncio.StreamReader.read(self, size))
 
 
+# TODO: Subclass multistream
 class ZipStreamReader(RequestStreamReader):
-        
-    def __init__(self, request_stream):
-        super().__init__(request_stream.request)
-        self.sio = None
-        self.zf = None
-        self.zg = None
 
-    def initialize(self):
-        self.sio = BytesIO()
-        self.zf = ZipFile(self.sio, mode='w')
-        self.zg = self.zip_generator()
+    def __init__(self, request):
+        super().__init__(request)
+        self.original_size = int(request.headers.get('Content-Length'))
+        self.zinfo = None
+        self.header = ''
+        self.data_descriptor = ''
+        self.footer = ''
 
-    def zip_generator(self):
-        # TODO: This does not work
-        for chunk in self.zf:
-            yield bytes(chunk)
+    def make_header(self):
+        self.zinfo = zipfile.ZipInfo(
+            filename='thefile.txt',
+            date_time=time.localtime(time.time())[:6],
+        )
+        self.zinfo.external_attr = 0o600 << 16
+        self.zinfo.header_offset = 0
+        self.zinfo.flag_bits |= 0x08
 
-    # @asyncio.coroutine
-    # def read(self, size=-1):
-    #     _next = next
-    #     eof = self.at_eof()
-    #     unzipped_data = yield from self._read(size)
-    #     # import ipdb; ipdb.set_trace()
-    #     self.zf.writestr('temp.txt', unzipped_data)
-    #     data = next(self.zg)
-    #     if not eof:
-    #         for reader in self.readers.values():
-    #             reader.feed_data(data)
-    #         for writer in self.writers.values():
-    #             writer.write(data)
-    #     return data
+        self.header = self.zinfo.FileHeader(zip64=False)  # TODO: Can we support zip64?
+        return self.header
+
+    def make_data_descriptor(self, data):
+        """Create 16 byte descriptor of file CRC, file size, and compress size"""
+        fmt = '<4sLLL'
+        self.zinfo.CRC = binascii.crc32(data) & 0xffffffff
+        signature = b'PK\x07\x08'  # magic number for data descriptor
+        self.data_descriptor = struct.pack(
+            fmt,
+            signature,
+            self.zinfo.CRC,
+            self.original_size,     # Compressed size
+            self.original_size,     # Uncompressed size
+        )
+        return self.data_descriptor
+
+    def make_footer(self):
+        count = 1
+        dt = self.zinfo.date_time
+        dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
+        dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
+        extra_data = self.zinfo.extra
+
+        filename, flag_bits = self.zinfo._encodeFilenameFlags()
+        centdir = struct.pack(
+            zipfile.structCentralDir,
+            zipfile.stringCentralDir,
+            self.zinfo.create_version,
+            self.zinfo.create_system,
+            self.zinfo.extract_version,
+            self.zinfo.reserved,
+            flag_bits,
+            self.zinfo.compress_type,
+            dostime,
+            dosdate,
+            self.zinfo.CRC,
+            self.original_size,     # Compressed size
+            self.original_size,     # Uncompressed size
+            len(self.zinfo.filename),
+            len(extra_data),
+            len(self.zinfo.comment),
+            0,
+            self.zinfo.internal_attr,
+            self.zinfo.external_attr,
+            self.zinfo.header_offset,
+        )
+
+        output = centdir + filename + extra_data + self.zinfo.comment
+
+        centdir_offset = len(self.header) + self.original_size + len(self.data_descriptor)
+
+        endrec = struct.pack(
+            zipfile.structEndArchive,
+            zipfile.stringEndArchive,
+            0,
+            0,
+            count,
+            count,
+            len(output),
+            centdir_offset,
+            0,
+        )
+
+        output += endrec
+        self.footer = output
+
+        return self.footer
+
+    @property
+    def size(self):  # TODO
+        """ Predictably: header + filename + data descriptor + footer"""
+        return 30 + len('filename.txt') + self.original_size + 0
 
 
 class FileStreamReader(BaseStream):

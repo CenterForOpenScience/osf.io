@@ -4,7 +4,7 @@ import asyncio
 
 from tornado import web
 
-from waterbutler.core.streams import RequestStreamReader
+from waterbutler.core.streams import RequestStreamReader, ZipStreamReader
 
 from waterbutler.server import utils
 from waterbutler.server import settings
@@ -33,7 +33,11 @@ class CRUDHandler(core.BaseHandler):
 
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
-            self.stream = RequestStreamReader(self.request)
+            # import ipdb; ipdb.set_trace()
+            if b'dataverse' in self.request.query_arguments['provider']:
+                self.stream = ZipStreamReader(self.request)
+            else:
+                self.stream = RequestStreamReader(self.request)
             self.uploader = asyncio.async(
                 self.provider.upload(self.stream, **self.arguments)
             )
