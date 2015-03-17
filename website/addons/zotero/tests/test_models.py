@@ -248,23 +248,6 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
 
 class ZoteroUserSettingsTestCase(OsfTestCase):
 
-    def test_to_json(self):
-        # All values are passed to the user settings view
-        user_accounts = [ZoteroAccountFactory(), ZoteroAccountFactory()]
-        user = UserFactory(external_accounts=user_accounts)
-        user_addon = ZoteroUserSettingsFactory(owner=user)
-        res = user_addon.to_json(user)
-        for account in user_accounts:
-            assert_in(
-                {
-                    'id': account._id,
-                    'provider_id': account.provider_id,
-                    'display_name': account.display_name,
-                    'nodes': [],
-                },
-                res['accounts'],
-            )
-
     def _prep_oauth_case(self):
         self.node = ProjectFactory()
         self.user = self.node.creator

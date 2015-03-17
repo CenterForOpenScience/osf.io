@@ -1,23 +1,22 @@
 /**
- * A simple folder picker plugin built on HGrid.
- * Takes the same options as HGrid and additionally requires an
- * `onChooseFolder` option (the callback executed when a folder is selected).
- *
- * Usage:
- *
- *     $('#myPicker').folderpicker({
- *         data: // Array of HGrid-formatted data or URL to fetch data
- *         onPickFolder: function(evt, folder) {
- *             // do something with folder
- *         }
- *     });
- */
+* A simple folder picker plugin built on HGrid.
+* Takes the same options as HGrid and additionally requires an
+* `onChooseFolder` option (the callback executed when a folder is selected).
+*
+* Usage:
+*
+*     $('#myPicker').folderpicker({
+*         data: // Array of HGrid-formatted data or URL to fetch data
+*         onPickFolder: function(evt, folder) {
+*             // do something with folder
+*         }
+*     });
+*/
 'use strict';
 var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 
-require('../css/folderpicker.css');
 
 function treebeardToggleCheck(item) {
     return ((typeof item.data.hasChildren === 'undefined') || item.data.hasChildren);
@@ -29,15 +28,15 @@ function treebeardResolveToggle(item) {
     }
 
     return item.open ?
-        m('i.icon-minus', ' ') :
-        m('i.icon-plus', ' ');
+        m('i.fa.fa-minus', ' '):
+        m('i.fa.fa-plus', ' ');
 }
 
 // Returns custom icons for OSF
 function treebeardResolveIcon(item) {
     return item.open ?
-        m('i.icon-folder-open-alt', ' ') :
-        m('i.icon-folder-close-alt', ' ');
+        m('i.fa.fa-folder-open-o', ' '):
+        m('i.fa.fa-folder-o', ' ');
 }
 
 var INPUT_NAME = '-folder-select';
@@ -170,9 +169,12 @@ var defaults = {
     lazyLoadOnLoad: treebeardLazyLoadOnLoad,
     // Disable uploads
     uploads: false,
-    showFilter: false,
-    resizeColumns: false,
-    rowHeight: 35
+    showFilter : false,
+    resizeColumns : false,
+    rowHeight : 35,
+    resolveRefreshIcon : function() {
+        return m('i.fa.fa-refresh.fa-spin');
+    },
 };
 
 function FolderPicker(selector, opts) {

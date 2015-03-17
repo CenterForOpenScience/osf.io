@@ -39,7 +39,7 @@
                 </span>
             </span>
             <span data-bind="if: submitting">
-                <i class="icon-spinner icon-large icon-spin"></i>
+                <i class="fa fa-spinner fa-lg fa-spin"></i>
             </span>
         </p>
 
@@ -77,7 +77,7 @@
                             </div>
                         </div>
                         <div data-bind="ifnot: loadedStudies">
-                            <i class="icon-spinner icon-large icon-spin"
+                            <i class="fa fa-spinner fa-lg fa-spin"
                                style="padding-bottom: 8px; padding-top: 8px"></i>
                             <span class="text-info">Retrieving studies...</span>
                         </div>
