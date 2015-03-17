@@ -865,7 +865,13 @@ h1.node-title, h1.node-parent-title {
     color: #808080;
 }
 
-
+.wiki-panel-header.single-view {
+    background: white;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    border-right: none;
+    border-left: none;
+}
 
 .wiki-panel-body .superlist li {
     display: block;
