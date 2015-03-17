@@ -10,13 +10,15 @@ from tests.factories import AuthUserFactory, ProjectFactory
 
 import urlparse
 
+from framework.auth import authenticate
+
 from website.addons.mendeley.tests.factories import (
     MendeleyAccountFactory, MendeleyUserSettingsFactory,
     MendeleyNodeSettingsFactory
 )
 
 from website.util import api_url_for
-from website.addons.mendeley import utils
+from website.addons.mendeley.serializer import MendeleySerializer
 from website.addons.mendeley import views
 
 from utils import mock_responses
@@ -108,18 +110,15 @@ class MendeleyViewsTestCase(OsfTestCase):
     def test_user_folders(self):
         # JSON: a list of user's Mendeley folders"
         res = self.app.get(
-            api_url_for('list_mendeley_accounts_user'),
+            api_url_for('mendeley_get_user_settings'),
             auth=self.user.auth,
         )
-        expected = {
-            'accounts': [
-                utils.serialize_account(each)
-                for each in self.user.external_accounts
-                if each.provider == 'mendeley'
-            ]
-        }
-        assert_equal(res.json, expected)
-
+        serializer = MendeleySerializer(node_settings=self.node_addon, user_settings=self.user_addon)
+        with self.app.app.test_request_context():
+            authenticate(user=self.user, response=None)
+            expected = serializer.serialized_user_settings
+            assert_equal(res.json, expected)
+        
     def test_set_auth(self):
 
         res = self.app.post_json(
