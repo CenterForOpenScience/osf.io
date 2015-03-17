@@ -2160,8 +2160,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         :return bool: Add-on was deleted
 
         """
-        rv = super(Node, self).delete_addon(addon_name, auth, _force)
-        if rv:
+        ret = super(Node, self).delete_addon(addon_name, auth, _force)
+        if ret:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_REMOVED,
@@ -2175,7 +2175,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
             self.save()
             # TODO: save here or outside the conditional? @mambocab
-        return rv
+        return ret
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
