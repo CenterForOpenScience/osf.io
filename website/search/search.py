@@ -25,7 +25,7 @@ def search(query, index=settings.ELASTIC_INDEX, doc_type=None):
 
 @requires_search
 def update_node(node, index=settings.ELASTIC_INDEX):
-    search_engine.update_node(node)
+    search_engine.update_node(node, index=index)
 
 
 @requires_search
