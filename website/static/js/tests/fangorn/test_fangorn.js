@@ -42,11 +42,11 @@ QUnit.module( "Fangorn API Tests" );
         item.data.icon = "pnggg";
         var publicSpecificDataItem = filebrowser.options.resolveIcon(item);
 
-        assert.deepEqual(publicOpenFolder, m('i.fa-folder-open-o', ' '), 'when item is folder and open returns with open folder icon.');
-        assert.deepEqual(publicClosedFolder, m('i.fa-folder-close-o', ' '), 'when item is folder and closed returns with closed folder sign.');
-        assert.deepEqual(pointerFolder, m('i.fa-hand-o-right', ' '), 'when item is folder and isPointer is true returns pointer folder.');
+        assert.deepEqual(publicOpenFolder, m('i.fa.fa-folder-open-o', ' '), 'when item is folder and open returns with open folder icon.');
+        assert.deepEqual(publicClosedFolder, m('i.fa.fa-folder', ' '), 'when item is folder and closed returns with closed folder sign.');
+        assert.deepEqual(pointerFolder, m('i.fa.fa-hand-o-right', ' '), 'when item is folder and isPointer is true returns pointer folder.');
         assert.deepEqual(privateFolder, m('img', { src : "/static/img/hgrid/fatcowicons/folder_delete.png" }), 'when item is folder and edit permission is false returns private folder.');
-        assert.deepEqual(publicItem, m('i.fa-file-o'), 'when item is item and public returns with generic icon.');
+        assert.deepEqual(publicItem, m('i.fa.fa-file-o'), 'when item is item and public returns with generic icon.');
         assert.deepEqual(publicSpecificItem, m('img', { src : '/static/img/hgrid/fatcowicons/file_extension_txt.png'}), 'when item is item and public returns with respective icon.');
         assert.deepEqual(publicSpecificDataItem, m('i.fa.' + item.data.icon, ' '), 'when item is item and public returns with specific icon.');
     });
