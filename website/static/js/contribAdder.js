@@ -26,7 +26,7 @@ function Contributor(data) {
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
-    constructor(title, parentId, parentTitle) {
+    constructor: function(title, parentId, parentTitle) {
         this.super.constructor();
         var self = this;
 
@@ -80,20 +80,20 @@ var AddContributorViewModel = oop.extend(Paginator, {
         return names.join(', ');
     });
     },
-    selectWhom() {
+    selectWhom: function() {
         this.page('whom');
     },
-    selectWhich() {
+    selectWhich: function() {
         this.page('which');
     },
-    gotoInvite() {
+    gotoInvite: function() {
         var self = this;
         self.inviteName(self.query());
         self.inviteError('');
         self.inviteEmail('');
         self.page('invite');
     },
-    goToPage (page) {
+    goToPage: function(page) {
         this.page(page);
     },
     /**
@@ -102,11 +102,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         * attribute which is the human-readable display of the number of projects the
         * currently logged-in user has in common with the contributor.
         */
-    startSearch() {
+    startSearch: function() {
         this.currentPage(0);
         this.search();
     },
-    search() {
+    search: function() {
         var self = this;
         self.notification(false);
         if (self.query()) {
@@ -133,7 +133,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.totalPages(0);
         }
     },
-    importFromParent() {
+    importFromParent: function() {
         self.notification(false);
         $.getJSON(
             nodeApiUrl + 'get_contributors_from_parent/',
@@ -149,7 +149,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         );
     },
-    recentlyAdded() {
+    recentlyAdded: function() {
         var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
@@ -185,7 +185,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             });
         });
     },
-    mostInCommon() {
+    mostInCommon: function() {
         var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
@@ -221,12 +221,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
             });
         });
     },
-    addTips(elements) {
+    addTips: function(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
     },
-    setupEditable(elm, data) {
+    setupEditable: function(elm, data) {
         var $elm = $(elm);
         var $editable = $elm.find('.permission-editable');
         $editable.editable({
@@ -242,12 +242,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         });
     },
-    afterRender(elm, data) {
+    afterRender: function(elm, data) {
         var self = this;
         self.addTips(elm, data);
         self.setupEditable(elm, data);
     },
-    makeAfterRender(){
+    makeAfterRender: function(){
         var self = this;
         return function(elm, data){
             return self.afterRender(elm, data);
@@ -256,7 +256,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     /** Validate the invite form. Returns a string error message or
     *   true if validation succeeds.
     */
-    validateInviteForm(){
+    validateInviteForm: function(){
         var self = this;
         // Make sure Full Name is not blank
         if (!self.inviteName().trim().length) {
@@ -274,7 +274,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return true;
     },
-    postInvite() {
+    postInvite: function() {
         var self = this;
         self.inviteError('');
         var validated = self.validateInviteForm();
@@ -284,7 +284,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
-    add(data) {
+    add: function(data) {
         data.permission = ko.observable('admin');
         // All manually added contributors are visible
         data.visible = true;
@@ -293,7 +293,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    remove(data) {
+    remove: function(data) {
         this.selection.splice(
             this.selection.indexOf(data), 1
         );
@@ -301,31 +301,31 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    addAll() {
+    addAll: function() {
         $.each(this.results(), function(idx, result) {
             if (this.selection().indexOf(result) === -1) {
                 this.add(result);
             }
         });
     },
-    removeAll() {
+    removeAll: function() {
         $.each(this.selection(), function(idx, selected) {
             this.remove(selected);
         });
     },
-    cantSelectNodes() {
+    cantSelectNodes: function() {
         return this.nodesToChange().length === this.nodes().length;
     },
-    cantDeselectNodes() {
+    cantDeselectNodes: function() {
         return this.nodesToChange().length === 0;
     },
-    selectNodes() {
+    selectNodes: function() {
         this.nodesToChange($osf.mapByProperty(this.nodes(), 'id'));
     },
-    deselectNodes() {
+    deselectNodes: function() {
         this.nodesToChange([]);
     },
-    selected(data) {
+    selected: function(data) {
         for (var idx=0; idx < this.selection().length; idx++) {
             if (data.id === this.selection()[idx].id){
                 return true;
@@ -333,7 +333,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return false;
     },
-    submit() {
+    submit: function() {
         var self = this;
         $osf.block();
         $osf.postJSON(
@@ -352,7 +352,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             $osf.growl('Error','Add contributor failed.');
         });
     },
-    clear() {
+    clear: function() {
         var self = this;
         self.page('whom');
         self.query('');
@@ -361,7 +361,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodesToChange([]);
         self.notification(false);
     },
-    postInviteRequest(fullname, email) {
+    postInviteRequest: function(fullname, email) {
         var self = this;
         $osf.postJSON(
             nodeApiUrl + 'invite_contributor/',
@@ -372,14 +372,14 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.onInviteError.bind(self)
         );
     },
-    onInviteSuccess(result) {
+    onInviteSuccess: function(result) {
         var self = this;
         self.query('');
         self.results([]);
         self.page('whom');
         self.add(result.contributor);
     },
-    onInviteError(xhr) {
+    onInviteError: function(xhr) {
         var response = JSON.parse(xhr.responseText);
         // Update error message
         this.inviteError(response.message);
