@@ -297,10 +297,11 @@ def elasticsearch():
         print("Your system is not recognized, you will have to start elasticsearch manually")
 
 @task
-def migrate_search(python='python'):
+def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
     '''Migrate the search-enabled models.'''
-    cmd = '{0} -m website.search_migration.migrate'.format(python)
-    run(bin_prefix(cmd))
+    from website.search_migration.migrate import migrate
+    migrate(delete, index=index)
+
 
 @task
 def mailserver(port=1025):
@@ -374,12 +375,14 @@ def test_all(flake=False):
     karma(single=True, browsers='PhantomJS')
 
 @task
-def karma(single=False, browsers=None):
+def karma(single=False, sauce=False, browsers=None):
     """Run JS tests with Karma. Requires Chrome to be installed."""
     karma_bin = os.path.join(
         HERE, 'node_modules', 'karma', 'bin', 'karma'
     )
     cmd = '{} start'.format(karma_bin)
+    if sauce:
+        cmd += ' karma.saucelabs.conf.js'
     if single:
         cmd += ' --single-run'
     # Use browsers if specified on the command-line, otherwise default
