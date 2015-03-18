@@ -426,7 +426,7 @@ describe('s3NodeConfigViewModel', () => {
                     vm.createBucket(name)
                         .always(function() {
                             assert.isFalse(vm.creating());
-                            assert.notEqual(vm.bucketList().indexOf(name), -1);
+                            assert.notEqual(vm.bucketList().indexOf(name.toLowerCase()), -1);
                             done();
                         });
                 });

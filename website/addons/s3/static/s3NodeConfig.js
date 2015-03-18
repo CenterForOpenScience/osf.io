@@ -204,7 +204,7 @@ ViewModel.prototype.createBucket = function(bucketName) {
     self.creating(true);
     bucketName = bucketName.toLowerCase();
     return $osf.postJSON(
-        self.urls().createBucket, {
+        self.urls().create_bucket, {
             bucket_name: bucketName
         }
     ).done(function(response) {
