@@ -74,11 +74,13 @@ var search = function(vm) {
     History.pushState({
         optionalFilters: vm.optionalFilters,
         requiredFilters: vm.requiredFilters,
-        query: vm.query()
+        query: vm.query(),
+        sort: vm.sort()
     }, 'OSF | SHARE', '?'+ $.param({
         'q': vm.query(),
         'required': vm.requiredFilters.join('|'),
-        'optional': vm.optionalFilters.join('|')
+        'optional': vm.optionalFilters.join('|'),
+        'sort': vm.sort()
     }));
 
     loadMore(vm);

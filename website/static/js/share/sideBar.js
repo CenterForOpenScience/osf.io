@@ -20,14 +20,14 @@ SideBar.view = function(ctrl){
                     'href': '#',
                     onclick: function(event) {
                             ctrl.vm.sort('Relevance');
-                            utils.buildQuery(ctrl.vm);
+                            utils.search(ctrl.vm);
                         }
                 }, ['Relevance'])]),
                 m('li', [m('a', {
                     'href': '#',
                     onclick: function(event) {
                         ctrl.vm.sort('Date');
-                        utils.buildQuery(ctrl.vm);
+                        utils.search(ctrl.vm);
                     }
                 }, ['Date'])]),
             ])
@@ -41,7 +41,7 @@ SideBar.controller = function(vm) {
     var self = this;
     self.vm = vm;
 
-    self.vm.sort = m.prop("Relevance");
+    self.vm.sort = m.prop($osf.urlParams().sort) || m.prop("Relevance");
     self.vm.requiredFilters = $osf.urlParams().required || [];
     self.vm.optionalFilters = $osf.urlParams().optional || [];
     if (self.vm.requiredFilters.indexOf('|') > -1){
