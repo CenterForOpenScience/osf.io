@@ -407,6 +407,15 @@ class TestAddonFileViewHelpers(OsfFileTestCase):
         assert_equals(getattr(guid, 'name', 'foo'), 'test')
 
 
+def assert_urls_equal(url1, url2):
+    furl1 = furl.furl(url1)
+    furl2 = furl.furl(url2)
+    for attr in ['scheme', 'host', 'port']:
+        setattr(furl1, attr, None)
+        setattr(furl2, attr, None)
+    assert_equal(furl1, furl2)
+
+
 class TestAddonFileViews(OsfTestCase):
 
     def setUp(self):
@@ -546,40 +555,16 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 403)
 
-    @mock.patch('website.addons.base.views.request')
-    @mock.patch('website.addons.base.views.requests.get')
-    @mock.patch('website.addons.base.requests.get')
-    def test_ie11_get_redirect(self, _, mock_get, mock_request):
+    def test_head_returns_url(self):
         path = 'the little engine that couldnt'
         guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
 
-        mock_request.args.to_dict.return_value = {
-            'mode': 'render',
-            'action': 'download'
-        }
+        download_url = furl.furl(guid.download_url)
+        download_url.args['accept_url'] = 'false'
 
-        mock_request.path = guid.guid_url
-        mock_request.user_agent.browser = 'msie'
-        mock_request.user_agent.version = '11.0'
+        resp = self.app.head(guid.guid_url, auth=self.user.auth)
 
-        mock_get.return_value = mock.MagicMock(status_code=302, headers={'Location': 'lul'})
-
-        resp = self.app.get(
-            '{}?action=download&mode=render'.format(guid.guid_url),
-            auth=self.user.auth,
-        )
-
-        assert_equals(resp.status_code, 302)
-        assert_equals(resp.headers['Location'], 'http://localhost:80/lul')
-
-
-def assert_urls_equal(url1, url2):
-    furl1 = furl.furl(url1)
-    furl2 = furl.furl(url2)
-    for attr in ['scheme', 'host', 'port']:
-        setattr(furl1, attr, None)
-        setattr(furl2, attr, None)
-    assert_equal(furl1, furl2)
+        assert_urls_equal(resp.headers['Location'], download_url.url)
 
 
 class TestLegacyViews(OsfTestCase):
