@@ -7,7 +7,7 @@ import logging
 from modularodm import Q
 
 from website import models
-
+from website.app import init_app
 from scripts import utils as scripts_utils
 
 
@@ -42,6 +42,7 @@ def main(dry_run=True):
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
+    init_app(set_backends=True, routes=False, mfr=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
