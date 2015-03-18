@@ -127,6 +127,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return '{0}: {1}'.format(self.config.full_name, self.folder)
 
     @property
+    def complete(self):
+        return self.has_auth and self.folder is not None
+
+    @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)

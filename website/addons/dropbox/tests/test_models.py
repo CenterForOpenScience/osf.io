@@ -174,6 +174,25 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
             owner=self.project
         )
 
+    def test_complete_true(self):
+        self.node_settings.user_settings.access_token = 'seems legit'
+
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.user_settings.access_token = 'seems legit'
+        self.node_settings.folder = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
     def test_fields(self):
         node_settings = DropboxNodeSettings(user_settings=self.user_settings)
         node_settings.save()
