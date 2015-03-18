@@ -28,6 +28,15 @@ class TestFileGuid(OsfTestCase):
             model.FigShareGuidFile().provider
         )
 
+    def test_path_doesnt_crash_without_addon(self):
+        guid = model.FigShareGuidFile(node=self.project, path='/baz/foo/bar')
+        self.project.delete_addon('figshare', Auth(self.user))
+
+        assert_is(self.project.get_addon('figshare'), None)
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
     def test_correct_path_article(self):
         guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
         guid._metadata_cache = {'name': 'shigfare.io'}
