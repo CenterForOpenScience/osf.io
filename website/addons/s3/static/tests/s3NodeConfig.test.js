@@ -61,8 +61,86 @@ var APITestCases = function(test, cases) {
 };
 
 describe('s3NodeConfigViewModel', () => {
+    window.contextVars = {
+        node: {
+            urls: {
+                web: '/12345'
+            }
+        }
+    };
     describe('#fetchFromServer', () => {
-        var cases = [{
+        new APITestCases(
+            function(tc) {
+                var expected = tc.expected;
+                describe('Case: ' + tc.description, () => {
+                    before(tc.before);
+                    after(tc.after);
+                    it('fetches data from the server and updates its state', (done) => {
+                        var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                        vm.fetchFromServer(function() {
+                            // VM is updated with data from the fake server
+                            // observables
+                            assert.equal(vm.ownerName(), expected.owner);
+                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                            assert.equal(vm.userHasAuth(), expected.user_has_auth);
+                            assert.equal(vm.currentBucket(), (expected.bucket === null) ? 'None' : '');
+                            assert.deepEqual(vm.urls(), expected.urls);
+                            done();
+                        });
+                    });
+                    describe('... and after updating computed values work as expected', () => {
+                        it('shows settings if Node has auth', (done) => {
+                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                            vm.fetchFromServer(function() {
+                                assert.equal(vm.showSettings(), expected.showSettings);
+                                done();
+                            });
+                        });
+                        it('disables settings in User dosen\'t have auth and is not auth owner', (done) => {
+                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                            vm.fetchFromServer(function() {
+                                assert.equal(vm.disableSettings(), expected.disableSettings);
+                                done();
+                            });
+                        });
+                        it('shows the new bucket button if User has auth and is auth owner', (done) => {
+                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                            vm.fetchFromServer(function() {
+                                assert.equal(vm.showNewBucket(), expected.showNewBucket);
+                                done();
+                            });
+                        });
+                        it('shows the import auth link if User has auth and Node is unauthorized', (done) => {
+                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                            vm.fetchFromServer(function() {
+                                assert.equal(vm.showImport(), expected.showImportAuth);
+                                done();
+                            });
+                        });
+                        it('shows the create credentials link if User is unauthorized and Node is unauthorized ', (done) => {
+                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                            vm.fetchFromServer(function() {
+                                assert.equal(vm.showCreateCredentials(), expected.showCreateCredentials);
+                                done();
+                            });
+                        });
+                        it('lets User see change bucket UI if they are auth owner and Node has auth', (done) => {
+                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                            vm.fetchFromServer(function() {
+                                assert.equal(vm.canChange(), expected.canChange);
+                                done();
+                            });
+                        });
+                        it('allows User to change buckets if there are buckets to be seleted and buckets are not currently being loaded ', (done) => {
+                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                            vm.fetchFromServer(function() {
+                                assert.equal(vm.allowSelectBucket(), expected.allowSelectBucket);
+                                done();
+                            });
+                        });
+                    });
+                });
+            }, [{
                 description: 'Node is unauthorized and User is unauthorized',
                 endpoint: makeSettingsEndpoint({
                     node_has_auth: false,
@@ -135,105 +213,7 @@ describe('s3NodeConfigViewModel', () => {
                     canChange: true,
                     allowSelectBucket: false
                 }
-            }];
-
-        beforeEach(() => {
-            
-        });
-        afterEach(() => {
-
-        });
-        for(var i = 0; i < cases.length; i++){
-            var tc = cases[i];
-            tc.description = tc.description || '';
-            tc.endpoint = tc.endpoint || {
-                response: {
-                    result: {}
-                }
-            };
-
-        }
-
-        new APITestCases(
-            function(tc) {
-                var expected = tc.expected;
-                describe('Case: ' + tc.description, () => {
-                    before(tc.before);
-                    after(tc.after);
-                    it('fetches data from the server and updates its state', (done) => {
-                        var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                        vm.fetchFromServer()
-                            .always(function() {
-                                // VM is updated with data from the fake server
-                                // observables
-                                assert.equal(vm.ownerName(), expected.owner);
-                                assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
-                                assert.equal(vm.userHasAuth(), expected.user_has_auth);
-                                assert.equal(vm.currentBucket(), (expected.bucket === null) ? 'None' : '');
-                                assert.deepEqual(vm.urls(), expected.urls);
-                                done();
-                            });
-                    });
-                    describe('... and after updating computed values work as expected', () => {
-                        it('shows settings if Node has auth', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                            vm.fetchFromServer()
-                                .always(function() {
-                                    assert.equal(vm.showSettings(), expected.showSettings);
-                                    done();
-                                });
-                        });
-                        it('disables settings in User dosen\'t have auth and is not auth owner', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                            vm.fetchFromServer()
-                                .always(function() {
-                                    assert.equal(vm.disableSettings(), expected.disableSettings);
-                                    done();
-                                });
-                        });
-                        it('shows the new bucket button if User has auth and is auth owner', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                            vm.fetchFromServer()
-                                .always(function() {
-                                    assert.equal(vm.showNewBucket(), expected.showNewBucket);
-                                    done();
-                                });
-                        });
-                        it('shows the import auth link if User has auth and Node is unauthorized', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                            vm.fetchFromServer()
-                                .always(function() {
-                                    assert.equal(vm.showImport(), expected.showImportAuth);
-                                    done();
-                                });
-                        });
-                        it('shows the create credentials link if User is unauthorized and Node is unauthorized ', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                            vm.fetchFromServer()
-                                .always(function() {
-                                    assert.equal(vm.showCreateCredentials(), expected.showCreateCredentials);
-                                    done();
-                                });
-                        });
-                        it('lets User see change bucket UI if they are auth owner and Node has auth', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                            vm.fetchFromServer()
-                                .always(function() {
-                                    assert.equal(vm.canChange(), expected.canChange);
-                                    done();
-                                });
-                        });
-                        it('allows User to change buckets if there are buckets to be seleted and buckets are not currently being loaded ', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                            vm.fetchFromServer()
-                                .always(function() {
-                                    assert.equal(vm.allowSelectBucket(), expected.allowSelectBucket);
-                                    done();
-                                });
-                        });
-                    });
-                });
-            }, );
+            }]);
     });
     describe('#toggleBucket', () => {
         var server;
@@ -253,21 +233,20 @@ describe('s3NodeConfigViewModel', () => {
             server.restore();
         });
         it('shows the bucket selector when disabled and if buckets aren\'t loaded fetches the list of buckets', (done) => {
-            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-            vm.fetchFromServer()
-                .always(function() {
-                    vm.showSelect(false);
-                    vm.loadedBucketList(false);
-                    var spy = sinon.spy(vm, 'fetchBucketList');
-                    var promise = vm.toggleSelect();
-                    promise.always(function() {
-                        assert.isTrue(vm.showSelect());
-                        assert.isTrue(vm.loadedBucketList());
-                        assert.isAbove(vm.bucketList().length, 0);
-                        assert(spy.calledOnce);
-                        done();
-                    });
+            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+            vm.fetchFromServer(function() {
+                vm.showSelect(false);
+                vm.loadedBucketList(false);
+                var spy = sinon.spy(vm, 'fetchBucketList');
+                var promise = vm.toggleSelect();
+                promise.always(function() {
+                    assert.isTrue(vm.showSelect());
+                    assert.isTrue(vm.loadedBucketList());
+                    assert.isAbove(vm.bucketList().length, 0);
+                    assert(spy.calledOnce);
+                    done();
                 });
+            });
         });
     });
     describe('#selectBucket', () => {
@@ -289,16 +268,15 @@ describe('s3NodeConfigViewModel', () => {
             server.restore();
         });
         it('submits the selected bucket to the server, and updates data on success', (done) => {
-            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-            vm.fetchFromServer()
-                .always(function() {
-                    vm.selectedBucket(bucket);
-                    var promise = vm.selectBucket();
-                    promise.always(function() {
-                        assert.equal(vm.currentBucket(), bucket);
-                        done();
-                    });
+            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+            vm.fetchFromServer(function() {
+                vm.selectedBucket(bucket);
+                var promise = vm.selectBucket();
+                promise.always(function() {
+                    assert.equal(vm.currentBucket(), bucket);
+                    done();
                 });
+            });
         });
     });
     describe('Authorization/Authentication: ', () => {
@@ -346,18 +324,17 @@ describe('s3NodeConfigViewModel', () => {
         describe('#_deauthorizeNodeConfirm', () => {
             it('makes a delete request to the server and updates settings on success', (done) => {
                 var expected = endpoints[1].response;
-                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                vm.fetchFromServer()
-                    .always(function() {
-                        var promise = vm._deauthorizeNodeConfirm();
-                        promise.always(function() {
-                            assert.equal(vm.userHasAuth(), expected.user_has_auth);
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
-                            assert.isFalse(vm.showSettings());
-                            assert.isTrue(vm.showImport());
-                            done();
-                        });
+                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                vm.fetchFromServer(function() {
+                    var promise = vm._deauthorizeNodeConfirm();
+                    promise.always(function() {
+                        assert.equal(vm.userHasAuth(), expected.user_has_auth);
+                        assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                        assert.isFalse(vm.showSettings());
+                        assert.isTrue(vm.showImport());
+                        done();
                     });
+                });
             });
         });
         describe('#_importAuthConfirm', () => {
@@ -367,16 +344,15 @@ describe('s3NodeConfigViewModel', () => {
             });
             it('makes a POST request to import auth and updates settings on success', (done) => {
                 var expected = endpoints[2].response;
-                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                vm.fetchFromServer()
-                    .always(function() {
-                        var promise = vm._importAuthConfirm();
-                        promise.always(function() {
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
-                            assert.isTrue(vm.showSettings());
-                            done();
-                        });
+                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                vm.fetchFromServer(function() {
+                    var promise = vm._importAuthConfirm();
+                    promise.always(function() {
+                        assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                        assert.isTrue(vm.showSettings());
+                        done();
                     });
+                });
             });
         });
         describe('#createCredentials', () => {
@@ -394,19 +370,18 @@ describe('s3NodeConfigViewModel', () => {
             });
             var expected = endpoints[0].response;
             it('makes a POST request to create auth and updates settings on success', (done) => {
-                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                vm.fetchFromServer()
-                    .always(function() {
-                        var promise = vm.createCredentials();
-                        assert.isTrue(vm.creatingCredentials());
-                        assert.isFalse(vm.userHasAuth());
-                        server.respond();
-                        promise.always(function() {
-                            assert.isFalse(vm.creatingCredentials());
-                            assert.isTrue(vm.userHasAuth());
-                            done();
-                        });
+                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '');
+                vm.fetchFromServer(function() {
+                    var promise = vm.createCredentials();
+                    assert.isTrue(vm.creatingCredentials());
+                    assert.isFalse(vm.userHasAuth());
+                    server.respond();
+                    promise.always(function() {
+                        assert.isFalse(vm.creatingCredentials());
+                        assert.isTrue(vm.userHasAuth());
+                        done();
                     });
+                });
             });
         });
     });
@@ -430,18 +405,8 @@ describe('s3NodeConfigViewModel', () => {
             server.restore();
         });
 
-        it('sends a POST to the server and on success adds the newly created bucket to the bucket list', (done) => {
-            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-            vm.fetchFromServer()
-                .always(function() {
-                    var name = faker.internet.password();
-                    vm.createBucket(name)
-                    .always(function(){
-                        assert.isFalse(vm.creating());
-                        assert.notEqual(vm.bucketList().indexOf(name), -1);
-                        done();
-                    });
-                });
+        it('', () => {
+
         });
     });
 });
