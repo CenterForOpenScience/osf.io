@@ -11,6 +11,7 @@ from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
+from framework.routing import xml_renderer
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
@@ -650,6 +651,8 @@ def make_url_map(app):
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
         Rule('/share/registration/', 'get', {}, OsfWebRenderer('share_registration.mako')),
+        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
+        Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(
