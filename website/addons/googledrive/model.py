@@ -62,9 +62,15 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def folder(self):
-        folder = self.node.get_addon('googledrive').folder_path
+        addon = self.node.get_addon('googledrive')
+        if not addon:
+            return ''  # Must return a str value this will error out properly later
+
+        folder = addon.folder_path
+
         if folder == '/':
             return ''
+
         return '/' + folder
 
     @property
