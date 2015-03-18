@@ -6,38 +6,41 @@
 var ko = require('knockout');
 
 var $osf = require('osfHelpers');
+var oop = require('js/oop');
 
+var ValidationError = oop.extend(Error, {
+    constructor: function (messages, header, level) {
+        this.super.constructor();
+        this.messages = messages || [];
+        this.header = header || 'Error';
+        this.level = level || 'warning';
+    }
+});
 
-var ValidationError = function(errorHeader, errorMessage) {
-    this.errorHeader = errorHeader;
-    this.errorMessage = errorMessage;
-    this.errorLevel = 'warning';
-};
-
-var FormViewModel = function() {
-
-    // Abstract method each ViewModel must impliment. Expected behavior is to either return true
-    // or an array of ValidationError objects
-    self.isValid = function() {
-        throw "Not Implemented";
-    };
-
-    self.submit = function() {
+var FormViewModel = oop.defclass({
+    constructor: function() {
+        var self = this;
+    },
+    isValid: function() {
+        throw new Error('FormViewModel subclass must implement isValid');
+    },
+    submit: function() {
         try {
             this.isValid();
             return true; // Allow form to submit normally
-        } catch (ValidationErrors) {
-            for (var i = 0; i < ValidationErrors.length; i++) {
+        } catch (ValidationError) {
+            for (var i = 0; i < ValidationError.messages.length; i++) {
                 $osf.growl(
-                    ValidationErrors[i].errorHeader,
-                    ValidationErrors[i].errorMessage,
-                    ValidationErrors[i].errorLevel
+                    ValidationError.header,
+                    ValidationError.messages[i],
+                    ValidationError.level
                 );
             }
             return false; // Stop form submission
         }
-    };
-};
+    }
+});
+
 
 module.exports = {
     FormViewModel: FormViewModel,

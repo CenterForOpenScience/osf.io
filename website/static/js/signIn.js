@@ -7,55 +7,40 @@ var ko = require('knockout');
 require('knockout-validation').init({insertMessages: false});  // override default DOM insertions
 
 var $osf = require('js/osfHelpers');
-var formViewModel = require('   js/formViewModel');
+var oop = require('js/oop');
+var formViewModel = require('js/formViewModel');
 
 
-var SignInViewModel = function() {
-    // Call constructor for superclass
-    formViewModel.FormViewModel.call(this);
-
-    var self = this;
-
-    self.username = ko.observable('').extend({
-        required: true,
-        email: true
-    });
-    self.password = ko.observable('').extend({
-        required: true,
-        minLength: 6,
-        maxLength: 35
-    });
-};
-
-SignInViewModel.prototype = Object.create(formViewModel.FormViewModel.prototype);
-// Set the "constructor property" to refer to FormViewModel
-SignInViewModel.prototype.constructor = formViewModel.FormViewModel;
-
-// Subclass methods for ForgotPasswordViewModel
-SignInViewModel.prototype.isValid = function() {
-    var validationErrors = [];
-    if (!this.username.isValid()) {
-        validationErrors.push(
-            new formViewModel.ValidationError(
-                'Error',
-                'Please enter a valid email address.'
-            )
-        );
+var SignInViewModel = oop.extend(formViewModel.FormViewModel, {
+    constructor: function () {
+        var self = this;
+        self.super.constructor();
+        self.username = ko.observable('').extend({
+            required: true,
+            email: true
+        });
+        self.password = ko.observable('').extend({
+            required: true,
+            minLength: 6,
+            maxLength: 35
+        });
+    },
+    isValid: function() {
+        var ValidationError = new formViewModel.ValidationError();
+        if (!this.username.isValid()) {
+            ValidationError.messages.push('Please enter a valid email address.');
+        }
+        if (!this.password.isValid()) {
+            ValidationError.messages.push('Your password must be more than six but fewer than 36 characters.');
+        }
+        if (ValidationError.messages.length > 0) {
+            throw ValidationError;
+        } else {
+            return true;
+        }
     }
-    if (!this.password.isValid()) {
-        validationErrors.push(
-            new formViewModel.ValidationError(
-                'Error',
-                'Your password must be more than six but fewer than 36 characters.'
-            )
-        );
-    }
-    if (validationErrors.length > 0) {
-        throw validationErrors;
-    } else {
-        return true;
-    }
-};
+});
+
 
 var SignIn = function(selector) {
     this.viewModel = new SignInViewModel();
