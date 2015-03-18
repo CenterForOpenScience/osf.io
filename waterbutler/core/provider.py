@@ -122,7 +122,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def revisions(self, **kwargs):
         return []
 
-    def create_folder(self, **kwargs):
+    def create_folder(self, *args, **kwargs):
         """Create a folder in the current provider
         returns True if the folder was created; False if it already existed
 
