@@ -274,7 +274,7 @@ class TestGoogleDriveUtils(OsfTestCase):
         assert_equal(urls['importAuth'], self.project.api_url_for('googledrive_import_user_auth'))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
-        assert_equal(urls['get_folders'], self.project.api_url_for('googledrive_folders'))
+        assert_equal(urls['folders'], self.project.api_url_for('googledrive_folders'))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         self.user_settings.access_token = 'abc123'

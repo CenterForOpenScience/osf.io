@@ -1,4 +1,7 @@
-var GoogleDriveNodeConfig = require('./googleDriveNodeConfig.js').GoogleDriveNodeConfig;
+'use strict';
+
+var AddonNodeConfig = require('addonNodeConfig');
 
 var url = window.contextVars.node.urls.api + 'googledrive/config/';
-new GoogleDriveNodeConfig('googledrive', '#googleDriveAddonScope', url, '#myGoogleDriveGrid');
+new AddonNodeConfig('Google Drive', '#googledriveScope', url,
+'#googledriveGdrid');

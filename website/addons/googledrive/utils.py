@@ -7,7 +7,7 @@ from urllib import quote
 
 from website.util import web_url_for
 from website.addons.citations import utils
-from serializer import OAuthAddonSerializer
+from website.addons.googledrive.exceptions import ExpiredAuthError
 
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ def serialize_urls(node_settings):
                             service_name=node.provider_name),
         'deauthorize': node.api_url_for('googledrive_deauthorize'),
         'importAuth': node.api_url_for('googledrive_import_user_auth'),
-        'get_folders': node.api_url_for('googledrive_folders'),
+        'folders': node.api_url_for('googledrive_folders'),
     }
 
 
@@ -96,11 +96,18 @@ def serialize_settings(node_settings, current_user):
     user_is_owner = user_settings is not None and user_settings.owner == current_user
 
     current_user_settings = current_user.get_addon('googledrive')
+    valid_credentials = True
+    if user_settings:
+        try:
+            user_settings.fetch_access_token()
+        except ExpiredAuthError:
+            valid_credentials = False
     ret = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-        'urls': OAuthAddonSerializer.addon_serialized_urls()
+        'urls': serialize_urls(node_settings),
+        'validCredentials': valid_credentials,
     }
 
     if node_settings.has_auth:
@@ -120,7 +127,7 @@ def serialize_settings(node_settings, current_user):
 def build_googledrive_urls(item, node, path):
     return {
         'fetch': node.api_url_for('googledrive_folders', folderId=item['id']),
-        'get_folders': node.api_url_for('googledrive_folders', folderId=item['id'], path=path),
+        'folders': node.api_url_for('googledrive_folders', folderId=item['id'], path=path),
     }
 
 

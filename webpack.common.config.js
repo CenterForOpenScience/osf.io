@@ -129,6 +129,9 @@ var resolve = {
         'diffTool': staticPath('js/diffTool.js'),
         'mathrender': staticPath('js/mathrender.js'),
         'citations': staticPath('js/citations.js'),
+        'jstz': staticPath('vendor/bower_components/jsTimezoneDetect/index.js'),
+        'addonNodeConfig': staticPath('js/addonNodeConfig.js'),
+        'citationsNodeConfig': staticPath('js/citationsNodeConfig.js'),
         'tests': staticPath('js/tests')
     }
 };

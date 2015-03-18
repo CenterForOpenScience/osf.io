@@ -5,6 +5,7 @@ class GoogleDriveSerializer(OAuthAddonSerializer):
 
     @property
     def addon_serialized_urls(self):
+        super(GoogleDriveSerializer, self).addon_serialized_urls
         node = self.node_settings.owner
         return {
             'files': node.web_url_for('collect_file_trees'),
