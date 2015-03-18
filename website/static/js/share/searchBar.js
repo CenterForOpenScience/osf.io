@@ -36,8 +36,8 @@ SearchBar.view = function(ctrl) {
                     onsubmit: ctrl.search,
                 },[
                     m('input.share-search-input.form-control[type=text][placeholder=Search][autofocus]', {
-                        value: ctrl.vm.queryString(),
-                        onchange: m.withAttr('value', ctrl.vm.queryString),
+                        value: ctrl.vm.query(),
+                        onchange: m.withAttr('value', ctrl.vm.query),
                     }),
                     m('span.input-group-btn', [
                         m('button.btn.osf-search-btn', m('i.fa.fa-search.fa-lg')),

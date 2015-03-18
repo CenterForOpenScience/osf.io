@@ -6,11 +6,18 @@ var Results = {};
 
 
 Results.view = function(ctrl) {
+    if (ctrl.vm.results === null){
+        res = [];
+        len = 0
+    } else {
+        res = ctrl.vm.results.map(ctrl.renderResult);
+        len = 0;
+    }
     return m('.row', [
-        m('.row', m('.col-md-12', ctrl.vm.results.map(ctrl.renderResult))),
+        m('.row', m('.col-md-12', res)),
         m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
         m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-            ctrl.vm.results.length > 0 && ctrl.vm.results.length < ctrl.vm.count ?
+            len > 0 && len < ctrl.vm.count ?
             m('a.btn.btn-md.btn-default', {onclick: function(){utils.loadMore(ctrl.vm);}}, 'More') : [])
          ))
     ]);
@@ -46,7 +53,7 @@ Results.controller = function(vm) {
                                     m('span', index !== 0 ? ' · ' : ''),
                                     m('a', {
                                         onclick: function() {
-                                            utils.addFilter(self.vm, '(contributors.family:' + person.family + ' AND contributors.given:' + person.given + ')');
+                                            utils.addFilter(self.vm, '(contributors.family:' + person.family + ' AND contributors.given:' + person.given + ')', true);
                                         }
                                     }, person.given + ' ' + person.family)
                                 ]);
@@ -69,7 +76,7 @@ Results.controller = function(vm) {
                                 var renderTag = function(tag) {
                                     return [
                                         m('.badge.pointer', {onclick: function(){
-                                            utils.addFilter(self.vm, 'tags:"' + tag + '"');
+                                            utils.addFilter(self.vm, 'tags:"' + tag + '"', true);
                                         }}, tag.length < 50 ? tag : tag.substring(0, 47) + '...'),
                                         ' '
                                     ];

@@ -44,7 +44,7 @@ var loadMore = function(vm) {
         background: true,
         url: '/api/v1/share/?' + $.param({
             from: page,
-            q: vm.query(),
+            q: buildQuery(vm),
             sort: sort
         })
     }).then(function(data) {
@@ -72,18 +72,21 @@ var search = function(vm) {
     vm.results = [];
 
     History.pushState({
-        queryString: vm.queryString(),
         optionalFilters: vm.optionalFilters,
         requiredFilters: vm.requiredFilters,
         query: vm.query()
-    }, 'OSF | SHARE', '?q=' + vm.query());
+    }, 'OSF | SHARE', '?'+ $.param({
+        'q': vm.query(),
+        'required': vm.requiredFilters.join('|'),
+        'optional': vm.optionalFilters.join('|')
+    }));
 
     loadMore(vm);
 };
 
 var buildQuery = function(vm){
     var query = [
-        vm.queryString(),
+        vm.query(),
         '(' + vm.optionalFilters.join(' OR ') + ')',
         '(' + vm.requiredFilters.join(' AND ') + ')'
     ].filter(function(a) {
@@ -92,9 +95,7 @@ var buildQuery = function(vm){
         }
         return true;
     }).join(' AND ');
-    vm.query(query);
-    $(document.body).scrollTop(0);
-    search(vm);
+    return query;
 };
 
 var maybeQuashEvent = function(event) {
@@ -115,7 +116,7 @@ var addFilter = function(vm, filter, required){
     } else if (vm.optionalFilters.indexOf(filter) === -1){
         vm.optionalFilters.push(filter);
     }
-    buildQuery(vm);
+    search(vm);
 };
 
 var removeFilter = function(vm, filter){
@@ -127,7 +128,7 @@ var removeFilter = function(vm, filter){
     if (optIndex > -1) {
         vm.optionalFilters.splice(optIndex, 1);
     }
-    buildQuery(vm);
+    search(vm);
 };
 
 

@@ -19,9 +19,8 @@ ShareApp.ViewModel = function() {
     self.time = 0;
     self.page = 0;
     self.count = 0;
-    self.results = [];
-    self.queryString = m.prop($osf.urlParams().q || '');
-    self.query = m.prop('')
+    self.results = null;
+    self.query = m.prop($osf.urlParams().q || '');
     m.request({
         method: 'get',
         background: true,
@@ -62,14 +61,12 @@ ShareApp.controller = function() {
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
-        if (state.queryString === self.vm.queryString() &&
-            state.query === self.vm.query() &&
+        if (state.query === self.vm.query() &&
             state.optionalFilters === self.vm.optionalFilters &&
             state.requiredFilters === self.vm.requiredFilters) return;
         self.vm.optionalFilters = state.optionalFilters;
         self.vm.requiredFilters = state.requiredFilters;
-        self.vm.queryString(state.queryString);
-        self.vm.query(state.query)
+        self.vm.query(state.query);
         utils.search(self.vm);
     });
 };
