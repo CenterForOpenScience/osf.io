@@ -39,7 +39,7 @@ class DropboxFile(GuidFile):
     @property
     def folder(self):
         addon = self.node.get_addon('dropbox')
-        if not addon:
+        if not addon or not addon.folder:
             return ''  # Must return a str value this will error out properly later
         return addon.folder
 
