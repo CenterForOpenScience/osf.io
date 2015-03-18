@@ -109,14 +109,17 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
             'callback': self.owner.api_url_for(
                 'osf_storage_update_metadata_hook',
                 _absolute=True,
+                _offload=True
             ),
             'metadata': self.owner.api_url_for(
                 'osf_storage_get_metadata_hook',
                 _absolute=True,
+                _offload=True
             ),
             'revisions': self.owner.api_url_for(
                 'osf_storage_get_revisions',
                 _absolute=True,
+                _offload=True
             ),
         }
         ret.update(settings.WATERBUTLER_SETTINGS)
