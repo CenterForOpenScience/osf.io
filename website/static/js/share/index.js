@@ -46,7 +46,7 @@ ShareApp.view = function(ctrl) {
                 ])
             ]),
             m('.row', m('.col-md-12', {style: 'padding-top: 30px;'}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
-        ]),
+        ])
     ]);
 };
 
