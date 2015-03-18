@@ -21,7 +21,7 @@ ShareApp.ViewModel = function() {
     self.count = 0;
     self.results = [];
     self.queryString = m.prop($osf.urlParams().q || '');
-    self.query = m.prop([])
+    self.query = m.prop('')
     m.request({
         method: 'get',
         background: true,
