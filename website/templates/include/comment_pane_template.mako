@@ -13,7 +13,7 @@
         <h4>
             <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
             <span data-bind="if: page() == 'wiki' ">Wiki
-               <span data-bind="if: id().toLowerCase() != 'home' "><span data-bind="text: '｜ ' + id() + ' '"></span></span>
+               <span data-bind="if: id().toLowerCase() !== 'home' "><span data-bind="text: '｜ ' + id() + ' '"></span></span>
                 Discussion
             </span>
             % if not file_name is UNDEFINED:
