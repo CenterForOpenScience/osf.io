@@ -1,10 +1,13 @@
-var pointers = require('../pointers.es6.js');
-var AccountClaimer = require('../accountClaimer.js');
-var $osf = require('osfHelpers');
+'use strict';
+var $ = require('jquery');
+
+var pointers = require('js/pointers');
+var AccountClaimer = require('js/accountClaimer.js');
+var $osf = require('js/osfHelpers');
 
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
 // pages
-require('../project.js');
+require('js/project');
 
 var node = window.contextVars.node;
 
@@ -24,7 +27,7 @@ if (node.isPublic && node.piwikSiteID) {
 function replaceAnchorScroll (buffer){
     buffer = buffer || 100;
     $(document).on('click', 'a[href^="#"]', function(event){
-        if(!$(this).attr('data-model') && $(this).attr('href') !== "#") {
+        if(!$(this).attr('data-model') && $(this).attr('href') !== '#') {
             event.preventDefault();
             // get location of the target
             var target = $(this).attr('href'),
