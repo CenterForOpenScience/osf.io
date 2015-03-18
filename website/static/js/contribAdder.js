@@ -1,6 +1,6 @@
 /**
-* Controller for the Add Contributor modal.
-*/
+ * Controller for the Add Contributor modal.
+ */
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
@@ -26,7 +26,7 @@ function Contributor(data) {
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
-    constructor(title, parentId, parentTitle) {
+    constructor: function(title, parentId, parentTitle) {
         this.super.constructor();
         var self = this;
 
@@ -58,8 +58,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
         $.getJSON(
-            nodeApiUrl + 'get_editable_children/',
-            {},
+            nodeApiUrl + 'get_editable_children/', {},
             function(result) {
                 $.each(result.children || [], function(idx, child) {
                     child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
@@ -81,43 +80,42 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.addingSummary = ko.computed(function() {
             var names = $.map(self.selection(), function(result) {
                 return result.fullname;
+            });
+            return names.join(', ');
         });
-        return names.join(', ');
-    });
     },
-    selectWhom() {
+    selectWhom: function() {
         this.page('whom');
     },
-    selectWhich() {
+    selectWhich: function() {
         this.page('which');
     },
-    gotoInvite() {
+    gotoInvite: function() {
         var self = this;
         self.inviteName(self.query());
         self.inviteError('');
         self.inviteEmail('');
         self.page('invite');
     },
-    goToPage (page) {
+    goToPage: function(page) {
         this.page(page);
     },
     /**
-        * A simple Contributor model that receives data from the
-        * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
-        * attribute which is the human-readable display of the number of projects the
-        * currently logged-in user has in common with the contributor.
-        */
-    startSearch() {
+     * A simple Contributor model that receives data from the
+     * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
+     * attribute which is the human-readable display of the number of projects the
+     * currently logged-in user has in common with the contributor.
+     */
+    startSearch: function() {
         this.currentPage(0);
         this.search();
     },
-    search() {
+    search: function() {
         var self = this;
         self.notification(false);
         if (self.query()) {
-            $.getJSON(
-                '/api/v1/user/search/',
-                {
+            return $.getJSON(
+                '/api/v1/user/search/', {
                     query: self.query(),
                     excludeNode: nodeId,
                     page: self.currentPage
@@ -138,11 +136,10 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.totalPages(0);
         }
     },
-    importFromParent() {
+    importFromParent: function() {
         self.notification(false);
         $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/',
-            {},
+            nodeApiUrl + 'get_contributors_from_parent/', {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -154,13 +151,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         );
     },
-    recentlyAdded() {
+    recentlyAdded: function() {
         var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
-        $.getJSON(
-            url,
-            {},
+        return $.getJSON(
+            url, {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -170,16 +166,15 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 }
                 var contribs = [];
                 var numToDisplay = result.contributors.length;
-                for (var i=0; i< numToDisplay; i++) {
+                for (var i = 0; i < numToDisplay; i++) {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
                 self.numberOfPages(1);
             }
-        ).fail(function (xhr, textStatus, error) {
+        ).fail(function(xhr, textStatus, error) {
             self.notification({
-                'message':
-                    'OSF was unable to resolve your request. If this issue persists, ' +
+                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
                 'level': 'warning'
             });
@@ -190,13 +185,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
             });
         });
     },
-    mostInCommon() {
+    mostInCommon: function() {
         var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
-        $.getJSON(
-            url,
-            {},
+        return $.getJSON(
+            url, {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -206,16 +200,15 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 }
                 var contribs = [];
                 var numToDisplay = result.contributors.length;
-                for (var i=0; i< numToDisplay; i++) {
+                for (var i = 0; i < numToDisplay; i++) {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
                 self.numberOfPages(1);
             }
-        ).fail(function (xhr, textStatus, error) {
+        ).fail(function(xhr, textStatus, error) {
             self.notification({
-                'message':
-                    'OSF was unable to resolve your request. If this issue persists, ' +
+                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
                 'level': 'warning'
             });
@@ -226,25 +219,25 @@ var AddContributorViewModel = oop.extend(Paginator, {
             });
         });
     },
-    addTips(elements) {
+    addTips: function(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
     },
-    afterRender(elm, data) {
+    afterRender: function(elm, data) {
         var self = this;
         self.addTips(elm, data);
     },
-    makeAfterRender(){
+    makeAfterRender: function() {
         var self = this;
-        return function(elm, data){
+        return function(elm, data) {
             return self.afterRender(elm, data);
         };
     },
     /** Validate the invite form. Returns a string error message or
-    *   true if validation succeeds.
-    */
-    validateInviteForm(){
+     *   true if validation succeeds.
+     */
+    validateInviteForm: function() {
         var self = this;
         // Make sure Full Name is not blank
         if (!self.inviteName().trim().length) {
@@ -254,7 +247,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             return 'Not a valid email address.';
         }
         // Make sure that entered email is not already in selection
-        for (var i=0, contrib; contrib = self.selection()[i]; ++i){
+        for (var i = 0, contrib; contrib = self.selection()[i]; ++i) {
             var contribEmail = contrib.email.toLowerCase().trim();
             if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
                 return self.inviteEmail() + ' is already in queue.';
@@ -262,7 +255,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return true;
     },
-    postInvite() {
+    postInvite: function() {
         var self = this;
         self.inviteError('');
         var validated = self.validateInviteForm();
@@ -272,7 +265,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
-    add(data) {
+    add: function(data) {
         data.permission = ko.observable('read'); //default permission
         // All manually added contributors are visible
         data.visible = true;
@@ -281,7 +274,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    remove(data) {
+    remove: function(data) {
         this.selection.splice(
             this.selection.indexOf(data), 1
         );
@@ -289,44 +282,43 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    addAll() {
+    addAll: function() {
         $.each(this.results(), function(idx, result) {
             if (this.selection().indexOf(result) === -1) {
                 this.add(result);
             }
         });
     },
-    removeAll() {
+    removeAll: function() {
         $.each(this.selection(), function(idx, selected) {
             this.remove(selected);
         });
     },
-    cantSelectNodes() {
+    cantSelectNodes: function() {
         return this.nodesToChange().length === this.nodes().length;
     },
-    cantDeselectNodes() {
+    cantDeselectNodes: function() {
         return this.nodesToChange().length === 0;
     },
-    selectNodes() {
+    selectNodes: function() {
         this.nodesToChange($osf.mapByProperty(this.nodes(), 'id'));
     },
-    deselectNodes() {
+    deselectNodes: function() {
         this.nodesToChange([]);
     },
-    selected(data) {
-        for (var idx=0; idx < this.selection().length; idx++) {
-            if (data.id === this.selection()[idx].id){
+    selected: function(data) {
+        for (var idx = 0; idx < this.selection().length; idx++) {
+            if (data.id === this.selection()[idx].id) {
                 return true;
             }
         }
         return false;
     },
-    submit() {
+    submit: function() {
         var self = this;
         $osf.block();
-        $osf.postJSON(
-            nodeApiUrl + 'contributors/',
-            {
+        return $osf.postJSON(
+            nodeApiUrl + 'contributors/', {
                 users: self.selection().map(function(user) {
                     var permission = user.permission().value; //removes the value from the object
                     var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
@@ -340,10 +332,10 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function() {
             $('.modal').modal('hide');
             $osf.unblock();
-            $osf.growl('Error','Add contributor failed.');
+            $osf.growl('Error', 'Add contributor failed.');
         });
     },
-    clear() {
+    clear: function() {
         var self = this;
         self.page('whom');
         self.query('');
@@ -352,25 +344,27 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodesToChange([]);
         self.notification(false);
     },
-    postInviteRequest(fullname, email) {
+    postInviteRequest: function(fullname, email) {
         var self = this;
-        $osf.postJSON(
-            nodeApiUrl + 'invite_contributor/',
-            {'fullname': fullname, 'email': email}
+        return $osf.postJSON(
+            nodeApiUrl + 'invite_contributor/', {
+                'fullname': fullname,
+                'email': email
+            }
         ).done(
             self.onInviteSuccess.bind(self)
         ).fail(
             self.onInviteError.bind(self)
         );
     },
-    onInviteSuccess(result) {
+    onInviteSuccess: function(result) {
         var self = this;
         self.query('');
         self.results([]);
         self.page('whom');
         self.add(result.contributor);
     },
-    onInviteError(xhr) {
+    onInviteError: function(xhr) {
         var response = JSON.parse(xhr.responseText);
         // Update error message
         this.inviteError(response.message);
@@ -382,7 +376,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder (selector, nodeTitle, nodeId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
