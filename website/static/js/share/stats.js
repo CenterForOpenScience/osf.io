@@ -18,7 +18,7 @@ function get_source_length(elastic_data) {
 
 function donutGraph (data, vm) {
     data.charts.shareDonutGraph.onclick = function (d, element) {
-        utils.addFilter(vm, 'source:' + d['name'], true);
+        utils.updateFilter(vm, 'source:' + d['name'], true);
     };
     return c3.generate({
         bindto: '#shareDonutGraph',

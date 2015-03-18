@@ -110,7 +110,7 @@ var maybeQuashEvent = function(event) {
     }
 };
 
-var addFilter = function(vm, filter, required){
+var updateFilter = function(vm, filter, required){
     required = required || false;
     if (required === true && vm.requiredFilters.indexOf(filter) === -1){
         vm.requiredFilters.push(filter);
@@ -141,6 +141,6 @@ module.exports = {
     formatNumber: formatNumber,
     maybeQuashEvent: maybeQuashEvent,
     buildQuery: buildQuery,
-    addFilter: addFilter,
+    updateFilter: updateFilter,
     removeFilter: removeFilter
 };

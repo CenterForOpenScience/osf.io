@@ -53,7 +53,7 @@ Results.controller = function(vm) {
                                     m('span', index !== 0 ? ' · ' : ''),
                                     m('a', {
                                         onclick: function() {
-                                            utils.addFilter(self.vm, '(contributors.family:' + person.family + ' AND contributors.given:' + person.given + ')', true);
+                                            utils.updateFilter(self.vm, '(contributors.family:' + person.family + ' AND contributors.given:' + person.given + ')', true);
                                         }
                                     }, person.given + ' ' + person.family)
                                 ]);
@@ -76,7 +76,7 @@ Results.controller = function(vm) {
                                 var renderTag = function(tag) {
                                     return [
                                         m('.badge.pointer', {onclick: function(){
-                                            utils.addFilter(self.vm, 'tags:"' + tag + '"', true);
+                                            utils.updateFilter(self.vm, 'tags:"' + tag + '"', true);
                                         }}, tag.length < 50 ? tag : tag.substring(0, 47) + '...'),
                                         ' '
                                     ];
@@ -99,7 +99,7 @@ Results.controller = function(vm) {
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.addFilter(self.vm, 'source:' + result.source);}}, self.vm.ProviderMap[result.source].short_name)
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'source:' + result.source);}}, self.vm.ProviderMap[result.source].short_name)
                     ])
                 ])
             ]),
