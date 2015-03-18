@@ -13,7 +13,7 @@ var ConnectedProject = function(data) {
     self.urls = data.urls;
 };
 
-var ExternalAccount = oop.defClass({
+var ExternalAccount = oop.defclass({
     constructor: function(data) {
         var self = this;
         self.name = data.display_name;
@@ -59,7 +59,7 @@ var ExternalAccount = oop.defClass({
     }
 });
 
-var OAuthAddonSettingsViewModel = oop.defClass({
+var OAuthAddonSettingsViewModel = oop.defclass({
     constructor: function(name, displayName) {
         var self = this;
         self.name = name;
