@@ -5,6 +5,90 @@ import xml
 
 from website.search import share_search
 
+STANDARD_RETURN_VALUE = {
+    'hits': {
+        'hits': [{
+            "_score": 1,
+            "_type": "doepages",
+            "_id": "1164135",
+            "_source": {
+                "description": "We calculate the masses of baryons containing one, two, or three heavy quarks using lattice QCD. We consider all possible combinations of charm and bottom and quark-model studies.",
+                "contributors": [{
+                    "given": "Zachary",
+                    "suffix": "",
+                    "family": "Brown",
+                    "middle": "S.",
+                    "prefix": "",
+                    "ORCID": "",
+                    "email": ""
+                }],
+                "title": "Charmed bottom baryon spectroscopy from lattice QCD",
+                "source": "doepages",
+                "dateUpdated": "2014-11-24T00:00:00",
+                "id": {
+                    "url": "http://www.osti.gov/pages/biblio/1164135",
+                    "serviceID": "1164135",
+                    "doi": "10.1103/PhysRevD.90.094507"
+                },
+                "tags": []
+            },
+            "_index": "share"
+        }, {
+            "_score": 1,
+            "_type": "doepages",
+            "_id": "1164539",
+            "_source": {
+                "description": "",
+                "contributors": [{
+                    "given": "Peng",
+                    "suffix": "",
+                    "family": "Lian",
+                    "middle": "",
+                    "prefix": "",
+                    "ORCID": "",
+                    "email": ""
+                }],
+                "source": "doepages",
+                "dateUpdated": "2014-11-27T00:00:00",
+                "id": {
+                    "url": "http://www.osti.gov/pages/biblio/1164539",
+                    "serviceID": "1164539",
+                    "doi": "10.1021/bi500608u"
+                },
+                "tags": []
+            },
+            "_index": "share"
+        }, {
+            "_score": 1,
+            "_type": "doepages",
+            "_id": "1167103",
+            "_source": {
+                "description": "It is well known that high-energy scattering of a meson from some hadronic es. ",
+                "contributors": [{
+                    "given": "Ian",
+                    "suffix": "JLAB]",
+                    "family": "Balitsky",
+                    "middle": "[ODU",
+                    "prefix": "",
+                    "ORCID": "",
+                    "email": ""
+                }],
+                "title": "NLO evolution of 3-quark Wilson loop operator",
+                "source": "doepages",
+                "dateUpdated": "2015-01-13T00:00:00",
+                "id": {
+                    "url": "http://www.osti.gov/pages/biblio/1167103",
+                    "serviceID": "1167103",
+                    "doi": "10.1007/JHEP01(2015)009"
+                },
+                "tags": []
+            },
+            "_index": "share"
+        }],
+        'total': 3
+    }
+}
+
 
 class TestShareSearch(OsfTestCase):
 
@@ -86,41 +170,53 @@ class TestShareSearch(OsfTestCase):
 
 class TestShareAtom(OsfTestCase):
 
-    def test_atom_returns_200(self):
+    @patch.object(share_search.share_es, 'search')
+    def test_atom_returns_200(self, mock_search):
+        mock_search.return_value = STANDARD_RETURN_VALUE
         response = self.app.get('/share/atom/')
         assert_equal(response.status, '200 OK')
 
-    def test_atom_renders_xml(self):
+    @patch.object(share_search.share_es, 'search')
+    def test_atom_renders_xml(self, mock_search):
+        mock_search.return_value = STANDARD_RETURN_VALUE
         response = self.app.get('/share/atom/')
         xml_content = response.xml
         assert isinstance(xml_content, xml.etree.ElementTree.Element)
 
-    def test_atom_head_tag(self):
+    @patch.object(share_search.share_es, 'search')
+    def test_atom_head_tag(self, mock_search):
+        mock_search.return_value = STANDARD_RETURN_VALUE
         response = self.app.get('/share/atom/')
         xml_content = response.xml
         assert_equal(xml_content.tag, '{http://www.w3.org/2005/Atom}feed')
 
-    def test_first_link_rel_self(self):
+    @patch.object(share_search.share_es, 'search')
+    def test_first_link_rel_self(self, mock_search):
+        mock_search.return_value = STANDARD_RETURN_VALUE
         response = self.app.get('/share/atom/')
         xml_content = response.xml
         rel = xml_content.find('{http://www.w3.org/2005/Atom}link')
         assert_equal(rel.attrib['rel'], 'self')
 
-    def test_page_5_has_correct_links(self):
+    @patch.object(share_search.share_es, 'search')
+    def test_page_5_has_correct_links(self, mock_search):
+        mock_search.return_value = STANDARD_RETURN_VALUE
         response = self.app.get('/share/atom/', params={
             'page': 5
         })
         links = response.xml.findall('{http://www.w3.org/2005/Atom}link')
         assert_equal(len(links), 4)
         attribs = [link.attrib for link in links]
-        assert_equal(attribs[1]['href'], 'http://localhost:5000/share/atom/?page=1')
+        assert_equal(attribs[1]['href'][-7:], '?page=1')
         assert_equal(attribs[1]['rel'], 'first')
-        assert_equal(attribs[2]['href'], 'http://localhost:5000/share/atom/?page=6')
+        assert_equal(attribs[2]['href'][-7:], '?page=6')
         assert_equal(attribs[2]['rel'], 'next')
-        assert_equal(attribs[3]['href'], 'http://localhost:5000/share/atom/?page=4')
+        assert_equal(attribs[3]['href'][-7:], '?page=4')
         assert_equal(attribs[3]['rel'], 'previous')
 
-    def test_title_updates_with_query(self):
+    @patch.object(share_search.share_es, 'search')
+    def test_title_updates_with_query(self, mock_search):
+        mock_search.return_value = STANDARD_RETURN_VALUE
         response = self.app.get('/share/atom/', params={
             'q': 'cats'
         })
