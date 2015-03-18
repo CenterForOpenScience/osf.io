@@ -216,6 +216,42 @@ class GoogleDriveProvider(provider.BaseProvider):
             'id': data['etag'] + settings.DRIVE_IGNORE_VERSION,
         }).serialized()]
 
+    @asyncio.coroutine
+    def create_folder(self, path, **kwargs):
+        path = GoogleDrivePath(self.folder['name'], path)
+
+        try:
+            yield from self.metadata(str(path), raw=True)
+            raise exceptions.CreateFolderError('Folder {} already exists'.format(str(path)), code=409)
+        except exceptions.MetadataError:
+            pass
+
+        if path.parent.is_root:
+            folder_id = self.folder['id']
+        else:
+            parent_path = str(path.parent).rstrip('/')
+            metadata = yield from self.metadata(parent_path, raw=True)
+            folder_id = metadata['id']
+
+        resp = yield from self.make_request(
+            'POST',
+            self.build_url('files'),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'title': path.name,
+                'parents': [{
+                    'id': folder_id
+                }],
+                'mimeType': 'application/vnd.google-apps.folder'
+            }),
+            expects=(200, ),
+            throws=exceptions.CreateFolderError,
+        )
+
+        return GoogleDriveFolderMetadata((yield from resp.json()), path.parent).serialized()
+
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
 
