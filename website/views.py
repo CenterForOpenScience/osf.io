@@ -262,7 +262,7 @@ def get_dashboard_nodes(auth):
         if perm not in permissions.PERMISSIONS:
             raise HTTPError(http.BAD_REQUEST, dict(
                 message_short='Invalid query parameter',
-                message_oong='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
+                message_long='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
             ))
         response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
     else:
