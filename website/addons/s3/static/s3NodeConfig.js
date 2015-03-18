@@ -308,29 +308,28 @@ ViewModel.prototype.updateFromData = function(settings) {
     }
 };
 
-ViewModel.prototype.fetchFromServer = function(callback) {
+ViewModel.prototype.fetchFromServer = function() {
     var self = this;
     return $.ajax({
             url: self.url,
             type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                var settings = response.result;
-                self.updateFromData(settings);
-            },
-            error: function(xhr, status, error) {
-                var message = 'Could not retrieve S3 settings at ' +
-                    'this time. Please refresh the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
-                self.changeMessage(message, 'text-warning');
-                Raven.captureMessage('Could not GET s3 settings', {
-                    url: self.url,
-                    textStatus: status,
-                    error: error
-                });
-            }
+            dataType: 'json'
         })
-        .done(callback || noop);
+    .done(function(response) {
+        var settings = response.result;
+        self.updateFromData(settings);
+    })
+    .fail(function(xhr, status, error) {
+        var message = 'Could not retrieve S3 settings at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not GET s3 settings', {
+            url: self.url,
+            textStatus: status,
+            error: error
+        });
+    });
 };
 
 /** Change the flashed message. */
