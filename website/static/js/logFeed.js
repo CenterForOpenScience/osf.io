@@ -96,6 +96,7 @@ var LogsViewModel = oop.extend(Paginator, {
     },
     //send request to get more logs when the more button is clicked
     search: function(){
+        var self = this;
         return $.ajax({
             type: 'get',
             url: self.url,
@@ -106,13 +107,15 @@ var LogsViewModel = oop.extend(Paginator, {
         }).done(function(response) {
             // Initialize LogViewModel
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
+            console.log("logNum" + logModelObjects.length);
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
             self.currentPage(response.page);
             self.numberOfPages(response.pages);
             console.log("currentPage" + self.currentPage());
-            console.log("currentPage" + self.numberOfPages());
+            console.log("numerOfPages" + self.numberOfPages());
+            console.log("-------");
             self.addNewPaginators();
         }).fail(
             $osf.handleJSONError

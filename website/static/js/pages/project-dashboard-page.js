@@ -11,7 +11,7 @@ var Fangorn = require('fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
-var LogFeed = require('../logFeed.js');
+var LogFeed = require('js/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment');
 var NodeControl = require('js/nodeControl');
