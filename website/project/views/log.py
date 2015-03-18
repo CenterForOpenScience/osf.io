@@ -60,7 +60,7 @@ def _get_logs(node, count, auth, link=None, start=0):
 
     pages = math.ceil(total / size)
 
-    return islice(logs, start, start + size), total, pages
+    return [log for log in islice(logs, start, start + size)], total, pages
 
 
 @no_auto_transaction
@@ -71,7 +71,7 @@ def get_logs(auth, **kwargs):
 
     """
     node = kwargs['node'] or kwargs['project']
-    page = request.json.get('page', 0)
+    page = request.args.get('page', 0)
     link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     if not node.can_view(auth):

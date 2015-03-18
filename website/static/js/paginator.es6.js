@@ -122,4 +122,5 @@ var Paginator = oop.defclass({
         throw new Error('Paginator subclass must define a "search" method.');
     }
 });
+
 module.exports = Paginator;

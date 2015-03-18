@@ -11,7 +11,7 @@ var Fangorn = require('fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
-var LogFeed = require('../logFeed.es6.js');
+var LogFeed = require('../logFeed.js');
 var pointers = require('js/pointers');
 var Comment = require('js/comment');
 var NodeControl = require('js/nodeControl');
@@ -19,6 +19,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -176,5 +177,4 @@ $(document).ready(function() {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
-
 });

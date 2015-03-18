@@ -79,7 +79,7 @@ var Log = function(params) {
   * @param url the url ajax request post to
   */
 var LogsViewModel = oop.extend(Paginator, {
-    constructor(logs, url) {
+    constructor: function(logs, url) {
         this.super.constructor();
         var self = this;
         self.logs = ko.observableArray(logs);
@@ -95,8 +95,8 @@ var LogsViewModel = oop.extend(Paginator, {
         });
     },
     //send request to get more logs when the more button is clicked
-    search(){
-        $.ajax({
+    search: function(){
+        return $.ajax({
             type: 'get',
             url: self.url,
             data:{
@@ -111,6 +111,8 @@ var LogsViewModel = oop.extend(Paginator, {
             }
             self.currentPage(response.page);
             self.numberOfPages(response.pages);
+            console.log("currentPage" + self.currentPage());
+            console.log("currentPage" + self.numberOfPages());
             self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
@@ -159,6 +161,7 @@ var defaults = {
 var initViewModel = function(self, logs, url){
     self.logs = createLogs(logs);
     self.viewModel = new LogsViewModel(self.logs, url);
+    self.viewModel.search();
     self.init();
 };
 

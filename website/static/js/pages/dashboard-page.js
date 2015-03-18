@@ -11,7 +11,7 @@ var $osf = require('osfHelpers');
 var projectOrganizer = require('js/projectorganizer');
 var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
 
-var LogFeed = require('../logFeed.es6.js');
+var LogFeed = require('../logFeed.js');
 // Knockout components for the onboarder
 require('../onboarder.js');
 
@@ -72,6 +72,8 @@ var ensureUserTimezone = function(savedTimezone, savedLocale) {
         });
     }
 };
+// Initialize logfeed
+new LogFeed('#logScope', '/api/v1/watched/logs/');
 
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
@@ -97,8 +99,6 @@ $(document).ready(function() {
         });
     });
 
-
-
 });
-// Initialize logfeed
-new LogFeed('#logScope', '/api/v1/watched/logs/');
+
+

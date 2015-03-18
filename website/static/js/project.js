@@ -7,7 +7,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var LogFeed = require('js/logFeed');
+var LogFeed = require('./logFeed.js');
 var $osf = require('osfHelpers');
 
 var ctx = window.contextVars;
@@ -210,7 +210,7 @@ NodeActions.openCloseNode = function(nodeId) {
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
-                new LogFeed($logs, response.logs);
+                LogFeed($logs, response.logs);
                 $logs.addClass('served');
             });
         }
