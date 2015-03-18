@@ -20,7 +20,7 @@ from website.project.decorators import (
 
 from website.addons.googledrive.client import GoogleAuthClient
 from website.addons.googledrive.utils import serialize_settings
-from website.addons.googledrive.model import GoogleDriveOAuthSettings
+# from website.addons.googledrive.model import GoogleDriveOAuthSettings
 
 
 @must_be_logged_in

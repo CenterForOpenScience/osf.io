@@ -21,7 +21,7 @@ ko.punches.enableAll();
 /**
  * Knockout view model for the Google Drive node settings widget.
  */
-var ViewModel = function(url, folderPicker, fetchCallback) {
+var ViewModel = function(name, url, selector, folderPicker) {
     var self = this;
     self.url = url;
     self.loaded = false;
@@ -70,19 +70,17 @@ var ViewModel = function(url, folderPicker, fetchCallback) {
         self.message('Could not fetch settings.');
     }
 
-    self.fetch = function() {
-        return $.ajax({
+    function fetch() {
+        $.ajax({
             url: self.url,
             type: 'GET',
             dataType: 'json'
         })
         .done(onFetchSuccess)
         .fail(onFetchError);
-    };
+    }
 
-    // TODO: Don't fetch on initialization. This makes testing difficult and leads to
-    // unexpected errors during initialization.
-    self.fetch().done(fetchCallback);
+    fetch();
 
     /* Change the flashed status message */
     self.changeMessage = function(text, css, timeout) {
@@ -108,7 +106,7 @@ var ViewModel = function(url, folderPicker, fetchCallback) {
     });
 
     self.createAuth = function() {
-        return $.osf.postJSON(
+        return $.getJSON (
             self.urls().create
         ).success(function(response){
             window.location.href = response.url;
@@ -225,13 +223,13 @@ var ViewModel = function(url, folderPicker, fetchCallback) {
             self.loaded = true;
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
-                filesData: self.urls().get_folders,
+                filesData: self.urls().folders,
                 initialFolderPath : self.currentPath(),
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
 
                 resolveLazyloadUrl : function(item){
-                    return item.data.urls.get_folders;
+                    return item.data.urls.folders;
                 },
                 ajaxOptions: {
                     error: function (xhr, textStatus, error) {
@@ -294,7 +292,6 @@ var ViewModel = function(url, folderPicker, fetchCallback) {
         'text-success', 5000);
         // Update folder in ViewModel
         self.urls(response.result.urls);
-        self.cancelSelection();
     }
 
     function onSubmitError() {
@@ -305,20 +302,17 @@ var ViewModel = function(url, folderPicker, fetchCallback) {
      * Send a PUT request to change the linked Google Drive folder.
      */
     self.submitSettings = function() {
-        return $osf.putJSON(self.urls().config, ko.toJS(self))
+        $osf.putJSON(self.urls().config, ko.toJS(self))
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     };
 };
 
-function GoogleDriveNodeConfig(selector, url, folderPicker) {
+function GoogleDriveNodeConfig(name, selector, url, folderPicker) {
     // Initialization code
     var self = this;
-    self.viewModel = new ViewModel(url, folderPicker);
-    $osf.applyBindings(self.viewModel, selector);
+    self.viewModel = new ViewModel(name, url, selector, folderPicker);
+    $.osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports = {
-    _ViewModel: ViewModel,
-    GoogleDriveNodeConfig: GoogleDriveNodeConfig
-};
+module.exports = GoogleDriveNodeConfig;

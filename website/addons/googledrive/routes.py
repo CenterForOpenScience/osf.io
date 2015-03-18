@@ -12,27 +12,27 @@ auth_routes = {
 
         ##### OAuth #####
 
-        Rule(
-            ['/oauth/connect/googledrive/'],
-            'post',
-            views.auth.googledrive_oauth_start,
-            json_renderer,
-            endpoint_suffix='_user'
-        ),
+        # Rule(
+        #     ['/oauth/connect/googledrive/'],
+        #     'post',
+        #     views.auth.googledrive_oauth_start,
+        #     json_renderer,
+        #     endpoint_suffix='_user'
+        # ),
 
-        Rule(
-            ['/oauth/callback/googledrive/'],
-            'get',
-            views.auth.googledrive_oauth_finish,
-            json_renderer,
-        ),
+        # Rule(
+        #     ['/oauth/callback/googledrive/'],
+        #     'get',
+        #     views.auth.googledrive_oauth_finish,
+        #     json_renderer,
+        # ),
 
-        Rule(
-            ['/oauth/accounts/googledrive/'],
-            'delete',
-            views.auth.googledrive_oauth_delete_user,
-            json_renderer,
-        ),
+        # Rule(
+        #     ['/oauth/accounts/googledrive/'],
+        #     'delete',
+        #     views.auth.googledrive_oauth_delete_user,
+        #     json_renderer,
+        # ),
     ],
 }
 
@@ -56,12 +56,14 @@ api_routes = {
         #### Profile settings ###
 
         Rule(
-            ['/settings/googledrive'],
+            [
+                '/settings/googledrive/accounts/',
+            ],
             'get',
-            views.config.googledrive_user_config_get,
+            views.config.list_googledrive_user_acccounts,
             json_renderer,
-
         ),
+
 
         ##### Node settings #####
 

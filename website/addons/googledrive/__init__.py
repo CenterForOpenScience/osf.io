@@ -1,14 +1,14 @@
-from website.addons.googledrive import routes, model, views
+from website.addons.googledrive import routes, model_1, views
 
 
 MODELS = [
-    model.GoogleDriveUserSettings,
-    model.GoogleDriveNodeSettings,
-    model.GoogleDriveOAuthSettings,
-    model.GoogleDriveGuidFile,
+    model_1.GoogleDriveUserSettings,
+    model_1.GoogleDriveNodeSettings,
+    # model.GoogleDriveOAuthSettings,
+    # model.GoogleDriveGuidFile,
 ]
-USER_SETTINGS_MODEL = model.GoogleDriveUserSettings
-NODE_SETTINGS_MODEL = model.GoogleDriveNodeSettings
+USER_SETTINGS_MODEL = model_1.GoogleDriveUserSettings
+NODE_SETTINGS_MODEL = model_1.GoogleDriveNodeSettings
 
 ROUTES = [routes.auth_routes, routes.api_routes]
 
