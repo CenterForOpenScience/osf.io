@@ -87,7 +87,7 @@ var search = function(vm) {
 };
 
 var buildQuery = function(vm){
-    var query = [
+    return [
         vm.query(),
         '(' + vm.optionalFilters.join(' OR ') + ')',
         '(' + vm.requiredFilters.join(' AND ') + ')'
@@ -97,7 +97,6 @@ var buildQuery = function(vm){
         }
         return true;
     }).join(' AND ');
-    return query;
 };
 
 var maybeQuashEvent = function(event) {
