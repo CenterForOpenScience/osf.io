@@ -1,9 +1,5 @@
 'use strict';
 
-var $ = require('jquery');
-var ko = require('knockout');
-
-var osfHelpers = require('osfHelpers');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
 var assert = require('chai').assert;
@@ -32,21 +28,27 @@ describe('Paginator', () => {
 
 
     it('nextPage', () => {
-        var newCurrentPage = vm.nextPage();
-        assert.equal(newCurrentPage, vm.currentPage + 1);
+        var ins = new vm;
+        var newCurrentPage = ins.nextPage();
+        assert.true(newCurrentPage);
+        assert.equal(ins.currentPage() - 1, 1);
     });
 
     it('previousPage', () => {
-        var newCurrentPage = vm.previousPage();
-        assert.equal(newCurrentPage, vm.currentPage - 1);
+        var ins = new vm;
+        var newCurrentPage = ins.previousPage();
+        assert.true(newCurrentPage);
+        assert.equal(ins.currentPage() + 1, 1);
     });
 
     it('search', () => {
-        assert.throw(vm.previousPage(), 'Paginator subclass must define a "search" method.');
+        var ins = new vm
+        assert.equal(true, ins.search());
     });
 
     it('addNewPaginator', () => {
-        var newPaginator = vm.addNewPaginators();
-        assert.equal(vm.paginators.length(), 1);
+        var ins = new vm;
+        var newPaginator = ins.addNewPaginators();
+        assert.equal(ins.paginators.length(), 1);
     });
 });
