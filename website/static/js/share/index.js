@@ -57,7 +57,7 @@ ShareApp.controller = function() {
     self.statsController = new Stats.controller(self.vm);
     self.resultsController = new Results.controller(self.vm);
     self.searchBarController = new SearchBar.controller(self.vm);
-    self.sideBarController = new SideBar.controller(self.vm)
+    self.sideBarController = new SideBar.controller(self.vm);
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
