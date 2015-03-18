@@ -407,6 +407,15 @@ class TestAddonFileViewHelpers(OsfFileTestCase):
         assert_equals(getattr(guid, 'name', 'foo'), 'test')
 
 
+def assert_urls_equal(url1, url2):
+    furl1 = furl.furl(url1)
+    furl2 = furl.furl(url2)
+    for attr in ['scheme', 'host', 'port']:
+        setattr(furl1, attr, None)
+        setattr(furl2, attr, None)
+    assert_equal(furl1, furl2)
+
+
 class TestAddonFileViews(OsfTestCase):
 
     def setUp(self):
@@ -546,7 +555,6 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 403)
 
-    @unittest.skip('No auth in head ¯\_(ツ)_/¯')
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
         guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
@@ -556,16 +564,7 @@ class TestAddonFileViews(OsfTestCase):
 
         resp = self.app.head(guid.guid_url, auth=self.user.auth)
 
-        assert_equals(resp.headers['Location'], download_url.url)
-
-
-def assert_urls_equal(url1, url2):
-    furl1 = furl.furl(url1)
-    furl2 = furl.furl(url2)
-    for attr in ['scheme', 'host', 'port']:
-        setattr(furl1, attr, None)
-        setattr(furl2, attr, None)
-    assert_equal(furl1, furl2)
+        assert_urls_equal(resp.headers['Location'], download_url.url)
 
 
 class TestLegacyViews(OsfTestCase):
