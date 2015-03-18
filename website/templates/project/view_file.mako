@@ -18,17 +18,17 @@
     <div id="file-container" class="row">
 
     <div class="panel-toggle col-md-3">
-        <div class="osf-panel osf-panel-flex hidden-xs">
+        <div class="file-panel file-panel-flex hidden-xs">
             <div class="osf-panel-header osf-panel-header-flex"><i class="fa fa-file"></i>  Project Files
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div></div>
             </div>
-            <div class="osf-panel-body osf-panel-body-flex file-page">
+            <div class="osf-panel-body file-panel-body-flex file-page">
                 <div id="grid"></div>
             </div>
         </div>
 
     <!-- Menu toggle closed -->
-        <div class="osf-panel panel-collapsed hidden-xs text-center"  style="display: none">
+        <div class="file-panel panel-collapsed hidden-xs text-center"  style="display: none">
           <div class="osf-panel-header">
             <i class="fa fa-file"> </i>
             <i class="fa fa-angle-right"> </i>
