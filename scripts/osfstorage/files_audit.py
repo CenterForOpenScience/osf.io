@@ -97,7 +97,6 @@ def ensure_parity(version, dry_run):
 
 def ensure_backups(version, dry_run):
     if version.size == 0:
-        logger.info('Skipping empty version {0}'.format(version._id))
         return
     ensure_glacier(version, dry_run)
     ensure_parity(version, dry_run)
@@ -153,7 +152,6 @@ if __name__ == '__main__':
         # Log to file
         if not dry_run:
             scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
-
             main(nworkers, worker_id, dry_run=dry_run)
     except Exception as err:
         logger.error('=== Unexpected Error ===')
