@@ -173,7 +173,7 @@
             <div class="addon-widget-header clearfix">
                 <h4>Recent discussions</h4>
                 <div class="pull-right">
-                    <a href="${node['url']}discussions/" class="btn"> <i class="icon icon-external-link"></i> </a>
+                    <a href="${node['url']}discussions/" class="btn"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
             <div class="addon-widget-body">

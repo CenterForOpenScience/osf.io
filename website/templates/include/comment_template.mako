@@ -57,20 +57,7 @@
                             <span class="comment-author" data-bind="text: author.name"></span>
                         </span>
                         <span data-bind="if: mode !== 'pane'">
-                            <a class="comment-author" data-bind="attr: {href: targetUrl()}">
-                                <span data-bind="if: page()==='node'">
-                                        (Overview)
-                                </span>
-                                <span data-bind="if: page()==='wiki'">
-                                    <span data-bind="if: title().toLowerCase()==='home'">(Wiki)</span>
-                                    <span data-bind="ifnot: title().toLowerCase()==='home'">
-                                        <span data-bind="text: '(Wiki - ' + title() + ')'"></span>
-                                    </span>
-                                </span>
-                                <span data-bind="if: page()==='files'">
-                                    (Files - <span data-bind="text: title"></span>)
-                                </span>
-                            </a>
+                            <a class="comment-author" data-bind="attr: {href: targetUrl()}, text: cleanTitle"></a>
                         </span>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">

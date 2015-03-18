@@ -6,6 +6,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
+var waterbutler = require('waterbutler');
 require('knockout-mapping');
 require('knockout-punches');
 require('jquery-autosize');
@@ -195,6 +196,15 @@ BaseComment.prototype.getThread = function(thread_id) {
     return deferred;
 }
 
+//BaseComment.prototype.checkFileExists = function() {
+//    var self = this;
+//    var url = ""; // waterbutler-ish
+//    for (var c in self.comments()) {
+//        var comment = self.comments()[c];
+
+//    }
+//}
+
 BaseComment.prototype.submitReply = function() {
     var self = this;
     if (!self.replyContent()) {
@@ -310,6 +320,28 @@ var CommentModel = function(data, $parent, $root) {
     self.shouldShowChildren = ko.computed(function() {
         return self.level < self.MAXLEVEL;
     })
+
+    self.cleanTitle = ko.computed(function() {
+        var cleaned;
+        switch(self.page()) {
+            case 'wiki':
+                cleaned = '(Wiki';
+                if (self.title().toLowerCase() !== 'home') {
+                    cleaned += ' - ' + self.title();
+                }
+                break;
+            case 'files':
+                cleaned = '(Files - ';
+                var filePath = self.title().split('/');
+                cleaned += filePath[filePath.length - 1];
+                break;
+            case 'node':
+                cleaned = '(Overview';
+                break;
+        }
+        cleaned += ')';
+        return cleaned;
+    });
 
     self.rootUrl = ko.computed(function(){
         var url = 'discussions';
