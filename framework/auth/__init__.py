@@ -103,6 +103,8 @@ def verify_two_factor(user_id, two_factor_code):
         # Raise error if incorrect code is submitted
         raise TwoFactorValidationError('Two-Factor auth does not match.')
 
+    # Update session field verifying two factor and delete key used for auth
+    session.data.update(session.data['two_factor_auth'])
     del session.data['two_factor_auth']
 
     next_url = session.data.get('next_url', False)
