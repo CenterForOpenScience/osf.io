@@ -49,9 +49,7 @@ SideBar.controller = function(vm) {
         return Object.keys(self.vm.ProviderMap).map(function(result, index){
             return self.vm.ProviderMap[result];
         }).sort(function(a,b){
-                if (a.long_name > b.long_name) return 1;
-                if (a.long_name < b.long_name) return -1;
-                return 0;
+                return a.long_name > b.long_name ? 1: -1;
         }).map(function(result, index){
             return m('li', [m('label', [
                 m('input', {
