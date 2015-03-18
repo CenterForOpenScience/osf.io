@@ -56,6 +56,12 @@ def reset_password(auth, **kwargs):
 
 
 def forgot_password():
+    """Return forgot password page upon GET request. If POST, attempt to send
+    user password reset or return respective error.
+    """
+    if request.method == 'GET':
+        return {}
+
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
     if form.validate():
@@ -83,6 +89,9 @@ def forgot_password():
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
 
+def _forgot_password(*args, **kwargs):
+
+    return forgot_password(*args, **kwargs)
 
 ###############################################################################
 # Log in

@@ -3,18 +3,17 @@
 import mock
 from nose.tools import *  # noqa
 
+from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.zotero.tests.factories import (
-    ZoteroAccountFactory, ZoteroUserSettingsFactory,
+    ZoteroAccountFactory,
+    ZoteroUserSettingsFactory,
     ExternalAccountFactory,
-    ZoteroNodeSettingsFactory
 )
 from website.addons.zotero.provider import ZoteroCitationsProvider
-
-import datetime
 
 from website.addons.zotero import model
 
@@ -153,6 +152,9 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         assert_is_none(self.node_settings.user_settings)
 
     def test_set_target_folder(self):
+        folder_id = 'fake-folder-id'
+        folder_name = 'fake-folder-name'
+
         external_account = ExternalAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
@@ -164,7 +166,11 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
 
         assert_is_none(self.node_settings.zotero_list_id)
 
-        self.node_settings.set_target_folder('fake-folder-id')
+        self.node_settings.set_target_folder(
+            folder_id,
+            folder_name,
+            auth=Auth(user=self.user),
+        )
 
         # instance was updated
         assert_equal(
@@ -181,6 +187,11 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
                 metadata={'folder': 'fake-folder-id'}
             )
         )
+
+        log = self.node.logs[-1]
+        assert_equal(log.action, 'zotero_folder_selected')
+        assert_equal(log.params['folder_id'], folder_id)
+        assert_equal(log.params['folder_name'], folder_name)
 
     def test_has_auth_false(self):
         external_account = ExternalAccountFactory()

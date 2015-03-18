@@ -2,6 +2,7 @@
 
 import os
 import importlib
+from collections import OrderedDict
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
@@ -30,7 +31,7 @@ def init_addons(settings, routes=True):
     :param bool routes: Add each addon's routing rules to the URL map.
     """
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
-    settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', {})
+    settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
         try:
             addon = init_addon(app, addon_name, routes=routes)

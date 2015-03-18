@@ -55,7 +55,7 @@
                     <button data-bind="attr.disabled: disableShare,
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-box"><i class="fa-share"></i> Share on Box
+                        class="btn btn-sm btn-box"><i class="fa fa-share"></i> Share on Box
                             <span data-bind="visible: folder().path === 'All Files'">(Cannot share root folder)</span>
                         </button>
                 </div>
@@ -94,13 +94,13 @@
                             <span data-clipboard-target="contribEmails"
                                 class="input-group-addon pointer"
                                 id="copyBtn">
-                                <i class="fa-clipboard"></i>
+                                <i class="fa fa-clipboard"></i>
                             </span>
                         </div>
 
                         <div class="input-group pull-right">
                             <a target="_blank" data-bind="attr.href: urls().share"
-                                class="btn btn-link"><i class="fa-share"></i> Continue to Box...</a>
+                                class="btn btn-link"><i class="fa fa-share"></i> Continue to Box...</a>
                         </div>
                     </div>
 

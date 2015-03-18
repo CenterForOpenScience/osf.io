@@ -1,116 +1,116 @@
 /**
-* Controller for the Add Contributor modal.
-*/
+ * Controller for the Add Contributor modal.
+ */
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-require('bootstrap-editable');
+var Paginator = require('js/paginator');
 
-NODE_OFFSET = 25;
+require('bootstrap-editable');
+var oop = require('js/oop');
+
+var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show
 var MAX_RECENT = 5;
 
-/**
-* The add contributor VM, scoped to the add contributor modal dialog.
-*/
-var AddContributorViewModel = function(title, parentId, parentTitle) {
+function Contributor(data) {
+    $.extend(this, data);
+    if (data.n_projects_in_common === 1) {
+        this.displayProjectsInCommon = data.n_projects_in_common + ' project in common';
+    } else if (data.n_projects_in_common !== 0) {
+        this.displayProjectsInCommon = data.n_projects_in_common + ' projects in common';
+    } else {
+        this.displayProjectsInCommon = '';
+    }
+}
 
-    var self = this;
+var AddContributorViewModel = oop.extend(Paginator, {
+    constructor: function(title, parentId, parentTitle) {
+        this.super.constructor();
+        var self = this;
 
-    self.permissions = ['read', 'write', 'admin'];
+        self.permissions = ['read', 'write', 'admin'];
 
-    self.title = title;
-    self.parentId = parentId;
-    self.parentTitle = parentTitle;
+        self.title = title;
+        self.parentId = parentId;
+        self.parentTitle = parentTitle;
 
-    self.page = ko.observable('whom');
-    self.pageTitle = ko.computed(function() {
-        return {
-            whom: 'Add Contributors',
-            which: 'Select Components',
-            invite: 'Add Unregistered Contributor'
-        }[self.page()];
-    });
-    self.query = ko.observable();
-    self.results = ko.observableArray([]);
-    self.selection = ko.observableArray();
-    self.notification = ko.observable('');
-    self.inviteError = ko.observable('');
-    self.numberOfPages = ko.observable(0);
-    self.currentPage = ko.observable(0);
-    self.totalPages = ko.observable(0);
-    self.paginators = ko.observableArray([]);
-    self.nodes = ko.observableArray([]);
-    self.nodesToChange = ko.observableArray();
-    $.getJSON(
-        nodeApiUrl + 'get_editable_children/',
-        {},
-        function(result) {
-            $.each(result.children || [], function(idx, child) {
-                child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
+        self.page = ko.observable('whom');
+        self.pageTitle = ko.computed(function() {
+            return {
+                whom: 'Add Contributors',
+                which: 'Select Components',
+                invite: 'Add Unregistered Contributor'
+            }[self.page()];
+        });
+        self.query = ko.observable();
+        self.results = ko.observableArray([]);
+        self.selection = ko.observableArray();
+        self.notification = ko.observable('');
+        self.inviteError = ko.observable('');
+        self.totalPages = ko.observable(0);
+        self.nodes = ko.observableArray([]);
+        self.nodesToChange = ko.observableArray();
+        $.getJSON(
+            nodeApiUrl + 'get_editable_children/', {},
+            function(result) {
+                $.each(result.children || [], function(idx, child) {
+                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
+                });
+                self.nodes(result.children);
+            }
+        );
+        self.foundResults = ko.computed(function() {
+            return self.query() && self.results().length;
+        });
+
+        self.noResults = ko.computed(function() {
+            return self.query() && !self.results().length;
+        });
+
+        self.inviteName = ko.observable();
+        self.inviteEmail = ko.observable();
+
+        self.addingSummary = ko.computed(function() {
+            var names = $.map(self.selection(), function(result) {
+                return result.fullname;
             });
-            self.nodes(result.children);
-        }
-    );
-
-    self.foundResults = ko.computed(function() {
-        return self.query() && self.results().length;
-    });
-
-    self.noResults = ko.computed(function() {
-        return self.query() && !self.results().length;
-    });
-
-    self.inviteName = ko.observable();
-    self.inviteEmail = ko.observable();
-
-    self.selectWhom = function() {
-        self.page('whom');
-    };
-    self.selectWhich = function() {
-        self.page('which');
-    };
-
-    self.gotoInvite = function() {
+            return names.join(', ');
+        });
+    },
+    selectWhom: function() {
+        this.page('whom');
+    },
+    selectWhich: function() {
+        this.page('which');
+    },
+    gotoInvite: function() {
+        var self = this;
         self.inviteName(self.query());
         self.inviteError('');
         self.inviteEmail('');
         self.page('invite');
-    };
-
-    self.goToPage = function(page) {
-        self.page(page);
-    };
-
+    },
+    goToPage: function(page) {
+        this.page(page);
+    },
     /**
-        * A simple Contributor model that receives data from the
-        * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
-        * attribute which is the human-readable display of the number of projects the
-        * currently logged-in user has in common with the contributor.
-        */
-    function Contributor(data) {
-        $.extend(this, data);
-        if (data.n_projects_in_common === 1) {
-            this.displayProjectsInCommon = data.n_projects_in_common + ' project in common';
-        } else if (data.n_projects_in_common !== 0) {
-            this.displayProjectsInCommon = data.n_projects_in_common + ' projects in common';
-        } else {
-            this.displayProjectsInCommon = '';
-        }
-    }
-
-    self.startSearch = function() {
-        self.currentPage(0);
-        self.search();
-    };
-
-    self.search = function() {
+     * A simple Contributor model that receives data from the
+     * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
+     * attribute which is the human-readable display of the number of projects the
+     * currently logged-in user has in common with the contributor.
+     */
+    startSearch: function() {
+        this.currentPage(0);
+        this.search();
+    },
+    search: function() {
+        var self = this;
         self.notification(false);
         if (self.query()) {
-            $.getJSON(
-                '/api/v1/user/search/',
-                {
+            return $.getJSON(
+                '/api/v1/user/search/', {
                     query: self.query(),
                     excludeNode: nodeId,
                     page: self.currentPage
@@ -130,123 +130,11 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
             self.currentPage(0);
             self.totalPages(0);
         }
-    };
-
-    var MAX_PAGES_ON_PAGINATOR = 7;
-    var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
-
-    self.addNewPaginators = function() {
-        self.paginators.removeAll();
-        if (self.numberOfPages() > 1) {
-            self.paginators.push({
-                style: (self.currentPage() === 0)? 'disabled' : '',
-                handler: self.previousPage,
-                text: '&lt;'
-            });
-            self.paginators.push({
-                style: (self.currentPage() === 0)? 'active' : '',
-                text: '1',
-                handler: function () {
-                    self.currentPage(0);
-                    self.search();
-                }
-            });
-            if (self.numberOfPages() <= MAX_PAGES_ON_PAGINATOR) {
-                for (var i = 1; i < self.numberOfPages() - 1; i++) {
-                    self.paginators.push({
-                        style: (self.currentPage() === i)? 'active' : '',
-                        text: i + 1,
-                        handler: function () {
-                            self.currentPage(parseInt(this.text) - 1);
-                            self.search();
-                        }
-                    });
-                }
-            } else if (self.currentPage() < MAX_PAGES_ON_PAGINATOR_SIDE - 1) { // One ellipse at the end
-                for (var i = 1; i < MAX_PAGES_ON_PAGINATOR_SIDE; i++) {
-                    self.paginators.push({
-                        style: (self.currentPage() === i)? 'active' : '',
-                        text: i + 1,
-                        handler: function () {
-                            self.currentPage(parseInt(this.text) - 1);
-                            self.search();
-                        }
-                    });
-                }
-                self.paginators.push({
-                    style: 'disabled',
-                    text: '...',
-                    handler: function () {}
-                });
-            } else if (self.currentPage() > self.numberOfPages() - MAX_PAGES_ON_PAGINATOR_SIDE) { // one ellipses at the beginning
-                self.paginators.push({
-                    style: 'disabled',
-                    text: '...',
-                    handler: function () {}
-                });
-                for (var i = self.numberOfPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < self.numberOfPages() - 1; i++) {
-                    self.paginators.push({
-                        style: (self.currentPage() === i)? 'active' : '',
-                        text: i + 1,
-                        handler: function () {
-                            self.currentPage(parseInt(this.text) - 1);
-                            self.search();
-                        }
-                    });
-                }
-            } else { // two ellipses
-                self.paginators.push({
-                    style: 'disabled',
-                    text: '...',
-                    handler: function () {}
-                });
-                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
-                    self.paginators.push({
-                        style: (self.currentPage() === i) ? 'active' : '',
-                        text: i + 1,
-                        handler: function () {
-                            self.currentPage(parseInt(this.text) - 1);
-                            self.search();
-                        }
-                    });
-                }
-                self.paginators.push({
-                    style: 'disabled',
-                    text: '...',
-                    handler: function () {}
-                });
-            }
-            self.paginators.push({
-                style: (self.currentPage() === self.numberOfPages() - 1)? 'active' : '',
-                text: self.numberOfPages(),
-                handler: function () {
-                    self.currentPage(self.numberOfPages() - 1);
-                    self.search();
-                }
-            });
-            self.paginators.push({
-                style: (self.currentPage() === self.numberOfPages() - 1)? 'disabled' : '',
-                handler: self.nextPage,
-                text: '&gt;'
-            });
-        }
-    };
-
-    self.nextPage = function() {
-        self.currentPage(self.currentPage() + 1);
-        self.search();
-    };
-
-    self.previousPage = function() {
-        self.currentPage(self.currentPage() - 1);
-        self.search();
-    };
-
-    self.importFromParent = function() {
+    },
+    importFromParent: function() {
         self.notification(false);
         $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/',
-            {},
+            nodeApiUrl + 'get_contributors_from_parent/', {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -257,14 +145,13 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                 self.results(result.contributors);
             }
         );
-    };
-
-    self.recentlyAdded = function() {
+    },
+    recentlyAdded: function() {
+        var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
-        $.getJSON(
-            url,
-            {},
+        return $.getJSON(
+            url, {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -274,16 +161,15 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                 }
                 var contribs = [];
                 var numToDisplay = result.contributors.length;
-                for (var i=0; i< numToDisplay; i++) {
+                for (var i = 0; i < numToDisplay; i++) {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
                 self.numberOfPages(1);
             }
-        ).fail(function (xhr, textStatus, error) {
+        ).fail(function(xhr, textStatus, error) {
             self.notification({
-                'message':
-                    'OSF was unable to resolve your request. If this issue persists, ' +
+                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
                 'level': 'warning'
             });
@@ -293,14 +179,13 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                 error: error
             });
         });
-    };
-
-    self.mostInCommon = function() {
+    },
+    mostInCommon: function() {
+        var self = this;
         self.notification(false);
         var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
-        $.getJSON(
-            url,
-            {},
+        return $.getJSON(
+            url, {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -310,16 +195,15 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                 }
                 var contribs = [];
                 var numToDisplay = result.contributors.length;
-                for (var i=0; i< numToDisplay; i++) {
+                for (var i = 0; i < numToDisplay; i++) {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
                 self.numberOfPages(1);
             }
-        ).fail(function (xhr, textStatus, error) {
+        ).fail(function(xhr, textStatus, error) {
             self.notification({
-                'message':
-                    'OSF was unable to resolve your request. If this issue persists, ' +
+                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
                 'level': 'warning'
             });
@@ -329,64 +213,49 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
                 error: error
             });
         });
-    };
-
-    self.addTips = function(elements) {
+    },
+    addTips: function(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
-    };
-
-    self.setupEditable = function(elm, data) {
+    },
+    setupEditable: function(elm, data) {
         var $elm = $(elm);
         var $editable = $elm.find('.permission-editable');
         $editable.editable({
             showbuttons: false,
             value: 'admin',
-            source: [
-                {value: 'read', text: 'Read'},
-                {value: 'write', text: 'Read + Write'},
-                {value: 'admin', text: 'Administrator'}
-            ],
+            source: [{
+                value: 'read',
+                text: 'Read'
+            }, {
+                value: 'write',
+                text: 'Read + Write'
+            }, {
+                value: 'admin',
+                text: 'Administrator'
+            }],
             success: function(response, value) {
                 data.permission(value);
             }
         });
-    };
-
-    self.afterRender = function(elm, data) {
+    },
+    afterRender: function(elm, data) {
+        var self = this;
         self.addTips(elm, data);
         self.setupEditable(elm, data);
-    };
-
-    function postInviteRequest(fullname, email) {
-        $osf.postJSON(
-            nodeApiUrl + 'invite_contributor/',
-            {'fullname': fullname, 'email': email}
-        ).done(
-            onInviteSuccess
-        ).fail(
-            onInviteError
-        );
-    }
-
-    function onInviteSuccess(result) {
-        self.query('');
-        self.results([]);
-        self.page('whom');
-        self.add(result.contributor);
-    }
-
-    function onInviteError(xhr) {
-        var response = JSON.parse(xhr.responseText);
-        // Update error message
-        self.inviteError(response.message);
-    }
-
+    },
+    makeAfterRender: function() {
+        var self = this;
+        return function(elm, data) {
+            return self.afterRender(elm, data);
+        };
+    },
     /** Validate the invite form. Returns a string error message or
-    *   true if validation succeeds.
-    */
-    self.validateInviteForm = function (){
+     *   true if validation succeeds.
+     */
+    validateInviteForm: function() {
+        var self = this;
         // Make sure Full Name is not blank
         if (!self.inviteName().trim().length) {
             return 'Full Name is required.';
@@ -395,95 +264,78 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
             return 'Not a valid email address.';
         }
         // Make sure that entered email is not already in selection
-        for (var i=0, contrib; contrib = self.selection()[i]; ++i){
+        for (var i = 0, contrib; contrib = self.selection()[i]; ++i) {
             var contribEmail = contrib.email.toLowerCase().trim();
             if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
                 return self.inviteEmail() + ' is already in queue.';
             }
         }
         return true;
-    };
-
-    self.postInvite = function() {
+    },
+    postInvite: function() {
+        var self = this;
         self.inviteError('');
         var validated = self.validateInviteForm();
         if (typeof validated === 'string') {
             self.inviteError(validated);
             return false;
         }
-        return postInviteRequest(self.inviteName(), self.inviteEmail());
-    };
-
-    self.add = function(data) {
+        return self.postInviteRequest(self.inviteName(), self.inviteEmail());
+    },
+    add: function(data) {
         data.permission = ko.observable('admin');
         // All manually added contributors are visible
         data.visible = true;
-        self.selection.push(data);
+        this.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    };
-
-
-    self.remove = function(data) {
-        self.selection.splice(
-            self.selection.indexOf(data), 1
+    },
+    remove: function(data) {
+        this.selection.splice(
+            this.selection.indexOf(data), 1
         );
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
-    };
-
-    self.addAll = function() {
-        $.each(self.results(), function(idx, result) {
-            if (self.selection().indexOf(result) === -1) {
-                self.add(result);
+    },
+    addAll: function() {
+        $.each(this.results(), function(idx, result) {
+            if (this.selection().indexOf(result) === -1) {
+                this.add(result);
             }
         });
-    };
-
-    self.removeAll = function() {
-        $.each(self.selection(), function(idx, selected) {
-            self.remove(selected);
+    },
+    removeAll: function() {
+        $.each(this.selection(), function(idx, selected) {
+            this.remove(selected);
         });
-    };
-
-    self.cantSelectNodes = function() {
-        return self.nodesToChange().length === self.nodes().length;
-    };
-    self.cantDeselectNodes = function() {
-        return self.nodesToChange().length === 0;
-    };
-
-    self.selectNodes = function() {
-        self.nodesToChange($osf.mapByProperty(self.nodes(), 'id'));
-    };
-    self.deselectNodes = function() {
-        self.nodesToChange([]);
-    };
-
-    self.selected = function(data) {
-        for (var idx=0; idx < self.selection().length; idx++) {
-            if (data.id === self.selection()[idx].id){
+    },
+    cantSelectNodes: function() {
+        return this.nodesToChange().length === this.nodes().length;
+    },
+    cantDeselectNodes: function() {
+        return this.nodesToChange().length === 0;
+    },
+    selectNodes: function() {
+        this.nodesToChange($osf.mapByProperty(this.nodes(), 'id'));
+    },
+    deselectNodes: function() {
+        this.nodesToChange([]);
+    },
+    selected: function(data) {
+        for (var idx = 0; idx < this.selection().length; idx++) {
+            if (data.id === this.selection()[idx].id) {
                 return true;
             }
         }
         return false;
-    };
-
-
-    self.addingSummary = ko.computed(function() {
-        var names = $.map(self.selection(), function(result) {
-            return result.fullname;
-        });
-        return names.join(', ');
-    });
-
-    self.submit = function() {
+    },
+    submit: function() {
+        var self = this;
         $osf.block();
-        $osf.postJSON(
-            nodeApiUrl + 'contributors/',
-            {
+        return $osf.postJSON(
+            nodeApiUrl + 'contributors/', {
                 users: self.selection().map(function(user) {
                     return ko.toJS(user);
                 }),
@@ -494,26 +346,51 @@ var AddContributorViewModel = function(title, parentId, parentTitle) {
         }).fail(function() {
             $('.modal').modal('hide');
             $osf.unblock();
-            $osf.growl('Error','Add contributor failed.');
+            $osf.growl('Error', 'Add contributor failed.');
         });
-    };
-
-    self.clear = function() {
+    },
+    clear: function() {
+        var self = this;
         self.page('whom');
         self.query('');
         self.results([]);
         self.selection([]);
         self.nodesToChange([]);
         self.notification(false);
-    };
+    },
+    postInviteRequest: function(fullname, email) {
+        var self = this;
+        return $osf.postJSON(
+            nodeApiUrl + 'invite_contributor/', {
+                'fullname': fullname,
+                'email': email
+            }
+        ).done(
+            self.onInviteSuccess.bind(self)
+        ).fail(
+            self.onInviteError.bind(self)
+        );
+    },
+    onInviteSuccess: function(result) {
+        var self = this;
+        self.query('');
+        self.results([]);
+        self.page('whom');
+        self.add(result.contributor);
+    },
+    onInviteError: function(xhr) {
+        var response = JSON.parse(xhr.responseText);
+        // Update error message
+        this.inviteError(response.message);
+    }
+});
 
-};
 
 ////////////////
 // Public API //
 ////////////////
 
-function ContribAdder (selector, nodeTitle, nodeId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);

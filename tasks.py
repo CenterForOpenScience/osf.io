@@ -375,12 +375,14 @@ def test_all(flake=False):
     karma(single=True, browsers='PhantomJS')
 
 @task
-def karma(single=False, browsers=None):
+def karma(single=False, sauce=False, browsers=None):
     """Run JS tests with Karma. Requires Chrome to be installed."""
     karma_bin = os.path.join(
         HERE, 'node_modules', 'karma', 'bin', 'karma'
     )
     cmd = '{} start'.format(karma_bin)
+    if sauce:
+        cmd += ' karma.saucelabs.conf.js'
     if single:
         cmd += ' --single-run'
     # Use browsers if specified on the command-line, otherwise default
@@ -541,11 +543,11 @@ def analytics():
     init_app()
     from scripts import metrics
     from scripts.analytics import (
-        logs, addons, comments, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, links, watch, email_invites,
+        metrics, logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
