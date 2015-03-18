@@ -58,34 +58,8 @@ STANDARD_RETURN_VALUE = {
                 "tags": []
             },
             "_index": "share"
-        }, {
-            "_score": 1,
-            "_type": "doepages",
-            "_id": "1167103",
-            "_source": {
-                "description": "It is well known that high-energy scattering of a meson from some hadronic es. ",
-                "contributors": [{
-                    "given": "Ian",
-                    "suffix": "JLAB]",
-                    "family": "Balitsky",
-                    "middle": "[ODU",
-                    "prefix": "",
-                    "ORCID": "",
-                    "email": ""
-                }],
-                "title": "NLO evolution of 3-quark Wilson loop operator",
-                "source": "doepages",
-                "dateUpdated": "2015-01-13T00:00:00",
-                "id": {
-                    "url": "http://www.osti.gov/pages/biblio/1167103",
-                    "serviceID": "1167103",
-                    "doi": "10.1007/JHEP01(2015)009"
-                },
-                "tags": []
-            },
-            "_index": "share"
         }],
-        'total': 3
+        'total': 2
     }
 }
 
