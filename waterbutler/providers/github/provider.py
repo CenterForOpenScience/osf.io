@@ -1,3 +1,4 @@
+import os
 import json
 import base64
 import asyncio
@@ -173,6 +174,42 @@ class GitHubProvider(provider.BaseProvider):
             GitHubRevision(item).serialized()
             for item in (yield from resp.json())
         ]
+
+    @asyncio.coroutine
+    def create_folder(self, path, branch=None, message=None, **kwargs):
+        path = GitHubPath(path)
+        super()._validate_folder(path)
+
+        assert self.name is not None
+        assert self.email is not None
+        message = message or settings.UPLOAD_FILE_MESSAGE
+
+        data = {
+            'path': os.path.join(path.path, '.gitkeep'),
+            'message': message,
+            'content': '',
+            'committer': self.committer,
+        }
+
+        if branch is not None:
+            data['branch'] = branch
+
+        resp = yield from self.make_request(
+            'PUT',
+            self.build_repo_url('contents', path.path),
+            data=json.dumps(data),
+            expects=(201, 422),
+            throws=exceptions.CreateFolderError
+        )
+
+        data = yield from resp.json()
+
+        if resp.status == 422:
+            if data.get('message') == "Invalid request.\n\n\"sha\" wasn\'t supplied.', 'documentation_url'":
+                raise exceptions.CreateFolderError('Folder {} already exists'.format(str(path)), code=409)
+            raise exceptions.CreateFolderError(data, code=409)
+
+        return GitHubFolderContentMetadata(data['content'], commit=data['commit']).serialized()
 
     @asyncio.coroutine
     def _delete_file(self, path, sha=None, message=None, branch=None, **kwargs):
