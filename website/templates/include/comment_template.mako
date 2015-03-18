@@ -134,7 +134,7 @@
                                 <i class="fa fa-warning"></i>
                             </span>
                             <span data-bind="if: canEdit, click: startDelete">
-                                <i class="fa-trash-o"></i>
+                                <i class="fa fa-trash-o"></i>
                             </span>
 
                         </div>
