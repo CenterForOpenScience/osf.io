@@ -22,6 +22,7 @@ describe('googleDriveNodeConfig', () => {
         },
         message: 'Successfully updated settings.'
     };
+
     var endpoints = [
         {
             method: 'GET',

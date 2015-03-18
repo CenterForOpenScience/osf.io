@@ -125,6 +125,9 @@ class OAuthAddonSerializer(AddonSerializer):
         ret.update(addon_urls)
         return ret
 
+    @property
+    def addon_serialized_urls(self):
+        pass
 
     @property
     def user_is_owner(self):

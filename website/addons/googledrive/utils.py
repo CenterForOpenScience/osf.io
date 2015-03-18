@@ -6,6 +6,8 @@ import logging
 from urllib import quote
 
 from website.util import web_url_for
+from website.addons.citations import utils
+from serializer import OAuthAddonSerializer
 
 
 logger = logging.getLogger(__name__)
