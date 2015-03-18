@@ -31,6 +31,12 @@ var loadMore = function(vm) {
         return;
     }
     var page = vm.page++ * 10;
+    var sort;
+    if (vm.sort() === 'Date') {
+        sort = 'dateUpdated';
+    } else {
+        sort = null;
+    }
     vm.resultsLoading(true);
 
     m.request({
@@ -39,7 +45,7 @@ var loadMore = function(vm) {
         url: '/api/v1/share/?' + $.param({
             from: page,
             q: vm.query(),
-            sort: 'dateUpdated',
+            sort: sort
         })
     }).then(function(data) {
         vm.time = data.time;
@@ -71,8 +77,8 @@ var search = function(vm) {
 };
 
 var buildQuery = function(vm){
-    filterString = vm.optionalFilters.join([separator=' OR ']) + ' AND ' + vm.requiredFilters.join([separator=' AND ']);
-    filterString = filterString.replace(/(^\s*AND\s+)|(\s+AND\s*$)|(^\s*OR\s+)|(\s+OR\s*$)/g, '');
+    var filterString = '(' + vm.optionalFilters.join([separator=' OR ']) + ') AND (' + vm.requiredFilters.join([separator=' AND ']) + ')';
+    filterString = filterString.replace(/(\s+AND\s*\(\)\s*$)/g, '');
     vm.query(filterString);
     $(document.body).scrollTop(0);
     search(vm);
@@ -91,7 +97,6 @@ var maybeQuashEvent = function(event) {
 
 var addFilter = function(vm, filter, required){
     required = required || false;
-    console.log(filter);
     if (required === true && vm.requiredFilters.indexOf(filter) === -1){
         vm.requiredFilters.push(filter);
     } else if (vm.optionalFilters.indexOf(filter) === -1){
