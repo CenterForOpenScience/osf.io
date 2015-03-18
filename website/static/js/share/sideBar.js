@@ -20,12 +20,14 @@ SideBar.view = function(ctrl){
                     'href': '#',
                     onclick: function(event) {
                             ctrl.vm.sort('Relevance');
+                            utils.buildQuery(ctrl.vm);
                         }
                 }, ['Relevance'])]),
                 m('li', [m('a', {
                     'href': '#',
                     onclick: function(event) {
                         ctrl.vm.sort('Date');
+                        utils.buildQuery(ctrl.vm);
                     }
                 }, ['Date'])]),
             ])

@@ -20,7 +20,8 @@ ShareApp.ViewModel = function() {
     self.page = 0;
     self.count = 0;
     self.results = [];
-    self.query = m.prop($osf.urlParams().q || '');
+    self.queryString = m.prop($osf.urlParams().q || '');
+    self.query = m.prop([])
     m.request({
         method: 'get',
         background: true,
@@ -54,10 +55,10 @@ ShareApp.controller = function() {
     var self = this;
 
     self.vm = new ShareApp.ViewModel(self.vm);
+    self.sideBarController = new SideBar.controller(self.vm);
     self.statsController = new Stats.controller(self.vm);
     self.resultsController = new Results.controller(self.vm);
     self.searchBarController = new SearchBar.controller(self.vm);
-    self.sideBarController = new SideBar.controller(self.vm);
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;

@@ -77,9 +77,17 @@ var search = function(vm) {
 };
 
 var buildQuery = function(vm){
-    var filterString = '(' + vm.optionalFilters.join([separator=' OR ']) + ') AND (' + vm.requiredFilters.join([separator=' AND ']) + ')';
-    filterString = filterString.replace(/(\s+AND\s*\(\)\s*$)/g, '');
-    vm.query(filterString);
+    var query = [
+        vm.queryString(),
+        '(' + vm.optionalFilters.join(' OR ') + ')',
+        '(' + vm.requiredFilters.join(' AND ') + ')'
+    ].filter(function(a) {
+        if (a === '()'){
+            return false;
+        }
+        return true;
+    }).join(' AND ');
+    vm.query(query);
     $(document.body).scrollTop(0);
     search(vm);
 };
