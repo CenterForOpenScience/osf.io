@@ -285,8 +285,8 @@ class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    date = fields.DateTimeField(default=datetime.datetime.utcnow)
-    action = fields.StringField()
+    date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
+    action = fields.StringField(index=True)
     params = fields.DictionaryField()
 
     user = fields.ForeignField('user', backref='created')
@@ -545,18 +545,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     _id = fields.StringField(primary=True)
 
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, index=True)
 
     # Privacy
-    is_public = fields.BooleanField(default=False)
+    is_public = fields.BooleanField(default=False, index=True)
 
     # User mappings
     permissions = fields.DictionaryField()
     visible_contributor_ids = fields.StringField(list=True)
 
     # Project Organization
-    is_dashboard = fields.BooleanField(default=False)
-    is_folder = fields.BooleanField(default=False)
+    is_dashboard = fields.BooleanField(default=False, index=True)
+    is_folder = fields.BooleanField(default=False, index=True)
 
     # Expanded: Dictionary field mapping user IDs to expand state of this node:
     # {
@@ -565,21 +565,21 @@ class Node(GuidStoredObject, AddonModelMixin):
     # }
     expanded = fields.DictionaryField(default={}, validate=validate_user)
 
-    is_deleted = fields.BooleanField(default=False)
-    deleted_date = fields.DateTimeField()
+    is_deleted = fields.BooleanField(default=False, index=True)
+    deleted_date = fields.DateTimeField(index=True)
 
-    is_registration = fields.BooleanField(default=False)
-    registered_date = fields.DateTimeField()
+    is_registration = fields.BooleanField(default=False, index=True)
+    registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
 
-    is_fork = fields.BooleanField(default=False)
-    forked_date = fields.DateTimeField()
+    is_fork = fields.BooleanField(default=False, index=True)
+    forked_date = fields.DateTimeField(index=True)
 
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
-    category = fields.StringField(validate=validate_category)
+    category = fields.StringField(validate=validate_category, index=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -602,11 +602,11 @@ class Node(GuidStoredObject, AddonModelMixin):
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
-    forked_from = fields.ForeignField('node', backref='forked')
-    registered_from = fields.ForeignField('node', backref='registrations')
+    forked_from = fields.ForeignField('node', backref='forked', index=True)
+    registered_from = fields.ForeignField('node', backref='registrations', index=True)
 
     # The node (if any) used as a template for this node's creation
-    template_node = fields.ForeignField('node', backref='template_node')
+    template_node = fields.ForeignField('node', backref='template_node', index=True)
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
