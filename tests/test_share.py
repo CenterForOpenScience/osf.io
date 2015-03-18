@@ -9,53 +9,53 @@ STANDARD_RETURN_VALUE = {
     'hits': {
         'hits': [{
             "_score": 1,
-            "_type": "doepages",
+            "_type": "squaredcircle",
             "_id": "1164135",
             "_source": {
-                "description": "We calculate the masses of baryons containing one, two, or three heavy quarks using lattice QCD. We consider all possible combinations of charm and bottom and quark-model studies.",
+                "description": "Jobbers and society.",
                 "contributors": [{
                     "given": "Zachary",
                     "suffix": "",
-                    "family": "Brown",
-                    "middle": "S.",
+                    "family": "Ryder",
+                    "middle": "Woo Woo Woo",
                     "prefix": "",
                     "ORCID": "",
                     "email": ""
                 }],
-                "title": "Charmed bottom baryon spectroscopy from lattice QCD",
-                "source": "doepages",
+                "title": "Am I Still Employed",
+                "source": "squaredcircle",
                 "dateUpdated": "2014-11-24T00:00:00",
                 "id": {
-                    "url": "http://www.osti.gov/pages/biblio/1164135",
-                    "serviceID": "1164135",
-                    "doi": "10.1103/PhysRevD.90.094507"
+                    "url": "http://squaredcircle.com/zackryder/woowoowoo",
+                    "serviceID": "123456",
+                    "doi": "10.123/wrestlingDOIs"
                 },
-                "tags": []
+                "tags": ['woo', 'woo', 'woo'],
             },
             "_index": "share"
         }, {
             "_score": 1,
-            "_type": "doepages",
+            "_type": "squaredcircle",
             "_id": "1164539",
             "_source": {
-                "description": "",
+                "description": "Unlocking the universe with the Cosmic Key",
                 "contributors": [{
-                    "given": "Peng",
+                    "given": "Star",
                     "suffix": "",
-                    "family": "Lian",
+                    "family": "Dust",
                     "middle": "",
                     "prefix": "",
                     "ORCID": "",
                     "email": ""
                 }],
-                "source": "doepages",
+                "source": "squaredcircle",
                 "dateUpdated": "2014-11-27T00:00:00",
                 "id": {
-                    "url": "http://www.osti.gov/pages/biblio/1164539",
-                    "serviceID": "1164539",
-                    "doi": "10.1021/bi500608u"
+                    "url": "http://squaredcircle.com/stardust/hisssssss",
+                    "serviceID": "12346",
+                    "doi": "10.123/wrestlingDOIs"
                 },
-                "tags": []
+                "tags": ['cody', 'is', 'noone']
             },
             "_index": "share"
         }],
