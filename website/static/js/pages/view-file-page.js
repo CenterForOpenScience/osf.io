@@ -33,6 +33,23 @@ $(document).ready(function() {
                         width: '100%'
                     }];
                 },
+                lazyLoadOnLoad: function(item) {
+                    var tb = this;
+                    for (var i=0; i < item.children.length; i++) {
+                        var child = item.children[i];
+                        if (child.data.kind === 'file' && child.data.name === window.contextVars.file.name && child.data.provider === window.contextVars.file.provider) {
+                            tb.currentFileId = child.id;
+                        }
+                    }
+
+                    if (tb.currentFileId) {
+                       var index = tb.returnRangeIndex(tb.currentFileId);
+                       if (tb.visibleIndexes.indexOf(index) !== -1 ) {
+                           var scrollTo = (tb.visibleIndexes.indexOf(index)/ tb.visibleIndexes.length) * 100;
+                           $('#tb-tbody').scrollTop(scrollTo);
+                       }
+                    }
+                },
                 resolveRows: function (item) {
                     var selectClass = '';
                     if (item.data.kind === 'file' && item.data.name === window.contextVars.file.name && item.data.provider === window.contextVars.file.provider) {
