@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import itertools
+import math
 import httplib as http
 
 from flask import request
@@ -283,22 +284,21 @@ def dashboard(auth):
 @must_be_logged_in
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
-    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
-    page_size = 10
-    offset = page_num * page_size
-    recent_log_ids = itertools.islice(user.get_recent_log_ids(), offset, offset + page_size + 1)
+    page = int(request.args.get('page', '').strip('/') or 0)
+    size = float(request.args.get('size', 10))
+    start = page * size
+    total = sum(1 for x in user.get_recent_log_ids())
+    recent_log_ids = itertools.islice(user.get_recent_log_ids(), start, start + size)
     logs = (model.NodeLog.load(id) for id in recent_log_ids)
-    watch_logs = []
-    has_more_logs = False
 
-    for log in logs:
-        if len(watch_logs) < page_size:
-            watch_logs.append(serialize_log(log))
-        else:
-            has_more_logs = True
-            break
+    pages = math.ceil(total / size)
 
-    return {"logs": watch_logs, "has_more_logs": has_more_logs}
+    return {
+        "logs": [serialize_log(log) for log in logs],
+        "total": total,
+        "pages": pages,
+        "page": page
+    }
 
 
 def serialize_log(node_log, anonymous=False):
