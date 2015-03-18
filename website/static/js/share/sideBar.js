@@ -42,18 +42,8 @@ SideBar.controller = function(vm) {
     self.vm = vm;
 
     self.vm.sort = m.prop($osf.urlParams().sort) || m.prop("Relevance");
-    self.vm.requiredFilters = $osf.urlParams().required || [];
-    self.vm.optionalFilters = $osf.urlParams().optional || [];
-    if (self.vm.requiredFilters.indexOf('|') > -1){
-        self.vm.requiredFilters = self.vm.requiredFilters.split('|');
-    } else if (self.vm.requiredFilters.length > 0) {
-        self.vm.requiredFilters = [self.vm.requiredFilters];
-    }
-    if (self.vm.optionalFilters.indexOf('|') > -1){
-        self.vm.optionalFilters = self.vm.optionalFilters.split('|');
-    } else if (self.vm.optionalFilters.length > 0) {
-        self.vm.optionalFilters = [self.vm.optionalFilters]
-    }
+    self.vm.requiredFilters = $osf.urlParams.required ? $osf.urlParams().required.split('|') : [];
+    self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 
     self.renderProviders = function () {
         return Object.keys(self.vm.ProviderMap).map(function(result, index){
