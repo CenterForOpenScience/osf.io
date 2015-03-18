@@ -1,4 +1,4 @@
-<!-- Template for the "Dropbox" section in the "Configure Add-ons" panel-->
+## Template for the "Dropbox" section in the "Configure Add-ons" panel
 <div id='dropboxAddonScope' class='addon-settings scripted'>
 
     <h4 class="addon-title">
