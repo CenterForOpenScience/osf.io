@@ -1199,6 +1199,16 @@ class TestNode(OsfTestCase):
             )
         )
 
+    def test_web_url_for_absolute(self):
+        result = self.parent.web_url_for('view_project', _absolute=True)
+        assert_in(settings.DOMAIN, result)
+        assert_not_in(settings.OFFLOAD_DOMAIN, result)
+
+    def test_web_url_for_absolute_offload(self):
+        result = self.parent.web_url_for('view_project', _absolute=True, _offload=True)
+        assert_in(settings.OFFLOAD_DOMAIN, result)
+        assert_not_in(settings.DOMAIN, result)
+
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
         assert_equal(node.category_display, 'Hypothesis')
