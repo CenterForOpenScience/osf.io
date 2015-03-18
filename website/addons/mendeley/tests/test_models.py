@@ -170,18 +170,25 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_is_none(self.node_settings.user_settings)
 
     def test_set_target_folder(self):
+        folder_id = 'fake-folder-id'
+        folder_name = 'fake-folder-name'
+
         external_account = ExternalAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
         self.node_settings.set_auth(
             external_account=external_account,
-            user=self.user
+            user=self.user,
         )
 
         assert_is_none(self.node_settings.mendeley_list_id)
 
-        self.node_settings.set_target_folder('fake-folder-id')
+        self.node_settings.set_target_folder(
+            folder_id,
+            folder_name,
+            auth=Auth(user=self.user),
+        )
 
         # instance was updated
         assert_equal(
@@ -198,6 +205,11 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
                 metadata={'folder': 'fake-folder-id'}
             )
         )
+
+        log = self.node.logs[-1]
+        assert_equal(log.action, 'mendeley_folder_selected')
+        assert_equal(log.params['folder_id'], folder_id)
+        assert_equal(log.params['folder_name'], folder_name)
 
     def test_has_auth_false(self):
         external_account = ExternalAccountFactory()
@@ -316,22 +328,6 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
 
 class MendeleyUserSettingsTestCase(OsfTestCase):
-    def test_to_json(self):
-        # All values are passed to the user settings view
-        user_accounts = [MendeleyAccountFactory(), MendeleyAccountFactory()]
-        user = UserFactory(external_accounts=user_accounts)
-        user_addon = MendeleyUserSettingsFactory(owner=user)
-        res = user_addon.to_json(user)
-        for account in user_accounts:
-            assert_in(
-                {
-                    'id': account._id,
-                    'provider_id': account.provider_id,
-                    'display_name': account.display_name,
-                    'nodes': [],
-                },
-                res['accounts'],
-            )
 
     def _prep_oauth_case(self):
         self.node = ProjectFactory()

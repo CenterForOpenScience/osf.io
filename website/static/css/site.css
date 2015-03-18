@@ -861,7 +861,7 @@ h1.node-title, h1.node-parent-title {
 .wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
     cursor: pointer;
 }
-.wiki-panel-header .icon-list {
+.wiki-panel-header .fa-list {
     color: #808080;
 }
 

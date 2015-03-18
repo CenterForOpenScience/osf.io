@@ -10,7 +10,7 @@
             <div class="col-xs-2">
                 % if user['can_edit']:
                     <a href="#" data-toggle="modal" data-target="#newWiki">
-                        <i class="icon icon-plus-sign pointer icon-lg" data-toggle="tooltip" title="New" data-placement="left"></i>
+                        <i class="fa fa-plus-circle pointer fa-lg" data-toggle="tooltip" title="New" data-placement="left"></i>
                     </a>
                 % endif
             </div>
@@ -39,7 +39,7 @@
                                     <a href="${page['url']}"><div class="col-xs-10">${page['name']}</div></a>
                                     <div class="col-xs-2">
                                         <a href="#" data-toggle="modal" data-target="#deleteWiki">
-                                            <i class="icon icon-trash text-danger pointer icon-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
+                                            <i class="fa fa-trash-o text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
                                         </a>
                                     </div>
                                 % else:
@@ -61,7 +61,7 @@
                         <div class="col-xs-10">
                             <a href="${child['url']}">
                                 % if child['is_pointer']:
-                                    <i class="icon icon-link"></i>
+                            <i class="fa fa-hand-o-right"></i>
                                 % endif
                                 ${child['title'] | n}
                                     % if child['category']:

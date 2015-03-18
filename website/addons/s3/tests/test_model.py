@@ -59,6 +59,42 @@ class TestFileGuid(OsfTestCase):
         assert_false(created2)
         assert_equals(guid1, guid2)
 
+class TestNodeSettings(OsfTestCase):
+    def setUp(self):
+        super(TestNodeSettings, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.user.add_addon('s3')
+        self.project.add_addon('s3', auth=Auth(self.user))
+
+        self.user_settings = self.user.get_addon('s3')
+        self.node_settings = self.project.get_addon('s3')
+
+        self.user_settings.access_key = 'We-Will-Rock-You'
+        self.user_settings.secret_key = 'Idontknowanyqueensongs'
+        self.user_settings.save()
+
+        self.node_settings.bucket = 'Sheer-Heart-Attack'
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.bucket = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
 
 class TestCallbacks(OsfTestCase):
 
@@ -146,11 +182,22 @@ class TestCallbacks(OsfTestCase):
         drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
         assert_true('Atticus' in drop_list)
 
-    def test_after_remove_contributor(self):
-        self.node_settings.after_remove_contributor(
-            self.project, self.project.creator
+    def test_after_remove_contributor_self(self):
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, self.consolidated_auth
         )
         assert_equal(self.node_settings.user_settings, None)
+        assert_true(message)
+        assert_not_in("You can re-authenticate", message)
+
+    def test_after_remove_contributor_not_self(self):
+        auth = Auth(user=self.non_authenticator)
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, auth
+        )
+        assert_equal(self.node_settings.user_settings, None)
+        assert_true(message)
+        assert_in("You can re-authenticate", message)
 
     def test_registration_settings(self):
         registration = ProjectFactory()

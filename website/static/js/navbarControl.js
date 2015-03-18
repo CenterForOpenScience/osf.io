@@ -21,7 +21,7 @@ var NavbarViewModel = function() {
     });
 
     // signIn viewmodel component
-    self.signIn = new signIn.SignIn('#signInForm', false);
+    self.signIn = new signIn.ViewModel();
 
     self.toggleSearch = function(){
         if(self.showSearch()){

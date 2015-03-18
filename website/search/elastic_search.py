@@ -37,7 +37,7 @@ ALIASES = {
     'total': 'Total'
 }
 
-INDICES = ['website']
+INDEX = settings.ELASTIC_INDEX
 
 try:
     es = Elasticsearch(
@@ -86,7 +86,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index='website', doc_type=None, search_type='count', body=count_query)
+    res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
 
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
@@ -109,7 +109,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index='website', doc_type='_all'):
+def search(query, index=INDEX, doc_type='_all'):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -200,7 +200,7 @@ def load_parent(parent_id):
 
 
 @requires_search
-def update_node(node, index='website'):
+def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
 
     component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
@@ -262,10 +262,10 @@ def update_node(node, index='website'):
 
 
 @requires_search
-def update_user(user):
+def update_user(user, index=INDEX):
     if not user.is_active:
         try:
-            es.delete(index='website', doc_type='user', id=user._id, refresh=True, ignore=[404])
+            es.delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
         except NotFoundError:
             pass
         return
@@ -302,13 +302,12 @@ def update_user(user):
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
-    es.index(index='website', doc_type='user', body=user_doc, id=user._id, refresh=True)
+    es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 
 @requires_search
 def delete_all():
-    for idx in INDICES:
-        delete_index(idx)
+    delete_index(INDEX)
 
 
 @requires_search
@@ -317,7 +316,7 @@ def delete_index(index):
 
 
 @requires_search
-def create_index():
+def create_index(index=INDEX):
     '''Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, and registrations'''
     mapping = {
@@ -328,13 +327,13 @@ def create_index():
             },
         }
     }
-    es.indices.create('website', ignore=[400])
+    es.indices.create(index, ignore=[400])
     for type_ in ['project', 'component', 'registration', 'user']:
-        es.indices.put_mapping(index='website', doc_type=type_, body=mapping, ignore=[400, 404])
+        es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
 @requires_search
-def delete_doc(elastic_document_id, node, index='website'):
+def delete_doc(elastic_document_id, node, index=INDEX):
     category = 'registration' if node.is_registration else node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
@@ -361,7 +360,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
             "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
 
-    results = search(build_query(query, start=start, size=size), index='website', doc_type='user')
+    results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
 

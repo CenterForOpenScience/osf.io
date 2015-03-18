@@ -41,11 +41,9 @@ ForgotPasswordViewModel.prototype.isValid = function() {
 };
 
 
-var ForgotPassword = function(selector, applyBindings) {
+var ForgotPassword = function(selector) {
     this.viewModel = new ForgotPasswordViewModel();
-    if (applyBindings) {  // Apply bindings if viewmodel is not a child component
-        $osf.applyBindings(this.viewModel, selector);
-    }
+    $osf.applyBindings(this.viewModel, selector);
 };
 
 module.exports = {

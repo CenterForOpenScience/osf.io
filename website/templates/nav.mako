@@ -4,14 +4,14 @@
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
                 <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
+                <span class="fa fa-bar"></span>
+                <span class="fa fa-bar"></span>
+                <span class="fa fa-bar"></span>
             </button>
             <!-- ko ifnot: onSearchPage -->
             <span class="visible-xs" data-bind="click : toggleSearch, css: searchCSS">
                 <a class="osf-xs-search pull-right" >
-                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
+                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg" ></span>
                 </a>
             </span>
             <!-- /ko -->
@@ -47,7 +47,7 @@
                 <!-- ko ifnot: onSearchPage -->
                 <li class="hidden-xs" data-bind="click : toggleSearch, css: searchCSS">
                     <a class="" >
-                        <span rel="tooltip" data-placement="bottom" title="Search OSF" class="icon-search icon-lg" ></span>
+                        <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg" ></span>
                     </a>
                 </li>
                 <!-- /ko -->
@@ -62,18 +62,18 @@
                 </li>
                 <li>
                     <a href="${web_url_for('user_profile')}">
-                        <span rel="tooltip" data-placement="bottom" title="Settings" class="icon-cog hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Settings" class="fa fa-cog hidden-xs fa-lg"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
                     <a href="${web_url_for('auth_logout')}">
-                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="icon-signout hidden-xs icon-lg"></span>
+                        <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="fa fa-sign-out hidden-xs fa-lg"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>
                 % elif allow_login:
-                <li data-bind="with: $root.signIn.viewModel">
+                <li data-bind="with: $root.signIn">
                     <form
                             id="signInForm"
                             class="navbar-form navbar-right"

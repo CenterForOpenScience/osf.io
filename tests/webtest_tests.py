@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
 import unittest
-import os
 import re
 import mock
 
@@ -24,8 +23,6 @@ from website import settings, language
 from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
-from website.project.views.file import get_cache_path
-from framework.render.tasks import ensure_path
 from website.util import web_url_for
 
 
@@ -153,7 +150,6 @@ class TestAUser(OsfTestCase):
         res = res.follow()
         assert_equal(web_url_for('two_factor'), res.request.path)
         assert_equal(res.status_code, 200)
-
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_access_resource_before_two_factor_authorization(self, mock_push_message):

@@ -57,11 +57,9 @@ SignInViewModel.prototype.isValid = function() {
     }
 };
 
-var SignIn = function(selector, applyBindings) {
+var SignIn = function(selector) {
     this.viewModel = new SignInViewModel();
-    if (applyBindings === true) {
-        $osf.applyBindings(this.viewModel, selector);
-    }
+    $osf.applyBindings(this.viewModel, selector);
 };
 
 module.exports = {
