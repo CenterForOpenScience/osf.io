@@ -217,16 +217,151 @@ class TestS3ViewsConfig(OsfTestCase):
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('<label for="s3Addon">Access Key</label>' in rv.body)
 
-    '''
-    Test no longer relevant in KO driven UI 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
-    def test_node_settings_user_settings_ui(self, mock_dropdown):
-        mock_dropdown.return_value = ['mybucket']
-        url = self.project.url + 'settings/'
+    @mock.patch('website.addons.s3.utils.get_bucket_list')
+    def test_s3_bucket_list(self, mock_bucket_list):
+        fake_buckets = [
+            MockS3Bucket(name=fake.domain_word())
+            for i in range(10)
+        ]
+        mock_bucket_list.return_value = fake_buckets
+        url = self.node_settings.owner.api_url_for('s3_bucket_list')
         ret = self.app.get(url, auth=self.user.auth)
-        assert_true('mybucket' in ret.body)
-    '''
 
+        assert_equals(ret.json, {'buckets': [bucket.name for bucket in fake_buckets]})
+
+    def test_s3_remove_node_settings_owner(self):
+        url = self.node_settings.owner.api_url_for('s3_remove_node_settings')
+        ret = self.app.delete(url, auth=self.user.auth)
+
+        assert_equal(ret.json['has_bucket'], False)
+        assert_equal(ret.json['node_has_auth'], False)
+
+    def test_s3_remove_node_settings_unauthorized(self):
+        url = self.node_settings.owner.api_url_for('s3_remove_node_settings')
+        ret = self.app.delete(url, auth=None, expect_errors=True)
+
+        assert_equal(ret.status_code, 401)
+
+    def test_s3_get_node_settings_owner(self):
+        url = self.node_settings.owner.api_url_for('s3_get_node_settings')
+        res = self.app.get(url, auth=self.user.auth)
+
+        expected_bucket = self.node_settings.bucket
+        expected_node_has_auth = True
+        expected_user_is_owner = True
+        result = res.json['result']
+        assert_equal(result['bucket'], expected_bucket)
+        assert_equal(result['node_has_auth'], expected_node_has_auth)
+        assert_equal(result['user_is_owner'], expected_user_is_owner)
+
+    def test_s3_get_node_settings_not_owner(self):
+        url = self.node_settings.owner.api_url_for('s3_get_node_settings')
+        non_owner = AuthUserFactory()
+        self.project.add_contributor(non_owner, save=True, permissions=['write'])
+        res = self.app.get(url, auth=non_owner.auth)
+
+        expected_bucket = self.node_settings.bucket
+        expected_node_has_auth = True
+        expected_user_is_owner = False
+        result = res.json['result']
+        assert_equal(result['bucket'], expected_bucket)
+        assert_equal(result['node_has_auth'], expected_node_has_auth)
+        assert_equal(result['user_is_owner'], expected_user_is_owner)
+
+    def test_s3_get_node_settings_unauthorized(self):
+        url = self.node_settings.owner.api_url_for('s3_get_node_settings')
+        unauthorized = AuthUserFactory()
+        ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
+
+        assert_equal(ret.status_code, 403)
+
+    @mock.patch('website.addons.s3.views.config.add_s3_auth')
+    def test_s3_authorize_node_valid(self, mock_add):
+        mock_add.return_value = True
+        url = self.project.api_url_for('s3_authorize_node')
+        cred = {
+            'access_key': fake.password(),
+            'secret_key': fake.password(),
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth)
+        assert_equal(res.json['node_has_auth'], True)
+
+    def test_s3_authorize_node_invalid(self):
+        url = self.project.api_url_for('s3_authorize_node')
+        cred = {
+            'access_key': fake.password(),
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.addons.s3.views.config.add_s3_auth')
+    def test_s3_authorize_node_malformed(self, mock_add):
+        mock_add.return_value = False
+        url = self.project.api_url_for('s3_authorize_node')
+        cred = {
+            'access_key': fake.password(),
+            'secret_key': fake.password(),
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.json['message'], 'Incorrect credentials')
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.addons.s3.views.config.add_s3_auth')
+    def test_s3_authorize_node_unauthorized(self, mock_add):
+        mock_add.return_value = True
+        url = self.project.api_url_for('s3_authorize_node')
+        cred = {
+            'access_key': fake.password(),
+            'secret_key': fake.password(),
+        }
+        unauthorized = AuthUserFactory()
+        res = self.app.post_json(url, cred, auth=unauthorized.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    @mock.patch('website.addons.s3.views.config.add_s3_auth')
+    def test_s3_authorize_user_valid(self, mock_add):
+        mock_add.return_value = True
+        url = self.project.api_url_for('s3_authorize_user')
+        cred = {
+            'access_key': fake.password(),
+            'secret_key': fake.password(),
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth)
+        assert_equal(res.json, {})
+
+    def test_s3_authorize_user_invalid(self):
+        url = self.project.api_url_for('s3_authorize_user')
+        cred = {
+            'access_key': fake.password(),
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('website.addons.s3.views.config.add_s3_auth')
+    def test_s3_authorize_user_malformed(self, mock_add):
+        mock_add.return_value = False
+        url = self.project.api_url_for('s3_authorize_user')
+        cred = {
+            'access_key': fake.password(),
+            'secret_key': fake.password(),
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.json['message'], 'Incorrect credentials')
+        assert_equal(res.status_code, 400)
+
+    def test_s3_node_import_auth_authorized(self):
+        url = self.project.api_url_for('s3_node_import_auth')
+        self.node_settings.deauthorize(auth=None, save=True)
+        res = self.app.post(url, auth=self.user.auth)
+        assert_equal(res.json['node_has_auth'], True)
+        assert_equal(res.json['user_is_owner'], True)
+
+    def test_s3_node_import_auth_unauthorized(self):
+        url = self.project.api_url_for('s3_node_import_auth')
+        self.node_settings.deauthorize(auth=None, save=True)
+        unauthorized = AuthUserFactory()
+        res = self.app.post(url, auth=unauthorized.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 class TestCreateBucket(OsfTestCase):
 
@@ -288,61 +423,3 @@ class TestCreateBucket(OsfTestCase):
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
-
-    @mock.patch('website.addons.s3.utils.get_bucket_list')
-    def test_s3_bucket_list(self, mock_bucket_list):
-        fake_buckets = [
-            MockS3Bucket(name=fake.domain_word())
-            for i in range(10)
-        ]
-        mock_bucket_list.return_value = fake_buckets
-        url = self.node_settings.owner.api_url_for('s3_bucket_list')
-        ret = self.app.get(url, auth=self.user.auth)
-
-        assert_equals(ret.json, {'buckets': [bucket.name for bucket in fake_buckets]})
-
-    def test_s3_remove_node_settings_owner(self):
-        url = self.node_settings.owner.api_url_for('s3_remove_node_settings')
-        ret = self.app.delete(url, auth=self.user.auth)
-
-        assert_equal(ret.json['has_bucket'], False)
-        assert_equal(ret.json['node_has_auth'], False)
-
-    def test_s3_remove_node_settings_unauthorized(self):
-        url = self.node_settings.owner.api_url_for('s3_remove_node_settings')
-        ret = self.app.delete(url, auth=None, expect_errors=True)
-
-        assert_equal(ret.status_code, 401)
-
-    def test_s3_get_node_settings_owner(self):
-        url = self.node_settings.owner.api_url_for('s3_get_node_settings')
-        res = self.app.get(url, auth=self.user.auth)
-
-        expected_bucket = self.node_settings.bucket
-        expected_node_has_auth = True
-        expected_user_is_owner = True
-        result = res.json['result']
-        assert_equal(result['bucket'], expected_bucket)
-        assert_equal(result['node_has_auth'], expected_node_has_auth)
-        assert_equal(result['user_is_owner'], expected_user_is_owner)
-
-    def test_s3_get_node_settings_not_owner(self):
-        url = self.node_settings.owner.api_url_for('s3_get_node_settings')
-        non_owner = AuthUserFactory()
-        self.project.add_contributor(non_owner, save=True, permissions=['write'])
-        res = self.app.get(url, auth=non_owner.auth)
-
-        expected_bucket = self.node_settings.bucket
-        expected_node_has_auth = True
-        expected_user_is_owner = False
-        result = res.json['result']
-        assert_equal(result['bucket'], expected_bucket)
-        assert_equal(result['node_has_auth'], expected_node_has_auth)
-        assert_equal(result['user_is_owner'], expected_user_is_owner)
-
-    def test_s3_get_node_settings_unauthorized(self):
-        url = self.node_settings.owner.api_url_for('s3_get_node_settings')
-        unauthorized = AuthUserFactory()
-        ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
-
-        assert_equal(ret.status_code, 403)
