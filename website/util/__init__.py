@@ -29,7 +29,7 @@ def _get_guid_url_for(url):
     return guid_url
 
 
-def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
+def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -42,11 +42,12 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        return urlparse.urljoin(settings.DOMAIN, url)
+        domain = settings.OFFLOAD_DOMAIN if _offload else settings.DOMAIN
+        return urlparse.urljoin(domain, url)
     return url
 
 
-def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
+def web_url_for(view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
     """Reverse URL lookup for web routes (those that use the OsfWebRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -59,7 +60,8 @@ def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        return urlparse.urljoin(settings.DOMAIN, url)
+        domain = settings.OFFLOAD_DOMAIN if _offload else settings.DOMAIN
+        return urlparse.urljoin(domain, url)
     return url
 
 
