@@ -114,5 +114,5 @@ def serialize_urls(node_addon, user):
     }
     if user_settings:
         result['owner'] = web_url_for('profile_view_id',
-                                      uid=user_settings.owner._primary_key)
+                                      uid=user_settings.owner._id)
     return result
