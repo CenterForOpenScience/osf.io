@@ -66,11 +66,13 @@ var ViewModel = function(url, selector) {
 };
 
 ViewModel.prototype.toggleSelect = function() {
-    this.showSelect(!this.showSelect());
-    if (!this.loadedBucketList()) {
-        return this.fetchBucketList();
-    }
-    return new $.Deferred().promise();
+    var self = this;
+    self.showSelect(!self.showSelect());
+    return self.fetchBucketList()
+    .done(function(buckets){
+        self.bucketList(buckets);
+        self.selectedBucket(self.currentBucket());
+    });
 };
 
 ViewModel.prototype.selectBucket = function() {
@@ -218,13 +220,15 @@ ViewModel.prototype.createBucket = function(bucketName) {
         self.bucketList();
         self.showSelect(true);
     }).fail(function(xhr) {
-        var message = JSON.parse(xhr.responseText).message;
+        var resp = JSON.parse(xhr.responseText);
+        var message = resp.message;
+        var title = resp.title || 'Problem creating bucket';
         self.creating(false);
         if (!message) {
             message = 'Looks like that name is taken. Try another name?';
         }
         bootbox.confirm({
-            title: 'Duplicate bucket name',
+            title: title,
             message: message,
             callback: function(result) {
                 if (result) {
@@ -261,16 +265,21 @@ ViewModel.prototype.openCreateBucket = function() {
 
 ViewModel.prototype.fetchBucketList = function() {
     var self = this;
-    return $.ajax({
-        url: self.urls().bucket_list,
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            self.bucketList(response.buckets);
+
+    var ret = $.Deferred();
+    if(self.loadedBucketList()){
+        ret.resolve(self.bucketList());
+    }
+    else{
+         $.ajax({
+            url: self.urls().bucket_list,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
             self.loadedBucketList(true);
-            self.selectedBucket(self.currentBucket());
-        },
-        error: function(xhr, status, error) {
+            ret.resolve(response.buckets);
+        })
+        .fail(function(xhr, status, error) {
             var message = 'Could not retrieve list of S3 buckets at' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
@@ -280,8 +289,10 @@ ViewModel.prototype.fetchBucketList = function() {
                 textStatus: status,
                 error: error
             });
-        }
-    });
+            ret.reject(xhr, status, error);
+        });
+    }
+    return ret.promise();
 };
 
 ViewModel.prototype.updateFromData = function(settings) {
