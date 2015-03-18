@@ -135,6 +135,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     @property
+    def complete(self):
+        return self.has_auth and self.figshare_id is not None
+
+    @property
     def linked_content(self):
         return {
             'id': self.figshare_id,

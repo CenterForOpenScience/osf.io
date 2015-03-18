@@ -543,11 +543,11 @@ def analytics():
     init_app()
     from scripts import metrics
     from scripts.analytics import (
-        logs, addons, comments, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, links, watch, email_invites,
+        metrics, logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
