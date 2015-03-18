@@ -71,7 +71,12 @@ var search = function(vm) {
     vm.page = 0;
     vm.results = [];
 
-    History.pushState({query: vm.query()}, 'OSF | SHARE', '?q=' + vm.query());
+    History.pushState({
+        queryString: vm.queryString(),
+        optionalFilters: vm.optionalFilters,
+        requiredFilters: vm.requiredFilters,
+        query: vm.query()
+    }, 'OSF | SHARE', '?q=' + vm.query());
 
     loadMore(vm);
 };

@@ -62,8 +62,14 @@ ShareApp.controller = function() {
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
-        if (state.query === self.vm.query()) return;
-        self.vm.query(state.query);
+        if (state.queryString === self.vm.queryString() &&
+            state.query === self.vm.query() &&
+            state.optionalFilters === self.vm.optionalFilters &&
+            state.requiredFilters === self.vm.requiredFilters) return;
+        self.vm.optionalFilters = state.optionalFilters;
+        self.vm.requiredFilters = state.requiredFilters;
+        self.vm.queryString(state.queryString);
+        self.vm.query(state.query)
         utils.search(self.vm);
     });
 };
