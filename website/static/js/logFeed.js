@@ -122,8 +122,10 @@ var LogsViewModel = oop.extend(Paginator, {
         }).fail(
             $osf.handleJSONError
         );
+
     }
 });
+
 
 /**
   * Create an Array of Log model objects from data returned from an endpoint
