@@ -234,7 +234,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).set_auth(*args, **kwargs)
 
-    def set_target_folder(self, mendeley_list_id):
+    def set_target_folder(self, mendeley_list_id, mendeley_list_name, auth):
         """Configure this addon to point to a Mendeley folder
 
         :param str mendeley_list_id:
@@ -253,3 +253,14 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         # update this instance
         self.mendeley_list_id = mendeley_list_id
         self.save()
+
+        self.owner.add_log(
+            'mendeley_folder_selected',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'folder_id': mendeley_list_id,
+                'folder_name': mendeley_list_name,
+            },
+            auth=auth,
+        )
