@@ -32,3 +32,4 @@ git+https://github.com/CenterForOpenScience/modular-file-renderer.git@dev
 requests==2.5.3
 requests-oauthlib>=0.4.1
 raven==5.1.1
+webcolors==1.4

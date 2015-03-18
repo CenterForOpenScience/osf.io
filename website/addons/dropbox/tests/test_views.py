@@ -9,9 +9,12 @@ import httplib
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from dropbox.rest import ErrorResponse
+from dropbox.client import DropboxOAuth2Flow
+
 from urllib3.exceptions import MaxRetryError
+
 from tests.base import OsfTestCase, assert_is_redirect
-from tests.factories import AuthUserFactory
+from tests.factories import AuthUserFactory, ProjectFactory
 
 from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, mock_responses, MockDropbox, patch_client
@@ -47,6 +50,22 @@ class TestAuthViews(OsfTestCase):
         url = api_url_for('dropbox_oauth_finish')
         res = self.app.get(url)
         assert_is_redirect(res)
+
+    @mock.patch('website.addons.dropbox.views.auth.session')
+    @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
+    def test_dropbox_oauth_finish_cancelled(self, mock_finish, mock_session):
+        node = ProjectFactory(creator=self.user)
+        mock_session.data = {'dropbox_auth_nid': node._id}
+        mock_response = mock.Mock()
+        mock_response.status = 404
+        mock_finish.side_effect = DropboxOAuth2Flow.NotApprovedException
+        settings = self.user.get_addon('dropbox')
+        url = api_url_for('dropbox_oauth_finish')
+        res = self.app.get(url)
+
+        assert_is_redirect(res)
+        assert_in(node._id, res.headers["location"])
+        assert_false(settings)
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.disable_access_token')
     def test_dropbox_oauth_delete_user(self, mock_disable_access_token):

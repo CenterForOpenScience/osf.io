@@ -14,7 +14,7 @@ from framework.auth import Auth
 
 from website.addons.github.exceptions import NotFoundError
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, TooBigToRenderError
+from website.addons.github.exceptions import TooBigToRenderError
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
 from website.addons.github.model import AddonGitHubUserSettings
 from website.addons.github.model import AddonGitHubNodeSettings
@@ -180,18 +180,32 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    def test_after_remove_contributor_authenticator(self):
-        self.node_settings.after_remove_contributor(
-            self.project, self.project.creator
+    def test_after_remove_contributor_authenticator_self(self):
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, self.consolidated_auth
         )
         assert_equal(
             self.node_settings.user_settings,
             None
         )
+        assert_true(message)
+        assert_not_in("You can re-authenticate", message)
+
+    def test_after_remove_contributor_authenticator_not_self(self):
+        auth = Auth(user=self.non_authenticator)
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, auth
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            None
+        )
+        assert_true(message)
+        assert_in("You can re-authenticate", message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
-            self.project, self.non_authenticator
+            self.project, self.non_authenticator, self.consolidated_auth
         )
         assert_not_equal(
             self.node_settings.user_settings,
@@ -352,6 +366,28 @@ class TestAddonGithubNodeSettings(OsfTestCase):
             user_settings=self.user_settings,
         )
         self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.user = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_repo_false(self):
+        self.node_settings.repo = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
     @mock.patch('website.addons.github.api.GitHub.delete_hook')
     def test_delete_hook(self, mock_delete_hook):
