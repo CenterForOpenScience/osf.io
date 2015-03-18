@@ -97,6 +97,7 @@ var LogsViewModel = oop.extend(Paginator, {
     //send request to get more logs when the more button is clicked
     search: function(){
         var self = this;
+        self.logs.removeAll
         return $.ajax({
             type: 'get',
             url: self.url,
@@ -106,6 +107,7 @@ var LogsViewModel = oop.extend(Paginator, {
             cache: false
         }).done(function(response) {
             // Initialize LogViewModel
+            self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
             console.log("logNum" + logModelObjects.length);
             for (var i=0; i<logModelObjects.length; i++) {

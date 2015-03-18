@@ -210,7 +210,7 @@ NodeActions.openCloseNode = function(nodeId) {
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
-                LogFeed($logs, response.logs);
+                new LogFeed($logs, response.logs);
                 $logs.addClass('served');
             });
         }

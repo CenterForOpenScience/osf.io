@@ -59,8 +59,8 @@ def _get_logs(node, count, auth, link=None, start=0):
             logs.append(serialize_log(log, anonymous))
 
     pages = math.ceil(total / size)
-
-    print ("total: " + str(total))
+    print("loglenth {0}".format(str(len(logs))))
+    print("total: {0}".format(str(total)))
 
     return [log for log in islice(logs, start, start + count)], total, pages
 
