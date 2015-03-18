@@ -627,6 +627,13 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     }
 
     @property
+    def complete(self):
+        """Whether or not this addon is properly configured
+        :rtype bool:
+        """
+        raise NotImplementedError()
+
+    @property
     def has_auth(self):
         """Whether the node has added credentials for this addon."""
         return False
