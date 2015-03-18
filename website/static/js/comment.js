@@ -319,7 +319,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.shouldShowChildren = ko.computed(function() {
         return self.level < self.MAXLEVEL;
-    })
+    });
 
     self.cleanTitle = ko.computed(function() {
         var cleaned;
