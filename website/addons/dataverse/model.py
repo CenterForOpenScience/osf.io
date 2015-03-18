@@ -7,9 +7,9 @@ from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth.decorators import Auth
-from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
-from website.addons.base import GuidFile
-from website.security import encrypt, decrypt
+from website.addons.base import (
+    AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
+)
 
 
 logging.getLogger('sword2').setLevel(logging.WARNING)
@@ -22,6 +22,14 @@ class DataverseFile(GuidFile):
     @property
     def file_url(self):
         return os.path.join('dataverse', 'file', self.file_id)
+
+    @property
+    def waterbutler_path(self):
+        return '/' + self.file_id
+
+    @property
+    def provider(self):
+        return 'dataverse'
 
     @property
     def deep_url(self):
@@ -93,6 +101,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         """Whether a dataverse account is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    def find_or_create_file_guid(self, path):
+        path = path.strip('/') if path else ''
+        return DataverseFile.get_or_create(self.owner, path)
+
     def delete(self, save=True):
         self.deauthorize(add_log=False)
         super(AddonDataverseNodeSettings, self).delete(save)
@@ -127,6 +139,35 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 },
                 auth=auth,
             )
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.api_token}
+
+    def serialize_waterbutler_settings(self):
+        return {'doi': self.dataset_doi}
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        # TODO: This
+        print 'log log log LOG LOG LOG'
+        pass
+        # url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
+        # self.owner.add_log(
+        #     'dropbox_{0}'.format(action),
+        #     auth=auth,
+        #     params={
+        #         'project': self.owner.parent_id,
+        #         'node': self.owner._id,
+        #         'path': cleaned_path,
+        #         'folder': self.folder,
+        #         'urls': {
+        #             'view': url,
+        #             'download': url + '?action=download'
+        #         },
+        #     },
+        # )
+
 
     ##### Callback overrides #####
 
