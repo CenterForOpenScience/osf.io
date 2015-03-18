@@ -21,6 +21,12 @@ settings_routes = {
             json_renderer
         ),
         Rule(
+            '/settings/s3/',
+            'delete',
+            views.config.s3_remove_user_settings,
+            json_renderer,
+        ),
+        Rule(
             [
                 '/project/<pid>/s3/settings/',
                 '/project/<pid>/node/<nid>/s3/settings/',
@@ -65,12 +71,6 @@ settings_routes = {
             ],
             'post',
             views.config.s3_authorize_node,
-            json_renderer,
-        ),
-        Rule(
-            '/settings/s3/',
-            'delete',
-            views.config.s3_remove_user_settings,
             json_renderer,
         ),
         Rule(
