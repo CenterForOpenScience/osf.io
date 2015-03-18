@@ -17,39 +17,43 @@ var ExternalAccount = function(data) {
     self.name = data.display_name;
     self.id = data.id;
     self.profileUrl = data.profile_url;
-    self.provider_name = data.provider_name;
+    self.providerName = data.provider_name;
 
     self.connectedNodes = ko.observableArray();
 
     ko.utils.arrayMap(data.nodes, function(item) {
         self.connectedNodes.push(new ConnectedProject(item));
     });
-
-    self.deauthorizeNode = function(node) {
-        bootbox.confirm({
-            title: 'Remove addon?',
-            message: 'Are you sure you want to remove the ' + self.provider_name + ' authorization from this project?',
-            callback: function (confirm) {
-                if (confirm) {
-                    var url = node.urls.deauthorize;
-                    var request = $.ajax({
-                        url: url,
-                        type: 'DELETE'
-                    });
-                    request.done(function(data) {
-                        self.connectedNodes.remove(node);
-                    });
-                    request.fail(function(xhr, status, error) {
-                        Raven.captureMessage('Error deauthorizing node: ' + node.id, {
-                            url: url, status: status, error: error
-                        });
-                    });
-                    return request;
-                }
-            }
-        });
-    };
 };
+ExternalAccount.prototype._deauthorizeNodeConfirm = function(node){
+    var self = this;
+    var url = node.urls.deauthorize;
+    var request = $.ajax({
+        url: url,
+        type: 'DELETE'
+    })
+            .done(function(data) {
+                self.connectedNodes.remove(node);
+            })
+            .fail(function(xhr, status, error) {
+                Raven.captureMessage('Error deauthorizing node: ' + node.id, {
+                    url: url, status: status, error: error
+                });
+            });
+};
+ExternalAccount.prototype.deauthorizeNode = function(node) {
+    var self = this;
+    bootbox.confirm({
+        title: 'Remove addon?',
+        message: 'Are you sure you want to remove the ' + self.providerName + ' authorization from this project?',
+        callback: function (confirm) {
+            if (confirm) {
+                self._deauthorizeNodeConfirm(node);
+            }
+        }
+    });
+};
+
 
 var OAuthAddonSettingsViewModel = function(name, displayName) {
     var self = this;
