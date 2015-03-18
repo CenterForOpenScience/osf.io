@@ -26,7 +26,6 @@ describe('Paginator', () => {
         });
     });
 
-
     it('nextPage', () => {
         var ins = new vm;
         var newCurrentPage = ins.nextPage();
