@@ -78,13 +78,24 @@ var Log = function(params) {
   * @param {Log[]} logs An array of Log model objects to render.
   * @param url the url ajax request post to
   */
-var LogsViewModel = function(logs, url) {
-    var self = this;
-    self.logs = ko.observableArray(logs);
-    self.url = url;
+var LogsViewModel = oop.extend(Paginator, {
+    constructor(logs, url) {
+        this.super.constructor();
+        var self = this;
+        self.logs = ko.observableArray(logs);
+        self.url = url;
 
+        self.tzname = ko.computed(function() {
+            var logs = self.logs();
+            if (logs.length) {
+                var tz =  moment(logs[0].date).format('ZZ');
+                return tz;
+            }
+            return '';
+        });
+    },
     //send request to get more logs when the more button is clicked
-    self.moreLogs = function(){
+    search(){
         $.ajax({
             type: 'get',
             url: self.url,
@@ -104,17 +115,8 @@ var LogsViewModel = function(logs, url) {
         }).fail(
             $osf.handleJSONError
         );
-    };
-
-    self.tzname = ko.computed(function() {
-        var logs = self.logs();
-        if (logs.length) {
-            var tz =  moment(logs[0].date).format('ZZ');
-            return tz;
-        }
-        return '';
-    });
-};
+    }
+});
 
 /**
   * Create an Array of Log model objects from data returned from an endpoint
