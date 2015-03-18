@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def migrate_nodes(index):
-    logger.info("Migrating nodes")
+    logger.info("Migrating nodes to index: {}".format(index))
     n_iter = 0
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     for node in nodes:
@@ -35,7 +35,7 @@ def migrate_nodes(index):
 
 
 def migrate_users(index):
-    logger.info("Migrating users")
+    logger.info("Migrating users to index: {}".format(index))
     n_migr = 0
     n_iter = 0
     for user in User.find():
@@ -90,8 +90,9 @@ def set_up_index(idx):
 def set_up_alias(old_index, index):
     alias = es.indices.get_aliases(index=old_index)
     if alias:
-        logger.info("Removing old aliases...")
+        logger.info("Removing old aliases to {}".format(old_index))
         es.indices.delete_alias(index=old_index, name='_all', ignore=404)
+    logger.info("Creating new alias from {0} to {1}".format(old_index, index))
     es.indices.put_alias(old_index, index)
 
 
