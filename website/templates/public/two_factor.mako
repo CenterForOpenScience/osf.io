@@ -25,7 +25,7 @@
         <div class="panel panel-primary">
             <div class="panel-heading">Two Factor Code</div>
                 <div class="panel-body">
-                    <input type="text" class="form-control" name="twoFactorCode" placeholder="Enter two factor code" />
+                    <input class="form-control" name="twoFactorCode" placeholder="Enter two factor code" autocomplete="off"/>
                     <button type="submit" class="btn btn-success pull-right m-t-md">Verify</button>
                 </div>
         </div>

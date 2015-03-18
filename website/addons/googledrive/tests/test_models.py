@@ -278,6 +278,22 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         assert_true(hasattr(node_settings, 'folder_name'))
         assert_equal(node_settings.user_settings.owner, self.user)
 
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.folder_id = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
     def test_folder_defaults_to_none(self):
         node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
