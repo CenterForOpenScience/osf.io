@@ -297,7 +297,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         download_url = furl.furl(file_guid.download_url)
         download_url.args.update(extras)
         download_url.args['accept_url'] = 'false'
-        return make_response(('', 200, {'Location': file_guid.download_url}))
+        return make_response(('', 200, {'Location': download_url.url}))
 
     if action == 'download':
         download_url = furl.furl(file_guid.download_url)
