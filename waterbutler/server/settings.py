@@ -10,7 +10,12 @@ config = settings.get('SERVER_CONFIG', {})
 
 ADDRESS = config.get('ADDRESS', '127.0.0.1')
 PORT = config.get('PORT', 7777)
+
 DEBUG = config.get('DEBUG', True)
+
+SSL_CERT_FILE = config.get('SSL_CERT_FILE', None)
+SSL_KEY_FILE = config.get('SSL_KEY_FILE', None)
+
 XHEADERS = config.get('XHEADERS', False)
 CORS_ALLOW_ORIGIN = config.get('CORS_ALLOW_ORIGIN', '*')
 
