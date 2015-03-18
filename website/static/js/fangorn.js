@@ -49,6 +49,19 @@ var getExtensionIconClass = function(name) {
     return null;
 };
 
+var cancelUploadTemplate = m('.btn.btn-xs.btn-danger.m-l-sm', m('.fa.fa-times')); 
+var cancelAllUploadsTemplate = m('div', [
+    m('span', 'Uploads in progress'),
+    m('.btn.btn-xs.m-l-sm.btn-warning', {
+        'onclick' : function() { 
+            treebeard.uploadsAreCancelled = true;
+            treebeard.dropzone.removeAllFiles(true); 
+
+        } 
+    }, 'Cancel All Uploads')
+]);
+
+
 /**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
@@ -218,7 +231,10 @@ function _fangornUploadProgress(treebeard, file, progress) {
     var item,
         child,
         column,
-        msgText = '';
+        msgWithCancel,
+        msgWithoutCancel,
+        fullRowTemplate = m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
+        columnTemplate = m('span', 'Uploaded ' + Math.floor(progress) + '%');
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -231,16 +247,18 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     if(treebeard.options.placement === 'dashboard'){
         column = null;
-        msgText += file.name.slice(0,25) + '... : ';
+        msgWithCancel = m('span', [ fullRowTemplate, cancelUploadTemplate ]);
+        msgWithoutCancel = fullRowTemplate;
     } else {
         column = 1;
+        msgWithCancel = m('span', [ columnTemplate, cancelUploadTemplate]);
+        msgWithoutCancel = columnTemplate;
     }
-    msgText  += 'Uploaded ' + Math.floor(progress) + '%';
 
     if (progress < 100) {
-        item.notify.update(msgText, 'success', column, 0);
+        item.notify.update(msgWithCancel, 'success', column, 0);
     } else {
-        item.notify.update(msgText, 'success', column, 2000);
+        item.notify.update(msgWithoutCancel, 'success', column, 2000);
     }
 }
 
@@ -261,18 +279,8 @@ function _fangornSending(treebeard, file, xhr, formData) {
     xhr.send = function() {
         _send.call(xhr, file);
     };
-    var mithrilContent = m('div', [
-        m('span', 'Uploads in progress'),
-        m('.btn.btn-xs.m-l-sm.btn-warning', {
-            'onclick' : function() { 
-                treebeard.uploadsAreCancelled = true;
-                treebeard.dropzone.removeAllFiles(true); 
-
-            } 
-        }, 'Cancel All Uploads')
-    ]);
     treebeard.multimodal.height = 45;
-    treebeard.multimodal.update(mithrilContent);
+    treebeard.multimodal.update(cancelAllUploadsTemplate);
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -668,21 +676,6 @@ function _fangornActionColumn (item, col) {
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
         });
-        buttons.push({
-            name: '',
-            icon: 'icon-pencil',
-            'tooltip' : 'Multimodal',
-
-            css: 'fangorn-clickable btn btn-default btn-xs',
-            onclick: function(event, item){
-                this.multimodal.css = ''
-                var mithrilContent = m('div', [
-                    m('b.break-word', 'This:' + item.data.name+ '"?'),
-                    m('span', 'This action is irreversible.')
-                ]);
-                this.multimodal.update(mithrilContent);
-            }
-        });
     }
 
     //Download button if this is an item
@@ -747,6 +740,7 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
+
     if(item.data.tmpID){
         return [
         {
@@ -757,7 +751,7 @@ function _fangornResolveRows(item) {
         },
         {
             data : '',  // Data field name
-            custom : function(){ return m('span.text-muted', 'Upload pending...'); }
+            custom : function(){ return m('span.text-muted', [m('span','Upload pending...'), cancelUploadTemplate]); }
         },
         {
             data : '',  // Data field name
