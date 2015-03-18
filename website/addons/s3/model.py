@@ -106,6 +106,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def display_name(self):
         return u'{0}: {1}'.format(self.config.full_name, self.bucket)
 
+    @property
+    def complete(self):
+        return self.has_auth and self.bucket is not None
+
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(

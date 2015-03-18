@@ -14,7 +14,7 @@ from framework.auth import Auth
 
 from website.addons.github.exceptions import NotFoundError
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, TooBigToRenderError
+from website.addons.github.exceptions import TooBigToRenderError
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
 from website.addons.github.model import AddonGitHubUserSettings
 from website.addons.github.model import AddonGitHubNodeSettings
@@ -366,6 +366,28 @@ class TestAddonGithubNodeSettings(OsfTestCase):
             user_settings=self.user_settings,
         )
         self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.user = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_repo_false(self):
+        self.node_settings.repo = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
     @mock.patch('website.addons.github.api.GitHub.delete_hook')
     def test_delete_hook(self, mock_delete_hook):

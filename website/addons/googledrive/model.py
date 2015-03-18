@@ -253,6 +253,10 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def complete(self):
+        return self.has_auth and self.folder_id is not None
+
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         if add_log:
