@@ -25,28 +25,30 @@ var ExternalAccount = function(data) {
         self.connectedNodes.push(new ConnectedProject(item));
     });
 };
-ExternalAccount.prototype._deauthorizeNodeConfirm = function(node){
+ExternalAccount.prototype._deauthorizeNodeConfirm = function(node) {
     var self = this;
     var url = node.urls.deauthorize;
     var request = $.ajax({
-        url: url,
-        type: 'DELETE'
-    })
-            .done(function(data) {
-                self.connectedNodes.remove(node);
-            })
-            .fail(function(xhr, status, error) {
-                Raven.captureMessage('Error deauthorizing node: ' + node.id, {
-                    url: url, status: status, error: error
-                });
+            url: url,
+            type: 'DELETE'
+        })
+        .done(function(data) {
+            self.connectedNodes.remove(node);
+        })
+        .fail(function(xhr, status, error) {
+            Raven.captureMessage('Error deauthorizing node: ' + node.id, {
+                url: url,
+                status: status,
+                error: error
             });
+        });
 };
 ExternalAccount.prototype.deauthorizeNode = function(node) {
     var self = this;
     bootbox.confirm({
         title: 'Remove addon?',
         message: 'Are you sure you want to remove the ' + self.providerName + ' authorization from this project?',
-        callback: function (confirm) {
+        callback: function(confirm) {
             if (confirm) {
                 self._deauthorizeNodeConfirm(node);
             }
@@ -102,7 +104,9 @@ var OAuthAddonSettingsViewModel = function(name, displayName) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
-                url: url, status: status, error: error
+                url: url,
+                status: status,
+                error: error
             });
         });
         return request;
@@ -118,7 +122,9 @@ var OAuthAddonSettingsViewModel = function(name, displayName) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
-                url: url, status: status, error: error
+                url: url,
+                status: status,
+                error: error
             });
         });
         return request;
