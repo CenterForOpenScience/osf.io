@@ -334,6 +334,24 @@ class JSONRenderer(Renderer):
 json_renderer = JSONRenderer()
 
 
+class XMLRenderer(Renderer):
+    """Renderer for API views. Generates XML; ignores
+    redirects from views and exceptions.
+
+    """
+
+    CONTENT_TYPE = "application/xml"
+
+    def handle_error(self, error):
+        return str(error.to_data()['message_long']), error.code
+
+    def render(self, data, redirect_url, *args, **kwargs):
+        return data
+
+# Create a single XMLRenderer instance to avoid repeated construction
+xml_renderer = XMLRenderer()
+
+
 class WebRenderer(Renderer):
     """Renderer for web views. Generates HTML; follows redirects
     from views and exceptions.

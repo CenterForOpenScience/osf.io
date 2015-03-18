@@ -81,9 +81,15 @@ text-align: center;
 }
 
 .tb-expand-icon-holder > i {
-	font-size: 16px;
+	font-size: 14px;
 	padding-left: 2px;
 }
+.tb-modal-dismiss {
+  font-size: 24px;
+  margin-top: 4px;
+  margin-right: 11px;
+}
+
 
 .tb-multimodal-inner {
 	background: #B8ECC0;
@@ -99,6 +105,7 @@ text-align: center;
 	width: 16px;
 	height: 16px;
 }
+
 .file-extension._3gp {background: url('/static/img/hgrid/fatcowicons/file_extension_3gp.png');	}
 .file-extension._7z  {background: url('/static/img/hgrid/fatcowicons/file_extension_7z.png'); 	}
 .file-extension._ace {background: url('/static/img/hgrid/fatcowicons/file_extension_ace.png');	}

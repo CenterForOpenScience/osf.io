@@ -7,9 +7,9 @@
 var Treebeard = require('treebeard');
 
 // CSS
-require('../css/typeahead.css');
-require('../css/fangorn.css');
-require('../css/projectorganizer.css');
+require('css/typeahead.css');
+require('css/fangorn.css');
+require('css/projectorganizer.css');
 
 var Handlebars = require('handlebars');
 var $ = require('jquery');
@@ -484,7 +484,7 @@ function _poActionColumn(item, col) {
         if (url !== null) {
             buttons.push({
                 'name' : '',
-                'icon' : 'icon-chevron-right',
+                'icon' : 'fa fa-chevron-right',
                 'css' : 'project-organizer-icon-visit fangorn-clickable btn btn-info btn-xs',
                 'onclick' : _gotoEvent
             });
@@ -533,16 +533,16 @@ function _poContributors(item) {
  * @private
  */
 function _poModified(item) {
-    var personString,
-        dateString;
+    var personString = '';
+    var dateString = '';
     if (item.data.modifiedDelta === 0) {
         return m('span');
     }
     dateString = moment.utc(item.data.dateModified).fromNow();
     if (item.data.modifiedBy !== '') {
-        personString = item.data.modifiedBy.toString();
+        personString = ', by ' + item.data.modifiedBy.toString();
     }
-    return m('span', dateString + ', by ' + personString);
+    return m('span', dateString + personString);
 }
 
 /**
@@ -689,8 +689,8 @@ function _poResolveIcon(item) {
  * @private
  */
 function _poResolveToggle(item) {
-    var toggleMinus = m('i.icon-minus'),
-        togglePlus = m('i.icon-plus'),
+    var toggleMinus = m('i.fa.fa-minus'),
+        togglePlus = m('i.fa.fa-plus'),
         childrenCount = item.data.childrenCount || item.children.length;
     if (item.kind === 'folder' && childrenCount > 0 && item.depth > 1) {
         if (item.open) {
@@ -1204,8 +1204,8 @@ var tbOptions = {
     hoverClassMultiselect : 'po-hover-multiselect',
     togglecheck : _poToggleCheck,
     sortButtonSelector : {
-        up : 'i.icon-chevron-up',
-        down : 'i.icon-chevron-down'
+        up : 'i.fa.fa-chevron-up',
+        down : 'i.fa.fa-chevron-down'
     },
     dragOptions : {},
     dropOptions : {},
@@ -1251,7 +1251,10 @@ var tbOptions = {
     resolveIcon : _poResolveIcon,
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
-    lazyLoadOnLoad : expandStateLoad
+    lazyLoadOnLoad : expandStateLoad,
+    resolveRefreshIcon : function() {
+        return m('i.fa.fa-refresh.fa-spin');
+    }
 };
 
 /**

@@ -14,7 +14,7 @@ from framework.auth import Auth
 
 from website.addons.github.exceptions import NotFoundError
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, TooBigToRenderError
+from website.addons.github.exceptions import TooBigToRenderError
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
 from website.addons.github.model import AddonGitHubUserSettings
 from website.addons.github.model import AddonGitHubNodeSettings
@@ -180,18 +180,32 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    def test_after_remove_contributor_authenticator(self):
-        self.node_settings.after_remove_contributor(
-            self.project, self.project.creator
+    def test_after_remove_contributor_authenticator_self(self):
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, self.consolidated_auth
         )
         assert_equal(
             self.node_settings.user_settings,
             None
         )
+        assert_true(message)
+        assert_not_in("You can re-authenticate", message)
+
+    def test_after_remove_contributor_authenticator_not_self(self):
+        auth = Auth(user=self.non_authenticator)
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, auth
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            None
+        )
+        assert_true(message)
+        assert_in("You can re-authenticate", message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
-            self.project, self.non_authenticator
+            self.project, self.non_authenticator, self.consolidated_auth
         )
         assert_not_equal(
             self.node_settings.user_settings,
@@ -337,18 +351,43 @@ class TestAddonGithubNodeSettings(OsfTestCase):
 
     def setUp(self):
         OsfTestCase.setUp(self)
-        self.user_settings = AddonGitHubUserSettings()
-        self.oauth_settings = AddonGitHubOauthSettings()
+        self.user = UserFactory()
+        self.user.add_addon('github')
+        self.user_settings = self.user.get_addon('github')
+        self.oauth_settings = AddonGitHubOauthSettings(oauth_access_token='foobar')
         self.oauth_settings.github_user_id = 'testuser'
         self.oauth_settings.save()
         self.user_settings.oauth_settings = self.oauth_settings
         self.user_settings.save()
         self.node_settings = AddonGitHubNodeSettings(
+            owner=ProjectFactory(),
             user='chrisseto',
             repo='openpokemon',
             user_settings=self.user_settings,
         )
         self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.user = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_repo_false(self):
+        self.node_settings.repo = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
     @mock.patch('website.addons.github.api.GitHub.delete_hook')
     def test_delete_hook(self, mock_delete_hook):
@@ -396,3 +435,17 @@ class TestAddonGithubNodeSettings(OsfTestCase):
         res = self.node_settings.delete_hook()
         assert_false(res)
         mock_delete_hook.assert_called_with(*args)
+
+    def test_to_json_noauthorizing_authed_user(self):
+        user = UserFactory()
+        user.add_addon('github')
+        user_settings = user.get_addon('github')
+
+        oauth_settings = AddonGitHubOauthSettings(oauth_access_token='foobar')
+        oauth_settings.github_user_id = 'testuser'
+        oauth_settings.save()
+
+        user_settings.oauth_settings = self.oauth_settings
+        user_settings.save()
+
+        self.node_settings.to_json(user)

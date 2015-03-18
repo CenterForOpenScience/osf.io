@@ -28,15 +28,15 @@ function _treebeardResolveToggle(item) {
     }
 
     return item.open ?
-        m('i.icon-minus', ' '):
-        m('i.icon-plus', ' ');
+        m('i.fa.fa-minus', ' '):
+        m('i.fa.fa-plus', ' ');
 }
 
 // Returns custom icons for OSF
 function _treebeardResolveIcon(item) {
     return item.open ?
-        m('i.icon-folder-open-alt', ' '):
-        m('i.icon-folder-close-alt', ' ');
+        m('i.fa.fa-folder-open-o', ' '):
+        m('i.fa.fa-folder-o', ' ');
 }
 
 var INPUT_NAME = '-folder-select';
@@ -162,7 +162,10 @@ var defaults = {
     uploads: false,
     showFilter : false,
     resizeColumns : false,
-    rowHeight : 35
+    rowHeight : 35,
+    resolveRefreshIcon : function() {
+        return m('i.fa.fa-refresh.fa-spin');
+    },
 };
 
 function FolderPicker(selector, opts) {

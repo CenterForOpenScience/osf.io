@@ -1,25 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # noqa
-
+from nose.tools import *  # flake8: noqa
 import responses
 import mock
-import unittest
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
-import json
 import urlparse
 
+from framework.auth.core import Auth
+
 from website.addons.zotero.tests.factories import (
-    ZoteroAccountFactory, ZoteroUserSettingsFactory,
+    ZoteroAccountFactory,
+    ZoteroUserSettingsFactory,
     ZoteroNodeSettingsFactory
 )
 
-from website.util import api_url_for
 from website.addons.zotero import views
-from website.addons.citations.utils import serialize_account
 
 from utils import mock_responses
 
@@ -107,21 +105,6 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['importAuth'])
         assert_true(res.json['urls']['settings'])
 
-    def test_user_folders(self):
-        # JSON: a list of user's Zotero folders"
-        res = self.app.get(
-            api_url_for('list_zotero_accounts_user'),
-            auth=self.user.auth,
-        )
-        expected = {
-            'accounts': [
-                serialize_account(each)
-                for each in self.user.external_accounts
-                if each.provider == 'zotero'
-            ]
-        }
-        assert_equal(res.json, expected)
-
     def test_set_auth(self):
 
         res = self.app.post_json(
@@ -207,7 +190,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         # JSON: everything a widget needs
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.zotero_list_id, None)
-        self.node_addon.set_target_folder('ROOT')
+        self.node_addon.set_target_folder('ROOT-ID', 'ROOT', auth=Auth(user=self.user))
         res = views.zotero_widget(node_addon=self.node_addon,
                                     project=self.project,
                                     node=self.node,
@@ -215,7 +198,7 @@ class ZoteroViewsTestCase(OsfTestCase):
                                     pid=self.project._id,
                                     auth=self.user.auth)
         assert_true(res['complete'])
-        assert_equal(res['list_id'], 'ROOT')
+        assert_equal(res['list_id'], 'ROOT-ID')
 
     def test_widget_view_incomplete(self):
         # JSON: tell the widget when it hasn't been configured

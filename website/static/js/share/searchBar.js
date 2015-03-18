@@ -40,7 +40,7 @@ SearchBar.view = function(ctrl) {
                         onchange: m.withAttr('value', ctrl.vm.query),
                     }),
                     m('span.input-group-btn', [
-                        m('button.btn.osf-search-btn', m('i.icon-search.icon-lg')),
+                        m('button.btn.osf-search-btn', m('i.fa.fa-search.fa-lg')),
                     ])
                 ])
             ])

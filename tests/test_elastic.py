@@ -1,3 +1,6 @@
+from website import settings
+settings.ELASTIC_INDEX = 'test'
+
 import unittest
 from nose.tools import *  # PEP8 asserts
 
@@ -11,26 +14,25 @@ from tests.factories import (
 from framework.auth.core import Auth
 
 import website.search.search as search
+from website.search import elastic_search
 from website.search.util import build_query
-
-from website import settings
-
+from website.search_migration.migrate import migrate
 
 @requires_search
 class SearchTestCase(OsfTestCase):
 
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
-        search.delete_all()
-        search.create_index()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
 
     def setUp(self):
         super(SearchTestCase, self).setUp()
-        search.create_index()
+        search.create_index(elastic_search.INDEX)
 
 
 def query(term):
-    results = search.search(build_query(term))
+    results = search.search(build_query(term), index=elastic_search.INDEX)
     return results
 
 
@@ -44,8 +46,8 @@ class TestUserUpdate(SearchTestCase):
 
     def setUp(self):
         super(TestUserUpdate, self).setUp()
-        search.delete_all()
-        search.create_index()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
@@ -159,8 +161,8 @@ class TestProject(SearchTestCase):
 
     def setUp(self):
         super(TestProject, self).setUp()
-        search.delete_all()
-        search.create_index()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
@@ -478,3 +480,56 @@ class TestSearchExceptions(OsfTestCase):
         )
         self.user.save()
         self.project.save()
+
+
+class TestSearchMigration(SearchTestCase):
+    """
+    Verify that the correct indices are created/deleted during migration
+    """
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSearchMigration, cls).tearDownClass()
+        search.create_index('test')
+
+    def setUp(self):
+        super(TestSearchMigration, self).setUp()
+        self.es = search.search_engine.es
+        search.delete_index('test')
+        search.create_index('test')
+        self.user = UserFactory(fullname='David Bowie')
+        self.project = ProjectFactory(
+            title='TEST',
+            creator=self.user,
+            is_public=True
+        )
+
+    def test_first_migration_no_delete(self):
+        migrate(delete=False, index='test')
+        var = self.es.indices.get_aliases()
+        assert_equal(var['test_v1']['aliases'].keys()[0], 'test')
+
+    def test_multiple_migrations_no_delete(self):
+        migrate(delete=False, index='test')
+        var = self.es.indices.get_aliases()
+        assert_equal(var['test_v1']['aliases'].keys()[0], 'test')
+
+        migrate(delete=False, index='test')
+        var = self.es.indices.get_aliases()
+        assert_equal(var['test_v2']['aliases'].keys()[0], 'test')
+
+
+    def test_first_migration_with_delete(self):
+        migrate(delete=True, index='test')
+        var = self.es.indices.get_aliases()
+        assert_equal(var['test_v1']['aliases'].keys()[0], 'test')
+
+    def test_multiple_migrations_with_delete(self):
+        migrate(delete=True, index='test')
+        var = self.es.indices.get_aliases()
+        assert_equal(var['test_v1']['aliases'].keys()[0], 'test')
+
+        migrate(delete=True, index='test')
+        var = self.es.indices.get_aliases()
+        assert_equal(var['test_v2']['aliases'].keys()[0], 'test')
+        assert not var.get('test_v1')

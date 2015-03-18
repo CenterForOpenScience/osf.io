@@ -5,8 +5,10 @@ import time
 import mendeley
 from modularodm import fields
 
-from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
-from website.addons.citations.utils import serialize_account, serialize_folder
+from website.addons.base import AddonOAuthNodeSettingsBase
+from website.addons.base import AddonOAuthUserSettingsBase
+from website.addons.citations.utils import serialize_folder
+from website.addons.mendeley import serializer
 from website.addons.mendeley import settings
 from website.addons.mendeley.api import APISession
 from website.oauth.models import ExternalProvider
@@ -173,25 +175,12 @@ class Mendeley(ExternalProvider):
 
 class MendeleyUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Mendeley
-    oauth_grants = fields.DictionaryField()
-
-    def _get_connected_accounts(self):
-        """Get user's connected Mendeley accounts"""
-        return [
-            x for x in self.owner.external_accounts if x.provider == 'mendeley'
-        ]
-
-    def to_json(self, user):
-        ret = super(MendeleyUserSettings, self).to_json(user)
-        ret['accounts'] = [
-            serialize_account(each)
-            for each in self._get_connected_accounts()
-        ]
-        return ret
+    serializer = serializer.MendeleySerializer
 
 
 class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = Mendeley
+    serializer = serializer.MendeleySerializer
 
     mendeley_list_id = fields.StringField()
 
@@ -245,7 +234,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).set_auth(*args, **kwargs)
 
-    def set_target_folder(self, mendeley_list_id):
+    def set_target_folder(self, mendeley_list_id, mendeley_list_name, auth):
         """Configure this addon to point to a Mendeley folder
 
         :param str mendeley_list_id:
@@ -264,3 +253,14 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         # update this instance
         self.mendeley_list_id = mendeley_list_id
         self.save()
+
+        self.owner.add_log(
+            'mendeley_folder_selected',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'folder_id': mendeley_list_id,
+                'folder_name': mendeley_list_name,
+            },
+            auth=auth,
+        )
