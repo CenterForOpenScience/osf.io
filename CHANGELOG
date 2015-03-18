@@ -1,0 +1,8 @@
+*********
+ChangeLog
+*********
+
+0.2.4 (2015-03-18)
+==================
+
+- Allow ssl certs to be specified in the config
