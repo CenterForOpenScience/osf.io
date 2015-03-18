@@ -37,6 +37,10 @@ function replaceAnchorScroll (buffer){
     });
 }
 
+// Used for clearing backward/forward cache issues 
+$(window).unload(function(){ 
+    return "Unload";
+});
 $(document).ready(function(){
     replaceAnchorScroll();
 });
