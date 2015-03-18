@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
+import math
+from itertools import islice
 
 from flask import request
 
@@ -30,7 +32,7 @@ def get_log(auth, log_id):
     return {'log': serialize_log(log)}
 
 
-def _get_logs(node, count, auth, link=None, offset=0):
+def _get_logs(node, count, auth, link=None, start=0):
     """
 
     :param Node node:
@@ -41,21 +43,24 @@ def _get_logs(node, count, auth, link=None, offset=0):
 
     """
     logs = []
-    has_more_logs = False
-    for log in (x for idx, x in enumerate(reversed(node.logs)) if idx >= offset):
+    size = float(count)
+    total = 0
+
+    for log in reversed(node.logs):
         # A number of errors due to database inconsistency can arise here. The
         # log can be None; its `node__logged` back-ref can be empty, and the
         # 0th logged node can be None. Catch and log these errors and ignore
         # the offending logs.
         log_node = log.resolve_node(node)
         if log.can_view(node, auth):
+            total+=1
             anonymous = has_anonymous_link(log_node, auth)
-            if len(logs) < count:
-                logs.append(serialize_log(log, anonymous))
-            else:
-                has_more_logs = True
-                break
-    return logs, has_more_logs
+
+            logs.append(serialize_log(log, anonymous))
+
+    pages = math.ceil(total / size)
+
+    return islice(logs, start, start + size), total, pages
 
 
 @no_auto_transaction
@@ -66,7 +71,7 @@ def get_logs(auth, **kwargs):
 
     """
     node = kwargs['node'] or kwargs['project']
-    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
+    page = request.json.get('page', 0)
     link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     if not node.can_view(auth):
@@ -80,9 +85,9 @@ def get_logs(auth, **kwargs):
         count = request.json['count']
     else:
         count = 10
-    offset = page_num * count
+    start = page * count
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, pages, page = _get_logs(node, count, auth, link, offset)
-    return {'logs': logs, 'page':pages, 'page':page}
+    logs, total, pages = _get_logs(node, count, auth, link, start)
+    return {'logs': logs, 'total':total, 'pages': pages, 'page': page}
