@@ -28,7 +28,7 @@
         </small>
     </h4>
     <!-- Settings Pane -->
-    <div class="${addon_short_name}-settings" data-bind='if: showSettings'>
+    <div class="${addon_short_name}-settings" data-bind='visible: showSettings'>
         <div class="row">
             <div class="col-md-12">
                 <p>
