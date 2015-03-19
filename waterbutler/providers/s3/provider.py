@@ -219,10 +219,11 @@ class S3Provider(provider.BaseProvider):
         try:
             yield from self.metadata(str(path))
             raise exceptions.CreateFolderError('Folder {} already exists'.format(path.path), code=409)
-        except exceptions.MetadataError:
-            pass
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
 
-        resp = yield from self.make_request(
+        yield from self.make_request(
             'PUT',
             self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'PUT'),
             expects=(200, 201),
