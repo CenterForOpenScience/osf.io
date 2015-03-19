@@ -185,8 +185,8 @@ function LogFeed(selector, data, options) {
     if (Array.isArray(data)) { // data is an array of log object from server
         initViewModel(self, data, self.options.url);
     } else { // data is an URL, for watch logs and project logs
-        var empty =[];
-        initViewModel(self, empty, data);
+        var noLogs =[];
+        initViewModel(self, noLogs, data);
     }
 }
 

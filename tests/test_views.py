@@ -502,7 +502,9 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
-        assert_false(data['has_more_logs'])
+        assert_equal(data['total'], len(self.project.logs))
+        assert_equal(data['page'], 0)
+        assert_equal(data['pages'], 1)
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
 
@@ -520,7 +522,9 @@ class TestProjectViews(OsfTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
-        assert_true(res.json['has_more_logs'])
+        assert_equal(res.json['total'], 5)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
@@ -536,7 +540,9 @@ class TestProjectViews(OsfTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        assert_equal(res.json['total'], 12)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
 
     def test_get_more_logs(self):
         # Add some logs
@@ -550,9 +556,11 @@ class TestProjectViews(OsfTestCase):
             )
         self.project.save()
         url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
-        assert_false(res.json['has_more_logs'])
+        assert_equal(res.json['total'], 12)
+        assert_equal(res.json['page'], 1)
+        assert_equal(res.json['pages'], 2)
 
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
@@ -580,7 +588,9 @@ class TestProjectViews(OsfTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        assert_equal(res.json['total'], 15)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
         assert_equal(
             [self.project._id] * 10,
             [
