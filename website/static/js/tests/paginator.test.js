@@ -1,3 +1,4 @@
+/*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 
 var Paginator = require('js/paginator');
@@ -5,49 +6,45 @@ var oop = require('js/oop');
 var assert = require('chai').assert;
 sinon.assert.expose(assert, {prefix: ''});
 
+var TestPaginator = oop.extend(Paginator, {
+    constructor: function(){
+        this.super.constructor();
+    },
+    search: sinon.spy(),
+    configure: function(config){
+        config(this);
+    }
+});
+
 
 describe('Paginator', () => {
-    var vm;
-    //var numberOfPage = 5;
-    //var currentPage = 1;
-    //var paginators = [];
+    var paginator;
 
     beforeEach(() => {
-        vm = oop.extend(Paginator, {
-            constructor(){
-                var self = this;
-                self.numberOfPage = 5;
-                self.currentPage = 1;
-                self.paginators = [];
-            },
-            search(){
-                return True;
-            }
-        });
-    });
+        paginator = new TestPaginator();
+    });  
 
     it('nextPage', () => {
-        var ins = new vm;
-        var newCurrentPage = ins.nextPage();
-        assert.true(newCurrentPage);
-        assert.equal(ins.currentPage() - 1, 1);
+        paginator.configure(function(p){
+            p.numberOfPages(5);
+        });
+        paginator.nextPage();
+        assert.isTrue(paginator.search.calledOnce);
+        assert.equal(paginator.currentPage() - 1, 0);
     });
 
     it('previousPage', () => {
-        var ins = new vm;
-        var newCurrentPage = ins.previousPage();
-        assert.true(newCurrentPage);
-        assert.equal(ins.currentPage() + 1, 1);
+        paginator.previousPage();
+        assert.isTrue(paginator.search.calledOnce);
+        assert.equal(paginator.currentPage() + 1, 1);
     });
 
-    it('search', () => {
-        var ins = new vm
-        assert.equal(true, ins.search());
+    it('enforces implementation of search', () => {
+        var pg = new Paginator();
+        assert.throw(pg.search, Error, 'Paginator subclass must define a "search" method');
     });
 
     it('addNewPaginator', () => {
-        var ins = new vm;
-        var newPaginator = ins.addNewPaginators();
-        assert.equal(ins.paginators.length(), 1);
+        assert(true);
     });
 });
