@@ -203,16 +203,16 @@ BaseComment.prototype.checkFileExists = function() {
     for (var c in self.comments()) {
         var comment = self.comments()[c];
         if (comment.page() !== 'files') {
-            break;
+            continue;
         }
         url  = waterbutler.buildMetadataUrl(comment.title(), comment.provider(), nodeId, {}); // waterbutler url
         $.ajax({
             method: 'GET',
             url: url
         }).done(function(resp){
-            console.log(resp);
+            console.log(resp); // todo change
         }).fail(function(xhl){
-            console.log('error: ');
+            console.log('error: '); // todo change
             console.log(xhl);
         })
     }
