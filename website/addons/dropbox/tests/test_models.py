@@ -35,6 +35,24 @@ class TestFileGuid(OsfTestCase):
         assert_equals(guid.path, 'baz/foo/bar')
         assert_equals(guid.waterbutler_path, '/foo/bar')
 
+    def test_path_doesnt_crash_without_addon(self):
+        guid = DropboxFile(node=self.project, path='baz/foo/bar')
+        self.project.delete_addon('dropbox', Auth(self.user))
+
+        assert_is(self.project.get_addon('dropbox'), None)
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
+    def test_path_doesnt_crash_nonconfig_addon(self):
+        guid = DropboxFile(node=self.project, path='baz/foo/bar')
+        self.node_addon.folder = None
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
     @mock.patch('website.addons.base.requests.get')
     def test_unique_identifier(self, mock_get):
         mock_response = mock.Mock(ok=True, status_code=200)
@@ -173,6 +191,25 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
             user_settings=self.user_settings,
             owner=self.project
         )
+
+    def test_complete_true(self):
+        self.node_settings.user_settings.access_token = 'seems legit'
+
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.user_settings.access_token = 'seems legit'
+        self.node_settings.folder = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
     def test_fields(self):
         node_settings = DropboxNodeSettings(user_settings=self.user_settings)
@@ -352,12 +389,22 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_in(self.user.fullname, message)
         assert_in(self.project.project_or_component, message)
 
-    def test_after_remove_authorized_dropbox_user(self):
+    def test_after_remove_authorized_dropbox_user_self(self):
+        auth = Auth(user=self.user_settings.owner)
         message = self.node_settings.after_remove_contributor(
-            self.project, self.user_settings.owner)
+            self.project, self.user_settings.owner, auth)
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
+        assert_not_in("You can re-authenticate", message)
+
+    def test_after_remove_authorized_dropbox_user_not_self(self):
+        message = self.node_settings.after_remove_contributor(
+            node=self.project, removed=self.user_settings.owner)
+        self.node_settings.save()
+        assert_is_none(self.node_settings.user_settings)
+        assert_true(message)
+        assert_in("You can re-authenticate", message)
 
     def test_after_delete(self):
         self.project.remove_node(Auth(user=self.project.creator))

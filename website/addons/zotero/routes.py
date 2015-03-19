@@ -11,7 +11,7 @@ api_routes = {
                 '/settings/zotero/accounts/',
             ],
             'get',
-            views.list_zotero_accounts_user,
+            views.zotero_list_accounts_user,
             json_renderer,
         ),
         Rule(

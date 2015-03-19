@@ -27,12 +27,12 @@
         </h4>
     </div>
 
-    % if node_has_auth:
+    % if node_has_auth and valid_credentials:
 
         <input type="hidden" id="githubUser" name="github_user" value="${github_user}" />
         <input type="hidden" id="githubRepo" name="github_repo" value="${github_repo}" />
 
-        <p> <strong>Current Repo:</strong></p>
+        <p><strong>Current Repo:</strong></p>
 
         <div class="row">
 
@@ -52,13 +52,10 @@
             % if is_owner and not is_registration:
                 <div class="col-md-6">
                     <a id="githubCreateRepo" class="btn btn-default">Create Repo</a>
-
                     <button class="btn btn-primary addon-settings-submit pull-right">
                         Submit
                     </button>
                 </div>
-
-
             % endif
 
         </div>
@@ -67,7 +64,20 @@
 
     ${self.on_submit()}
 
-    <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
+    % if node_has_auth and not valid_credentials:
+        <div class="addon-settings-message text-danger" style="padding-top: 10px;">
+            % if is_owner:
+                Could not retrieve GitHub settings at this time. The GitHub addon credentials
+                may no longer be valid. Try deauthorizing and reauthorizing GitHub on your
+                <a href="${addons_url}">account settings page</a>.
+            % else:
+                Could not retrieve GitHub settings at this time. The GitHub addon credentials
+                may no longer be valid. Contact ${auth_osf_name} to verify.
+            % endif
+        </div>
+    % else:
+        <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
+    % endif
 
 </form>
 

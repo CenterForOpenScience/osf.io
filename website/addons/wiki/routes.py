@@ -81,12 +81,6 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/',
         ], 'get', views.project_wiki_home, json_renderer),
 
-        # View (Name) : GET
-        Rule([
-            '/project/<pid>/wiki/<wname>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/',
-        ], 'get', views.project_wiki_view, json_renderer),
-
         # Draft : GET
         Rule([
             '/project/<pid>/wiki/<wname>/draft/',

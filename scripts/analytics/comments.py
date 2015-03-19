@@ -20,7 +20,7 @@ def main():
         record['date_created']
         for record in comment_collection.find({}, {'date_created': True})
     ]
-    fig = plot_dates(dates)
+    plot_dates(dates)
     plt.title('comments ({0} total)'.format(len(dates)))
     plt.savefig(os.path.join(FIG_PATH, 'comment-actions.png'))
     plt.close()
@@ -28,4 +28,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

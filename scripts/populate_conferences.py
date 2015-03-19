@@ -185,7 +185,7 @@ MEETING_DATA = {
         ],
         'public_projects': True,
     },
-    
+
 }
 
 

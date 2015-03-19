@@ -8,7 +8,7 @@
 
         <div class="col-md-8 col-md-offset-2">
 
-            <h1>Presentation Submission Service</h1>
+            <h1>Presentation Sharing Service</h1>
 
             <p>
                 The OSF can host posters and talks for scholarly meetings.
@@ -19,7 +19,7 @@
             </p>
 
             <p>
-                The Presentation Submission Service is a product that we offer to
+                The Presentation Sharing Service is a product that we offer to
                 academic conferences at no cost. To request poster and talk hosting
                 for a conference, email us at
                 <a href="mailto:contact@cos.io">contact@cos.io</a>. We'll review

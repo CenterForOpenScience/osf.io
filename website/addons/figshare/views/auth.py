@@ -102,7 +102,7 @@ def figshare_oauth_callback(auth, **kwargs):
     )
     # Handle request cancellations from FigShare's API
     if not access_token or not access_token_secret:
-        push_status_message('FigShare authorization request cancelled.')
+        push_status_message('figshare authorization request cancelled.')
         if node:
             return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))

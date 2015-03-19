@@ -6,6 +6,7 @@ from pyzotero import zotero
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.citations.utils import serialize_folder
+from website.addons.zotero import serializer
 from website.addons.zotero import settings
 from website.oauth.models import ExternalProvider
 
@@ -111,28 +112,15 @@ class Zotero(ExternalProvider):
         next_page = (page + 1 if more else -1)
         return citations, next_page
 
+
 class ZoteroUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Zotero
+    serializer = serializer.ZoteroSerializer
 
-    def _get_connected_accounts(self):
-        """Get user's connected Zotero accounts"""
-        return [
-            x for x in self.owner.external_accounts if x.provider == 'zotero'
-        ]
-
-    def to_json(self, user):
-        rv = super(ZoteroUserSettings, self).to_json(user)
-        rv['accounts'] = [
-            {
-                'id': account._id,
-                'provider_id': account.provider_id,
-                'display_name': account.display_name,
-            } for account in self._get_connected_accounts()
-        ]
-        return rv
 
 class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = Zotero
+    serializer = serializer.ZoteroSerializer
 
     zotero_list_id = fields.StringField()
 
@@ -186,7 +174,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
         self.zotero_list_id = None
         return super(ZoteroNodeSettings, self).clear_auth()
 
-    def set_target_folder(self, zotero_list_id):
+    def set_target_folder(self, zotero_list_id, zotero_list_name, auth):
         """Configure this addon to point to a Zotero folder
 
         :param str zotero_list_id:
@@ -205,3 +193,14 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
         # update this instance
         self.zotero_list_id = zotero_list_id
         self.save()
+
+        self.owner.add_log(
+            'zotero_folder_selected',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'folder_id': zotero_list_id,
+                'folder_name': zotero_list_name,
+            },
+            auth=auth,
+        )

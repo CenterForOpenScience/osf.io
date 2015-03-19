@@ -187,9 +187,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.sortOrder = ko.observable(0);
     self.sortClass = ko.computed(function() {
         if (self.sortOrder() === 1) {
-            return 'icon-caret-up';
+                return 'fa fa-caret-up';
         } else if (self.sortOrder() === -1) {
-            return 'icon-caret-down';
+                return 'fa fa-caret-down';
         }
     });
     self.sortFunc = ko.computed(function() {

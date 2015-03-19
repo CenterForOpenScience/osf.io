@@ -67,7 +67,9 @@ var RevisionsViewModel = function(node, file, editable) {
         file.path.split('/') :
         file.path.split('/').map(decodeURIComponent);
 
-    self.editable = ko.observable(editable);
+    // Hack: Set Figshare files to uneditable by default, then update after
+    // fetching file metadata after revisions request fails
+    self.editable = ko.observable(editable && file.provider !== 'figshare');
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
         download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
@@ -119,13 +121,9 @@ RevisionsViewModel.prototype.fetch = function() {
             // so dont allow downloads and set a fake current version
             $.ajax({
                 method: 'GET',
-                url: self.urls.metadata,
-            }).done(function(data) {
-                if (data.data.extra.status === 'drafts') {
-                    self.editable(true);
-                } else {
-                    self.editable(false);
-                }
+                url: self.urls.metadata
+            }).done(function(resp) {
+                self.editable(resp.data.extra.canDelete);
             }).fail(function(xhr) {
                 self.editable(false);
             });

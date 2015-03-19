@@ -137,7 +137,7 @@
                                     <th width="45%">Name</th>
                                     <th width="30%">
                                         Permissions
-                                        <i class="icon-question-sign permission-info"
+                                        <i class="fa fa-question-sign permission-info"
                                                 data-toggle="popover"
                                                 data-title="Permission Information"
                                                 data-container="#addContributors"
@@ -145,7 +145,7 @@
                                             ></i>
                                     </th>
                                 </thead>
-                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: afterRender, options: {containment: 'parent'}}">
+                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: makeAfterRender(), options: {containment: 'parent'}}">
                                     <tr>
                                         <td style="padding-right: 10px;">
                                             <a
