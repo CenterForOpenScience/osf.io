@@ -590,8 +590,40 @@ function reapplyTooltips () {
  * @private
  */
 function _fangornMultiselect(event, item) {
-
+    var tb = this;
+    tb.multiselected = filterRowsNotInParent.call(tb, tb.multiselected);
+    tb.highlightMultiselect;
 }
+
+/**
+ * When multiple rows are selected remove those that are not in the parent -- borrowed from ProjectOrganizer
+ * @param {Array} rows List of item objects
+ * @returns {Array} newRows Returns the revised list of rows
+ */
+function filterRowsNotInParent(rows) {
+    if (this.multiselected.length < 2) {
+        return this.multiselected;
+    }
+    var i, newRows = [],
+        originalRow = this.find(this.multiselected[0].id),
+        originalParent,
+        currentItem;
+    if (typeof originalRow !== "undefined") {
+        originalParent = originalRow.parentID;
+        for (i = 0; i < rows.length; i++) {
+            currentItem = rows[i];
+            if (currentItem.parentID === originalParent && currentItem.id !== -1) {
+                newRows.push(rows[i]);
+            }
+        }
+    }
+    this.multiselected = newRows;
+    this.highlightMultiselect();
+    return newRows;
+}
+
+
+
 /**
  * Called when new object data has arrived to be loaded.
  * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
