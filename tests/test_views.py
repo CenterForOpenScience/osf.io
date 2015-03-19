@@ -522,9 +522,9 @@ class TestProjectViews(OsfTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
-        assert_equal(res.json['total'], 5)
+        assert_equal(res.json['total'], 5 + 2)
         assert_equal(res.json['page'], 0)
-        assert_equal(res.json['pages'], 2)
+        assert_equal(res.json['pages'], 3)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
@@ -540,7 +540,7 @@ class TestProjectViews(OsfTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
-        assert_equal(res.json['total'], 12)
+        assert_equal(res.json['total'], 12 + 2)
         assert_equal(res.json['page'], 0)
         assert_equal(res.json['pages'], 2)
 
@@ -558,7 +558,7 @@ class TestProjectViews(OsfTestCase):
         url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
         res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
-        assert_equal(res.json['total'], 12)
+        assert_equal(res.json['total'], 12 + 2)
         assert_equal(res.json['page'], 1)
         assert_equal(res.json['pages'], 2)
 
@@ -588,7 +588,7 @@ class TestProjectViews(OsfTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
-        assert_equal(res.json['total'], 15)
+        assert_equal(res.json['total'], 15 + 2)
         assert_equal(res.json['page'], 0)
         assert_equal(res.json['pages'], 2)
         assert_equal(
