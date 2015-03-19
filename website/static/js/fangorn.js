@@ -49,17 +49,45 @@ var getExtensionIconClass = function(name) {
     return null;
 };
 
-var cancelUploadTemplate = m('.btn.btn-xs.btn-danger.m-l-sm', m('.fa.fa-times')); 
-var cancelAllUploadsTemplate = m('div', [
-    m('span', 'Uploads in progress'),
-    m('.btn.btn-xs.m-l-sm.btn-warning', {
-        'onclick' : function() { 
-            treebeard.uploadsAreCancelled = true;
-            treebeard.dropzone.removeAllFiles(true); 
+function cancelUploads (row) {
+    var treebeard = this;
+    if (row){
+        var filesArr = treebeard.dropzone.getQueuedFiles();
+        for (var i = 0; i < filesArr.length; i++) {
+            var m = filesArr[i];
+            if (row.data.tmpID === m.tmpID) {
+                console.log("to remove: ", m);
+                treebeard.dropzone.removeFile(m);
+                treebeard.deleteNode(row.parentID,row.id);
+            }
+        }
+    } else {
+        treebeard.uploadsAreCancelled = true;
+        treebeard.dropzone.removeAllFiles(true); 
+    }
+}
 
-        } 
-    }, 'Cancel All Uploads')
-]);
+var cancelUploadTemplate = function(row){
+    var treebeard = this;
+    return m('.btn.btn-xs.btn-danger.m-l-sm', { 
+            'onclick' : function (e) {
+                cancelUploads.call(treebeard, row);
+            }},
+        m('.fa.fa-times'));
+}
+
+
+var cancelAllUploadsTemplate = function(){
+    var treebeard = this;
+    return m('div', [
+        m('span', 'Uploads in progress'),
+        m('.btn.btn-xs.m-l-sm.btn-warning', {
+            'onclick' : function() { 
+                cancelUploads.call(treebeard);
+            } 
+        }, 'Cancel All Uploads')
+    ]);
+}
 
 
 /**
@@ -247,11 +275,11 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     if(treebeard.options.placement === 'dashboard'){
         column = null;
-        msgWithCancel = m('span', [ fullRowTemplate, cancelUploadTemplate ]);
+        msgWithCancel = m('span', [ fullRowTemplate, cancelUploadTemplate.call(treebeard, item) ]);
         msgWithoutCancel = fullRowTemplate;
     } else {
         column = 1;
-        msgWithCancel = m('span', [ columnTemplate, cancelUploadTemplate]);
+        msgWithCancel = m('span', [ columnTemplate, cancelUploadTemplate.call(treebeard, item) ]);
         msgWithoutCancel = columnTemplate;
     }
 
@@ -280,7 +308,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
         _send.call(xhr, file);
     };
     treebeard.multimodal.height = 45;
-    treebeard.multimodal.update(cancelAllUploadsTemplate);
+    treebeard.multimodal.update(cancelAllUploadsTemplate.call(treebeard));
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -751,7 +779,7 @@ function _fangornResolveRows(item) {
         },
         {
             data : '',  // Data field name
-            custom : function(){ return m('span.text-muted', [m('span','Upload pending...'), cancelUploadTemplate]); }
+            custom : function(){ return m('span.text-muted', [m('span','Upload pending...'), cancelUploadTemplate.call(this, item) ]); }
         },
         {
             data : '',  // Data field name
@@ -956,6 +984,7 @@ tbOptions = {
         reapplyTooltips();
     },
     onselectrow : function(row) {
+        console.log(row);
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
