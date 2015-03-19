@@ -846,6 +846,7 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    multiselect : true,
     title : function() {
         if(window.contextVars.uploadInstruction) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
