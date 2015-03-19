@@ -202,7 +202,7 @@
 
 <%def name="render_node_settings(data)">
     <%
-       template_name = "{name}/templates/{name}_node_settings.mako".format(name=data['addon_short_name'])
+       template_name = data['node_settings_template']
        tpl = context.lookup.get_template(template_name).render(**data)
     %>
     ${tpl}
