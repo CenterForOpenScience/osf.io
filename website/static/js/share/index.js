@@ -64,8 +64,8 @@ ShareApp.controller = function() {
         var state = History.getState().data;
         if (state.query === self.vm.query() &&
             state.sort === self.vm.sort() &&
-            state.optionalFilters === self.vm.optionalFilters &&
-            state.requiredFilters === self.vm.requiredFilters) return;
+            utils.arrayEqual(state.optionalFilters, self.vm.optionalFilters) &&
+            utils.arrayEqual(state.requiredFilters, self.vm.requiredFilters)) return;
         self.vm.optionalFilters = state.optionalFilters;
         self.vm.requiredFilters = state.requiredFilters;
         self.vm.query(state.query);

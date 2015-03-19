@@ -31,12 +31,10 @@ var loadMore = function(vm) {
         return;
     }
     var page = vm.page++ * 10;
-    var sort;
-    if (vm.sort() === 'Date') {
-        sort = 'dateUpdated';
-    } else {
-        sort = null;
-    }
+    var sort = {
+        Date: 'dateUpdated'
+    }[vm.sort()] || null;
+
     vm.resultsLoading(true);
 
     m.request({
@@ -70,7 +68,6 @@ var search = function(vm) {
 
     vm.page = 0;
     vm.results = [];
-
     History.pushState({
         optionalFilters: vm.optionalFilters,
         requiredFilters: vm.requiredFilters,
@@ -132,6 +129,10 @@ var removeFilter = function(vm, filter){
     search(vm);
 };
 
+var arrayEqual = function(a, b) {
+    return $(a).not(b).length === 0 && $(b).not(a).length === 0
+};
+
 
 module.exports = {
     search: search,
@@ -142,5 +143,6 @@ module.exports = {
     maybeQuashEvent: maybeQuashEvent,
     buildQuery: buildQuery,
     updateFilter: updateFilter,
-    removeFilter: removeFilter
+    removeFilter: removeFilter,
+    arrayEqual: arrayEqual
 };
