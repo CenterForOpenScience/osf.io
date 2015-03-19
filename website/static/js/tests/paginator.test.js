@@ -42,7 +42,7 @@ describe('Paginator', () => {
             p.currentPage(currentPage);
         });
         paginator.previousPage();
-        assert.isTrue(paginator.search.calledOnce);
+        assert.calledOnce(paginator.search);
         assert.equal(paginator.currentPage() + 1, currentPage);
     });
 
