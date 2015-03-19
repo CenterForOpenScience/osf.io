@@ -195,7 +195,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
     serializer = serializer.MendeleySerializer
 
     mendeley_list_id = fields.StringField()
-    mendeley_folder_name = fields.StringField()
+    mendeley_list_name = fields.StringField()
 
     _api = None
 
@@ -222,9 +222,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         elif self.mendeley_list_id == 'ROOT':
             return 'All Documents'
         else:
-            #folder = self.api._folder_metadata(self.mendeley_list_id)
-            #return folder.name
-            return self.mendeley_folder_name
+            return self.mendeley_list_name
 
     @property
     def root_folder(self):
@@ -248,7 +246,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).set_auth(*args, **kwargs)
 
-    def set_target_folder(self, mendeley_list_id, mendeley_folder_name):
+    def set_target_folder(self, mendeley_list_id, mendeley_list_name):
         """Configure this addon to point to a Mendeley folder
 
         :param str mendeley_list_id:
@@ -266,7 +264,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
 
         # update this instance
         self.mendeley_list_id = mendeley_list_id
-        self.mendeley_folder_name = mendeley_folder_name
+        self.mendeley_folder_list_name = mendeley_list_name
         self.save()
 
         self.owner.add_log(
