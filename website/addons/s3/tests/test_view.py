@@ -203,13 +203,14 @@ class TestS3ViewsConfig(OsfTestCase):
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('<label for="s3Addon">Access Key</label>' in rv.body)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
-    def test_node_settings_user_settings_ui(self, mock_dropdown):
+    @mock.patch('website.addons.s3.utils.get_bucket_list')
+    @mock.patch('website.addons.s3.api.does_bucket_exist')
+    def test_node_settings_user_settings_ui(self, mock_exists, mock_dropdown):
+        mock_exists.return_value = True
         mock_dropdown.return_value = ['mybucket']
-        url = self.project.url + 'settings/'
+        url = self.project.api_url_for('s3_node_settings')
         rv = self.app.get(url, auth=self.user.auth)
         assert_true('mybucket' in rv.body)
-
 
 class TestCreateBucket(OsfTestCase):
 
