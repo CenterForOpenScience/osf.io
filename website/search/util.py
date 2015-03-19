@@ -1,3 +1,4 @@
+import re
 import copy
 import webcolors
 
@@ -93,3 +94,17 @@ def create_atom_feed(name, data, query, size, start, url, to_atom):
         feed.add(**to_atom(doc))
 
     return feed
+
+
+def illegal_unicode_replace(atom_element):
+    """ Replace an illegal for XML unicode character with nothing.
+    This fix thanks to Matt Harper from his blog post:
+    https://maxharp3r.wordpress.com/2008/05/15/pythons-minidom-xml-and-illegal-unicode-characters/
+    """
+    RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
+                     u'|' + \
+                     u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
+                     (unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff),
+                     unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff),
+                     unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff))
+    return re.sub(RE_XML_ILLEGAL, "", atom_element)
