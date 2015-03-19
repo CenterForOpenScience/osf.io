@@ -15,25 +15,25 @@
   <h2 class="text-300">Settings</h2>
 </div>
 
-<div class="row">
+<div class="row project-page">
     <div class="col-sm-3">
-        <div class="panel panel-default">
+        <div class="panel panel-default" data-spy="affix" >
             <ul class="nav nav-stacked nav-pills">
                 % if 'admin' in user['permissions'] and not node['is_registration']:
-                    <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
+                    <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
                 % endif
                 % if 'admin' in user['permissions'] and not node['is_registration']:
-                    <li><a href="#configureCommenting">Configure Commenting</a></li>
+                    <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                 % endif
 
                 % if 'write' in user['permissions'] and not node['is_registration']:
-                    <li><a href="#selectAddons">Select Add-ons</a></li>
+                    <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
                 % if addon_enabled_settings:
-                    <li><a href="#configureAddons">Configure Add-ons</a></li>
+                    <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                 % endif
 
-                    <li><a href="#configureNotifications">Configure Notifications</a></li>
+                    <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
                 %endif
             </ul>
         </div><!-- end sidebar -->
@@ -44,6 +44,7 @@
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
             <div class="panel panel-default">
+                <span id="configureNodeAnchor" class="anchor"></span>
 
                 <div class="panel-heading">
                     <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
@@ -61,7 +62,7 @@
             </div>
 
             <div class="panel panel-default">
-                <span id="configureCommenting" class="anchor"></span>
+                <span id="configureCommentingAnchor" class="anchor"></span>
 
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure Commenting</h3>
@@ -101,7 +102,7 @@
 
         % if 'write' in user['permissions']:
         <div class="panel panel-default">
-            <span id="selectAddons"></span>
+            <span id="selectAddonsAnchor" class="anchor"></span>
              <div class="panel-heading">
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>
@@ -154,6 +155,7 @@
             </div>
 
             % if addon_enabled_settings:
+                <span id="configureAddonsAnchor" class="anchor"></span>
 
                 <div id="configureAddons" class="panel panel-default">
 
@@ -180,7 +182,7 @@
 
         % if not node['is_registration'] and user['has_read_permissions']:
             <div class="panel panel-default">
-                <span id="configureNotifications" class="anchor"></span>
+                <span id="configureNotificationsAnchor" class="anchor"></span>
 
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure Notifications</h3>
