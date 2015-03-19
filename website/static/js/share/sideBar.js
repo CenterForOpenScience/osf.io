@@ -35,7 +35,6 @@ SideBar.view = function(ctrl){
         m('br'), m('br'),
         'Filters:', m('br'),
         m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
-        m('br'), m('br'),
         'Providers:', m('br'),
         m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
     ]);
@@ -46,7 +45,7 @@ SideBar.controller = function(vm) {
     self.vm = vm;
 
     self.vm.sort = $osf.urlParams().sort ? m.prop($osf.urlParams().sort) : m.prop("Relevance");
-    self.vm.requiredFilters = $osf.urlParams.required ? $osf.urlParams().required.split('|') : [];
+    self.vm.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 
     self.renderFilters = function(){
