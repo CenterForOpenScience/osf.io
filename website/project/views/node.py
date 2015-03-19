@@ -304,7 +304,9 @@ def node_setting(auth, **kwargs):
     for addon in node.get_addons():
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
-            addon_enabled_settings.append(addon.to_json(auth.user))
+            config = addon.to_json(auth.user)
+            config['node_settings_template'] = addon.config.node_settings_template.split('../addons/')[-1]
+            addon_enabled_settings.append(config)
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
