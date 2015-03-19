@@ -11,7 +11,7 @@ Results.view = function(ctrl) {
         len = 0
     } else {
         res = ctrl.vm.results.map(ctrl.renderResult);
-        len = 0;
+        len = ctrl.vm.results.length;
     }
     return m('.row', [
         m('.row', m('.col-md-12', res)),
