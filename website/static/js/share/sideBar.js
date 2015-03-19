@@ -50,20 +50,14 @@ SideBar.controller = function(vm) {
 
     self.renderFilters = function(){
         return self.vm.optionalFilters.concat(self.vm.requiredFilters).map(function(filter){
-            return m('li', [m('label', [
-                m('input', {
-                    'type': 'checkbox',
-                    'checked': true,
-                    onclick: function(cb){
-                        if (cb.target.checked == true){
-                            utils.updateFilter(self.vm, filter);
-                        } else {
-                            utils.removeFilter(self.vm, filter);
-                        }
+            return m('li', [
+                m('a', {
+                    onclick: function(event){
+                        utils.removeFilter(self.vm, filter)
                     }
-                }),
-                ' ' + filter
-            ])])
+                }, [m('i.fa.fa-close'), ' ' + filter
+                ])
+            ])
         });
     };
 
