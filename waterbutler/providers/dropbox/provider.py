@@ -227,13 +227,14 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.CreateFolderError
         )
 
-        if response.status == 403:
-            raise exceptions.CreateFolderError('Folder {} already exists'.format(path.path), code=409)
+        data = yield from response.json()
 
-        return DropboxFolderMetadata(
-            (yield from response.json()),
-            self.folder
-        ).serialized()
+        if response.status == 403:
+            if 'because a file or folder already exists at path' in data.get('error'):
+                raise exceptions.CreateFolderError('Folder {} already exists'.format(str(path)), code=409)
+            raise exceptions.CreateFolderError(data, code=403)
+
+        return DropboxFolderMetadata(data, self.folder).serialized()
 
     def can_intra_copy(self, dest_provider):
         return type(self) == type(dest_provider)
