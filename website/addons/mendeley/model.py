@@ -246,7 +246,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).set_auth(*args, **kwargs)
 
-    def set_target_folder(self, mendeley_list_id, mendeley_list_name):
+    def set_target_folder(self, mendeley_list_id, mendeley_list_name, auth):
         """Configure this addon to point to a Mendeley folder
 
         :param str mendeley_list_id:

@@ -259,16 +259,9 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
             ''
         )
 
-    @mock.patch('website.addons.mendeley.model.Mendeley._folder_metadata')
-    def test_selected_folder_name(self, mock_folder_metadata):
-        # Mock the return from api call to get the folder's name
-        mock_folder = mock.Mock()
-        mock_folder.name = 'Fake Folder'
-
-        # Add the mocked return object to the mocked api client
-        mock_folder_metadata.return_value = mock_folder
-
+    def test_selected_folder_name(self):
         self.node_settings.mendeley_list_id = 'fake-list-id'
+        self.node_settings.mendeley_list_name = 'Fake Folder'
 
         assert_equal(
             self.node_settings.selected_folder_name,
