@@ -27,7 +27,7 @@ var formatNumber = function(num) {
 var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
 
 var loadMore = function(vm) {
-    if (vm.query().length === 0) {
+    if (buildQuery(vm).length === 0) {
         return;
     }
     var page = vm.page++ * 10;
@@ -64,7 +64,7 @@ var loadMore = function(vm) {
 };
 
 var search = function(vm) {
-    if (vm.query().length === 0) {
+    if (buildQuery(vm).length === 0) {
         return;
     }
 
