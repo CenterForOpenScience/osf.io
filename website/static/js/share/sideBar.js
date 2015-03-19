@@ -32,7 +32,8 @@ SideBar.view = function(ctrl){
                 }, ['Date'])]),
             ])
         ]),
-        m('br'),
+        m('br'), m('br'),
+        'Providers:', m('br'),
         m('ul', {style:{'list-style-type': 'none'}}, ctrl.renderProviders()),
     ]);
 };
@@ -41,7 +42,7 @@ SideBar.controller = function(vm) {
     var self = this;
     self.vm = vm;
 
-    self.vm.sort = m.prop($osf.urlParams().sort) || m.prop("Relevance");
+    self.vm.sort = $osf.urlParams().sort ? m.prop($osf.urlParams().sort) : m.prop("Relevance");
     self.vm.requiredFilters = $osf.urlParams.required ? $osf.urlParams().required.split('|') : [];
     self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 
@@ -54,7 +55,7 @@ SideBar.controller = function(vm) {
             return m('li', [m('label', [
                 m('input', {
                     'type': 'checkbox',
-                    'checked': (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1),
+                    'checked': (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1),
                     onclick: function(cb){
                         if (cb.target.checked == true){
                             utils.updateFilter(self.vm, 'source:' + result.short_name);
