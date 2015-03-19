@@ -127,7 +127,31 @@ class AddonConfig(object):
                 'user_settings_default.mako',
             )
 
+        # Provide the path the the node_settings template
         self.node_settings_template = node_settings_template
+        addon_node_settings_path = os.path.join(
+            template_path,
+            '{}_node_settings.mako'.format(self.short_name)
+        )
+        if node_settings_template:
+            # If NODE_SETTINGS_TEMPLATE is defined, use that path.
+            self.node_settings_template = node_settings_template
+        elif os.path.exists(addon_node_settings_path):
+            # An implicit template exists
+            self.node_settings_template = os.path.join(
+                os.path.pardir,
+                'addons',
+                self.short_name,
+                'templates',
+                '{}_node_settings.mako'.format(self.short_name),
+            )
+        else:
+            # Use the default template (for OAuth addons)
+            self.node_settings_template = os.path.join(
+                'project',
+                'addon',
+                'node_settings_default.mako',
+            )
 
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
