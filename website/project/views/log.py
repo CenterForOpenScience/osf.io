@@ -53,7 +53,7 @@ def _get_logs(node, count, auth, link=None, start=0):
         # the offending logs.
         log_node = log.resolve_node(node)
         if log.can_view(node, auth):
-            total+=1
+            total += 1
             anonymous = has_anonymous_link(log_node, auth)
             logs.append(serialize_log(log, anonymous))
 
@@ -89,4 +89,4 @@ def get_logs(auth, **kwargs):
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
     logs, total, pages = _get_logs(node, count, auth, link, start)
-    return {'logs': logs, 'total':total, 'pages': pages, 'page': page}
+    return {'logs': logs, 'total': total, 'pages': pages, 'page': page}
