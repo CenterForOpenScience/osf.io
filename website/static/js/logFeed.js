@@ -107,7 +107,7 @@ var LogsViewModel = oop.extend(Paginator, {
             cache: false
         }).done(function(response) {
             // Initialize LogViewModel
-            self.logs.removeAll();
+            //self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
             console.log("logNum" + logModelObjects.length);
             for (var i=0; i<logModelObjects.length; i++) {
@@ -168,7 +168,9 @@ var defaults = {
 var initViewModel = function(self, logs, url){
     self.logs = createLogs(logs);
     self.viewModel = new LogsViewModel(self.logs, url);
-    self.viewModel.fetchResult();
+    if(url) {
+        self.viewModel.fetchResult();
+    }
     self.init();
 };
 
@@ -184,12 +186,15 @@ function LogFeed(selector, data, options) {
     self.$element = $(selector);
     self.options = $.extend({}, defaults, options);
     self.$progBar = $(self.options.progBar);
+    //for recent activities
     if (Array.isArray(data)) { // data is an array of log object from server
         initViewModel(self, data, self.options.url);
-    } else { // data is an URL
-        $.getJSON(data, function(response) {
-            initViewModel(self, response.logs, data);
-        });
+    } else { // data is an URL, for watch log and project log
+        var empty =[];
+        initViewModel(self, empty, data);
+        //$.getJSON(data, function(response) {
+        //    initViewModel(self, response.logs, data);
+        //});
     }
 }
 
