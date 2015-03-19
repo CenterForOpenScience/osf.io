@@ -46,6 +46,16 @@ class TestFileGuid(OsfTestCase):
         assert_true(guid.path)
         assert_true(guid.waterbutler_path)
 
+    def test_path_doesnt_crash_nonconfig_addon(self):
+        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+        self.node_addon.folder_id = None
+        self.node_addon.folder_path = None
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
     def test_provider(self):
         assert_equal('googledrive', GoogleDriveGuidFile().provider)
 
