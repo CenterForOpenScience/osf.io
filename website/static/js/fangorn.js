@@ -591,7 +591,6 @@ function reapplyTooltips () {
  */
 function _fangornMultiselect(event, item) {
     var tb = this;
-    
     tb.multiselected = filterRowsNotInParent.call(tb, tb.multiselected); 
     tb.highlightMultiselect;
     if(tb.multiselected.length > 1 ) {
@@ -605,10 +604,7 @@ function _fangornMultiselect(event, item) {
         ]);
          tb.multimodal.height = 45;
          tb.multimodal.update(modalTemplate);        
-     } else {
-        tb.clearMultiselect();
      }
-
 }
 
 function deleteMultiselectFiles(){
@@ -628,8 +624,7 @@ function deleteMultiselectFiles(){
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
-    tb.multimodal.dismiss();
-    tb.clearMultiselect();
+
 }
 
 /**
