@@ -214,6 +214,9 @@ def serialize_comment(comment, auth, anonymous=False):
         # In case the wiki name is changed
         root_id = comment.root_target.page_name
         title = comment.root_target.page_name
+    elif isinstance(comment.root_target, GuidFile):
+        root_id = comment.root_target._id
+        title = comment.root_target.waterbutler_path
     else:
         root_id = comment.root_target._id
         title = ''
@@ -238,7 +241,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'page': comment.page or 'node',
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
         'rootId': root_id,
-        'title': title or comment.root_title,
+        'title': title,
         'provider': comment.root_target.provider if isinstance(comment.root_target, GuidFile) else '',
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
@@ -283,7 +286,6 @@ def add_comment(**kwargs):
         raise HTTPError(http.FORBIDDEN)
     page = request.json.get('page')
     guid = request.json.get('target')
-    title = request.json.get('title')
     target = resolve_target(node, page, guid)
 
     content = request.json.get('content').strip()
@@ -300,7 +302,6 @@ def add_comment(**kwargs):
         user=auth.user,
         page=page,
         content=content,
-        root_title=title,
     )
     comment.save()
 

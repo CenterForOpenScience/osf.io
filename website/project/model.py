@@ -157,7 +157,6 @@ class Comment(GuidStoredObject):
     is_hidden = fields.BooleanField(default=False)
     page = fields.StringField()
     content = fields.StringField()
-    root_title = fields.StringField(default='')
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {

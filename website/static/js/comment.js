@@ -18,10 +18,6 @@ var CommentPane = require('./commentpane.js');
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
 var nodeUrl = '/' + nodeId + '/';
-var filePath = '';
-if (typeof window.contextVars.file != 'undefined') {
-    filePath = window.contextVars.file.path;
-}
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -86,7 +82,6 @@ var BaseComment = function() {
 
     self.page = ko.observable('node'); // Default
     self.mode = 'pane'; // Default
-    self.title = ko.observable(''); // Default
 
     self.errorMessage = ko.observable();
     self.editErrorMessage = ko.observable();
@@ -240,7 +235,6 @@ BaseComment.prototype.submitReply = function() {
             page: self.page(),
             target: self.id(),
             content: self.replyContent(),
-            title: self.title()
         }
     ).done(function(response) {
         self.cancelReply();
@@ -576,7 +570,6 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.page(host_page);
     self.id = ko.observable(host_name);
     self.rootId = ko.observable(host_name);
-    self.title(filePath);
 
     self.commented = ko.computed(function(){
         return self.comments().length > 0;
