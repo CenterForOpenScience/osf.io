@@ -33,8 +33,11 @@ SideBar.view = function(ctrl){
             ])
         ]),
         m('br'), m('br'),
+        'Filters:', m('br'),
+        m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
+        m('br'), m('br'),
         'Providers:', m('br'),
-        m('ul', {style:{'list-style-type': 'none'}}, ctrl.renderProviders()),
+        m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
     ]);
 };
 
@@ -45,6 +48,30 @@ SideBar.controller = function(vm) {
     self.vm.sort = $osf.urlParams().sort ? m.prop($osf.urlParams().sort) : m.prop("Relevance");
     self.vm.requiredFilters = $osf.urlParams.required ? $osf.urlParams().required.split('|') : [];
     self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
+
+    self.renderFilters = function(){
+        var filters = [];
+        for (i in self.vm.requiredFilters) {
+            var filter = self.vm.requiredFilters[i];
+            if (filter.indexOf('source:') === -1){
+                filters.push(m('li', [m('label', [
+                    m('input', {
+                        'type': 'checkbox',
+                        'checked': true,
+                        onclick: function(cb){
+                            if (cb.target.checked == true){
+                                utils.updateFilter(self.vm, filter);
+                            } else {
+                                utils.removeFilter(self.vm, filter);
+                            }
+                        }
+                    }),
+                    ' ' + filter
+                ])]))
+            }
+        }
+        return filters;
+    };
 
     self.renderProviders = function () {
         return Object.keys(self.vm.ProviderMap).map(function(result, index){
