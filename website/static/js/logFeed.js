@@ -107,17 +107,12 @@ var LogsViewModel = oop.extend(Paginator, {
             cache: false
         }).done(function(response) {
             // Initialize LogViewModel
-            //self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
-            console.log("logNum" + logModelObjects.length);
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
             self.currentPage(response.page);
             self.numberOfPages(response.pages);
-            console.log("currentPage" + self.currentPage());
-            console.log("numerOfPages" + self.numberOfPages());
-            console.log("-------");
             self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
@@ -192,9 +187,6 @@ function LogFeed(selector, data, options) {
     } else { // data is an URL, for watch log and project log
         var empty =[];
         initViewModel(self, empty, data);
-        //$.getJSON(data, function(response) {
-        //    initViewModel(self, response.logs, data);
-        //});
     }
 }
 

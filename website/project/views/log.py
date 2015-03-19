@@ -55,12 +55,9 @@ def _get_logs(node, count, auth, link=None, start=0):
         if log.can_view(node, auth):
             total+=1
             anonymous = has_anonymous_link(log_node, auth)
-
             logs.append(serialize_log(log, anonymous))
 
     pages = math.ceil(total / size)
-    print("loglenth {0}".format(str(len(logs))))
-    print("total: {0}".format(str(total)))
 
     return [log for log in islice(logs, start, start + count)], total, pages
 
