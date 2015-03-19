@@ -84,6 +84,7 @@ def get_user_from_cookie(cookie):
 
 
 permission_map = {
+    'create_folder': 'write',
     'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
