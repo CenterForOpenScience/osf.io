@@ -261,6 +261,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         assert_equal(account.oauth_key, 'perm_token')
         assert_equal(account.oauth_secret, 'perm_secret')
         assert_equal(account.provider_id, 'mock_provider_id')
+        assert_equal(account.provider_name, 'Mock OAuth 1.0a Provider')
 
     @responses.activate
     def test_callback_wrong_user(self):
