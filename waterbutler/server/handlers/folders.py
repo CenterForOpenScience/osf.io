@@ -7,7 +7,7 @@ from waterbutler.server.handlers import core
 class FolderHandler(core.BaseHandler):
 
     ACTION_MAP = {
-        'GET': 'create_folder',
+        'POST': 'create_folder',
     }
 
     @utils.coroutine
@@ -15,7 +15,7 @@ class FolderHandler(core.BaseHandler):
         yield from super().prepare()
 
     @utils.coroutine
-    def get(self):
+    def post(self):
         """Create a folder"""
         self.set_status(201)
-        self.write((yield from self.provider.create_folder(**self.arguments))
+        self.write((yield from self.provider.create_folder(**self.arguments)))
