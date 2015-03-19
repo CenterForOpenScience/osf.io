@@ -38,7 +38,10 @@ class DropboxFile(GuidFile):
 
     @property
     def folder(self):
-        return self.node.get_addon('dropbox').folder
+        addon = self.node.get_addon('dropbox')
+        if not addon or not addon.folder:
+            return ''  # Must return a str value this will error out properly later
+        return addon.folder
 
     @property
     def provider(self):
@@ -125,6 +128,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     @property
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder)
+
+    @property
+    def complete(self):
+        return self.has_auth and self.folder is not None
 
     @property
     def has_auth(self):

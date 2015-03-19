@@ -2,14 +2,11 @@
 # Requirements that are used in the development environment only
 nose
 factory-boy==2.2.1
-webtest-plus
+webtest-plus==0.3.3
 mock
 fake-factory
 
-pep8>=1.5.7,<1.6.0
-pyflakes>=0.8,<0.9
-mccabe>=0.3,<0.4
-flake8==2.3.0
+flake8==2.4.0
 
 responses
 

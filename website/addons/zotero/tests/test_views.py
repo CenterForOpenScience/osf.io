@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # noqa
-
-import mock
+from nose.tools import *  # flake8: noqa
 import responses
+import mock
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -18,9 +17,7 @@ from website.addons.zotero.tests.factories import (
     ZoteroNodeSettingsFactory
 )
 
-from website.util import api_url_for
 from website.addons.zotero import views
-from website.addons.citations.utils import serialize_account
 
 from utils import mock_responses
 
@@ -107,21 +104,6 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['folders'])
         assert_true(res.json['urls']['importAuth'])
         assert_true(res.json['urls']['settings'])
-
-    def test_user_folders(self):
-        # JSON: a list of user's Zotero folders"
-        res = self.app.get(
-            api_url_for('list_zotero_accounts_user'),
-            auth=self.user.auth,
-        )
-        expected = {
-            'accounts': [
-                serialize_account(each)
-                for each in self.user.external_accounts
-                if each.provider == 'zotero'
-            ]
-        }
-        assert_equal(res.json, expected)
 
     def test_set_auth(self):
 

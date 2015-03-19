@@ -30,6 +30,10 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+# May set these to True in local.py for development
+DEV_MODE = False
+DEBUG_MODE = False
+
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
@@ -38,6 +42,7 @@ CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
 BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
 
 DOMAIN = 'http://localhost:5000/'
+OFFLOAD_DOMAIN = 'http://localhost:5001/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
@@ -49,16 +54,12 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
+ELASTIC_INDEX = 'website'
 SHARE_ELASTIC_URI = ELASTIC_URI
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'
-
-# May set these to True in local.py for development
-DEV_MODE = False
-DEBUG_MODE = False
-
 
 # TODO: Remove after migration to OSF Storage
 COPY_GIT_REPOS = False
@@ -177,7 +178,6 @@ CELERY_IMPORTS = (
 )
 
 # Add-ons
-
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_REQUESTED = json.load(fp)['addons']

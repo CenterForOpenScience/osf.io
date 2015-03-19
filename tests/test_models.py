@@ -25,7 +25,6 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent,
 )
-from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
 from website.addons.wiki.exceptions import (
@@ -225,6 +224,8 @@ class TestUser(OsfTestCase):
         u.save()
         assert_equal(u.username, email)
         assert_false(u.is_registered)
+        assert_false(u.is_claimed)
+        assert_true(u.is_invited)
         assert_true(email in u.emails)
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
@@ -870,35 +871,6 @@ class TestGUID(OsfTestCase):
             )
 
 
-class TestNodeFile(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeFile, self).setUp()
-        # Create a project with a NodeFile
-        self.node = ProjectFactory()
-        self.node_file = NodeFile(node=self.node, path='foo.py', filename='foo.py', size=128)
-        self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
-        self.node.save()
-
-    def test_url(self):
-        assert_equal(
-            self.node_file.api_url(self.node),
-            '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
-        )
-
-    def test_clean(self):
-        assert_equal(self.node_file.clean_filename, 'foo_py')
-
-    def test_latest_version_number(self):
-        assert_equal(self.node_file.latest_version_number(self.node), 1)
-
-    def test_download_url(self):
-        assert_equal(
-            self.node_file.download_url(self.node),
-            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
-        )
-
-
 class TestApiKey(OsfTestCase):
 
     def test_factory(self):
@@ -1229,6 +1201,22 @@ class TestNode(OsfTestCase):
             )
         )
 
+    def test_web_url_for_absolute(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.web_url_for('view_project', _absolute=True)
+        assert_in(settings.DOMAIN, result)
+        assert_not_in(settings.OFFLOAD_DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
+    def test_web_url_for_absolute_offload(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.web_url_for('view_project', _absolute=True, _offload=True)
+        assert_in(settings.OFFLOAD_DOMAIN, result)
+        assert_not_in(settings.DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
         assert_equal(node.category_display, 'Hypothesis')
@@ -1254,6 +1242,22 @@ class TestNode(OsfTestCase):
                 nid=self.node._id,
             )
         )
+
+    def test_api_url_for_absolute(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.api_url_for('view_project', _absolute=True)
+        assert_in(settings.DOMAIN, result)
+        assert_not_in(settings.OFFLOAD_DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
+    def test_api_url_for_absolute_offload(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.api_url_for('view_project', _absolute=True, _offload=True)
+        assert_in(settings.OFFLOAD_DOMAIN, result)
+        assert_not_in(settings.DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_node_factory(self):
         node = NodeFactory()

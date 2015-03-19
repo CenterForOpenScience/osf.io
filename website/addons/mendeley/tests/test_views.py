@@ -18,8 +18,6 @@ from website.addons.mendeley.tests.factories import (
     MendeleyNodeSettingsFactory
 )
 
-from website.util import api_url_for
-from website.addons.mendeley import utils
 from website.addons.mendeley import views
 
 from utils import mock_responses
@@ -107,21 +105,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['folders'])
         assert_true(res.json['urls']['importAuth'])
         assert_true(res.json['urls']['settings'])
-
-    def test_user_folders(self):
-        # JSON: a list of user's Mendeley folders"
-        res = self.app.get(
-            api_url_for('list_mendeley_accounts_user'),
-            auth=self.user.auth,
-        )
-        expected = {
-            'accounts': [
-                utils.serialize_account(each)
-                for each in self.user.external_accounts
-                if each.provider == 'mendeley'
-            ]
-        }
-        assert_equal(res.json, expected)
 
     def test_set_auth(self):
 

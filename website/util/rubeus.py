@@ -1,16 +1,15 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
+# -*- coding: utf-8 -*-
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
 import datetime
 
-import hurry
+import hurry.filesize
 from modularodm import Q
 
-from website.util import paths
 from framework.auth.decorators import Auth
+
+from website.util import paths
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
     ALL_MY_REGISTRATIONS_NAME
@@ -288,7 +287,7 @@ class NodeProjectCollector(object):
                 })
         try:
             user = node.logs[-1].user
-            modified_by = user.family_name
+            modified_by = user.family_name or user.given_name
         except AttributeError:
             modified_by = ''
         # test_children = self._collect_addons(node)

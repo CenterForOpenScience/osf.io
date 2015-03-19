@@ -1,3 +1,4 @@
+
 import unittest
 from nose.tools import *  # PEP8 asserts
 
@@ -10,27 +11,27 @@ from tests.factories import (
 
 from framework.auth.core import Auth
 
-import website.search.search as search
-from website.search.util import build_query
-
 from website import settings
-
+import website.search.search as search
+from website.search import elastic_search
+from website.search.util import build_query
+from website.search_migration.migrate import migrate
 
 @requires_search
 class SearchTestCase(OsfTestCase):
 
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
-        search.delete_all()
-        search.create_index()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
 
     def setUp(self):
         super(SearchTestCase, self).setUp()
-        search.create_index()
+        search.create_index(elastic_search.INDEX)
 
 
 def query(term):
-    results = search.search(build_query(term))
+    results = search.search(build_query(term), index=elastic_search.INDEX)
     return results
 
 
@@ -44,8 +45,8 @@ class TestUserUpdate(SearchTestCase):
 
     def setUp(self):
         super(TestUserUpdate, self).setUp()
-        search.delete_all()
-        search.create_index()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
@@ -159,8 +160,8 @@ class TestProject(SearchTestCase):
 
     def setUp(self):
         super(TestProject, self).setUp()
-        search.delete_all()
-        search.create_index()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
@@ -478,3 +479,56 @@ class TestSearchExceptions(OsfTestCase):
         )
         self.user.save()
         self.project.save()
+
+
+class TestSearchMigration(SearchTestCase):
+    """
+    Verify that the correct indices are created/deleted during migration
+    """
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestSearchMigration, cls).tearDownClass()
+        search.create_index(settings.ELASTIC_INDEX)
+
+    def setUp(self):
+        super(TestSearchMigration, self).setUp()
+        self.es = search.search_engine.es
+        search.delete_index(settings.ELASTIC_INDEX)
+        search.create_index(settings.ELASTIC_INDEX)
+        self.user = UserFactory(fullname='David Bowie')
+        self.project = ProjectFactory(
+            title=settings.ELASTIC_INDEX,
+            creator=self.user,
+            is_public=True
+        )
+
+    def test_first_migration_no_delete(self):
+        migrate(delete=False, index=settings.ELASTIC_INDEX)
+        var = self.es.indices.get_aliases()
+        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+
+    def test_multiple_migrations_no_delete(self):
+        migrate(delete=False, index=settings.ELASTIC_INDEX)
+        var = self.es.indices.get_aliases()
+        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+
+        migrate(delete=False, index=settings.ELASTIC_INDEX)
+        var = self.es.indices.get_aliases()
+        assert_equal(var[settings.ELASTIC_INDEX + '_v2']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+
+
+    def test_first_migration_with_delete(self):
+        migrate(delete=True, index=settings.ELASTIC_INDEX)
+        var = self.es.indices.get_aliases()
+        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+
+    def test_multiple_migrations_with_delete(self):
+        migrate(delete=True, index=settings.ELASTIC_INDEX)
+        var = self.es.indices.get_aliases()
+        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+
+        migrate(delete=True, index=settings.ELASTIC_INDEX)
+        var = self.es.indices.get_aliases()
+        assert_equal(var[settings.ELASTIC_INDEX + '_v2']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+        assert not var.get(settings.ELASTIC_INDEX + '_v1')
