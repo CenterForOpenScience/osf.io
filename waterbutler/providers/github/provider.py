@@ -184,8 +184,10 @@ class GitHubProvider(provider.BaseProvider):
         assert self.email is not None
         message = message or settings.UPLOAD_FILE_MESSAGE
 
+        keep_path = os.path.join(path.path, '.gitkeep')
+
         data = {
-            'path': os.path.join(path.path, '.gitkeep'),
+            'path': keep_path,
             'message': message,
             'content': '',
             'committer': self.committer,
@@ -196,7 +198,7 @@ class GitHubProvider(provider.BaseProvider):
 
         resp = yield from self.make_request(
             'PUT',
-            self.build_repo_url('contents', path.path),
+            self.build_repo_url('contents', keep_path),
             data=json.dumps(data),
             expects=(201, 422),
             throws=exceptions.CreateFolderError
@@ -205,9 +207,12 @@ class GitHubProvider(provider.BaseProvider):
         data = yield from resp.json()
 
         if resp.status == 422:
-            if data.get('message') == "Invalid request.\n\n\"sha\" wasn\'t supplied.', 'documentation_url'":
+            if data.get('message') == 'Invalid request.\n\n"sha" wasn\'t supplied.':
                 raise exceptions.CreateFolderError('Folder {} already exists'.format(str(path)), code=409)
-            raise exceptions.CreateFolderError(data, code=409)
+            raise exceptions.CreateFolderError(data, code=resp.status)
+
+        data['content']['name'] = path.name
+        data['content']['path'] = data['content']['path'].replace('.gitkeep', '')
 
         return GitHubFolderContentMetadata(data['content'], commit=data['commit']).serialized()
 
