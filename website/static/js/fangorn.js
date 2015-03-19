@@ -591,8 +591,45 @@ function reapplyTooltips () {
  */
 function _fangornMultiselect(event, item) {
     var tb = this;
-    tb.multiselected = filterRowsNotInParent.call(tb, tb.multiselected);
+    
+    tb.multiselected = filterRowsNotInParent.call(tb, tb.multiselected); 
     tb.highlightMultiselect;
+    if(tb.multiselected.length > 1 ) {
+        var modalTemplate =  m('div', [
+            m('span', 'Delete selection files?'),
+            m('.btn.btn-xs.m-l-sm.btn-danger', {
+                'onclick' : function() { 
+                    deleteMultiselectFiles.call(tb);
+                } 
+            }, 'Delete')
+        ]);
+         tb.multimodal.height = 45;
+         tb.multimodal.update(modalTemplate);        
+     } else {
+        tb.clearMultiselect();
+     }
+
+}
+
+function deleteMultiselectFiles(){
+    var tb = this;
+    for (var i = 0; i < tb.multiselected.length; i++){
+        var m = tb.multiselected[i];
+        var url = resolveconfigOption.call(this, m, 'resolveDeleteUrl', [m]);
+        url = url || waterbutler.buildTreeBeardDelete(m);
+        $.ajax({
+            url: url,
+            type: 'DELETE'
+        })
+        .done(function(data) {
+            tb.deleteNode(m.parentID, m.id);
+        })
+        .fail(function(data){
+            item.notify.update('Delete failed.', 'danger', undefined, 3000);
+        });
+    }
+    tb.multimodal.dismiss();
+    tb.clearMultiselect();
 }
 
 /**
