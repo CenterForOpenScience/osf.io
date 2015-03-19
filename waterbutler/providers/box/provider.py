@@ -18,14 +18,10 @@ class BoxPath(utils.WaterButlerPath):
 
     def __init__(self, path, prefix=False, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
-
-        split = path.split('/')[1:]
-        if not split:
-            self._id = '0'
-        elif not split[-1] and len(split) == 2:
-            self._id = None
+        if path != '/':
+            self._id = path.split('/')[1]
         else:
-            self._id = split[0]
+            self._id = path
 
 class BoxProvider(provider.BaseProvider):
 
@@ -123,6 +119,9 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
+        if len(path.split('/')) == 3:
+            path = '/{}{}'.format(self.folder, path)
+
         path = BoxPath(path)
         super()._validate_folder(path)
 
