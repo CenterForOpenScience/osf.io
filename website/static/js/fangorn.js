@@ -583,6 +583,16 @@ function reapplyTooltips () {
 }
 
 /**
+ * Hook to run on multiselect that removes invalid selections (i.e. not a file) and opens up the notification 
+ * @param event Browser click event object
+ * @param {Object} tree A Treebeard _item object. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _fangornMultiselect(event, item) {
+
+}
+/**
  * Called when new object data has arrived to be loaded.
  * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
@@ -847,6 +857,7 @@ tbOptions = {
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
     multiselect : true,
+    onmultiselect : _fangornMultiselect,
     title : function() {
         if(window.contextVars.uploadInstruction) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
