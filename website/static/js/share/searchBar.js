@@ -60,7 +60,6 @@ SearchBar.controller = function(vm) {
     self.vm.showStats = true;
 
     self.search = function(e) {
-        utils.buildQuery(self.vm);
         utils.maybeQuashEvent(e);
         utils.search(self.vm);
     };
