@@ -98,7 +98,7 @@ var cancelAllUploadsTemplate = function(){
     var treebeard = this;
     return m('div', [
         m('span', 'Uploads in progress'),
-        m('.btn.btn-xs.m-l-sm.btn-warning', {
+        m('.btn.btn-xs.m-l-sm.btn-danger', {
             'onclick' : function() { 
                 cancelUploads.call(treebeard);
             } 
@@ -998,7 +998,6 @@ tbOptions = {
         reapplyTooltips();
     },
     onselectrow : function(row) {
-        console.log(row);
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
