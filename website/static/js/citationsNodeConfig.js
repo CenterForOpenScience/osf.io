@@ -228,7 +228,7 @@ CitationsFolderPickerViewModel.prototype.updateAccounts = function(callback) {
     });
 };
 /**
- * Allows a user to create a Menedeley access token from the nodeSettings page
+ * Allows a user to create an access token from the nodeSettings page
  */
 CitationsFolderPickerViewModel.prototype.connectAccount = function() {
     var self = this;
