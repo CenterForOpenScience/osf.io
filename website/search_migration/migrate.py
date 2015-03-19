@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def migrate_nodes(index):
-    logger.info("Migrating nodes")
+    logger.info("Migrating nodes to index: {}".format(index))
     n_iter = 0
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     for node in nodes:
@@ -35,7 +35,7 @@ def migrate_nodes(index):
 
 
 def migrate_users(index):
-    logger.info("Migrating users")
+    logger.info("Migrating users to index: {}".format(index))
     n_migr = 0
     n_iter = 0
     for user in User.find():
@@ -79,7 +79,7 @@ def set_up_index(idx):
         es.indices.put_alias(idx, index)
     else:
         # Increment version
-        version = int(alias.keys()[0][-1]) + 1
+        version = int(alias.keys()[0].split('_v')[1]) + 1
         logger.info("Incrementing index version to {}".format(version))
         index = '{0}_v{1}'.format(idx, version)
         search.create_index(index=index)
@@ -90,18 +90,19 @@ def set_up_index(idx):
 def set_up_alias(old_index, index):
     alias = es.indices.get_aliases(index=old_index)
     if alias:
-        logger.info("Removing old aliases...")
+        logger.info("Removing old aliases to {}".format(old_index))
         es.indices.delete_alias(index=old_index, name='_all', ignore=404)
+    logger.info("Creating new alias from {0} to {1}".format(old_index, index))
     es.indices.put_alias(old_index, index)
 
 
 def delete_old(index):
-    old_version = int(index[-1]) - 1
+    old_version = int(index.split('_v')[1]) - 1
     if old_version < 1:
         logger.info("No index before {} to delete".format(index))
         pass
     else:
-        old_index = index[:-1] + str(old_version)
+        old_index = index.split('_v')[0] + '_v' + str(old_version)
         logger.info("Deleting {}".format(old_index))
         es.indices.delete(index=old_index, ignore=404)
 
