@@ -116,7 +116,7 @@ Stats.controller = function(vm) {
 
         m.request({
             method: 'GET',
-            url: '/api/v1/share/stats/?' + $.param({q: self.vm.query()}),
+            url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(self.vm)}),
             background: true
         }).then(function(data) {
             self.vm.statsData = data;
