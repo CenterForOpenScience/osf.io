@@ -48,7 +48,7 @@ api_routes = {
                 '/project/<pid>/oauth/connect/googledrive/',
                 '/project/<pid>/node/<nid>/oauth/connect/googledrive/'
             ],
-            'post',
+            'get',
             views.auth.googledrive_oauth_start,
             json_renderer,
         ),
