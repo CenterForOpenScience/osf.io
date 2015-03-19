@@ -468,47 +468,50 @@ function createFolder(event, parent, col) {
     var self = this;
     var folderName = m.prop();
     self.multimodal.height = 50;
+    var creatingFolder = m.prop(false);
 
     self.multimodal.update(m('div', [
         m('form.form-inline', {
             onsubmit: function(event) {
                 event.preventDefault();
-                var path = (item.data.path || '/') + folderName() + '/';
+                creatingFolder(true);
+                var path = (parent.data.path || '/') + folderName() + '/';
+                m.redraw();
 
-                $.ajax({
-                    url: waterbutler.buildCreateFolderUrl(path, item.data.provider, item.data.nodeId),
-                    type: 'POST'
-                })
-                .done(function(data) {
-                    self.multimodal.height = 0;
-                    self.multimodal.update();
+                m.request({
+                    method: 'POST',
+                    background: true,
+                    url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+                }).then(function(item) {
+                    folderName('');
+                    creatingFolder(false);
+                    self.multimodal.dismiss();
+                    inheritFromParent({data: item}, parent);
 
-
-                    var item = {
-                        name: folderName(),
-                        kind: 'folder',
-                        provider: parent.data.provider,
-                        children: [],
-                        permissions: {
-                            view: false,
-                            edit: false
-                        },
-                        tmpID: tmpID
-                    };
-
-                    inheritFromParent(data, item);
-                    self.createItem(data, item.id);
-                    _fangornOrderFolder.call(self, item);
-                })
-                .fail(function(data){
-                    self.multimodal.height = 0;
-                    item.notify.update('Folder creation failed', 'danger', undefined, 3000);
-                });
+                    self.createItem(item, parent.id);
+                    _fangornOrderFolder.call(self, parent);
+                }, function(data) {
+                    folderName('');
+                    creatingFolder(false);
+                    self.multimodal.dismiss();
+                    if (data && data.code === 409) {
+                        $osf.growl('Error', data.message);
+                    } else {
+                        $osf.growl('Error', 'Folder creation failed.');
+                    }
+                }).then(m.redraw);
             }
         }, [
             m('.form-group',
-                m('input.form-control[type=text][placeholder=Folder name]', {onchange: m.withAttr('value', folderName)})
+                m('input.form-control[autofocus][type=text]', {
+                    placeholder: 'Folder Name',
+                    onchange: m.withAttr('value', folderName),
+                    disabled: creatingFolder() ? 'disabled' : '',
+                })
             ),
+            ' ',
+            creatingFolder() ?
+            m('i.fa.fa-spinner.fa-spin') :
             m('button.btn.btn-success.btn-md', 'Create')
         ])
     ]));
