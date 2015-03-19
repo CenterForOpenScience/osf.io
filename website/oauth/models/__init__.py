@@ -281,6 +281,8 @@ class ExternalProvider(object):
             )
             assert self.account is not None
 
+        # ensure that provider_name is correct
+        self.account.provider_name = self.name
         # required
         self.account.oauth_key = info['key']
 
