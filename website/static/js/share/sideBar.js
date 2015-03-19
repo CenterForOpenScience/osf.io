@@ -33,7 +33,7 @@ SideBar.view = function(ctrl){
             ])
         ]),
         m('br'), m('br'),
-        'Filters:', m('br'),
+        'Active filters:', m('br'),
         m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
         'Providers:', m('br'),
         m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
@@ -49,27 +49,22 @@ SideBar.controller = function(vm) {
     self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 
     self.renderFilters = function(){
-        var filters = [];
-        for (i in self.vm.requiredFilters) {
-            var filter = self.vm.requiredFilters[i];
-            if (filter.indexOf('source:') === -1){
-                filters.push(m('li', [m('label', [
-                    m('input', {
-                        'type': 'checkbox',
-                        'checked': true,
-                        onclick: function(cb){
-                            if (cb.target.checked == true){
-                                utils.updateFilter(self.vm, filter);
-                            } else {
-                                utils.removeFilter(self.vm, filter);
-                            }
+        return self.vm.optionalFilters.concat(self.vm.requiredFilters).map(function(filter){
+            return m('li', [m('label', [
+                m('input', {
+                    'type': 'checkbox',
+                    'checked': true,
+                    onclick: function(cb){
+                        if (cb.target.checked == true){
+                            utils.updateFilter(self.vm, filter);
+                        } else {
+                            utils.removeFilter(self.vm, filter);
                         }
-                    }),
-                    ' ' + filter
-                ])]))
-            }
-        }
-        return filters;
+                    }
+                }),
+                ' ' + filter
+            ])])
+        });
     };
 
     self.renderProviders = function () {
