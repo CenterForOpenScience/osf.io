@@ -8,7 +8,6 @@ from tests.factories import UserFactory, ProjectFactory
 from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings, S3GuidFile
 from website.models import Comment
-from utils import create_mock_wrapper
 
 
 class TestFileGuid(OsfTestCase):
@@ -61,20 +60,42 @@ class TestFileGuid(OsfTestCase):
         assert_false(created2)
         assert_equals(guid1, guid2)
 
-    def test_node_addon_get_existing_files(self):
-        wrapper = create_mock_wrapper()
-        bucket = mock.create_autospec(Bucket)
-        bucket.name = 'Charlie Bucket and the Chocolate Factory'
-        path = 'find_or_create_file.guid'
-        obj = mock.Mock()
-        obj.name = path
-        bucket.list = lambda: [obj]
-        wrapper.bucket = bucket
-        self.node_addon.bucket = bucket
-        guid, _ = self.node_addon.find_or_create_file_guid(path)
-        files = self.node_addon.get_existing_files(wrapper)
-        assert_equal(len(files), 1)
-        assert_equal(files[0], guid)
+
+class TestNodeSettings(OsfTestCase):
+    def setUp(self):
+        super(TestNodeSettings, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.user.add_addon('s3')
+        self.project.add_addon('s3', auth=Auth(self.user))
+
+        self.user_settings = self.user.get_addon('s3')
+        self.node_settings = self.project.get_addon('s3')
+
+        self.user_settings.access_key = 'We-Will-Rock-You'
+        self.user_settings.secret_key = 'Idontknowanyqueensongs'
+        self.user_settings.save()
+
+        self.node_settings.bucket = 'Sheer-Heart-Attack'
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.bucket = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
 
 class TestCallbacks(OsfTestCase):

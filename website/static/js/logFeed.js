@@ -109,7 +109,7 @@ var LogsViewModel = function(logs, hasMoreLogs, url) {
     self.tzname = ko.computed(function() {
         var logs = self.logs();
         if (logs.length) {
-            var tz =  moment(logs[0].date).format('ZZ');
+            var tz =  moment(logs[0].date.date).format('ZZ');
             return tz;
         }
         return '';

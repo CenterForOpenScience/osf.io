@@ -7,21 +7,17 @@ require('jquery-tagsinput');
 
 var m = require('mithril');
 var Fangorn = require('fangorn');
-
-var LogFeed = require('../logFeed.js');
-var pointers = require('../pointers.es6.js');
-
-var Comment = require('../comment.js');
 var Raven = require('raven-js');
-
-var NodeControl = require('../nodeControl.js');
-
-var CitationList = require('../citationList.js');
-var CitationWidget = require('../citationWidget.js');
-
-var mathrender = require('mathrender');
-var md = require('markdown').full;
 require('truncate');
+
+var LogFeed = require('js/logFeed');
+var pointers = require('js/pointers');
+var Comment = require('js/comment');
+var NodeControl = require('js/nodeControl');
+var CitationList = require('js/citationList');
+var CitationWidget = require('js/citationWidget');
+var mathrender = require('js/mathrender');
+var md = require('js/markdown').full;
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;

@@ -224,6 +224,8 @@ class TestUser(OsfTestCase):
         u.save()
         assert_equal(u.username, email)
         assert_false(u.is_registered)
+        assert_false(u.is_claimed)
+        assert_true(u.is_invited)
         assert_true(email in u.emails)
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
@@ -1199,6 +1201,22 @@ class TestNode(OsfTestCase):
             )
         )
 
+    def test_web_url_for_absolute(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.web_url_for('view_project', _absolute=True)
+        assert_in(settings.DOMAIN, result)
+        assert_not_in(settings.OFFLOAD_DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
+    def test_web_url_for_absolute_offload(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.web_url_for('view_project', _absolute=True, _offload=True)
+        assert_in(settings.OFFLOAD_DOMAIN, result)
+        assert_not_in(settings.DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
         assert_equal(node.category_display, 'Hypothesis')
@@ -1224,6 +1242,22 @@ class TestNode(OsfTestCase):
                 nid=self.node._id,
             )
         )
+
+    def test_api_url_for_absolute(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.api_url_for('view_project', _absolute=True)
+        assert_in(settings.DOMAIN, result)
+        assert_not_in(settings.OFFLOAD_DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
+    def test_api_url_for_absolute_offload(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.api_url_for('view_project', _absolute=True, _offload=True)
+        assert_in(settings.OFFLOAD_DOMAIN, result)
+        assert_not_in(settings.DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_node_factory(self):
         node = NodeFactory()

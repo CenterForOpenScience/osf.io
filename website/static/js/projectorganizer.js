@@ -7,9 +7,9 @@
 var Treebeard = require('treebeard');
 
 // CSS
-require('../css/typeahead.css');
-require('../css/fangorn.css');
-require('../css/projectorganizer.css');
+require('css/typeahead.css');
+require('css/fangorn.css');
+require('css/projectorganizer.css');
 
 var Handlebars = require('handlebars');
 var $ = require('jquery');
@@ -533,16 +533,16 @@ function _poContributors(item) {
  * @private
  */
 function _poModified(item) {
-    var personString,
-        dateString;
+    var personString = '';
+    var dateString = '';
     if (item.data.modifiedDelta === 0) {
         return m('span');
     }
     dateString = moment.utc(item.data.dateModified).fromNow();
     if (item.data.modifiedBy !== '') {
-        personString = item.data.modifiedBy.toString();
+        personString = ', by ' + item.data.modifiedBy.toString();
     }
-    return m('span', dateString + ', by ' + personString);
+    return m('span', dateString + personString);
 }
 
 /**

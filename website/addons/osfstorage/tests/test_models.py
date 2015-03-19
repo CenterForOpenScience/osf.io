@@ -75,6 +75,8 @@ class TestNodeSettingsModel(StorageTestCase):
     def test_fields(self):
         assert_true(self.node_settings._id)
         assert_is(self.node_settings.file_tree, None)
+        assert_is(self.node_settings.has_auth, True)
+        assert_is(self.node_settings.complete, True)
 
     def test_after_fork_copies_versions(self):
         path = 'jazz/dreamers-ball.mp3'
