@@ -1010,4 +1010,6 @@ Fangorn.Utils = {
     reapplyTooltips : reapplyTooltips
 };
 
+Fangorn.DefaultOptions = tbOptions;
+
 module.exports = Fangorn;

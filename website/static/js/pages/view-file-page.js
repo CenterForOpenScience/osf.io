@@ -33,26 +33,33 @@ $(document).ready(function() {
                         width: '100%'
                     }];
                 },
-                lazyLoadOnLoad: function(item) {
+                lazyLoadOnLoad: function(tree) {
+                    Fangorn.DefaultOptions.lazyLoadOnLoad.call(this, tree);
                     var tb = this;
-                    for (var i=0; i < item.children.length; i++) {
-                        var child = item.children[i];
-                        if (child.data.kind === 'file' && child.data.name === window.contextVars.file.name && child.data.provider === window.contextVars.file.provider) {
+                    var node = tree.parent();
+                    for (var i=0; i < tree.children.length; i++) {
+                        var child = tree.children[i];
+                        if (child.data.kind === 'file' && window.contextVars.node.id === node.data.nodeID && child.data.name === window.contextVars.file.name && child.data.provider === window.contextVars.file.provider) {
                             tb.currentFileId = child.id;
                         }
                     }
 
                     if (tb.currentFileId) {
-                       var index = tb.returnRangeIndex(tb.currentFileId);
-                       if (tb.visibleIndexes.indexOf(index) !== -1 ) {
-                           var scrollTo = (tb.visibleIndexes.indexOf(index)/ tb.visibleIndexes.length) * 100;
-                           $('#tb-tbody').scrollTop(scrollTo);
+                        var index = tb.returnIndex(tb.currentFileId);
+                        if (tb.visibleIndexes.indexOf(index) !== -1 ) {
+                            var visibleIndex = tb.showRange.indexOf(index);
+                            // show item if it is not in the visible range
+                            if (visibleIndex ===  -1 || visibleIndex > tb.showRange.length - 2 ) {
+                                var scrollTo = tb.visibleIndexes.indexOf(index) * tb.options.rowHeight;
+                                $('#tb-tbody').scrollTop(scrollTo);
+                           }
                        }
                     }
                 },
                 resolveRows: function (item) {
                     var selectClass = '';
-                    if (item.data.kind === 'file' && item.data.name === window.contextVars.file.name && item.data.provider === window.contextVars.file.provider) {
+                    var node = item.parent().parent();
+                    if (item.data.kind === 'file' && window.contextVars.node.id === node.data.nodeID && item.data.name === window.contextVars.file.name && item.data.provider === window.contextVars.file.provider) {
                         selectClass = 'fangorn-hover';
                     }
 
