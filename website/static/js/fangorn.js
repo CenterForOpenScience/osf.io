@@ -49,22 +49,39 @@ var getExtensionIconClass = function(name) {
     return null;
 };
 
+function findByTempID(parent, tmpID){
+    var child;
+    var item;
+    for (var i = 0; i < parent.children.length; i++) {
+        child = parent.children[i];
+        if (!child.data.tmpID) {
+            continue;
+        }
+        if (child.data.tmpID === tmpID) {
+            item = child;
+        }
+    }
+    return item;
+}
+
 function cancelUploads (row) {
     var treebeard = this;
-    if (row){
-        var filesArr = treebeard.dropzone.getQueuedFiles();
-        for (var i = 0; i < filesArr.length; i++) {
-            var m = filesArr[i];
-            if (row.data.tmpID === m.tmpID) {
-                console.log("to remove: ", m);
+    var filesArr = treebeard.dropzone.getQueuedFiles();
+    for (var i = 0; i < filesArr.length; i++) {
+        var m = filesArr[i];
+        if(!row){
+            var parent = m.treebeardParent || treebeard.dropzoneItemCache;
+            var item = findByTempID(parent, m.tmpID);
+            treebeard.dropzone.removeFile(m);
+            treebeard.deleteNode(parent.id,item.id);
+        } else {
+            treebeard.deleteNode(row.parentID,row.id);
+            if(row.data.tmpID === m.tmpID){
                 treebeard.dropzone.removeFile(m);
-                treebeard.deleteNode(row.parentID,row.id);
             }
         }
-    } else {
-        treebeard.uploadsAreCancelled = true;
-        treebeard.dropzone.removeAllFiles(true); 
     }
+
 }
 
 var cancelUploadTemplate = function(row){
@@ -307,8 +324,11 @@ function _fangornSending(treebeard, file, xhr, formData) {
     xhr.send = function() {
         _send.call(xhr, file);
     };
-    treebeard.multimodal.height = 45;
-    treebeard.multimodal.update(cancelAllUploadsTemplate.call(treebeard));
+    var filesArr = treebeard.dropzone.getQueuedFiles();
+    if (filesArr.length  > 1) {
+        treebeard.multimodal.height = 45;
+        treebeard.multimodal.update(cancelAllUploadsTemplate.call(treebeard));        
+    }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -345,7 +365,7 @@ function _fangornAddedFile(treebeard, file) {
         },
         tmpID: tmpID
     };
-    treebeard.createItem(blankItem, item.id);
+    var newitem = treebeard.createItem(blankItem, item.id);
     return configOption || null;
 }
 
@@ -472,15 +492,9 @@ function _fangornDropzoneError(tb, file, message) {
             tb.deleteNode(parent.id, item.id);
         }
     }
-    if (!tb.uploadsAreCancelled){
-        $osf.growl('Error', msgText);
-    }
+    $osf.growl('Error', msgText);
     tb.options.uploadInProgress = false;
     tb.multimodal.dismiss();
-    if (tb.dropzone.getUploadingFiles().length === 0 && tb.dropzone.getQueuedFiles().length === 0) {
-        tb.uploadsAreCancelled = false;
-      }
-
 }
 
 /**
