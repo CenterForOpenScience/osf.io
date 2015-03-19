@@ -2,8 +2,8 @@
 
 from nose.tools import *  # noqa
 
-import responses
 import mock
+import responses
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -13,7 +13,8 @@ import urlparse
 from framework.auth import authenticate
 
 from website.addons.mendeley.tests.factories import (
-    MendeleyAccountFactory, MendeleyUserSettingsFactory,
+    MendeleyAccountFactory,
+    MendeleyUserSettingsFactory,
     MendeleyNodeSettingsFactory
 )
 
@@ -107,18 +108,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(res.json['urls']['importAuth'])
         assert_true(res.json['urls']['settings'])
 
-    def test_user_folders(self):
-        # JSON: a list of user's Mendeley folders"
-        res = self.app.get(
-            api_url_for('mendeley_get_user_settings'),
-            auth=self.user.auth,
-        )
-        serializer = MendeleySerializer(node_settings=self.node_addon, user_settings=self.user_addon)
-        with self.app.app.test_request_context():
-            authenticate(user=self.user, response=None)
-            expected = serializer.serialized_user_settings
-            assert_equal(res.json, expected)
-        
     def test_set_auth(self):
 
         res = self.app.post_json(
@@ -203,7 +192,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         # JSON: everything a widget needs
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
-        self.node_addon.set_target_folder('ROOT')
+        self.node_addon.set_target_folder('ROOT-ID', 'ROOT', auth=Auth(user=self.user))
         res = views.mendeley_widget(node_addon=self.node_addon,
                                     project=self.project,
                                     node=self.node,
@@ -211,7 +200,7 @@ class MendeleyViewsTestCase(OsfTestCase):
                                     pid=self.project._id,
                                     auth=self.user.auth)
         assert_true(res['complete'])
-        assert_equal(res['list_id'], 'ROOT')
+        assert_equal(res['list_id'], 'ROOT-ID')
 
     def test_widget_view_incomplete(self):
         # JSON: tell the widget when it hasn't been configured

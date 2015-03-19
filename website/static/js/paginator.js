@@ -8,12 +8,12 @@ var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 
 var Paginator = oop.defclass({
-    constructor() {
+    constructor: function() {
         this.numberOfPages = ko.observable(0);
         this.currentPage = ko.observable(0);
         this.paginators = ko.observableArray([]);
     },
-    addNewPaginators() {
+    addNewPaginators: function() {
         var self = this;
         self.paginators.removeAll();
         if (self.numberOfPages() > 1) {
@@ -110,16 +110,17 @@ var Paginator = oop.defclass({
             });
         }
     },
-    nextPage(){
+    nextPage: function(){
         this.currentPage(this.currentPage() + 1);
         this.search();
     },
-    previousPage(){
+    previousPage: function(){
         this.currentPage(this.currentPage() - 1);
         this.search();
     },
-    search() {
+    search: function() {
         throw new Error('Paginator subclass must define a "search" method.');
     }
 });
+
 module.exports = Paginator;
