@@ -22,8 +22,9 @@ class FigShareGuidFile(GuidFile):
 
     @property
     def waterbutler_path(self):
-        if self.node.get_addon('figshare').figshare_type == 'project':
+        if getattr(self.node.get_addon('figshare'), 'figshare_type', None) == 'project':
             return '/{}/{}'.format(self.article_id, self.file_id)
+
         return '/' + str(self.file_id)
 
     @property
@@ -133,6 +134,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     @property
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    @property
+    def complete(self):
+        return self.has_auth and self.figshare_id is not None
 
     @property
     def linked_content(self):

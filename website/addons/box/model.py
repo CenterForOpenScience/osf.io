@@ -250,6 +250,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def complete(self):
+        return self.has_auth and self.folder_id is not None
+
     def fetch_folder_name(self):
         self._update_folder_data()
         return self.folder_name

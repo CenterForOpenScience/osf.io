@@ -170,18 +170,25 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_is_none(self.node_settings.user_settings)
 
     def test_set_target_folder(self):
+        folder_id = 'fake-folder-id'
+        folder_name = 'fake-folder-name'
+
         external_account = ExternalAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
         self.node_settings.set_auth(
             external_account=external_account,
-            user=self.user
+            user=self.user,
         )
 
         assert_is_none(self.node_settings.mendeley_list_id)
 
-        self.node_settings.set_target_folder('fake-folder-id', 'Fake')
+        self.node_settings.set_target_folder(
+            folder_id,
+            folder_name,
+            auth=Auth(user=self.user),
+        )
 
         # instance was updated
         assert_equal(
@@ -198,6 +205,11 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
                 metadata={'folder': 'fake-folder-id'}
             )
         )
+
+        log = self.node.logs[-1]
+        assert_equal(log.action, 'mendeley_folder_selected')
+        assert_equal(log.params['folder_id'], folder_id)
+        assert_equal(log.params['folder_name'], folder_name)
 
     def test_has_auth_false(self):
         external_account = ExternalAccountFactory()
@@ -245,6 +257,22 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_equal(
             self.node_settings.selected_folder_name,
             ''
+        )
+
+    @mock.patch('website.addons.mendeley.model.Mendeley._folder_metadata')
+    def test_selected_folder_name(self, mock_folder_metadata):
+        # Mock the return from api call to get the folder's name
+        mock_folder = mock.Mock()
+        mock_folder.name = 'Fake Folder'
+
+        # Add the mocked return object to the mocked api client
+        mock_folder_metadata.return_value = mock_folder
+
+        self.node_settings.mendeley_list_id = 'fake-list-id'
+
+        assert_equal(
+            self.node_settings.selected_folder_name,
+            'Fake Folder'
         )
 
     # TODO: Make these tests generic and move to core

@@ -29,10 +29,9 @@ class CitationsProvider(object):
             ]
         }
 
-    def set_config(self, node_addon, user, external_list_id, external_folder_name):
+    def set_config(self, node_addon, user, external_list_id, external_list_name, auth):
         # Ensure request has all required information
-
-        node_addon.set_target_folder(external_list_id, external_folder_name)
+        node_addon.set_target_folder(external_list_id, external_list_name, auth)
 
     def add_user_auth(self, node_addon, user, external_account_id):
 

@@ -60,6 +60,9 @@ class GithubGuidFile(GuidFile):
 
     @property
     def extra(self):
+        if not self._metadata_cache:
+            return {}
+
         return {
             'sha': self._metadata_cache['extra']['fileSha'],
         }
@@ -204,6 +207,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def complete(self):
+        return self.has_auth and self.repo is not None and self.user is not None
+
     def find_or_create_file_guid(self, path):
         try:
             return GithubGuidFile.find_one(
@@ -263,13 +270,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def short_url(self):
         if self.user and self.repo:
             return '/'.join([self.user, self.repo])
-
-    @property
-    def complete(self):
-        return (
-            self.user and self.repo and
-            self.user_settings and self.user_settings.has_auth
-        )
 
     @property
     def is_private(self):

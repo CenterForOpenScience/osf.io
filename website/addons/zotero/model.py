@@ -191,7 +191,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
         self.zotero_list_id = None
         return super(ZoteroNodeSettings, self).clear_auth()
 
-    def set_target_folder(self, zotero_list_id, zotero_folder_name):
+    def set_target_folder(self, zotero_list_id, zotero_list_name, auth):
         """Configure this addon to point to a Zotero folder
 
         :param str zotero_list_id:
@@ -211,3 +211,14 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
         self.zotero_list_id = zotero_list_id
         self.zotero_folder_name = zotero_folder_name
         self.save()
+
+        self.owner.add_log(
+            'zotero_folder_selected',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'folder_id': zotero_list_id,
+                'folder_name': zotero_list_name,
+            },
+            auth=auth,
+        )

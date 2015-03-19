@@ -10,8 +10,11 @@ from tests.factories import AuthUserFactory, ProjectFactory
 
 import urlparse
 
+from framework.auth.core import Auth
+
 from website.addons.zotero.tests.factories import (
-    ZoteroAccountFactory, ZoteroUserSettingsFactory,
+    ZoteroAccountFactory,
+    ZoteroUserSettingsFactory,
     ZoteroNodeSettingsFactory
 )
 
@@ -190,7 +193,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         # JSON: everything a widget needs
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.zotero_list_id, None)
-        self.node_addon.set_target_folder('ROOT', 'Root')
+        self.node_addon.set_target_folder('ROOT-ID', 'ROOT', auth=Auth(user=self.user))
         res = views.zotero_widget(node_addon=self.node_addon,
                                     project=self.project,
                                     node=self.node,
@@ -198,7 +201,7 @@ class ZoteroViewsTestCase(OsfTestCase):
                                     pid=self.project._id,
                                     auth=self.user.auth)
         assert_true(res['complete'])
-        assert_equal(res['list_id'], 'ROOT')
+        assert_equal(res['list_id'], 'ROOT-ID')
 
     def test_widget_view_incomplete(self):
         # JSON: tell the widget when it hasn't been configured

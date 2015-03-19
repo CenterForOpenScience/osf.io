@@ -268,3 +268,14 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         self.mendeley_list_id = mendeley_list_id
         self.mendeley_folder_name = mendeley_folder_name
         self.save()
+
+        self.owner.add_log(
+            'mendeley_folder_selected',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'folder_id': mendeley_list_id,
+                'folder_name': mendeley_list_name,
+            },
+            auth=auth,
+        )
