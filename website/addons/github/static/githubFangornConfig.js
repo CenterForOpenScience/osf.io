@@ -79,6 +79,14 @@ function _fangornActionColumn (item, col){
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : Fangorn.ButtonEvents._uploadEvent
             });
+            buttons.push({
+                name: '',
+                icon: 'fa fa-plus',
+                'tooltip' : 'New folder',
+
+                css: 'fangorn-clickable btn btn-default btn-xs',
+                onclick: Fangorn.ButtonEvents.createFolder
+            });
         }
 
         if (item.data.addonFullname) {
