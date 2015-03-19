@@ -438,6 +438,25 @@ ViewModel.prototype.activatePicker = function() {
 };
 
 /**
+ * Allows a user to create an access token from the nodeSettings page
+ */
+ViewModel.prototype.connectAccount = function() {
+    var self = this;
+    window.oauthComplete = function(res) {
+        // Update view model based on response
+        self.changeMessage(self.messages.CONNECT_ACCOUNT_SUCCESS(), 'text-success', 3000);
+        self.updateAccounts(function() {
+            $osf.postJSON(
+                self.urls().importAuth, {
+                    external_account_id: self.accounts()[0].id
+                }
+            ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
+        });
+    };
+    window.open(self.urls().auth);
+};
+
+/**
  *  Toggles the visibility of the folder picker.
  */
 ViewModel.prototype.togglePicker = function() {
@@ -462,7 +481,7 @@ function AddonNodeConfig(addonName, selector, url, folderPicker, opts) {
         opts = {};
     }
     self.viewModel = new ViewModel(addonName, url, selector, folderPicker, opts);
-    self.fetchFromServer();    
+    self.viewModel.fetchFromServer();
     $osf.applyBindings(self.viewModel, selector);
 }
 
