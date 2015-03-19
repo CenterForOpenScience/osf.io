@@ -16,7 +16,12 @@ var osfHelpers = require('osfHelpers');
 var CommentPane = require('./commentpane.js');
 
 var nodeApiUrl = window.contextVars.node.urls.api;
-var nodeUrl = '/' + window.contextVars.node.id + '/';
+var nodeId = window.contextVars.node.id;
+var nodeUrl = '/' + nodeId + '/';
+var filePath = '';
+if (typeof window.contextVars.file != 'undefined') {
+    filePath = window.contextVars.file.path;
+}
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -171,6 +176,7 @@ BaseComment.prototype.fetch = function(thread) {
             );
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
+            self.checkFileExists();
             self._loaded = true;
         }
     );
@@ -196,14 +202,26 @@ BaseComment.prototype.getThread = function(thread_id) {
     return deferred;
 }
 
-//BaseComment.prototype.checkFileExists = function() {
-//    var self = this;
-//    var url = ""; // waterbutler-ish
-//    for (var c in self.comments()) {
-//        var comment = self.comments()[c];
-
-//    }
-//}
+BaseComment.prototype.checkFileExists = function() {
+    var self = this;
+    var url;
+    for (var c in self.comments()) {
+        var comment = self.comments()[c];
+        if (comment.page() !== 'files') {
+            break;
+        }
+        url  = waterbutler.buildMetadataUrl(comment.title(), comment.provider(), nodeId, {}); // waterbutler url
+        $.ajax({
+            method: 'GET',
+            url: url
+        }).done(function(resp){
+            console.log(resp);
+        }).fail(function(xhl){
+            console.log('error: ');
+            console.log(xhl);
+        })
+    }
+}
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
@@ -332,8 +350,8 @@ var CommentModel = function(data, $parent, $root) {
                 break;
             case 'files':
                 cleaned = '(Files - ';
-                var filePath = self.title().split('/');
-                cleaned += filePath[filePath.length - 1];
+                var path = self.title().split('/');
+                cleaned += path[path.length - 1];
                 break;
             case 'node':
                 cleaned = '(Overview';
@@ -534,7 +552,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, host_page, host_name, title, mode, canComment, hasChildren, thread) {
+var CommentListModel = function(userName, host_page, host_name, mode, canComment, hasChildren, thread) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -558,7 +576,7 @@ var CommentListModel = function(userName, host_page, host_name, title, mode, can
     self.page(host_page);
     self.id = ko.observable(host_name);
     self.rootId = ko.observable(host_name);
-    self.title(title);
+    self.title(filePath);
 
     self.commented = ko.computed(function(){
         return self.comments().length > 0;
@@ -655,10 +673,10 @@ var onOpen = function(host_page, host_name) {
     });
 };
 
-var init = function(selector, host_page, host_name, title, mode, userName, canComment, hasChildren, thread_id) {
+var init = function(selector, host_page, host_name, mode, userName, canComment, hasChildren, thread_id) {
 
     new CommentPane(selector, host_page, host_name, mode, {onOpen: onOpen});
-    var viewModel = new CommentListModel(userName, host_page, host_name, title, mode, canComment, hasChildren, thread_id);
+    var viewModel = new CommentListModel(userName, host_page, host_name, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

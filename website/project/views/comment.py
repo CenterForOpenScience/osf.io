@@ -15,6 +15,7 @@ from website import settings
 from website.notifications.emails import notify
 from website.filters import gravatar
 from website.models import Guid, Comment
+from website.addons.base import GuidFile
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
@@ -210,6 +211,7 @@ def serialize_comment(comment, auth, anonymous=False):
     from website.addons.wiki.model import NodeWikiPage
 
     if isinstance(comment.root_target, NodeWikiPage):
+        # In case the wiki name is changed
         root_id = comment.root_target.page_name
         title = comment.root_target.page_name
     else:
@@ -237,6 +239,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
         'rootId': root_id,
         'title': title or comment.root_title,
+        'provider': comment.root_target.provider if isinstance(comment.root_target, GuidFile) else '',
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,

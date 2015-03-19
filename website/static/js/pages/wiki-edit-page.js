@@ -150,5 +150,5 @@ if ($comments.length) {
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
     var title = window.contextVars.wiki.name;
-    Comment.init('.commentPane', 'wiki', title, '', 'pane', userName, canComment, hasChildren);
+    Comment.init('.commentPane', 'wiki', title, 'pane', userName, canComment, hasChildren);
 }
