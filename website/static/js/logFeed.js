@@ -97,7 +97,6 @@ var LogsViewModel = oop.extend(Paginator, {
     //send request to get more logs when the more button is clicked
     fetchResult: function(){
         var self = this;
-        self.logs.removeAll();
         return $.ajax({
             type: 'get',
             url: self.url,
@@ -107,6 +106,7 @@ var LogsViewModel = oop.extend(Paginator, {
             cache: false
         }).done(function(response) {
             // Initialize LogViewModel
+            self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
@@ -181,10 +181,10 @@ function LogFeed(selector, data, options) {
     self.$element = $(selector);
     self.options = $.extend({}, defaults, options);
     self.$progBar = $(self.options.progBar);
-    //for recent activities
+    //for recent activities logs
     if (Array.isArray(data)) { // data is an array of log object from server
         initViewModel(self, data, self.options.url);
-    } else { // data is an URL, for watch log and project log
+    } else { // data is an URL, for watch logs and project logs
         var empty =[];
         initViewModel(self, empty, data);
     }

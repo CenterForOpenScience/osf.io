@@ -72,8 +72,6 @@ var ensureUserTimezone = function(savedTimezone, savedLocale) {
         });
     }
 };
-// Initialize logfeed
-new LogFeed('#logScope', '/api/v1/watched/logs/');
 
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
@@ -101,4 +99,5 @@ $(document).ready(function() {
 
 });
 
-
+// Initialize logfeed
+new LogFeed('#logScope', '/api/v1/watched/logs/');

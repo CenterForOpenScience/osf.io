@@ -15,8 +15,6 @@ var Paginator = oop.defclass({
     },
     addNewPaginators: function() {
         var self = this;
-        console.log("currentPage" + self.currentPage());
-        console.log("numberOfPage" + self.numberOfPages());
         self.paginators.removeAll();
         if (self.numberOfPages() > 1) {
             self.paginators.push({
