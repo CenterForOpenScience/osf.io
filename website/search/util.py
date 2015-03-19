@@ -4,6 +4,14 @@ import webcolors
 
 COLORBREWER_COLORS = [(166, 206, 227), (31, 120, 180), (178, 223, 138), (51, 160, 44), (251, 154, 153), (227, 26, 28), (253, 191, 111), (255, 127, 0), (202, 178, 214), (106, 61, 154), (255, 255, 153), (177, 89, 40)]
 
+RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
+                 u'|' + \
+                 u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
+                 (unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff),
+                 unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff),
+                 unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff))
+
+RE_XML_ILLEGAL_COMPILED = re.compile(RE_XML_ILLEGAL)
 
 from werkzeug.contrib.atom import AtomFeed
 
@@ -101,10 +109,5 @@ def illegal_unicode_replace(atom_element):
     This fix thanks to Matt Harper from his blog post:
     https://maxharp3r.wordpress.com/2008/05/15/pythons-minidom-xml-and-illegal-unicode-characters/
     """
-    RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
-                     u'|' + \
-                     u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
-                     (unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff),
-                     unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff),
-                     unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff))
-    return re.sub(RE_XML_ILLEGAL, "", atom_element)
+
+    return RE_XML_ILLEGAL_COMPILED.sub('', atom_element)
