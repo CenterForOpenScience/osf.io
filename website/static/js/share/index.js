@@ -21,14 +21,7 @@ ShareApp.ViewModel = function() {
     self.count = 0;
     self.results = null;
     self.query = m.prop($osf.urlParams().q || '');
-    m.request({
-        method: 'get',
-        background: true,
-        url: '/api/v1/share/providers/'
-    }).then(function(data) {
-        self.ProviderMap = data.providerMap;
-    });
-};
+   };
 
 
 ShareApp.view = function(ctrl) {
@@ -54,11 +47,19 @@ ShareApp.controller = function() {
     var self = this;
 
     self.vm = new ShareApp.ViewModel(self.vm);
-    self.sideBarController = new SideBar.controller(self.vm);
-    self.statsController = new Stats.controller(self.vm);
-    self.resultsController = new Results.controller(self.vm);
-    self.searchBarController = new SearchBar.controller(self.vm);
+    m.request({
+        method: 'get',
+        background: false,
+        url: '/api/v1/share/providers/'
+    }).then(function(data) {
+        self.vm.ProviderMap = data.providerMap;
 
+        self.sideBarController = new SideBar.controller(self.vm);
+        self.statsController = new Stats.controller(self.vm);
+        self.resultsController = new Results.controller(self.vm);
+        self.searchBarController = new SearchBar.controller(self.vm);
+
+    });
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
         if (state.query === self.vm.query() &&
