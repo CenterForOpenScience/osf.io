@@ -7,6 +7,7 @@ from waterbutler import settings
 from waterbutler.core.utils import AioSentryClient
 from waterbutler.server.handlers import crud
 from waterbutler.server.handlers import status
+from waterbutler.server.handlers import folders
 from waterbutler.server.handlers import metadata
 from waterbutler.server.handlers import revisions
 from waterbutler.server import settings as server_settings
@@ -19,6 +20,7 @@ def make_app(debug):
             (r'/file', crud.CRUDHandler),
             (r'/data', metadata.MetadataHandler),
             (r'/status', status.StatusHandler),
+            (r'/folders', folders.FolderHandler),
             (r'/revisions', revisions.RevisionHandler),
         ],
         debug=debug,
