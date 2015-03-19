@@ -7,7 +7,8 @@ import httplib as http
 
 import pymongo
 from github3 import GitHubError
-from modularodm import fields
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -17,6 +18,7 @@ from website.util import web_url_for
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import GuidFile
 
 from website.addons.github import utils
 from website.addons.github.api import GitHub
@@ -270,6 +272,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             return '/'.join([self.user, self.repo])
 
     @property
+    def complete(self):
+        return (
+            self.user and self.repo and
+            self.user_settings and self.user_settings.has_auth
+        )
+
+    @property
     def is_private(self):
         connection = GitHub.from_settings(self.user_settings)
         return connection.repo(user=self.user, repo=self.repo).private
@@ -280,6 +289,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         user_settings = user.get_addon('github')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
+            'node_has_auth': False,
+            'user_is_owner': (
+                (self.user_settings and self.user_settings.owner == user) or False
+            ),
+            'owner': None,
+            'repo_names': None,
             'is_registration': self.owner.is_registration,
         })
         if self.user_settings and self.user_settings.has_auth:
@@ -373,6 +388,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         :param Node node:
         :param User user:
         :return str: Alert message
+
         """
         messages = []
 
@@ -642,7 +658,9 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     def delete_hook(self, save=True):
         """
+
         :return bool: Hook was deleted
+
         """
         if self.user_settings and self.hook_id:
             connection = GitHub.from_settings(self.user_settings)

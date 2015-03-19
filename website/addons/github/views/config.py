@@ -95,7 +95,7 @@ def github_set_config(**kwargs):
 
         node_settings.save()
 
-    return {}
+    return node_settings.to_json(auth.user)
 
 @must_be_logged_in
 @must_have_addon('github', 'node')
@@ -147,6 +147,7 @@ def github_repo_list(auth, node_addon, user_addon, **kwargs):
         '{0} / {1}'.format(repo.owner.login, repo.name)
         for repo in repos
     ]
+    import pdb; pdb.set_trace()
 
     return {
         'repo_names': repo_names
