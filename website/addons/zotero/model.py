@@ -138,7 +138,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     serializer = serializer.ZoteroSerializer
 
     zotero_list_id = fields.StringField()
-    zotero_folder_name = fields.StringField()
+    zotero_list_name = fields.StringField()
 
     _api = None
 
@@ -163,9 +163,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
         if self.zotero_list_id is None:
             return ''
         elif self.zotero_list_id != 'ROOT':
-            #folder = self.api._folder_metadata(self.zotero_list_id)
-            #return folder['data'].get('name')
-            return self.zotero_folder_name
+            return self.zotero_list_name
         else:
             return 'All Documents'
 
@@ -209,7 +207,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
 
         # update this instance
         self.zotero_list_id = zotero_list_id
-        self.zotero_folder_name = zotero_folder_name
+        self.zotero_lisr_name = zotero_list_name
         self.save()
 
         self.owner.add_log(
