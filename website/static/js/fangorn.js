@@ -464,6 +464,56 @@ function _downloadEvent (event, item, col) {
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
+function createFolder(event, parent, col) {
+    var self = this;
+    var folderName = m.prop();
+    self.multimodal.height = 50;
+
+    self.multimodal.update(m('div', [
+        m('form.form-inline', {
+            onsubmit: function(event) {
+                event.preventDefault();
+                var path = (item.data.path || '/') + folderName() + '/';
+
+                $.ajax({
+                    url: waterbutler.buildCreateFolderUrl(path, item.data.provider, item.data.nodeId),
+                    type: 'POST'
+                })
+                .done(function(data) {
+                    self.multimodal.height = 0;
+                    self.multimodal.update();
+
+
+                    var item = {
+                        name: folderName(),
+                        kind: 'folder',
+                        provider: parent.data.provider,
+                        children: [],
+                        permissions: {
+                            view: false,
+                            edit: false
+                        },
+                        tmpID: tmpID
+                    };
+
+                    inheritFromParent(data, item);
+                    self.createItem(data, item.id);
+                    _fangornOrderFolder.call(self, item);
+                })
+                .fail(function(data){
+                    self.multimodal.height = 0;
+                    item.notify.update('Folder creation failed', 'danger', undefined, 3000);
+                });
+            }
+        }, [
+            m('.form-group',
+                m('input.form-control[type=text][placeholder=Folder name]', {onchange: m.withAttr('value', folderName)})
+            ),
+            m('button.btn.btn-success.btn-md', 'Create')
+        ])
+    ]));
+}
+
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -647,6 +697,14 @@ function _fangornActionColumn (item, col) {
 
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
+        });
+        buttons.push({
+            name: '',
+            icon: 'fa fa-plus',
+            'tooltip' : 'New folder',
+
+            css: 'fangorn-clickable btn btn-default btn-xs',
+            onclick: createFolder
         });
     }
     //Download button if this is an item
