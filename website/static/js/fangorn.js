@@ -466,55 +466,64 @@ function _downloadEvent (event, item, col) {
 
 function createFolder(event, parent, col) {
     var self = this;
-    var folderName = m.prop();
+    var folderName = m.prop('');
     self.multimodal.height = 50;
     var creatingFolder = m.prop(false);
 
-    self.multimodal.update(m('div', [
-        m('form.form-inline', {
-            onsubmit: function(event) {
-                event.preventDefault();
-                creatingFolder(true);
-                var path = (parent.data.path || '/') + folderName() + '/';
-                m.redraw();
+    if (!parent.open) {
+        self.updateFolder(null, parent);
+    }
+    function redraw() {
+        self.multimodal.update((function() {
+            return m('div', [
+                m('form.form-inline', {
+                    onsubmit: function(event) {
+                        event.preventDefault();
+                        if (folderName().length < 1) return;
 
-                m.request({
-                    method: 'POST',
-                    background: true,
-                    url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
-                }).then(function(item) {
-                    folderName('');
-                    creatingFolder(false);
-                    self.multimodal.dismiss();
-                    inheritFromParent({data: item}, parent);
+                        creatingFolder(true);
+                        redraw();
+                        var path = (parent.data.path || '/') + folderName() + '/';
 
-                    self.createItem(item, parent.id);
-                    _fangornOrderFolder.call(self, parent);
-                }, function(data) {
-                    folderName('');
-                    creatingFolder(false);
-                    self.multimodal.dismiss();
-                    if (data && data.code === 409) {
-                        $osf.growl('Error', data.message);
-                    } else {
-                        $osf.growl('Error', 'Folder creation failed.');
+                        m.request({
+                            method: 'POST',
+                            background: true,
+                            url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+                        }).then(function(item) {
+                            inheritFromParent({data: item}, parent);
+
+                            self.createItem(item, parent.id);
+                            _fangornOrderFolder.call(self, parent);
+                        }, function(data) {
+                            if (data && data.code === 409) {
+                                $osf.growl('Error', data.message);
+                            } else {
+                                $osf.growl('Error', 'Folder creation failed.');
+                            }
+                        }).then(function() {
+                            folderName('');
+                            creatingFolder(false);
+                            self.multimodal.dismiss();
+                        });
                     }
-                }).then(m.redraw);
-            }
-        }, [
-            m('.form-group',
-                m('input.form-control[autofocus][type=text]', {
-                    placeholder: 'Folder Name',
-                    onchange: m.withAttr('value', folderName),
-                    disabled: creatingFolder() ? 'disabled' : '',
-                })
-            ),
-            ' ',
-            creatingFolder() ?
-            m('i.fa.fa-spinner.fa-spin') :
-            m('button.btn.btn-success.btn-md', 'Create')
-        ])
-    ]));
+                }, [
+                    m('.form-group',
+                        m('input.form-control[autofocus][type=text]', {
+                            placeholder: 'Folder Name',
+                            onchange: m.withAttr('value', folderName),
+                            disabled: creatingFolder() ? 'disabled' : '',
+                        })
+                    ),
+                    ' ',
+                    creatingFolder() ?
+                    m('i.fa.fa-spinner.fa-spin') :
+                    m('button.btn.btn-success.btn-md', 'Create')
+                ])
+            ]);
+        })());
+    }
+
+    redraw();
 }
 
 /**
@@ -1055,7 +1064,8 @@ Fangorn.prototype = {
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
-    _removeEvent: _removeEvent
+    _removeEvent: _removeEvent,
+    createFolder: createFolder,
 };
 
 Fangorn.DefaultColumns = {
