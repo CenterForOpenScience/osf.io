@@ -71,6 +71,7 @@ def serialize_urls(node_settings):
         'deauthorize': node.api_url_for('googledrive_deauthorize'),
         'importAuth': node.api_url_for('googledrive_import_user_auth'),
         'folders': node.api_url_for('googledrive_folders'),
+        'auth': node.api_url_for('googledrive_oauth_start'),
     }
 
 
