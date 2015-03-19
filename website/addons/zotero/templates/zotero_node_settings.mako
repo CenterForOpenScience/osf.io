@@ -27,7 +27,7 @@
     </h4>
 
     <!-- Settings Pane -->
-    <div class="zotero-settings" data-bind='if: showSettings'>
+    <div class="zotero-settings" data-bind='visible: showSettings'>
         <div class="row">
             <div class="col-md-12">
                 <p>
