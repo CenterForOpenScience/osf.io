@@ -60,6 +60,9 @@ class GithubGuidFile(GuidFile):
 
     @property
     def extra(self):
+        if not self._metadata_cache:
+            return {}
+
         return {
             'sha': self._metadata_cache['extra']['fileSha'],
         }
