@@ -39,8 +39,8 @@ def github_set_config(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Parse request
-    github_user_name = request.json.get('github_user', '')
-    github_repo_name = request.json.get('github_repo', '')
+    github_user_name = request.json.get('github_repo', '').split('/')[0].strip()
+    github_repo_name = request.json.get('github_repo', '').split('/')[1].strip()
 
     # Verify that repo exists and that user can access
     connection = GitHub.from_settings(user_settings)
@@ -147,7 +147,6 @@ def github_repo_list(auth, node_addon, user_addon, **kwargs):
         '{0} / {1}'.format(repo.owner.login, repo.name)
         for repo in repos
     ]
-    import pdb; pdb.set_trace()
 
     return {
         'repo_names': repo_names

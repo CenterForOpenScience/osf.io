@@ -90,6 +90,7 @@ ViewModel.prototype.selectRepo = function() {
             self.changeMessage('Successfully linked Github repo \'' + self.currentRepo() + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.', 'text-success');
             self.loading(false);
+            self.showSelect(false);
         })
         .fail(function(xhr, status, error) {
             self.loading(false);
@@ -248,7 +249,6 @@ ViewModel.prototype.fetchRepoList = function() {
             self.repoList(response.repo_names);
             self.loadedRepoList(true);
             self.selectedRepo(self.currentRepo());
-            debugger;
         },
         error: function(xhr, status, error) {
             var message = 'Could not retrieve list of Github repos at' +
