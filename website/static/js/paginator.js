@@ -29,7 +29,7 @@ var Paginator = oop.defclass({
                 text: '1',
                 handler: function() {
                     self.currentPage(0);
-                    self.search();
+                    self.fetchResult();
                 }
             });
             if (self.numberOfPages() <= MAX_PAGES_ON_PAGINATOR) {
@@ -39,7 +39,7 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.currentPage(parseInt(this.text) - 1);
-                            self.search();
+                            self.fetchResult();
                         }
                     });
                 }
@@ -50,7 +50,7 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.currentPage(parseInt(this.text) - 1);
-                            self.search();
+                            self.fetchResult();
                         }
                     });
                 }
@@ -71,7 +71,7 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.currentPage(parseInt(this.text) - 1);
-                            self.search();
+                            self.fetchResult();
                         }
                     });
                 }
@@ -87,7 +87,7 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.currentPage(parseInt(this.text) - 1);
-                            self.search();
+                            self.fetchResult();
                         }
                     });
                 }
@@ -102,7 +102,7 @@ var Paginator = oop.defclass({
                 text: self.numberOfPages(),
                 handler: function() {
                     self.currentPage(self.numberOfPages() - 1);
-                    self.search();
+                    self.fetchResult();
                 }
             });
             self.paginators.push({
@@ -114,14 +114,14 @@ var Paginator = oop.defclass({
     },
     nextPage: function(){
         this.currentPage(this.currentPage() + 1);
-        this.search();
+        this.fetchResult();
     },
     previousPage: function(){
         this.currentPage(this.currentPage() - 1);
-        this.search();
+        this.fetchResult();
     },
-    search: function() {
-        throw new Error('Paginator subclass must define a "search" method.');
+    fetchResult: function() {
+        throw new Error('Paginator subclass must define a "fetchResult" method.');
     }
 });
 

@@ -38,13 +38,13 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     searchAllProjects: function() {
         this.includePublic(true);
-        this.search();
+        this.fetchResult();
     },
     searchMyProjects: function() {
         this.includePublic(false);
-        this.search();
+        this.fetchResult();
     },
-    search: function() {
+    fetchResult: function() {
         var self = this;
         self.errorMsg('');
         if (self.query()) {

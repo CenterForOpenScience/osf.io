@@ -95,7 +95,7 @@ var LogsViewModel = oop.extend(Paginator, {
         });
     },
     //send request to get more logs when the more button is clicked
-    search: function(){
+    fetchResult: function(){
         var self = this;
         self.logs.removeAll();
         return $.ajax({
@@ -168,7 +168,7 @@ var defaults = {
 var initViewModel = function(self, logs, url){
     self.logs = createLogs(logs);
     self.viewModel = new LogsViewModel(self.logs, url);
-    self.viewModel.search();
+    self.viewModel.fetchResult();
     self.init();
 };
 

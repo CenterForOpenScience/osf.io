@@ -103,9 +103,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
      */
     startSearch: function() {
         this.currentPage(0);
-        this.search();
+        this.fetchResult();
     },
-    search: function() {
+    fetchResult: function() {
         var self = this;
         self.notification(false);
         if (self.query()) {
