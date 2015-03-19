@@ -68,7 +68,7 @@ class GoogleDriveGuidFile(GuidFile):
 
         folder = addon.folder_path
 
-        if folder == '/':
+        if not folder or folder == '/':
             return ''
 
         return '/' + folder
