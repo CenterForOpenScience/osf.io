@@ -15,8 +15,10 @@ from ..api import GitHub
 
 @must_be_logged_in
 @must_have_addon('github', 'user')
-def github_create_repo(**kwargs):
+@must_have_addon('github', 'node')
+def github_create_repo(node_addon, **kwargs):
 
+    user = kwargs['auth'].user
     repo_name = request.json.get('repo_name')
 
     if not repo_name:
@@ -31,7 +33,4 @@ def github_create_repo(**kwargs):
         # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)
 
-    return {
-        'user': repo.owner.login,
-        'repo': repo.name,
-    }
+    return node_addon.to_json(user)

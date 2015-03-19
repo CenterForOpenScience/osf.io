@@ -185,6 +185,7 @@ ViewModel.prototype.createRepo = function(repoName) {
             repo_name: repoName
         }
     ).done(function(response) {
+        debugger;
         repoName = response.user + ' / ' + response.repo;
         self.creating(false);
         self.updateFromData(response);
@@ -264,39 +265,6 @@ ViewModel.prototype.fetchRepoList = function() {
     });
 };
 
-//ViewModel.prototype.fetchRepoList = function() {
-//    var self = this;
-//
-//    var ret = $.Deferred();
-//    if(self.loadedRepoList()){
-//        ret.resolve(self.repoList());
-//    }
-//    else{
-//         $.ajax({
-//            url: self.urls().repoList,
-//            type: 'GET',
-//            dataType: 'json'
-//        }).done(function(response) {
-//            self.loadedRepoList(true);
-//             debugger;
-//            ret.resolve(response.repo_names);
-//        })
-//        .fail(function(xhr, status, error) {
-//            var message = 'Could not retrieve list of Github repos at' +
-//                'this time. Please refresh the page. If the problem persists, email ' +
-//                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-//            self.changeMessage(message, 'text-warning');
-//            Raven.captureMessage('Could not GET github repo list', {
-//                url: self.urls().repoList,
-//                textStatus: status,
-//                error: error
-//            });
-//            ret.reject(xhr, status, error);
-//        });
-//    }
-//    return ret.promise();
-//};
-
 
 ViewModel.prototype.updateFromData = function(settings){
     var self = this;
@@ -335,30 +303,6 @@ ViewModel.prototype.fetchFromServer = function() {
         });
 };
 
-//ViewModel.prototype.fetchFromServer = function(callback) {
-//    var self = this;
-//    return $.ajax({
-//            url: self.url,
-//            type: 'GET',
-//            dataType: 'json',
-//            success: function(response) {
-//                var settings = response.result;
-//                self.updateFromData(settings);
-//            },
-//            error: function(xhr, status, error) {
-//                var message = 'Could not retrieve Github settings at ' +
-//                    'this time. Please refresh the page. If the problem persists, email ' +
-//                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
-//                self.changeMessage(message, 'text-warning');
-//                Raven.captureMessage('Could not GET github settings', {
-//                    url: self.url,
-//                    textStatus: status,
-//                    error: error
-//                });
-//            }
-//        })
-//        .done(callback || noop);
-//};
 
 /** Change the flashed message. */
 ViewModel.prototype.changeMessage = function(text, css, timeout) {

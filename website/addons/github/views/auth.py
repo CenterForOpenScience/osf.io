@@ -146,4 +146,4 @@ def github_oauth_delete_user(auth, user_addon, **kwargs):
 @must_not_be_registration
 def github_oauth_deauthorize_node(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
-    return {}
+    return node_addon.to_json(auth.user)
