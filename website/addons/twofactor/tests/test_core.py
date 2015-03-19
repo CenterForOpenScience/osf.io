@@ -10,6 +10,7 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from website.app import init_app
 from website.addons.twofactor.tests import _valid_code
+from website.util import web_url_for
 
 app = init_app(
     routes=True,
@@ -34,7 +35,7 @@ class TestCore(OsfTestCase):
     def test_authenticate_two_factor_returns_correct_response(self):
         response = authenticate_two_factor(self.user)
         assert_true(isinstance(response, BaseResponse))
-        assert_equal(response.location, u'/login/two-factor/')
+        assert_equal(response.location, web_url_for('two_factor'))
         assert_equal(response.status_code, 302)
 
     def test_authenticate_two_factor_with_next_url(self):
@@ -45,7 +46,7 @@ class TestCore(OsfTestCase):
         assert_true(isinstance(response, BaseResponse))
 
         assert_equal(response.location,
-                     u'/login/two-factor/?next=%2Fsomeendpoint%2F'
+                     u'{0}?next=%2Fsomeendpoint%2F'.format(web_url_for('two_factor'))
         )
         assert_equal(response.status_code, 302)
 
