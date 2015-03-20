@@ -38,11 +38,11 @@ class TestGoogleDriveAuthViews(OsfTestCase):
     # Class variables(self) are usually used to mark mock variables. Can be removed later.
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.start')
     def test_googledrive_oauth_start(self, mock_auth_client_start):
-        url = api_url_for('googledrive_oauth_start_user', Auth(self.user))
+        url = api_url_for('googledrive_oauth_start_user')
         authorization_url = 'https://fake.domain/'
         state = 'secure state'
         mock_auth_client_start.return_value = (authorization_url, state)
-        res = self.app.post(url)
+        res = self.app.get(url, auth=self.user.auth)
         assert_true(res.headers['location'], authorization_url)
 
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.userinfo')
