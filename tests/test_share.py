@@ -1,8 +1,10 @@
-from nose.tools import *  # PEP8 asserts
-from mock import patch
-from tests.base import OsfTestCase
 import xml
 
+from mock import patch
+from nose.tools import *  # PEP8 asserts
+from tests.base import OsfTestCase
+
+from website.search import util
 from website.search import share_search
 
 STANDARD_RETURN_VALUE = {
@@ -196,3 +198,11 @@ class TestShareAtom(OsfTestCase):
         })
         title = response.xml.find('{http://www.w3.org/2005/Atom}title')
         assert_equal(title.text, 'SHARE: Atom Feed for query: "cats"')
+
+    def test_illegal_unicode_sub(self):
+        illegal_str = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello'
+        illegal_str += unichr(0xd800) + unichr(0xdbff) + ' World'
+        assert_equal(util.illegal_unicode_replace(illegal_str), 'Hello World')
+        assert_equal(util.illegal_unicode_replace(''), '')
+        assert_equal(util.illegal_unicode_replace(None), None)
+        assert_equal(util.illegal_unicode_replace('WOOOooooOOo'), 'WOOOooooOOo')

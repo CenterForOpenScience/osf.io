@@ -567,7 +567,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_urls_equal(resp.headers['Location'], download_url.url)
 
-    def test_nonexistant_addons_raise(self):
+    def test_nonexistent_addons_raise(self):
         path = 'cloudfiles'
         self.project.delete_addon('github', Auth(self.user))
         self.project.save()

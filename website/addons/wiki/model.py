@@ -1,6 +1,4 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import datetime
 import functools
@@ -94,8 +92,6 @@ def render_content(content, node):
 
 
 class NodeWikiPage(GuidStoredObject):
-
-    redirect_mode = 'redirect'
 
     _id = fields.StringField(primary=True)
 

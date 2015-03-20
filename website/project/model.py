@@ -536,7 +536,6 @@ def validate_user(value):
 
 class Node(GuidStoredObject, AddonModelMixin):
 
-    redirect_mode = 'proxy'
     #: Whether this is a pointer or not
     primary = True
 

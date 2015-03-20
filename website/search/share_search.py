@@ -13,7 +13,7 @@ from elasticsearch import Elasticsearch
 
 from website import settings
 
-from util import generate_color
+from util import generate_color, illegal_unicode_replace
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
@@ -252,15 +252,15 @@ def data_for_charts(elastic_results):
 
 def to_atom(result):
     return {
-        'title': result.get('title') or 'No title provided.',
-        'summary': result.get('description') or 'No summary provided.',
+        'title': illegal_unicode_replace(result.get('title')) or 'No title provided.',
+        'summary': illegal_unicode_replace(result.get('description')) or 'No summary provided.',
         'id': result['id']['url'],
         'updated': get_date_updated(result),
         'links': [
             {'href': result['id']['url'], 'rel': 'alternate'}
         ],
         'author': format_contributors_for_atom(result['contributors']),
-        'categories': [{"term": tag} for tag in result.get('tags')],
+        'categories': [{"term": illegal_unicode_replace(tag)} for tag in result.get('tags')],
         'published': parse(result.get('dateUpdated'))
     }
 
@@ -268,7 +268,10 @@ def to_atom(result):
 def format_contributors_for_atom(contributors_list):
     return [
         {
-            'name': '{} {}'.format(entry['given'], entry['family'])
+            'name': '{} {}'.format(
+                illegal_unicode_replace(entry['given']),
+                illegal_unicode_replace(entry['family'])
+            )
         }
         for entry in contributors_list
     ]
