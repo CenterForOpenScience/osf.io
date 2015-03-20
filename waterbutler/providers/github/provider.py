@@ -208,7 +208,7 @@ class GitHubProvider(provider.BaseProvider):
 
         if resp.status == 422:
             if data.get('message') == 'Invalid request.\n\n"sha" wasn\'t supplied.':
-                raise exceptions.CreateFolderError('Folder {} already exists'.format(str(path)), code=409)
+                raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
             raise exceptions.CreateFolderError(data, code=resp.status)
 
         data['content']['name'] = path.name

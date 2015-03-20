@@ -134,9 +134,12 @@ class BoxProvider(provider.BaseProvider):
                     'id': path._id or self.folder
                 }
             },
-            expects=(201, ),
+            expects=(201, 409),
             throws=exceptions.CreateFolderError,
         )
+
+        if resp.status == 409:
+            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
 
         return BoxFolderMetadata(
             (yield from resp.json()),
