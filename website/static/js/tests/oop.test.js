@@ -15,13 +15,16 @@ describe('oop', () => {
     var Thing = oop.defclass({
         constructor: constructorSpy,
         methodA: methodSpy,
-        override: overrideSpy
+        override: function() {
+            assert.instanceOf(this, SubThing);
+            overrideSpy();
+        }
     });
 
     var suboverrideSpy = new sinon.spy();
     var SubThing = oop.extend(Thing, {
         override: function() {
-            this.super.override();
+            this.super.override.call(this);
             suboverrideSpy();
         }
     });

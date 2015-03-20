@@ -29,8 +29,20 @@ $.ajax({
     });
 });
 
+// Reusable function to fix affix widths to columns.  
+function fixAffixWidth(parent) {
+    var parent = parent || 'body';
+    $(parent + ' .affix').each(function (){
+        var el = $(this);
+        var colsize = el.parent('div[class^="col-"]').width();
+        el.width(colsize);
+    });
+}
 
 $(document).ready(function() {
+
+    $(window).resize(function (){ fixAffixWidth(); });
+    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
