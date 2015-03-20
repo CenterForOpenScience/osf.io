@@ -31,9 +31,7 @@ var loadMore = function(vm) {
         return;
     }
     var page = vm.page++ * 10;
-    var sort = {
-        Date: 'dateUpdated'
-    }[vm.sort()] || null;
+    var sort = vm.sortMap[vm.sort()] || null;
 
     vm.resultsLoading(true);
 

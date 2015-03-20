@@ -13,30 +13,14 @@ SideBar.view = function(ctrl){
             m('button.btn.btn-default.dropdown-taggle', {
                     'data-toggle': 'dropdown',
                     'aria-expanded': 'false'
-                }, ['Sort by: ' + ctrl.vm.sort(), m('span.caret')]
+                }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
             ),
-            m('ul.dropdown-menu', {'role': 'menu'}, [
-                m('li', [m('a', {
-                    'href': '#',
-                    onclick: function(event) {
-                            ctrl.vm.sort('Relevance');
-                            utils.search(ctrl.vm);
-                        }
-                }, ['Relevance'])]),
-                m('li', [m('a', {
-                    'href': '#',
-                    onclick: function(event) {
-                        ctrl.vm.sort('Date');
-                        utils.search(ctrl.vm);
-                    }
-                }, ['Date'])]),
-            ])
-        ]),
-        m('br'), m('br'),
-        'Active filters:', m('br'),
-        m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
-        'Providers:', m('br'),
-        m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
+                m('ul.dropdown-menu', {'role': 'menu'}, ctrl.renderSort())]),
+            m('br'), m('br'),
+            'Active filters:', m('br'),
+            m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
+            'Providers:', m('br'),
+            m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
     ]);
 };
 
@@ -47,6 +31,24 @@ SideBar.controller = function(vm) {
     self.vm.sort = $osf.urlParams().sort ? m.prop($osf.urlParams().sort) : m.prop("Relevance");
     self.vm.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
+
+    self.vm.sortMap = {
+        'Date': 'dateUpdated',
+        Relevance: null
+    };
+
+    self.renderSort = function(){
+        return Object.keys(self.vm.sortMap).map(function(a) {
+            return m('li',
+                m('a', {
+                    'href': '#',
+                    onclick: function(event) {
+                        self.vm.sort(a);
+                        utils.search(self.vm);
+                    }
+                }, a))
+        });
+    };
 
     self.renderFilters = function(){
         return self.vm.optionalFilters.concat(self.vm.requiredFilters).map(function(filter){
