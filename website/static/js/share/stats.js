@@ -123,7 +123,6 @@ Stats.controller = function(vm) {
         }).then(function(data) {
             self.vm.statsData = data;
             Object.keys(self.graphs).map(function(type) {
-                self.vm.statsData.charts[type].unload = true;
                 if(type === 'shareDonutGraph') {
                     var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
                     $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
