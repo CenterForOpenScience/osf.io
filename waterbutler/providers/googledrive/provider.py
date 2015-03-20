@@ -219,12 +219,14 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
+        super()._validate_folder(path)
 
         try:
             yield from self.metadata(str(path), raw=True)
             raise exceptions.CreateFolderError('Folder {} already exists'.format(str(path)), code=409)
-        except exceptions.MetadataError:
-            pass
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
 
         if path.parent.is_root:
             folder_id = self.folder['id']
