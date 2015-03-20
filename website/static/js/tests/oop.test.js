@@ -7,7 +7,7 @@ sinon.assert.expose(assert, {prefix: ''});
 var oop = require('js/oop');
 
 
-describe('oop', () => {
+describe.only('oop', () => {
     var constructorSpy = new sinon.spy();
     var methodSpy = new sinon.spy();
     var overrideSpy = new sinon.spy();
@@ -15,13 +15,16 @@ describe('oop', () => {
     var Thing = oop.defclass({
         constructor: constructorSpy,
         methodA: methodSpy,
-        override: overrideSpy
+        override: function() {
+            assert.instanceOf(this, SubThing);
+            overrideSpy();
+        }
     });
 
     var suboverrideSpy = new sinon.spy();
     var SubThing = oop.extend(Thing, {
         override: function() {
-            this.super.override();
+            this.super.override.call(this);
             suboverrideSpy();
         }
     });
