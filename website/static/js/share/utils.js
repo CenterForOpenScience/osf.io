@@ -87,10 +87,7 @@ var buildQuery = function(vm){
         '(' + vm.optionalFilters.join(' OR ') + ')',
         '(' + vm.requiredFilters.join(' AND ') + ')'
     ].filter(function(a) {
-        if (a === '()'){
-            return false;
-        }
-        return true;
+        return a !== '()';
     }).join(' AND ');
 };
 
