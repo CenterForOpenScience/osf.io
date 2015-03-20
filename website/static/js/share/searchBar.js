@@ -55,7 +55,7 @@ SearchBar.controller = function(vm) {
     self.vm = vm;
 
     self.vm.totalCount = 0;
-    self.vm.providers = 28;
+    self.vm.providers = Object.keys(self.vm.ProviderMap).length;
     self.vm.latestDate = undefined;
     self.vm.showStats = true;
 
