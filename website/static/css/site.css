@@ -2273,6 +2273,22 @@ span#profileFullname{
     overflow-x: hidden;
 }
 
+#file-navigation .osf-panel {
+    height: auto;
+}
+
+#file-navigation .osf-panel-flex{
+    height: auto;
+}
+
+#file-navigation .osf-panel-body-flex {
+    height: auto;
+}
+
+#file-navigation .panel-collapsed{
+    height: 500px;
+}
+
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
@@ -2402,46 +2418,6 @@ span#profileFullname{
     height: 500px;
 }
 
-
-/* Osf panels for the file view page. Remove height to allow
-   treebeard to auto-resize */
-.file-panel {
-    border: 1px solid #ccc;
-    overflow: auto;
-    display: block;
-    position: relative;
-    overflow-x: hidden;
-}
-
-.file-panel-flex {
-    width: 100%;
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: -webkit-flex;
-    display: flex;
-    -webkit-align-content: flex-start;
-    -ms-align-content: flex-start;
-    align-content: flex-start;
-    -webkit-flex-direction: column;
-    -ms-flex-direction: column;
-    flex-direction: column;
-    -webkit-box-align: stretch;
-    -webkit-align-items: stretch;
-    -ms-flex-align: stretch;
-    align-items: stretch;
-    -webkit-flex-wrap: wrap;
-    -ms-flex-wrap: wrap;
-    flex-wrap: wrap;
-}
-
-.file-panel-body-flex {
-    width: 100%;
-    margin: auto;
-    -webkit-box-flex: 3 0 auto;
-    -webkit-flex: 3 0 auto;
-    -ms-flex: 3 0 auto;
-    flex: 3 0 auto;
-}
 
 /* scroll fix for wherever treebeard is used */
 #tb-tbody::-webkit-scrollbar  {
