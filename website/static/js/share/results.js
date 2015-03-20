@@ -14,7 +14,7 @@ Results.view = function(ctrl) {
         len = ctrl.vm.results.length;
     }
     return m('', [
-        m('.row', m('.col-md-12', res)),
+        m('.row', m('.col-md-12', len > 0 ? res : m('span', {style: {margin: "auto"}}, 'No results for this query'))),
         m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
         m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
             len > 0 && len < ctrl.vm.count ?
@@ -113,8 +113,6 @@ Results.controller = function(vm) {
     //         utils.loadMore(self.vm);
     //     }
     // });
-
-    utils.loadMore(self.vm);
 };
 
 module.exports = Results;
