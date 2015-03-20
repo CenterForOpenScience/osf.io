@@ -2285,10 +2285,6 @@ span#profileFullname{
     height: auto;
 }
 
-#file-navigation .panel-collapsed{
-    height: 500px;
-}
-
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;

@@ -33,6 +33,17 @@ $(document).ready(function() {
                         width: '100%'
                     }];
                 },
+                ontogglefolder : function (tree){
+                    Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
+                    this.options.showTotal = this.visibleIndexes.length + 2;
+                    var containerHeight = (this.visibleIndexes.length + 2) * this.options.rowHeight;
+                    if (containerHeight < 750) {
+                        $('#tb-tbody').height(containerHeight);
+                    } else {
+                        $('#tb-tbody').height(750);
+                    }
+                    this.redraw();
+                },
                 lazyLoadOnLoad: function(tree) {
                     Fangorn.DefaultOptions.lazyLoadOnLoad.call(this, tree);
                     var tb = this;
@@ -108,7 +119,7 @@ $(document).ready(function() {
         panelToggle.removeClass('col-md-3').addClass('col-md-1');
         panelExpand.removeClass('col-md-6').addClass('col-md-8');
         el.children('.panel-collapsed').show();
-
+        el.children('.panel-collapsed').css('height', $('#tb-tbody').height());
     });
     $('.panel-collapsed .osf-panel-header').on('click', function () {
         var el = $(this).parent();
