@@ -185,8 +185,11 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     else:
         filename, _ = scrape_dataverse(file_id, name_only=True)
 
-    render_url = node.api_url_for('dataverse_get_rendered_file',
-                                path=file_id)
+    render_url = node.api_url_for(
+        'dataverse_get_rendered_file',
+        path=file_id,
+        render=True
+    )
     ret = {
         'file_name': filename,
         'rendered': rendered,
