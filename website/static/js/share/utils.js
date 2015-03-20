@@ -71,14 +71,26 @@ var search = function(vm) {
         requiredFilters: vm.requiredFilters,
         query: vm.query(),
         sort: vm.sort()
-    }, 'OSF | SHARE', '?'+ $.param({
-        'q': vm.query(),
-        'required': vm.requiredFilters.join('|'),
-        'optional': vm.optionalFilters.join('|'),
-        'sort': vm.sort()
-    }));
+    }, 'OSF | SHARE', '?'+ buildURLParams(vm));
 
     loadMore(vm);
+};
+
+var buildURLParams = function(vm){
+    var d = {};
+    if (vm.query()){
+        d.q = vm.query();
+    }
+    if (!arrayEqual(vm.requiredFilters, [])){
+        d.required = vm.requiredFilters.join('|');
+    }
+    if (!arrayEqual(vm.optionalFilters, [])){
+        d.optional = vm.optionalFilters.join('|');
+    }
+    if (vm.sort()){
+        d.sort = vm.sort();
+    }
+    return $.param(d)
 };
 
 var buildQuery = function(vm){
