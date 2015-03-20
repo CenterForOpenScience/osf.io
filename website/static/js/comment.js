@@ -177,7 +177,7 @@ BaseComment.prototype.fetch = function(isCommentList, thread) {
             }
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
-            self.checkFileExists();
+            self.checkFileExists(isCommentList);
             self._loaded = true;
         }
     );
@@ -203,7 +203,7 @@ BaseComment.prototype.getThread = function(thread_id) {
     return deferred;
 }
 
-BaseComment.prototype.checkFileExists = function() {
+BaseComment.prototype.checkFileExists = function(isCommentList) {
     var self = this;
     var url;
     for (var c in self.comments()) {
@@ -222,6 +222,24 @@ BaseComment.prototype.checkFileExists = function() {
                 console.log('error: '); // todo change
                 console.log(xhl);
                 comment.isHidden(true);
+                if (isCommentList) {
+                    $.map([self.discussionByFrequency(), self.discussionByRecency()], function(l) {
+                        var commenter_id = comment.author.id();
+                        var ind;
+                        for (var i in l) {
+                            if (l[i].id == commenter_id) {
+                                var commenter = l[i];
+                                ind = i;
+                                commenter.numOfComments -= 1;
+                                if (commenter.numOfComments == 0) {
+                                    l.splice(ind, 1);
+                                    self.discussion(self.discussionByRecency());
+                                }
+                                break;
+                            }
+                        }
+                    });
+                }
             })
         })(comment);
     }
