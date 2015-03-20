@@ -111,5 +111,5 @@ def illegal_unicode_replace(atom_element):
     https://maxharp3r.wordpress.com/2008/05/15/pythons-minidom-xml-and-illegal-unicode-characters/
     """
     if atom_element:
-        return re.sub(RE_XML_ILLEGAL_COMPILED, '', atom_element)
+        return RE_XML_ILLEGAL_COMPILED.sub('', atom_element)
     return atom_element
