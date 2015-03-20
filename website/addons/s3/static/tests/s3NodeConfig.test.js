@@ -61,13 +61,6 @@ var APITestCases = function(test, cases) {
 };
 
 describe('s3NodeConfigViewModel', () => {
-    window.contextVars = {
-        node: {
-            urls: {
-                web: '/12345'
-            }
-        }
-    };
     describe('#fetchFromServer', () => {
         new APITestCases(
             function(tc) {
