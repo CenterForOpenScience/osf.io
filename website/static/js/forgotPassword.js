@@ -4,7 +4,7 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-validation');
+require('knockout.validation');
 
 var $osf = require('js/osfHelpers');
 

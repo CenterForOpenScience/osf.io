@@ -49,7 +49,6 @@ var entry = {
         // Vendor libraries
         'knockout',
         'moment',
-        'knockout-validation',
         'bootstrap',
         'bootbox',
         'bootstrap-editable',
@@ -92,7 +91,6 @@ var resolve = {
     alias: {
         'knockout-punches': staticPath('vendor/knockout-punches/knockout.punches.js'),
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
-        'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.js'),
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
@@ -183,7 +181,7 @@ module.exports = {
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?minetype=application/font-woff" },
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?minetype=application/font-woff'},
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'}
