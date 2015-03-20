@@ -22,18 +22,13 @@ install:
     - travis_retry pip install flake8 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --repo https://github.com/CenterForOpenScience/wheelhouse --path $WHEELHOUSE
     - travis_retry invoke travis_addon_settings
-    - travis_retry invoke requirements
-    - travis_retry invoke addon_requirements
-    - travis_retry mfr -r install all
-    - travis_retry npm install
-    - travis_retry npm install -g bower
-    - travis_retry bower install
-    - inv webpack
-
+    - travis_retry invoke requirements --dev --addons
+    - travis_retry invoke assets --dev
 before_script:
     - flake8 .
 
-script: invoke test_all
+# Run Python tests (core and addon) and JS tests
+script: invoke test --all
 
 cache:
   directories:

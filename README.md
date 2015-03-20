@@ -316,6 +316,8 @@ Use the following command to update your requirements and build the asset bundle
 $ inv assets -dw
 ```
 
+The -w option puts you in "watch": assets will be built when a file changes.
+
 ## Downloading citation styles (optional)
 
 To download citation styles, run:
@@ -330,7 +332,7 @@ $ invoke update_citation_styles
 To install the python libraries needed to support the enabled addons, run:
 
 ```bash
-$ invoke addon_requirements
+$ invoke requirements --addons
 ```
 
 ### Getting application credentials

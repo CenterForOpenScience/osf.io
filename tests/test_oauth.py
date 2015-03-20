@@ -92,6 +92,7 @@ class TestExternalAccount(OsfTestCase):
         external_account = ExternalAccountFactory(
             provider='mock2',
             provider_id='mock_provider_id',
+            provider_name='Mock Provider',
         )
         self.user.external_accounts.append(external_account)
         self.user.save()
@@ -132,6 +133,7 @@ class TestExternalAccount(OsfTestCase):
         external_account = ExternalAccountFactory(
             provider='mock2',
             provider_id='mock_provider_id',
+            provider_name='Mock Provider',
         )
         self.user.external_accounts.append(external_account)
         self.user.save()
@@ -259,6 +261,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         assert_equal(account.oauth_key, 'perm_token')
         assert_equal(account.oauth_secret, 'perm_secret')
         assert_equal(account.provider_id, 'mock_provider_id')
+        assert_equal(account.provider_name, 'Mock OAuth 1.0a Provider')
 
     @responses.activate
     def test_callback_wrong_user(self):
@@ -286,6 +289,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         user = UserFactory()
         account = ExternalAccountFactory(
             provider="mock1a",
+            provider_name='Mock 1A',
             oauth_key="temp_key",
             oauth_secret="temp_secret",
             temporary=True
@@ -457,6 +461,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         external_account = ExternalAccountFactory(
             provider='mock2',
             provider_id='mock_provider_id',
+            provider_name='Mock Provider',
         )
         user_a.external_accounts.append(external_account)
         user_a.save()
