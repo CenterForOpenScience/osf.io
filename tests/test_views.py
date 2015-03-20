@@ -1960,8 +1960,11 @@ class TestWatchViews(OsfTestCase):
         self.user.watch(watch_cfg)
         self.user.save()
         url = "/api/v1/watched/logs/"
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        assert_equal(res.json['page'], 1)
+        assert_equal(res.json['pages'], 2)
+        assert_equal(res.json['total'], 13)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 
