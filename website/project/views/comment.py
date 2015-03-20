@@ -124,8 +124,7 @@ def resolve_target(node, page, guid):
     return target.referent
 
 
-def collect_discussion(target, users=None):
-    users = users or collections.defaultdict(list)
+def collect_discussion(target, users):
     if not getattr(target, 'commented', None) is None:
         for comment in getattr(target, 'commented', []):
             if not (comment.is_deleted or comment.is_hidden):
@@ -134,32 +133,14 @@ def collect_discussion(target, users=None):
     return users
 
 
-@must_be_contributor_or_public
-def comment_discussion(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
+def comment_discussion(comments, node, anonymous=False, widget=False):
 
-    page = request.args.get('page')
-    guid = request.args.get('target')
-
-    if page == 'total':
-        users = collections.defaultdict(list)
-        for comment in getattr(node, 'comment_owner', []) or []:
-            if not comment.is_deleted and not comment.is_hidden:
-                users[comment.user].append(comment)
-    elif guid is None or guid == 'None':
-        users = collections.defaultdict(list)
-        comments = Comment.find(Q('node', 'eq', node) &
-                                Q('page', 'eq', page) &
-                                Q('is_deleted', 'eq', False) &
-                                Q('is_hidden', 'eq', False)).get_keys()
-        for cid in comments:
-            comment = Comment.load(cid)
+    users = collections.defaultdict(list)
+    for comment in comments:
+        if not (comment.is_deleted or comment.is_hidden):
             users[comment.user].append(comment)
-    else:
-        target = resolve_target(node, page, guid)
-        users = collect_discussion(target)
-    anonymous = has_anonymous_link(node, auth)
+        if not widget:
+            collect_discussion(comment, users=users)
 
     sorted_users_frequency = sorted(
         users.keys(),
@@ -181,18 +162,18 @@ def comment_discussion(**kwargs):
     )
 
     return {
-        'discussion_by_frequency': [
-            serialize_discussion(node, user, anonymous)
+        'discussionByFrequency': [
+            serialize_discussion(node, user, len(users[user]), anonymous)
             for user in sorted_users_frequency
         ],
-        'discussion_by_recency': [
-            serialize_discussion(node, user, anonymous)
+        'discussionByRecency': [
+            serialize_discussion(node, user, len(users[user]), anonymous)
             for user in sorted_users_recency
         ]
     }
 
 
-def serialize_discussion(node, user, anonymous=False):
+def serialize_discussion(node, user, num, anonymous=False):
     return {
         'id': privacy_info_handle(user._id, anonymous),
         'url': privacy_info_handle(user.url, anonymous),
@@ -203,7 +184,8 @@ def serialize_discussion(node, user, anonymous=False):
                 user, use_ssl=True, size=settings.GRAVATAR_SIZE_DISCUSSION,
             ),
             anonymous
-        )
+        ),
+        'numOfComments': num
     }
 
 
@@ -251,13 +233,6 @@ def serialize_comment(comment, auth, anonymous=False):
         'isHidden': comment.is_hidden,
         'isAbuse': auth.user and auth.user._id in comment.reports,
     }
-
-
-def serialize_comments(record, auth, anonymous=False):
-    return [
-        serialize_comment(comment, auth, anonymous)
-        for comment in getattr(record, 'commented', [])
-    ]
 
 
 def kwargs_to_comment(kwargs, owner=False):
@@ -339,78 +314,81 @@ def list_comments(auth, **kwargs):
     page = request.args.get('page')
     guid = request.args.get('target')
     root_id = request.args.get('rootId')
+    is_list = request.args.get('isCommentList')
+    is_widget = False
 
     if page == 'total' and root_id == 'None':  # "Total" on discussion page
-        serialized_comments = list_total_comments(node, auth, 'total')
+        comments = list_total_comments(node, auth, 'total')
     elif page == 'total':  # Discussion widget on overview's page
-        serialized_comments = list_total_comments_widget(node, auth)
+        comments = list_total_comments_widget(node, auth)
+        is_widget = True
     elif root_id == 'None':  # Overview/Files/Wiki page on discussion page
-        serialized_comments = list_total_comments(node, auth, page)
+        comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
-        serialized_comments = serialize_comments(target, auth, anonymous)
-    n_unread = 0
+        comments = getattr(target, 'commented', [])
 
+    if is_list:
+        discussions = comment_discussion(comments, node, anonymous=anonymous, widget=is_widget)
+
+    n_unread = 0
     if node.is_contributor(auth.user):
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
         n_unread = n_unread_comments(node, auth.user, page, root_id)
 
-    return {
-        'comments': serialized_comments,
+    ret = {
+        'comments': [
+            serialize_comment(comment, auth, anonymous)
+            for comment in comments
+        ],
         'nUnread': n_unread
     }
+    if is_list:
+        ret.update(discussions)
+    return ret
 
 
 def list_total_comments_widget(node, auth):
-    anonymous = has_anonymous_link(node, auth)
-    comments = Comment.find(Q('node', 'eq', node) &
+    comments_keys = Comment.find(Q('node', 'eq', node) &
                             Q('is_hidden', 'eq', False) &
                             Q('page', 'ne', 'files')).get_keys()
-    comments.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
-    serialized_comments = []
-    for cid in comments:
+    comments_keys.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
+    comments = []
+    for cid in comments_keys:
         cmt = Comment.load(cid)
-        serialized_comments.append(cmt)
-    serialized_comments.sort(
+        comments.append(cmt)
+    comments.sort(
         key=lambda item: item.date_created,
         reverse=False
     )
-    return [
-        serialize_comment(comment, auth, anonymous)
-        for comment in serialized_comments[-5:]
-    ]
+    return comments
 
 
 def list_total_comments(node, auth, page):
-    comments = []
-    anonymous = has_anonymous_link(node, auth)
+    comments_keys = []
     if page == 'total':
-        comments = Comment.find(Q('node', 'eq', node) &
+        comments_keys = Comment.find(Q('node', 'eq', node) &
                                 Q('is_hidden', 'eq', False) &
                                 Q('page', 'ne', 'files')).get_keys()
     elif page != 'files':
-        comments = Comment.find(Q('node', 'eq', node) &
+        comments_keys = Comment.find(Q('node', 'eq', node) &
                                 Q('page', 'eq', page) &
                                 Q('is_hidden', 'eq', False)).get_keys()
     if page in ('total', 'files'):
-        comments.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
-    serialized_comments = []
-    for cid in comments:
+        comments_keys.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
+    comments = []
+    for cid in comments_keys:
         cmt = Comment.load(cid)
         if not isinstance(cmt.target, Comment):
-            serialized_comments.append(cmt)
-    serialized_comments = [
-        serialize_comment(comment, auth, anonymous)
-        for comment in serialized_comments
-    ]
-    serialized_comments = sorted(
-        serialized_comments,
-        key=lambda item: item.get('dateCreated'),
+            comments.append(cmt)
+    comments = sorted(
+        comments,
+        key=lambda item: item.date_created,
         reverse=False,
     )
-    return serialized_comments
+    return comments
 
 
 @must_be_logged_in

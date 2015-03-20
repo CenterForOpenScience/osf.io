@@ -147,7 +147,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.fetch = function(thread) {
+BaseComment.prototype.fetch = function(isCommentList, thread) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
@@ -161,7 +161,8 @@ BaseComment.prototype.fetch = function(thread) {
         {
             page: self.page(),
             target: self.id(),
-            rootId: self.rootId()
+            rootId: self.rootId(),
+            isCommentList: (isCommentList || null)
         },
         function(response) {
             self.comments(
@@ -169,6 +170,11 @@ BaseComment.prototype.fetch = function(thread) {
                     return new CommentModel(comment, self, self.$root);
                 })
             );
+            if (isCommentList) {
+                self.discussionByFrequency(response.discussionByFrequency);
+                self.discussionByRecency(response.discussionByRecency);
+                self.discussion(response.discussionByRecency);
+            }
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
             self.checkFileExists();
@@ -249,9 +255,9 @@ BaseComment.prototype.submitReply = function() {
         self.replyErrorMessage('');
         // Update discussion in case we aren't already in it
         // TODO: This can lead to unnecessary API calls; fix this
-        if (!self.$root.commented()) {
-            self.$root.fetchDiscussion();
-        }
+        //if (!self.$root.commented()) {
+        //    self.$root.fetchDiscussion();
+        //}
         self.onSubmitSuccess(response);
         if (self.level >= self.MAXLEVEL) {
             window.location.href = nodeUrl + 'discussions/' + self.id();
@@ -538,7 +544,7 @@ CommentModel.prototype.stopHoverContent = function() {
 };
 
 CommentModel.prototype.toggle = function () {
-    this.fetch();
+    this.fetch(false);
     this.showChildren(!this.showChildren());
 };
 
@@ -566,8 +572,8 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     self.canComment = ko.observable(canComment);
     self.hasChildren = ko.observable(hasChildren);
 
-    self.discussion_by_frequency = ko.observableArray();
-    self.discussion_by_recency = ko.observableArray();
+    self.discussionByFrequency = ko.observableArray();
+    self.discussionByRecency = ko.observableArray();
     self.discussion = ko.observableArray();
 
     self.page(host_page);
@@ -606,8 +612,7 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
     });
 
 
-    self.fetch(thread);
-    self.fetchDiscussion();
+    self.fetch(true, thread);
 
 };
 
@@ -615,30 +620,14 @@ CommentListModel.prototype = new BaseComment();
 
 CommentListModel.prototype.onSubmitSuccess = function() {};
 
-CommentListModel.prototype.fetchDiscussion = function() {
-    var self = this;
-    $.getJSON(
-        nodeApiUrl + 'comments/discussion/',
-        {
-            page: self.page(),
-            target: self.id()
-        },
-        function(response) {
-            self.discussion_by_frequency(response.discussion_by_frequency);
-            self.discussion_by_recency(response.discussion_by_recency);
-            self.discussion(response.discussion_by_recency);
-        }
-    );
-};
-
 CommentListModel.prototype.showRecent = function() {
     var self = this;
-    self.discussion(self.discussion_by_recency());
+    self.discussion(self.discussionByRecency());
 }
 
 CommentListModel.prototype.showFrequent = function() {
     var self = this;
-    self.discussion(self.discussion_by_frequency());
+    self.discussion(self.discussionByFrequency());
 }
 
 CommentListModel.prototype.initListeners = function() {
