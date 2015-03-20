@@ -6,12 +6,13 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
+var Raven = require('raven-js');
 require('knockout-mapping');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
 
-var osfHelpers = require('osfHelpers');
+var osfHelpers = require('./osfHelpers');
 var CommentPane = require('./commentpane.js');
 
 var nodeApiUrl = window.contextVars.node.urls.api;

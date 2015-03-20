@@ -7,7 +7,7 @@ var moment = require('moment');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
-require('koHelpers');
+require('./koHelpers');
 
 var GrowlBox = require('./growlBox');
 

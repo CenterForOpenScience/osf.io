@@ -61,9 +61,9 @@ var entry = {
         'jquery.cookie',
         'URIjs',
         // Common internal modules
-        'fangorn',
-        'citations',
-        'osfHelpers'
+        'js/fangorn',
+        'js/citations',
+        'js/osfHelpers'
     ]
 };
 
@@ -110,20 +110,7 @@ var resolve = {
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
-        'fangorn': staticPath('js/fangorn.js'),
-        'waterbutler': staticPath('js/waterbutler.js'),
-        'folderpicker': staticPath('js/folderPicker.js'),
-        'osfHelpers': staticPath('js/osfHelpers.js'),
-        'osfLanguage': staticPath('js/osfLanguage.js'),
         'addons': path.join(__dirname, 'website', 'addons'),
-        'addonHelper': staticPath('js/addonHelper.js'),
-        'koHelpers': staticPath('js/koHelpers.js'),
-        'addonPermissions': staticPath('js/addonPermissions.js'),
-        'navbar-control': staticPath('js/navbarControl.js'),
-        'markdown': staticPath('js/markdown.js'),
-        'diffTool': staticPath('js/diffTool.js'),
-        'mathrender': staticPath('js/mathrender.js'),
-        'citations': staticPath('js/citations.js'),
         'tests': staticPath('js/tests')
     }
 };

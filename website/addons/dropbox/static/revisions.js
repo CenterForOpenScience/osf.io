@@ -7,8 +7,8 @@
 var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 

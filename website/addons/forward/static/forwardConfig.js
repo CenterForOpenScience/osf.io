@@ -2,10 +2,10 @@
 
 var ko = require('knockout');
 require('knockout.punches');
-var koHelpers = require('koHelpers');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 var Raven = require('raven-js');
+var koHelpers = require('js/koHelpers');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 

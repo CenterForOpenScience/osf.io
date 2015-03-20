@@ -6,7 +6,7 @@ var Raven = require('raven-js');
 
 var ProjectSettings = require('../projectSettings.js');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 require('../../css/addonsettings.css');
 
 var ctx = window.contextVars;

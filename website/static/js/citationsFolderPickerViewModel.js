@@ -6,8 +6,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
-var $osf = require('osfHelpers');
+var FolderPicker = require('./folderpicker');
+var $osf = require('./osfHelpers');
 var ctx = window.contextVars;
 
 ko.punches.enableAll();

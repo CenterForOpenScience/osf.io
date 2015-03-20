@@ -1,6 +1,7 @@
-var $ = require('jquery');
-var $osf = require('osfHelpers');
+'use strict';
 
+var $ = require('jquery');
+var $osf = require('./osfHelpers');
 
 function getCookie() {
     cookieName =  window.contextVars.cookieName;

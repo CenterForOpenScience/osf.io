@@ -1,7 +1,7 @@
 'use strict';
 
-var $osf = require('osfHelpers');
-var ViewModel = require('../../../static/js/citationsFolderPickerViewModel');
+var $osf = require('js/osfHelpers');
+var ViewModel = require('js/citationsFolderPickerViewModel');
 
 // Public API
 function ZoteroNodeConfig(selector, url, folderPicker) {
@@ -13,4 +13,3 @@ function ZoteroNodeConfig(selector, url, folderPicker) {
 }
 
 module.exports = ZoteroNodeConfig;
-

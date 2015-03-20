@@ -10,18 +10,18 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osfHelpers');
+var FolderPicker = require('js/folderpicker');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
 function noop() {}
 
 /**
-    * Knockout view model for the Dropbox node settings widget.
-    */
+ * Knockout view model for the Dropbox node settings widget.
+ */
 var ViewModel = function(url, selector, folderPicker, fetchCallback) {
     var self = this;
     // TODO: Remove selector?

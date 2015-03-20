@@ -10,8 +10,8 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-var language = require('osfLanguage').Addons.dataverse;
-var osfHelpers = require('osfHelpers');
+var language = require('js/osfLanguage').Addons.dataverse;
+var osfHelpers = require('js/osfHelpers');
 
 function ViewModel(url) {
     var self = this;

@@ -3,9 +3,9 @@
 var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-var waterbutler = require('waterbutler');
+var $osf = require('./osfHelpers');
+var waterbutler = require('./waterbutler');
 
 ko.punches.enableAll();
 
