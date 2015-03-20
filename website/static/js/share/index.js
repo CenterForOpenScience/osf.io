@@ -29,7 +29,7 @@ ShareApp.view = function(ctrl) {
         m('.col-xs-12', [
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
-            ctrl.renderSort(),
+            ctrl.vm.results !== null ? ctrl.renderSort() : [],
             m('.row.searchContent', [
                m('.col-md-2.col-lg-3', [
                     SideBar.view(ctrl.sideBarController)
