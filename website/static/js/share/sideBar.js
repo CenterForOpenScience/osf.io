@@ -9,7 +9,16 @@ SideBar.view = function(ctrl){
         return [];
     }
     return m('', [
-            m('.sidebarHeader', 'Active filters:'),
+            m('.sidebarHeader',  ['Active filters:',
+              (ctrl.vm.optionalFilters.length > 0 || ctrl.vm.requiredFilters.length > 0) ? m('a', {
+                  style: {
+                      'float': 'right'
+                  }, onclick: function(event){
+                      ctrl.vm.optionalFilters = [];
+                      ctrl.vm.requiredFilters = [];
+                      utils.search(ctrl.vm);
+                    }
+              }, ['Clear ', m('i.fa.fa-close')]) : []]),
             m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
             m('.sidebarHeader', 'Providers:'),
             m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
