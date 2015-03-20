@@ -69,11 +69,16 @@ var ViewModel = function(url, selector, filesUrl) {
 ViewModel.prototype.toggleSelect = function() {
     var self = this;
     self.showSelect(!self.showSelect());
+    return self.updateBucketList();
+};
+
+ViewModel.prototype.updateBucketList = function(){
+    var self = this;
     return self.fetchBucketList()
-    .done(function(buckets){
-        self.bucketList(buckets);
-        self.selectedBucket(self.currentBucket());
-    });
+        .done(function(buckets){
+            self.bucketList(buckets);
+            self.selectedBucket(self.currentBucket());
+        });
 };
 
 ViewModel.prototype.selectBucket = function() {
@@ -213,7 +218,7 @@ ViewModel.prototype.createBucket = function(bucketName) {
         self.changeMessage('Successfully created bucket \'' + bucketName + '\'. You can now select it from the drop down list.', 'text-success');
         self.bucketList().push(bucketName);
         if (!self.loadedBucketList()) {
-            self.fetchBucketList();
+            self.updateBucketList();
         }
         self.selectedBucket(bucketName);
         self.selectedBucket();
@@ -295,29 +300,42 @@ ViewModel.prototype.fetchBucketList = function() {
     return ret.promise();
 };
 
-ViewModel.prototype.updateFromData = function(settings) {
+ViewModel.prototype.updateFromData = function(data) {
     var self = this;
-    self.nodeHasAuth(settings.node_has_auth);
-    self.userHasAuth(settings.user_has_auth);
-    self.userIsOwner(settings.user_is_owner);
-    self.ownerName(settings.owner);
-    self.currentBucket(settings.has_bucket ? settings.bucket : 'None');
-    self.loadedSettings(true);
-    if (settings.urls) {
-        self.urls(settings.urls);
+    var ret = $.Deferred();
+    var applySettings = function(settings){
+        self.nodeHasAuth(settings.node_has_auth);
+        self.userHasAuth(settings.user_has_auth);
+        self.userIsOwner(settings.user_is_owner);
+        self.ownerName(settings.owner);
+        self.currentBucket(settings.has_bucket ? settings.bucket : 'None');
+        if (settings.urls) {
+            self.urls(settings.urls);
+        }                
+        ret.resolve();
+    };
+    if (typeof data === 'undefined'){
+        return self.fetchFromServer()
+            .done(applySettings);
     }
+    else {
+        applySettings(data);
+    }
+    return ret.promise();
 };
 
 ViewModel.prototype.fetchFromServer = function() {
     var self = this;
-    return $.ajax({
+    var ret = $.Deferred();
+    $.ajax({
             url: self.url,
             type: 'GET',
             dataType: 'json'
         })
     .done(function(response) {
         var settings = response.result;
-        self.updateFromData(settings);
+        self.loadedSettings(true);
+        ret.resolve(settings);
     })
     .fail(function(xhr, status, error) {
         var message = 'Could not retrieve S3 settings at ' +
@@ -329,7 +347,9 @@ ViewModel.prototype.fetchFromServer = function() {
             textStatus: status,
             error: error
         });
+        ret.reject(xhr, status, error);
     });
+    return ret.promise();
 };
 
 /** Change the flashed message. */
@@ -350,7 +370,7 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 var S3Config = function(selector, url, filesUrl) {
     var viewModel = new ViewModel(url, selector);
     $osf.applyBindings(viewModel, selector, filesUrl);
-    viewModel.fetchFromServer();
+    viewModel.updateFromData();
 };
 
 module.exports = {
