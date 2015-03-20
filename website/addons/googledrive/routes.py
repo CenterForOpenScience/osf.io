@@ -14,7 +14,7 @@ auth_routes = {
 
         Rule(
             ['/oauth/connect/googledrive/'],
-            'post',
+            'get',
             views.auth.googledrive_oauth_start,
             json_renderer,
             endpoint_suffix='_user'

@@ -43,7 +43,7 @@ class TestGoogleDriveAuthViews(OsfTestCase):
         state = 'secure state'
         mock_auth_client_start.return_value = (authorization_url, state)
         res = self.app.post(url)
-        assert_true(res.json['url'], authorization_url)
+        assert_true(res.headers['location'], authorization_url)
 
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.userinfo')
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.finish')
