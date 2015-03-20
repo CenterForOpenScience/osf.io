@@ -99,7 +99,7 @@ Results.controller = function(vm) {
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'source:' + result.source);}}, self.vm.ProviderMap[result.source].short_name)
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'source:' + result.source);}}, self.vm.ProviderMap[result.source].long_name)
                     ])
                 ])
             ]),
