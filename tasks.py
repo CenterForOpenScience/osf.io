@@ -553,7 +553,7 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
-    assets(develop=True, watch=False)
+    assets(dev=True, watch=False)
 
 
 @task
@@ -734,34 +734,34 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, develop=False):
+def webpack(clean=False, watch=False, dev=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and develop:
+    if settings.DEBUG_MODE and dev:
         args += ['--colors']
     else:
         args += ['--progress']
     if watch:
         args += ['--watch']
-    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     run(command, echo=True)
 
 @task()
-def assets(develop=False, watch=False):
+def assets(dev=False, watch=False):
     """Install and build static assets."""
     npm = 'npm install'
-    if not develop:
+    if not dev:
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, develop=develop)
+    webpack(clean=False, watch=watch, dev=dev)
 
 @task
 def generate_self_signed(domain):
