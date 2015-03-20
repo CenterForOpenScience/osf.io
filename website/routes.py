@@ -768,13 +768,13 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/retract_registration/',
             '/project/<pid>/node/<nid>/retract_registration/',
-        ],  'get', project_views.register.node_registration_retraction,
-             OsfWebRenderer('project/retract_registration.mako')),
+        ], 'get', project_views.register.node_registration_retraction,
+            OsfWebRenderer('project/retract_registration.mako')),
         Rule([
             '/project/<pid>/retracted_registration/',
             '/project/<pid>/node/<nid>/retracted_registration/',
-        ],  'get', project_views.register.node_registration_retracted,
-             OsfWebRenderer('project/retracted_registration.mako')),
+        ], 'get', project_views.register.node_registration_retracted,
+            OsfWebRenderer('project/retracted_registration.mako')),
 
         # Statistics
         Rule([

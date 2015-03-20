@@ -18,7 +18,7 @@ from website.project.decorators import (
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.utils import serialize_node
-from website.util.permissions import ADMIN, READ
+from website.util.permissions import ADMIN
 from website.models import MetaSchema
 from website import language
 

@@ -12,7 +12,6 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 
 from website.models import Node
-from website.util import is_json_request
 
 
 def _kwargs_to_nodes(kwargs):
