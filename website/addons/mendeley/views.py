@@ -31,7 +31,12 @@ def mendeley_get_config(auth, node_addon, **kwargs):
     (see serialize_settings/serialize_urls)
     """
     provider = MendeleyCitationsProvider()
-    return provider.serializer(node_addon, auth.user.get_addon('mendeley')).serialized_node_settings
+    return {
+        'result': provider.serializer(
+            node_addon,
+            auth.user.get_addon('mendeley')
+        ).serialized_node_settings
+    }
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')
@@ -50,8 +55,12 @@ def mendeley_set_config(auth, node_addon, **kwargs):
         external_list_name,
         auth,
     )
-    # TODO: Return a more useful response body, e.g. the serialized settings
-    return {}
+    return {
+        'result': provider.serializer(
+            node_addon,
+            auth.user.get_addon('mendeley')
+        ).serialized_node_settings
+    }
 
 @must_have_permission('write')
 @must_have_addon('mendeley', 'node')

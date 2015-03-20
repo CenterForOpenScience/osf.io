@@ -1,3 +1,4 @@
+
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
 import httplib as http
@@ -107,6 +108,7 @@ def serialize_settings(node_settings, current_user, client=None):
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
         'validCredentials': valid_credentials,
         'urls': serialize_urls(node_settings),
+        'canShare': True,
     }
 
     if node_settings.has_auth:

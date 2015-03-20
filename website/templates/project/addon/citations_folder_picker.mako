@@ -32,11 +32,10 @@
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>
-                             {{folder}}
-                    <span data-bind="if: folder().path === null" class="text-muted">
-                        None
+                             {{folderName}}
+                    <span data-bind="if: folder().name === null" class="text-muted">
+                        None             
                     </span>
-
                 </p>
 
                 <!-- Folder buttons -->
