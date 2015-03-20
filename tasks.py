@@ -49,11 +49,6 @@ def rabbitmq():
 
 
 @task
-def redis():
-    run('redis-server', pty=True)
-
-
-@task
 def server():
     from waterbutler.server.app import serve
     serve()
