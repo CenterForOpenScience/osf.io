@@ -693,14 +693,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             return self.parent_node.is_admin_parent(user)
         return False
 
-    def is_ancestor_admin(self, user):
-        if self.parent_node:
-            if self.parent_node.has_permission(user, "admin"):
-                return True
-            else:
-                return self.parent_node.is_ancestor_admin(user)
-        return False
-
     def can_view(self, auth):
         if not auth and not self.is_public:
             return False
@@ -709,7 +701,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.is_public or
             (auth.user and self.has_permission(auth.user, 'read')) or
             auth.private_key in self.private_link_keys_active or
-            self.is_ancestor_admin(auth.user)
+            self.is_admin_parent(auth.user)
         )
 
     def is_expanded(self, user=None):
