@@ -328,6 +328,10 @@ li.pointer {
     overflow-x: hidden;
 }
 
+.comment-actions i {
+    cursor: pointer;
+}
+
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
@@ -347,11 +351,9 @@ li.pointer {
 }
 .edit-comment {
     background-color: #F3F3F3;
-    cursor: pointer;
 }
 
 .comment-body i {
-    cursor: pointer;
     padding-right: 5px;
 }
 
@@ -980,7 +982,7 @@ h1.unavailable {
 .project-page .anchor {
     margin-top: -100px;
     padding-top: 100px;
-    display: block; 
+    display: block;
 }
 
 .anchor {
