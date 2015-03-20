@@ -48,12 +48,13 @@ var entry = {
     'vendor': [
         // Vendor libraries
         'knockout',
+        'knockout.validation',
+        'knockout.punches',
         'moment',
         'bootstrap',
         'bootbox',
         'bootstrap-editable',
         'select2',
-        'knockout-punches',
         'dropzone',
         'knockout-sortable',
         'treebeard',
@@ -89,7 +90,6 @@ var resolve = {
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
     // Need to alias libraries that aren't managed by bower or npm
     alias: {
-        'knockout-punches': staticPath('vendor/knockout-punches/knockout.punches.js'),
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),

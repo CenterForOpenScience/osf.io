@@ -3,7 +3,7 @@
 */
 'use strict';
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 ko.punches.enableAll();
 var $ = require('jquery');
 var Raven = require('raven-js');

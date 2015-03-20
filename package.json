@@ -26,6 +26,7 @@
     "jquery.cookie": "^1.4.1",
     "jstimezonedetect": "^1.0.5",
     "knockout": "~3.2.0",
+    "knockout.punches": "^0.5.1",
     "knockout.validation": "^2.0.2",
     "livedb": "~0.4.8",
     "livedb-mongo": "~0.4.1",

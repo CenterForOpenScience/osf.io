@@ -7,7 +7,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
 require('knockout-mapping');
-require('knockout-punches');
+require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
 

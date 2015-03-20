@@ -8,7 +8,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('bootstrap-editable');
-require('knockout-punches');
+require('knockout.punches');
 ko.punches.enableAll();
 
 $.ajaxSetup({ cache: false });

@@ -1,7 +1,7 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var koHelpers = require('koHelpers');
 var $ = require('jquery');
 var $osf = require('osfHelpers');

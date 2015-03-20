@@ -1,6 +1,6 @@
 'use strict';
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var $osf = require('osfHelpers');
 
@@ -20,7 +20,7 @@ function ViewModel(url) {
 
     // Flashed messages
     self.message = ko.observable('');
-    self.messageClass = ko.observable('text-info')
+    self.messageClass = ko.observable('text-info');
 
     self.init = function() {
         $.ajax({

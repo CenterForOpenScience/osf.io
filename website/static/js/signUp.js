@@ -5,7 +5,7 @@
 
 var ko = require('knockout');
 require('knockout.validation');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 
 var $osf = require('osfHelpers');
