@@ -75,6 +75,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return True
 
+    @property
+    def complete(self):
+        return True
+
     def find_or_create_file_guid(self, path):
         return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
 

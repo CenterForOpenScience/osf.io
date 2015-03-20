@@ -13,20 +13,22 @@ from framework.analytics import get_basic_counters
 
 from website import settings
 from website.app import init_app
-from website.models import User, PrivateLink
+from website.models import User, Node, PrivateLink
 from website.addons.dropbox.model import DropboxUserSettings
 from website.addons.osfstorage.model import OsfStorageFileRecord
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
 
 
-def get_active_users():
-    return User.find(
+def get_active_users(extra=None):
+    query = (
         Q('is_registered', 'eq', True) &
         Q('password', 'ne', None) &
         Q('is_merged', 'ne', True) &
         Q('date_confirmed', 'ne', None)
     )
+    query = query & extra if extra else query
+    return User.find(query)
 
 
 def get_dropbox_metrics():
@@ -46,6 +48,14 @@ def get_dropbox_metrics():
 
 def get_private_links():
     return PrivateLink.find(
+        Q('is_deleted', 'ne', True)
+    )
+
+
+def get_folders():
+    return Node.find(
+        Q('is_folder', 'eq', True) &
+        Q('is_dashboard', 'ne', True) &
         Q('is_deleted', 'ne', True)
     )
 
@@ -129,9 +139,11 @@ def get_log_counts(users):
 
 def main():
     active_users = get_active_users()
+    active_users_invited = get_active_users(Q('is_invited', 'eq', True))
     dropbox_metrics = get_dropbox_metrics()
     extended_profile_counts = profile.get_profile_counts()
     private_links = get_private_links()
+    folders = get_folders()
     downloads_unique, downloads_total = count_file_downloads()
 
     node_counts = count_user_nodes(active_users)
@@ -140,11 +152,13 @@ def main():
 
     rows = [
         ['active-users', active_users.count()],
+        ['active-users-invited', active_users_invited.count()],
         ['dropbox-users-enabled', len(dropbox_metrics['enabled'])],
         ['dropbox-users-authorized', len(dropbox_metrics['authorized'])],
         ['dropbox-users-linked', len(dropbox_metrics['linked'])],
         ['profile-edits', extended_profile_counts['any']],
         ['view-only-links', private_links.count()],
+        ['folders', folders.count()],
         ['downloads-unique', downloads_unique],
         ['downloads-total', downloads_total],
         ['nodes-gte-1', nodes_at_least_1],

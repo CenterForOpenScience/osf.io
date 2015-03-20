@@ -62,9 +62,15 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def folder(self):
-        folder = self.node.get_addon('googledrive').folder_path
-        if folder == '/':
+        addon = self.node.get_addon('googledrive')
+        if not addon:
+            return ''  # Must return a str value this will error out properly later
+
+        folder = addon.folder_path
+
+        if not folder or folder == '/':
             return ''
+
         return '/' + folder
 
     @property
@@ -252,6 +258,10 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    @property
+    def complete(self):
+        return self.has_auth and self.folder_id is not None
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # noqa
-
+from nose.tools import *  # flake8: noqa
+import responses
 import mock
 
 from tests.base import OsfTestCase

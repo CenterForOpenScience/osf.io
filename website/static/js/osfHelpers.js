@@ -297,6 +297,35 @@ ko.bindingHandlers.tooltip = {
     }
 };
 
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements 
+ * Example:
+ * <span data-bind="anchorScroll"></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            var $element = $(element);
+            if(!$item.attr('data-model') && $item.attr('href') !== "#") {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href'),
+                    offset = $(target).offset();
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.height() ) {
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    $(window).scrollTop(offset.top - 100);
+                }
+            }
+        });
+    }
+};
+
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element if it was
