@@ -6,6 +6,8 @@ var $ = require('jquery');
 var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 var waterbutler = require('waterbutler');
+var oop = require('js/oop');
+var Paginator = require('js/paginator');
 
 ko.punches.enableAll();
 
@@ -21,36 +23,35 @@ var Revision = function(data) {
 
 };
 
-var RevisionsViewModel = function(node, path, editable, urls) {
+var RevisionsViewModel = oop.extend(Paginator, {
+    constructor: function(node, path, editable, urls) {
+        var self = this;
+        var sliced = path.split('/');
 
-    var self = this;
-    var sliced = path.split('/');
-
-    self.node = node;
-    self.path = path;
-    self.name = sliced[sliced.length - 1];
-    self.editable = editable;
-    self.urls = urls;
-    self.page = 0;
-    self.more = ko.observable(false);
-    self.revisions = ko.observableArray([]);
-
-};
-
-RevisionsViewModel.prototype.fetch = function() {
-    var self = this;
-    $.getJSON(
-        self.urls.revisions,
-        {page: self.page}
-    ).done(function(response) {
-        self.more(response.more);
-        var revisions = ko.utils.arrayMap(response.revisions, function(item) {
-            return new Revision(item);
+        self.node = node;
+        self.path = path;
+        self.name = sliced[sliced.length - 1];
+        self.editable = editable;
+        self.urls = urls;
+        self.page = 0;
+        self.more = ko.observable(false);
+        self.revisions = ko.observableArray([]);
+    },
+    fetch: function(){
+         var self = this;
+        $.getJSON(
+            self.urls.revisions,
+            {page: self.page}
+        ).done(function(response) {
+            self.more(response.more);
+            var revisions = ko.utils.arrayMap(response.revisions, function(item) {
+                return new Revision(item);
+            });
+            self.revisions(self.revisions().concat(revisions));
+            self.page += 1;
         });
-        self.revisions(self.revisions().concat(revisions));
-        self.page += 1;
-    });
-};
+    }
+});
 
 RevisionsViewModel.prototype.delete = function() {
     var self = this;
