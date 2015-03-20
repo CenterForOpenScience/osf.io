@@ -114,14 +114,17 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         window.open(self.urls().auth);
     },
     treebeardOptions: function(){
-        return {
-            onPickFolder: function(evt, item) {
-                return this.options.onPickFolder.call(this, evt, item);
-            }.bind(this),
-            resolveLazyloadUrl: function(item) {
-                return item.data.urls.folders;
-            }
-        };
+        return $.extend(
+            {}, 
+            this.super.treebeardOptions(),
+            {
+                onPickFolder: function(evt, item) {
+                    return this.options.onPickFolder.call(this, evt, item);
+                }.bind(this),
+                resolveLazyloadUrl: function(item) {
+                    return item.data.urls.folders;
+                }
+            });
     }
 });
 

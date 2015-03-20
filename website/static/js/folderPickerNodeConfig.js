@@ -158,7 +158,7 @@ var FolderPickerViewModel = oop.defclass({
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
             var name = selected.name || 'None';
-            return (userIsOwner && selected) ? name : '';
+            return userIsOwner ? name : '';
         });
     },
     changeMessage: function(text, css, timeout) {
@@ -215,7 +215,6 @@ var FolderPickerViewModel = oop.defclass({
             dataType: 'json'
         });
         request.done(function(response) {
-            console.log("Loaded " + self.addonName + " settings");
             self.loadedSettings(true);
             ret.resolve(response.result);
         });
@@ -253,7 +252,7 @@ var FolderPickerViewModel = oop.defclass({
                 error: error
             });
         }
-        $osf.putJSON(self.urls().config, self._serializeSettings())
+        return $osf.putJSON(self.urls().config, self._serializeSettings())
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     },
@@ -335,10 +334,10 @@ var FolderPickerViewModel = oop.defclass({
             }
         });
     },
-    /**
-     * Must be used to update radio buttons and knockout view model simultaneously
-     */
     cancelSelection: function() {
+        /**
+         * Must be used to update radio buttons and knockout view model simultaneously
+         */
         this.selected(null);
     },
     togglePicker: function() {
@@ -365,7 +364,7 @@ var FolderPickerViewModel = oop.defclass({
                 throw new Error('Subclassess of FolderPickerViewModel must implement an \'onPickFolder(evt, item)\' method');
             },
             resolveLazyloadUrl: function(item) {
-                throw new Error('Subclassess of FolderPickerViewModel must implement an \'resolveLazyLoadUrl(item)\' method');
+                throw new Error('Subclassess of FolderPickerViewModel must implement an \'resolveLazyloadUrl(item)\' method');
             }
         };
     },
