@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 
 from flask import redirect

@@ -176,8 +176,6 @@ class Auth(object):
 
 class User(GuidStoredObject, AddonModelMixin):
 
-    redirect_mode = 'proxy'
-
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',

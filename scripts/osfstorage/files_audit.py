@@ -8,13 +8,17 @@ TODO: Add check against Glacier inventory
 Note: Must have par2 installed to run
 """
 
+from __future__ import division
+
 import os
+import math
 import logging
 
 import pyrax
+import progressbar
+from modularodm import Q
 from boto.glacier.layer2 import Layer2
 from pyrax.exceptions import NoSuchObject
-from modularodm import Q
 
 from website.app import init_app
 from website.addons.osfstorage import model
@@ -31,6 +35,7 @@ vault = None
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('boto').setLevel(logging.CRITICAL)
+
 
 def download_from_cloudfiles(version):
     path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
@@ -59,7 +64,7 @@ def delete_temp_file(version):
 def ensure_glacier(version, dry_run):
     if version.metadata.get('archive'):
         return
-    logger.info('Glacier archive for version {0} not found'.format(version._id))
+    logger.warn('Glacier archive for version {0} not found'.format(version._id))
     if dry_run:
         return
     download_from_cloudfiles(version)
@@ -78,7 +83,7 @@ def check_parity_files(version):
 def ensure_parity(version, dry_run):
     if check_parity_files(version):
         return
-    logger.info('Parity files for version {0} not found'.format(version._id))
+    logger.warn('Parity files for version {0} not found'.format(version._id))
     if dry_run:
         return
     file_path = download_from_cloudfiles(version)
@@ -92,7 +97,6 @@ def ensure_parity(version, dry_run):
 
 def ensure_backups(version, dry_run):
     if version.size == 0:
-        logger.info('Skipping empty version {0}'.format(version._id))
         return
     ensure_glacier(version, dry_run)
     ensure_parity(version, dry_run)
@@ -107,9 +111,15 @@ def get_targets():
 
 
 def main(nworkers, worker_id, dry_run):
+    targets = get_targets()
+    progress_bar = progressbar.ProgressBar(maxval=math.ceil(targets.count() / nworkers))
+    idx = 0
     for version in get_targets():
         if hash(version._id) % nworkers == worker_id:
             ensure_backups(version, dry_run)
+            idx += 1
+            progress_bar.update(idx)
+    progress_bar.finish()
 
 
 if __name__ == '__main__':
@@ -142,7 +152,6 @@ if __name__ == '__main__':
         # Log to file
         if not dry_run:
             scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
-
             main(nworkers, worker_id, dry_run=dry_run)
     except Exception as err:
         logger.error('=== Unexpected Error ===')
