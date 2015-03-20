@@ -153,12 +153,14 @@
                         </div>
                     </div>
                 </div>
-                <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView" class="wiki-panel-body markdown-it-view wiki-panel-body-flex">
-                    % if wiki_content:
-                        ${wiki_content | n}
-                    % else:
-                        <p><em>No wiki content</em></p>
-                    % endif
+                <div id="wikiViewPanel"  class="wiki-panel-body wiki-panel-body-flex">
+                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 215, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+                      % if wiki_content:
+                          ${wiki_content | n}
+                      % else:
+                          <p><em>No wiki content</em></p>
+                      % endif
+                  </div>
                 </div>
               </div>
           </div>

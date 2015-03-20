@@ -28,6 +28,25 @@ class TestFileGuid(OsfTestCase):
             model.FigShareGuidFile().provider
         )
 
+    def test_path_doesnt_crash_without_addon(self):
+        guid = model.FigShareGuidFile(node=self.project, path='/baz/foo/bar')
+        self.project.delete_addon('figshare', Auth(self.user))
+
+        assert_is(self.project.get_addon('figshare'), None)
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
+    def test_path_doesnt_crash_nonconfig_addon(self):
+        guid = model.FigShareGuidFile(node=self.project, path='/baz/foo/bar')
+        self.node_addon.figshare_type = None
+        self.node_addon.figshare_id = None
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
     def test_correct_path_article(self):
         guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
         guid._metadata_cache = {'name': 'shigfare.io'}
@@ -121,6 +140,41 @@ class TestFileGuid(OsfTestCase):
         other, other_created = self.node_addon.find_or_create_file_guid('/4/2')
         assert_false(other_created)
         assert_equal(guid, other)
+
+class TestNodeSettings(OsfTestCase):
+    def setUp(self):
+        super(TestNodeSettings, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.project.add_addon('figshare', auth=Auth(self.user))
+        self.project.creator.add_addon('figshare')
+        self.node_settings = self.project.get_addon('figshare')
+        self.user_settings = self.project.creator.get_addon('figshare')
+        self.user_settings.oauth_access_token = 'legittoken'
+        self.user_settings.oauth_access_token_secret = 'legittoken'
+        self.user_settings.save()
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.figshare_id = '123456'
+        self.node_settings.figshare_type = 'project'
+        self.node_settings.figshare_title = 'singlefile'
+        self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.figshare_id = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
 class TestCallbacks(OsfTestCase):
 
@@ -252,9 +306,10 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    def test_after_remove_contributor_authenticator(self):
+    def test_after_remove_contributor_authenticator_not_self(self):
+        auth = Auth(user=self.non_authenticator)
         msg = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator
+            self.project, self.project.creator, auth
         )
 
         assert_in(
@@ -265,6 +320,22 @@ class TestCallbacks(OsfTestCase):
             self.node_settings.user_settings,
             None
         )
+        assert_in("You can re-authenticate", msg)
+
+    def test_after_remove_contributor_authenticator_self(self):
+        msg = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, self.consolidated_auth
+        )
+
+        assert_in(
+            self.project.title,
+            msg
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            None
+        )
+        assert_not_in("You can re-authenticate", msg)
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()

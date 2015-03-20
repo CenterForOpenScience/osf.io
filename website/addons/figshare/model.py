@@ -22,8 +22,9 @@ class FigShareGuidFile(GuidFile):
 
     @property
     def waterbutler_path(self):
-        if self.node.get_addon('figshare').figshare_type == 'project':
+        if getattr(self.node.get_addon('figshare'), 'figshare_type', None) == 'project':
             return '/{}/{}'.format(self.article_id, self.file_id)
+
         return '/' + str(self.file_id)
 
     @property
@@ -133,6 +134,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     @property
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    @property
+    def complete(self):
+        return self.has_auth and self.figshare_id is not None
 
     @property
     def linked_content(self):
@@ -332,7 +337,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 user=removed.fullname,
             )
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:
@@ -346,11 +351,22 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             self.user_settings = None
             self.save()
 
-            return messages.AFTER_REMOVE_CONTRIBUTOR.format(
-                user=removed.fullname,
-                url=node.url,
-                category=node.project_or_component
+            message = (
+                u'Because the FigShare add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
             )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def before_fork(self, node, user):
         """
