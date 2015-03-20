@@ -27,7 +27,7 @@ var TestSubclassVM = oop.extend(FolderPickerNodeConfigVM, {
     }
 });
 
-var makeFakeData = function(overrides){
+var makeFakeData = function(overrides) {
     var nodeHasAuth = faker.random.number() ? true : false;
     var userHasAuth = faker.random.number() ? true : false;
     var userIsOwner = faker.random.number() ? true : false;
@@ -55,25 +55,23 @@ var makeFakeData = function(overrides){
 
 describe('FolderPickerNodeConfigViewModel', () => {
     var settingsUrl = '/api/v1/12345/addon/config/';
-    var endpoints = [
-        {
-            method: 'GET',
-            url: settingsUrl,
-            response: {
-                result: {
-                    ownerName: faker.name.findName(),
-                    userisOwner: true,
-                    userHasAuth: true,
-                    validCredentials: true,
-                    nodeHasAuth: true,
-                    urls: {
-                        owner: '/abc123/',
-                        config: settingsUrl
-                    }
+    var endpoints = [{
+        method: 'GET',
+        url: settingsUrl,
+        response: {
+            result: {
+                ownerName: faker.name.findName(),
+                userisOwner: true,
+                userHasAuth: true,
+                validCredentials: true,
+                nodeHasAuth: true,
+                urls: {
+                    owner: '/abc123/',
+                    config: settingsUrl
                 }
             }
         }
-    ];
+    }];
 
     var server;
     before(() => {
@@ -86,14 +84,14 @@ describe('FolderPickerNodeConfigViewModel', () => {
 
     describe('ViewModel', () => {
         it('throws an Error if the return value of the Subclassess \'treebeardOptions\' method does not override the default \'resolveLazyloadUrl\'', () => {
-            var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker'); 
+            var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
             assert.throw(broken.treebeardOptions().resolveLazyloadUrl, 'Subclassess of FolderPickerViewModel must implement an \'resolveLazyloadUrl(item)\' method');
         });
         it('throws an Error if the return value of the Subclassess \'treebeardOptions\' method does not override the default \'onPickFolder\'', () => {
-            var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker'); 
+            var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
             assert.throw(broken.treebeardOptions().onPickFolder, 'Subclassess of FolderPickerViewModel must implement an \'onPickFolder(evt, item)\' method');
         });
-        var vm = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker'); 
+        var vm = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
         var hardReset = () => {
             vm = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
         };
@@ -280,15 +278,13 @@ describe('FolderPickerNodeConfigViewModel', () => {
         });
         describe('#fetchFromServer', () => {
             var data = makeFakeData();
-            var endpoints = [
-                {
-                    method: 'GET',
-                    url: settingsUrl,
-                    response: {
-                        result: data
-                    }
+            var endpoints = [{
+                method: 'GET',
+                url: settingsUrl,
+                response: {
+                    result: data
                 }
-            ];
+            }];
             var server;
             before(() => {
                 server = utils.createServer(sinon, endpoints);
@@ -305,14 +301,47 @@ describe('FolderPickerNodeConfigViewModel', () => {
             });
         });
         describe('#submitSettings', () => {
+            var data = makeFakeData();
+            data.urls.view = faker.internet.ip();
             var configUrl = faker.internet.ip();
-            var endpoints = [
-                {
-                    method: 'PUT',
-                    url: configUrl,
-                    response: {}
+            var endpoints = [{
+                method: 'PUT',
+                url: configUrl,
+                response: {
+                    result: data
                 }
-            ];
+            }];
+            var server;
+            before(() => {
+                server = utils.createServer(sinon, endpoints);
+            });
+            after(() => {
+                server.restore();
+            });
+            data.urls.config = configUrl;
+            it('serializes the VM state and sends a PUT request to the \'config\' url passed in settings', (done) => {
+                hardReset();
+                var spy = sinon.spy($osf, 'putJSON');
+                vm.updateFromData(data)
+                    .always(function() {
+                        vm.submitSettings()
+                            .always(function() {
+                                assert.isTrue(
+                                    spy.calledWith(data.urls.config, vm.folder().name.toUpperCase())
+                                );
+                                $osf.putJSON.restore();
+                                done();
+                            });
+                    });
+            });
+        });
+        describe('#_importAuthConfirm', () => {
+            var importAuthUrl = faker.internet.ip();
+            var endpoints = [{
+                method: 'PUT',
+                url: importAuthUrl,
+                response: {}
+            }];
             var server;
             before(() => {
                 server = utils.createServer(sinon, endpoints);
@@ -321,20 +350,23 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 server.restore();
             });
             var data = makeFakeData();
-            data.urls.config = configUrl;
-            it('serializes the VM state and sends a PUT request to the \'config\' url passed in settings', (done) => {
+            data.urls.importAuth = importAuthUrl;
+            it('sends a PUT request to the \'importAuth\' url passed in settings, calls updateFromData with the response, and calls activatePicker', (done) => {
+                assert.isTrue(false); // TODO
                 hardReset();
                 var spy = sinon.spy($osf, 'putJSON');
-                vm.updateFromData(data);
-                vm.submitSettings()
-                    .always(function(){
-                        assert.isTrue(
-                            spy.calledWith(data.urls.config, vm.folder().name.toUpperCase())
-                        );
-                        done();
-                    });
+                vm.updateFromData(data)
+                .always(function() {
+                    vm._importAuthConfirm()
+                        .always(function() {
+                            assert.isTrue(
+                                spy.calledWith(importAuthUrl, {})
+                            );
+                            $osf.putJSON.restore();
+                            done();
+                        });
+                });
             });
-
         });
     });
 });

@@ -101,9 +101,8 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Successfully created a ' + self.addonName + ' Access Token';
             }),
             SUBMIT_SETTINGS_SUCCESS: ko.pureComputed(function() {
-                var overviewURL = window.contextVars.node.urls.web;
                 return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
-                    overviewURL + '">Overview page</a> to view your citations.';
+                    self.urls().view + '">Overview page</a> to view your citations.';
             }),
             SUBMIT_SETTINGS_ERROR: ko.pureComputed(function() {
                 return 'Could not change settings. Please try again later.';
@@ -113,6 +112,9 @@ var FolderPickerViewModel = oop.defclass({
             }),
             CONFIRM_AUTH: ko.pureComputed(function() {
                 return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
+            }),
+            TOKEN_IMPORT_SUCCESS: ko.pureComputed(function() {
+                return 'Successfully imported access token from profile.';
             }),
             TOKEN_IMPORT_ERROR: ko.pureComputed(function() {
                 return 'Error occurred while importing access token.';
@@ -235,7 +237,7 @@ var FolderPickerViewModel = oop.defclass({
     submitSettings: function() {
         /**
          * Send a PUT request to change the linked folder.
-         */        
+         */
         var self = this;
         function onSubmitSuccess(response) {
             // Update folder in ViewModel
