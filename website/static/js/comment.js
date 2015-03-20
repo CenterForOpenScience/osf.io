@@ -205,16 +205,19 @@ BaseComment.prototype.checkFileExists = function() {
         if (comment.page() !== 'files') {
             continue;
         }
-        url  = waterbutler.buildMetadataUrl(comment.title(), comment.provider(), nodeId, {}); // waterbutler url
-        $.ajax({
-            method: 'GET',
-            url: url
-        }).done(function(resp){
-            console.log(resp); // todo change
-        }).fail(function(xhl){
-            console.log('error: '); // todo change
-            console.log(xhl);
-        })
+        (function(comment) {
+            url  = waterbutler.buildMetadataUrl(comment.title(), comment.provider(), nodeId, {}); // waterbutler url
+            $.ajax({
+                method: 'GET',
+                url: url
+            }).done(function(resp){
+                console.log(resp); // todo change
+            }).fail(function(xhl){
+                console.log('error: '); // todo change
+                console.log(xhl);
+                comment.isHidden(true);
+            })
+        })(comment);
     }
 }
 

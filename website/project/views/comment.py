@@ -368,16 +368,11 @@ def list_total_comments_widget(node, auth):
     comments = Comment.find(Q('node', 'eq', node) &
                             Q('is_hidden', 'eq', False) &
                             Q('page', 'ne', 'files')).get_keys()
+    comments.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
     serialized_comments = []
     for cid in comments:
         cmt = Comment.load(cid)
         serialized_comments.append(cmt)
-    files = get_all_files(node)
-    for file_obj in files:
-        for comment in getattr(file_obj, 'comment_target', []):
-            if comment.is_hidden:  # File is already deleted
-                break
-            serialized_comments.append(comment)
     serialized_comments.sort(
         key=lambda item: item.date_created,
         reverse=False
@@ -399,13 +394,13 @@ def list_total_comments(node, auth, page):
         comments = Comment.find(Q('node', 'eq', node) &
                                 Q('page', 'eq', page) &
                                 Q('is_hidden', 'eq', False)).get_keys()
+    if page in ('total', 'files'):
+        comments.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
     serialized_comments = []
     for cid in comments:
         cmt = Comment.load(cid)
         if not isinstance(cmt.target, Comment):
             serialized_comments.append(cmt)
-    if page in ('total', 'files'):
-        serialized_comments.extend(get_files_comments(node))
     serialized_comments = [
         serialize_comment(comment, auth, anonymous)
         for comment in serialized_comments
@@ -416,17 +411,6 @@ def list_total_comments(node, auth, page):
         reverse=False,
     )
     return serialized_comments
-
-
-def get_files_comments(node):
-    comments = []
-    files = get_all_files(node)
-    for file_obj in files:
-        for comment in getattr(file_obj, 'commented', []):
-            if comment.is_hidden:  # File is already deleted
-                break
-            comments.append(comment)
-    return comments
 
 
 @must_be_logged_in
