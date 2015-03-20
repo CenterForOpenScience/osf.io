@@ -34,17 +34,17 @@ function defclass(prototype) {
 /**
  * Usage:
  *
- *     var Person = extend(Animal, {
- *         constructor: function(name) {
- *             this.super.constructor(name);
- *             this.name = name || 'Steve';
- *         }
- *     });
+ *  var Person = extend(Animal, {
+ *      constructor: function(name) {
+ *          this.super.constructor.call(name);
+ *          this.name = name || 'Steve';
+ *      }
+ *  });
  */
-function extend(constructor, sub) {
-    var prototype = Object.create(constructor.prototype);
+function extend(cls, sub) {
+    var prototype = Object.create(cls.prototype);
     for (var key in sub) { prototype[key] = sub[key]; }
-    prototype.super = constructor.prototype;
+    prototype.super = cls.prototype;
     return defclass(prototype);
 }
 
