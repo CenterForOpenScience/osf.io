@@ -195,31 +195,22 @@ BaseComment.prototype.submitReply = function() {
 
 
 var mapJS = function(data, parent) {
-    //console.log(parent);
     for (var key in data) {
         if (data[key] !== null && typeof data[key] === 'object') {
-            console.log(parent[key]);
             if (typeof parent[key] === "undefined") {
                 parent[key] = {};
                 for (var subkey in data[key]) {
-                    //console.log("a");
                     parent[key][subkey] = ko.observable(data[key][subkey]);
                 }
             } else {
                 for (var subkey in data[key]) {
-                    //console.log("b");
                     parent[key][subkey](data[key][subkey]);
                 }
             }
-        } else if (data[key] !== null) {
-            //console.log(key + ": " + data[key]);
+        } else {
             parent[key] = ko.observable(data[key]);
         }
-        console.log(parent[key]);
     }
-    //console.log("******************");
-    //console.log(data);
-    //console.log(parent);
 };
 /*
     *
@@ -234,12 +225,10 @@ var CommentModel = function(data, $parent, $root) {
     self.$root = $root;
 
     mapJS(data, self);
-    //console.log(self);
 
     //$.extend(self, ko.mapping.fromJS(data));
     //self.dateCreated(data.dateCreated);
     //self.dateModified(data.dateModified);
-    //console.log(self);
 
     self.prettyDateCreated = ko.computed(function() {
         return relativeDate(self.dateCreated());
