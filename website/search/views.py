@@ -14,13 +14,21 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Node
 from website.models import User
+from website.search import util
+from website.util import api_url_for
 from website.search import exceptions
+from website.search import share_search
 import website.search.search as search
 from framework.exceptions import HTTPError
+from website.search.exceptions import IndexNotFoundError
+from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
 
+
 logger = logging.getLogger(__name__)
+
+RESULTS_PER_PAGE = 250
 
 
 def handle_search_errors(func):
@@ -221,6 +229,46 @@ def search_share_stats():
     query = build_query(q, 0, 0) if q else {}
 
     return search.share_stats(query=query)
+
+
+def search_share_atom(**kwargs):
+    q = request.args.get('q', '*')
+    sort = request.args.get('sort', 'dateUpdated')
+
+    # we want the results per page to be constant between pages
+    # TODO -  move this functionality into build_query in util
+
+    try:
+        page = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
+    except ValueError:
+        page = 1
+
+    if page < 1:
+        page = 1
+
+    query = build_query(q, size=RESULTS_PER_PAGE, start=page, sort=sort)
+
+    try:
+        search_results = search.search_share(query)
+    except MalformedQueryError:
+        raise HTTPError(http.BAD_REQUEST)
+    except IndexNotFoundError:
+        search_results = {
+            'count': 0,
+            'results': []
+        }
+
+    atom_url = api_url_for('search_share_atom', _xml=True, _absolute=True)
+
+    return util.create_atom_feed(
+        name='SHARE',
+        data=search_results['results'],
+        query=q,
+        size=RESULTS_PER_PAGE,
+        start=page,
+        url=atom_url,
+        to_atom=share_search.to_atom
+    )
 
 
 def search_share_providers():

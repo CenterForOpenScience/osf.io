@@ -200,8 +200,6 @@ class AddonConfig(object):
 
 class GuidFile(GuidStoredObject):
 
-    redirect_mode = 'proxy'
-
     _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
@@ -625,6 +623,13 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     _meta = {
         'abstract': True,
     }
+
+    @property
+    def complete(self):
+        """Whether or not this addon is properly configured
+        :rtype bool:
+        """
+        raise NotImplementedError()
 
     @property
     def has_auth(self):

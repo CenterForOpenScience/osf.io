@@ -176,8 +176,6 @@ class Auth(object):
 
 class User(GuidStoredObject, AddonModelMixin):
 
-    redirect_mode = 'proxy'
-
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
@@ -210,18 +208,14 @@ class User(GuidStoredObject, AddonModelMixin):
     username = fields.StringField(required=False, unique=True, index=True)
     password = fields.StringField()
     fullname = fields.StringField(required=True, validate=string_required)
-    is_registered = fields.BooleanField()
+    is_registered = fields.BooleanField(index=True)
 
-    # TODO: Migrate unclaimed users to the new style, then remove this attribute
-    # Note: No new users should be created where is_claimed is False.
-    #   As of 9 Sep 2014, there were 331 legacy unclaimed users in the system.
-    #   When those users are migrated to the new style, this attribute should be
-    #   removed.
-    is_claimed = fields.BooleanField()
+    is_claimed = fields.BooleanField(default=False, index=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
     security_messages = fields.DictionaryField()
+    is_invited = fields.BooleanField(default=False, index=True)
 
     # Per-project unclaimed user data:
     # Format: {
@@ -237,7 +231,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # TODO: add validation
     unclaimed_records = fields.DictionaryField(required=False)
     # The user who merged this account
-    merged_by = fields.ForeignField('user', default=None, backref="merged")
+    merged_by = fields.ForeignField('user', default=None, backref='merged', index=True)
     #: Verification key used for resetting password
     verification_key = fields.StringField()
     emails = fields.StringField(list=True)
@@ -256,7 +250,7 @@ class User(GuidStoredObject, AddonModelMixin):
     mailing_lists = fields.DictionaryField()
 
     aka = fields.StringField(list=True)
-    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow)
+    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow, index=True)
     # Watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
@@ -315,10 +309,10 @@ class User(GuidStoredObject, AddonModelMixin):
 
     date_last_login = fields.DateTimeField()
 
-    date_confirmed = fields.DateTimeField()
+    date_confirmed = fields.DateTimeField(index=True)
 
     # When the user was disabled.
-    date_disabled = fields.DateTimeField()
+    date_disabled = fields.DateTimeField(index=True)
 
     # Format: {
     #   'node_id': 'timestamp'
@@ -338,19 +332,17 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
-        """Creates a new unregistered user.
-
-        :raises: DuplicateEmailError if a user with the given email address
-            is already in the database.
+        """Create a new unregistered user.
         """
         user = cls(
             username=email,
             fullname=fullname,
+            is_invited=True,
+            is_registered=False,
         )
         user.update_guessed_names()
         if email:
             user.emails.append(email)
-        user.is_registered = False
         return user
 
     @classmethod

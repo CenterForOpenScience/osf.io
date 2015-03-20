@@ -1,14 +1,19 @@
+from __future__ import unicode_literals
+
 from time import gmtime
 from calendar import timegm
 from datetime import datetime
 
+import pytz
+
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 from elasticsearch import Elasticsearch
 
 from website import settings
 
-from util import generate_color
+from util import generate_color, illegal_unicode_replace
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
@@ -243,3 +248,39 @@ def data_for_charts(elastic_results):
     }
 
     return all_data
+
+
+def to_atom(result):
+    return {
+        'title': illegal_unicode_replace(result.get('title')) or 'No title provided.',
+        'summary': illegal_unicode_replace(result.get('description')) or 'No summary provided.',
+        'id': result['id']['url'],
+        'updated': get_date_updated(result),
+        'links': [
+            {'href': result['id']['url'], 'rel': 'alternate'}
+        ],
+        'author': format_contributors_for_atom(result['contributors']),
+        'categories': [{"term": illegal_unicode_replace(tag)} for tag in result.get('tags')],
+        'published': parse(result.get('dateUpdated'))
+    }
+
+
+def format_contributors_for_atom(contributors_list):
+    return [
+        {
+            'name': '{} {}'.format(
+                illegal_unicode_replace(entry['given']),
+                illegal_unicode_replace(entry['family'])
+            )
+        }
+        for entry in contributors_list
+    ]
+
+
+def get_date_updated(result):
+    try:
+        updated = pytz.utc.localize(parse(result.get('dateUpdated')))
+    except ValueError:
+        updated = parse(result.get('dateUpdated'))
+
+    return updated

@@ -19,11 +19,14 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
 from tests.test_features import requires_piwik
+from tests.test_addons import assert_urls_equal
 from website import settings, language
+from website.addons.twofactor.tests import _valid_code
 from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.util import web_url_for
+from website.addons.twofactor.tests import _valid_code
 
 
 class TestDisabledUser(OsfTestCase):
@@ -89,6 +92,73 @@ class TestAnUnregisteredUser(OsfTestCase):
             'You must log in to access this resource',
             res,
         )
+
+
+class TestTwoFactor(OsfTestCase):
+
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def setUp(self, mock_push_message):
+        super(TestTwoFactor, self).setUp()
+        self.user = UserFactory()
+        self.user.set_password('science')
+        self.user.save()
+
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+    def test_user_with_two_factor_redirected_to_two_factor_page(self):
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills in log in form with correct username/password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+
+        assert_equal(web_url_for('two_factor'), res.request.path)
+        assert_equal(res.status_code, 200)
+
+    def test_user_with_2fa_failure(self):
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills in log in form with correct username/password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        # Fills in 2FA form with incorrect two factor code
+        form = res.forms['twoFactorSignInForm']
+        form['twoFactorCode'] = 0000000
+        # Submits
+        res = form.submit(expect_errors=True)
+
+        assert_equal(web_url_for('two_factor'), res.request.path)
+        assert_equal(res.status_code, 401)
+
+    def test_user_with_2fa_success(self):
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills in log in form with correct username/password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        # Fills in 2FA form with incorrect two factor code
+        form = res.forms['twoFactorSignInForm']
+        form['twoFactorCode'] = _valid_code(self.user_settings.totp_secret)
+        res = form.submit()
+        res.follow()
+
+        assert_urls_equal(web_url_for('dashboard'), res.location)
+        assert_equal(res.status_code, 302)
 
 
 class TestAUser(OsfTestCase):
@@ -203,7 +273,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills the form with correct password
-        form  = res.forms['signinForm']
+        form = res.forms['signinForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -212,6 +282,34 @@ class TestAUser(OsfTestCase):
         res = self.app.get(web_url_for('dashboard'))
         assert_equal(res.status_code, 302)
         assert_in(web_url_for('auth_login'), res.location)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def test_is_redirected_to_dashboard_after_two_factor_login(self, mock_push_message):
+        # User attempts to access resource after login page but before two factor authentication
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills the form with correct password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        # Fills the form with the correct 2FA code
+        form = res.forms['twoFactorSignInForm']
+        form['twoFactorCode'] = _valid_code(self.user_settings.totp_secret)
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, web_url_for('dashboard'))
 
     def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
         res = self._login(self.user.username, 'science')

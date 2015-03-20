@@ -1,3 +1,5 @@
+'use strict';
+
 var ko = require('knockout');
 require('knockout-punches');
 var $ = require('jquery');
@@ -272,10 +274,10 @@ CitationsFolderPickerViewModel.prototype.submitSettings = function() {
         self.changeMessage(self.messages.SUBMIT_SETTINGS_ERROR(), 'text-danger');
     }
 
-
     $osf.putJSON(self.urls().config, {
             external_account_id: self.userAccountId(),
-            external_list_id: self.selected().id
+            external_list_id: self.selected().id,
+            external_list_name: self.selected().name
         })
         .done(onSubmitSuccess)
         .fail(onSubmitError);
