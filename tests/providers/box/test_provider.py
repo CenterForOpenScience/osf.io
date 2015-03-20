@@ -456,3 +456,41 @@ class TestRevisions:
         assert result == expected
         assert aiohttpretty.has_call(method='GET', uri=file_url)
         assert aiohttpretty.has_call(method='GET', uri=revisions_url)
+
+
+class TestCreateFolder:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_must_be_folder(self, provider):
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder('/Just a poor file from a poor folder')
+        assert e.value.code == 400
+        assert e.value.message == 'Path must be a directory'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_already_exists(self, provider):
+        path = BoxPath('/50 shades of nope/')
+        url = provider.build_url('folders')
+        aiohttpretty.register_json_uri('POST', url, status=409)
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 409
+        assert e.value.message == 'Folder "/{}/50 shades of nope/" already exists.'.format(provider.folder)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_returns_metadata(self, provider, folder_object_metadata):
+        path = BoxPath('/50 shades of nope/')
+        folder_object_metadata['name'] = '50 shades of nope'
+        url = provider.build_url('folders')
+        aiohttpretty.register_json_uri('POST', url, status=201, body=folder_object_metadata)
+
+        resp = yield from provider.create_folder(str(path))
+
+        assert resp['kind'] == 'folder'
+        assert resp['name'] == '50 shades of nope'
+        assert resp['path'] == '/{}/'.format(folder_object_metadata['id'])

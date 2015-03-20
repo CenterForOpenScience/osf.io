@@ -622,3 +622,73 @@ class TestMetadata:
     # def test_metadata_non_root_folder(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
     # def test_metadata_non_root_folder_branch(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
     # def test_metadata_non_root_folder_commit_sha(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
+
+
+class TestCreateFolder:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_errors_out(self, provider):
+        path = GitHubPath('/Imarealboy/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_uri('PUT', url, status=400)
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 400
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_must_be_folder(self, provider):
+        path = GitHubPath('/Imarealboy')
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_already_exists(self, provider):
+        path = GitHubPath('/Imarealboy/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_json_uri('PUT', url, status=422, body={
+            'message': 'Invalid request.\n\n"sha" wasn\'t supplied.'
+        })
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 409
+        assert e.value.message == 'Folder "/Imarealboy/" already exists.'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_raises_other_422(self, provider):
+        path = GitHubPath('/Imarealboy/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_json_uri('PUT', url, status=422, body={
+            'message': 'github no likey'
+        })
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 422
+        assert e.value.data == {'message': 'github no likey'}
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_returns_metadata(self, provider, create_folder_response):
+        path = GitHubPath('/i/like/trains/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_json_uri('PUT', url, status=201, body=create_folder_response)
+
+        metadata = yield from provider.create_folder(str(path))
+
+        assert metadata['kind'] == 'folder'
+        assert metadata['name'] == 'trains'
+        assert metadata['path'] == '/i/like/trains/'
