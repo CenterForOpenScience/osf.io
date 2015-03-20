@@ -224,8 +224,6 @@ class AddonConfig(object):
 
 class GuidFile(GuidStoredObject):
 
-    redirect_mode = 'proxy'
-
     _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)

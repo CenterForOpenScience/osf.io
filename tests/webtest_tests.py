@@ -26,6 +26,7 @@ from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.util import web_url_for
+from website.addons.twofactor.tests import _valid_code
 
 
 class TestDisabledUser(OsfTestCase):
@@ -283,6 +284,32 @@ class TestAUser(OsfTestCase):
         assert_in(web_url_for('auth_login'), res.location)
         res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 401)
+
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def test_is_redirected_to_dashboard_after_two_factor_login(self, mock_push_message):
+        # User attempts to access resource after login page but before two factor authentication
+        self.user.add_addon('twofactor')
+        self.user_settings = self.user.get_addon('twofactor')
+        self.user_settings.is_confirmed = True
+        self.user_settings.save()
+
+        # Goes to log in page
+        res = self.app.get(web_url_for('auth_login'))
+        # Fills the form with correct password
+        form  = res.forms['signinForm']
+        form['username'] = self.user.username
+        form['password'] = 'science'
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        # Fills the form with the correct 2FA code
+        form = res.forms['twoFactorSignInForm']
+        form['twoFactorCode'] = _valid_code(self.user_settings.totp_secret)
+        # Submits
+        res = form.submit()
+        res = res.follow()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, web_url_for('dashboard'))
 
     def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
         res = self._login(self.user.username, 'science')
