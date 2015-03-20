@@ -115,8 +115,7 @@ var maybeQuashEvent = function(event) {
 };
 
 var updateFilter = function(vm, filter, required){
-    required = required || false;
-    if (required === true && vm.requiredFilters.indexOf(filter) === -1){
+    if (required && vm.requiredFilters.indexOf(filter) === -1){
         vm.requiredFilters.push(filter);
     } else if (vm.optionalFilters.indexOf(filter) === -1){
         vm.optionalFilters.push(filter);

@@ -74,7 +74,7 @@ SideBar.controller = function(vm) {
                     'type': 'checkbox',
                     'checked': (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1),
                     onclick: function(cb){
-                        if (cb.target.checked == true){
+                        if (cb.target.checked){
                             utils.updateFilter(self.vm, 'source:' + result.short_name);
                         } else {
                             utils.removeFilter(self.vm, 'source:' + result.short_name);
