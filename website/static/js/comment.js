@@ -270,10 +270,18 @@ BaseComment.prototype.submitReply = function() {
         }
         self.replyErrorMessage('');
         // Update discussion in case we aren't already in it
-        // TODO: This can lead to unnecessary API calls; fix this
-        //if (!self.$root.commented()) {
-        //    self.$root.fetchDiscussion();
-        //}
+        var hasCommented = false;
+        var discussion = self.$root.discussion();
+        for (var i in discussion) {
+            if (discussion[i].id == response.comment.id) {
+                hasCommented = true;
+                break;
+            }
+        }
+        if (!hasCommented) {
+            self.$root.discussionByRecency.shift(response.comment.author());
+            self.$root.discussionByFrequency.push(response.comment.author());
+        }
         self.onSubmitSuccess(response);
         if (self.level >= self.MAXLEVEL) {
             window.location.href = nodeUrl + 'discussions/' + self.id();

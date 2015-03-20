@@ -98,7 +98,7 @@ def view_comments_single(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     comment = kwargs_to_comment(kwargs)
-    serialized_comment = serialize_comment(comment, auth)
+    serialized_comment = serialize_comment(comment, node, auth)
 
     from website.addons.wiki.model import NodeWikiPage
 
@@ -189,7 +189,7 @@ def serialize_discussion(node, user, num, anonymous=False):
     }
 
 
-def serialize_comment(comment, auth, anonymous=False):
+def serialize_comment(comment, node, auth, anonymous=False):
     from website.addons.wiki.model import NodeWikiPage
 
     if isinstance(comment.root_target, NodeWikiPage):
@@ -204,20 +204,7 @@ def serialize_comment(comment, auth, anonymous=False):
         title = ''
     return {
         'id': comment._id,
-        'author': {
-            'id': privacy_info_handle(comment.user._id, anonymous),
-            'url': privacy_info_handle(comment.user.url, anonymous),
-            'name': privacy_info_handle(
-                comment.user.fullname, anonymous, name=True
-            ),
-            'gravatarUrl': privacy_info_handle(
-                gravatar(
-                    comment.user, use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_DISCUSSION
-                ),
-                anonymous
-            ),
-        },
+        'author': serialize_discussion(node, comment.user, 0, anonymous),
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
         'page': comment.page or 'node',
@@ -299,7 +286,7 @@ def add_comment(**kwargs):
             notify(uid=target.user._id, event='comment_replies', **context)
 
     return {
-        'comment': serialize_comment(comment, auth)
+        'comment': serialize_comment(comment, node, auth)
     }, http.CREATED
 
 
@@ -340,7 +327,7 @@ def list_comments(auth, **kwargs):
 
     ret = {
         'comments': [
-            serialize_comment(comment, auth, anonymous)
+            serialize_comment(comment, node, auth, anonymous)
             for comment in comments
         ],
         'nUnread': n_unread
@@ -395,6 +382,7 @@ def list_total_comments(node, auth, page):
 @must_be_contributor_or_public
 def edit_comment(**kwargs):
     auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
 
     comment = kwargs_to_comment(kwargs, owner=True)
 
@@ -411,7 +399,7 @@ def edit_comment(**kwargs):
         save=True
     )
 
-    return serialize_comment(comment, auth)
+    return serialize_comment(comment, node, auth)
 
 
 @must_be_logged_in

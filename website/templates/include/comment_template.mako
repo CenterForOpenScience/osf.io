@@ -51,10 +51,10 @@
                             <img data-bind="attr: {src: author.gravatarUrl}"/>
                         </span>
                         <span data-bind="if: author.id">
-                            <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
+                            <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.url}"></a>
                         </span>
                         <span data-bind="ifnot: author.id">
-                            <span class="comment-author" data-bind="text: author.name"></span>
+                            <span class="comment-author" data-bind="text: author.fullname"></span>
                         </span>
                         <span data-bind="if: mode !== 'pane'">
                             <a class="comment-author" data-bind="attr: {href: targetUrl()}, text: cleanTitle"></a>
