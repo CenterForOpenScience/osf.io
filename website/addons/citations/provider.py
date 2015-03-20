@@ -142,7 +142,7 @@ class CitationsProvider(object):
                         node_settings=node_addon,
                         user_settings=user.get_addon(self.provider_name),
                     ).serialize_citation(each)
-                    for each in node_addon.api.get_list(list_id)
+                    for each in citations
                 ]
                 if self.next_is_truthy(next_page):
                     self.add_show_more(node_addon, contents, list_id, next_page)
