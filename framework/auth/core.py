@@ -240,6 +240,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
     # }
+    # See also ``unconfirmed_emails``
     email_verifications = fields.DictionaryField()
 
     # Format: {
@@ -341,8 +342,6 @@ class User(GuidStoredObject, AddonModelMixin):
             is_registered=False,
         )
         user.update_guessed_names()
-        if email:
-            user.emails.append(email)
         return user
 
     @classmethod
@@ -361,7 +360,7 @@ class User(GuidStoredObject, AddonModelMixin):
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_email_verification(username)
+        user.add_unconfirmed_email(username)
         user.is_registered = False
         return user
 
@@ -541,13 +540,28 @@ class User(GuidStoredObject, AddonModelMixin):
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 
-    def add_email_verification(self, email, expiration=None):
+    def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
         token = generate_confirm_token()
 
         self.email_verifications[token] = {'email': email.lower()}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
+
+    def remove_unconfirmed_emails(self, *args):
+        """Remove one or more unconfirmed email addresses and their tokens."""
+        emails_to_remove = set(args)
+        removed_emails = []
+        tokens = []
+        for token, value in self.email_verifications.iteritems():
+            if value.get('email') in emails_to_remove:
+                removed_emails.append(value.get('email'))
+                tokens.append(token)
+
+        for token in tokens:
+            del self.email_verifications[token]
+
+        return removed_emails
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
@@ -565,7 +579,7 @@ class User(GuidStoredObject, AddonModelMixin):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
                     else:
-                        new_token = self.add_email_verification(email)
+                        new_token = self.add_unconfirmed_email(email)
                         self.save()
                         return new_token
                 return token
@@ -625,6 +639,14 @@ class User(GuidStoredObject, AddonModelMixin):
             return True
         else:
             return False
+
+    @property
+    def unconfirmed_emails(self):
+        return [
+            each['email']
+            for each
+            in self.email_verifications.values()
+        ]
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a

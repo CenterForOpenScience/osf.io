@@ -15,6 +15,7 @@ from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
+from framework.auth.views import send_confirm_email
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -85,20 +86,48 @@ def update_user(auth):
     data = request.get_json()
 
     # TODO: Expand this to support other user attributes
-    if 'timezone' in data:
-        if data['timezone']:
-            user.timezone = data['timezone']
+    if 'emails' in data:
+        removed_emails = [
+            each
+            for each in user.emails + user.unconfirmed_emails
+            if each not in [x['address'] for x in data['emails']]
+        ]
+
+        for address in removed_emails:
+            if address in user.emails:
+                user.emails.remove(address)
+            user.remove_unconfirmed_emails(address)
+
+
+        added_emails = [
+            each['address']
+            for each in data['emails']
+            if each['address'] not in user.emails
+            and each['address'] not in user.unconfirmed_emails
+        ]
+
+        for address in added_emails:
+            user.add_unconfirmed_email(address)
+            # TODO: This setting is now named incorrectly.
+            if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                send_confirm_email(user, email=address)
+
+
     if 'locale' in data:
         if data['locale']:
             locale = data['locale'].replace('-', '_')
             user.locale = locale
+    if 'timezone' in data:
+        if data['timezone']:
+            user.timezone = data['timezone']
 
     user.save()
 
-    return {}
+    return _profile_view(user)
 
 
-def _profile_view(profile, is_profile):
+
+def _profile_view(profile, is_profile=False):
     # TODO: Fix circular import
     from website.addons.badges.util import get_sorted_user_badges
 

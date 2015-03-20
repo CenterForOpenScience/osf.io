@@ -2449,7 +2449,7 @@ class TestAuthViews(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
-        self.user.add_email_verification(self.user.username)
+        self.user.add_unconfirmed_email(self.user.username)
         self.user.save()
         self.app.post('/resend/', {'email': self.user.username})
         assert_true(send_mail.called)
@@ -2463,7 +2463,7 @@ class TestAuthViews(OsfTestCase):
     def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
         expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
         random_string.return_value = '12345'
-        self.user.add_email_verification(self.user.username, expiration=expiration)
+        self.user.add_unconfirmed_email(self.user.username, expiration=expiration)
         self.user.save()
 
         self.app.post('/resend/', {'email': self.user.username})

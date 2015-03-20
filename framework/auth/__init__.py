@@ -165,24 +165,11 @@ def register_unconfirmed(username, password, fullname):
             fullname=fullname)
         user.save()
     elif not user.is_registered:  # User is in db but not registered
-        user.add_email_verification(username)
+        user.add_unconfirmed_email(username)
         user.set_password(password)
         user.fullname = fullname
         user.update_guessed_names()
         user.save()
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
-    return user
-
-
-def register(username, password, fullname):
-    user = get_user(username=username)
-    if not user:
-        user = User.create_unconfirmed(
-            username=username, password=password, fullname=fullname
-        )
-    user.registered = True
-    user.date_confirmed = user.date_registered
-    user.emails.append(username)
-    user.save()
     return user

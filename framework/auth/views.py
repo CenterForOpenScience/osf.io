@@ -193,17 +193,22 @@ def confirm_email_get(**kwargs):
     methods: GET
     """
     user = User.load(kwargs['uid'])
+    is_initial_confirmation = not user.date_confirmed
     token = kwargs['token']
-    if user:
-        if user.confirm_email(token):  # Confirm and register the user
+    if user and user.confirm_email(token):  # Confirm and register the user
+
+        if is_initial_confirmation:
             user.date_last_login = datetime.datetime.utcnow()
             user.save()
 
             # Go to settings page
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
             response = redirect('/settings/')
+        else:
+            status.push_status_message(language.CONFIRMED_EMAIL, 'success')
+            response = redirect(web_url_for('user_account'))
 
-            return framework.auth.authenticate(user, response=response)
+        return framework.auth.authenticate(user, response=response)
     # Return data for the error template
     return {
         'code': http.BAD_REQUEST,

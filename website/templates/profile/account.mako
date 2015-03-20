@@ -5,39 +5,62 @@
 
 <%def name="content()">
     <% from website import settings %>
-    <h2 class="page-header">Account Settings</h2>
-    <div class="row">
-        <div class="col-md-3">
-            <div class="panel panel-default">
-                <ul class="nav nav-stacked nav-pills">
-                    <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
-                    <li><a href="#">Account Settings</a></li>
-                    <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                    <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                </ul>
+    <div id="accountSettings">
+        <h2 class="page-header">Account Settings</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="panel panel-default">
+                    <ul class="nav nav-stacked nav-pills">
+                        <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
+                        <li><a href="#">Account Settings</a></li>
+                        <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
+                        <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
+                    </ul>
+                </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div id="changePassword" class="panel panel-default">
-                <div class="panel-heading"><h3 class="panel-title">Change Password</h3></div>
-                <div class="panel-body">
-                    <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
-                        <div class="form-group">
-                            <label for="old-password">Old password</label>
-                            <input type="password" class="form-control" name="old_password">
-                        </div>
-                        <div class="form-group">
-                            <label for="password">New password</label>
-                            <input type="password" class="form-control" name="new_password">
-                        </div>
-                        <div class="form-group">
-                            <label for="password2">Confirm new password</label>
-                            <input type="password" class="form-control" name="confirm_password">
-                        </div>
-                        <button type="submit" class="btn btn-default">Update password</button>
-                    </form>
+            <div class="col-md-6">
+                <div id="connectedEmails" class="panel panel-default">
+                    <div class="panel-heading"><h3 class="panel-title">Connected Emails</h3></div>
+                    <div class="panel-body">
+                        <ul data-bind="foreach: emails()">
+                            <li>
+                                {{ address }}
+                                <!-- ko if: isPrimary() -->
+                                    <em>(primary)</em>
+                                <!-- /ko -->
+                                <!-- ko if: !isConfirmed() -->
+                                    <em>(unconfirmed)</em>
+                                <!-- /ko -->
+                                <!-- ko if: !isPrimary() -->
+                                    <a data-bind="click: $root.removeEmail">Remove</a>
+                                <!-- /ko -->
+                            </li>
+                        </ul>
+                        <input type="text" data-bind="value: emailInput"><a data-bind="click: addEmail" class="btn btn-primary">Add</a>
+                    </div>
+                </div>
+                <div id="changePassword" class="panel panel-default">
+                    <div class="panel-heading"><h3 class="panel-title">Change Password</h3></div>
+                    <div class="panel-body">
+                        <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
+                            <div class="form-group">
+                                <label for="old-password">Old password</label>
+                                <input type="password" class="form-control" name="old_password">
+                            </div>
+                            <div class="form-group">
+                                <label for="password">New password</label>
+                                <input type="password" class="form-control" name="new_password">
+                            </div>
+                            <div class="form-group">
+                                <label for="password2">Confirm new password</label>
+                                <input type="password" class="form-control" name="confirm_password">
+                            </div>
+                            <button type="submit" class="btn btn-default">Update password</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    <script src=${"/static/public/js/profile-account-settings-page.js" | webpack_asset}></script>
 </%def>

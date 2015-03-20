@@ -226,7 +226,7 @@ class TestUser(OsfTestCase):
         assert_false(u.is_registered)
         assert_false(u.is_claimed)
         assert_true(u.is_invited)
-        assert_true(email in u.emails)
+        assert_false(email in u.emails)
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
@@ -311,28 +311,28 @@ class TestUser(OsfTestCase):
             u.save()
 
     @mock.patch('website.security.random_string')
-    def test_add_email_verification(self, random_string):
+    def test_add_unconfirmed_email(self, random_string):
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
         assert_equal(len(u.email_verifications.keys()), 0)
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         assert_equal(len(u.email_verifications.keys()), 1)
         assert_equal(u.email_verifications[token]['email'], 'foo@bar.com')
 
     @mock.patch('website.security.random_string')
-    def test_add_email_verification_adds_expiration_date(self, random_string):
+    def test_add_unconfirmed_email_adds_expiration_date(self, random_string):
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
-        u.add_email_verification(u.username)
+        u.add_unconfirmed_email(u.username)
         assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
         random_string.return_value = '12345'
         u = UserFactory()
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
@@ -340,7 +340,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with assert_raises(ExpiredTokenError):
             u.get_confirmation_token('foo@bar.com')
@@ -351,7 +351,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
         with assert_raises(ExpiredTokenError):
@@ -366,7 +366,7 @@ class TestUser(OsfTestCase):
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
         u = UserFactory()
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
 
@@ -374,7 +374,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with assert_raises(ExpiredTokenError):
             u.get_confirmation_url('foo@bar.com')
@@ -385,7 +385,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
         with assert_raises(ExpiredTokenError):
@@ -401,7 +401,7 @@ class TestUser(OsfTestCase):
         u = UserFactory.build(username='foo@bar.com')
         u.is_registered = False
         u.is_claimed = False
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         u.save()
         token = u.get_confirmation_token('foo@bar.com')
         confirmed = u.confirm_email(token)
@@ -418,7 +418,7 @@ class TestUser(OsfTestCase):
             is_registered=False,
             date_confirmed=None
         )
-        u.add_email_verification('LetsGetTacos@LGT.com')
+        u.add_unconfirmed_email('LetsGetTacos@LGT.com')
         u.save()
         assert_false(u.is_confirmed())  # sanity check
 
@@ -430,7 +430,7 @@ class TestUser(OsfTestCase):
 
     def test_verify_confirmation_token(self):
         u = UserFactory.build()
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         u.save()
         assert_false(u.verify_confirmation_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
@@ -443,7 +443,7 @@ class TestUser(OsfTestCase):
         # A user verification token may not have an expiration
         email = fake.email()
         u = UserFactory.build()
-        u.add_email_verification(email)
+        u.add_unconfirmed_email(email)
         token = u.get_confirmation_token(email)
         # manually remove expiration to simulate legacy user
         del u.email_verifications[token]['expiration']

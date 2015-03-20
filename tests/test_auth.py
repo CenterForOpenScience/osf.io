@@ -31,15 +31,6 @@ from website.project.decorators import (
 
 class TestAuthUtils(OsfTestCase):
 
-    def test_register(self):
-        auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
-        user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
-        # The password should be set
-        assert_true(user.check_password('gattaca'))
-        assert_equal(user.fullname, "Rosie Franklin")
-        assert_equal(user.username, 'rosie@franklin.com')
-        assert_in("rosie@franklin.com", user.emails)
-
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
 

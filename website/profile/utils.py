@@ -71,6 +71,22 @@ def serialize_user(user, node=None, admin=False, full=False):
         })
 
     if full:
+        # Add emails
+        ret['emails'] = [
+            {
+                'address': each,
+                'primary': each == user.username,
+                'confirmed': True,
+            } for each in user.emails
+        ] + [
+            {
+                'address': each,
+                'primary': each == user.username,
+                'confirmed': False
+            }
+            for each in user.unconfirmed_emails
+        ]
+
         if user.is_merged:
             merger = user.merged_by
             merged_by = {
