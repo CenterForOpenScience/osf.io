@@ -15,6 +15,7 @@
     "c3": "^0.4.9",
     "css-loader": "^0.9.1",
     "diff": "~1.2.2",
+    "dropzone": "git://github.com/sloria/dropzone.git#accept-directory",
     "exports-loader": "^0.6.2",
     "express": "~4.10.0",
     "file-loader": "^0.8.1",

@@ -14,7 +14,6 @@
     "jquery-autosize": "~1.18.15",
     "reconnectingWebsocket": "#07669519f8",
     "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
-    "dropzone": "https://github.com/sloria/dropzone.git#accept-directory",
     "treebeard": "https://github.com/caneruguz/treebeard.git#40af39cb35ac545732b184a3dddc20e37b85159f",
     "xhook": "~1.3.0",
     "osf-panel": "https://github.com/caneruguz/osf-panel.git#fda8e05d9f3ba8ed7bd43b46ceffe265b3d73b39",
