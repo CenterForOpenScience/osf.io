@@ -13,7 +13,7 @@ Results.view = function(ctrl) {
         res = ctrl.vm.results.map(ctrl.renderResult);
         len = ctrl.vm.results.length;
     }
-    return m('.row', [
+    return m('', [
         m('.row', m('.col-md-12', res)),
         m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
         m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
@@ -37,12 +37,12 @@ Results.controller = function(vm) {
                     m('br'),
                     (function(){
                         if (result.description.length > 350) {
-                            return m('small.pointer',
+                            return m('p.readable.pointer',
                                 {onclick:function(){result.showAll = result.showAll ? false : true;}},
                                 result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
                             );
                         }
-                        return m('small', result.description);
+                        return m('p.readable', result.description);
                     }()),
                 ]),
                 m('.row', [

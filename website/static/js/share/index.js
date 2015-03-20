@@ -25,16 +25,15 @@ ShareApp.ViewModel = function() {
 
 
 ShareApp.view = function(ctrl) {
-    return m('.row', [
-        m('.col-md-offset-1.col-md-10', [
+    return m('', [
+        m('.col-xs-12', [
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
-            m('br'),
-            m('.row', [
-               m('.col-md-2', [
+            m('.row.searchContent', [
+               m('.col-md-2.col-lg-3', [
                     SideBar.view(ctrl.sideBarController)
                 ]),
-                m('.col-md-10', [
+                m('.col-md-10.col-lg-9', [
                     Results.view(ctrl.resultsController)
                 ])
             ]),

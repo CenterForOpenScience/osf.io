@@ -8,7 +8,7 @@ SideBar.view = function(ctrl){
     if (ctrl.vm.results === null){
         return [];
     }
-    return m('.row', [
+    return m('', [
         m('.btn-group', [
             m('button.btn.btn-default.dropdown-taggle', {
                     'data-toggle': 'dropdown',
@@ -16,10 +16,9 @@ SideBar.view = function(ctrl){
                 }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
             ),
                 m('ul.dropdown-menu', {'role': 'menu'}, ctrl.renderSort())]),
-            m('br'), m('br'),
-            'Active filters:', m('br'),
+            m('.sidebarHeader', 'Active filters:'),
             m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
-            'Providers:', m('br'),
+            m('.sidebarHeader', 'Providers:'),
             m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
     ]);
 };
@@ -52,7 +51,7 @@ SideBar.controller = function(vm) {
 
     self.renderFilters = function(){
         return self.vm.optionalFilters.concat(self.vm.requiredFilters).map(function(filter){
-            return m('li', [
+            return m('li.renderFilter', [
                 m('a', {
                     onclick: function(event){
                         utils.removeFilter(self.vm, filter)
@@ -69,20 +68,19 @@ SideBar.controller = function(vm) {
         }).sort(function(a,b){
                 return a.long_name > b.long_name ? 1: -1;
         }).map(function(result, index){
-            return m('li', [m('label', [
-                m('input', {
-                    'type': 'checkbox',
-                    'checked': (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1),
+            var checked = (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1) ? 'inFilter' : '';
+
+            return m('li', m('.providerFilter', {
+                    'class': checked,
                     onclick: function(cb){
-                        if (cb.target.checked){
-                            utils.updateFilter(self.vm, 'source:' + result.short_name);
-                        } else {
+                        if (checked === 'inFilter') {
                             utils.removeFilter(self.vm, 'source:' + result.short_name);
+                        } else {
+                            utils.updateFilter(self.vm, 'source:' + result.short_name);
                         }
                     }
-                }),
-                ' ' + result.long_name
-            ])])
+                }, result.long_name
+            ));
         });
     };
 };

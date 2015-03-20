@@ -8,9 +8,9 @@ var SearchBar = {};
 SearchBar.view = function(ctrl) {
     return [
         m('.row', [
-            m('.col-md-12', {
+            m('.col-xs-12', {
                     style: {
-                        margin: 'auto',
+                        margin: '30px auto',
                         display: 'block',
                         'text-align': 'center'
                     }
@@ -24,21 +24,21 @@ SearchBar.view = function(ctrl) {
                     // class: 'animated pulse'
                 }),
                 m('span.about-share-header', 'SHARE'),
-                m('div', {style: {color: 'darkgrey'}}, m('small', [
+                m('div', {style: {color: 'darkgrey'}}, m('p.readable', [
                     'Notice: this is a public alpha release'
                 ])),
                 m('br'),
             ])
         ]),
         m('.row', [
-            m('.col-md-12', [
+            m('.col-xs-12.col-lg-8.col-lg-offset-2', [
                 m('form.input-group', {
                     onsubmit: ctrl.search,
                 },[
                     m('input.share-search-input.form-control[type=text][placeholder=Search][autofocus]', {
                         value: ctrl.vm.query(),
                         onchange: m.withAttr('value', ctrl.vm.query),
-                    }),
+                    }),         
                     m('span.input-group-btn', [
                         m('button.btn.osf-search-btn', m('i.fa.fa-search.fa-lg')),
                     ])
