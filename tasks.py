@@ -315,16 +315,37 @@ def flake():
     run('flake8 .', echo=True)
 
 
-@task
-def requirements(all=False, download_cache=None):
-    """Install dependencies."""
-    cmd = "pip install --upgrade -r dev-requirements.txt"
+def pip_install(req_file, download_cache=None):
+    """Return the proper 'pip install' command for installing the dependencies
+    defined in ``req_file``.
+    """
+    cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
         cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
-    run(bin_prefix(cmd), echo=True)
-    if all:
+    return cmd
+
+@task(aliases=['req'])
+def requirements(addons=False, release=False, dev=False, download_cache=None):
+    """Install python dependencies.
+
+    Examples:
+
+        inv requirements --dev
+        inv requirements --addons
+        inv requirements --release
+    """
+    req_file = None
+    # "release" takes precedence
+    if release:
+        req_file = os.path.join(HERE, 'requirements', 'release.txt')
+    elif dev:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    else:  # then base requirements
+        req_file = os.path.join(HERE, 'requirements.txt')
+    run(pip_install(req_file), echo=True)
+    if addons:
         addon_requirements(download_cache=download_cache)
 
 
@@ -532,7 +553,7 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
-    assets(develop=True, watch=False)
+    assets(dev=True, watch=False)
 
 
 @task
@@ -713,34 +734,34 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, develop=False):
+def webpack(clean=False, watch=False, dev=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and develop:
+    if settings.DEBUG_MODE and dev:
         args += ['--colors']
     else:
         args += ['--progress']
     if watch:
         args += ['--watch']
-    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     run(command, echo=True)
 
 @task()
-def assets(develop=False, watch=False):
+def assets(dev=False, watch=False):
     """Install and build static assets."""
     npm = 'npm install'
-    if not develop:
+    if not dev:
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, develop=develop)
+    webpack(clean=False, watch=watch, dev=dev)
 
 @task
 def generate_self_signed(domain):
