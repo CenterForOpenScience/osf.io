@@ -94,7 +94,6 @@ var resolve = {
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
-        'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
