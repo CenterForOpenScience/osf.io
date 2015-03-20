@@ -29,6 +29,7 @@ ShareApp.view = function(ctrl) {
         m('.col-xs-12', [
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
+            ctrl.renderSort(),
             m('.row.searchContent', [
                m('.col-md-2.col-lg-3', [
                     SideBar.view(ctrl.sideBarController)
@@ -46,6 +47,7 @@ ShareApp.controller = function() {
     var self = this;
 
     self.vm = new ShareApp.ViewModel(self.vm);
+
     m.request({
         method: 'get',
         background: false,
@@ -59,6 +61,18 @@ ShareApp.controller = function() {
         self.searchBarController = new SearchBar.controller(self.vm);
 
     });
+
+    self.renderSort = function(){
+        return m('.btn-group', {style: {'float': 'right'}}, [
+            m('button.btn.btn-default.dropdown-taggle', {
+                    'data-toggle': 'dropdown',
+                    'aria-expanded': 'false'
+                }, ['Sort by: ' + self.vm.sort() + ' ', m('span.caret')]
+            ),
+                m('ul.dropdown-menu', {'role': 'menu'}, self.sideBarController.renderSort())])
+    };
+
+
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
         if (state.query === self.vm.query() &&

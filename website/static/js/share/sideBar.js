@@ -9,13 +9,6 @@ SideBar.view = function(ctrl){
         return [];
     }
     return m('', [
-        m('.btn-group', [
-            m('button.btn.btn-default.dropdown-taggle', {
-                    'data-toggle': 'dropdown',
-                    'aria-expanded': 'false'
-                }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
-            ),
-                m('ul.dropdown-menu', {'role': 'menu'}, ctrl.renderSort())]),
             m('.sidebarHeader', 'Active filters:'),
             m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
             m('.sidebarHeader', 'Providers:'),
