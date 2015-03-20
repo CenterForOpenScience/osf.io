@@ -347,11 +347,9 @@ li.pointer {
 }
 .edit-comment {
     background-color: #F3F3F3;
-    cursor: pointer;
 }
 
 .comment-body i {
-    cursor: pointer;
     padding-right: 5px;
 }
 
@@ -980,7 +978,7 @@ h1.unavailable {
 .project-page .anchor {
     margin-top: -100px;
     padding-top: 100px;
-    display: block; 
+    display: block;
 }
 
 .anchor {
