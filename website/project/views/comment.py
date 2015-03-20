@@ -204,7 +204,7 @@ def serialize_comment(comment, node, auth, anonymous=False):
         title = ''
     return {
         'id': comment._id,
-        'author': serialize_discussion(node, comment.user, 0, anonymous),
+        'author': serialize_discussion(node, comment.user, 1, anonymous),
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
         'page': comment.page or 'node',

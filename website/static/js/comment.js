@@ -173,7 +173,6 @@ BaseComment.prototype.fetch = function(isCommentList, thread) {
             if (isCommentList) {
                 self.discussionByFrequency(response.discussionByFrequency);
                 self.discussionByRecency(response.discussionByRecency);
-                self.discussion(response.discussionByRecency);
             }
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
@@ -222,17 +221,16 @@ BaseComment.prototype.checkFileExists = function() {
                 console.log('error: '); // todo change
                 console.log(xhl);
                 comment.isHidden(true);
-                $.map([self.$root.discussionByFrequency(), self.$root.discussionByRecency()], function(l) {
+                $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(ls) {
                     var commenter_id = comment.author.id();
                     var ind;
-                    for (var i in l) {
-                        if (l[i].id == commenter_id) {
-                            var commenter = l[i];
+                    for (var i in ls()) {
+                        if (ls()[i].id == commenter_id) {
+                            var commenter = ls()[i];
                             ind = i;
                             commenter.numOfComments -= 1;
                             if (commenter.numOfComments == 0) {
-                                l.splice(ind, 1);
-                                self.$root.discussion(self.$root.discussionByRecency());
+                                ls.splice(ind, 1);
                             }
                             break;
                         }
@@ -279,8 +277,8 @@ BaseComment.prototype.submitReply = function() {
             }
         }
         if (!hasCommented) {
-            self.$root.discussionByRecency.shift(response.comment.author());
-            self.$root.discussionByFrequency.push(response.comment.author());
+            self.$root.discussionByRecency.unshift(response.comment.author);
+            self.$root.discussionByFrequency.push(response.comment.author);
         }
         self.onSubmitSuccess(response);
         if (self.level >= self.MAXLEVEL) {
@@ -613,7 +611,15 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
 
     self.discussionByFrequency = ko.observableArray();
     self.discussionByRecency = ko.observableArray();
-    self.discussion = ko.observableArray();
+    self.byRecency = ko.observable(true); // Default sorting is by recency
+    
+    self.discussion = ko.computed(function(){
+        if (self.byRecency()) {
+            return self.discussionByRecency();
+        } else {
+            return self.discussionByFrequency();
+        }
+    })
 
     self.page(host_page);
     self.id = ko.observable(host_name);
@@ -660,13 +666,11 @@ CommentListModel.prototype = new BaseComment();
 CommentListModel.prototype.onSubmitSuccess = function() {};
 
 CommentListModel.prototype.showRecent = function() {
-    var self = this;
-    self.discussion(self.discussionByRecency());
+    this.byRecency(true);
 }
 
 CommentListModel.prototype.showFrequent = function() {
-    var self = this;
-    self.discussion(self.discussionByFrequency());
+    this.byRecency(false);
 }
 
 CommentListModel.prototype.initListeners = function() {
