@@ -353,12 +353,27 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.shouldShow = ko.computed(function() {
-        return (!self.isDeleted() && !self.isHidden()) || self.hasChildren() || self.canEdit();
+        if (!self.isDeleted() && !self.isHidden()) {
+            return true;
+        }
+        if (self.isHidden()) {
+            return self.level == 0;
+        }
+        return self.hasChildren() || self.canEdit();
     });
 
     self.shouldShowChildren = ko.computed(function() {
+        if (self.isHidden()) {
+            self.showChildren(false);
+            return false;
+        }
         return self.level < self.MAXLEVEL;
     });
+
+    self.shouldContinueThread = ko.computed(function() {
+        if (self.shouldShowChildren()) { return false;}
+        return (!self.isHidden());
+    })
 
     self.cleanTitle = ko.computed(function() {
         var cleaned;

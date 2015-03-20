@@ -26,7 +26,7 @@
                     <span data-bind="if: hasChildren() && shouldShowChildren()">
                         <i data-bind="css: toggleIcon, click: toggle"></i>
                     </span>
-                    Comment deleted.
+                    The original file or wiki has been deleted.
                 </div>
             </div>
 
@@ -171,7 +171,7 @@
 
         </ul>
 
-        <div data-bind="ifnot: shouldShowChildren">
+        <div data-bind="if: shouldContinueThread">
             <a data-bind="attr: {href: '/' + id()}">Continue this thread &#8594;</a>
         </div>
 
