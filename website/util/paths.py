@@ -11,6 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 def load_asset_paths():
+    if settings.DEBUG_MODE:
+        logger.warn('Skipping load of "webpack-assets.json" in DEBUG_MODE.')
+        return
     try:
         return json.load(open(settings.ASSET_HASH_PATH))
     except IOError:
