@@ -583,6 +583,80 @@ function reapplyTooltips () {
 }
 
 /**
+ * Hook to run on multiselect that removes invalid selections (i.e. not a file) and opens up the notification 
+ * @param event Browser click event object
+ * @param {Object} tree A Treebeard _item object. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _fangornMultiselect(event, item) {
+    var tb = this;
+    tb.multiselected = filterRowsNotInParent.call(tb, tb.multiselected); 
+    tb.highlightMultiselect;
+    if(tb.multiselected.length > 1 ) {
+        var modalTemplate =  m('div', [
+            m('span', 'Delete selection files?'),
+            m('.btn.btn-xs.m-l-sm.btn-danger', {
+                'onclick' : function() { 
+                    deleteMultiselectFiles.call(tb);
+                } 
+            }, 'Delete')
+        ]);
+         tb.multimodal.height = 45;
+         tb.multimodal.update(modalTemplate);        
+     }
+}
+
+function deleteMultiselectFiles(){
+    var tb = this;
+    for (var i = 0; i < tb.multiselected.length; i++){
+        var m = tb.multiselected[i];
+        var url = resolveconfigOption.call(this, m, 'resolveDeleteUrl', [m]);
+        url = url || waterbutler.buildTreeBeardDelete(m);
+        $.ajax({
+            url: url,
+            type: 'DELETE'
+        })
+        .done(function(data) {
+            tb.deleteNode(m.parentID, m.id);
+        })
+        .fail(function(data){
+            item.notify.update('Delete failed.', 'danger', undefined, 3000);
+        });
+    }
+
+}
+
+/**
+ * When multiple rows are selected remove those that are not in the parent -- borrowed from ProjectOrganizer
+ * @param {Array} rows List of item objects
+ * @returns {Array} newRows Returns the revised list of rows
+ */
+function filterRowsNotInParent(rows) {
+    if (this.multiselected.length < 2) {
+        return this.multiselected;
+    }
+    var i, newRows = [],
+        originalRow = this.find(this.multiselected[0].id),
+        originalParent,
+        currentItem;
+    if (typeof originalRow !== "undefined") {
+        originalParent = originalRow.parentID;
+        for (i = 0; i < rows.length; i++) {
+            currentItem = rows[i];
+            if (currentItem.parentID === originalParent && currentItem.id !== -1) {
+                newRows.push(rows[i]);
+            }
+        }
+    }
+    this.multiselected = newRows;
+    this.highlightMultiselect();
+    return newRows;
+}
+
+
+
+/**
  * Called when new object data has arrived to be loaded.
  * @param {Object} tree A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
@@ -846,6 +920,8 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    multiselect : true,
+    onmultiselect : _fangornMultiselect,
     title : function() {
         if(window.contextVars.uploadInstruction) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
