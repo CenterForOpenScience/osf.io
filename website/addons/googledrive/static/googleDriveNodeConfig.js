@@ -11,7 +11,7 @@ var m = require('mithril');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('js/folderPicker');
+var FolderPicker = require('js/folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
 var $osf = require('js/osfHelpers');
