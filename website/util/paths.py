@@ -23,11 +23,11 @@ def load_asset_paths():
 
 asset_paths = load_asset_paths()
 base_static_path = '/static/public/js/'
-def webpack_asset(path, asset_paths=asset_paths):
+def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
     """Mako filter that resolves a human-readable asset path to its name on disk
     (which may include the hash of the file).
     """
-    if not settings.DEBUG_MODE:
+    if not debug:
         key = path.replace(base_static_path, '').replace('.js', '')
         hash_path = asset_paths[key]
         return os.path.join(base_static_path, hash_path)
