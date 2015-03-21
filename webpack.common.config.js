@@ -126,7 +126,7 @@ var externals = {
 
 var plugins = [
     // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.[hash].js'),
+    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.js'),
     // Bower support
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
@@ -140,14 +140,13 @@ var plugins = [
     new webpack.DefinePlugin({
         'define.amd': false
     }),
-    new SaveAssetsJson()
 ];
 
 
 var output = {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
-    filename: '[name].[chunkhash].js',
+    filename: '[name].js',
     sourcePrefix: ''
 };
 
@@ -165,7 +164,7 @@ module.exports = {
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?minetype=application/font-woff'},
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'}

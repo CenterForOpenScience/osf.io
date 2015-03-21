@@ -41,11 +41,17 @@ except Failure:
 
 
 @task
-def server(host=None, port=5000, debug=True):
+def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
+    from livereload import Server
     app = init_app(set_backends=True, routes=True, mfr=True)
-    app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+    if live:
+        server = Server(app.wsgi_app)
+        server.serve(port=port)
+    else:
+        app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 SHELL_BANNER = """
