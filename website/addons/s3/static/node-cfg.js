@@ -1,5 +1,7 @@
-var AddonHelper = require('addonHelper');
+'use strict';
+
 var $ = require('jquery');
+var AddonHelper = require('js/addonHelper');
 require('./s3-node-settings.js');
 
 if (!window.contextVars.currentUser.hasAuth) {
