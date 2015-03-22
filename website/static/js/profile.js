@@ -10,6 +10,7 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
+require('js/objectCreateShim');
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
