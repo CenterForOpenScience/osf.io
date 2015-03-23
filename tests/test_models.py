@@ -2055,7 +2055,11 @@ class TestProject(OsfTestCase):
 
     def test_is_admin_parent_grandparent_admin(self):
         user = UserFactory()
-        parent_node = NodeFactory(project=self.project, creator=user)
+        parent_node = NodeFactory(
+            project=self.project,
+            category='project',
+            creator=user
+        )
         child_node = NodeFactory(project=parent_node, creator=user)
         assert_true(child_node.is_admin_parent(self.project.creator))
         assert_true(parent_node.is_admin_parent(self.project.creator))
@@ -2074,8 +2078,15 @@ class TestProject(OsfTestCase):
 
     def test_has_permission_read_grandparent_admin(self):
         user = UserFactory()
-        parent_node = NodeFactory(project=self.project, creator=user)
-        child_node = NodeFactory(project=parent_node, creator=user)
+        parent_node = NodeFactory(
+            project=self.project,
+            category='project',
+            creator=user
+        )
+        child_node = NodeFactory(
+            project=parent_node,
+            creator=user
+        )
         assert_true(child_node.has_permission(self.project.creator, 'read'))
         assert_false(child_node.has_permission(self.project.creator, 'admin'))
         assert_true(parent_node.has_permission(self.project.creator, 'read'))
@@ -2089,8 +2100,15 @@ class TestProject(OsfTestCase):
 
     def test_can_view_grandparent_admin(self):
         user = UserFactory()
-        parent_node = NodeFactory(project=self.project, creator=user)
-        child_node = NodeFactory(project=parent_node, creator=user)
+        parent_node = NodeFactory(
+            project=self.project,
+            creator=user,
+            category='project'
+        )
+        child_node = NodeFactory(
+            project=parent_node,
+            creator=user
+        )
         assert_true(parent_node.can_view(Auth(user=self.project.creator)))
         assert_false(parent_node.can_edit(Auth(user=self.project.creator)))
         assert_true(child_node.can_view(Auth(user=self.project.creator)))
