@@ -890,7 +890,8 @@ def n_unread_total(node, user, page, check=False):
 
             return n_unread
         else:
-            if not user.comments_viewed_timestamp.get(node._id):
+            if not (user.comments_viewed_timestamp.get(node._id) and \
+                            isinstance(user.comments_viewed_timestamp[node._id], dict)):
                 user.comments_viewed_timestamp[node._id] = dict()
                 user.comments_viewed_timestamp[node._id]['node'] = default_timestamp
             # unopened files
