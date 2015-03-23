@@ -165,29 +165,26 @@ def update_analytics(node, path, version_idx):
 @utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
-    path = payload.get('path', '')
+    path = payload['path']
 
-    if path.endswith('/') or not path:
-        file_tree = model.OsfStorageFileTree.find_by_path(path, node_addon)
-        if file_tree is None:
-            if path == '':
-                return []
-            raise HTTPError(httplib.NOT_FOUND)
+    if not path:
+        raise HTTPError(httplib.BAD_REQUEST)
 
-        return [
-            utils.serialize_metadata(item)
-            for item in list(file_tree.children)
-            if not item.is_deleted
-        ]
+    if path == '/':
+        fileobj = node_addon.root_node
     else:
-        file_record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
-        if not file_record:
-            raise HTTPError(httplib.NOT_FOUND)
+        fileobj = model.OsfStorageNode.get(path.strip('/'), node_addon)
 
-        if file_record.is_deleted:
-            raise HTTPError(httplib.GONE)
+    if fileobj.is_deleted:
+        raise HTTPError(httplib.GONE)
 
-        return utils.serialize_metadata(file_record)
+    if fileobj.kind == 'file':
+        return utils.serialize_metadata(fileobj)
+
+    return [
+        utils.serialize_metadata(child)
+        for child in fileobj.children
+    ]
 
 
 def osf_storage_root(node_settings, auth, **kwargs):
