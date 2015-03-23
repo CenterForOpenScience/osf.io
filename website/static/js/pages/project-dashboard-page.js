@@ -23,7 +23,7 @@ var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
 // Initialize controller for "Add Links" modal
-new pointers.PointerManager('#addPointer', window.contextVars.node.title);
+new pointers.PointerManager('#addPointer', ctx.node.title);
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -35,9 +35,9 @@ $('body').on('nodeLoad', function(event, data) {
 // Initialize comment pane w/ it's viewmodel
 var $comments = $('#comments');
 if ($comments.length) {
-    var userName = window.contextVars.currentUser.name;
-    var canComment = window.contextVars.currentUser.canComment;
-    var hasChildren = window.contextVars.node.hasChildren;
+    var userName = ctx.currentUser.name;
+    var canComment = ctx.currentUser.canComment;
+    var hasChildren = ctx.node.hasChildren;
     Comment.init('#commentPane', userName, canComment, hasChildren);
 }
 
@@ -110,10 +110,10 @@ $(document).ready(function() {
     // Tag input
     $('#node-tags').tagsInput({
         width: '100%',
-        interactive: window.contextVars.currentUser.canEdit,
+        interactive: ctx.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
+            var url = ctx.node.urls.api + 'addtag/' + tag + '/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',
@@ -126,7 +126,7 @@ $(document).ready(function() {
             });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
+            var url = ctx.node.urls.api + 'removetag/' + tag + '/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',
@@ -165,14 +165,14 @@ $(document).ready(function() {
     }
 
     // Remove delete UI if not contributor
-    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+    if (!ctx.currentUser.canEdit || ctx.node.isRegistration) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
     }
 
-    if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
+    if (ctx.node.isRegistration && ctx.node.tags.length === 0) {
         $('div.tags').remove();
     }
 

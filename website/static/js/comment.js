@@ -1,6 +1,3 @@
-/**
- * Controller for the Add Contributor modal.
- */
 'use strict';
 
 var $ = require('jquery');
@@ -15,8 +12,6 @@ ko.punches.enableAll();
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
-
-var nodeApiUrl = window.contextVars.node.urls.api;
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -192,7 +187,7 @@ BaseComment.prototype.submitReply = function() {
     });
 };
 
-
+//Maps an object two deep into a given object as ko observables.
 var mapJS = function(data, parent) {
     for (var key in data) {
         if (data[key] !== null && typeof data[key] === 'object') {
@@ -221,14 +216,7 @@ var CommentModel = function(data, $parent, $root) {
     self.$parent = $parent;
     self.$root = $root;
 
-    mapJS(data, self);
-
-    //$.extend(self, ko.mapping.fromJS(data));
-    //self.dateCreated(data.dateCreated);
-    //self.dateModified(data.dateModified);
-
-    // Note: assigns self.content()
-    //$.extend(self, ko.mapping.fromJS(data));
+    mapJS(data, self); //data is a two deep object.
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
@@ -491,8 +479,8 @@ CommentListModel.prototype.initListeners = function() {
     });
 };
 
-var timestampUrl = nodeApiUrl + 'comments/timestamps/';
 var onOpen = function() {
+    var timestampUrl = nodeApiUrl + 'comments/timestamps/';
     var request = osfHelpers.putJSON(timestampUrl);
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
