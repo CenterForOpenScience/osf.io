@@ -6,8 +6,9 @@
 var ko = require('knockout');
 var $ = require('jquery');
 var moment = require('moment');
-require('knockout-punches');
-var $osf = require('osfHelpers');
+require('knockout.punches');
+
+var $osf = require('./osfHelpers');
 
 ko.punches.enableAll();  // Enable knockout punches
 /**

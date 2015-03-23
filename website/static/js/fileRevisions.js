@@ -1,13 +1,14 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
 var waterbutler = require('waterbutler');
 var oop = require('js/oop');
 var Paginator = require('js/paginator');
+var $osf = require('./osfHelpers');
+
 
 ko.punches.enableAll();
 
