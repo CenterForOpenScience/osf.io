@@ -3,7 +3,7 @@
 
 import mock
 import unittest
-import responses
+import httpretty
 from os.path import join as join_path
 from json import dumps
 
@@ -59,18 +59,18 @@ class TestViewsConfig(OsfTestCase):
         self.figshare = create_mock_figshare('test')
 
     def configure_responses(self):
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             join_path(self.node_settings.api_url, 'articles'),
             body=dumps(self.figshare.articles.return_value)
         )
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             join_path(self.node_settings.api_url, 'articles', '902210'),
             body=dumps(self.figshare.article.return_value)
         )
 
-    @responses.activate
+    @httpretty.activate
     def test_import_auth(self):
         self.configure_responses()
         """Testing figshare_import_user_auth to ensure that auth gets imported correctly"""
@@ -164,7 +164,7 @@ class TestViewsConfig(OsfTestCase):
         assert_equal(res.status_int, http.FORBIDDEN)
         assert_equal(nlogs, len(self.project.logs))
 
-    @responses.activate
+    @httpretty.activate
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         self.configure_responses()
 
@@ -173,7 +173,7 @@ class TestViewsConfig(OsfTestCase):
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
-    @responses.activate
+    @httpretty.activate
     def test_serialize_settings_for_user_no_auth(self):
         self.configure_responses()
 
