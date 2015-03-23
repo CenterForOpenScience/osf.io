@@ -3,19 +3,30 @@
 import os
 import logging
 
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+import pymongo
+from modularodm import fields
 
 from framework.auth.decorators import Auth
-from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+
 from website.addons.base import GuidFile
 from website.security import encrypt, decrypt
+from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 
 
 logging.getLogger('sword2').setLevel(logging.WARNING)
 
 
 class DataverseFile(GuidFile):
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('file_id', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     file_id = fields.StringField(required=True, index=True)
 
@@ -30,23 +41,6 @@ class DataverseFile(GuidFile):
         return os.path.join(
             self.node.deep_url, self.file_url,
         )
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        """Get or create a new file record. Return a tuple of the form (obj, created)
-        """
-        try:
-            new = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('file_id', 'eq', path)
-            )
-            created = False
-        except ModularOdmException:
-            # Create new
-            new = cls(node=node, file_id=path)
-            new.save()
-            created = True
-        return new, created
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
