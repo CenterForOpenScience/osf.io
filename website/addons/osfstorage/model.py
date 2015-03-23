@@ -14,6 +14,9 @@ from modularodm.storage.base import KeyExistsException
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
+from website.models import NodeLog
+from website.addons.base import AddonNodeSettingsBase, GuidFile
+from website.models import Tag
 
 from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
 from website.addons.osfstorage import utils
@@ -521,6 +524,42 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
+    
+    def remove_tag(self, tag, auth, save=True):
+       if tag in self.tags2:
+            self.tags2.remove(tag)
+            self.add_log(
+                action=NodeLog.TAG_REMOVED,
+                params={
+                    'file': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
+
+    def add_tag(self, tag, auth, save=True):
+        if tag not in self.tags2:
+            new_tag = Tag.load(tag)
+            if not new_tag:
+                new_tag = Tag(_id=tag)
+            new_tag.save()
+            self.tags2.append(new_tag)
+            self.add_log(
+                action=NodeLog.TAG_ADDED,
+                params={
+                    'file': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
 
 
 class OsfStorageTrashedFileNode(StoredObject):
