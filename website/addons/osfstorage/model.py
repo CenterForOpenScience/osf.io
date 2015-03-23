@@ -25,73 +25,24 @@ from website.addons.osfstorage import settings
 
 logger = logging.getLogger(__name__)
 
-oid_primary_key = fields.StringField(
-    primary=True,
-    default=lambda: str(bson.ObjectId())
-)
-
-
-def copy_file_tree(tree, node_settings):
-    """Recursively copy file tree.
-
-    :param OsfStorageFileTree tree: Tree to copy
-    :param node_settings: Root node settings record
-    """
-    children = [copy_files(child, node_settings) for child in tree.children]
-    clone = tree.clone()
-    clone.children = children
-    clone.node_settings = node_settings
-    clone.save()
-    return clone
-
-
-def copy_file_record(record, node_settings):
-    """Copy versions of an `OsfStorageFileRecord`. Versions are copied
-    by primary key and will not be duplicated in the database.
-
-    :param OsfStorageFileRecord record: Record to copy
-    :param node_settings: Root node settings record
-    """
-    clone = record.clone()
-    clone.versions = record.versions
-    clone.node_settings = node_settings
-    clone.save()
-    return clone
-
-
-def copy_files(files, node_settings):
-    if isinstance(files, OsfStorageFileTree):
-        return copy_file_tree(files, node_settings)
-    if isinstance(files, OsfStorageFileRecord):
-        return copy_file_record(files, node_settings)
-    raise TypeError('Input must be `OsfStorageFileTree` or `OsfStorageFileRecord`')
-
 
 class OsfStorageNodeSettings(AddonNodeSettingsBase):
+    complete = True
+    has_auth = True
+    root_node = fields.ForeignField('OsfStorageNode')
 
-    file_tree = fields.ForeignField('OsfStorageFileTree')
+    def on_add(self):
+        if self.root_node:
+            return
 
-    @property
-    def has_auth(self):
-        return True
-
-    @property
-    def complete(self):
-        return True
+        self.save()
+        root = OsfStorageNode(name='', kind='folder', node_settings=self)
+        root.save()
+        self.root_node = root
+        self.save()
 
     def find_or_create_file_guid(self, path):
-        return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
-
-    def copy_contents_to(self, dest):
-        """Copy file tree and contents to destination. Note: destination must be
-        saved before copying so that copied items can refer to it.
-
-        :param OsfStorageNodeSettings dest: Destination settings object
-        """
-        dest.save()
-        if self.file_tree:
-            dest.file_tree = copy_file_tree(self.file_tree, dest)
-            dest.save()
+        return OsfStorageGuidFile.get_or_create(self.owner, path)
 
     def after_fork(self, node, fork, user, save=True):
         clone, message = super(OsfStorageNodeSettings, self).after_fork(
