@@ -2,7 +2,6 @@
 
 var $ = require('jquery');
 var Raven = require('raven-js');
-var $osf = require('osfHelpers');
 require('bootstrap-editable');
 require('osf-panel');
 var WikiPage = require('wikiPage');
@@ -11,6 +10,8 @@ require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
+
+var $osf = require('js/osfHelpers');
 
 
 var ctx = window.contextVars.wiki;  // mako context variables

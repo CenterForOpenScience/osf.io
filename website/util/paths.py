@@ -11,6 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 def load_asset_paths():
+    if settings.DEBUG_MODE:
+        logger.warn('Skipping load of "webpack-assets.json" in DEBUG_MODE.')
+        return
     try:
         return json.load(open(settings.ASSET_HASH_PATH))
     except IOError:
@@ -20,13 +23,16 @@ def load_asset_paths():
 
 asset_paths = load_asset_paths()
 base_static_path = '/static/public/js/'
-def webpack_asset(path, asset_paths=asset_paths):
+def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
     """Mako filter that resolves a human-readable asset path to its name on disk
     (which may include the hash of the file).
     """
-    key = path.replace(base_static_path, '').replace('.js', '')
-    hash_path = asset_paths[key]
-    return os.path.join(base_static_path, hash_path)
+    if not debug:
+        key = path.replace(base_static_path, '').replace('.js', '')
+        hash_path = asset_paths[key]
+        return os.path.join(base_static_path, hash_path)
+    else:  # We don't cachebust in debug mode, so just return unmodified path
+        return path
 
 
 def resolve_addon_path(config, file_name):

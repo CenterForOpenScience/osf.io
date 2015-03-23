@@ -48,22 +48,22 @@ var entry = {
     'vendor': [
         // Vendor libraries
         'knockout',
+        'knockout.validation',
+        'knockout.punches',
         'moment',
-        'knockout-validation',
         'bootstrap',
         'bootbox',
         'bootstrap-editable',
         'select2',
-        'knockout-punches',
         'dropzone',
         'knockout-sortable',
         'treebeard',
         'jquery.cookie',
         'URIjs',
         // Common internal modules
-        'fangorn',
-        'citations',
-        'osfHelpers'
+        'js/fangorn',
+        'js/citations',
+        'js/osfHelpers'
     ]
 };
 
@@ -90,20 +90,15 @@ var resolve = {
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
     // Need to alias libraries that aren't managed by bower or npm
     alias: {
-        'knockout-punches': staticPath('vendor/knockout-punches/knockout.punches.js'),
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
-        'knockout-validation': staticPath('vendor/knockout-validation/knockout.validation.js'),
         'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
-        'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
-        // Dropzone doesn't have a proper 'main' entry in its bower.json
-        'dropzone': staticPath('vendor/bower_components/dropzone/dist/dropzone.js'),
         'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
         'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
@@ -115,20 +110,7 @@ var resolve = {
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
-        'fangorn': staticPath('js/fangorn.js'),
-        'waterbutler': staticPath('js/waterbutler.js'),
-        'folderpicker': staticPath('js/folderPicker.js'),
-        'osfHelpers': staticPath('js/osfHelpers.js'),
-        'osfLanguage': staticPath('js/osfLanguage.js'),
         'addons': path.join(__dirname, 'website', 'addons'),
-        'addonHelper': staticPath('js/addonHelper.js'),
-        'koHelpers': staticPath('js/koHelpers.js'),
-        'addonPermissions': staticPath('js/addonPermissions.js'),
-        'navbar-control': staticPath('js/navbarControl.js'),
-        'markdown': staticPath('js/markdown.js'),
-        'diffTool': staticPath('js/diffTool.js'),
-        'mathrender': staticPath('js/mathrender.js'),
-        'citations': staticPath('js/citations.js'),
         'tests': staticPath('js/tests')
     }
 };
@@ -144,7 +126,7 @@ var externals = {
 
 var plugins = [
     // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.[hash].js'),
+    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.js'),
     // Bower support
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
@@ -158,14 +140,13 @@ var plugins = [
     new webpack.DefinePlugin({
         'define.amd': false
     }),
-    new SaveAssetsJson()
 ];
 
 
 var output = {
     path: './website/static/public/js/',
     // publicPath: '/static/', // used to generate urls to e.g. images
-    filename: '[name].[chunkhash].js',
+    filename: '[name].js',
     sourcePrefix: ''
 };
 
@@ -183,7 +164,7 @@ module.exports = {
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?minetype=application/font-woff" },
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'}
