@@ -69,7 +69,12 @@ def get_logs(auth, **kwargs):
 
     """
     node = kwargs['node'] or kwargs['project']
-    page = int(request.args.get('page', 0))
+    try:
+        page = int(request.args.get('page', 0))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page": {}'.format(request.args['page'])
+        ))
     link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     if not node.can_view(auth):

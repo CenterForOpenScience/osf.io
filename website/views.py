@@ -284,8 +284,18 @@ def dashboard(auth):
 @must_be_logged_in
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
-    page = int(request.args.get('page', '').strip('/') or 0)
-    size = int(request.args.get('size', 10))
+    try:
+        page = int(request.args.get('page', 0))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page": {}'.format(request.args['page'])
+        ))
+    try:
+        size = int(request.args.get('size', 10))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "size": {}'.format(request.args['size'])
+        ))
     start = page * size
     total = sum(1 for x in user.get_recent_log_ids())
     recent_log_ids = itertools.islice(user.get_recent_log_ids(), start, start + size)
