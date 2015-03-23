@@ -272,7 +272,7 @@ class OsfStorageNode(StoredObject):
 
 class OsfStorageFileVersion(StoredObject):
 
-    _id = oid_primary_key
+    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
     creator = fields.ForeignField('user', required=True)
 
     # Date version record was created. This is the date displayed to the user.
@@ -286,7 +286,7 @@ class OsfStorageFileVersion(StoredObject):
     #     'worker_url': '127.0.0.1',
     #     'worker_host': 'upload-service-1',
     # }
-    location = fields.DictionaryField(validate=validate_location)
+    location = fields.DictionaryField(validate=utils.validate_location)
 
     # Dictionary containing raw metadata from upload service response
     # {
