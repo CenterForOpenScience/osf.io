@@ -338,10 +338,7 @@ def list_comments(auth, **kwargs):
 
 
 def list_total_comments_widget(node, auth):
-    comments_keys = Comment.find(Q('node', 'eq', node) &
-                            Q('is_hidden', 'eq', False) &
-                            Q('page', 'ne', 'files')).get_keys()
-    comments_keys.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
+    comments_keys = Comment.find(Q('node', 'eq', node)).get_keys()
     comments = []
     for cid in comments_keys:
         cmt = Comment.load(cid)
@@ -355,12 +352,10 @@ def list_total_comments_widget(node, auth):
 
 def list_total_comments(node, auth, page):
     if page == 'total':
-        comments_keys = Comment.find(Q('node', 'eq', node) &
-                                Q('is_hidden', 'eq', False)).get_keys()
+        comments_keys = Comment.find(Q('node', 'eq', node)).get_keys()
     else:
         comments_keys = Comment.find(Q('node', 'eq', node) &
-                                Q('page', 'eq', page) &
-                                Q('is_hidden', 'eq', False)).get_keys()
+                                Q('page', 'eq', page)).get_keys()
     comments = []
     for cid in comments_keys:
         cmt = Comment.load(cid)
