@@ -184,11 +184,14 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             for comment in getattr(db_file, 'comment_target', []):
                 comment.hide(save=True)
 
-    def show_comments(self, connection):
-        dropbox_files = self.get_existing_files(connection)
-        for dropbox_file in dropbox_files:
-            for comment in getattr(dropbox_file, 'comment_target', []):
-                comment.show(save=True)
+    def show_comments(self):
+        if not self.folder:
+            return list()
+        dropbox_files = DropboxFile.find(Q('node', 'eq', self.owner))
+        for db_file in dropbox_files:
+            if db_file.path.find(self.folder.lstrip('/')) == 0:
+                for comment in getattr(db_file, 'comment_target', []):
+                    comment.show(save=True)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -351,36 +354,3 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
-
-    def get_existing_files(self, connection=None):
-        if not self.folder:
-            return list()
-        if not connection:
-            connection = get_node_addon_client(self)
-        dropbox_files = dict()
-        has_more = True
-        cursor = None
-        while has_more:
-            files_data = connection.delta(cursor=cursor, path_prefix=self.folder)
-            has_more = files_data['has_more']
-            cursor = files_data['cursor']
-            dropbox_file_data = files_data['entries']
-            for file_data in dropbox_file_data:
-                lowercase_path = file_data[0]
-                file_metadata = file_data[1]
-                if file_metadata is None:
-                    dropbox_files.pop(lowercase_path, None)
-                    for other in dropbox_files.keys():
-                        if other.startswith(lowercase_path + '/'):
-                            del dropbox_files[other]
-                elif not file_metadata['is_dir']:
-                    path = clean_path(file_metadata['path'])  # To ensure letter case
-                    try:
-                        guid = DropboxFile.find_one(
-                            Q('node', 'eq', self.owner) &
-                            Q('path', 'eq', path)
-                        )
-                    except:
-                        continue
-                    dropbox_files[lowercase_path] = guid
-        return dropbox_files.values()

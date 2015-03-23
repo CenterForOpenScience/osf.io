@@ -139,8 +139,7 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
     if path != node_addon.folder:
         node_addon.hide_all_comments()
         node_addon.set_folder(path, auth=auth)
-        client = get_node_addon_client(node_addon)
-        node_addon.show_comments(client)
+        node_addon.show_comments()
     node_addon.save()
     return {
         'result': {

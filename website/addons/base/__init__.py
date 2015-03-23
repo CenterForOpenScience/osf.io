@@ -777,14 +777,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
-    def get_existing_files(self, connect=None):
-        """
-
-        :param Connection connect:
-        :return: Files in the osf from provider
-        """
-        pass
-
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     _meta = {

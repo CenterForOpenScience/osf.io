@@ -210,9 +210,8 @@ class TestConfigViews(DropboxAddonTestCase):
             self.project.api_url_for('dropbox_config_put'),
         )
 
-    @mock.patch('website.addons.dropbox.views.config.get_node_addon_client')
-    def test_dropbox_config_put(self, mock_node_addon_client):
-        url = api_url_for('dropbox_config_put', pid=self.project._primary_key)
+    def test_dropbox_config_put(self):
+        url = self.project.api_url_for('dropbox_config_put')
         # Can set folder through API call
         res = self.app.put_json(url, {'selected': {'path': 'My test folder',
             'name': 'Dropbox/My test folder'}},
@@ -314,8 +313,7 @@ class TestConfigViews(DropboxAddonTestCase):
 
 class TestCommentsViews(DropboxAddonTestCase):
 
-    @mock.patch('website.addons.dropbox.views.config.get_node_addon_client')
-    def test_comments_visibility_on_change_folder(self, mock_client):
+    def test_comments_visibility_on_change_folder(self):
 
         self.node_settings.set_folder('Dropbox/Old folder', auth=Auth(self.user))
 
@@ -431,10 +429,7 @@ class TestCommentsViews(DropboxAddonTestCase):
         assert_equal(len(comments), 1)
         assert_true(comments[0]['isHidden'])
 
-    @mock.patch('website.addons.dropbox.views.config.get_client_from_user_settings')
-    @mock.patch('website.addons.dropbox.views.config.get_node_addon_client')
-    def test_comments_visibility_on_reauthorize(self, mock_node_addon_client, mock_client):
-        mock_node_addon_client.return_value = MockDropbox()
+    def test_comments_visibility_on_reauthorize(self):
         self.node_settings.folder = '/'
         # Create comment
         path = u'Public/latest.txt'
