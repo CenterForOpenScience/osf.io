@@ -22,19 +22,22 @@ var FormViewModel = oop.defclass({
     isValid: function() {
         throw new Error('FormViewModel subclass must implement isValid');
     },
+    onError: function(validationError) {
+        for (var i = 0; i < validationError.messages.length; i++) {
+            $osf.growl(
+                validationError.header,
+                validationError.messages[i],
+                validationError.level
+            );
+        }
+    },
     submit: function() {
         try {
             this.isValid();
             return true; // Allow form to submit normally
         } catch (err) {
             if (err instanceof ValidationError) {
-                for (var i = 0; i < err.messages.length; i++) {
-                    $osf.growl(
-                        err.header,
-                        err.messages[i],
-                        err.level
-                    );
-                }
+                this.onError(err);
                 return false; // Stop form submission
             } else {
                 throw err;
