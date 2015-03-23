@@ -558,7 +558,7 @@ def setup():
     """Creates local settings, installs requirements, and generates encryption key"""
     copy_settings(addons=True)
     packages()
-    requirements(all=True)
+    requirements(addons=True, dev=True)
     encryption()
     assets(dev=True, watch=False)
 
