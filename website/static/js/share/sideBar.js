@@ -1,5 +1,5 @@
 var m = require('mithril');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var utils = require('./utils.js');
 
 var SideBar = {};

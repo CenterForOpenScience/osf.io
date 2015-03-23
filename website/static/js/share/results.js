@@ -8,10 +8,9 @@ var Results = {};
 
 
 Results.view = function(ctrl) {
-    if (ctrl.vm.results === null){
-        res = [];
-        len = 0
-    } else {
+    var res = [];
+    var len = 0;
+    if (!(ctrl.vm.results === null)){
         res = ctrl.vm.results.map(ctrl.renderResult);
         len = ctrl.vm.results.length;
     }
