@@ -19,7 +19,7 @@
   <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="wiki-panel hidden-xs ${'' if 'menu' in panels_used else 'hidden-alt' | n}" data-bind="css: {  'wiki-panel-flex': $root.singleVis() === undefined, reset-height : $root.singleVis() !== undefined }">
+        <div class="wiki-panel hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'wiki-panel-flex': $root.singleVis() === undefined, reset-height : $root.singleVis() !== undefined }">
             <div class="wiki-panel-header" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() === undefined }"> <i class="fa fa-list"> </i>  Menu
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div></div>
             </div>
@@ -29,7 +29,7 @@
         </div>
 
         <!-- Menu with toggle collapsed -->
-        <div class="wiki-panel panel-collapsed hidden-xs text-center ${'hidden-alt' if 'menu' in panels_used else '' | n}" >
+        <div class="wiki-panel panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
           <div class="wiki-panel-header">
             <i class="fa fa-list"> </i>
             <i class="fa fa-angle-right"> </i>
