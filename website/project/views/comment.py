@@ -35,7 +35,7 @@ def view_comments_project(**kwargs):
         'comment_target_id': None
     }
 
-    ret.update(_view_project(node, auth, primary=True))
+    ret.update(_view_project(node, auth, primary=True, check_files=True))
     return ret
 
 

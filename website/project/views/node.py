@@ -20,6 +20,7 @@ from website import language
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
+from website.addons.base.exceptions import AddonEnrichmentError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
@@ -684,7 +685,7 @@ def _should_show_wiki_widget(node, user):
         return has_wiki
 
 
-def _view_project(node, auth, primary=False):
+def _view_project(node, auth, primary=False, check_files=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -709,6 +710,9 @@ def _view_project(node, auth, primary=False):
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, dismissible=False)
+    n_unread_node = n_unread_comments(node, user, 'node')
+    n_unread_files = n_unread_comments(node, user, 'files', check=check_files)
+    n_unread_wiki = n_unread_comments(node, user, 'wiki')
     data = {
         'node': {
             'id': node._primary_key,
@@ -784,10 +788,10 @@ def _view_project(node, auth, primary=False):
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': dashboard_id,
             'unread_comments': {
-                'total': n_unread_comments(node, user, 'total'),
-                'node': n_unread_comments(node, user, 'node'),
-                'wiki': n_unread_comments(node, user, 'wiki'),
-                'files': n_unread_comments(node, user, 'files')
+                'node': n_unread_node,
+                'wiki': n_unread_wiki,
+                'files': n_unread_files,
+                'total': n_unread_node + n_unread_wiki + n_unread_files
             }
         },
         'badges': _get_badge(user),
@@ -831,17 +835,21 @@ def _get_children(node, auth, indent=0):
     return children
 
 
-def n_unread_comments(node, user, page, root_id=None):
+def n_unread_comments(node, user, page, root_id=None, check=False):
     """Return the number of unread comments on a node for a user."""
     if not node.is_contributor(user):
         return 0
     if root_id is None or root_id == 'None' or page == 'node':
-        return n_unread_total(node, user, page)
+        return n_unread_total(node, user, page, check=check)
     root_target = Guid.load(root_id)
     if root_target:
         root_target = root_target.referent
     else:
         root_target = node.get_wiki_page(root_id, 1)
+    if page == 'files' and check:
+        exists, _ = check_file_exists(node, root_id)
+        if not exists:
+            return 0
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
     if isinstance(view_timestamp, dict):
@@ -857,7 +865,7 @@ def n_unread_comments(node, user, page, root_id=None):
                         Q('root_target', 'eq', root_target)).count()
 
 
-def n_unread_total(node, user, page):
+def n_unread_total(node, user, page, check=False):
     if not node.is_contributor(user):
         return 0
     from website.addons.wiki.model import NodeWikiPage
@@ -870,9 +878,8 @@ def n_unread_total(node, user, page):
         if isinstance(view_timestamp, dict):
             n_unread = 0
             if page == 'files':
-                files = node.commented_files.keys()
-                for file_id in files:
-                    n_unread += n_unread_comments(node, user, page, file_id)
+                for file_id in node.commented_files.keys():
+                    n_unread += n_unread_comments(node, user, page, file_id, check)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
@@ -882,7 +889,20 @@ def n_unread_total(node, user, page):
                         n_unread += n_unread_comments(node, user, page, root_id)
 
             return n_unread
-        # mostly node
+        # unopened files
+        if page == 'files':
+            n_unread = Comment.find(Q('node', 'eq', node) &
+                            Q('user', 'ne', user) &
+                            Q('is_deleted', 'eq', False) &
+                            Q('is_hidden', 'eq', False) &
+                            Q('page', 'eq', page)).count()
+            if check:
+                for file_id in node.commented_files.keys():
+                    exists, num = check_file_exists(node, file_id)
+                    if not exists:
+                        n_unread -= num
+            return n_unread
+        # node
         return Comment.find(Q('node', 'eq', node) &
                             Q('user', 'ne', user) &
                             Q('date_created', 'gt', view_timestamp) &
@@ -891,7 +911,19 @@ def n_unread_total(node, user, page):
                             Q('is_hidden', 'eq', False) &
                             Q('page', 'eq', page)).count()
     return n_unread_total(node, user, 'node') + n_unread_total(node, user, 'wiki') + \
-        n_unread_total(node, user, 'files')
+        n_unread_total(node, user, 'files', check=check)
+
+
+def check_file_exists(node, file_id):
+    num_of_comments = node.commented_files[file_id]
+    try:
+        file_guid = Guid.load(file_id).referent
+        file_guid.enrich()
+    except AddonEnrichmentError:
+        del node.commented_files[file_id]
+        node.save()
+        return False, num_of_comments
+    return True, num_of_comments
 
 
 @must_be_valid_project  # returns project
