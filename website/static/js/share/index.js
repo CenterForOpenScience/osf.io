@@ -31,7 +31,7 @@ ShareApp.view = function(ctrl) {
         m('.col-xs-12', [
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
-            ctrl.vm.results !== null ? ctrl.renderSort() : [],
+            ctrl.vm.results !== null ? renderSort(ctrl) : [],
             m('.row.searchContent', [
                m('.col-md-2.col-lg-3', [
                     SideBar.view(ctrl.sideBarController)
@@ -64,16 +64,6 @@ ShareApp.controller = function() {
 
     });
 
-    self.renderSort = function(){
-        return m('.btn-group', {style: {'float': 'right'}}, [
-            m('button.btn.btn-default.dropdown-taggle', {
-                    'data-toggle': 'dropdown',
-                    'aria-expanded': 'false'
-                }, ['Sort by: ' + self.vm.sort() + ' ', m('span.caret')]
-            ),
-                m('ul.dropdown-menu', {'role': 'menu'}, self.sideBarController.renderSort())])
-    };
-
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
@@ -90,5 +80,16 @@ ShareApp.controller = function() {
         utils.search(self.vm);
     });
 };
+
+var renderSort = function(ctrl){
+        return m('.btn-group', {style: {'float': 'right'}}, [
+            m('button.btn.btn-default.dropdown-taggle', {
+                    'data-toggle': 'dropdown',
+                    'aria-expanded': 'false'
+                }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
+            ),
+                m('ul.dropdown-menu', {'role': 'menu'}, ctrl.sideBarController.renderSort())])
+    };
+
 
 module.exports = ShareApp;
