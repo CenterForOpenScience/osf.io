@@ -231,20 +231,25 @@ def search_share_stats():
     return search.share_stats(query=query)
 
 
+def compute_start(page, size):
+    try:
+        start = (int(page) - 1) * size
+    except ValueError:
+        start = 0
+
+    if start < 0:
+        start = 0
+
+    return start
+
+
 def search_share_atom(**kwargs):
     q = request.args.get('q', '*')
     sort = request.args.get('sort', 'dateUpdated')
 
     # we want the results per page to be constant between pages
     # TODO -  move this functionality into build_query in util
-
-    try:
-        start = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
-    except ValueError:
-        start = 0
-
-    if start < 0:
-        start = 0
+    start = compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
 
     query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
 
