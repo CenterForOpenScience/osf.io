@@ -4,7 +4,7 @@ var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
-var waterbutler = require('waterbutler');
+var waterbutler = require('./waterbutler');
 var oop = require('js/oop');
 var Paginator = require('js/paginator');
 var $osf = require('./osfHelpers');
