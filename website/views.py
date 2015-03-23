@@ -296,6 +296,7 @@ def watched_logs_get(**kwargs):
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long='Invalid value for "size": {}'.format(request.args['size'])
         ))
+
     start = page * size
     total = sum(1 for x in user.get_recent_log_ids())
     recent_log_ids = itertools.islice(user.get_recent_log_ids(), start, start + size)
