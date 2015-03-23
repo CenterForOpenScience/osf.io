@@ -4,11 +4,11 @@ var assert = require('chai').assert;
 
 var utils = require('tests/utils');
 var faker = require('faker');
-
+var Raven = require('raven-js');
 var oop = require('js/oop');
 var ko = require('knockout');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 var FolderPickerNodeConfigVM = require('js/folderPickerNodeConfig');
 
@@ -83,14 +83,6 @@ describe('FolderPickerNodeConfigViewModel', () => {
     });
 
     describe('ViewModel', () => {
-        it('throws an Error if the return value of the Subclassess \'treebeardOptions\' method does not override the default \'resolveLazyloadUrl\'', () => {
-            var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
-            assert.throw(broken.treebeardOptions().resolveLazyloadUrl, 'Subclassess of FolderPickerViewModel must implement an \'resolveLazyloadUrl(item)\' method');
-        });
-        it('throws an Error if the return value of the Subclassess \'treebeardOptions\' method does not override the default \'onPickFolder\'', () => {
-            var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
-            assert.throw(broken.treebeardOptions().onPickFolder, 'Subclassess of FolderPickerViewModel must implement an \'onPickFolder(evt, item)\' method');
-        });
         var vm = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
         var hardReset = () => {
             vm = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
@@ -312,16 +304,18 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 }
             }];
             var server;
+            var spy;
             before(() => {
                 server = utils.createServer(sinon, endpoints);
+                spy = sinon.spy($osf, 'putJSON');
             });
             after(() => {
                 server.restore();
+                $osf.putJSON.restore();
             });
             data.urls.config = configUrl;
             it('serializes the VM state and sends a PUT request to the \'config\' url passed in settings', (done) => {
                 hardReset();
-                var spy = sinon.spy($osf, 'putJSON');
                 vm.updateFromData(data)
                     .always(function() {
                         vm.submitSettings()
@@ -329,7 +323,6 @@ describe('FolderPickerNodeConfigViewModel', () => {
                                 assert.isTrue(
                                     spy.calledWith(data.urls.config, vm.folder().name.toUpperCase())
                                 );
-                                $osf.putJSON.restore();
                                 done();
                             });
                     });
@@ -343,29 +336,114 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 response: {}
             }];
             var server;
+            var putJSONSpy;
+            var activatePickerSpy;
             before(() => {
+                hardReset();
                 server = utils.createServer(sinon, endpoints);
+                putJSONSpy = sinon.spy($osf, 'putJSON');
+                activatePickerSpy = sinon.spy(vm, 'activatePicker');
             });
             after(() => {
                 server.restore();
+                $osf.putJSON.restore();
+                activatePickerSpy.restore();
             });
             var data = makeFakeData();
             data.urls.importAuth = importAuthUrl;
             it('sends a PUT request to the \'importAuth\' url passed in settings, calls updateFromData with the response, and calls activatePicker', (done) => {
-                assert.isTrue(false); // TODO
-                hardReset();
-                var spy = sinon.spy($osf, 'putJSON');
                 vm.updateFromData(data)
-                .always(function() {
-                    vm._importAuthConfirm()
-                        .always(function() {
-                            assert.isTrue(
-                                spy.calledWith(importAuthUrl, {})
-                            );
-                            $osf.putJSON.restore();
-                            done();
-                        });
-                });
+                    .always(function() {
+                        vm._importAuthConfirm()
+                            .always(function() {
+                                assert.isTrue(
+                                    putJSONSpy.calledWith(importAuthUrl, {})
+                                );
+                                assert.isTrue(activatePickerSpy.calledOnce);
+                                done();
+                            });
+                    });
+            });
+        });
+        describe('#_deauthorizeConfirm', () => {
+            var deleteUrl = faker.internet.ip();
+            var endpoints = [{
+                url: deleteUrl,
+                method: 'DELETE',
+                response: {}
+            }];
+            var server;
+            var spy;
+            before(() => {
+                hardReset();
+                server = utils.createServer(sinon, endpoints);
+                spy = sinon.spy($, 'ajax');
+            });
+            after(() => {
+                server.restore();
+                $.ajax.restore();
+            });
+            var data = makeFakeData();
+            data.urls.deauthorize = deleteUrl;
+            it('sends a DELETE request to the \'deauthorize\' url passed in settings', (done) => {
+                vm.updateFromData(data)
+                    .always(function() {
+                        vm._deauthorizeConfirm()
+                            .always(function() {
+                                assert.isTrue(
+                                    spy.calledWith({
+                                        url: deleteUrl,
+                                        type: 'DELETE'
+                                    })
+                                );
+                                done();
+                            });
+                    });
+            });
+        });
+        describe('#togglePicker', () => {
+            it('shows the folder picker and calls activatePicker if hidden', () => {
+                vm.currentDisplay(null);
+                var spy = sinon.spy(vm, 'activatePicker');
+                vm.togglePicker();
+                assert.isTrue(spy.calledOnce);
+                assert.equal(vm.currentDisplay(), vm.PICKER);
+                vm.activatePicker.restore();
+            });
+            it('hides the folder picker and cancels the selection if visible', () => {
+                vm.currentDisplay(vm.PICKER);
+                var spy = sinon.spy(vm, 'cancelSelection');
+                vm.togglePicker();
+                assert.isTrue(spy.calledOnce);
+                assert.isNull(vm.currentDisplay());
+                vm.cancelSelection.restore();
+            });
+        });
+        describe('#treebeardOptions', () => {
+            it('throws an Error if the Subclass does not override the default \'resolveLazyloadUrl\'', () => {
+                var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
+                assert.throw(broken.treebeardOptions().resolveLazyloadUrl, 'Subclassess of FolderPickerViewModel must implement an \'resolveLazyloadUrl(item)\' method');
+            });
+            it('throws an Error if the Subclassess does not override the default \'onPickFolder\'', () => {
+                var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
+                assert.throw(broken.treebeardOptions().onPickFolder, 'Subclassess of FolderPickerViewModel must implement an \'onPickFolder(evt, item)\' method');
+            });
+        });
+        describe('#activatePicker', () => {
+            it('instantiates a new folderPicker instance if folders have not been loaded', () => {
+                var urls = vm.urls();
+                urls.folders = faker.internet.ip();
+                vm.urls(urls);
+                var opts = $.extend({}, {
+                    initialFolderPath: vm.folder().path || '',
+                    filesData: vm.urls().folders
+                }, vm.treebeardOptions());
+                var spy = sinon.spy($.prototype, 'folderpicker');
+                vm.loadedFolders(false);
+                vm.activatePicker();
+                assert.equal(spy.args[0][0].filesData, opts.filesData);
+                assert.equal(spy.args[0][0].initialFolderPath, opts.initialFolderPath);
+                $.fn.folderpicker.restore();
             });
         });
     });
