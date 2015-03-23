@@ -91,10 +91,10 @@ var buildURLParams = function(vm){
     if (vm.query()){
         d.q = vm.query();
     }
-    if (!arrayEqual(vm.requiredFilters, [])){
+    if (vm.requiredFilters.length > 0){
         d.required = vm.requiredFilters.join('|');
     }
-    if (!arrayEqual(vm.optionalFilters, [])){
+    if (vm.optionalFilters.length > 0){
         d.optional = vm.optionalFilters.join('|');
     }
     if (vm.sort()){
