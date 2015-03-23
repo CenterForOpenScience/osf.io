@@ -369,18 +369,16 @@ var FolderPickerViewModel = oop.defclass({
             this.cancelSelection();
         }
     },
-    treebeardOptions: function(){
-        return {
-            lazyLoadPreprocess: function(data) { 
-                return data;
-            },
-            onPickFolder: function() {
-                throw new Error('Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
-            },
-            resolveLazyloadUrl: function(item) {
-                throw new Error('Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
-            }
-        };
+    treebeardOptions: {
+        lazyLoadPreprocess: function(data) { 
+            return data;
+        },
+        onPickFolder: function() {
+            throw new Error('Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
+        },
+        resolveLazyloadUrl: function(item) {
+            throw new Error('Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
+        }
     },
     /**
      *  Activates the HGrid folder picker.

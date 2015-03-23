@@ -83,33 +83,32 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             external_list_name: this.selected().name
         };
     },
-    treebeardOptions: function(){
-        return $.extend(
-            {}, 
-            this.super.treebeardOptions(),
-            {
-                onPickFolder: function(evt, item){
-                    /** Callback for chooseFolder action.
-                     *   Just changes the ViewModel's self.selected observable to the selected
-                     *   folder.
-                     */
-                    evt.preventDefault();
-                    this.selected({
-                        name: item.data.name,
-                        id: item.data.id
-                    });
-                    return false; // Prevent event propagation     
-                }.bind(this),
-                lazyLoadPreprocess: function(data) {    
-                    return data.contents.filter(function(item) {
-                        return item.kind === 'folder';
-                    });
-                },
-                resolveLazyloadUrl: function(item) {
-                    return this.urls().folders + item.data.id + '/?view=folders';
-                }.bind(this)
-            });
-    }
+    treebeardOptions: $.extend(
+        {}, 
+        FolderPickerViewModel.prototype.treebeardOptions,
+        {
+            /** Callback for chooseFolder action.
+             *   Just changes the ViewModel's self.selected observable to the selected
+             *   folder.
+             */
+            onPickFolder: function(evt, item){
+                evt.preventDefault();
+                this.selected({
+                    name: item.data.name,
+                    id: item.data.id
+                });
+                return false; // Prevent event propagation     
+            }.bind(this),
+            lazyLoadPreprocess: function(data) {    
+                return data.contents.filter(function(item) {
+                    return item.kind === 'folder';
+                });
+            },
+            resolveLazyloadUrl: function(item) {
+                return this.urls().folders + item.data.id + '/?view=folders';
+            }.bind(this)
+        }
+    )
 });
 
 // Public API
