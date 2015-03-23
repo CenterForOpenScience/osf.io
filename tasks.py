@@ -430,7 +430,7 @@ def wheelhouse(addons=False, release=False, dev=False):
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
     run(cmd, pty=True)
-  
+
     if not addons:
         return
     for directory in os.listdir(settings.ADDON_PATH):
