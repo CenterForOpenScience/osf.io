@@ -38,25 +38,28 @@ def make_error(code, message_short=None, message_long=None):
     return HTTPError(code, data=data)
 
 
-def get_record_or_404(path, node_addon):
-    record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
-    if record is not None:
-        return record
-    raise HTTPError(httplib.NOT_FOUND)
-
-
 @must_be_signed
+@utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     try:
-        path = payload['path']
+        path = payload['path'].strip('/')
+        version_id = int(payload.get('version', 0)) - 1
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise make_error(httplib.BAD_REQUEST, 'Path is required')
+    except ValueError:
+        raise make_error(httplib.BAD_REQUEST, 'Version must be an int or null')
 
-    version_idx, version, record = get_version(path, node_addon, payload.get('version'))
+    storage_node = model.OsfStorageNode.get_file(path, node_addon)
+    if storage_node.is_deleted:
+        raise HTTPError(httplib.GONE)
+
+    version = storage_node.get_version(version_id)
 
     if payload.get('mode') != 'render':
-        update_analytics(node_addon.owner, path, version_idx)
+        if version_id < 0:
+            version_id = len(storage_node.versions) + version_id
+        update_analytics(node_addon.owner, storage_node.path, version_id)
 
     return {
         'data': {
