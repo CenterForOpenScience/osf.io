@@ -65,10 +65,10 @@ function timeGraph (data) {
 
 Stats.view = function(ctrl) {
     return [
-        m('.row.searchHelper', {style: {color: 'darkgrey'}}, 
+        m('.row.searchHelper', {style: {color: 'darkgrey'}},
             m('.col-xs-12.col-lg-8.col-lg-offset-2', [
                 m('.col-md-4', m('p.text-center', ctrl.vm.latestDate ? utils.formatNumber(ctrl.vm.totalCount) + ' events as of ' + new Date().toDateString() : '')),
-                m('.col-md-4', m('p.text-center', ctrl.vm.query().length > 0 ? 'Found ' + utils.formatNumber(ctrl.vm.count) + ' events in ' + ctrl.vm.time + ' seconds' : '')),
+                m('.col-md-4', m('p.text-center', (ctrl.vm.query() && ctrl.vm.query().length > 0) ? 'Found ' + utils.formatNumber(ctrl.vm.count) + ' events in ' + ctrl.vm.time + ' seconds' : '')),
                 m('.col-md-4', m('p.text-center', ctrl.vm.providers + ' content providers'))
             ])
         ),
@@ -97,7 +97,7 @@ Stats.controller = function(vm) {
 
     self.vm = vm;
 
-    self.graphs = {};
+    self.vm.graphs = {};
 
     self.vm.totalCount = 0;
     self.vm.showStats = true;
@@ -107,28 +107,12 @@ Stats.controller = function(vm) {
     self.drawGraph = function(divId, graphFunction) {
         return m('div', {id: divId, config: function(e, i) {
             if (i) return;
-            self.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
+            self.vm.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
         }});
     };
 
-    self.loadStats = function() {
-        self.vm.statsLoaded(false);
-
-        m.request({
-            method: 'GET',
-            url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(self.vm)}),
-            background: true
-        }).then(function(data) {
-            self.vm.statsData = data;
-            Object.keys(self.graphs).map(function(type) {
-                if(type === 'shareDonutGraph') {
-                    var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
-                    $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
-                }
-                self.graphs[type].load(self.vm.statsData.charts[type]);
-            });
-            self.vm.statsLoaded(true);
-        }).then(m.redraw);
+    self.loadStats = function(){
+        utils.loadStats(self.vm);
     };
 
     utils.onSearch(self.loadStats);
