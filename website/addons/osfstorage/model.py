@@ -135,10 +135,6 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         pass
 
-    def get_existing_files(self, connect=None):
-        files_id = OsfStorageGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
-        return map(lambda guid: OsfStorageGuidFile.load(guid), files_id)
-
 
 class BaseFileObject(StoredObject):
     __indices__ = [
@@ -331,7 +327,6 @@ class OsfStorageFileRecord(BaseFileObject):
         if self.is_deleted:
             raise errors.DeleteError
         self.is_deleted = True
-        OsfStorageGuidFile.configure_comment(self.node, self.path, delete=True)
         self.save()
         if log:
             self.log(auth, NodeLog.FILE_REMOVED, version=False)
@@ -340,7 +335,6 @@ class OsfStorageFileRecord(BaseFileObject):
         if not self.is_deleted:
             raise errors.UndeleteError
         self.is_deleted = False
-        OsfStorageGuidFile.configure_comment(self.node, self.path, delete=False)
         self.save()
         if log:
             self.log(auth, NodeLog.FILE_ADDED)
@@ -437,29 +431,6 @@ class OsfStorageGuidFile(GuidFile):
             obj.save()
             created = True
         return obj, created
-
-    @classmethod
-    def configure_comment(cls, node, path, delete=True):
-        """
-
-        :param node:
-        :param path:
-        :param delete: If True, comments are going to be hidden; else, comments are going to be shown
-        :return:
-        """
-        path = path.lstrip('/')
-        try:
-            obj = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-        except modm_errors.ModularOdmException:
-            return
-        for comment in getattr(obj, 'comment_target', []):
-            if delete:
-                comment.hide(save=True)
-            else:
-                comment.show(save=True)
 
     @property
     def provider(self):
