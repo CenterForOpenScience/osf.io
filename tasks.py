@@ -436,12 +436,11 @@ def wheelhouse(addons=False, release=False, dev=False):
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
         if os.path.isdir(path):
-            try:
-                req_file = os.path.join(path, 'requirements.txt')
+            req_file = os.path.join(path, 'requirements.txt')
+            if os.path.exists(req_file):
                 cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
                 run(cmd, pty=True)
-            except:
-                pass
+            
 
 @task
 def addon_requirements(download_cache=None):
