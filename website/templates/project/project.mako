@@ -231,11 +231,10 @@
             <div class="addon-widget-body">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
+
         </div>
 
         %endif
-
-
         <%include file="log_list.mako" args="scripted=True" />
 
     </div>
