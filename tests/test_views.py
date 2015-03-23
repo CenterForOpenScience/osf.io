@@ -18,7 +18,6 @@ from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
-from webtest.app import AppError
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
@@ -522,15 +521,14 @@ class TestProjectViews(OsfTestCase):
         self.project.save()
         url = self.project.api_url_for('get_logs')
         wrong_input = 'invalid page'
-        with assert_raises(AppError):
-            res = self.app.get(url, {'page': wrong_input}, auth=self.auth)
-            assert_equal(res.status_code, 400)
-            assert_equal(
-                res.json['message_long'],
-                'Invalid value for "page": {}'.format(wrong_input)
-            )
-
-
+        res = self.app.get(
+            url, {'page': wrong_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page": {}'.format(wrong_input)
+        )
 
     def test_get_logs_with_count_param(self):
         # Add some logs
@@ -2020,13 +2018,14 @@ class TestWatchViews(OsfTestCase):
         self.user.save()
         url = api_url_for("watched_logs_get")
         wrong_page = 'invalid page'
-        with assert_raises(AppError):
-            res = self.app.get(url, {'page': wrong_page}, auth=self.auth)
-            assert_equal(res.status_code, 400)
-            assert_equal(
-                res.json['message_long'],
-                'Invalid value for "page": {}'.format(wrong_page)
-            )
+        res = self.app.get(
+            url, {'page': wrong_page}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page": {}'.format(wrong_page)
+        )
 
     def test_get_more_watched_logs_wrong_size(self):
         project = ProjectFactory()
@@ -2039,13 +2038,14 @@ class TestWatchViews(OsfTestCase):
         self.user.save()
         url = api_url_for("watched_logs_get")
         wrong_size = 'invalid size'
-        with assert_raises(AppError):
-            res = self.app.get(url, {'size': wrong_size}, auth=self.auth)
-            assert_equal(res.status_code, 400)
-            assert_equal(
-                res.json['message_long'],
-                'Invalid value for "size": {}'.format(wrong_size)
-            )
+        res = self.app.get(
+            url, {'size': wrong_size}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "size": {}'.format(wrong_size)
+        )
 
 class TestPointerViews(OsfTestCase):
 
