@@ -1947,7 +1947,7 @@ span#profileFullname{
 }
 
 /*Dashboard */
-.col-sm-5 .tab-content .addon-widget-body{
+.tab-content .components .addon-widget-body{
     min-height: 605px;
 }
 
