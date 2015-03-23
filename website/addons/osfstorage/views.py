@@ -238,6 +238,7 @@ def update_analytics(node, path, version_idx):
 
 
 @must_be_signed
+@utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     path = payload.get('path', '')
@@ -282,6 +283,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
 
 
 @must_be_signed
+@utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
@@ -316,18 +318,19 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
 
 @must_be_signed
+@utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_create_folder(payload, node_addon, **kwargs):
     path = payload.get('path')
+    split = path.strip('/').split('/')
+    child = split.pop(-1)
 
-    if not path:
+    if not child:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    path = path.strip('/')
+    if split:
+        parent = model.OsfStorageNode.get(split[0], node_addon)
+    else:
+        parent = node_addon.root_node
 
-    tree, created = model.OsfStorageFileTree.get_or_create(path, node_addon)
-
-    if not created:
-        raise HTTPError(httplib.CONFLICT)
-
-    return utils.serialize_metadata(tree)
+    return utils.serialize_metadata(parent.append_folder(child)), httplib.CREATED
