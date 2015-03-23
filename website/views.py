@@ -285,13 +285,13 @@ def dashboard(auth):
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
     page = int(request.args.get('page', '').strip('/') or 0)
-    size = float(request.args.get('size', 10))
+    size = int(request.args.get('size', 10))
     start = page * size
     total = sum(1 for x in user.get_recent_log_ids())
     recent_log_ids = itertools.islice(user.get_recent_log_ids(), start, start + size)
     logs = (model.NodeLog.load(id) for id in recent_log_ids)
 
-    pages = math.ceil(total / size)
+    pages = math.ceil(total / float(size))
 
     return {
         "logs": [serialize_log(log) for log in logs],
