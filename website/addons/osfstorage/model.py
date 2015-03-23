@@ -8,17 +8,18 @@ import furl
 import pymongo
 
 from modularodm import fields, Q
-from modularodm import exceptions as modm_errors
-from modularodm.storage.base import KeyExistsException
 from dateutil.parser import parse as parse_date
+from modularodm import exceptions as modm_errors
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
 from framework.analytics import get_basic_counters
+
 from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 from website.addons.osfstorage import logs
+from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
