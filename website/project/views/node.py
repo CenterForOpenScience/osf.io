@@ -20,7 +20,7 @@ from website import language
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
-from website.addons.base.exceptions import AddonEnrichmentError
+from website.addons.base.exceptions import AddonEnrichmentError, FileDeletedError, FileDoesntExistError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
@@ -889,27 +889,28 @@ def n_unread_total(node, user, page, check=False):
                         n_unread += n_unread_comments(node, user, page, root_id)
 
             return n_unread
-        # unopened files
-        if page == 'files':
-            n_unread = Comment.find(Q('node', 'eq', node) &
-                            Q('user', 'ne', user) &
-                            Q('is_deleted', 'eq', False) &
-                            Q('is_hidden', 'eq', False) &
-                            Q('page', 'eq', page)).count()
-            if check:
+        else:
+            if not user.comments_viewed_timestamp.get(node._id):
+                user.comments_viewed_timestamp[node._id] = dict()
+                user.comments_viewed_timestamp[node._id]['node'] = default_timestamp
+            # unopened files
+            if page == 'files':
+                n_unread = 0
+                file_timestamps = dict()
+                user.comments_viewed_timestamp[node._id]['files'] = file_timestamps
                 for file_id in node.commented_files.keys():
-                    exists, num = check_file_exists(node, file_id)
-                    if not exists:
-                        n_unread -= num
-            return n_unread
-        # node
-        return Comment.find(Q('node', 'eq', node) &
-                            Q('user', 'ne', user) &
-                            Q('date_created', 'gt', view_timestamp) &
-                            Q('date_modified', 'gt', view_timestamp) &
-                            Q('is_deleted', 'eq', False) &
-                            Q('is_hidden', 'eq', False) &
-                            Q('page', 'eq', page)).count()
+                    file_timestamps[file_id] = default_timestamp
+                    n_unread += n_unread_comments(node, user, page, file_id, check)
+                user.save()
+                return n_unread
+            # node
+            return Comment.find(Q('node', 'eq', node) &
+                                Q('user', 'ne', user) &
+                                Q('date_created', 'gt', view_timestamp) &
+                                Q('date_modified', 'gt', view_timestamp) &
+                                Q('is_deleted', 'eq', False) &
+                                Q('is_hidden', 'eq', False) &
+                                Q('page', 'eq', page)).count()
     return n_unread_total(node, user, 'node') + n_unread_total(node, user, 'wiki') + \
         n_unread_total(node, user, 'files', check=check)
 
@@ -919,10 +920,12 @@ def check_file_exists(node, file_id):
     try:
         file_guid = Guid.load(file_id).referent
         file_guid.enrich()
-    except AddonEnrichmentError:
+    except (FileDoesntExistError, FileDeletedError):
         del node.commented_files[file_id]
         node.save()
         return False, num_of_comments
+    except AddonEnrichmentError:
+        pass
     return True, num_of_comments
 
 
