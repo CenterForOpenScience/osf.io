@@ -38,9 +38,17 @@ SearchBar.view = function(ctrl) {
                     m('input.share-search-input.form-control[type=text][placeholder=Search][autofocus]', {
                         value: ctrl.vm.query(),
                         onchange: m.withAttr('value', ctrl.vm.query),
-                    }),         
+                    }),
                     m('span.input-group-btn', [
                         m('button.btn.osf-search-btn', m('i.fa.fa-search.fa-lg')),
+                        m('button.btn.osf-search-btn', {
+                            'data-toggle': 'tooltip',
+                            'title': 'View search as ATOM feed',
+                            'data-placement': 'bottom',
+                            onclick: function(){
+                                location.href = '/share/atom/?' + ctrl.atomParams()
+                            }
+                        }, m('i.fa.fa-rss.fa-lg'))
                     ])
                 ])
             ])
@@ -58,6 +66,13 @@ SearchBar.controller = function(vm) {
     self.vm.providers = Object.keys(self.vm.ProviderMap).length;
     self.vm.latestDate = undefined;
     self.vm.showStats = true;
+
+    self.atomParams = function(){
+        var d = {};
+        d.q = utils.buildQuery(self.vm);
+        d.sort = self.vm.sortMap[self.vm.sort()] || null;
+        return $.param(d);
+    };
 
     self.search = function(e) {
         utils.maybeQuashEvent(e);
