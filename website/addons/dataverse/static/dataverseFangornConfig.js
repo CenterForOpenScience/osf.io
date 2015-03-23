@@ -231,10 +231,10 @@ function _canDrop(item) {
 
 Fangorn.config.dataverse = {
     // Handle changing the branch select
-    folderIcon: _fangornFolderIcons,
-    resolveDeleteUrl: _fangornDeleteUrl,
-    resolveRows: _fangornColumns,
-    lazyload:_fangornLazyLoad,
-    uploadUrl: _uploadUrl,
-    canDrop: _canDrop
+    //folderIcon: _fangornFolderIcons,
+    //resolveDeleteUrl: _fangornDeleteUrl,
+    //resolveRows: _fangornColumns,
+    //lazyload:_fangornLazyLoad,
+    //uploadUrl: _uploadUrl,
+    //canDrop: _canDrop
 };
