@@ -18,6 +18,7 @@ from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from webtest.app import AppError
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
@@ -495,7 +496,7 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         for mock_command in mock_commands:
             assert_false(mock_command.called)
@@ -508,6 +509,29 @@ class TestProjectViews(OsfTestCase):
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
 
+    def test_get_logs_invalid_page_input(self):
+        # Add some logs
+        for _ in range(5):
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action='file_added',
+                    params={'project': self.project._id}
+                )
+            )
+        self.project.save()
+        url = self.project.api_url_for('get_logs')
+        wrong_input = 'invalid page'
+        with assert_raises(AppError):
+            res = self.app.get(url, {'page': wrong_input}, auth=self.auth)
+            assert_equal(res.status_code, 400)
+            assert_equal(
+                res.json['message_long'],
+                'Invalid value for "page": {}'.format(wrong_input)
+            )
+
+
+
     def test_get_logs_with_count_param(self):
         # Add some logs
         for _ in range(5):
@@ -519,7 +543,7 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
         assert_equal(res.json['total'], 5 + 2)
@@ -537,7 +561,7 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
         assert_equal(res.json['total'], 12 + 2)
@@ -555,7 +579,7 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
         assert_equal(res.json['total'], 12 + 2)
@@ -585,7 +609,7 @@ class TestProjectViews(OsfTestCase):
                 params={'project': child._id}
             )
 
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
         assert_equal(res.json['total'], 15 + 2)
@@ -1950,6 +1974,23 @@ class TestWatchViews(OsfTestCase):
         assert_equal(len(res.json['logs']), 10)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
     def test_get_more_watched_logs(self):
         project = ProjectFactory()
         # Add some logs
@@ -1959,14 +2000,52 @@ class TestWatchViews(OsfTestCase):
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
         self.user.save()
-        url = "/api/v1/watched/logs/"
-        res = self.app.get(url, {"page": 1}, auth=self.auth)
+        url = api_url_for("watched_logs_get")
+        page = 1
+        res = self.app.get(url, {'page': page}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
-        assert_equal(res.json['page'], 1)
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], page)
         assert_equal(res.json['pages'], 2)
-        assert_equal(res.json['total'], 13)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_more_watched_logs_wrong_page(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        wrong_page = 'invalid page'
+        with assert_raises(AppError):
+            res = self.app.get(url, {'page': wrong_page}, auth=self.auth)
+            assert_equal(res.status_code, 400)
+            assert_equal(
+                res.json['message_long'],
+                'Invalid value for "page": {}'.format(wrong_page)
+            )
+
+    def test_get_more_watched_logs_wrong_size(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        wrong_size = 'invalid size'
+        with assert_raises(AppError):
+            res = self.app.get(url, {'size': wrong_size}, auth=self.auth)
+            assert_equal(res.status_code, 400)
+            assert_equal(
+                res.json['message_long'],
+                'Invalid value for "size": {}'.format(wrong_size)
+            )
 
 class TestPointerViews(OsfTestCase):
 
