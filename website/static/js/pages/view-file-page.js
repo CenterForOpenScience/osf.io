@@ -52,14 +52,11 @@ $(document).ready(function() {
 
                     if (tb.currentFileId) {
                         var index = tb.returnIndex(tb.currentFileId);
-                        if (tb.visibleIndexes.indexOf(index) !== -1 ) {
-                            var visibleIndex = tb.showRange.indexOf(index);
-                            // show item if it is not in the visible range
-                            if (visibleIndex ===  -1 || visibleIndex > tb.showRange.length - 2 ) {
-                                var scrollTo = tb.visibleIndexes.indexOf(index) * tb.options.rowHeight;
-                                $('#tb-tbody').scrollTop(scrollTo);
-                           }
-                       }
+                        var visibleIndex = tb.visibleIndexes.indexOf(index);
+                        if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
+                            var scrollTo = visibleIndex * tb.options.rowHeight;
+                            $('#tb-tbody').scrollTop(scrollTo);
+                        }
                     }
                 },
                 resolveRows: function (item) {
