@@ -74,32 +74,6 @@ SIGNED_REQUEST_ERROR = HTTPError(
 )
 
 
-def patch_url(url, **kwargs):
-    parsed = furl.furl(url)
-    for key, value in kwargs.iteritems():
-        setattr(parsed, key, value)
-    return parsed.url
-
-
-def ensure_domain(url):
-    return patch_url(url, host=site_settings.DOMAIN)
-
-
-def build_callback_urls(node, path):
-    start_url = node.api_url_for('osf_storage_upload_start_hook', path=path)
-    finish_url = node.api_url_for('osf_storage_upload_finish_hook', path=path)
-    cached_url = node.api_url_for('osf_storage_upload_cached_hook', path=path)
-    ping_url = node.api_url_for('osf_storage_upload_ping_hook', path=path)
-    archive_url = node.api_url_for('osf_storage_upload_archived_hook', path=path)
-    return {
-        'startUrl': ensure_domain(start_url),
-        'finishUrl': ensure_domain(finish_url),
-        'cachedUrl': ensure_domain(cached_url),
-        'pingUrl': ensure_domain(ping_url),
-        'archiveUrl': ensure_domain(archive_url),
-    }
-
-
 def get_filename(version_idx, file_version, file_record):
     """Build name for downloaded file, appending version date if not latest.
 
