@@ -23,7 +23,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
         self.userAccountId = ko.observable('');
     },
-    updateAccounts: function(callback) {
+    updateAccounts: function() {
         var self = this;
         var request = $.get(self.urls().accounts);
         request.done(function(data) {
@@ -33,7 +33,6 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     id: account.id
                 };
             }));
-            callback();
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
@@ -43,30 +42,32 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 error: error
             });
         });
+        return request;
     },
+    /**
+     * Allows a user to create an access token from the nodeSettings page
+     */
     connectAccount: function() {
-        /**
-         * Allows a user to create an access token from the nodeSettings page
-         */
         var self = this;
 
         window.oauthComplete = function(res) {
             // Update view model based on response
             self.changeMessage(self.messages.CONNECT_ACCOUNT_SUCCESS(), 'text-success', 3000);
-            self.updateAccounts(function() {
-                $osf.postJSON(
-                    self.urls().importAuth, {
-                        external_account_id: self.accounts()[0].id
-                    }
-                ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
-            });
+            self.updateAccounts()
+                .done(function() {
+                    $osf.postJSON(
+                        self.urls().importAuth, {
+                            external_account_id: self.accounts()[0].id
+                        }
+                    ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
+                });
         };
         window.open(self.urls().auth);
     },
     connectExistingAccount: function(account_id) {
         var self = this;
 
-        $osf.postJSON(
+        return $osf.postJSON(
             self.urls().importAuth, {
                 external_account_id: account_id
             }
