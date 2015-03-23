@@ -14,7 +14,7 @@ var formViewModel = require('js/formViewModel');
 var SignInViewModel = oop.extend(formViewModel.FormViewModel, {
     constructor: function () {
         var self = this;
-        self.super.constructor();
+        self.super.constructor.call(self);
         self.username = ko.observable('').extend({
             required: true,
             email: true
@@ -26,17 +26,15 @@ var SignInViewModel = oop.extend(formViewModel.FormViewModel, {
         });
     },
     isValid: function() {
-        var ValidationError = new formViewModel.ValidationError();
+        var validationError = new formViewModel.ValidationError();
         if (!this.username.isValid()) {
-            ValidationError.messages.push('Please enter a valid email address.');
+            validationError.messages.push('Please enter a valid email address.');
         }
         if (!this.password.isValid()) {
-            ValidationError.messages.push('Your password must be more than six but fewer than 36 characters.');
+            validationError.messages.push('Your password must be more than six but fewer than 36 characters.');
         }
-        if (ValidationError.messages.length > 0) {
-            throw ValidationError;
-        } else {
-            return true;
+        if (validationError.messages.length > 0) {
+            throw validationError;
         }
     }
 });

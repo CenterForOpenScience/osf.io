@@ -10,7 +10,7 @@ var oop = require('js/oop');
 
 var ValidationError = oop.extend(Error, {
     constructor: function (messages, header, level) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         this.messages = messages || [];
         this.header = header || 'Error';
         this.level = level || 'warning';
@@ -18,9 +18,7 @@ var ValidationError = oop.extend(Error, {
 });
 
 var FormViewModel = oop.defclass({
-    constructor: function() {
-        var self = this;
-    },
+    constructor: function() {},
     isValid: function() {
         throw new Error('FormViewModel subclass must implement isValid');
     },
@@ -28,15 +26,19 @@ var FormViewModel = oop.defclass({
         try {
             this.isValid();
             return true; // Allow form to submit normally
-        } catch (ValidationError) {
-            for (var i = 0; i < ValidationError.messages.length; i++) {
-                $osf.growl(
-                    ValidationError.header,
-                    ValidationError.messages[i],
-                    ValidationError.level
-                );
+        } catch (err) {
+            if (err instanceof ValidationError) {
+                for (var i = 0; i < err.messages.length; i++) {
+                    $osf.growl(
+                        err.header,
+                        err.messages[i],
+                        err.level
+                    );
+                }
+                return false; // Stop form submission
+            } else {
+                throw err;
             }
-            return false; // Stop form submission
         }
     }
 });
