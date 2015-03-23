@@ -169,7 +169,7 @@ function ViewModel(options){
     // singleVis : checks if the item visible is the only visible column
     self.singleVis = ko.pureComputed(function(){
         var visible = 0;
-        var single = undefined;
+        var single;
         if(self.editVis()){
             visible++;
             single = 'edit';
@@ -180,13 +180,13 @@ function ViewModel(options){
         }
         if(self.compareVis()){
             visible++;
-            single = 'compare'
+            single = 'compare';
         }
         if(visible === 1){
             return single;
         }
-        return undefined;
-    })
+        return false;
+    });
 
     self.pageTitle = $(document).find('title').text();
 
