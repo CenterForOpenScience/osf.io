@@ -84,7 +84,7 @@
                             method="POST"
                         >
                         <div class="form-group">
-                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Username">
+                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Email">
                         </div>
                         <div class="form-group">
                             <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">
