@@ -20,14 +20,14 @@ var oop = require('js/oop');
 ko.punches.enableAll();
 
 var FolderPickerViewModel = oop.defclass({
+    /*
+     @class ViewModel
+     @param {String} addonName Full display name of the addon
+     @param {String} url API url to initially fetch settings
+     @param {String} selector CSS selector for containing div
+     @param {String} folderPicker CSS selector for folderPicker div
+     */    
     constructor: function(addonName, url, selector, folderPicker) {
-        /*
-         @class ViewModel
-         @param {String} addonName: full display name of the addon
-         @param {String} url: API url to initially fetch settings
-         @param {String} selector: CSS selector for containing div
-         @param {String} folderPicker: CSS selector for folderPicker div
-         */
         var self = this;
         self.url = url;
         self.addonName = addonName;
@@ -163,8 +163,14 @@ var FolderPickerViewModel = oop.defclass({
             return userIsOwner ? name : '';
         });
     },
+    /** 
+     * Change the flashed message. 
+     *
+     * @param {String} text Text to show
+     * @param {String} css CSS class of text to be show, defaults to 'text-info'
+     * @param {Number} timeout Optional number of ms to wait until removing the flashed message
+     */
     changeMessage: function(text, css, timeout) {
-        /** Change the flashed message. */
         var self = this;
 
         self.message(text);
@@ -178,11 +184,18 @@ var FolderPickerViewModel = oop.defclass({
             }, timeout);
         }
     },
-    _updateCustomFields: function(settings){},  // Abstract method
+    /**
+     * Abstract stub where subclasses can capture extra data from the API response
+     *
+     * @param {Object} settings Settings passed from server response in #updateFromData
+     */
+    _updateCustomFields: function(settings){},  
+    /**
+     * Update the view model from data returned from the server or data passed explicitly.
+     *
+     * @param {Object} data optional data to update from rather than from API
+     */
     updateFromData: function(data) {
-        /**
-         * Update the view model from data returned from the server.
-         */
         var self = this;
         var ret = $.Deferred();
         var applySettings = function(settings){
@@ -280,10 +293,10 @@ var FolderPickerViewModel = oop.defclass({
             .done(onImportSuccess)
             .fail(onImportError);
     },
+    /**
+     * Send PUT request to import access token from user profile.
+     */
     importAuth: function() {
-        /**
-         * Send PUT request to import access token from user profile.
-         */
         var self = this;
         bootbox.confirm({
             title: 'Import ' + self.addonName + ' Access Token?',
@@ -295,10 +308,10 @@ var FolderPickerViewModel = oop.defclass({
             }
         });
     },
+    /**
+     * Send DELETE request to deauthorize this node.
+     */
     _deauthorizeConfirm: function(){
-        /**
-         * Send DELETE request to deauthorize this node.
-         */
         var self = this;
         var request = $.ajax({
             url: self.urls().deauthorize,
@@ -321,10 +334,10 @@ var FolderPickerViewModel = oop.defclass({
         });
         return request;
     },
+    /** Pop up a confirmation to deauthorize addon from this node.
+     *  Send DELETE request if confirmed.
+     */
     deauthorize: function() {
-        /** Pop up a confirmation to deauthorize addon from this node.
-         *  Send DELETE request if confirmed.
-         */
         var self = this;
         bootbox.confirm({
             title: 'Deauthorize ' + self.addonName + '?',
@@ -336,17 +349,16 @@ var FolderPickerViewModel = oop.defclass({
             }
         });
     },
+    /**
+     * Must be used to update radio buttons and knockout view model simultaneously
+     */    
     cancelSelection: function() {
-        /**
-         * Must be used to update radio buttons and knockout view model simultaneously
-         */
         this.selected(null);
     },
+    /**
+     *  Toggles the visibility of the folder picker.
+     */
     togglePicker: function() {
-        /**
-         *  Toggles the visibility of the folder picker.
-         */
-        // Toggle visibility of folder picker
         var shown = this.currentDisplay() === this.PICKER;
         if (!shown) {
             this.currentDisplay(this.PICKER);
@@ -370,10 +382,10 @@ var FolderPickerViewModel = oop.defclass({
             }
         };
     },
+    /**
+     *  Activates the HGrid folder picker.
+     */
     activatePicker: function() {
-        /**
-         *  Activates the HGrid folder picker.
-         */
         var self = this;
         var opts = $.extend({}, {
             initialFolderPath: self.folder().path || '',
