@@ -1,13 +1,14 @@
 /**
-* Controller for the Add Contributor modal.
-*/
+ * Controller for the Add Contributor modal.
+ */
 'use strict';
 
 var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
+var Raven = require('raven-js');
 require('knockout-mapping');
-require('knockout-punches');
+require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
 var Raven = require('raven-js');
@@ -28,9 +29,9 @@ var ABUSE_CATEGORIES = {
 };
 
 /*
-    * Format UTC datetime relative to current datetime, ensuring that time
-    * is in the past.
-    */
+ * Format UTC datetime relative to current datetime, ensuring that time
+ * is in the past.
+ */
 var relativeDate = function(datetime) {
     var now = moment.utc();
     var then = moment.utc(datetime);
@@ -62,9 +63,6 @@ var exclusifyGroup = function() {
     }
 };
 
-/*
-    *
-    */
 var BaseComment = function() {
 
     var self = this;
