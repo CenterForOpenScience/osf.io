@@ -61,6 +61,18 @@
 
 </div>
 
+ %if node['tags'] or 'write' in user['permissions']:
+     <div class="tags addon-widget-container">
+        <div class="addon-widget-header clearfix">
+            <h4>Tags </h4>
+            <div class="pull-right"></div>
+        </div>
+        <div class="addon-widget-body">
+            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+        </div>
+    </div>
+%endif
+
 
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">
