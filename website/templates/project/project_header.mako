@@ -11,9 +11,7 @@
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
                         <span class="sr-only">Toggle navigation</span>
-                        <span class="fa fa-bar"></span>
-                        <span class="fa fa-bar"></span>
-                        <span class="fa fa-bar"></span>
+                        <span class="fa fa-bars fa-lg"></span>
                     </button>
                     <a class="navbar-brand visible-xs" href="${node['url']}">
                         ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation

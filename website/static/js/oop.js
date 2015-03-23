@@ -1,17 +1,9 @@
 // These are mostly a simplification of
 // augment.js (https://github.com/javascript/augment, MIT Licensed) and
 // Douglas Crockford's protoypical inheritance pattern.
+require('js/objectCreateShim'); // IE8 compat
 
 var noop = function() {};
-
-// IE8 shim for Object.create
-if (typeof Object.create !== 'function') {
-    Object.create = function (o) {
-        noop.prototype = o;
-        return new noop();
-    };
-}
-
 /**
  * Usage:
  *

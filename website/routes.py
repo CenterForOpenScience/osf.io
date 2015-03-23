@@ -136,7 +136,7 @@ def make_url_map(app):
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
             website_views.resolve_guid,
-            OsfWebRenderer('', render_mako_string),
+            notemplate,
         ),
 
         Rule(
