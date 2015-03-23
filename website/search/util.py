@@ -4,6 +4,8 @@ import webcolors
 
 from werkzeug.contrib.atom import AtomFeed
 
+from website.util.sanitize import strip_html
+
 
 COLORBREWER_COLORS = [(166, 206, 227), (31, 120, 180), (178, 223, 138), (51, 160, 44), (251, 154, 153), (227, 26, 28), (253, 191, 111), (255, 127, 0), (202, 178, 214), (106, 61, 154), (255, 255, 153), (177, 89, 40)]
 
@@ -43,6 +45,18 @@ def build_query_string(q):
             'lenient': True  # TODO, may not want to do this
         }
     }
+
+
+def compute_start(page, size):
+    try:
+        start = (int(page) - 1) * size
+    except ValueError:
+        start = 0
+
+    if start < 0:
+        start = 0
+
+    return start
 
 
 def generate_color():
@@ -105,11 +119,12 @@ def create_atom_feed(name, data, query, size, start, url, to_atom):
     return feed
 
 
-def illegal_unicode_replace(atom_element):
+def html_and_illegal_unicode_replace(atom_element):
     """ Replace an illegal for XML unicode character with nothing.
     This fix thanks to Matt Harper from his blog post:
     https://maxharp3r.wordpress.com/2008/05/15/pythons-minidom-xml-and-illegal-unicode-characters/
     """
     if atom_element:
-        return RE_XML_ILLEGAL_COMPILED.sub('', atom_element)
+        new_element = RE_XML_ILLEGAL_COMPILED.sub('', atom_element)
+        return strip_html(new_element)
     return atom_element
