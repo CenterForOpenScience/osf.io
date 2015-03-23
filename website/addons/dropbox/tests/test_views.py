@@ -429,7 +429,9 @@ class TestCommentsViews(DropboxAddonTestCase):
         assert_equal(len(comments), 1)
         assert_true(comments[0]['isHidden'])
 
-    def test_comments_visibility_on_reauthorize(self):
+    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
+    def test_comments_visibility_on_reauthorize(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
         self.node_settings.folder = '/'
         # Create comment
         path = u'Public/latest.txt'

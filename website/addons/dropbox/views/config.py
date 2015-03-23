@@ -15,7 +15,7 @@ from website.project.decorators import (
 from website.util import web_url_for
 
 from website.addons.dropbox import utils
-from website.addons.dropbox.client import get_client_from_user_settings, get_node_addon_client
+from website.addons.dropbox.client import get_client_from_user_settings
 from dropbox.rest import ErrorResponse
 
 
@@ -136,10 +136,9 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked dropbox folder."""
     folder = request.json.get('selected')
     path = folder['path']
-    if path != node_addon.folder:
-        node_addon.hide_all_comments()
-        node_addon.set_folder(path, auth=auth)
-        node_addon.show_comments()
+    node_addon.hide_all_comments()
+    node_addon.set_folder(path, auth=auth)
+    node_addon.show_comments()
     node_addon.save()
     return {
         'result': {

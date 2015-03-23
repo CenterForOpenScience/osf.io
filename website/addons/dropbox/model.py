@@ -350,7 +350,6 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             #
             return message
 
-
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
