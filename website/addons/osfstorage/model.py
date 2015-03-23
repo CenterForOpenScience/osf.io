@@ -92,143 +92,110 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         pass
 
 
-class BaseFileObject(StoredObject):
+class OsfStorageNode(StoredObject):
     __indices__ = [
         {
             'key_or_list': [
-                ('path', pymongo.ASCENDING),
+                ('name', pymongo.ASCENDING),
+                ('type', pymongo.ASCENDING),
+                ('parent', pymongo.ASCENDING),
                 ('node_settings', pymongo.ASCENDING),
             ],
             'unique': True,
         }
     ]
 
-    path = fields.StringField(required=True, index=True)
-    node_settings = fields.ForeignField(
-        'OsfStorageNodeSettings',
-        required=True,
-        index=True,
-    )
+    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
-    _meta = {
-        'abstract': True,
-    }
+    is_deleted = fields.BooleanField(default=False)
+    name = fields.StringField(required=True, index=True)
+    kind = fields.StringField(required=True, index=True)
+    parent = fields.ForeignField('OsfStorageNode', index=True)
+    versions = fields.ForeignField('OsfStorageFileVersion', list=True)
+    node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
+
+    @classmethod
+    def get(cls, path, node_settings):
+        return cls.find_one(
+            Q('_id', 'eq', path) &
+            Q('node_settings', 'eq', node_settings)
+        )
+
+    @classmethod
+    def get_folder(cls, path, node_settings):
+        return cls.find_one(
+            Q('_id', 'eq', path) &
+            Q('kind', 'eq', 'folder') &
+            Q('node_settings', 'eq', node_settings)
+        )
+
+    @classmethod
+    def get_file(cls, path, node_settings):
+        return cls.find_one(
+            Q('_id', 'eq', path) &
+            Q('kind', 'eq', 'file') &
+            Q('node_settings', 'eq', node_settings)
+        )
 
     @property
-    def name(self):
-        _, value = os.path.split(self.path)
-        return value
+    @utils.must_be('folder')
+    def children(self):
+        return self.__class__.find(Q('parent', 'eq', self._id))
 
     @property
-    def extension(self):
-        _, value = os.path.splitext(self.path)
-        return value
+    def is_folder(self):
+        return self.kind == 'folder'
+
+    @property
+    def is_file(self):
+        return self.kind == 'file'
+
+    @property
+    def path(self):
+        return '/{}{}'.format(self._id, '/' if self.is_folder else '')
 
     @property
     def node(self):
         return self.node_settings.owner
 
-    @classmethod
-    def parent_class(cls):
-        raise NotImplementedError
+    def find_child_by_name(self, name, kind='file'):
+        return self.__class__.find_one(
+            Q('name', 'eq', name) &
+            Q('kind', 'eq', kind) &
+            Q('parent', 'eq', self)
+        )
 
-    @classmethod
-    def find_by_path(cls, path, node_settings):
-        """Find a record by path and root settings record.
+    def append_folder(self, name, save=True):
+        return self._create_child(name, 'folder', save=save)
 
-        :param str path: Path to file or directory
-        :param node_settings: Root node settings record
-        """
-        try:
-            obj = cls.find_one(
-                Q('path', 'eq', path.rstrip('/')) &
-                Q('node_settings', 'eq', node_settings._id)
-            )
-            return obj
-        except modm_errors.NoResultsFound:
-            return None
+    def append_file(self, name, save=True):
+        return self._create_child(name, 'file', save=save)
 
-    @classmethod
-    def get_or_create(cls, path, node_settings):
-        """Get or create a record by path and root settings record.
-
-        :param str path: Path to file or directory
-        :param node_settings: Root node settings record
-        :returns: Tuple of (record, created)
-        """
-        path = path.rstrip('/')
-
-        try:
-            obj = cls(path=path, node_settings=node_settings)
-            obj.save()
-        except KeyExistsException:
-            obj = cls.find_by_path(path, node_settings)
-            assert obj is not None
-            return obj, False
-
-        # Ensure all intermediate paths
-        if path:
-            parent_path, _ = os.path.split(path)
-            parent_class = cls.parent_class()
-            parent_obj, _ = parent_class.get_or_create(parent_path, node_settings)
-            parent_obj.append_child(obj)
-        else:
-            node_settings.file_tree = obj
-            node_settings.save()
-
-        return obj, True
+    @utils.must_be('folder')
+    def _create_child(self, name, kind, save=True):
+        child = OsfStorageNode(
+            name=name,
+            kind=kind,
+            parent=self,
+            node_settings=self.node_settings
+        )
+        if save:
+            child.save()
+        return child
 
     def get_download_count(self, version=None):
-        """Return download count or `None` if this is not a file object (e.g. a
-        folder).
-        """
-        return None
+        if self.is_folder:
+            return None
 
-    def __repr__(self):
-        return '<{}(path={!r}, node_settings={!r})>'.format(
-            self.__class__.__name__,
-            self.path,
-            self.node_settings._id,
-        )
+        parts = ['download', self.node._id, self.path]
+        if version is not None:
+            parts.append(version)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
 
+        return count or 0
 
-class OsfStorageFileTree(BaseFileObject):
-
-    _id = oid_primary_key
-    children = fields.AbstractForeignField(list=True)
-
-    @classmethod
-    def parent_class(cls):
-        return OsfStorageFileTree
-
-    def append_child(self, child):
-        """Appending children through ODM introduces a race condition such that
-        concurrent requests can overwrite previously added items; use the native
-        `addToSet` operation instead.
-        """
-        collection = self._storage[0].store
-        collection.update(
-            {'_id': self._id},
-            {'$addToSet': {'children': (child._id, child._name)}}
-        )
-        # Updating MongoDB directly means the cache is wrong; reload manually
-        self.reload()
-
-    @property
-    def is_deleted(self):
-        return False
-
-
-class OsfStorageFileRecord(BaseFileObject):
-
-    _id = oid_primary_key
-    is_deleted = fields.BooleanField(default=False)
-    versions = fields.ForeignField('OsfStorageFileVersion', list=True)
-
-    @classmethod
-    def parent_class(cls):
-        return OsfStorageFileTree
-
+    @utils.must_be('file')
     def get_version(self, index=-1, required=False):
         try:
             return self.versions[index]
@@ -237,14 +204,7 @@ class OsfStorageFileRecord(BaseFileObject):
                 raise errors.VersionNotFoundError
             return None
 
-    def get_versions(self, page, size=settings.REVISIONS_PAGE_SIZE):
-        start = len(self.versions) - (page * size)
-        stop = max(0, start - size)
-        indices = range(start, stop, -1)
-        versions = [self.versions[idx - 1] for idx in indices]
-        more = stop > 0
-        return indices, versions, more
-
+    @utils.must_be('file')
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
         version = OsfStorageFileVersion(creator=creator, location=location)
@@ -267,7 +227,10 @@ class OsfStorageFileRecord(BaseFileObject):
         )
         return version
 
+    @utils.must_be('file')
     def update_version_metadata(self, location, metadata):
+        assert self.is_file, 'Must be a file to perform this action'
+
         for version in reversed(self.versions):
             if version.location == location:
                 version.update_metadata(metadata)
@@ -299,23 +262,12 @@ class OsfStorageFileRecord(BaseFileObject):
         if log:
             self.log(auth, NodeLog.FILE_ADDED)
 
-    def get_download_count(self, version=None):
-        """
-        :param int version: Optional one-based version index
-        """
-        parts = ['download', self.node._id, self.path]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
-        return count or 0
-
-
-LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
-def validate_location(value):
-    for key in LOCATION_KEYS:
-        if key not in value:
-            raise modm_errors.ValidationValueError
+    def __repr__(self):
+        return '<{}(name={!r}, node_settings={!r})>'.format(
+            self.__class__.__name__,
+            self.name,
+            self.node_settings._id,
+        )
 
 
 class OsfStorageFileVersion(StoredObject):
