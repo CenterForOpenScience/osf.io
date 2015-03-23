@@ -239,14 +239,14 @@ def search_share_atom(**kwargs):
     # TODO -  move this functionality into build_query in util
 
     try:
-        page = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
+        start = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
     except ValueError:
-        page = 1
+        start = 0
 
-    if page < 1:
-        page = 1
+    if start < 0:
+        start = 0
 
-    query = build_query(q, size=RESULTS_PER_PAGE, start=page, sort=sort)
+    query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
 
     try:
         search_results = search.search_share(query)
@@ -265,7 +265,7 @@ def search_share_atom(**kwargs):
         data=search_results['results'],
         query=q,
         size=RESULTS_PER_PAGE,
-        start=page,
+        start=start,
         url=atom_url,
         to_atom=share_search.to_atom
     )
