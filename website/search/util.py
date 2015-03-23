@@ -16,6 +16,8 @@ RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
 
 RE_XML_ILLEGAL_COMPILED = re.compile(RE_XML_ILLEGAL)
 
+RE_HTML_TAG_COMPILED = re.compile(r'<[^>]+>')
+
 
 def build_query(q='*', start=0, size=10, sort=None):
     query = {
@@ -105,11 +107,12 @@ def create_atom_feed(name, data, query, size, start, url, to_atom):
     return feed
 
 
-def illegal_unicode_replace(atom_element):
+def html_and_illegal_unicode_replace(atom_element):
     """ Replace an illegal for XML unicode character with nothing.
     This fix thanks to Matt Harper from his blog post:
     https://maxharp3r.wordpress.com/2008/05/15/pythons-minidom-xml-and-illegal-unicode-characters/
     """
     if atom_element:
-        return RE_XML_ILLEGAL_COMPILED.sub('', atom_element)
+        new_element = RE_XML_ILLEGAL_COMPILED.sub('', atom_element)
+        return RE_HTML_TAG_COMPILED.sub('', new_element)
     return atom_element
