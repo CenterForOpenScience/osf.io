@@ -1,4 +1,4 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 
 import os
 import bson
@@ -80,7 +80,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return True
 
     def find_or_create_file_guid(self, path):
-        return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
+        return OsfStorageGuidFile.get_or_create(node=self.owner, path=path.lstrip('/'))
 
     def copy_contents_to(self, dest):
         """Copy file tree and contents to destination. Note: destination must be
@@ -411,26 +411,21 @@ class OsfStorageFileVersion(StoredObject):
 
 
 class OsfStorageGuidFile(GuidFile):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(required=True, index=True)
 
     @property
     def waterbutler_path(self):
         return '/' + self.path
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        try:
-            obj = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-            created = False
-        except modm_errors.ModularOdmException:
-            obj = cls(node=node, path=path)
-            obj.save()
-            created = True
-        return obj, created
 
     @property
     def provider(self):
