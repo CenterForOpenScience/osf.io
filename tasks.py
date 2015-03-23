@@ -49,6 +49,7 @@ def server(host=None, port=5000, debug=True, live=False):
 
     if live:
         server = Server(app.wsgi_app)
+        server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
     else:
         app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
