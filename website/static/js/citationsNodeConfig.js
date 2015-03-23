@@ -7,11 +7,9 @@
 var ko = require('knockout');
 require('knockout-punches');
 var $ = require('jquery');
-var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 

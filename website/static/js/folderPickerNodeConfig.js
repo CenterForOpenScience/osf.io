@@ -10,10 +10,10 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
+var FolderPicker = require('js/folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
 
@@ -304,7 +304,7 @@ var FolderPickerViewModel = oop.defclass({
             url: self.urls().deauthorize,
             type: 'DELETE'
         });
-        request.done(function() {
+        r1equest.done(function() {
             // Update observables
             self.nodeHasAuth(false);
             self.cancelSelection();
