@@ -287,33 +287,18 @@ def osf_storage_root(node_settings, auth, **kwargs):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
-    page = payload.get('page') or 0
     path = payload.get('path')
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    try:
-        page = int(page)
-    except (TypeError, ValueError):
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
-
-    if record is None:
-        raise HTTPError(httplib.NOT_FOUND)
-
-    indices, versions, more = record.get_versions(
-        page,
-        size=osf_storage_settings.REVISIONS_PAGE_SIZE,
-    )
+    record = model.OsfStorageNode.get(path.strip('/'), node_addon)
 
     return {
         'revisions': [
-            utils.serialize_revision(node, record, versions[idx], indices[idx])
-            for idx in range(len(versions))
-        ],
-        'more': more,
+            utils.serialize_revision(node, record, version, idx)
+            for idx, version in enumerate(record.versions)
+        ]
     }
 
 
