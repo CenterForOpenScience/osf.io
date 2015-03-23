@@ -830,17 +830,6 @@ def _get_children(node, auth, indent=0):
 
     return children
 
-def get_all_files(node):
-    files = []
-    # Other addons
-    addons = node.get_addon_names()
-    for addon_name in addons:
-        if addon_name in ('figshare', 'dropbox', 's3', 'github', 'osfstorage'):
-            addon = node.get_addon(addon_name)
-            if addon is not None:
-                files.extend(addon.get_existing_files())
-    return files
-
 
 def n_unread_comments(node, user, page, root_id=None):
     """Return the number of unread comments on a node for a user."""
@@ -881,10 +870,9 @@ def n_unread_total(node, user, page):
         if isinstance(view_timestamp, dict):
             n_unread = 0
             if page == 'files':
-                files = get_all_files(node)
-                for file_obj in files:
-                    if hasattr(file_obj, 'commented'):
-                        n_unread += n_unread_comments(node, user, page, file_obj._id)
+                files = node.commented_files.keys()
+                for file_id in files:
+                    n_unread += n_unread_comments(node, user, page, file_id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:

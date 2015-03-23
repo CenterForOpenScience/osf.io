@@ -376,7 +376,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.shouldContinueThread = ko.computed(function() {
         if (self.shouldShowChildren()) { return false;}
-        return (!self.isHidden());
+        return ((!self.isHidden()) && self.hasChildren());
     })
 
     self.cleanTitle = ko.computed(function() {

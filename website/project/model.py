@@ -183,6 +183,11 @@ class Comment(GuidStoredObject):
             comment.root_target = comment.target
         comment.save()
 
+        if comment.page == 'files':
+            file_key = comment.root_target._id
+            comment.node.commented_files[file_key] = \
+                comment.node.commented_files.get(file_key, 0) + 1
+
         comment.node.add_log(
             NodeLog.COMMENT_ADDED,
             {
@@ -218,6 +223,10 @@ class Comment(GuidStoredObject):
 
     def delete(self, auth, save=False):
         self.is_deleted = True
+        if self.page == 'files':
+            self.node.commented_files[self.root_target._id] -= 1
+            if self.node.commented_files[self.root_target._id] == 0:
+                del self.node.commented_files[self.root_target._id]
         self.node.add_log(
             NodeLog.COMMENT_REMOVED,
             {
@@ -234,6 +243,10 @@ class Comment(GuidStoredObject):
 
     def undelete(self, auth, save=False):
         self.is_deleted = False
+        if self.page == 'files':
+            file_key = self.root_target._id
+            self.node.commented_files[file_key] = \
+                self.node.commented_files.get(file_key, 0) + 1
         self.node.add_log(
             NodeLog.COMMENT_ADDED,
             {
@@ -641,6 +654,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
+
+    # Files that contains comments
+    commented_files = fields.DictionaryField(default=dict)
 
     _meta = {
         'optimistic': True,

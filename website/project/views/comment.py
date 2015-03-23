@@ -19,7 +19,7 @@ from website.addons.base import GuidFile
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
-from website.project.views.node import _view_project, n_unread_comments, get_all_files
+from website.project.views.node import _view_project, n_unread_comments
 
 
 @must_be_contributor_or_public
@@ -354,17 +354,13 @@ def list_total_comments_widget(node, auth):
 
 
 def list_total_comments(node, auth, page):
-    comments_keys = []
     if page == 'total':
         comments_keys = Comment.find(Q('node', 'eq', node) &
-                                Q('is_hidden', 'eq', False) &
-                                Q('page', 'ne', 'files')).get_keys()
-    elif page != 'files':
+                                Q('is_hidden', 'eq', False)).get_keys()
+    else:
         comments_keys = Comment.find(Q('node', 'eq', node) &
                                 Q('page', 'eq', page) &
                                 Q('is_hidden', 'eq', False)).get_keys()
-    if page in ('total', 'files'):
-        comments_keys.extend(Comment.find(Q('node', 'eq', node) & Q('page', 'eq', 'files')).get_keys())
     comments = []
     for cid in comments_keys:
         cmt = Comment.load(cid)
@@ -449,10 +445,12 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
         if root_id is None or root_id == 'None':
             ret = {}
             if page == 'files':
-                files = get_all_files(node)
-                for addon_file in files:
-                    if hasattr(addon_file, 'commented'):
-                        ret = _update_comments_timestamp(auth, node, page, addon_file._id)
+                root_targets = node.commented_files.keys()
+                for root_target_id in root_targets:
+                    root_target = Guid.load(root_target_id).referent
+                    if root_target.commented[0].is_hidden:
+                        continue
+                    ret = _update_comments_timestamp(auth, node, page, root_target._id)
             elif page == 'wiki':
                 root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
                 for root_target in root_targets:
