@@ -5,36 +5,36 @@
 
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('knockout-punches');
-var osfHelpers = require('osfHelpers');
+require('knockout.punches');
+var osfHelpers = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
 function ViewModel(url) {
     var self = this;
-    self.url = url;
-    self.urls = ko.observable();
-    self.dataverseUsername = ko.observable();
-    self.dataversePassword = ko.observable();
+        self.url = url;
+        self.urls = ko.observable();
+        self.dataverseUsername = ko.observable();
+        self.dataversePassword = ko.observable();
 
-    self.ownerName = ko.observable();
-    self.nodeHasAuth = ko.observable(false);
-    self.userHasAuth = ko.observable(false);
-    self.userIsOwner = ko.observable(false);
-    self.connected = ko.observable(false);
-    self.loadedSettings = ko.observable(false);
-    self.loadedStudies = ko.observable(false);
-    self.submitting = ko.observable(false);
+        self.ownerName = ko.observable();
+        self.nodeHasAuth = ko.observable(false);
+        self.userHasAuth = ko.observable(false);
+        self.userIsOwner = ko.observable(false);
+        self.connected = ko.observable(false);
+        self.loadedSettings = ko.observable(false);
+        self.loadedStudies = ko.observable(false);
+        self.submitting = ko.observable(false);
 
-    self.dataverses = ko.observableArray([]);
-    self.studies = ko.observableArray([]);
-    self.badStudies = ko.observableArray([]);
+        self.dataverses = ko.observableArray([]);
+        self.studies = ko.observableArray([]);
+        self.badStudies = ko.observableArray([]);
 
-    self.savedStudyHdl = ko.observable();
-    self.savedStudyTitle = ko.observable();
-    self.savedDataverseAlias = ko.observable();
-    self.savedDataverseTitle = ko.observable();
-    self.studyWasFound = ko.observable(false);
+        self.savedStudyHdl = ko.observable();
+        self.savedStudyTitle = ko.observable();
+        self.savedDataverseAlias = ko.observable();
+        self.savedDataverseTitle = ko.observable();
+        self.studyWasFound = ko.observable(false);
 
         self.messages = {
             USER_SETTINGS_ERROR: ko.pureComputed(function() {

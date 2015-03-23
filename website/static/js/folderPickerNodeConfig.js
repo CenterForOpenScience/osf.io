@@ -5,7 +5,7 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -304,7 +304,7 @@ var FolderPickerViewModel = oop.defclass({
             url: self.urls().deauthorize,
             type: 'DELETE'
         });
-        r1equest.done(function() {
+        request.done(function() {
             // Update observables
             self.nodeHasAuth(false);
             self.cancelSelection();
