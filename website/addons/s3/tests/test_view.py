@@ -195,22 +195,6 @@ class TestS3ViewsConfig(OsfTestCase):
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'scout')
 
-    def test_node_settings_no_user_settings_ui(self):
-        self.node_settings.user_settings.access_key = None
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = self.project.url + 'settings/'
-        rv = self.app.get(url, auth=self.user.auth)
-        assert_true('<label for="s3Addon">Access Key</label>' in rv.body)
-
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
-    def test_node_settings_user_settings_ui(self, mock_dropdown):
-        mock_dropdown.return_value = ['mybucket']
-        url = self.project.url + 'settings/'
-        rv = self.app.get(url, auth=self.user.auth)
-        assert_true('mybucket' in rv.body)
-
-
 class TestCreateBucket(OsfTestCase):
 
     def setUp(self):
