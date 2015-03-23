@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.29.0 (unreleased)
+0.29.0 (2015-03-19)
 ===================
 
 - Improved sign-in: add sign-in form to navbar; remove two-factor input from sign-in form.
@@ -10,6 +10,7 @@ Changelog
 - Fix rendering of PDFs and PDB files in Safari and IE.
 - Updated Getting Started page.
 - SHARE: Add endpoint for paginated ATOM feed.
+- SHARE: Remove hardcoded provider code and information.
 - Dev: Search migrations no longer result in search downtime.
 - Dev: Lots of dead code removed from addons.
 - Dev: Updates to front-end dependencies. Manage more dependencies with npm rather than bower.

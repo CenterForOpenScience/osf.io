@@ -1,10 +1,11 @@
-var $ = require('jquery');
-var $osf = require('osfHelpers');
+'use strict';
 
+var $ = require('jquery');
+var $osf = require('./osfHelpers');
 
 function getCookie() {
-    cookieName =  window.contextVars.cookieName;
-    match = document.cookie.match(new RegExp(cookieName + '=(.*?)(;|$)'));
+    var cookieName = window.contextVars.cookieName;
+    var match = document.cookie.match(new RegExp(cookieName + '=(.*?)(;|$)'));
     return match ? match[1] : null;
 }
 

@@ -2,7 +2,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-require('knockout-validation');
+require('knockout.validation');
 
 var makeExtender = function(interceptor) {
     return function(target, options) {

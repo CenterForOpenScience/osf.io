@@ -343,7 +343,7 @@ class TestProjectViews(OsfTestCase):
         )
 
         # add an unregistered contributor
-        unregistered_user = project.add_unregistered_contributor(
+        project.add_unregistered_contributor(
             fullname=fake.name(), email=fake.email(),
             auth=self.consolidate_auth1,
             save=True,
@@ -2684,7 +2684,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                               'data': {'list_id': '12345',
                                        'email': 'freddie@cos.io'}}}
         url = api_url_for('sync_data_from_mailchimp')
-        res = self.app.post_json(url, payload, auth= user.auth, expect_errors=True)
+        res = self.app.post_json(url, payload, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
     @classmethod
@@ -2703,8 +2703,8 @@ class TestFileViews(OsfTestCase):
         self.project.save()
 
     def test_files_get(self):
-        url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        url = self.project.api_url_for('collect_file_trees')
+        res = self.app.get(url, auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
 
         assert_equal(res.status_code, http.OK)
@@ -2713,7 +2713,7 @@ class TestFileViews(OsfTestCase):
         assert_in('tree_css', res.json)
 
     def test_grid_data(self):
-        url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
+        url = self.project.api_url_for('grid_data')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))

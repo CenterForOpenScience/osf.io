@@ -161,6 +161,97 @@ def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
     return {'status': 'success'}
 
 
+def parse_version_specifier(version_str):
+    """
+    :raise: `InvalidVersionError` if version specifier cannot be parsed
+    """
+    try:
+        version_idx = int(version_str)
+    except (TypeError, ValueError):
+        raise errors.InvalidVersionError
+    if version_idx < 1:
+        raise errors.InvalidVersionError
+    return version_idx
+
+
+def get_version_helper(file_record, version_str):
+    """
+    :return: Tuple of (version_index, file_version); note that index is one-based
+    :raise: `HTTPError` if version specifier is invalid or version not found
+    """
+    if version_str is None:
+        return (
+            len(file_record.versions),
+            file_record.versions[-1],
+        )
+    try:
+        version_idx = parse_version_specifier(version_str)
+    except errors.InvalidVersionError:
+        raise make_error(httplib.BAD_REQUEST, 'Invalid version')
+    try:
+        return version_idx, file_record.versions[version_idx - 1]
+    except IndexError:
+        raise HTTPError(httplib.NOT_FOUND)
+
+
+def get_version(path, node_settings, version_str, throw=True):
+    """Resolve version from request arguments.
+
+    :param str path: Path to file
+    :param node_settings: Node settings record
+    :param str version_str: Version from query string
+    :param bool throw: Throw `HTTPError` if version is incomplete
+    :return: Tuple of (<one-based version index>, <file version>, <file record>)
+    """
+    record = model.OsfStorageFileRecord.find_by_path(path, node_settings)
+
+    if record is None:
+        raise HTTPError(httplib.NOT_FOUND)
+
+    if record.is_deleted:
+        raise HTTPError(httplib.GONE)
+
+    version_idx, file_version = get_version_helper(record, version_str)
+    return version_idx, file_version, record
+
+
+def download_file(path, node_addon, version_query, **query):
+    idx, version, record = get_version(path, node_addon, version_query)
+    url = utils.get_waterbutler_download_url(idx, version, record, **query)
+    # Redirect the user directly to the backend service (CloudFiles or S3) rather than
+    # routing through OSF; this saves a request and avoids potential CORS configuration
+    # errors in WaterButler.
+    resp = requests.get(url, allow_redirects=False)
+    if resp.status_code in [301, 302]:
+        return redirect(resp.headers['Location'])
+    else:
+        response = make_response(resp.content)
+        filename = record.name.encode('utf-8')
+        if version != record.versions[-1]:
+            # add revision to filename
+            # foo.mp3 -> foo-abc123.mp3
+            filename = '-{}'.format(version.date_created.strftime('%Y-%m-%d')).join(os.path.splitext(filename))
+        disposition = 'attachment; filename={}'.format(filename)
+        response.headers['Content-Disposition'] = disposition
+        response.headers['Content-Type'] = 'application/octet-stream'
+        return response
+
+
+@no_auto_transaction
+@must_be_contributor_or_public
+@must_have_addon('osfstorage', 'node')
+def osf_storage_view_file(auth, path, node_addon, **kwargs):
+    action = request.args.get('action', 'view')
+    version_idx = request.args.get('version')
+    if action == 'download':
+        mode = request.args.get('mode')
+        return download_file(path, node_addon, version_idx, mode=mode)
+    # if action == 'view':
+    #     return view_file(auth, path, node_addon, version_idx)
+    raise HTTPError(httplib.BAD_REQUEST)
+
+
+>>>>>>> a6c3b4a15c3b5668bb058205b6de387136342db5
 def update_analytics(node, path, version_idx):
     """
     :param Node node: Root node to update

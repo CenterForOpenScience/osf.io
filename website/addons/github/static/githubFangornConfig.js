@@ -1,11 +1,12 @@
+'use strict';
 /**
  * Github FileBrowser configuration module.
  */
 var m = require('mithril');
-
-var Fangorn = require('fangorn');
-var waterbutler = require('waterbutler');
 var URI = require('URIjs');
+
+var Fangorn = require('js/fangorn');
+var waterbutler = require('js/waterbutler');
 
 
 function _uploadUrl(item, file) {

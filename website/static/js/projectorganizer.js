@@ -20,7 +20,7 @@ var moment = require('moment');
 var Raven = require('raven-js');
 
 
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module

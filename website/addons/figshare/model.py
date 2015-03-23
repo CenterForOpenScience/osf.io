@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+import pymongo
+from modularodm import fields
+
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
@@ -16,6 +17,17 @@ from . import settings as figshare_settings
 
 
 class FigShareGuidFile(GuidFile):
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('article_id', pymongo.ASCENDING),
+                ('file_id', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     article_id = fields.StringField(index=True)
     file_id = fields.StringField(index=True)
@@ -100,28 +112,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         else:
             _, file_id = split_path
             article_id = self.figshare_id
-
-        try:
-            return FigShareGuidFile.find_one(
-                Q('node', 'eq', self.owner) &
-                Q('file_id', 'eq', file_id) &
-                Q('article_id', 'eq', article_id)
-            ), False
-        except ModularOdmException:
-            pass
-        # Create new
-        new = FigShareGuidFile(
+        return FigShareGuidFile.get_or_create(
             node=self.owner,
             file_id=file_id,
-            article_id=article_id
-        )
-        new.save()
-        return new, True
-
-    @property
-    def embed_url(self):
-        return 'http://wl.figshare.com/articles/{fid}/embed?show_title=1'.format(
-            fid=self.figshare_id,
+            article_id=article_id,
         )
 
     @property

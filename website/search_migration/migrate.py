@@ -79,7 +79,7 @@ def set_up_index(idx):
         es.indices.put_alias(idx, index)
     else:
         # Increment version
-        version = int(alias.keys()[0][-1]) + 1
+        version = int(alias.keys()[0].split('_v')[1]) + 1
         logger.info("Incrementing index version to {}".format(version))
         index = '{0}_v{1}'.format(idx, version)
         search.create_index(index=index)
@@ -97,12 +97,12 @@ def set_up_alias(old_index, index):
 
 
 def delete_old(index):
-    old_version = int(index[-1]) - 1
+    old_version = int(index.split('_v')[1]) - 1
     if old_version < 1:
         logger.info("No index before {} to delete".format(index))
         pass
     else:
-        old_index = index[:-1] + str(old_version)
+        old_index = index.split('_v')[0] + '_v' + str(old_version)
         logger.info("Deleting {}".format(old_index))
         es.indices.delete(index=old_index, ignore=404)
 

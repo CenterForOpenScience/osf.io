@@ -7,11 +7,11 @@
 
 var $ = require('jquery');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var URI = require('URIjs');
-var waterbutler = require('waterbutler');
+var Treebeard = require('treebeard');
 
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
+var waterbutler = require('./waterbutler');
 
 // CSS
 require('../css/fangorn.css');
