@@ -11,7 +11,6 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
 // Knockout components for the onboarder
-
 require('../onboarder.js');
 var $osf = require('../osfHelpers');
 var LogFeed = require('js/logFeed');
