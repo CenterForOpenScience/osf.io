@@ -108,6 +108,7 @@ var RevisionsViewModel = oop.extend(Paginator, {
         if (Object.keys(self.currentVersion()).length === 0) {
             self.currentVersion(self.revisions()[0]);
         }
+        self.addNewPaginators();
     });
 
     request.fail(function(response) {
