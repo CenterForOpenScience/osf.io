@@ -11,7 +11,6 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
-from website.addons.dropbox.client import get_node_addon_client
 
 logger = logging.getLogger(__name__)
 
@@ -170,28 +169,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         self.folder = None
         self.user_settings = None
 
-        self.hide_all_comments()
-
         if add_log:
             extra = {'folder': folder}
             nodelogger = DropboxNodeLogger(node=node, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
-
-    def hide_all_comments(self):
-        files_id = DropboxFile.find(Q('node', 'eq', self.owner))
-        for file_id in files_id:
-            db_file = DropboxFile.load(file_id)
-            for comment in getattr(db_file, 'comment_target', []):
-                comment.hide(save=True)
-
-    def show_comments(self):
-        if not self.folder:
-            return list()
-        dropbox_files = DropboxFile.find(Q('node', 'eq', self.owner))
-        for db_file in dropbox_files:
-            if db_file.path.find(self.folder.lstrip('/')) == 0:
-                for comment in getattr(db_file, 'comment_target', []):
-                    comment.show(save=True)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:

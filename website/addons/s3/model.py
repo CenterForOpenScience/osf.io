@@ -11,7 +11,6 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
 
-from website.addons.s3.api import S3Wrapper
 
 class S3GuidFile(GuidFile):
 
@@ -128,7 +127,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         self.registration_data = {}
         self.bucket = None
         self.user_settings = None
-        self.hide_comments()
 
         if log:
             self.owner.add_log(
@@ -321,7 +319,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
             self.user_settings = None
             self.bucket = None
-            self.hide_comments()
             self.save()
 
             message = (
@@ -339,28 +336,3 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True, save=True)
-
-    def hide_comments(self):
-        files_id = S3GuidFile.find(Q('node', 'eq', self.owner)).get_keys()
-        for s3_file_id in files_id:
-            s3_file = S3GuidFile.load(s3_file_id)
-            for comment in getattr(s3_file, 'comment_target', []):
-                comment.hide(save=True)
-
-    def get_existing_files(self, connection=None):
-        if not self.bucket:
-            return list()
-        if not connection:
-            connection = S3Wrapper.from_addon(self)
-        s3_files = []
-        for key in connection.bucket.list():
-            path = key.name.lstrip('/')
-            try:
-                guid = S3GuidFile.find_one(
-                    Q('node', 'eq', self.owner) &
-                    Q('path', 'eq', path)
-                )
-            except:
-                continue
-            s3_files.append(guid)
-        return s3_files

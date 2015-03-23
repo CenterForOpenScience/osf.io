@@ -168,8 +168,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         self.figshare_type = None
         self.figshare_title = None
 
-        self.hide_all_comments()
-
         if add_log:
             node = self.owner
             self.owner.add_log(
@@ -246,13 +244,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         self.save()
         if updated:
-            # Configure comments visibility
-            self.hide_all_comments()
-            for figshare_file in self.get_existing_files():
-                for comment in getattr(figshare_file, 'comment_target', []):
-                    comment.show(save=True)
-
-            # Add log
             node.add_log(
                 action='figshare_content_linked',
                 params={
@@ -266,13 +257,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 },
                 auth=auth,
             )
-
-    def hide_all_comments(self):
-        files_id = FigShareGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
-        for fs_file_id in files_id:
-            fs_file = FigShareGuidFile.load(fs_file_id)
-            for comment in getattr(fs_file, 'comment_target', []):
-                comment.hide(save=True)
 
     def to_json(self, user):
         ret = super(AddonFigShareNodeSettings, self).to_json(user)
@@ -364,7 +348,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
-            self.deauthorize(auth=None, add_log=False, save=False)
             self.user_settings = None
             self.save()
 
@@ -450,28 +433,3 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             return messages.BEFORE_REGISTER.format(
                 category=node.project_or_component,
             )
-
-    def get_existing_files(self, data=None):
-        if not self.figshare_id:
-            return list()
-        if self.figshare_type == 'project':
-            articles = Figshare.from_settings(self.user_settings).project(self, self.figshare_id)['articles']
-        else:
-            articles = Figshare.from_settings(self.user_settings).article(self, self.figshare_id)['items']
-        if not self.figshare_id or not self.has_auth or not articles:
-            return
-        figshare_files = []
-        for article in articles:
-            files = article.get('files', [])
-            for fs_file in files:
-                file_id = str(fs_file['id'])
-                try:
-                    guid = FigShareGuidFile.find_one(
-                        Q('node', 'eq', self.owner) &
-                        Q('article_id', 'eq', article['article_id']) &
-                        Q('file_id', 'eq', file_id)
-                    )
-                except:
-                    continue
-                figshare_files.append(guid)
-        return figshare_files

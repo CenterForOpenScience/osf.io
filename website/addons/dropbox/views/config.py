@@ -136,9 +136,7 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked dropbox folder."""
     folder = request.json.get('selected')
     path = folder['path']
-    node_addon.hide_all_comments()
     node_addon.set_folder(path, auth=auth)
-    node_addon.show_comments()
     node_addon.save()
     return {
         'result': {

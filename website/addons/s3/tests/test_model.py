@@ -7,7 +7,6 @@ from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings, S3GuidFile
-from website.models import Comment
 
 
 class TestFileGuid(OsfTestCase):
@@ -59,7 +58,6 @@ class TestFileGuid(OsfTestCase):
         assert_true(created1)
         assert_false(created2)
         assert_equals(guid1, guid2)
-
 
 class TestNodeSettings(OsfTestCase):
     def setUp(self):
@@ -242,27 +240,3 @@ class TestCallbacks(OsfTestCase):
             data='hodor'
         )
         assert_false(registration.has_addon('s3'))
-
-    def test_hide_comments(self):
-        guid, _ = self.node_settings.find_or_create_file_guid('find_or_create_file.guid')
-        comment = Comment.create(
-            auth=Auth(self.project.creator),
-            node=self.project,
-            target=guid,
-            user=self.project.creator,
-            page='files',
-            content='anything...',
-            root_title='find_or_create_file.guid',
-        )
-        comment2 = Comment.create(
-            auth=Auth(self.project.creator),
-            node=self.project,
-            target=comment,
-            user=self.project.creator,
-            page='files',
-            content='anything...',
-            root_title='find_or_create_file.guid',
-        )
-        self.node_settings.hide_comments()
-        assert_true(comment.is_hidden)
-        assert_true(comment2.is_hidden)

@@ -459,7 +459,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
-            self.delete_hook(save=False)
             self.user_settings = None
             self.save()
             message = (
@@ -642,11 +641,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 self.hook_secret = secret
                 if save:
                     self.save()
-                # Re-enable file comments
-                github_files = self.get_existing_files(connect=connect)
-                for github_file in github_files:
-                    for comment in getattr(github_file, 'comment_target', []):
-                        comment.show(save=True)
 
     def delete_hook(self, save=True):
         """
@@ -659,38 +653,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             except (GitHubError, NotFoundError):
                 return False
             if response:
-
-                #disable comments
-                files_id = GithubGuidFile.find(Q('node', 'eq', self.owner)).get_keys()
-                for github_file_id in files_id:
-                    github_file = GithubGuidFile.load(github_file_id)
-                    for comment in getattr(github_file, 'comment_target', []):
-                        comment.hide(save=True)
-
                 self.hook_id = None
                 if save:
                     self.save()
                 return True
         return False
-
-    def get_existing_files(self, connect=None):
-        if not (self.hook_id and self.repo):
-            return list()
-        if not connect:
-            connect = GitHub.from_settings(self.user_settings)
-        files = connect.tree(self.user, self.repo, 'master', recursive=True)
-        github_files = []
-        for github_file in files.tree:
-            if github_file.type in ['file', 'blob']:
-                path = github_file.path
-                if not path.startswith('/'):
-                    path = '/' + path
-                try:
-                    guid = GithubGuidFile.find_one(
-                        Q('node', 'eq', self.owner) &
-                        Q('path', 'eq', path)
-                    )
-                except ModularOdmException:
-                    continue
-                github_files.append(guid)
-        return github_files

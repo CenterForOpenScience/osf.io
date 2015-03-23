@@ -116,19 +116,9 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
 
     if bucket != node_addon.bucket:
 
-        # Hide original comments
-        node_addon.hide_comments()
-
         # Update node settings
         node_addon.bucket = bucket
         node_addon.save()
-
-        s3wrapper = S3Wrapper.from_addon(node_addon)
-        if s3wrapper is None:
-            raise HTTPError(http.BAD_REQUEST)
-        for s3_file in node_addon.get_existing_files(connection=s3wrapper):
-            for comment in getattr(s3_file, 'comment_target', []):
-                comment.show(save=True)
 
         node.add_log(
             action='s3_bucket_linked',
