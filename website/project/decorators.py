@@ -41,27 +41,17 @@ def _kwargs_to_nodes(kwargs):
     return project, node
 
 
-def must_be_valid_project(func=None, are_retractions_valid=False):
+def must_be_valid_project(func):
 
     # TODO: Check private link
-    def must_be_valid_project_inner(func):
 
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
 
-            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-            if not are_retractions_valid and kwargs['project'].is_retracted:
-                url = kwargs['project'].web_url_for('node_registration_retracted')
-                return redirect(url)
-            else:
-                return func(*args, **kwargs)
+        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+        return func(*args, **kwargs)
 
-        return wrapped
-
-    if func:
-        return must_be_valid_project_inner(func)
-
-    return must_be_valid_project_inner
+    return wrapped
 
 
 def must_be_public_registration(func):

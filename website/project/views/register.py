@@ -74,15 +74,6 @@ def node_registration_retraction(auth, **kwargs):
 
     return serialize_node(node, auth, primary=True)
 
-@must_be_valid_project(are_retractions_valid=True)
-@must_be_contributor_or_public
-def node_registration_retracted(auth, **kwargs):
-    """ Handles view of retracted public registrations """
-
-    node = kwargs['node'] or kwargs['project']
-    ret = serialize_node(node, auth=auth)
-    return ret
-
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_register_template_page(auth, **kwargs):

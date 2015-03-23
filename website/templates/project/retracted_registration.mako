@@ -1,5 +1,3 @@
-<%inherit file="project/project_base.mako"/>
-
 <div id="projectScope">
     <header class="subhead" id="overview">
 
@@ -63,5 +61,3 @@
 </div>
 
 <%def name="title()">Retracted Registration: ${ node['title'] }</%def>
-
-${parent.javascript_bottom()}

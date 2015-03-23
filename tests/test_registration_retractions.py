@@ -7,7 +7,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, NodeFactory, RegistrationFactory, UserFactory, AuthUserFactory
 
 import werkzeug
-from modularodm.exceptions import ValidationTypeError, ValidationValueError
+from modularodm.exceptions import ValidationTypeError
 
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
@@ -138,16 +138,6 @@ def valid_project_helper(**kwargs):
     return kwargs
 
 
-@must_be_valid_project(are_retractions_valid=True)
-def as_factory_allow_retractions(**kwargs):
-    return kwargs
-
-
-@must_be_valid_project(are_retractions_valid=False)
-def as_factory_do_not_allow_retractions(**kwargs):
-    return kwargs
-
-
 class TestValidProject(OsfTestCase):
 
     def setUp(self):
@@ -193,22 +183,3 @@ class TestValidProject(OsfTestCase):
         with assert_raises(HTTPError) as exc_info:
             valid_project_helper(pid=self.project._id, nid=self.node._id)
         assert_equal(exc_info.exception.code, 410)
-
-    def test_valid_project_as_factory_allow_retractions_is_retracted(self):
-        self.project.is_registration = True
-        self.project.is_retracted = True
-        self.project.save()
-        res = as_factory_allow_retractions(pid=self.project._id)
-        assert_equal(res['project'], self.project)
-
-    def test_valid_project_as_factory_disallow_retractions_is_retracted(self):
-        self.project.is_registration = True
-        self.project.is_retracted = True
-        self.project.save()
-        res = as_factory_do_not_allow_retractions(pid=self.project._id)
-        assert_true(isinstance(res, werkzeug.Response))
-        assert_equal(res.status_code, 302)
-        assert_equal(
-            res.headers['Location'],
-            self.project.web_url_for('node_registration_retracted'),
-        )
