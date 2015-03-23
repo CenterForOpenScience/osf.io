@@ -47,6 +47,18 @@ def build_query_string(q):
     }
 
 
+def compute_start(page, size):
+    try:
+        start = (int(page) - 1) * size
+    except ValueError:
+        start = 0
+
+    if start < 0:
+        start = 0
+
+    return start
+
+
 def generate_color():
     # TODO - this might not be the optimal way - copy is expensive
     colors_to_generate = copy.copy(COLORBREWER_COLORS)
