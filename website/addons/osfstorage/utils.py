@@ -3,42 +3,30 @@
 import os
 import httplib
 import logging
+import functools
 
-import furl
-import itsdangerous
-from modularodm import Q
-from flask import request
+from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import ValidationValueError
+from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
+from website.addons.osfstorage import settings
 
-from website import settings as site_settings
-
-from website.util import rubeus
-from website.models import Session
-
-from website.addons.osfstorage import model
 
 logger = logging.getLogger(__name__)
+LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
 
-def get_permissions(auth, node):
-    """Get editing and viewing permissions.
-
-    :param Auth auth: Consolidated auth
-    :param Node node: Node to check
-    """
-    return {
-        'edit': node.can_edit(auth) and not node.is_registration,
-        'view': node.can_view(auth),
-    }
-
-
-def get_item_kind(item):
-    if isinstance(item, model.OsfStorageFileTree):
-        return rubeus.FOLDER
-    if isinstance(item, model.OsfStorageFileRecord):
-        return rubeus.FILE
-    raise TypeError('Value must be instance of `FileTree` or `FileRecord`')
+def handle_odm_errors(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except NoResultsFound:
+            raise HTTPError(httplib.NOT_FOUND)
+        except KeyExistsException:
+            raise HTTPError(httplib.CONFLICT)
+    return wrapped
 
 
 def serialize_metadata(item):
