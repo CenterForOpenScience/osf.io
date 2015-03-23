@@ -323,7 +323,8 @@ class OsfStorageFileVersion(StoredObject):
 
 
 class OsfStorageGuidFile(GuidFile):
-
+    provider = 'osfstorage'
+    version_identifier = 'version'
     path = fields.StringField(required=True, index=True)
 
     @property
