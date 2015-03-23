@@ -5,7 +5,6 @@
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
   "dependencies": {
-    "treebeard": "git://github.com/caneruguz/treebeard.git#40af39cb35ac545732b184a3dddc20e37b85159f",
     "URIjs": "^1.14.1",
     "assets-webpack-plugin": "^0.1.0",
     "async": "^0.9.0",
@@ -36,6 +35,7 @@
     "markdown-it-sanitizer": "^0.2.2",
     "markdown-it-toc": "~1.0.4",
     "markdown-it-video": "~0.1.6",
+    "mithril": "^0.1.30",
     "moment": "^2.9.0",
     "morgan": "^1.5.1",
     "object-assign": "^2.0.0",
@@ -43,6 +43,7 @@
     "raw-loader": "^0.5.1",
     "share": "~0.7.3",
     "style-loader": "^0.8.3",
+    "treebeard": "git://github.com/caneruguz/treebeard.git#92ad187b7c49e8",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
