@@ -4,6 +4,8 @@ import webcolors
 
 from werkzeug.contrib.atom import AtomFeed
 
+from website.util.sanitize import strip_html
+
 
 COLORBREWER_COLORS = [(166, 206, 227), (31, 120, 180), (178, 223, 138), (51, 160, 44), (251, 154, 153), (227, 26, 28), (253, 191, 111), (255, 127, 0), (202, 178, 214), (106, 61, 154), (255, 255, 153), (177, 89, 40)]
 
@@ -15,8 +17,6 @@ RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
                  unichr(0xd800), unichr(0xdbff), unichr(0xdc00), unichr(0xdfff))
 
 RE_XML_ILLEGAL_COMPILED = re.compile(RE_XML_ILLEGAL)
-
-RE_HTML_TAG_COMPILED = re.compile(r'<[^>]+>')
 
 
 def build_query(q='*', start=0, size=10, sort=None):
@@ -114,5 +114,5 @@ def html_and_illegal_unicode_replace(atom_element):
     """
     if atom_element:
         new_element = RE_XML_ILLEGAL_COMPILED.sub('', atom_element)
-        return RE_HTML_TAG_COMPILED.sub('', new_element)
+        return strip_html(new_element)
     return atom_element
