@@ -117,56 +117,28 @@ def get_filename(version_idx, file_version, file_record):
     )
 
 
-def get_cookie_for_user(user):
-    sessions = Session.find(
-        Q('data.auth_user_id', 'eq', user._id)
-    ).sort(
-        '-date_modified'
-    )
-    if sessions:
-        session = sessions[0]
-    else:
-        session = Session(data={
-            'auth_user_id': user._id,
-            'auth_user_username': user.username,
-            'auth_user_fullname': user.fullname,
-        })
-        session.save()
-    signer = itsdangerous.Signer(site_settings.SECRET_KEY)
-    return signer.sign(session._id)
+def validate_location(value):
+    for key in LOCATION_KEYS:
+        if key not in value:
+            raise ValidationValueError
 
 
-def get_waterbutler_url(user, *path, **query):
-    url = furl.furl(site_settings.WATERBUTLER_URL)
-    url.path.segments.extend(path)
-    cookie = (
-        get_cookie_for_user(user)
-        if user
-        else request.cookies.get(site_settings.COOKIE_NAME)
-    )
-    url.args.update({
-        'provider': 'osfstorage',
-        'cookie': cookie,
-    })
-    if 'view_only' in request.args:
-        url.args['view_only'] = request.args['view_only']
-    url.args.update(query)
-    return url.url
+def must_be(_type):
+    def _must_be(func):
+        @functools.wraps(func)
+        def wrapped(self, *args, **kwargs):
+            if not self.kind == _type:
+                raise ValueError('This instance is not a {}'.format(_type))
+            return func(self, *args, **kwargs)
+        return wrapped
+    return _must_be
 
 
-def get_waterbutler_download_url(version_idx, file_version, file_record, user=None, **query):
-    nid = file_record.node._id
-    display_name = get_filename(version_idx, file_version, file_record)
-    return get_waterbutler_url(
-        user,
-        'file',
-        nid=nid,
-        path='/' + file_record.name,
-        displayName=display_name,
-        version=version_idx,
-        **query
-    )
-
-
-def get_waterbutler_upload_url(user, node, path, **query):
-    return get_waterbutler_url(user, 'file', nid=node._id, path=path, **query)
+def copy_files(file_node, node_settings, parent=None):
+    cloned = file_node.clone()
+    cloned.node_settings = node_settings
+    cloned.parent = parent
+    cloned.save()
+    for child in file_node.children:
+        copy_files(child, node_settings, parent=cloned)
+    return cloned
