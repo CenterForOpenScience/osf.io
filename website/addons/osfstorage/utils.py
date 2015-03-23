@@ -33,20 +33,14 @@ def serialize_metadata(item):
     """Build Treebeard JSON for folder or file.
 
     :param item: `FileTree` or `FileRecord` to serialize
-    :param dict permissions: Permissions data from `get_permissions`
     """
-    ret = {
+    return {
         'path': item.path,
         'name': item.name,
-        'ext': item.extension,
-        rubeus.KIND: get_item_kind(item),
+        'kind': item.kind,
+        'version': len(item.versions),
         'downloads': item.get_download_count(),
     }
-
-    if isinstance(item, model.OsfStorageFileRecord):
-        ret['version'] = len(item.versions)
-
-    return ret
 
 
 def serialize_revision(node, record, version, index):
