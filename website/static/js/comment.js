@@ -1,19 +1,22 @@
 /**
-* Controller for the comments.
-*/
+ * Controller for the Add Contributor modal.
+ */
 'use strict';
 
 var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
-var waterbutler = require('waterbutler');
+var Raven = require('raven-js');
 require('knockout-mapping');
-require('knockout-punches');
+require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
+var Raven = require('raven-js');
 
-var osfHelpers = require('osfHelpers');
-var CommentPane = require('./commentpane.js');
+var osfHelpers = require('js/osfHelpers');
+var CommentPane = require('js/commentpane');
+var markdown = require('js/markdown');
+var waterbutler = require('./waterbutler');
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
@@ -35,9 +38,9 @@ var ABUSE_CATEGORIES = {
 };
 
 /*
-    * Format UTC datetime relative to current datetime, ensuring that time
-    * is in the past.
-    */
+ * Format UTC datetime relative to current datetime, ensuring that time
+ * is in the past.
+ */
 var relativeDate = function(datetime) {
     var now = moment.utc();
     var then = moment.utc(datetime);
@@ -69,9 +72,6 @@ var exclusifyGroup = function() {
     }
 };
 
-/*
-    *
-    */
 var BaseComment = function() {
 
     var self = this;
@@ -290,9 +290,6 @@ BaseComment.prototype.submitReply = function() {
     });
 };
 
-/*
-    *
-    */
 var CommentModel = function(data, $parent, $root) {
 
     BaseComment.prototype.constructor.call(this);
@@ -302,7 +299,16 @@ var CommentModel = function(data, $parent, $root) {
     self.$parent = $parent;
     self.$root = $root;
 
+    // Note: assigns self.content()
     $.extend(self, ko.mapping.fromJS(data));
+
+    self.contentDisplay = ko.observable(markdown.full.render(self.content()));
+
+    // Update contentDisplay with rednered markdown whenever content changes
+    self.content.subscribe(function(newContent) {
+        self.contentDisplay(markdown.full.render(newContent));
+    });
+
     self.dateCreated(data.dateCreated);
     self.dateModified(data.dateModified);
 

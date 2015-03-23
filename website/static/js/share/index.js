@@ -1,8 +1,10 @@
+'use strict';
+
 require('c3/c3.css');
 require('../../css/share-search.css');
 
 var m = require('mithril');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var Stats = require('../share/stats.js');
 var utils = require('../share/utils.js');
 var Results = require('../share/results.js');
@@ -25,7 +27,7 @@ ShareApp.ViewModel = function() {
         background: true,
         url: '/api/v1/share/providers/'
     }).then(function(data) {
-        self.ProviderMap = data.providerMap
+        self.ProviderMap = data.providerMap;
     });
 };
 
@@ -52,7 +54,9 @@ ShareApp.controller = function() {
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
-        if (state.query === self.vm.query()) return;
+        if (state.query === self.vm.query()) {
+            return;
+        }
         self.vm.query(state.query);
         utils.search(self.vm);
     });

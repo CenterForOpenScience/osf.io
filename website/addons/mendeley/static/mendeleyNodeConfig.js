@@ -1,7 +1,7 @@
 'use strict';
 
-var $osf = require('osfHelpers');
-var ViewModel = require('../../../static/js/citationsFolderPickerViewModel');
+var $osf = require('js/osfHelpers');
+var ViewModel = require('js/citationsFolderPickerViewModel');
 
 // Public API
 function MendeleyNodeConfig(selector, url, folderPicker) {

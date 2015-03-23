@@ -137,9 +137,6 @@ class MockDropbox(object):
             ret['path'] = path
         return ret
 
-    def delta(self, cursor=None, path_prefix='/'):
-        return mock_responses['metadata_delta']
-
     def get_file_and_metadata(*args, **kwargs):
         pass
 

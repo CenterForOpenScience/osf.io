@@ -67,7 +67,7 @@
                             &nbsp;
                             <span class="comment-link-icon" data-bind="if: mode == 'widget'">
                                 <a data-bind="attr:{href: '/'+id()}">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="icon-link"></i>
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="fa fa-link"></i>
                                 </a>
                             </span>
                         </span>
@@ -79,8 +79,11 @@
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">
-                            <span data-bind="if: mode !== 'widget' && hasChildren() && shouldShowChildren()"><i data-bind="css: toggleIcon, click: toggle"></i></span>
-                            <span class="overflow" data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
+                            <span data-bind="if: mode !== 'widget' && hasChildren() && shouldShowChildren()">
+                                <i data-bind="css: toggleIcon, click: toggle"></i>
+                            </span>
+                            <span class="overflow"
+                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
                         </div>
 
                         <!--
@@ -112,6 +115,9 @@
                                 <a data-bind="attr:{href: '/'+id()}" style="color: #000000">
                                     <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="fa fa-link"></i>
                                 </a>
+                                <span data-bind="if: canEdit, click: edit">
+                                    <i data-toggle="tooltip" data-placement="bottom" title="Edit" class="fa fa-pencil"></i>
+                                </span>
                                 <span data-bind="if: $root.canComment, click: showReply">
                                     <i data-toggle="tooltip" data-placement="bottom" title="Reply" class="fa fa-reply"></i>
                                 </span>

@@ -1,10 +1,12 @@
+'use strict';
+
 var ko = require('knockout');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 // Enable knockout punches
 ko.punches.enableAll();
 
