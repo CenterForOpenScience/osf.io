@@ -520,14 +520,14 @@ class TestProjectViews(OsfTestCase):
             )
         self.project.save()
         url = self.project.api_url_for('get_logs')
-        wrong_input = 'invalid page'
+        invalid_input = 'invalid page'
         res = self.app.get(
-            url, {'page': wrong_input}, auth=self.auth, expect_errors=True
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['message_long'],
-            'Invalid value for "page": {}'.format(wrong_input)
+            'Invalid value for "page": {}'.format(invalid_input)
         )
 
     def test_get_logs_with_count_param(self):
@@ -2007,7 +2007,7 @@ class TestWatchViews(OsfTestCase):
         assert_equal(res.json['pages'], 2)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
-    def test_get_more_watched_logs_wrong_page(self):
+    def test_get_more_watched_logs_invalid_page(self):
         project = ProjectFactory()
         # Add some logs
         for _ in range(12):
@@ -2017,17 +2017,17 @@ class TestWatchViews(OsfTestCase):
         self.user.watch(watch_cfg)
         self.user.save()
         url = api_url_for("watched_logs_get")
-        wrong_page = 'invalid page'
+        invalid_page = 'invalid page'
         res = self.app.get(
-            url, {'page': wrong_page}, auth=self.auth, expect_errors=True
+            url, {'page': invalid_page}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['message_long'],
-            'Invalid value for "page": {}'.format(wrong_page)
+            'Invalid value for "page": {}'.format(invalid_page)
         )
 
-    def test_get_more_watched_logs_wrong_size(self):
+    def test_get_more_watched_logs_invalid_size(self):
         project = ProjectFactory()
         # Add some logs
         for _ in range(12):
@@ -2037,14 +2037,14 @@ class TestWatchViews(OsfTestCase):
         self.user.watch(watch_cfg)
         self.user.save()
         url = api_url_for("watched_logs_get")
-        wrong_size = 'invalid size'
+        invalid_size = 'invalid size'
         res = self.app.get(
-            url, {'size': wrong_size}, auth=self.auth, expect_errors=True
+            url, {'size': invalid_size}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['message_long'],
-            'Invalid value for "size": {}'.format(wrong_size)
+            'Invalid value for "size": {}'.format(invalid_size)
         )
 
 class TestPointerViews(OsfTestCase):
