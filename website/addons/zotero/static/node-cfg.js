@@ -1,4 +1,6 @@
-var CitationsNodeConfig = require('citationsNodeConfig').CitationsNodeConfig;
+'use strict';
+
+var CitationsNodeConfig = require('js/citationsNodeConfig').CitationsNodeConfig;
 require('./node-cfg.css');
 
 var url = window.contextVars.node.urls.api + 'zotero/settings/';
