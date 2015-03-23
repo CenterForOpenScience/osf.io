@@ -2284,6 +2284,11 @@ span#profileFullname{
     height: auto;
 }
 
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}
+
 #file-navigation .osf-panel-flex{
     height: auto;
 }

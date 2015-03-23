@@ -35,13 +35,8 @@ $(document).ready(function() {
                 },
                 ontogglefolder : function (tree){
                     Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
-                    this.options.showTotal = this.visibleIndexes.length + 2;
-                    var containerHeight = (this.visibleIndexes.length + 2) * this.options.rowHeight;
-                    if (containerHeight < 750) {
-                        $('#tb-tbody').height(containerHeight);
-                    } else {
-                        $('#tb-tbody').height(750);
-                    }
+                    var containerHeight = this.select('#tb-tbody').height();
+                    this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
                     this.redraw();
                 },
                 lazyLoadOnLoad: function(tree) {
@@ -128,6 +123,5 @@ $(document).ready(function() {
         el.hide();
         panelToggle.removeClass('col-md-1').addClass('col-md-3');
         panelExpand.removeClass('col-md-8').addClass('col-md-6');
-
     });
 });
