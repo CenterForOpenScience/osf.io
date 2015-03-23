@@ -54,30 +54,39 @@ class DataverseProvider(provider.BaseProvider):
             result = yield from f
             return result
 
-        stream.make_header()
-        stream.make_data_descriptor(b'foo')
-        stream.make_footer()
-        # TODO: Something with the stream
-        # import ipdb; ipdb.set_trace()
+        filename = path.strip('/')
+
+        stream = streams.ZipStreamReader(
+            filename=filename,
+            file_stream=stream,
+        )
+
         dv_headers = {
             "Content-Disposition": "filename=temp.zip",
             "Content-Type": "application/zip",
             "Packaging": "http://purl.org/net/sword/package/SimpleZip",
-            "Content-Length": str(stream.size),
+            # "Content-Length": '141',
         }
-        yield from self.make_request(
+
+        # data = yield from stream.read()
+        # import ipdb; ipdb.set_trace()
+
+        resp = yield from self.make_request(
             'POST',
             provider.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
             headers=dv_headers,
             auth=(self.token, ),
             data=stream,
-            expects=(201, ),
+            # expects=(201, ),
             throws=exceptions.UploadError
         )
 
+        # data = yield from resp.read()
+        # import ipdb; ipdb.set_trace()
+
         # Find appropriate version of file from metadata url
         data = yield from self.metadata()
-        filename, version = dataverse_utils.unpack_filename(path.strip('/'))
+        filename, version = dataverse_utils.unpack_filename(filename)
 
         # Reduce to files of the same base name of the same/higher version
         data = sorted([

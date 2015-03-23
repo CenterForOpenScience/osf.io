@@ -33,11 +33,7 @@ class CRUDHandler(core.BaseHandler):
 
     def prepare_stream(self):
         if self.request.method in self.STREAM_METHODS:
-            # import ipdb; ipdb.set_trace()
-            if b'dataverse' in self.request.query_arguments['provider']:
-                self.stream = ZipStreamReader(self.request)
-            else:
-                self.stream = RequestStreamReader(self.request)
+            self.stream = RequestStreamReader(self.request)
             self.uploader = asyncio.async(
                 self.provider.upload(self.stream, **self.arguments)
             )
