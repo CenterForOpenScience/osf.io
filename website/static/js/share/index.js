@@ -77,10 +77,12 @@ ShareApp.controller = function() {
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
-        if (state.query === self.vm.query() &&
-            state.sort === self.vm.sort() &&
+        if (state.query === self.vm.query() && state.sort === self.vm.sort() &&
             utils.arrayEqual(state.optionalFilters, self.vm.optionalFilters) &&
-            utils.arrayEqual(state.requiredFilters, self.vm.requiredFilters)) return;
+            utils.arrayEqual(state.requiredFilters, self.vm.requiredFilters)) {
+
+            return;
+        }
         self.vm.optionalFilters = state.optionalFilters;
         self.vm.requiredFilters = state.requiredFilters;
         self.vm.query(state.query);
