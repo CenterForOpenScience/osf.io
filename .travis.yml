@@ -12,7 +12,7 @@ before_install:
     - unzip file.zip
     - tar xf tokumx-2.0.0.-linux-x86_64-main.tar -C /tmp
     - mkdir data
-    - /tmp/mongod --dbpath=data &
+    - mongod --dbpath=data &
 
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.4.tar.gz
     - tar -xvf elasticsearch-1.4.4.tar.gz
