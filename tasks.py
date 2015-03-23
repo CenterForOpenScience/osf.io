@@ -423,7 +423,7 @@ def karma(single=False, sauce=False, browsers=None):
 @task
 def wheelhouse(addons=False, release=False, dev=False):
     if release:
-        req_file =os.path.join(HERE, 'requirements', 'release.txt')
+        req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
@@ -440,7 +440,6 @@ def wheelhouse(addons=False, release=False, dev=False):
             if os.path.exists(req_file):
                 cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
                 run(cmd, pty=True)
-            
 
 @task
 def addon_requirements(download_cache=None):
