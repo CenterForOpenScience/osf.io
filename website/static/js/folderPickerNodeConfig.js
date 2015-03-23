@@ -179,10 +179,13 @@ var FolderPickerViewModel = oop.defclass({
         if (timeout) {
             // Reset message after timeout period
             setTimeout(function() {
-                self.message('');
-                self.messageClass('text-info');
+                self.resetMessage();
             }, timeout);
         }
+    },
+    resetMessage: function() {
+        this.message('');
+        this.messageClass('text-info');
     },
     /**
      * Abstract stub where subclasses can capture extra data from the API response

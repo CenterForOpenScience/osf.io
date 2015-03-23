@@ -198,8 +198,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
         });
         describe('#changeMessage', () => {
             var reset = () => {
-                vm.message('');
-                vm.messageClass('text-info');
+                vm.resetMessage();
             };
             it('updates the VM\'s message and message CSS class', () => {
                 reset();
