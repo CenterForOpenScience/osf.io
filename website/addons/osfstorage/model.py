@@ -329,7 +329,7 @@ class OsfStorageGuidFile(GuidFile):
 
     @property
     def waterbutler_path(self):
-        return '/' + self.path
+        return self.path
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -346,20 +346,12 @@ class OsfStorageGuidFile(GuidFile):
         return obj, created
 
     @property
-    def provider(self):
-        return 'osfstorage'
-
-    @property
-    def version_identifier(self):
-        return 'version'
-
-    @property
     def unique_identifier(self):
         return self._metadata_cache['extra']['version']
 
     @property
     def file_url(self):
-        return os.path.join('osfstorage', 'files', self.path)
+        return os.path.join('osfstorage', 'files', self.path.lstrip('/'))
 
     def get_download_path(self, version_idx):
         url = furl.furl('/{0}/'.format(self._id))
