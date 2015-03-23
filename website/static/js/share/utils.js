@@ -62,7 +62,7 @@ var loadMore = function(vm) {
 var search = function(vm) {
 
     if (!vm.query() || vm.query().length === 0){
-        vm,query = m.prop('');
+        vm.query = m.prop('');
         vm.results = null;
         vm.optionalFilters = [];
         vm.requiredFilters = [];
