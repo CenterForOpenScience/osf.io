@@ -68,7 +68,7 @@ var search = function(vm) {
         vm.requiredFilters = [];
         vm.sort('Relevance');
         loadStats(vm);
-        History.pushState({query: vm.query()}, 'OSF | SHARE', '?');
+        History.pushState({}, 'OSF | SHARE', '?');
         return;
     }
     if (buildQuery(vm).length === 0) {
