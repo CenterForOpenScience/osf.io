@@ -1,14 +1,16 @@
 /**
  * Controller for the Add Contributor modal.
  */
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-var Paginator = require('js/paginator');
-
 require('bootstrap-editable');
-var oop = require('js/oop');
+
+var oop = require('./oop');
+var $osf = require('./osfHelpers');
+var Paginator = require('./paginator');
 
 var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show

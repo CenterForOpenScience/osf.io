@@ -6,8 +6,7 @@ require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 
 var m = require('mithril');
-var Fangorn = require('fangorn');
-
+var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
 require('truncate');
 

@@ -6,7 +6,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 
-var osfHelpers = require('osfHelpers');
+var osfHelpers = require('js/osfHelpers');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
 

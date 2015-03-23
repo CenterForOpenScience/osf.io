@@ -1,19 +1,27 @@
 /**
  * Initialization code for the dashboard pages. Starts up the Project Organizer
  * and binds the onboarder Knockout components.
- * */
+ */
+
+'use strict';
+
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
-var $osf = require('osfHelpers');
-var projectOrganizer = require('js/projectorganizer');
-var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
-
-var LogFeed = require('js/logFeed');
+//var $osf = require('osfHelpers');
+//var projectOrganizer = require('js/projectorganizer');
+//var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
+//
+//var LogFeed = require('js/logFeed');
 // Knockout components for the onboarder
+
 require('../onboarder.js');
+var $osf = require('../osfHelpers');
+var LogFeed = require('js/logFeed');
+var projectOrganizer = require('..//projectorganizer');
+var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
