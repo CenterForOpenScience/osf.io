@@ -217,3 +217,21 @@ class TestShareAtom(OsfTestCase):
         response = self.app.get('/share/atom/')
         entries = response.xml.findall('{http://www.w3.org/2005/Atom}entry')
         assert_equal(len(entries), STANDARD_RETURN_VALUE['hits']['total'])
+
+    def test_compute_start_non_number(self):
+        page = 'cow'
+        size = 250
+        result = util.compute_start(page, size)
+        assert_equal(result, 0)
+
+    def test_compute_start_negative(self):
+        page = -10
+        size = 250
+        result = util.compute_start(page, size)
+        assert_equal(result, 0)
+
+    def test_compute_start_normal(self):
+        page = 50
+        size = 10
+        result = util.compute_start(page, size)
+        assert_equal(result, 490)
