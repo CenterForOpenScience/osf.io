@@ -3,13 +3,14 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('knockout-validation');
-require('knockout-punches');
+require('knockout.validation');
+require('knockout.punches');
 ko.punches.enableAll();
 require('knockout-sortable');
-var koHelpers = require('koHelpers');
 
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
+var koHelpers = require('./koHelpers');
+require('js/objectCreateShim');
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
@@ -30,6 +31,8 @@ var cleanByRule = function(rule) {
         return value;
     };
 };
+
+var noop = function() {};
 
 var SerializeMixin = function() {};
 
@@ -188,7 +191,7 @@ TrackedMixin.prototype.restoreOriginal = function () {
     }
 };
 
-var BaseViewModel = function(urls, modes) {
+var BaseViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
 
     self.urls = urls;
@@ -205,11 +208,13 @@ var BaseViewModel = function(urls, modes) {
     self.hasValidProperty = ko.observable(false);
 
     // Warn on URL change if dirty
-    $(window).on('beforeunload', function() {
-        if (self.dirty()) {
-            return 'There are unsaved changes to your settings.';
-        }
-    });
+    if (preventUnsaved !== false) {
+        $(window).on('beforeunload', function() {
+            if (self.dirty()) {
+                return 'There are unsaved changes to your settings.';
+            }
+        });
+    }
 
     // Warn on tab change if dirty
     $('body').on('show.bs.tab', function() {
@@ -258,7 +263,7 @@ BaseViewModel.prototype.handleSuccess = function() {
 
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
-    var msg = response.responseJSON.message_long || defaultMsg;
+    var msg = response.message_long || defaultMsg;
     this.changeMessage(
         msg,
         'text-danger',
@@ -270,13 +275,14 @@ BaseViewModel.prototype.setOriginal = function() {};
 
 BaseViewModel.prototype.dirty = function() { return false; };
 
-BaseViewModel.prototype.fetch = function() {
+BaseViewModel.prototype.fetch = function(callback) {
     var self = this;
+    callback = callback || noop;
     $.ajax({
         type: 'GET',
         url: this.urls.crud,
         dataType: 'json',
-        success: [this.unserialize.bind(this), self.setOriginal.bind(self)],
+        success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self)],
         error: this.handleError.bind(this, 'Could not fetch data')
     });
 };
@@ -329,9 +335,10 @@ BaseViewModel.prototype.submit = function() {
     }
 };
 
-var NameViewModel = function(urls, modes) {
+var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     var self = this;
-    BaseViewModel.call(self, urls, modes);
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
+    fetchCallback = fetchCallback || noop;
     TrackedMixin.call(self);
 
     self.full = koHelpers.sanitizedObservable().extend({required: true, trimmed: true});
@@ -360,18 +367,19 @@ var NameViewModel = function(urls, modes) {
         return !! self.full();
     });
 
-    self.impute = function() {
+    self.impute = function(callback) {
+        callback = callback || noop;
         if (! self.hasFirst()) {
             return;
         }
-        $.ajax({
+        return $.ajax({
             type: 'GET',
             url: urls.impute,
             data: {
                 name: self.full()
             },
             dataType: 'json',
-            success: self.unserialize.bind(self),
+            success: [self.unserialize.bind(self), callback.bind(self)],
             error: self.handleError.bind(self, 'Could not fetch names')
         });
     };
@@ -425,7 +433,7 @@ var NameViewModel = function(urls, modes) {
         return cite;
     });
 
-    self.fetch();
+    self.fetch(fetchCallback);
 };
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
@@ -764,5 +772,7 @@ module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,
-    Schools: Schools
+    Schools: Schools,
+    // Expose private viewmodels
+    _NameViewModel: NameViewModel
 };

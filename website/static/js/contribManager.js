@@ -1,9 +1,12 @@
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
-var $osf = require('osfHelpers');
 require('knockout-sortable');
+
+var $osf = require('./osfHelpers');
 
 var contribsEqual = function(a, b) {
     return a.id === b.id &&
@@ -75,7 +78,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         self.deleteStaged(true);
     };
     self.unremove = function(data, event) {
-        $target = $(event.target);
+        var $target = $(event.target);
         if (!$target.hasClass('contrib-button')) {
             self.deleteStaged(false);
         }
@@ -187,9 +190,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.sortOrder = ko.observable(0);
     self.sortClass = ko.computed(function() {
         if (self.sortOrder() === 1) {
-            return 'icon-caret-up';
+                return 'fa fa-caret-up';
         } else if (self.sortOrder() === -1) {
-            return 'icon-caret-down';
+                return 'fa fa-caret-down';
         }
     });
     self.sortFunc = ko.computed(function() {

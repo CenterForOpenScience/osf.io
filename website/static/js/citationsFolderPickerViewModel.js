@@ -1,11 +1,13 @@
+'use strict';
+
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
-var $osf = require('osfHelpers');
+var FolderPicker = require('./folderpicker');
+var $osf = require('./osfHelpers');
 var ctx = window.contextVars;
 
 ko.punches.enableAll();
@@ -29,8 +31,6 @@ var CitationsFolderPickerViewModel = function(name, url, selector, folderPicker)
     self.userIsOwner = ko.observable(false);
     // whether current user has an auth token
     self.userHasAuth = ko.observable(false);
-    // whether the auth token is valid
-    self.validCredentials = ko.observable(true);
     self.userAccountId = ko.observable('');
     // Currently linked folder, an Object of the form {name: ..., id: ...}
     self.folder = ko.observable({
@@ -181,7 +181,6 @@ CitationsFolderPickerViewModel.prototype.updateFromData = function(data) {
     self.userAccountId(data.userAccountId);
     self.folder(data.folder || 'None');
     self.urls(data.urls);
-    self.validCredentials(data.validCredentials);
 };
 
 CitationsFolderPickerViewModel.prototype.fetchFromServer = function() {
@@ -195,13 +194,6 @@ CitationsFolderPickerViewModel.prototype.fetchFromServer = function() {
     request.done(function(response) {
         self.updateFromData(response);
         self.loadedSettings(true);
-        if (!self.validCredentials()) {
-            if (self.userIsOwner()) {
-                self.changeMessage(self.messages.INVALID_CRED_OWNER(), 'text-warning');
-            } else {
-                self.changeMessage(self.messages.INVALID_CRED_NOT_OWNER(), 'text-warning');
-            }
-        }
     });
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.CANT_RETRIEVE_SETTINGS(), 'text-warning');
@@ -282,10 +274,10 @@ CitationsFolderPickerViewModel.prototype.submitSettings = function() {
         self.changeMessage(self.messages.SUBMIT_SETTINGS_ERROR(), 'text-danger');
     }
 
-
     $osf.putJSON(self.urls().config, {
             external_account_id: self.userAccountId(),
-            external_list_id: self.selected().id
+            external_list_id: self.selected().id,
+            external_list_name: self.selected().name
         })
         .done(onSubmitSuccess)
         .fail(onSubmitError);

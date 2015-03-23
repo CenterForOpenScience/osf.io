@@ -1,15 +1,16 @@
+'use strict';
+
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 var ProjectSettings = {};
 
 /**
-*  returns a random name from this list to use as a confirmation string
-*/
-function randomScientist() {
-    var scientists = [
+ *  returns a random name from this list to use as a confirmation string
+ */
+var scientists = [
     'Anning',
     'Banneker',
     'Cannon',
@@ -49,8 +50,8 @@ function randomScientist() {
     'Tesla',
     'Tyson',
     'Turing'
-    ];
-
+];
+function randomScientist() {
     return scientists[Math.floor(Math.random() * scientists.length)];
 }
 

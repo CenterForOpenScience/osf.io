@@ -328,6 +328,10 @@ li.pointer {
     overflow-x: hidden;
 }
 
+.comment-actions i {
+    cursor: pointer;
+}
+
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
@@ -347,11 +351,9 @@ li.pointer {
 }
 .edit-comment {
     background-color: #F3F3F3;
-    cursor: pointer;
 }
 
 .comment-body i {
-    cursor: pointer;
     padding-right: 5px;
 }
 
@@ -861,7 +863,7 @@ h1.node-title, h1.node-parent-title {
 .wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
     cursor: pointer;
 }
-.wiki-panel-header .icon-list {
+.wiki-panel-header .fa-list {
     color: #808080;
 }
 
@@ -974,6 +976,13 @@ li.unavailable {
 
 h1.unavailable {
     font-style: italic;
+}
+
+/* Project page has project navigation bar, which is fixed and therefore increases the offset the anchors need */
+.project-page .anchor {
+    margin-top: -100px;
+    padding-top: 100px;
+    display: block;
 }
 
 .anchor {
@@ -2193,7 +2202,6 @@ span#profileFullname{
 .modal-backdrop {
     position: fixed;
 }
-
 
 /* Minimal Treebeard for Configure Notifications in project and user settings */
 .osf-treebeard-minimal #tb-tbody {

@@ -98,13 +98,50 @@ $ invoke shell
 To run all tests:
 
 ```bash
-$ invoke test
+$ invoke test --all
 ```
 
 To run a certain test method
 
 ```bash
 $ nosetests tests/test_module.py:TestClass.test_method
+```
+
+Run OSF Python tests only:
+
+```bash
+$ inv test_osf
+```
+
+Run addons Python tests only:
+
+```bash
+$ inv test_addons
+```
+
+Run Javascript tests:
+
+```bash
+$ inv karma
+```
+
+By default, `inv karma` will start a Karma process which will re-run your tests every time a JS file is changed. To do a single run of the JS tests:
+
+
+```bash
+$ inv karma --single
+```
+
+By default, Karma will run tests using a PhantomJS headless browser. You can run tests in other browsers like so:
+
+```bash
+$ inv karma -b Firefox
+```
+
+If you want to run cross browser tests with SauceLabs, use "sauce" parameter:
+
+```bash
+$ inv karma --sauce
 ```
 
 ### Testing Addons
@@ -279,6 +316,8 @@ Use the following command to update your requirements and build the asset bundle
 $ inv assets -dw
 ```
 
+The -w option puts you in "watch": assets will be built when a file changes.
+
 ## Downloading citation styles (optional)
 
 To download citation styles, run:
@@ -293,7 +332,7 @@ $ invoke update_citation_styles
 To install the python libraries needed to support the enabled addons, run:
 
 ```bash
-$ invoke addon_requirements
+$ invoke requirements --addons
 ```
 
 ### Getting application credentials
@@ -301,6 +340,16 @@ $ invoke addon_requirements
 Many addons require application credentials (typically an app key and secret) to be able to authenticate through the OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
 
 For local development, the COS provides test app credentials for a number of services. A listing of these can be found here: https://osf.io/m2hig/wiki/home/ .
+
+## Livereload support
+
+You can run the app server in livereload mode with:
+
+```bash
+$ invoke server --live
+```
+
+This will make your browser automatically refresh whenever a code change is made.
 
 ## Summary
 

@@ -7,8 +7,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
+var $osf = require('./osfHelpers');
 var LogFeed = require('./logFeed.js');
-var $osf = require('osfHelpers');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
@@ -156,12 +156,12 @@ NodeActions._openCloseNode = function(nodeId) {
     body.toggleClass('hide');
 
     if (body.hasClass('hide')) {
-        icon.removeClass('icon-minus');
-        icon.addClass('icon-plus');
+        icon.removeClass('fa fa-minus');
+        icon.addClass('fa fa-plus');
         icon.attr('title', 'More');
     } else {
-        icon.removeClass('icon-plus');
-        icon.addClass('icon-minus');
+        icon.removeClass('fa fa-plus');
+        icon.addClass('fa fa-minus');
         icon.attr('title', 'Less');
     }
 

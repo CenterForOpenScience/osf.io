@@ -1,4 +1,4 @@
-FIGSHARE = 'FigShare'
+FIGSHARE = 'figshare'
 
 # MODEL MESSAGES :model.py
 BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS = 'Warnings: This OSF {category} is private but ' + FIGSHARE + ' project {project_id} may contain some public files or filesets. '
@@ -10,8 +10,6 @@ BEFORE_PAGE_LOAD_PERM_MISMATCH = 'Warnings: This OSF {category} is {node_perm}, 
 BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS = 'Users can view the contents of this private ' + FIGSHARE + ' article. '
 
 BEFORE_REMOVE_CONTRIBUTOR = 'The ' + FIGSHARE + ' add-on for this {category} is authenticated by {user}. Removing this user will also remove write access to the {category} unless another contributor re-authenticates. '
-
-AFTER_REMOVE_CONTRIBUTOR = 'Because the ' + FIGSHARE + ' add-on for this {category} was authenticated by {user}, authentication information has been deleted. You can re-authenticate on the <a href="{url}settings/">Settings</a> page. '
 
 BEFORE_FORK_OWNER = 'Because you have authenticated the ' + FIGSHARE + ' add-on for this {category}, forking it will also transfer your authorization to the forked {category}. '
 
@@ -30,9 +28,9 @@ FIGSHARE_VIEW_FILE_PRIVATE = 'Since this ' + FIGSHARE + ' file is unpublished we
 FIGSHARE_VIEW_FILE_OVERSIZED = 'This ' + FIGSHARE + ' file is too large to render; <a href="{url}">download file</a> to view it. '
 
 '''
-Publishing this article is an irreversible operation. Once a FigShare article is published it can never be deleted. Proceed with caution.
+Publishing this article is an irreversible operation. Once a figshare article is published it can never be deleted. Proceed with caution.
 <br /><br />
-Also, FigShare requires some additional info before this article can be published: <br />
+Also, figshare requires some additional info before this article can be published: <br />
 <form id='figsharePublishForm' action='${nodeApiUrl}figshare/publish/article/${parent_id}/'>
     <h3><label><Title></label></h3>
     <input name='title' type='text' value='${figshare_title}'>
@@ -45,6 +43,6 @@ Also, FigShare requires some additional info before this article can be publishe
 </form>
 '''
 
-OAUTH_INVALID = 'Your OAuth key for FigSahre is no longer valid. Please re-authenticate. '
+OAUTH_INVALID = 'Your OAuth key for figshare is no longer valid. Please re-authenticate. '
 
 # END MFR MESSAGES

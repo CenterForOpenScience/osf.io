@@ -10,17 +10,17 @@ require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 require('../../css/site.css');
-
+require('font-awesome-webpack');
 
 var $ = require('jquery');
 require('jquery.cookie');
-require('../crossOrigin.js');
 
-var NavbarControl = require('navbar-control');
-var $osf = require('osfHelpers');
+require('js/crossOrigin.js');
+var $osf = require('js/osfHelpers');
+var NavbarControl = require('js/navbarControl');
 
 // Prevent IE from caching responses
-$.ajaxSetup({ cache: false });
+$.ajaxSetup({cache: false});
 
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler
 // can be used
@@ -64,13 +64,13 @@ var SlideInViewModel = function (){
 
 $(document).on('click', '.project-toggle', function() {
     var widget = $(this).closest('.addon-widget-container');
-    var up = $(this).find('.icon-angle-up');
-    var down = $(this).find('.icon-angle-down');
+    var up = $(this).find('.fa fa-angle-up');
+    var down = $(this).find('.fa fa-angle-down');
     if(up.length > 0) {
-        up.removeClass('icon-angle-up').addClass('icon-angle-down');
+        up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
     }
     if(down.length > 0) {
-        down.removeClass('icon-angle-down').addClass('icon-angle-up');
+        down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
     }
 
     widget.find('.addon-widget-body').slideToggle();

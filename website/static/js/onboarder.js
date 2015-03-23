@@ -10,7 +10,6 @@ require('../css/onboarding.css');
 require('../css/typeahead.css');
 
 var Dropzone = require('dropzone');
-var waterbutler = require('waterbutler');
 var Handlebars = require('handlebars');
 var Raven = require('raven-js');
 var ko = require('knockout');
@@ -19,7 +18,8 @@ require('typeahead.js');
 
 
 require('./projectCreator.js');
-var $osf = require('osfHelpers');
+var waterbutler = require('./waterbutler');
+var $osf = require('./osfHelpers');
 
 function noop() {}
 var MAX_RESULTS = 14;
@@ -589,7 +589,7 @@ function OBGoToViewModel(params) {
     /* Observables */
     self.isOpen = ko.observable(true);
     self.hasFocus = ko.observable(true);
-    self.submitText = '<i class="icon-double-angle-right"></i> Go';
+        self.submitText = '<i class="fa fa-angle-double-right"></i> Go';
     /* Functions */
     self.toggle = function() {
         if (!self.isOpen()) {

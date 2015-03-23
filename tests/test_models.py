@@ -140,7 +140,6 @@ class TestUserValidation(OsfTestCase):
         with assert_raises(ValidationValueError):
             self.user.save()
 
-
     def test_validate_schools_bad_end_date(self):
         # end year is < start year
         self.user.schools = [{
@@ -225,6 +224,8 @@ class TestUser(OsfTestCase):
         u.save()
         assert_equal(u.username, email)
         assert_false(u.is_registered)
+        assert_false(u.is_claimed)
+        assert_true(u.is_invited)
         assert_true(email in u.emails)
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
@@ -790,6 +791,13 @@ class TestMergingUsers(OsfTestCase):
         self.master.merge_user(self.dupe)
         self.master.save()
 
+    def test_dashboard_nodes_arent_merged(self):
+        dashnode = ProjectFactory(creator=self.dupe, is_dashboard=True)
+
+        self._merge_dupe()
+
+        assert_not_in(dashnode, self.master.node__contributed)
+
     def test_dupe_is_merged(self):
         self._merge_dupe()
         assert_true(self.dupe.is_merged)
@@ -1193,6 +1201,22 @@ class TestNode(OsfTestCase):
             )
         )
 
+    def test_web_url_for_absolute(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.web_url_for('view_project', _absolute=True)
+        assert_in(settings.DOMAIN, result)
+        assert_not_in(settings.OFFLOAD_DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
+    def test_web_url_for_absolute_offload(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.web_url_for('view_project', _absolute=True, _offload=True)
+        assert_in(settings.OFFLOAD_DOMAIN, result)
+        assert_not_in(settings.DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
         assert_equal(node.category_display, 'Hypothesis')
@@ -1218,6 +1242,22 @@ class TestNode(OsfTestCase):
                 nid=self.node._id,
             )
         )
+
+    def test_api_url_for_absolute(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.api_url_for('view_project', _absolute=True)
+        assert_in(settings.DOMAIN, result)
+        assert_not_in(settings.OFFLOAD_DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
+
+    def test_api_url_for_absolute_offload(self):
+        orig_offload_domain = settings.OFFLOAD_DOMAIN
+        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
+        result = self.parent.api_url_for('view_project', _absolute=True, _offload=True)
+        assert_in(settings.OFFLOAD_DOMAIN, result)
+        assert_not_in(settings.DOMAIN, result)
+        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -1628,7 +1668,7 @@ class TestAddonCallbacks(OsfTestCase):
         for addon in self.node.addons:
             callback = addon.after_remove_contributor
             callback.assert_called_once_with(
-                self.node, user2
+                self.node, user2, self.consolidate_auth
             )
 
     def test_set_privacy_callback(self):

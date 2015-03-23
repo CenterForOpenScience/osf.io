@@ -343,7 +343,7 @@ class TestProjectViews(OsfTestCase):
         )
 
         # add an unregistered contributor
-        unregistered_user = project.add_unregistered_contributor(
+        project.add_unregistered_contributor(
             fullname=fake.name(), email=fake.email(),
             auth=self.consolidate_auth1,
             save=True,
@@ -2266,6 +2266,11 @@ class TestPublicViews(OsfTestCase):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
 
+    def test_forgot_password_get(self):
+        res = self.app.get(web_url_for('_forgot_password'))
+        assert_equal(res.status_code, 200)
+        assert_in('Forgot Password', res.body)
+
 
 class TestAuthViews(OsfTestCase):
 
@@ -2679,7 +2684,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                               'data': {'list_id': '12345',
                                        'email': 'freddie@cos.io'}}}
         url = api_url_for('sync_data_from_mailchimp')
-        res = self.app.post_json(url, payload, auth= user.auth, expect_errors=True)
+        res = self.app.post_json(url, payload, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
     @classmethod
@@ -2698,8 +2703,8 @@ class TestFileViews(OsfTestCase):
         self.project.save()
 
     def test_files_get(self):
-        url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        url = self.project.api_url_for('collect_file_trees')
+        res = self.app.get(url, auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
 
         assert_equal(res.status_code, http.OK)
@@ -2708,7 +2713,7 @@ class TestFileViews(OsfTestCase):
         assert_in('tree_css', res.json)
 
     def test_grid_data(self):
-        url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
+        url = self.project.api_url_for('grid_data')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
@@ -3861,6 +3866,10 @@ class TestStaticFileViews(OsfTestCase):
         res = self.app.get('/favicon.ico')
         assert_equal(res.status_code, 200)
         assert_in('image/vnd.microsoft.icon', res.headers['Content-Type'])
+
+    def test_getting_started_page(self):
+        res = self.app.get('/getting-started/')
+        assert_equal(res.status_code, 200)
 
 
 class TestUserConfirmSignal(OsfTestCase):

@@ -1,9 +1,10 @@
+'use strict';
+
 var m = require('mithril');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var utils = require('./utils.js');
 
 var SearchBar = {};
-
 
 SearchBar.view = function(ctrl) {
     return [
@@ -40,7 +41,7 @@ SearchBar.view = function(ctrl) {
                         onchange: m.withAttr('value', ctrl.vm.query),
                     }),
                     m('span.input-group-btn', [
-                        m('button.btn.osf-search-btn', m('i.icon-search.icon-lg')),
+                        m('button.btn.osf-search-btn', m('i.fa.fa-search.fa-lg')),
                     ])
                 ])
             ])

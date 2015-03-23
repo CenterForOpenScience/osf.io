@@ -17,7 +17,7 @@ To use:
 This will create 3 fake public projects, each with 3 fake contributors (with
     you as the creator).
 """
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 import sys
 import argparse
 import logging

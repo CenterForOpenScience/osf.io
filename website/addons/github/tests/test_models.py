@@ -1,17 +1,25 @@
+# -*- coding: utf-8 -*-
+
 import mock
 import unittest
-from nose.tools import *
+from nose.tools import *  # noqa
 
+from github3 import GitHubError
 from github3.repos import Repository
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
+
+from website.addons.github.exceptions import NotFoundError
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, TooBigToRenderError
+from website.addons.github.exceptions import TooBigToRenderError
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
-from website.addons.github.model import AddonGitHubUserSettings, AddonGitHubOauthSettings, GithubGuidFile
+from website.addons.github.model import AddonGitHubUserSettings
+from website.addons.github.model import AddonGitHubNodeSettings
+from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.github.model import GithubGuidFile
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
@@ -34,6 +42,11 @@ class TestFileGuid(OsfTestCase):
         guid, _ = self.node_addon.find_or_create_file_guid('perth')
         assert_equal(guid.waterbutler_path, 'perth')
         assert_equal(guid.waterbutler_path, guid.path)
+
+    def test_extra_without_metadata(self):
+        guid, _ = self.node_addon.find_or_create_file_guid('perth')
+
+        assert_equal(guid.extra, {})
 
     @mock.patch('website.addons.base.requests.get')
     def test_unique_identifier(self, mock_get):
@@ -172,18 +185,32 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    def test_after_remove_contributor_authenticator(self):
-        self.node_settings.after_remove_contributor(
-            self.project, self.project.creator
+    def test_after_remove_contributor_authenticator_self(self):
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, self.consolidated_auth
         )
         assert_equal(
             self.node_settings.user_settings,
             None
         )
+        assert_true(message)
+        assert_not_in("You can re-authenticate", message)
+
+    def test_after_remove_contributor_authenticator_not_self(self):
+        auth = Auth(user=self.non_authenticator)
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.project.creator, auth
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            None
+        )
+        assert_true(message)
+        assert_in("You can re-authenticate", message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
-            self.project, self.non_authenticator
+            self.project, self.non_authenticator, self.consolidated_auth
         )
         assert_not_equal(
             self.node_settings.user_settings,
@@ -323,3 +350,107 @@ class TestAddonGithubUserSettings(OsfTestCase):
         assert_false(self.user_settings.oauth_token_type)
         assert_false(self.user_settings.oauth_access_token)
         assert_false(self.user_settings.oauth_settings)
+
+
+class TestAddonGithubNodeSettings(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory()
+        self.user.add_addon('github')
+        self.user_settings = self.user.get_addon('github')
+        self.oauth_settings = AddonGitHubOauthSettings(oauth_access_token='foobar')
+        self.oauth_settings.github_user_id = 'testuser'
+        self.oauth_settings.save()
+        self.user_settings.oauth_settings = self.oauth_settings
+        self.user_settings.save()
+        self.node_settings = AddonGitHubNodeSettings(
+            owner=ProjectFactory(),
+            user='chrisseto',
+            repo='openpokemon',
+            user_settings=self.user_settings,
+        )
+        self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.user = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_repo_false(self):
+        self.node_settings.repo = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    def test_delete_hook(self, mock_delete_hook):
+        self.node_settings.hook_id = 'hook'
+        self.node_settings.save()
+        args = (
+            self.node_settings.user,
+            self.node_settings.repo,
+            self.node_settings.hook_id,
+        )
+        res = self.node_settings.delete_hook()
+        assert_true(res)
+        mock_delete_hook.assert_called_with(*args)
+
+    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    def test_delete_hook_no_hook(self, mock_delete_hook):
+        res = self.node_settings.delete_hook()
+        assert_false(res)
+        assert_false(mock_delete_hook.called)
+
+    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    def test_delete_hook_not_found(self, mock_delete_hook):
+        self.node_settings.hook_id = 'hook'
+        self.node_settings.save()
+        mock_delete_hook.side_effect = NotFoundError
+        args = (
+            self.node_settings.user,
+            self.node_settings.repo,
+            self.node_settings.hook_id,
+        )
+        res = self.node_settings.delete_hook()
+        assert_false(res)
+        mock_delete_hook.assert_called_with(*args)
+
+    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    def test_delete_hook_error(self, mock_delete_hook):
+        self.node_settings.hook_id = 'hook'
+        self.node_settings.save()
+        mock_delete_hook.side_effect = GitHubError(mock.Mock())
+        args = (
+            self.node_settings.user,
+            self.node_settings.repo,
+            self.node_settings.hook_id,
+        )
+        res = self.node_settings.delete_hook()
+        assert_false(res)
+        mock_delete_hook.assert_called_with(*args)
+
+    def test_to_json_noauthorizing_authed_user(self):
+        user = UserFactory()
+        user.add_addon('github')
+        user_settings = user.get_addon('github')
+
+        oauth_settings = AddonGitHubOauthSettings(oauth_access_token='foobar')
+        oauth_settings.github_user_id = 'testuser'
+        oauth_settings.save()
+
+        user_settings.oauth_settings = self.oauth_settings
+        user_settings.save()
+
+        self.node_settings.to_json(user)

@@ -5,22 +5,26 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osfHelpers');
+var FolderPicker = require('js/folderpicker');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
+
+function noop() {}
+
 /**
-    * Knockout view model for the Dropbox node settings widget.
-    */
-var ViewModel = function(url, selector, folderPicker) {
+ * Knockout view model for the Dropbox node settings widget.
+ */
+var ViewModel = function(url, selector, folderPicker, fetchCallback) {
     var self = this;
+    // TODO: Remove selector?
     self.selector = selector;
     // Auth information
     self.nodeHasAuth = ko.observable(false);
@@ -82,7 +86,7 @@ var ViewModel = function(url, selector, folderPicker) {
     };
 
     self.fetchFromServer = function() {
-        $.ajax({
+        return $.ajax({
             url: url, type: 'GET', dataType: 'json',
             success: function(response) {
                 self.updateFromData(response.result);
@@ -114,7 +118,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     error: error
                 });
             }
-        });
+        }).done(fetchCallback || noop);
     };
 
     // Initial fetch from server
@@ -386,4 +390,7 @@ function DropboxNodeConfig(selector, url, folderPicker) {
     $osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports = DropboxNodeConfig;
+module.exports = {
+    DropboxNodeConfig: DropboxNodeConfig,
+    _ViewModel: ViewModel
+};

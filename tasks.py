@@ -41,11 +41,18 @@ except Failure:
 
 
 @task
-def server(host=None, port=5000, debug=True):
+def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
+    from livereload import Server
     app = init_app(set_backends=True, routes=True, mfr=True)
-    app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+    if live:
+        server = Server(app.wsgi_app)
+        server.watch(os.path.join(HERE, 'website', 'static', 'public'))
+        server.serve(port=port)
+    else:
+        app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 SHELL_BANNER = """
@@ -297,10 +304,11 @@ def elasticsearch():
         print("Your system is not recognized, you will have to start elasticsearch manually")
 
 @task
-def migrate_search(python='python'):
+def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
     '''Migrate the search-enabled models.'''
-    cmd = '{0} -m website.search_migration.migrate'.format(python)
-    run(bin_prefix(cmd))
+    from website.search_migration.migrate import migrate
+    migrate(delete, index=index)
+
 
 @task
 def mailserver(port=1025):
@@ -314,16 +322,37 @@ def flake():
     run('flake8 .', echo=True)
 
 
-@task
-def requirements(all=False, download_cache=None):
-    """Install dependencies."""
-    cmd = "pip install --upgrade -r dev-requirements.txt"
+def pip_install(req_file, download_cache=None):
+    """Return the proper 'pip install' command for installing the dependencies
+    defined in ``req_file``.
+    """
+    cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
         cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
-    run(bin_prefix(cmd), echo=True)
-    if all:
+    return cmd
+
+@task(aliases=['req'])
+def requirements(addons=False, release=False, dev=False, download_cache=None):
+    """Install python dependencies.
+
+    Examples:
+
+        inv requirements --dev
+        inv requirements --addons
+        inv requirements --release
+    """
+    req_file = None
+    # "release" takes precedence
+    if release:
+        req_file = os.path.join(HERE, 'requirements', 'release.txt')
+    elif dev:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    else:  # then base requirements
+        req_file = os.path.join(HERE, 'requirements.txt')
+    run(pip_install(req_file), echo=True)
+    if addons:
         addon_requirements(download_cache=download_cache)
 
 
@@ -371,6 +400,24 @@ def test_all(flake=False):
         flake()
     test_osf()
     test_addons()
+    karma(single=True, browsers='PhantomJS')
+
+@task
+def karma(single=False, sauce=False, browsers=None):
+    """Run JS tests with Karma. Requires Chrome to be installed."""
+    karma_bin = os.path.join(
+        HERE, 'node_modules', 'karma', 'bin', 'karma'
+    )
+    cmd = '{} start'.format(karma_bin)
+    if sauce:
+        cmd += ' karma.saucelabs.conf.js'
+    if single:
+        cmd += ' --single-run'
+    # Use browsers if specified on the command-line, otherwise default
+    # what's specified in karma.conf.js
+    if browsers:
+        cmd += ' --browsers {}'.format(browsers)
+    run(cmd, echo=True)
 
 
 @task
@@ -511,9 +558,9 @@ def setup():
     """Creates local settings, installs requirements, and generates encryption key"""
     copy_settings(addons=True)
     packages()
-    requirements(all=True)
+    requirements(addons=True, dev=True)
     encryption()
-    assets(develop=True, watch=False)
+    assets(dev=True, watch=False)
 
 
 @task
@@ -524,11 +571,11 @@ def analytics():
     init_app()
     from scripts import metrics
     from scripts.analytics import (
-        logs, addons, comments, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, links, watch, email_invites,
+        metrics, logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -686,41 +733,42 @@ def bundle_certs(domain, cert_path):
 @task
 def clean_assets():
     """Remove built JS files."""
-    build_path = os.path.join(HERE,
-                              'website',
-                              'static',
-                              'public',
-                              'js',
-                              '*')
-    run('rm -rf {0}'.format(build_path), echo=True)
+    public_path = os.path.join(HERE, 'website', 'static', 'public')
+    js_path = os.path.join(public_path, 'js')
+    mfr_path = os.path.join(public_path, 'mfr')
+    run('rm -rf {0}'.format(js_path), echo=True)
+    run('rm -rf {0}'.format(mfr_path), echo=True)
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, develop=False):
+def webpack(clean=False, watch=False, dev=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and develop:
+    if settings.DEBUG_MODE and dev:
         args += ['--colors']
     else:
         args += ['--progress']
     if watch:
         args += ['--watch']
-    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     run(command, echo=True)
 
 @task()
-def assets(develop=False, watch=False):
+def assets(dev=False, watch=False):
     """Install and build static assets."""
-    run('npm install', echo=True)
+    npm = 'npm install'
+    if not dev:
+        npm += ' --production'
+    run(npm, echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, develop=develop)
+    webpack(clean=False, watch=watch, dev=dev)
 
 @task
 def generate_self_signed(domain):

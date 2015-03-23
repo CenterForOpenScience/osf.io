@@ -12,10 +12,10 @@
     </ol>
 
      <p>
-         <a data-bind="attr: {href: download_url}" class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
+         <a data-bind="attr: {href: download_url}" class="btn btn-success btn-md">Download <i class="fa fa-download"></i></a>
          ## TODO: Disable based on whether file is draft version. Re-evaluate on release of Dataverse 4.0
 ##        % if user['can_edit']:
-##            <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i></button>
+##            <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="fa-trash-o"></i></button>
 ##        % endif
      </p>
 
@@ -42,7 +42,7 @@
                         </td>
                         <td>
                             <a data-bind="attr: {href: download_url}" class="btn btn-primary btn-sm">
-                                <i class="icon-download-alt"></i>
+                                <i class="fa fa-download"></i>
                             </a>
                         </td>
                     </tr>

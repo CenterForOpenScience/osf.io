@@ -1,6 +1,6 @@
 // TODO: Deprecate me
-var $osf = require('osfHelpers');
 var $ = require('jquery');
+var $osf = require('./osfHelpers');
 
 var AddonHelper = (function() {
 
@@ -66,5 +66,3 @@ var AddonHelper = (function() {
     } 
     return exports;
 })();
-
-

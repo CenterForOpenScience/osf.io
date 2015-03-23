@@ -2,7 +2,7 @@
 
 var m = require('mithril');
 
-var Fangorn = require('fangorn');
+var Fangorn = require('js/fangorn');
 
 
 // Define Fangorn Button Actions
@@ -15,7 +15,7 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Upload files',
-            'icon' : 'icon-upload-alt',
+            'icon' : 'fa fa-upload',
             'css' : 'fangorn-clickable btn btn-default btn-xs',
             'onclick' : Fangorn.ButtonEvents._uploadEvent
         });
@@ -24,16 +24,19 @@ function _fangornActionColumn (item, col) {
         buttons.push({
             'name' : '',
             'tooltip' : 'Download file',
-            'icon' : 'icon-download-alt',
+            'icon' : 'fa fa-download',
             'css' : 'btn btn-info btn-xs',
             'onclick' : Fangorn.ButtonEvents._downloadEvent
         });
     }
 
-    if (item.kind === 'file' && item.data.extra && item.data.extra.status !== 'public' && item.data.permissions.edit) {
+    // Files can be deleted if private or if parent contains more than one child
+    var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
+        item.parent().children.length > 1;
+    if (item.kind === 'file' && privateOrSiblings) {
         buttons.push({
             'name' : '',
-            'icon' : 'icon-remove',
+            'icon' : 'fa fa-times',
             'tooltip' : 'Delete',
             'css' : 'm-l-lg text-danger fg-hover-hide',
             'style' : 'display:none',

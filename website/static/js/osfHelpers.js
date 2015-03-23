@@ -7,7 +7,7 @@ var moment = require('moment');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
-require('koHelpers');
+require('./koHelpers');
 
 var GrowlBox = require('./growlBox');
 
@@ -30,8 +30,8 @@ var growl = function(title, message, type) {
 * interface (using the `done` and `fail` methods of a jqXHR).
 *
 * Example:
-*     var osf = require('./osf-helpers');
-*     var request = osf.postJSON('/foo', {'email': 'bar@baz.com'});
+*     var $osf = require('./osf-helpers');
+*     var request = $osf.postJSON('/foo', {'email': 'bar@baz.com'});
 *     request.done(function(response) {
 *         // ...
 *     })
@@ -155,11 +155,15 @@ var isEmail = function(value) {
 
 /**
   * Get query string arguments as an object.
-  * From getQueryParameters plugin by Nicholas Ortenzio.
-  *
+  * If `str` is falsy, return {}.
+  * Modified from getQueryParameters plugin by Nicholas Ortenzio (MIT Licensed).
   */
 var urlParams = function(str) {
-    return (str || document.location.search).replace(/(^\?)/,'').split('&')
+    var stringToParse = str || document.location.search;
+    if (!stringToParse) {
+        return {};
+    }
+    return (stringToParse).replace(/(^\?)/,'').split('&')
         .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
 };
 
@@ -290,6 +294,35 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
         $(elem).tooltip(valueAccessor());
+    }
+};
+
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements 
+ * Example:
+ * <span data-bind="anchorScroll"></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            var $element = $(element);
+            if(!$item.attr('data-model') && $item.attr('href') !== "#") {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href'),
+                    offset = $(target).offset();
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.height() ) {
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    $(window).scrollTop(offset.top - 100);
+                }
+            }
+        });
     }
 };
 

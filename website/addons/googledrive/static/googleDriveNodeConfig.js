@@ -5,23 +5,23 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var m = require('mithril');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
+var FolderPicker = require('js/folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
 /**
  * Knockout view model for the Google Drive node settings widget.
  */
-var ViewModel = function(url, selector, folderPicker) {
+var ViewModel = function(url, folderPicker, fetchCallback) {
     var self = this;
     self.url = url;
     self.loaded = false;
@@ -43,7 +43,6 @@ var ViewModel = function(url, selector, folderPicker) {
     self.folderPicker =  folderPicker;
     self.selected = ko.observable(null);
     self.showFileTypes = ko.observable(false);
-    self.cancelSelection = ko.observable();
     self.loadedSettings = ko.observable(false);
     self.selectedFileTypeOption = ko.observable('');
 
@@ -71,17 +70,19 @@ var ViewModel = function(url, selector, folderPicker) {
         self.message('Could not fetch settings.');
     }
 
-    function fetch() {
-        $.ajax({
+    self.fetch = function() {
+        return $.ajax({
             url: self.url,
             type: 'GET',
             dataType: 'json'
         })
         .done(onFetchSuccess)
         .fail(onFetchError);
-    }
+    };
 
-    fetch();
+    // TODO: Don't fetch on initialization. This makes testing difficult and leads to
+    // unexpected errors during initialization.
+    self.fetch().done(fetchCallback);
 
     /* Change the flashed status message */
     self.changeMessage = function(text, css, timeout) {
@@ -293,6 +294,7 @@ var ViewModel = function(url, selector, folderPicker) {
         'text-success', 5000);
         // Update folder in ViewModel
         self.urls(response.result.urls);
+        self.cancelSelection();
     }
 
     function onSubmitError() {
@@ -303,7 +305,7 @@ var ViewModel = function(url, selector, folderPicker) {
      * Send a PUT request to change the linked Google Drive folder.
      */
     self.submitSettings = function() {
-        $osf.putJSON(self.urls().config, ko.toJS(self))
+        return $osf.putJSON(self.urls().config, ko.toJS(self))
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     };
@@ -312,8 +314,11 @@ var ViewModel = function(url, selector, folderPicker) {
 function GoogleDriveNodeConfig(selector, url, folderPicker) {
     // Initialization code
     var self = this;
-    self.viewModel = new ViewModel(url, selector, folderPicker);
-    $.osf.applyBindings(self.viewModel, selector);
+    self.viewModel = new ViewModel(url, folderPicker);
+    $osf.applyBindings(self.viewModel, selector);
 }
 
-module.exports = GoogleDriveNodeConfig;
+module.exports = {
+    _ViewModel: ViewModel,
+    GoogleDriveNodeConfig: GoogleDriveNodeConfig
+};

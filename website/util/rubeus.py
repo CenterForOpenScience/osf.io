@@ -287,7 +287,7 @@ class NodeProjectCollector(object):
                 })
         try:
             user = node.logs[-1].user
-            modified_by = user.family_name
+            modified_by = user.family_name or user.given_name
         except AttributeError:
             modified_by = ''
         # test_children = self._collect_addons(node)
