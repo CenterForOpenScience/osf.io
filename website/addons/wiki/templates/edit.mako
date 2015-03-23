@@ -21,7 +21,7 @@
         <!-- Menu with toggle normal -->
         <div class="wiki-panel hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'wiki-panel-flex': $root.singleVis() === undefined, reset-height : $root.singleVis() !== undefined }">
             <div class="wiki-panel-header" data-bind="css: {  'wiki-panel-header-flex': $root.singleVis() === undefined }"> <i class="fa fa-list"> </i>  Menu
-                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div></div>
+                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
             </div>
             <div class="wiki-panel-body" data-bind="css: {  'wiki-panel-body-flex': $root.singleVis() === undefined }">
                 <%include file="wiki/templates/toc.mako"/>
@@ -30,7 +30,7 @@
 
         <!-- Menu with toggle collapsed -->
         <div class="wiki-panel panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
-          <div class="wiki-panel-header">
+          <div class="wiki-panel-header pointer">
             <i class="fa fa-list"> </i>
             <i class="fa fa-angle-right"> </i>
           </div>
