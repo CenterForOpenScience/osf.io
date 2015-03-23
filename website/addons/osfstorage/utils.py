@@ -52,7 +52,7 @@ def serialize_revision(node, record, version, index):
     :param int index: One-based index of version
     """
     return {
-        'index': index,
+        'index': index + 1,
         'user': {
             'name': version.creator.fullname,
             'url': version.creator.url,
