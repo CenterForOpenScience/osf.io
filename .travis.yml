@@ -9,6 +9,7 @@ python:
 
 before_install:
     - export WHEELHOUSE=$(pwd)/.wheelhouse
+    - export TOKU_HUGE_PAGES_OK=1
     - unzip file.zip
     - mkdir /tmp/tokumx
     - tar xf tokumx-2.0.0.-linux-x86_64-main.tar -C /tmp/tokumx --strip-components=1
