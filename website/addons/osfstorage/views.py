@@ -97,14 +97,24 @@ def osf_storage_crud_prepare(node_addon, payload):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)
-    record, created = model.OsfStorageFileRecord.get_or_create(path, node_addon)
+    try:
+        parent, child = path.split('/')
+    except ValueError:
+        parent, child = node_addon.root_node, path
 
-    version = record.create_version(user, location, metadata)
+    try:
+        created, record = False, node_addon.root_node.find_child_by_name(child)
+    except NoResultsFound:
+        if not isinstance(parent, model.OsfStorageNode):
+            parent = model.OsfStorageNode.get_folder(parent, node_addon)
+        created, record = True, parent.append_file(child)
 
     code = httplib.CREATED if created else httplib.OK
+    version = record.create_version(user, location, metadata)
 
     return {
         'status': 'success',
+        'path': record.path,
         'version': version._id,
         'downloads': record.get_download_count(),
     }, code
