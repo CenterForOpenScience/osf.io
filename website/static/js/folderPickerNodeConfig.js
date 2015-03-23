@@ -162,6 +162,18 @@ var FolderPickerViewModel = oop.defclass({
             var name = selected.name || 'None';
             return userIsOwner ? name : '';
         });
+
+        self.treebeardOptions = {
+            lazyLoadPreprocess: function(data) { 
+                return data;
+            },
+            onPickFolder: function() {
+                throw new Error('Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
+            },
+            resolveLazyloadUrl: function(item) {
+                throw new Error('Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
+            }
+        };
     },
     /** 
      * Change the flashed message. 
@@ -274,27 +286,28 @@ var FolderPickerViewModel = oop.defclass({
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     },
+    onImportSuccess: function(response) {
+        var self = this;
+        var msg = response.message || self.messages.TOKEN_IMPORT_SUCCESS();
+        // Update view model based on response
+        self.changeMessage(msg, 'text-success', 3000);
+        self.updateFromData(response.result);
+        self.activatePicker();
+    },
+    onImportError: function(xhr, status, error) {
+        var self = this;
+        self.changeMessage(self.messages.TOKEN_IMPORT_ERROR(), 'text-danger');
+        Raven.captureMessage('Failed to import ' + self.addonName + ' access token.', {
+            xhr: xhr,
+            status: status,
+            error: error
+        });    
+    },
     _importAuthConfirm: function() {
-          var self = this;
-        // Callback for when PUT request to import user access token
-        function onImportSuccess(response) {
-            var msg = response.message || self.messages.TOKEN_IMPORT_SUCCESS();
-            // Update view model based on response
-            self.changeMessage(msg, 'text-success', 3000);
-            self.updateFromData(response.result);
-            self.activatePicker();
-        }
-        function onImportError(xhr, status, error) {
-            self.changeMessage(self.messages.TOKEN_IMPORT_ERROR(), 'text-danger');
-            Raven.captureMessage('Failed to import ' + self.addonName + ' access token.', {
-                xhr: xhr,
-                status: status,
-                error: error
-            });
-        }
+        var self = this;
         return $osf.putJSON(self.urls().importAuth, {})
-            .done(onImportSuccess)
-            .fail(onImportError);
+            .done(self.onImportSuccess.bind(self))
+            .fail(self.onImportError.bind(self));
     },
     /**
      * Send PUT request to import access token from user profile.
@@ -372,17 +385,6 @@ var FolderPickerViewModel = oop.defclass({
             this.cancelSelection();
         }
     },
-    treebeardOptions: {
-        lazyLoadPreprocess: function(data) { 
-            return data;
-        },
-        onPickFolder: function() {
-            throw new Error('Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
-        },
-        resolveLazyloadUrl: function(item) {
-            throw new Error('Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
-        }
-    },
     /**
      *  Activates the HGrid folder picker.
      */
@@ -414,7 +416,7 @@ var FolderPickerViewModel = oop.defclass({
                 // Set flag to prevent repeated requests
                 self.loadedFolders(true);
             }
-        }, self.treebeardOptions());
+        }, self.treebeardOptions);
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
         if (!self.loadedFolders()) {

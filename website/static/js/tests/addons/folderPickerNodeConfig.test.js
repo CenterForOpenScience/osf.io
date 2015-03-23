@@ -11,6 +11,7 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
 var FolderPickerNodeConfigVM = require('js/folderPickerNodeConfig');
+var testUtils = require('./folderPickerTestUtils.js');
 
 var onPickFolderSpy = new sinon.spy();
 var resolveLazyloadUrlSpy = new sinon.spy();
@@ -26,32 +27,6 @@ var TestSubclassVM = oop.extend(FolderPickerNodeConfigVM, {
         return this.folder().name.toUpperCase();
     }
 });
-
-var makeFakeData = function(overrides) {
-    var nodeHasAuth = faker.random.number() ? true : false;
-    var userHasAuth = faker.random.number() ? true : false;
-    var userIsOwner = faker.random.number() ? true : false;
-    var ownerName = faker.name.findName();
-    var folder = {
-        name: faker.hacker.noun(),
-        id: faker.finance.account(),
-        path: faker.hacker.noun()
-    };
-    var urlPath = faker.internet.domainWord();
-    var url = faker.internet.ip();
-    var urls = {};
-    urls[urlPath] = url;
-    var data = {
-        nodeHasAuth: nodeHasAuth,
-        userHasAuth: userHasAuth,
-        userIsOwner: userIsOwner,
-        folder: folder,
-        ownerName: ownerName,
-        urls: urls
-    };
-    return $.extend({}, data, overrides);
-};
-
 
 describe('FolderPickerNodeConfigViewModel', () => {
     var settingsUrl = '/api/v1/12345/addon/config/';
@@ -242,7 +217,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                         done();
                     });
             });
-            var data = makeFakeData();
+            var data = testUtils.makeFakeData();
             it('updates the VM with data if data passed as argument', (done) => {
                 vm.updateFromData(data)
                     .always(function() {
@@ -266,7 +241,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
             });
         });
         describe('#fetchFromServer', () => {
-            var data = makeFakeData();
+            var data = testUtils.makeFakeData();
             var endpoints = [{
                 method: 'GET',
                 url: settingsUrl,
@@ -290,7 +265,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
             });
         });
         describe('#submitSettings', () => {
-            var data = makeFakeData();
+            var data = testUtils.makeFakeData();
             data.urls.view = faker.internet.ip();
             var configUrl = faker.internet.ip();
             var endpoints = [{
@@ -344,7 +319,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 $osf.putJSON.restore();
                 activatePickerSpy.restore();
             });
-            var data = makeFakeData();
+            var data = testUtils.makeFakeData();
             data.urls.importAuth = importAuthUrl;
             it('sends a PUT request to the \'importAuth\' url passed in settings, calls updateFromData with the response, and calls activatePicker', (done) => {
                 vm.updateFromData(data)
@@ -380,7 +355,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 server.restore();
                 $.ajax.restore();
             });
-            var data = makeFakeData();
+            var data = testUtils.makeFakeData();
             data.urls.deauthorize = deleteUrl;
             it('sends a DELETE request to the \'deauthorize\' url passed in settings', (done) => {
                 vm.updateFromData(data)
@@ -420,11 +395,11 @@ describe('FolderPickerNodeConfigViewModel', () => {
         describe('#treebeardOptions', () => {
             it('throws an Error if the Subclass does not override the default \'resolveLazyloadUrl\'', () => {
                 var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
-                assert.throw(broken.treebeardOptions().resolveLazyloadUrl, 'Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
+                assert.throw(broken.treebeardOptions.resolveLazyloadUrl, 'Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
             });
             it('throws an Error if the Subclassess does not override the default \'onPickFolder\'', () => {
                 var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
-                assert.throw(broken.treebeardOptions().onPickFolder, 'Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
+                assert.throw(broken.treebeardOptions.onPickFolder, 'Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
             });
         });
         describe('#activatePicker', () => {
@@ -435,7 +410,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 var opts = $.extend({}, {
                     initialFolderPath: vm.folder().path || '',
                     filesData: vm.urls().folders
-                }, vm.treebeardOptions());
+                }, vm.treebeardOptions);
                 var spy = sinon.spy($.prototype, 'folderpicker');
                 vm.loadedFolders(false);
                 vm.activatePicker();
