@@ -41,17 +41,27 @@ def _kwargs_to_nodes(kwargs):
     return project, node
 
 
-def must_be_valid_project(func):
+def must_be_valid_project(func=None, are_retractions_valid=False):
+    """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
+    def must_be_valid_project_inner(func):
 
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
 
-        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-        return func(*args, **kwargs)
+            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+            if not are_retractions_valid and kwargs['project'].is_retracted:
+                raise HTTPError(http.BAD_REQUEST)
+            else:
+                return func(*args, **kwargs)
 
-    return wrapped
+        return wrapped
+
+    if func:
+        return must_be_valid_project_inner(func)
+
+    return must_be_valid_project_inner
 
 
 def must_be_public_registration(func):

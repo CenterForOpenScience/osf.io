@@ -123,6 +123,27 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_true(self.registration.is_retracted)
         assert_equal(self.registration.retracted_justification, self.justification)
 
+    def test_cant_access_non_approved_resource(self):
+        # Retract public registration
+        expected_redirect_url = self.registration.web_url_for('view_project')
+        res = self.app.post_json(
+            self.retraction_url,
+             {'justification': self.justification},
+             auth=self.auth,
+             expect_errors=True,
+        )
+        # Verify it's accessible
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['redirectUrl'], expected_redirect_url)
+        self.registration.reload()
+        assert_true(self.registration.is_retracted)
+        # Ensure access to resources not explicitly granting permission to retractions returns 400
+        res = self.app.get(
+            self.registration.web_url_for('project_wiki_home'),
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+
 
 class RegistrationRetractionSearchTestCase(OsfTestCase):
 
@@ -135,6 +156,15 @@ class RegistrationRetractionSearchTestCase(OsfTestCase):
 
 @must_be_valid_project
 def valid_project_helper(**kwargs):
+    return kwargs
+
+@must_be_valid_project(are_retractions_valid=True)
+def as_factory_allow_retractions(**kwargs):
+    return kwargs
+
+
+@must_be_valid_project(are_retractions_valid=False)
+def as_factory_do_not_allow_retractions(**kwargs):
     return kwargs
 
 
@@ -183,3 +213,22 @@ class TestValidProject(OsfTestCase):
         with assert_raises(HTTPError) as exc_info:
             valid_project_helper(pid=self.project._id, nid=self.node._id)
         assert_equal(exc_info.exception.code, 410)
+
+def test_valid_project_as_factory_allow_retractions_is_retracted(self):
+    self.project.is_registration = True
+    self.project.is_retracted = True
+    self.project.save()
+    res = as_factory_allow_retractions(pid=self.project._id)
+    assert_equal(res['project'], self.project)
+
+def test_valid_project_as_factory_disallow_retractions_is_retracted(self):
+    self.project.is_registration = True
+    self.project.is_retracted = True
+    self.project.save()
+    res = as_factory_do_not_allow_retractions(pid=self.project._id)
+    assert_true(isinstance(res, werkzeug.Response))
+    assert_equal(res.status_code, 302)
+    assert_equal(
+        res.headers['Location'],
+        self.project.web_url_for('node_registration_retracted'),
+    )
