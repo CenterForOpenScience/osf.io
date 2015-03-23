@@ -12,7 +12,7 @@ var TestPaginator = oop.extend(Paginator, {
     constructor: function(){
         this.super.constructor();
     },
-    fetchResult: spy,
+    fetchResults: spy,
     configure: function(config){
         config(this);
     }
@@ -42,7 +42,7 @@ describe('Paginator', () => {
             p.currentPage(currentPage);
         });
         paginator.previousPage();
-        assert.calledOnce(paginator.fetchResult);
+        assert.calledOnce(paginator.fetchResults);
         assert.equal(paginator.currentPage() + 1, currentPage);
     });
 
@@ -52,13 +52,13 @@ describe('Paginator', () => {
             p.numberOfPages(numberOfPages);
         });
         paginator.nextPage();
-        assert.calledOnce(paginator.fetchResult);
+        assert.calledOnce(paginator.fetchResults);
         assert.equal(paginator.currentPage() - 1, currentPage);
     });
 
-    it('enforces implementation of fetchResult', () => {
+    it('enforces implementation of fetchResults', () => {
         var pg = new Paginator();
-        assert.throw(pg.fetchResult, Error, 'Paginator subclass must define a "fetchResult" method');
+        assert.throw(pg.fetchResults, Error, 'Paginator subclass must define a "fetchResults" method');
     });
 
     describe('addNewPaginator', () => {
