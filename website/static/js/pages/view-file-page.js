@@ -106,12 +106,13 @@ $(document).ready(function() {
     var panelToggle = $('.panel-toggle');
     var panelExpand = $('.panel-expand');
     $('.panel-collapse').on('click', function () {
+        var panelHeight = $('.osf-panel.hidden-xs').height();
         var el = $(this).closest('.panel-toggle');
         el.children('.osf-panel.hidden-xs').hide();
         panelToggle.removeClass('col-md-3').addClass('col-md-1');
         panelExpand.removeClass('col-md-6').addClass('col-md-8');
         el.children('.panel-collapsed').show();
-        el.children('.panel-collapsed').css('height', $('#tb-tbody').height());
+        el.children('.panel-collapsed').css('height', panelHeight);
     });
     $('.panel-collapsed .osf-panel-header').on('click', function () {
         var el = $(this).parent();
