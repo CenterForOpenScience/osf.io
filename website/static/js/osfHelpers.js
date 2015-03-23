@@ -7,7 +7,7 @@ var moment = require('moment');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
-require('koHelpers');
+require('./koHelpers');
 
 var GrowlBox = require('./growlBox');
 
@@ -294,6 +294,35 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
         $(elem).tooltip(valueAccessor());
+    }
+};
+
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements 
+ * Example:
+ * <span data-bind="anchorScroll"></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            var $element = $(element);
+            if(!$item.attr('data-model') && $item.attr('href') !== "#") {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href'),
+                    offset = $(target).offset();
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.height() ) {
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    $(window).scrollTop(offset.top - 100);
+                }
+            }
+        });
     }
 };
 

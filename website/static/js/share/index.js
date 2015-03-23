@@ -1,8 +1,10 @@
+'use strict';
+
 require('c3/c3.css');
 require('../../css/share-search.css');
 
 var m = require('mithril');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var Stats = require('../share/stats.js');
 var utils = require('../share/utils.js');
 var SideBar = require('../share/sideBar.js');
@@ -21,7 +23,7 @@ ShareApp.ViewModel = function() {
     self.count = 0;
     self.results = null;
     self.query = m.prop($osf.urlParams().q || '');
-   };
+};
 
 
 ShareApp.view = function(ctrl) {

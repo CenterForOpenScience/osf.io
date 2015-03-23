@@ -328,6 +328,10 @@ li.pointer {
     overflow-x: hidden;
 }
 
+.comment-actions i {
+    cursor: pointer;
+}
+
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
@@ -347,11 +351,9 @@ li.pointer {
 }
 .edit-comment {
     background-color: #F3F3F3;
-    cursor: pointer;
 }
 
 .comment-body i {
-    cursor: pointer;
     padding-right: 5px;
 }
 
@@ -976,6 +978,13 @@ h1.unavailable {
     font-style: italic;
 }
 
+/* Project page has project navigation bar, which is fixed and therefore increases the offset the anchors need */
+.project-page .anchor {
+    margin-top: -100px;
+    padding-top: 100px;
+    display: block;
+}
+
 .anchor {
     margin-top: -60px;
     padding-top: 60px;
@@ -1412,7 +1421,6 @@ dl.activity-log dd {
 
 .overflow {
     word-wrap: break-word;
-    word-break: break-all;
     max-width: 100%;
 }
 

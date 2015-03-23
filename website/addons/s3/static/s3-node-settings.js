@@ -1,6 +1,8 @@
-var $osf = require('osfHelpers');
-var bootbox = require('bootbox');
+'use strict';
+
 var $ = require('jquery');
+var bootbox = require('bootbox');
+var $osf = require('js/osfHelpers');
 
 (function() {
 

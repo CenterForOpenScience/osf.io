@@ -1,15 +1,18 @@
+'use strict';
+
 var c3 = require('c3');
 var m = require('mithril');
-var $osf = require('osfHelpers');
+var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var utils = require('./utils.js');
 
 var Stats = {};
 
 function get_source_length(elastic_data) {
 
-    sources = elastic_data.raw_aggregations.sources.buckets;
-    source_names = [];
-    for (i = 0; i < sources.length; i++) {
+    var sources = elastic_data.raw_aggregations.sources.buckets;
+    var source_names = [];
+    for (var i=0; i<sources.length; i++) {
         source_names.push(sources[i]);
     }
 
