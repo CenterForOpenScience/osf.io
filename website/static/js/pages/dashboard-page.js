@@ -35,7 +35,7 @@ var request = $.getJSON(url, function(response) {
 
     function ProjectCreateViewModel() {
         var self = this;
-        self.isOpen = ko.observable(false),
+        self.isOpen = ko.observable(false);
         self.focus = ko.observable(false);
         self.toggle = function() {
             self.isOpen(!self.isOpen());
