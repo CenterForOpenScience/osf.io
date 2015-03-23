@@ -328,7 +328,7 @@ def pip_install(req_file, download_cache=None):
     """
     cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
-        cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
+        cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
     return cmd
@@ -421,17 +421,25 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(repo, path):
-    version = '.'.join([str(i) for i in sys.version_info[0:2]])
-    run('pip install wheel --upgrade', pty=False)
-    name = 'wheelhouse-{}.tar.gz'.format(version)
-    url = '{}/archive/{}.tar.gz'.format(repo, version)
-    # download and extract the wheelhouse github repository archive
-    run('mkdir {}'.format(path), pty=False)
-    run('curl -o {} -L {}'.format(name, url), pty=False)
-    run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
-    run('rm -f {}'.format(name), pty=False)
+def wheelhouse(addons=False, release=False, dev=False):
+    if release:
+        req_file =os.path.join(HERE, 'requirements', 'release.txt')
+    elif dev:
+        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    else:
+        req_file = os.path.join(HERE, 'requirements.txt')
+    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    run(cmd, pty=True)
 
+    for directory in os.listdir(settings.ADDON_PATH):
+        path = os.path.join(settings.ADDON_PATH, directory)
+	if os.path.isdir(path):
+	    try:
+	        req_file = os.path.join(path, 'requirements.txt')
+	        cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                run(cmd, pty=True)
+            except IOError:
+                pass
 
 @task
 def addon_requirements(download_cache=None):
@@ -445,7 +453,7 @@ def addon_requirements(download_cache=None):
                 print('Installing requirements for {0}'.format(directory))
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
                 if WHEELHOUSE_PATH:
-                    cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
+                    cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
                 if download_cache:
                     cmd += ' --download-cache {0}'.format(download_cache)
                 run(bin_prefix(cmd))
@@ -461,6 +469,7 @@ def encryption(owner=None):
     > invoke encryption
     On Linode:
     > sudo env/bin/invoke encryption --owner www-data
+
 
     """
     if not settings.USE_GNUPG:
