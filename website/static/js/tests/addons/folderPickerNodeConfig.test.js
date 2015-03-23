@@ -203,8 +203,6 @@ describe('FolderPickerNodeConfigViewModel', () => {
             };
             it('updates the VM\'s message and message CSS class', () => {
                 reset();
-                vm.message('');
-                vm.messageClass('text-info');
                 var msg = 'Such success!';
                 var cls = 'text-success';
                 vm.changeMessage(msg, cls);
@@ -240,7 +238,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 var spy = sinon.spy(vm, 'fetchFromServer');
                 vm.updateFromData()
                     .always(function() {
-                        assert.isTrue(spy.calledOnce);
+                        assert.calledOnce(spy);
                         vm.fetchFromServer.restore();
                         done();
                     });
@@ -320,9 +318,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                     .always(function() {
                         vm.submitSettings()
                             .always(function() {
-                                assert.isTrue(
-                                    spy.calledWith(data.urls.config, vm.folder().name.toUpperCase())
-                                );
+                                assert.calledWith(spy, data.urls.config, vm.folder().name.toUpperCase());
                                 done();
                             });
                     });
@@ -356,10 +352,12 @@ describe('FolderPickerNodeConfigViewModel', () => {
                     .always(function() {
                         vm._importAuthConfirm()
                             .always(function() {
-                                assert.isTrue(
-                                    putJSONSpy.calledWith(importAuthUrl, {})
+                                assert.calledWith(
+                                    putJSONSpy, 
+                                    importAuthUrl, 
+                                    {}
                                 );
-                                assert.isTrue(activatePickerSpy.calledOnce);
+                                assert.calledOnce(activatePickerSpy);
                                 done();
                             });
                     });
@@ -390,11 +388,12 @@ describe('FolderPickerNodeConfigViewModel', () => {
                     .always(function() {
                         vm._deauthorizeConfirm()
                             .always(function() {
-                                assert.isTrue(
-                                    spy.calledWith({
+                                assert.calledWith(
+                                    spy,
+                                    {
                                         url: deleteUrl,
                                         type: 'DELETE'
-                                    })
+                                    }
                                 );
                                 done();
                             });
@@ -406,7 +405,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 vm.currentDisplay(null);
                 var spy = sinon.spy(vm, 'activatePicker');
                 vm.togglePicker();
-                assert.isTrue(spy.calledOnce);
+                assert.calledOnce(spy);
                 assert.equal(vm.currentDisplay(), vm.PICKER);
                 vm.activatePicker.restore();
             });
@@ -414,7 +413,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 vm.currentDisplay(vm.PICKER);
                 var spy = sinon.spy(vm, 'cancelSelection');
                 vm.togglePicker();
-                assert.isTrue(spy.calledOnce);
+                assert.calledOnce(spy);
                 assert.isNull(vm.currentDisplay());
                 vm.cancelSelection.restore();
             });
@@ -422,11 +421,11 @@ describe('FolderPickerNodeConfigViewModel', () => {
         describe('#treebeardOptions', () => {
             it('throws an Error if the Subclass does not override the default \'resolveLazyloadUrl\'', () => {
                 var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
-                assert.throw(broken.treebeardOptions().resolveLazyloadUrl, 'Subclassess of FolderPickerViewModel must implement an \'resolveLazyloadUrl(item)\' method');
+                assert.throw(broken.treebeardOptions().resolveLazyloadUrl, 'Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
             });
             it('throws an Error if the Subclassess does not override the default \'onPickFolder\'', () => {
                 var broken = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
-                assert.throw(broken.treebeardOptions().onPickFolder, 'Subclassess of FolderPickerViewModel must implement an \'onPickFolder(evt, item)\' method');
+                assert.throw(broken.treebeardOptions().onPickFolder, 'Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
             });
         });
         describe('#activatePicker', () => {

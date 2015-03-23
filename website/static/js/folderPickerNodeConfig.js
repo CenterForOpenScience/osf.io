@@ -375,10 +375,10 @@ var FolderPickerViewModel = oop.defclass({
                 return data;
             },
             onPickFolder: function() {
-                throw new Error('Subclasses of FolderPickerViewModel must implement an "onPickFolder(evt, item)" method');
+                throw new Error('Subclasses of FolderPickerViewModel must implement a "onPickFolder(evt, item)" method');
             },
             resolveLazyloadUrl: function(item) {
-                throw new Error('Subclasses of FolderPickerViewModel must implement an "resolveLazyloadUrl(item)" method');
+                throw new Error('Subclasses of FolderPickerViewModel must implement a "resolveLazyloadUrl(item)" method');
             }
         };
     },

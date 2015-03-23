@@ -37,18 +37,6 @@ describe('addonNodeConfig', () => {
     });
 
     describe('ViewModel', () => {
-        it('fetches data from the server on initialization', (done) => {
-            var vm = new AddonNodeConfigVM('addon', '/api/v1/12345/addon/config/', '', '');
-            vm.fetchFromServer(function() {
-                // VM is updated with data from the fake server
-                var expected = endpoints[0].response.result;
-                assert.equal(vm.ownerName(), expected.ownerName);
-                assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
-                assert.equal(vm.userHasAuth(), expected.userHasAuth);
-                assert.deepEqual(vm.urls(), expected.urls);
-                done();
-            });
-        });
     });
 
 });
