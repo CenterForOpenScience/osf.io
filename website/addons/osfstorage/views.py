@@ -1,14 +1,11 @@
 # encoding: utf-8
 
-import os
 import httplib
 import logging
 
-import requests
-from flask import make_response
+from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
-from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
 from framework.auth.decorators import must_be_signed
