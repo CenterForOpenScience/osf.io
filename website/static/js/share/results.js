@@ -34,7 +34,7 @@ Results.controller = function(vm) {
         return m( '.animated.fadeInUp', [
             m('div', [
                 m('h4', [
-                    m('a[href=' + result.id.url + ']', result.title || "No title provided"),
+                    m('a[href=' + result.id.url + ']', result.title || 'No title provided'),
                     m('br'),
                     (function(){
                         if (result.description.length > 350) {
