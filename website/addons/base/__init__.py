@@ -1,6 +1,4 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import glob
@@ -13,6 +11,8 @@ from mako.lookup import TemplateLookup
 
 import furl
 import requests
+from modularodm import Q
+from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
@@ -207,6 +207,21 @@ class GuidFile(GuidStoredObject):
     _meta = {
         'abstract': True,
     }
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
+        try:
+            obj = cls(**kwargs)
+            obj.save()
+            return obj, True
+        except KeyExistsException:
+            obj = cls.find_one(
+                reduce(
+                    lambda acc, query: acc & query,
+                    (Q(key, 'eq', value) for key, value in kwargs.iteritems())
+                )
+            )
+            return obj, False
 
     @property
     def provider(self):

@@ -6,6 +6,7 @@ import base64
 from urllib import unquote
 from datetime import datetime
 
+import pymongo
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
@@ -22,6 +23,16 @@ from website.addons.googledrive.utils import GoogleDriveNodeLogger
 
 
 class GoogleDriveGuidFile(GuidFile):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
+
     path = fields.StringField(index=True)
 
     @property
@@ -335,8 +346,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
         path = os.path.join(self.folder_path, path.lstrip('/'))
         if self.folder_path != '/':
             path = '/' + path
-
-        return GoogleDriveGuidFile.get_or_create(self.owner, path)
+        return GoogleDriveGuidFile.get_or_create(node=self.owner, path=path)
 
     # #### Callback overrides #####
 
