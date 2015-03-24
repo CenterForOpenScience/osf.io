@@ -17,6 +17,7 @@ from website.addons.github.utils import serialize_urls
 from ..api import GitHub
 
 
+
 @must_be_logged_in
 def github_set_user_config(**kwargs):
     return {}

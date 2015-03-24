@@ -142,7 +142,7 @@ def serialize_urls(node_addon, user):
     result = {
         'createRepo': node.api_url_for('github_create_repo'),
         'importAuth': node.api_url_for('github_add_user_auth'),
-        # 'createAuth': node.api_url_for('github_add_user_auth'),
+        'createAuth': node.api_url_for('github_authorize_node'),
         'deauthorize': node.api_url_for('github_oauth_deauthorize_node'),
         'repoList': node.api_url_for('github_repo_list'),
         'setRepo': node.api_url_for('github_set_config'),

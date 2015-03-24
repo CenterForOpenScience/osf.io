@@ -52,22 +52,22 @@
           </div>         
         </div>          
     </div>
-##    <div data-bind="if: showCreateCredentials">
-##      <div class="form-group">
-##        <label for="githubAddon">Access Key</label>
-##        <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
-##      </div>
-##      <div class="form-group">
-##        <label for="githubAddon">Secret Key</label>
-##        <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
-##      </div>
-##      <button data-bind="click: createCredentials,
-##                         attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
-##        Submit
-##      </button>
-##    </div>
+    <div data-bind="if: showCreateCredentials">
+      <div class="form-group">
+        <label for="githubAddon">Access Key</label>
+        <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
+      </div>
+      <div class="form-group">
+        <label for="githubAddon">Secret Key</label>
+        <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
+      </div>
+      <button data-bind="click: createCredentials,
+                         attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
+        Submit
+      </button>
+    </div>
     <!-- Flashed Messages -->
-##    <div class="help-block">
-##        <p data-bind="html: message, attr.class: messageClass"></p>
-##    </div>
+    <div class="help-block">
+        <p data-bind="html: message, attr.class: messageClass"></p>
+    </div>
 </div>

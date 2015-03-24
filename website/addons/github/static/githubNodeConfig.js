@@ -31,8 +31,7 @@ var ViewModel = function(url, selector) {
     self.currentRepo = ko.observable('');
     self.selectedRepo = ko.observable('');
 
-    self.accessKey = ko.observable('');
-    self.password = ko.observable('');
+    self.accessToken = ko.observable('');
 
     self.loading = ko.observable(false);
     self.creating = ko.observable(false);
@@ -185,8 +184,7 @@ ViewModel.prototype.createRepo = function(repoName) {
             repo_name: repoName
         }
     ).done(function(response) {
-        debugger;
-        repoName = response.user + ' / ' + response.repo;
+        repoName = response.github_user + ' / ' + response.repo;
         self.creating(false);
         self.updateFromData(response);
         self.changeMessage('Successfully created repo \'' + repoName + '\'. You can now select it from the drop down list.', 'text-success');
@@ -301,6 +299,7 @@ ViewModel.prototype.fetchFromServer = function() {
                 error: error
             });
         });
+    debugger;
 };
 
 
@@ -318,6 +317,55 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
         }, timeout);
     }
 };
+
+
+ViewModel.prototype.importAuth = function() {
+    var self = this;
+    $osf.postJSON(
+        self.urls().importAuth, {}
+    ).done(function(response) {
+        self.changeMessage('Successfully imported Github credentials.', 'text-success');
+        self.updateFromData(response);
+    }).fail(function(xhr, status, error){
+        var message = 'Could not import Github credentials at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not import Github credentials', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
+    });
+};
+
+
+ViewModel.prototype.createCredentials = function() {
+    var self = this;
+    $osf.postJSON(
+        self.urls().createAuth,
+        {
+            secret_key: self.secretKey(),
+            access_key: self.accessKey()
+        }
+    ).done(function(response) {
+        self.creatingCredentials(false);
+        self.changeMessage('Successfully added Github credentials.', 'text-success');
+        self.updateFromData(response);
+    }).fail(function(xhr, status, error){
+        self.creatingCredentials(false);
+        var message = 'Could not add Github credentials at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not add Github credentials', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
+    });
+};
+
 
 
 var githubConfig = function(selector, url){

@@ -118,6 +118,16 @@ settings_routes = {
             views.auth.github_add_user_auth,
             json_renderer,
         ),
+
+        Rule(
+            [
+                '/project/<pid>/github/authorize/',
+                '/project/<pid>/node/<nid>/github/authorize/',
+            ],
+            'post',
+            views.config.github_authorize_node,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/github/oauth/',
