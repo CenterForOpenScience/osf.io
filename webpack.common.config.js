@@ -44,6 +44,7 @@ var entry = {
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
+    'share-embed-page': staticPath('js/pages/shareEmbedConfig.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
