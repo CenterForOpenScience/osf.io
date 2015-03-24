@@ -20,14 +20,18 @@ before_install:
     #tokumx
     - export TOKU_HUGE_PAGES_OK=1
     - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
+    - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz.md5
+    - md5sum --check tokumx-2.0.0-linux-x86_64-main.tar.gz.md5
     - mkdir /tmp/tokumx
     - tar xzf tokumx-2.0.0-linux-x86_64-main.tar.gz -C /tmp/tokumx --strip-components=1
     - mkdir /tmp/tokumx/data
     - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
     #elasticsearch
-    - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.4.tar.gz
+    - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz
+    - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz.sha1.txt
+    - sha1sum --check elasticsearch-1.5.0.tar.gz.sha1.txt
     - mkdir /tmp/elasticsearch
-    - tar -xvf elasticsearch-1.4.4.tar.gz -C /tmp/elasticsearch --strip-components=1
+    - tar -xvf elasticsearch-1.5.0.tar.gz -C /tmp/elasticsearch --strip-components=1
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null &
 
 install:
