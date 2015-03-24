@@ -1,3 +1,4 @@
+var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var History = require('exports?History!history');
@@ -66,7 +67,7 @@ var loadMore = function(vm) {
 
         vm.resultsLoading(false);
     }, errorState.bind(this, vm)).then(m.redraw).then(function() {
-        callbacks.map(function(cb) {cb();});
+        $.map(callbacks, function(cb) {cb();});
     });
 };
 
@@ -168,7 +169,7 @@ var loadStats = function(vm){
         background: true
     }).then(function(data) {
         vm.statsData = data;
-        Object.keys(vm.graphs).map(function(type) {
+        $.map(Object.keys(vm.graphs), function(type) {
             if(type === 'shareDonutGraph') {
                 var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));

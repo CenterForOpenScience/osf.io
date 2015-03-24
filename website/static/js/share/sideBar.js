@@ -40,7 +40,7 @@ SideBar.controller = function(vm) {
     };
 
     self.renderSort = function(){
-        return Object.keys(self.vm.sortMap).map(function(a) {
+        return $.map(Object.keys(self.vm.sortMap), function(a) {
             return m('li',
                 m('a', {
                     'href': '#',
@@ -53,7 +53,7 @@ SideBar.controller = function(vm) {
     };
 
     self.renderFilters = function(){
-        return self.vm.optionalFilters.concat(self.vm.requiredFilters).map(function(filter){
+        return $.map(self.vm.optionalFilters.concat(self.vm.requiredFilters), function(filter){
             return m('li.renderFilter', [
                 m('a', {
                     onclick: function(event){
@@ -66,11 +66,11 @@ SideBar.controller = function(vm) {
     };
 
     self.renderProviders = function () {
-        return Object.keys(self.vm.ProviderMap).map(function(result, index){
+        return $.map($.map(Object.keys(self.vm.ProviderMap), function(result, index){
             return self.vm.ProviderMap[result];
         }).sort(function(a,b){
                 return a.long_name > b.long_name ? 1: -1;
-        }).map(function(result, index){
+        }), function(result, index){
             var checked = (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1) ? 'inFilter' : '';
 
             return m('li', m('.providerFilter', {

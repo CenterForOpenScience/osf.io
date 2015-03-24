@@ -11,7 +11,7 @@ Results.view = function(ctrl) {
     var res = [];
     var len = 0;
     if (ctrl.vm.results !== null){
-        res = ctrl.vm.results.map(ctrl.renderResult);
+        res = $.map(ctrl.vm.results, ctrl.renderResult);
         len = ctrl.vm.results.length;
     }
     return m('', [
@@ -49,7 +49,7 @@ Results.controller = function(vm) {
                 m('.row', [
                     m('.col-md-7', m('span.pull-left', (function(){
                         var renderPeople = function(people) {
-                            return people.map(function(person, index) {
+                            return $.map(people, function(person, index) {
                                 return m('span', [
                                     m('span', index !== 0 ? ' · ' : ''),
                                     m('a', {
@@ -84,10 +84,10 @@ Results.controller = function(vm) {
                                 };
 
                                 if (result.showAllTags || result.tags.length < 5) {
-                                    return result.tags.map(renderTag);
+                                    return $.map(result.tags, renderTag);
                                 }
                                 return m('span', [
-                                    result.tags.slice(0, 5).map(renderTag),
+                                    $.map(result.tags.slice(0, 5), renderTag),
                                     m('br'),
                                     m('div', m('a', {onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},'See All'))
                                 ]);
