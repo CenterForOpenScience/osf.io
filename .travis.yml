@@ -38,8 +38,10 @@ before_script:
     - flake8 .
 
 # Run Python tests (core and addon) and JS tests
-script: invoke test --all
-pkill elasticsearch && pkill mongod
+script:
+    - invoke test --all
+    - pkill elasticsearch
+    - pkill mongod
 
 cache:
   directories:
