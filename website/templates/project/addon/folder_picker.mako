@@ -29,7 +29,7 @@
     </h4>
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind='if: showSettings'>
-        <div class="row">
+        <div class="row">`2
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>

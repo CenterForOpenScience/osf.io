@@ -90,6 +90,11 @@ class OAuthAddonSerializer(AddonSerializer):
             ]
         }
 
+    def serialized_node_settings(self):
+        result = super(OAuthAddonSerializer, self).serialized_node_settings
+        validCredentials =
+
+
     @collect_auth
     def serialize_granted_node(self, node, auth):
 

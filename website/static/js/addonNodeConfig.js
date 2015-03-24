@@ -222,7 +222,7 @@ ViewModel.prototype.fetchFromServer = function(cb) {
                 if (self.userIsOwner()) {
                     self.changeMessage(self.messages.INVALID_CRED_OWNER(), 'text-warning');
                 } else {
-                    self.changeMessage(self.message.INVALID_CRED_NOT_OWNER(), 'text-warning');
+                    self.changeMessage(self.messages.INVALID_CRED_NOT_OWNER(), 'text-warning');
                 }
             }
         })
@@ -462,11 +462,11 @@ function AddonNodeConfig(addonName, selector, url, folderPicker, opts) {
         opts = {};
     }
     self.viewModel = new ViewModel(addonName, url, selector, folderPicker, opts);
-    self.fetchFromServer();
+    self.viewModel.fetchFromServer();
     $osf.applyBindings(self.viewModel, selector);
 }
 
 module.exports = {
     AddonNodeConfig: AddonNodeConfig,
-    _AddonNodeConfigViewModel: ViewModel
+    AddonNodeConfigViewModel: ViewModel
 };

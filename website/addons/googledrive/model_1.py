@@ -1,6 +1,7 @@
 from modularodm import fields
 from website.addons.citations.utils import serialize_account, serialize_folder
 from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
+from website.addons.googledrive import exceptions
 from website.oauth.models import ExternalProvider
 from .client import GoogleAuthClient, GoogleDriveClient
 from . import settings
@@ -66,11 +67,28 @@ class GoogleDriveUserSettings(AddonOAuthUserSettingsBase):
         ]
         return ret
 
+    def fetch_access_token(self):
+        self.refresh_access_token()
+        return self.oauth_provider.account.oauth_key
+
+    def refresh_access_token(self, force=False):
+        if self._needs_refresh() or force:
+            client = GoogleAuthClient()
+            token = client.refresh(self.access_token, self.refresh_token)
+
+            self.access_token = token['access_token']
+            self.refresh_token = token['refresh_token']
+            self.expires_at = datetime.utcfromtimestamp(token['expires_at'])
+            self.save()
+
+
+
 
 class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = GoogleDriveProvider
 
     drive_folder_id = fields.StringField()
+    folder_path = fields.StringField()
 
     _api = None
 
@@ -99,6 +117,11 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         else:
             folder = self.api._folder_metadata(self.drive_folder_id)
             return folder.title
+
+    def set_folder(self, folder, auth, add_log=True):
+        self.drive_folder_id= folder['id']
+        self.folder_path = folder['path']
+
 
     # using citations/utils for now. Should be generalized to addons/utils
     # TODO: Why am I used?
@@ -143,3 +166,40 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         # update this instance
         self.drive_folder_id = drive_folder_id
         self.save()
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.fetch_access_token()}
+
+    def serialize_waterbutler_settings(self):
+        if not self.folder_id:
+            raise exceptions.AddonError('Folder is not configured')
+
+        return {
+            'folder': {
+                'id': self.drive_folder_id,
+                'name': self.selected_folder_name,
+                'path': self.folder_path
+            }
+        }
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        # cleaned_path = clean_path(metadata['path'])
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='googledrive')
+
+        self.owner.add_log(
+            'googledrive_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': metadata['path'],
+                'folder': self.folder_path,
+
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                },
+            },
+        )
