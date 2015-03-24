@@ -493,7 +493,7 @@ def project_before_set_public(**kwargs):
 @must_be_valid_project
 @must_have_permission('admin')
 def project_set_privacy(auth, **kwargs):
-    
+
     permissions = kwargs.get('permissions')
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
