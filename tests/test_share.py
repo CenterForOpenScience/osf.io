@@ -202,7 +202,36 @@ class TestShareAtom(OsfTestCase):
     def test_illegal_unicode_sub(self):
         illegal_str = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello'
         illegal_str += unichr(0xd800) + unichr(0xdbff) + ' World'
-        assert_equal(util.illegal_unicode_replace(illegal_str), 'Hello World')
-        assert_equal(util.illegal_unicode_replace(''), '')
-        assert_equal(util.illegal_unicode_replace(None), None)
-        assert_equal(util.illegal_unicode_replace('WOOOooooOOo'), 'WOOOooooOOo')
+        assert_equal(util.html_and_illegal_unicode_replace(illegal_str), 'Hello World')
+        assert_equal(util.html_and_illegal_unicode_replace(''), '')
+        assert_equal(util.html_and_illegal_unicode_replace(None), None)
+        assert_equal(util.html_and_illegal_unicode_replace('WOOOooooOOo'), 'WOOOooooOOo')
+
+    def test_html_tag_sub(self):
+        html_str = "<p><b>RKO</b> outta <i>NOWHERE</i>!!!</p>"
+        assert_equal(util.html_and_illegal_unicode_replace(html_str), 'RKO outta NOWHERE!!!')
+
+    @patch.object(share_search.share_es, 'search')
+    def test_atom_returns_correct_number(self, mock_search):
+        mock_search.return_value = STANDARD_RETURN_VALUE
+        response = self.app.get('/share/atom/')
+        entries = response.xml.findall('{http://www.w3.org/2005/Atom}entry')
+        assert_equal(len(entries), STANDARD_RETURN_VALUE['hits']['total'])
+
+    def test_compute_start_non_number(self):
+        page = 'cow'
+        size = 250
+        result = util.compute_start(page, size)
+        assert_equal(result, 0)
+
+    def test_compute_start_negative(self):
+        page = -10
+        size = 250
+        result = util.compute_start(page, size)
+        assert_equal(result, 0)
+
+    def test_compute_start_normal(self):
+        page = 50
+        size = 10
+        result = util.compute_start(page, size)
+        assert_equal(result, 490)

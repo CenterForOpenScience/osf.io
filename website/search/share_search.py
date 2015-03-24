@@ -13,7 +13,7 @@ from elasticsearch import Elasticsearch
 
 from website import settings
 
-from util import generate_color, illegal_unicode_replace
+from util import generate_color, html_and_illegal_unicode_replace
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
@@ -59,6 +59,7 @@ def providers():
             hit['_source']['short_name']: hit['_source'] for hit in provider_map['hits']['hits']
         }
     }
+
 
 def stats(query=None):
     query = query or {"query": {"match_all": {}}}
@@ -252,15 +253,15 @@ def data_for_charts(elastic_results):
 
 def to_atom(result):
     return {
-        'title': illegal_unicode_replace(result.get('title')) or 'No title provided.',
-        'summary': illegal_unicode_replace(result.get('description')) or 'No summary provided.',
+        'title': html_and_illegal_unicode_replace(result.get('title')) or 'No title provided.',
+        'summary': html_and_illegal_unicode_replace(result.get('description')) or 'No summary provided.',
         'id': result['id']['url'],
         'updated': get_date_updated(result),
         'links': [
             {'href': result['id']['url'], 'rel': 'alternate'}
         ],
         'author': format_contributors_for_atom(result['contributors']),
-        'categories': [{"term": illegal_unicode_replace(tag)} for tag in result.get('tags')],
+        'categories': [{"term": html_and_illegal_unicode_replace(tag)} for tag in result.get('tags')],
         'published': parse(result.get('dateUpdated'))
     }
 
@@ -269,8 +270,8 @@ def format_contributors_for_atom(contributors_list):
     return [
         {
             'name': '{} {}'.format(
-                illegal_unicode_replace(entry['given']),
-                illegal_unicode_replace(entry['family'])
+                html_and_illegal_unicode_replace(entry['given']),
+                html_and_illegal_unicode_replace(entry['family'])
             )
         }
         for entry in contributors_list
