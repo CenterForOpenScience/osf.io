@@ -322,19 +322,17 @@ def flake():
     run('flake8 .', echo=True)
 
 
-def pip_install(req_file, download_cache=None):
+def pip_install(req_file):
     """Return the proper 'pip install' command for installing the dependencies
     defined in ``req_file``.
     """
     cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
-    if download_cache:
-        cmd += ' --download-cache {0}'.format(download_cache)
     return cmd
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False, download_cache=None):
+def requirements(addons=False, release=False, dev=False):
     """Install python dependencies.
 
     Examples:
@@ -353,7 +351,7 @@ def requirements(addons=False, release=False, dev=False, download_cache=None):
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
     if addons:
-        addon_requirements(download_cache=download_cache)
+        addon_requirements()
 
 
 @task
@@ -442,7 +440,7 @@ def wheelhouse(addons=False, release=False, dev=False):
                 run(cmd, pty=True)
 
 @task
-def addon_requirements(download_cache=None):
+def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
@@ -454,8 +452,6 @@ def addon_requirements(download_cache=None):
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
                 if WHEELHOUSE_PATH:
                     cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
-                if download_cache:
-                    cmd += ' --download-cache {0}'.format(download_cache)
                 run(bin_prefix(cmd))
             except IOError:
                 pass
