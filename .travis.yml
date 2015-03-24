@@ -50,8 +50,7 @@ before_script:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    # - invoke test --all
-    - echo 'hi'
+    - invoke test --all
 
-# notifications:
-#    flowdock: 0221882cdda034c0e9ac2a0e766053dd
+notifications:
+   flowdock: 0221882cdda034c0e9ac2a0e766053dd
