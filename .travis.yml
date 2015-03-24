@@ -10,12 +10,14 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
-    - $HOME/wheelhouse
+    - $HOME/.cache/wheelhouse
     - node_modules
     - website/static/vendor/bower_components
 
+env:
+  WHEELHOUSE: $HOME/.cache/wheelhouse
+
 before_install:
-    - export WHEELHOUSE=$HOME/wheelhouse
     # tokumx
     - export TOKU_HUGE_PAGES_OK=1
     - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
