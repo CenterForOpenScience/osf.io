@@ -23,9 +23,9 @@ env:
 before_install:
     # cache directories
     - |
-      mkdir $HOME/.cache/downloads
-      mkdir $HOME/.cache/pip
-      mkdir $HOME/.cache/wheelhouse
+      mkdir -p $HOME/.cache/downloads
+      mkdir -p $HOME/.cache/pip
+      mkdir -p $HOME/.cache/wheelhouse
     # tokumx
     - |
       cd $HOME/.cache/downloads
