@@ -295,6 +295,7 @@ var ViewModel = function(params) {
 
     //Ensure that the first url displays properly
     self.validateSearch = function() {
+        var possibleCategories;
         if (self.category().name !== undefined) {
             possibleCategories = $.map(self.categories().filter(function(category) {
                 return category.count > 0;
