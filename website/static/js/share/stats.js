@@ -21,7 +21,7 @@ function get_source_length(elastic_data) {
 
 function donutGraph (data, vm) {
     data.charts.shareDonutGraph.onclick = function (d, element) {
-        utils.updateFilter(vm, 'source:' + d['name'], true);
+        utils.updateFilter(vm, 'source:' + d.name, true);
     };
     return c3.generate({
         bindto: '#shareDonutGraph',
@@ -109,7 +109,9 @@ Stats.controller = function(vm) {
 
     self.drawGraph = function(divId, graphFunction) {
         return m('div', {id: divId, config: function(e, i) {
-            if (i) return;
+            if (i) {
+                return;
+            }
             self.vm.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
         }});
     };

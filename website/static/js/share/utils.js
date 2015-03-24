@@ -35,7 +35,7 @@ var errorState = function(vm){
     vm.count = 0;
     vm.resultsLoading(false);
     m.redraw(true);
-    $osf.growl("Error", "invalid query");
+    $osf.growl('Error', 'invalid query');
 };
 
 var loadMore = function(vm) {
