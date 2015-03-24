@@ -27,42 +27,65 @@ $(document).ready(function() {
                 showFilter: false,
                 title: undefined,
                 hideColumnTitles: true,
+                ondataload: function () {
+                    var tb = this;
+                    tb.options.folderIndex = 0;
+                    tb.scrolled = false;
+                    if (window.contextVars.file.path) {
+                        tb.options.folderArray = window.contextVars.file.path.split("/");
+                        if (tb.options.folderArray.length > 1) {
+                            tb.options.folderArray.splice(0, 1);
+                        }
+                    } else {
+                        tb.options.folderArray = [''];
+                    }
+                },
                 columnTitles: function () {
                     return [{
                         title: 'Name',
                         width: '100%'
                     }];
                 },
-                ontogglefolder : function (tree){
+                ontogglefolder : function (tree) {
                     Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
                     var containerHeight = this.select('#tb-tbody').height();
                     this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
                     this.redraw();
                 },
                 lazyLoadOnLoad: function(tree) {
-                    Fangorn.DefaultOptions.lazyLoadOnLoad.call(this, tree);
                     var tb = this;
-                    var node = tree.parent();
-                    for (var i=0; i < tree.children.length; i++) {
-                        var child = tree.children[i];
-                        if (child.data.kind === 'file' && window.contextVars.node.id === node.data.nodeID && child.data.name === window.contextVars.file.name && child.data.provider === window.contextVars.file.provider) {
-                            tb.currentFileId = child.id;
+                    Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree);
+
+                    if (tb.options.folderIndex < tb.options.folderArray.length) {
+                        for (var i = 0; i < tree.children.length; i++) {
+                            var child = tree.children[i];
+                            if (window.contextVars.node.id === child.data.nodeId && child.data.provider === window.contextVars.file.provider && child.data.name === tb.options.folderArray[tb.options.folderIndex]) {
+                                tb.options.folderIndex++;
+                                if (child.data.kind === 'folder') {
+                                    tb.updateFolder(null, child);
+                                    tree = child;
+                                }
+                                else {
+                                    tb.currentFileID = child.id;
+                                }
+                            }
                         }
                     }
-
-                    if (tb.currentFileId) {
-                        var index = tb.returnIndex(tb.currentFileId);
+                    if (tb.currentFileID && !tb.scrolled) {
+                        var index = tb.returnIndex(tb.currentFileID);
                         var visibleIndex = tb.visibleIndexes.indexOf(index);
                         if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
                             var scrollTo = visibleIndex * tb.options.rowHeight;
                             $('#tb-tbody').scrollTop(scrollTo);
+                            tb.scrolled = true;
                         }
                     }
                 },
                 resolveRows: function (item) {
                     var selectClass = '';
+                    var tb = this;
                     var node = item.parent().parent();
-                    if (item.data.kind === 'file' && window.contextVars.node.id === node.data.nodeID && item.data.name === window.contextVars.file.name && item.data.provider === window.contextVars.file.provider) {
+                    if (item.data.kind === 'file' && tb.currentFileID === item.id) {
                         selectClass = 'fangorn-hover';
                     }
 
