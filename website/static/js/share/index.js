@@ -88,7 +88,7 @@ var renderSort = function(ctrl){
                     'aria-expanded': 'false'
                 }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
             ),
-                m('ul.dropdown-menu', {'role': 'menu'}, ctrl.sideBarController.renderSort())])
+                m('ul.dropdown-menu', {'role': 'menu'}, ctrl.sideBarController.renderSort())]);
     };
 
 
