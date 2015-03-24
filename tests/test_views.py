@@ -146,6 +146,26 @@ class TestProjectViews(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def test_can_view_nested_project_as_admin(self):
+        self.parent_project = NodeFactory(
+            title='parent project',
+            category='project',
+            project=self.project,
+            is_public=False
+        )
+        self.parent_project.save()
+        self.child_project = NodeFactory(
+            title='child project',
+            category='project',
+            project=self.parent_project,
+            is_public=False
+        )
+        self.child_project.save()
+        url = self.child_project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+        assert_not_in('Private Project', res.body)
+        assert_in('parent project', res.body)
+
     def test_edit_description(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         self.app.post_json(url,
@@ -343,7 +363,7 @@ class TestProjectViews(OsfTestCase):
         )
 
         # add an unregistered contributor
-        unregistered_user = project.add_unregistered_contributor(
+        project.add_unregistered_contributor(
             fullname=fake.name(), email=fake.email(),
             auth=self.consolidate_auth1,
             save=True,
@@ -2684,7 +2704,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                               'data': {'list_id': '12345',
                                        'email': 'freddie@cos.io'}}}
         url = api_url_for('sync_data_from_mailchimp')
-        res = self.app.post_json(url, payload, auth= user.auth, expect_errors=True)
+        res = self.app.post_json(url, payload, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
     @classmethod
@@ -2703,8 +2723,8 @@ class TestFileViews(OsfTestCase):
         self.project.save()
 
     def test_files_get(self):
-        url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        url = self.project.api_url_for('collect_file_trees')
+        res = self.app.get(url, auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
 
         assert_equal(res.status_code, http.OK)
@@ -2713,7 +2733,7 @@ class TestFileViews(OsfTestCase):
         assert_in('tree_css', res.json)
 
     def test_grid_data(self):
-        url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
+        url = self.project.api_url_for('grid_data')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))

@@ -4,7 +4,7 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-validation').init({insertMessages: false});  // override default DOM insertions
+require('knockout.validation').init({insertMessages: false});  // override default DOM insertions
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');

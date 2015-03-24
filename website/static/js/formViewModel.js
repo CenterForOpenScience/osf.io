@@ -5,7 +5,7 @@
 
 var ko = require('knockout');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
 var ValidationError = oop.extend(Error, {

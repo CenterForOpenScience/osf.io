@@ -6,8 +6,9 @@
 var ko = require('knockout');
 var $ = require('jquery');
 var moment = require('moment');
-require('knockout-punches');
-var $osf = require('osfHelpers');
+require('knockout.punches');
+
+var $osf = require('./osfHelpers');
 
 ko.punches.enableAll();  // Enable knockout punches
 /**
@@ -109,7 +110,7 @@ var LogsViewModel = function(logs, hasMoreLogs, url) {
     self.tzname = ko.computed(function() {
         var logs = self.logs();
         if (logs.length) {
-            var tz =  moment(logs[0].date).format('ZZ');
+            var tz =  moment(logs[0].date.date).format('ZZ');
             return tz;
         }
         return '';
