@@ -10,7 +10,7 @@ var Results = {};
 Results.view = function(ctrl) {
     var res = [];
     var len = 0;
-    if (!(ctrl.vm.results === null)){
+    if (ctrl.vm.results !== null){
         res = ctrl.vm.results.map(ctrl.renderResult);
         len = ctrl.vm.results.length;
     }
