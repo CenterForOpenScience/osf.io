@@ -2269,7 +2269,7 @@ span#profileFullname{
 }
 /* Wiki additions */
 .wiki-panel {
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     height: 750px;
     overflow: auto;
     display: block;
@@ -2303,7 +2303,9 @@ span#profileFullname{
 .wiki-panel-header.bottom-border {
     border-bottom: 1px solid #eee;
 }
-
+.wiki-panel-header.bordered {
+    border: 1px solid #ddd;
+}
 .wiki-panel-footer {
     position: absolute;
     bottom : 0;
