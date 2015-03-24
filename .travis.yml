@@ -14,6 +14,9 @@ cache:
     - node_modules
     - website/static/vendor/bower_components
 
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
+
 env:
   WHEELHOUSE: $HOME/.cache/wheelhouse
   TOKU_HUGE_PAGES_OK: 1
