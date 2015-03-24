@@ -699,7 +699,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         return (
             self.is_public or
             (auth.user and self.has_permission(auth.user, 'read')) or
-            auth.private_key in self.private_link_keys_active
+            auth.private_key in self.private_link_keys_active or
+            self.is_admin_parent(auth.user)
         )
 
     def is_expanded(self, user=None):
