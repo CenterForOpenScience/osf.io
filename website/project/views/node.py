@@ -214,7 +214,6 @@ def project_new_node(**kwargs):
 @must_be_logged_in
 @must_be_valid_project  # returns project
 def project_before_fork(**kwargs):
-
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
 
@@ -493,7 +492,6 @@ def project_before_set_public(**kwargs):
 @must_be_valid_project
 @must_have_permission('admin')
 def project_set_privacy(auth, **kwargs):
-
     permissions = kwargs.get('permissions')
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -890,7 +888,7 @@ def n_unread_total(node, user, page, check=False):
 
             return n_unread
         else:
-            if not (user.comments_viewed_timestamp.get(node._id) and \
+            if not (user.comments_viewed_timestamp.get(node._id) and
                             isinstance(user.comments_viewed_timestamp[node._id], dict)):
                 user.comments_viewed_timestamp[node._id] = dict()
                 user.comments_viewed_timestamp[node._id]['node'] = default_timestamp

@@ -373,7 +373,6 @@ def list_total_comments(node, auth, page):
 @must_be_contributor_or_public
 def edit_comment(**kwargs):
     auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
 
     comment = kwargs_to_comment(kwargs, owner=True)
 

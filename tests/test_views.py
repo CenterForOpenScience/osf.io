@@ -3375,11 +3375,13 @@ class TestComments(OsfTestCase):
 
     def test_n_unread_comments_overview(self):
         self._add_comment(self.project, auth=self.project.creator.auth)
+        self.project.reload()
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['node'], 1)
 
     def test_n_unread_comments_files(self):
         self._add_comment_files(self.project, auth=self.project.creator.auth)
+        self.project.reload()
         self._add_comment_files(
             self.project,
             content=None,
@@ -3387,6 +3389,7 @@ class TestComments(OsfTestCase):
             provider='github',
             auth=self.project.creator.auth
         )
+        self.project.reload()
         self._add_comment_files(
             self.project,
             content='I failed my test',
@@ -3394,18 +3397,21 @@ class TestComments(OsfTestCase):
             provider='dropbox',
             auth=self.project.creator.auth
         )
+        self.project.reload()
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['files'], 3)
 
     def test_n_unread_comments_wiki(self):
         self._add_comment_wiki(self.project, auth=self.project.creator.auth)
         self._add_comment_wiki(self.project, content='yellow', name='Cold play', auth=self.project.creator.auth)
+        self.project.reload()
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['wiki'], 2)
 
     def test_n_unread_comments_total(self):
 
         self._add_comment_files(self.project, auth=self.project.creator.auth)
+        self.project.reload()
 
         self._add_comment(self.project, auth=self.project.creator.auth)
         self._add_comment_wiki(
@@ -3421,6 +3427,7 @@ class TestComments(OsfTestCase):
             provider='github',
             auth=self.project.creator.auth
         )
+        self.project.reload()
 
         self._add_comment_wiki(self.project, auth=self.project.creator.auth)
         self._add_comment_files(
@@ -3430,6 +3437,7 @@ class TestComments(OsfTestCase):
             provider='dropbox',
             auth=self.project.creator.auth
         )
+        self.project.reload()
 
         res = _view_project(self.project, auth=Auth(user=self.user))['user']['unread_comments']
         assert_equal(res['node'], 1)
