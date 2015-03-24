@@ -38,7 +38,7 @@ if ($comments.length) {
     var userName = ctx.currentUser.name;
     var canComment = ctx.currentUser.canComment;
     var hasChildren = ctx.node.hasChildren;
-    Comment.init('#commentPane', userName, canComment, hasChildren);
+    Comment.init('#commentPane', nodeApiUrl, userName, canComment, hasChildren);
 }
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
