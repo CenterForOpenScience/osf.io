@@ -44,7 +44,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 self.urls().files + '">Files page</a> to view your content.';
         });
         // Overrides
-        self.options = {
+        var defaults = {
             onPickFolder: function(evt, item) {
                 evt.preventDefault();
                 var name = item.data.path !== '/' ? item.data.path : '/ (Full ' + self.addonName + ')';
@@ -57,7 +57,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }
         };
         // Overrides
-        self.options = $.extend(self.options, opts);
+        self.options = $.extend({}, defaults, opts);
         // Treebeard config
         self.treebeardOptions = $.extend(
             {}, 
