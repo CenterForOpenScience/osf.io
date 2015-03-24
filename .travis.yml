@@ -50,8 +50,7 @@ before_script:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    # - invoke test --all
-    - echo 'hi'
+    - invoke test --all
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
