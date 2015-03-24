@@ -15,7 +15,7 @@ var GrowlBox = oop.defclass({
     constructor: function(title, message, type) {
         this.title = title;
         this.message = message;
-        this.type = typeof type !== 'undefined' ? type : 'danger';
+        this.type = type || 'danger';
         this.show();
     },
     show: function() {
