@@ -74,7 +74,7 @@ class TestTwoFactor(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills in log in form with correct username/password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -88,7 +88,7 @@ class TestTwoFactor(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills in log in form with correct username/password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -107,7 +107,7 @@ class TestTwoFactor(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills in log in form with correct username/password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -255,7 +255,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills the form with correct password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
