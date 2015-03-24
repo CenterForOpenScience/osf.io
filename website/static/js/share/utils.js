@@ -35,7 +35,7 @@ var errorState = function(vm){
     vm.count = 0;
     vm.resultsLoading(false);
     m.redraw(true);
-    $osf.growl("Error", "invalid query")
+    $osf.growl("Error", "invalid query");
 };
 
 var loadMore = function(vm) {
@@ -111,7 +111,7 @@ var buildURLParams = function(vm){
     if (vm.sort()){
         d.sort = vm.sort();
     }
-    return $.param(d)
+    return $.param(d);
 };
 
 var buildQuery = function(vm){
@@ -157,7 +157,7 @@ var removeFilter = function(vm, filter){
 };
 
 var arrayEqual = function(a, b) {
-    return $(a).not(b).length === 0 && $(b).not(a).length === 0
+    return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
 
 var loadStats = function(vm){
