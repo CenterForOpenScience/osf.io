@@ -527,7 +527,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['message_long'],
-            'Invalid value for "page": {}'.format(invalid_input)
+            'Invalid value for "page".'
         )
 
     def test_get_logs_with_count_param(self):
@@ -2024,7 +2024,7 @@ class TestWatchViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['message_long'],
-            'Invalid value for "page": {}'.format(invalid_page)
+            'Invalid value for "page".'
         )
 
     def test_get_more_watched_logs_invalid_size(self):
@@ -2044,7 +2044,7 @@ class TestWatchViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(
             res.json['message_long'],
-            'Invalid value for "size": {}'.format(invalid_size)
+            'Invalid value for "size".'
         )
 
 class TestPointerViews(OsfTestCase):

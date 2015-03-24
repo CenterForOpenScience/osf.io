@@ -288,13 +288,13 @@ def watched_logs_get(**kwargs):
         page = int(request.args.get('page', 0))
     except ValueError:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Invalid value for "page": {}'.format(request.args['page'])
+            message_long='Invalid value for "page".'
         ))
     try:
         size = int(request.args.get('size', 10))
     except ValueError:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Invalid value for "size": {}'.format(request.args['size'])
+            message_long='Invalid value for "size".'
         ))
 
     start = page * size
