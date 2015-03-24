@@ -44,9 +44,10 @@ before_script:
 
 # Run Python tests (core and addon) and JS tests
 script:
+    - echo 'hi'
     # - invoke test --all
-    - pkill elasticsearch
-    - pkill mongod
+    # - pkill elasticsearch
+    # - pkill mongod
 
 
 #notifications:
