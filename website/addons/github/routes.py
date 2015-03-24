@@ -84,6 +84,7 @@ settings_routes = {
             json_renderer,
         ),
 
+
         # OAuth: User
         Rule(
             '/settings/github/oauth/',
@@ -119,15 +120,6 @@ settings_routes = {
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/github/authorize/',
-                '/project/<pid>/node/<nid>/github/authorize/',
-            ],
-            'post',
-            views.config.github_authorize_node,
-            json_renderer,
-        ),
         Rule(
             [
                 '/project/<pid>/github/oauth/',

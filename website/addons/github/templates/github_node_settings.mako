@@ -17,24 +17,27 @@
                   Import Access Token
                 </a>
             </span>
-        </small>            
+             <span data-bind="if: showCreateCredentials">
+                <a data-bind="click: createNodeAuth" id="githubAddKey" class="text-primary pull-right addon-auth">
+                    Create Access Token
+                </a>
+             </span>
+        </small>
+
     </h4>
     <div data-bind="if: showSettings">
         <p>
             <strong>Current Repo:</strong>
             <span data-bind="text: currentRepo"></span>
         </p>
-        <div class="row"
-             data-bind="attr.disabled: creating">
-          <div class="col-md-1" data-bind="if: canChange">
-            <button data-bind="click: toggleSelect,
+        <div class="btn-group" role="group" data-bind="attr.disabled: creating">
+
+            <button data-bind="if: canChange, click: toggleSelect,
                                css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
-          </div>
-          <div class="col-md-1" data-bind="if: showNewRepo">
-            <button data-bind="click: openCreateRepo,
+
+            <button data-bind="if: showNewRepo, click: openCreateRepo,
                                attr.disabled: creating" class="btn btn-sm btn-addon" id="newRepo">Create Repo</button>
           </div>
-        </div>
         <br />
         <div class="row" data-bind="if: showSelect">
           <div class="col-md-6">
@@ -52,22 +55,5 @@
           </div>         
         </div>          
     </div>
-    <div data-bind="if: showCreateCredentials">
-      <div class="form-group">
-        <label for="githubAddon">Access Key</label>
-        <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
-      </div>
-      <div class="form-group">
-        <label for="githubAddon">Secret Key</label>
-        <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
-      </div>
-      <button data-bind="click: createCredentials,
-                         attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
-        Submit
-      </button>
-    </div>
-    <!-- Flashed Messages -->
-    <div class="help-block">
-        <p data-bind="html: message, attr.class: messageClass"></p>
-    </div>
+
 </div>

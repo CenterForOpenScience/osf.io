@@ -105,6 +105,11 @@ ViewModel.prototype.selectRepo = function() {
         });
 };
 
+ViewModel.prototype.createNodeAuth = function() {
+    var self = this;
+    window.location.href = self.urls().createAuth;
+};
+
 
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {
@@ -179,11 +184,13 @@ ViewModel.prototype.importAuth = function() {
 ViewModel.prototype.createRepo = function(repoName) {
     var self = this;
     self.creating(true);
+    debugger;
     return $osf.postJSON(
         self.urls().createRepo, {
             repo_name: repoName
         }
     ).done(function(response) {
+            debugger;
         repoName = response.github_user + ' / ' + response.repo;
         self.creating(false);
         self.updateFromData(response);
@@ -196,6 +203,7 @@ ViewModel.prototype.createRepo = function(repoName) {
         self.selectedRepo();
         self.repoList();
         self.showSelect(true);
+
     }).fail(function(xhr) {
         var message = JSON.parse(xhr.responseText).message;
         self.creating(false);
@@ -272,7 +280,7 @@ ViewModel.prototype.updateFromData = function(settings){
     self.ownerName(settings.owner);
     self.currentRepo(settings.has_repo ? settings.repo : 'None');
     self.loadedSettings(true);
-    if (settings.urls){
+    if (settings.urls) {
         self.urls(settings.urls);
     }
 };
@@ -299,7 +307,6 @@ ViewModel.prototype.fetchFromServer = function() {
                 error: error
             });
         });
-    debugger;
 };
 
 

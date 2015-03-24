@@ -62,6 +62,8 @@ def github_oauth_start(auth, **kwargs):
     return redirect(authorization_url)
 
 
+
+
 def create_and_attach_oauth(user_settings, access_token, token_type):
     """helper function to set the AddonGitHubOauthsettings and link it with
     AddonGitHubUserSettings
@@ -73,7 +75,6 @@ def create_and_attach_oauth(user_settings, access_token, token_type):
 
     """
     gh = GitHub(access_token, token_type)
-    import pdb; pdb.set_trace()
     github_user = gh.user()
 
     oauth_settings = AddonGitHubOauthSettings.load(github_user.id)
