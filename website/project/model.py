@@ -624,9 +624,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Crash if parent provided and not project
         project = kwargs.get('project')
+        ''' NODEREFACTOR 
         if project and project.category != 'project':
             raise ValueError('Parent must be a project.')
-
+        '''
         if kwargs.get('_is_loaded', False):
             return
 
@@ -908,7 +909,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 message,
                 params={
+                    ''' NODEREFACTOR
                     'project': self.parent_id,
+                    '''
+                    'parent': self.parent_id,
                     'node': self._id,
                     'contributors': [user._id],
                 },
@@ -950,7 +954,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
-
+            # TODO NODEREFACTOR
             #
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
@@ -1143,7 +1147,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.POINTER_CREATED,
             params={
+                ''' NODEREFACTOR
                 'project': self.parent_id,
+                '''
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1179,7 +1186,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.POINTER_REMOVED,
             params={
+                ''' NODEREFACTOR
                 'project': self.parent_id,
+                '''
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1291,7 +1301,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             NodeLog.POINTER_FORKED,
             params={
+                ''' NODEREFACTOR
                 'project': self.parent_id,
+                '''
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1346,7 +1359,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
+                ''' NODEREFACTOR
                 'project': self.parent_id,
+                '''
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'title_new': self.title,
                 'title_original': original_title,
@@ -1370,7 +1386,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
+                ''' NODEREFACTOR
                 'project': self.parent_node,  # None if no parent
+                '''
+                'parent_node': self.parent_node,
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -1512,7 +1531,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
+                ''' NODEREFACTOR
                 'project': original.parent_id,
+                '''
+                'parent_node': original.parent_id,
                 'node': original._primary_key,
                 'registration': forked._primary_key,
             },
@@ -1522,7 +1544,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
         forked.save()
-
         # After fork callback
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
@@ -1598,6 +1619,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
+                ''' NODEREFACTOR
+                'project': original.parent_id,
+                '''
                 'project': original.parent_id,
                 'node': original._primary_key,
                 'registration': registered._primary_key,
@@ -1620,7 +1644,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
+                    ''' NODEREFACTOR 
                     'project': self.parent_id,
+                    '''
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
@@ -1640,7 +1667,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_ADDED,
                 params={
+                    ''' NODEREFACTOR
                     'project': self.parent_id,
+                    '''
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
