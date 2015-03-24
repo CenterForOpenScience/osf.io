@@ -48,5 +48,5 @@ cache:
     - website/vendor/bower_components
     - $HOME/virtualenv/python2.7/lib/python2.7/site-packages
 
-notifications:
-  flowdock: 0221882cdda034c0e9ac2a0e766053dd
+#notifications:
+#    flowdock: 0221882cdda034c0e9ac2a0e766053dd
