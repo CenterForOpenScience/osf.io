@@ -509,16 +509,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(most_recent['action'], 'file_added')
 
     def test_get_logs_invalid_page_input(self):
-        # Add some logs
-        for _ in range(5):
-            self.project.logs.append(
-                NodeLogFactory(
-                    user=self.user1,
-                    action='file_added',
-                    params={'project': self.project._id}
-                )
-            )
-        self.project.save()
         url = self.project.api_url_for('get_logs')
         invalid_input = 'invalid page'
         res = self.app.get(
@@ -2009,10 +1999,6 @@ class TestWatchViews(OsfTestCase):
 
     def test_get_more_watched_logs_invalid_page(self):
         project = ProjectFactory()
-        # Add some logs
-        for _ in range(12):
-            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
-        project.save()
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
         self.user.save()
@@ -2029,10 +2015,6 @@ class TestWatchViews(OsfTestCase):
 
     def test_get_more_watched_logs_invalid_size(self):
         project = ProjectFactory()
-        # Add some logs
-        for _ in range(12):
-            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
-        project.save()
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
         self.user.save()
