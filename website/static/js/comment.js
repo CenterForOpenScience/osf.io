@@ -208,6 +208,7 @@ BaseComment.prototype.checkFileExists = function() {
     for (var c in self.comments()) {
         var comment = self.comments()[c];
         if (comment.page() !== 'files') {
+            comment.loading(false);
             continue;
         }
         (function(comment) {
@@ -215,11 +216,9 @@ BaseComment.prototype.checkFileExists = function() {
             $.ajax({
                 method: 'GET',
                 url: url
-            }).done(function(resp){
-                console.log(resp); // todo change
+            }).done(function(response){
+                comment.loading(false);
             }).fail(function(xhl){
-                console.log('error: '); // todo change
-                console.log(xhl);
                 comment.isHidden(true);
                 $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(ls) {
                     var commenter_id = comment.author.id();
@@ -236,7 +235,8 @@ BaseComment.prototype.checkFileExists = function() {
                         }
                     }
                 });
-            })
+                comment.loading(false);
+            });
         })(comment);
     }
 }
@@ -262,7 +262,9 @@ BaseComment.prototype.submitReply = function() {
     ).done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        self.comments.unshift(new CommentModel(response.comment, self, self.$root));
+        var newComment = new CommentModel(response.comment, self, self.$root);
+        self.comments.unshift(newComment);
+        newComment.loading(false);
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -302,6 +304,7 @@ var CommentModel = function(data, $parent, $root) {
     // Note: assigns self.content()
     $.extend(self, ko.mapping.fromJS(data));
 
+
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
     // Update contentDisplay with rednered markdown whenever content changes
@@ -324,6 +327,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.level = $parent.level + 1;
 
+    self.loading = ko.observable(true);
     self.showChildren = ko.observable(false);
 
     self.hoverContent = ko.observable(false);
