@@ -38,7 +38,7 @@ before_install:
 
       mkdir -p /tmp/tokumx/data
       tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
-      /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
+    - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
     # elasticsearch
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz.sha1.txt
