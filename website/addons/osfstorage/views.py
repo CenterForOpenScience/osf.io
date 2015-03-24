@@ -228,6 +228,7 @@ def download_file(path, node_addon, version_query, **query):
         return response
 
 
+@no_auto_transaction
 @must_be_contributor_or_public
 @must_have_addon('osfstorage', 'node')
 def osf_storage_view_file(auth, path, node_addon, **kwargs):
