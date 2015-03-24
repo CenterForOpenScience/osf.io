@@ -47,7 +47,7 @@ SearchBar.view = function(ctrl) {
                             'title': 'View search as ATOM feed',
                             'data-placement': 'bottom',
                             onclick: function(){
-                                location.href = '/share/atom/?' + ctrl.atomParams()
+                                location.href = '/share/atom/?' + ctrl.atomParams();
                             }
                         }, m('i.fa.fa-rss.fa-lg'))
                     ])
