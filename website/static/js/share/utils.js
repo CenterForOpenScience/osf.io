@@ -1,4 +1,5 @@
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
 var History = require('exports?History!history');
 
 var callbacks = [];
@@ -26,6 +27,16 @@ var formatNumber = function(num) {
 
 var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
 
+var errorState = function(vm){
+    vm.results = null;
+    vm.statsData = undefined;
+    vm.time = 0;
+    vm,count = 0;
+    vm.resultsLoading(false);
+    m.redraw(true);
+    $osf.growl("Error", "invalid query")
+};
+
 var loadMore = function(vm) {
     if (buildQuery(vm).length === 0) {
         return;
@@ -42,7 +53,14 @@ var loadMore = function(vm) {
             from: page,
             q: buildQuery(vm),
             sort: sort
-        })
+        }),
+        unwrapSuccess: function(response) {
+            return response;
+        },
+        unwrapError: function(response) {
+            errorState(vm);
+            return response;
+        }
     }).then(function(data) {
         vm.time = data.time;
         vm.count = data.count;
@@ -60,7 +78,6 @@ var loadMore = function(vm) {
 };
 
 var search = function(vm) {
-
     if (!vm.query() || vm.query().length === 0){
         vm.query = m.prop('');
         vm.results = null;
@@ -155,7 +172,14 @@ var loadStats = function(vm){
     m.request({
         method: 'GET',
         url: '/api/v1/share/stats/?' + $.param({q: buildQuery(vm)}),
-        background: true
+        background: true,
+        unwrapSuccess: function(response) {
+            return response;
+        },
+        unwrapError: function(response) {
+            errorState(vm);
+            return response;
+        }
     }).then(function(data) {
         vm.statsData = data;
         Object.keys(vm.graphs).map(function(type) {
@@ -182,5 +206,6 @@ module.exports = {
     updateFilter: updateFilter,
     removeFilter: removeFilter,
     arrayEqual: arrayEqual,
-    loadStats: loadStats
+    loadStats: loadStats,
+    errorState: errorState
 };
