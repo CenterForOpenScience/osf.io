@@ -47,7 +47,7 @@ var loadMore = function(vm) {
 
     vm.resultsLoading(true);
 
-    m.request({
+    return m.request({
         method: 'get',
         background: true,
         url: '/api/v1/share/?' + $.param({
@@ -163,7 +163,7 @@ var arrayEqual = function(a, b) {
 var loadStats = function(vm){
     vm.statsLoaded(false);
 
-    m.request({
+    return m.request({
         method: 'GET',
         url: '/api/v1/share/stats/?' + $.param({q: buildQuery(vm)}),
         background: true
