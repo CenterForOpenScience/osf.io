@@ -342,7 +342,6 @@ class ZipStreamReader(MultiStream):
         self.zinfo = None
         self.filename = ''
         self.header = b''
-        self.compressed_data = b''  # TODO: Delete me
         self.data_descriptor = b''
         self.footer = b''
         self.compressor = zlib.compressobj(
@@ -354,17 +353,12 @@ class ZipStreamReader(MultiStream):
 
         self.add_file(filename, file_stream)
 
-    def __len__(self):
-        return self.size
-
     def _cycle(self):
         """Override to keep track of index, add data descriptor/footer"""
         try:
             self.stream = self.streams.pop(0)
             self.stream_index += 1
         except IndexError:
-
-            # import ipdb; ipdb.set_trace()
             # If we just finished the data stream, add the descriptor/footer
             if self.on_data_stream:
                 self.stream = None
@@ -382,7 +376,11 @@ class ZipStreamReader(MultiStream):
         chunk = self.compressor.compress(chunk)
         self.compress_size += len(chunk)
 
-        self.compressed_data += chunk  # TODO: Delete me
+        return chunk
+
+    def _flush(self):
+        chunk = self.compressor.flush()
+        self.compress_size += len(chunk)
         return chunk
 
     @property
@@ -400,10 +398,7 @@ class ZipStreamReader(MultiStream):
             return self._compress(chunk) if self.on_data_stream else chunk
         if self.on_data_stream:
             chunk = self._compress(chunk)
-            flushed_chunk = self.compressor.flush()
-            self.compress_size = len(flushed_chunk)
-            self.compressed_data += flushed_chunk  # TODO: Delete me
-            chunk += flushed_chunk
+            chunk += self._flush()
         self._cycle()
         nextn = -1 if n == -1 else n - len(chunk)
         next_chunk = (yield from self.read(nextn))
@@ -442,8 +437,8 @@ class ZipStreamReader(MultiStream):
             fmt,
             signature,
             self.zinfo.CRC,
-            self.compress_size,     # Compressed size
-            self.original_size,     # Uncompressed size
+            self.compress_size,
+            self.original_size,
         )
         return self.data_descriptor
 
@@ -467,8 +462,8 @@ class ZipStreamReader(MultiStream):
             dostime,
             dosdate,
             self.zinfo.CRC,
-            self.compress_size,     # Compressed size
-            self.original_size,     # Uncompressed size
+            self.compress_size,
+            self.original_size,
             len(self.zinfo.filename),
             len(extra_data),
             len(self.zinfo.comment),
@@ -506,8 +501,3 @@ class ZipStreamReader(MultiStream):
         footer_size = struct.calcsize(zipfile.structCentralDir) + len(self.filename) + struct.calcsize(zipfile.structEndArchive)
 
         return header_size + self.compress_size + descriptor_size + footer_size
-
-    #TODO: Delete me
-    @property
-    def full_contents(self):
-        return self.header + self.compressed_data + self.data_descriptor + self.footer

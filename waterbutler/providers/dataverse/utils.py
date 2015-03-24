@@ -8,4 +8,4 @@ def unpack_filename(filename):
     if basename.rsplit('-', 1)[-1].isdigit():
         basename, version = basename.rsplit('-', 1)
 
-    return basename + ext, int(version)
+    return basename.replace(' ', '_') + ext, int(version)

@@ -1,4 +1,5 @@
 import asyncio
+import tempfile
 import xmltodict
 
 from waterbutler.core import utils
@@ -48,11 +49,6 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        #TODO deleteme
-        _next = next
-        def unwrap(f):
-            result = yield from f
-            return result
 
         filename = path.strip('/')
 
@@ -61,42 +57,45 @@ class DataverseProvider(provider.BaseProvider):
             file_stream=stream,
         )
 
+        # Write stream to disk (Necessary to find zip file size)
+        f = tempfile.TemporaryFile()
+        chunk = yield from stream.read()
+        while chunk:
+            f.write(chunk)
+            chunk = yield from stream.read()
+        stream = streams.FileStreamReader(f)
+
         dv_headers = {
             "Content-Disposition": "filename=temp.zip",
             "Content-Type": "application/zip",
             "Packaging": "http://purl.org/net/sword/package/SimpleZip",
-            # "Content-Length": '141',
+            "Content-Length": str(stream.size),
         }
 
-        # data = yield from stream.read()
-        # import ipdb; ipdb.set_trace()
-
-        resp = yield from self.make_request(
+        yield from self.make_request(
             'POST',
             provider.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
             headers=dv_headers,
             auth=(self.token, ),
             data=stream,
-            # expects=(201, ),
+            expects=(201, ),
             throws=exceptions.UploadError
         )
-
-        # data = yield from resp.read()
-        # import ipdb; ipdb.set_trace()
 
         # Find appropriate version of file from metadata url
         data = yield from self.metadata()
         filename, version = dataverse_utils.unpack_filename(filename)
+        highest_compatible = None
 
         # Reduce to files of the same base name of the same/higher version
-        data = sorted([
+        filtered_data = sorted([
             f for f in data
             if f['extra']['original'] == filename
             and f['extra']['version'] >= version
         ], key=lambda f: f['extra']['version'])
 
         # Find highest version from original without a gap in between
-        for item in data:
+        for item in filtered_data:
             if item['extra']['version'] == version:
                 highest_compatible = item
                 version += 1
