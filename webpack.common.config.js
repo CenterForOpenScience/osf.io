@@ -112,7 +112,6 @@ var resolve = {
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
-        'formViewModel': staticPath('js/formViewModel.js'),
         'tests': staticPath('js/tests')
     }
 };

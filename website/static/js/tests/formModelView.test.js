@@ -11,7 +11,7 @@ sinon.assert.expose(assert, {prefix: ''});
 describe('formModelView', () => {
 
     describe('ValidationError', () => {
-        it('inherit from Error', () => {
+        it('inherits from Error', () => {
             var validationError = new formViewModel.ValidationError();
             assert.instanceOf(validationError, Error);
         });
@@ -24,7 +24,7 @@ describe('formModelView', () => {
         });
     });
 
-    describe('FormViewModel', () => {
+    describe('ViewModel', () => {
         var vm;
 
         beforeEach(() => {
@@ -52,7 +52,7 @@ describe('formModelView', () => {
                 assert.isTrue(result);
             });
 
-            it('growl called if not isValid', () => {
+            it('calls growl if not isValid', () => {
                 var growlSpy = new sinon.stub($osf, 'growl');
                 isValidStub.throws(new formViewModel.ValidationError(['pewpewpew']));
                 vm.submit();
