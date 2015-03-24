@@ -27,11 +27,11 @@ before_install:
       cd $HOME/.cache/downloads
 
       if [ ! -f "$TOKUMX_ARCHIVE" ]; then
-        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE;
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE
       fi
 
       if [ ! -f "$TOKUMX_ARCHIVE.md5" ]; then
-        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5;
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5
       fi
 
       md5sum --check $TOKUMX_ARCHIVE.md5
