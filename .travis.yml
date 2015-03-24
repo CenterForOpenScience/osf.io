@@ -16,40 +16,50 @@ cache:
     - website/static/vendor/bower_components
 
 env:
+  PROJECT_DIR: $PWD
   WHEELHOUSE: $HOME/.cache/wheelhouse
   TOKU_HUGE_PAGES_OK: 1
   TOKUMX_ARCHIVE: tokumx-2.0.0-linux-x86_64-main.tar.gz
-  ELASTICSEARCH_ARCHIVE: tokumx-2.0.0-linux-x86_64-main.tar.gz
+  ELASTICSEARCH_ARCHIVE: elasticsearch-1.5.0.tar.gz
 
 before_install:
     # tokumx
     - |
-      bash -c "
-        cd $HOME/.cache/downloads
+      cd $HOME/.cache/downloads
 
-        if [ ! -f "$TOKUMX_ARCHIVE" ]; then
-          curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE
-        fi
+      if [ ! -f "$TOKUMX_ARCHIVE" ]; then
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE
+      fi
 
-        if [ ! -f "$TOKUMX_ARCHIVE.md5" ]; then
-          curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5
-        fi
+      if [ ! -f "$TOKUMX_ARCHIVE.md5" ]; then
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5
+      fi
 
-        md5sum --check $TOKUMX_ARCHIVE.md5
+      md5sum --check $TOKUMX_ARCHIVE.md5
 
-        mkdir -p /tmp/tokumx/data
-        tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
-      "
+      mkdir -p /tmp/tokumx/data
+      tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
     - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
     # elasticsearch
-    - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz
-    - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz.sha1.txt
-    - sha1sum --check elasticsearch-1.5.0.tar.gz.sha1.txt
-    - mkdir /tmp/elasticsearch
-    - tar -xvf elasticsearch-1.5.0.tar.gz -C /tmp/elasticsearch --strip-components=1
+    - |
+      cd $HOME/.cache/downloads
+
+      if [ ! -f "$ELASTICSEARCH_ARCHIVE" ]; then
+        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE
+      fi
+
+      if [ ! -f "$ELASTICSEARCH_ARCHIVE.sha1.txt" ]; then
+        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE.sha1.txt
+      fi
+
+      sha1sum --check $ELASTICSEARCH_ARCHIVE.sha1.txt
+
+      mkdir -p /tmp/elasticsearch
+      tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null &
 
 install:
+    - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     # - travis_retry invoke encryption
     - travis_retry pip install --upgrade pip
@@ -64,7 +74,8 @@ before_script:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test --all
+    # - invoke test --all
+    - echo "hi"
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
@@ -78,5 +89,5 @@ before_cache:
   - rm -Rf node_modules/dropzone
   - rm -Rf node_modules/treebeard
 
-notifications:
-   flowdock: 0221882cdda034c0e9ac2a0e766053dd
+# notifications:
+#    flowdock: 0221882cdda034c0e9ac2a0e766053dd
