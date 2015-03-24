@@ -1,10 +1,10 @@
 'use strict';
 var $ = require('jquery');
-var ContribManager = require('../contribManager.js');
-var ContribAdder = require('../contribAdder.es6.js');
 
-var PrivateLinkManager = require('../privateLinkManager.js');
-var PrivateLinkTable = require('../privateLinkTable.js');
+var ContribManager = require('js/contribManager');
+var ContribAdder = require('js/contribAdder');
+var PrivateLinkManager = require('js/privateLinkManager');
+var PrivateLinkTable = require('js/privateLinkTable');
 
 var ctx = window.contextVars;
 

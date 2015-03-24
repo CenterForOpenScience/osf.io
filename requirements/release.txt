@@ -1,0 +1,3 @@
+# Requirements to be installed on server deployments
+-r ../requirements.txt
+-r metrics.txt

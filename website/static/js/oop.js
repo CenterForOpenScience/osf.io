@@ -1,17 +1,9 @@
 // These are mostly a simplification of
 // augment.js (https://github.com/javascript/augment, MIT Licensed) and
 // Douglas Crockford's protoypical inheritance pattern.
+require('js/objectCreateShim'); // IE8 compat
 
 var noop = function() {};
-
-// IE8 shim for Object.create
-if (typeof Object.create !== 'function') {
-    Object.create = function (o) {
-        noop.prototype = o;
-        return new noop();
-    };
-}
-
 /**
  * Usage:
  *
@@ -34,17 +26,17 @@ function defclass(prototype) {
 /**
  * Usage:
  *
- *     var Person = extend(Animal, {
- *         constructor: function(name) {
- *             this.super.constructor(name);
- *             this.name = name || 'Steve';
- *         }
- *     });
+ *  var Person = extend(Animal, {
+ *      constructor: function(name) {
+ *          this.super.constructor.call(name);
+ *          this.name = name || 'Steve';
+ *      }
+ *  });
  */
-function extend(constructor, sub) {
-    var prototype = Object.create(constructor.prototype);
+function extend(cls, sub) {
+    var prototype = Object.create(cls.prototype);
     for (var key in sub) { prototype[key] = sub[key]; }
-    prototype.super = constructor.prototype;
+    prototype.super = cls.prototype;
     return defclass(prototype);
 }
 

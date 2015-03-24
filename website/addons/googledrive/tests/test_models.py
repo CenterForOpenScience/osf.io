@@ -37,6 +37,25 @@ class TestFileGuid(OsfTestCase):
         self.node_addon.folder_path = 'baz'
         self.node_addon.save()
 
+    def test_path_doesnt_crash_without_addon(self):
+        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+        self.project.delete_addon('googledrive', Auth(self.user))
+
+        assert_is(self.project.get_addon('googledrive'), None)
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
+    def test_path_doesnt_crash_nonconfig_addon(self):
+        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+        self.node_addon.folder_id = None
+        self.node_addon.folder_path = None
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
     def test_provider(self):
         assert_equal('googledrive', GoogleDriveGuidFile().provider)
 
@@ -277,6 +296,22 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         assert_true(hasattr(node_settings, 'folder_path'))
         assert_true(hasattr(node_settings, 'folder_name'))
         assert_equal(node_settings.user_settings.owner, self.user)
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.folder_id = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
     def test_folder_defaults_to_none(self):
         node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)

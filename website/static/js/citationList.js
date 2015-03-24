@@ -2,8 +2,8 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osfHelpers');
-var citations = require('citations');
+var $osf = require('./osfHelpers');
+var citations = require('./citations');
 
 var BASE_URL = '/static/vendor/bower_components/styles/';
 var STYLES = {
