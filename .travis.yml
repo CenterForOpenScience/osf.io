@@ -14,9 +14,6 @@ cache:
     - node_modules
     - website/static/vendor/bower_components
 
-before_cache:
-  - rm -f $HOME/.cache/pip/log/debug.log
-
 env:
   WHEELHOUSE: $HOME/.cache/wheelhouse
   TOKU_HUGE_PAGES_OK: 1
@@ -54,6 +51,10 @@ before_script:
 # Run Python tests (core and addon) and JS tests
 script:
     - invoke test --all
+
+before_cache:
+  - rm -Rf $HOME/.cache/pip/http/
+  - rm -f $HOME/.cache/pip/log/debug.log
 
 notifications:
    flowdock: 0221882cdda034c0e9ac2a0e766053dd
