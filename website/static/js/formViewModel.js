@@ -17,13 +17,13 @@ var ValidationError = oop.extend(Error, {
     }
 });
 
+/**
+* Base class KO viewmodel based forms should inherit from.
+*
+* Note: isValid needs to be implemented by subclasses and onError can
+* optionally be implemented by subclasses to handle ValidationError(s) as desired.
+*/
 var FormViewModel = oop.defclass({
-    /**
-    * Base class KO viewmodel based forms should inherit from.
-    *
-    * Note: isValid needs to be implemented by subclasses and onError can
-    * optionally be implemented by subclasses to handle ValidationError(s) as desired.
-    */
     constructor: function() {},
     isValid: function() {
         throw new Error('FormViewModel subclass must implement isValid');
