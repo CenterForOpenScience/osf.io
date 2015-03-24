@@ -9,7 +9,7 @@ import pymongo
 
 from modularodm import fields, Q
 from dateutil.parser import parse as parse_date
-from modularodm import exceptions as modm_errors
+from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -337,6 +337,19 @@ class OsfStorageGuidFile(GuidFile):
     ]
 
     path = fields.StringField(required=True, index=True)
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        try:
+            return cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            ), False
+        except NoResultsFound:
+            # Create new
+            new = cls(node=node, path=path)
+            new.save()
+        return new, True
 
     @property
     def waterbutler_path(self):
