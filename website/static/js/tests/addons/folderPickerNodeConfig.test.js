@@ -19,6 +19,10 @@ var TestSubclassVM = oop.extend(FolderPickerNodeConfigVM, {
     constructor: function(addonName, url, selector, folderPicker) {
         this.super.constructor.call(this, addonName, url, selector, folderPicker);
         this.customField = ko.observable('');
+
+        this.messages.SUBMIT_SETTINGS_SUCCESS = ko.pureComputed(function(){
+            return 'SUCCESS';
+        });
     },
     _updateCustomFields: function(settings) {
         this.customField(settings.customField);
