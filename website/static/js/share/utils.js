@@ -31,7 +31,7 @@ var errorState = function(vm){
     vm.results = null;
     vm.statsData = undefined;
     vm.time = 0;
-    vm,count = 0;
+    vm.count = 0;
     vm.resultsLoading(false);
     m.redraw(true);
     $osf.growl("Error", "invalid query")
@@ -53,14 +53,7 @@ var loadMore = function(vm) {
             from: page,
             q: buildQuery(vm),
             sort: sort
-        }),
-        unwrapSuccess: function(response) {
-            return response;
-        },
-        unwrapError: function(response) {
-            errorState(vm);
-            return response;
-        }
+        })
     }).then(function(data) {
         vm.time = data.time;
         vm.count = data.count;
@@ -72,7 +65,7 @@ var loadMore = function(vm) {
         vm.results.push.apply(vm.results, data.results);
 
         vm.resultsLoading(false);
-    }).then(m.redraw).then(function() {
+    }, errorState.bind(this, vm)).then(m.redraw).then(function() {
         callbacks.map(function(cb) {cb();});
     });
 };
@@ -172,14 +165,7 @@ var loadStats = function(vm){
     m.request({
         method: 'GET',
         url: '/api/v1/share/stats/?' + $.param({q: buildQuery(vm)}),
-        background: true,
-        unwrapSuccess: function(response) {
-            return response;
-        },
-        unwrapError: function(response) {
-            errorState(vm);
-            return response;
-        }
+        background: true
     }).then(function(data) {
         vm.statsData = data;
         Object.keys(vm.graphs).map(function(type) {
@@ -188,7 +174,7 @@ var loadStats = function(vm){
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
             }
             vm.graphs[type].load(vm.statsData.charts[type]);
-        });
+        }, errorState.bind(this, vm));
         vm.statsLoaded(true);
     }).then(m.redraw);
 
