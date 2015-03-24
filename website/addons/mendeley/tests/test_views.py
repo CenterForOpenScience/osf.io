@@ -2,7 +2,7 @@
 from nose.tools import *  # noqa
 
 import mock
-import responses
+import httpretty
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -232,11 +232,11 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_false(res['complete'])
         assert_is_none(res['list_id'])
 
-    @responses.activate
+    @httpretty.activate
     def test_mendeley_citation_list_root(self):
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(API_URL, 'folders'),
             body=mock_responses['folders'],
             content_type='application/json'
@@ -251,18 +251,18 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(root['id'], 'ROOT')
         assert_equal(root['parent_list_id'], '__')
 
-    @responses.activate
+    @httpretty.activate
     def test_mendeley_citation_list_non_root(self):
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(API_URL, 'folders'),
             body=mock_responses['folders'],
             content_type='application/json'
         )
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(API_URL, 'documents'),
             body=mock_responses['documents'],
             content_type='application/json'
@@ -279,7 +279,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_equal(children[1]['kind'], 'file')
         assert_true(children[1].get('csl') is not None)
 
-    @responses.activate
+    @httpretty.activate
     def test_mendeley_citation_list_non_linked_or_child_non_authorizer(self):
 
         non_authorizing_user = AuthUserFactory()
@@ -288,15 +288,15 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.node_addon.mendeley_list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'
         self.node_addon.save()
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(API_URL, 'folders'),
             body=mock_responses['folders'],
             content_type='application/json'
         )
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(API_URL, 'documents'),
             body=mock_responses['documents'],
             content_type='application/json'

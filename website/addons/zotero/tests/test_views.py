@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # flake8: noqa
-import responses
+import httpretty
 import mock
 
 from tests.base import OsfTestCase
@@ -235,11 +235,11 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_false(res['complete'])
         assert_is_none(res['list_id'])
 
-    @responses.activate
+    @httpretty.activate
     def test_zotero_citation_list_root(self):
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(
                 API_URL,
                 'users/{}/collections'.format(self.account.provider_id)
@@ -257,11 +257,11 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_equal(root['id'], 'ROOT')
         assert_equal(root['parent_list_id'], '__')
 
-    @responses.activate
+    @httpretty.activate
     def test_zotero_citation_list_non_root(self):
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(
                 API_URL,
                 'users/{}/collections'.format(self.account.provider_id)
@@ -270,8 +270,8 @@ class ZoteroViewsTestCase(OsfTestCase):
             content_type='application/json'
         )
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(
                 API_URL,
                 'users/{}/items'.format(self.account.provider_id)
@@ -291,7 +291,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_equal(children[1]['kind'], 'file')
         assert_true(children[1].get('csl') is not None)
 
-    @responses.activate
+    @httpretty.activate
     def test_zotero_citation_list_non_linked_or_child_non_authorizer(self):
 
         non_authorizing_user = AuthUserFactory()
@@ -300,8 +300,8 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.node_addon.zotero_list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'
         self.node_addon.save()
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(
                 API_URL,
                 'users/{}/collections'.format(self.account.provider_id)
@@ -310,8 +310,8 @@ class ZoteroViewsTestCase(OsfTestCase):
             content_type='application/json'
         )
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(
                 API_URL,
                 'users/{}/items'.format(self.account.provider_id)
