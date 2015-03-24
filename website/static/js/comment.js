@@ -11,7 +11,6 @@ require('knockout-mapping');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
-var Raven = require('raven-js');
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
