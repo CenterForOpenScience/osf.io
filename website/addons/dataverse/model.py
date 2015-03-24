@@ -95,8 +95,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def find_or_create_file_guid(self, path):
-        path = path.strip('/') if path else ''
-        return DataverseFile.get_or_create(self.owner, path)
+        file_id = path.strip('/') if path else ''
+        return DataverseFile.get_or_create(node=self.owner, file_id=file_id)
 
     def delete(self, save=True):
         self.deauthorize(add_log=False)
