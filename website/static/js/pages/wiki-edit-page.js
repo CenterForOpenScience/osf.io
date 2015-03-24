@@ -96,23 +96,22 @@ $(document).ready(function () {
             // buttonState = the visibility of column after click, taen from data-osf-toggle attribute, 
             // thisbtn = $(this);
             // col = the $() for the column this button links to
-
+            
             // Determine if any columns are visible
             var visibleColumns = this.filter(function (i, element) {
                 return $(element).is(':visible');
             });
-
+ 
             if (visibleColumns.length === 0) {
                 thisbtn.click();
                 return;
             }
-
+            
             bodyElement.trigger('togglePanel', [
                 title.toLowerCase(),
                 buttonState
             ]);
             if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
-
         }
     });
 
@@ -120,23 +119,22 @@ $(document).ready(function () {
     var panelExpand = $('.panel-expand');
     $('.panel-collapse').on('click', function () {
         var el = $(this).closest('.panel-toggle');
-        el.children('.wiki-panel.hidden-xs').hide();
+        el.children('.wiki-panel.hidden-xs').addClass('hidden');
         panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
         panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
-        el.children('.panel-collapsed').show();
-        $('.wiki-nav').show();
+        el.children('.panel-collapsed').removeClass('hidden');
+        $('.wiki-nav').removeClass('hidden');
 
         bodyElement.trigger('toggleMenu', [false]);
     });
     $('.panel-collapsed .wiki-panel-header').on('click', function () {
         var el = $(this).parent();
         var toggle = el.closest('.panel-toggle');
-        toggle.children('.wiki-panel').show();
-        el.hide();
+        toggle.children('.wiki-panel').removeClass('hidden');
+        el.addClass('hidden');
         panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
         panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
-        $('.wiki-nav').hide();
-
+        $('.wiki-nav').addClass('hidden');
         bodyElement.trigger('toggleMenu', [true]);
     });
 

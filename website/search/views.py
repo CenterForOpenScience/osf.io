@@ -238,16 +238,9 @@ def search_share_atom(**kwargs):
 
     # we want the results per page to be constant between pages
     # TODO -  move this functionality into build_query in util
+    start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
 
-    try:
-        page = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
-    except ValueError:
-        page = 1
-
-    if page < 1:
-        page = 1
-
-    query = build_query(q, size=RESULTS_PER_PAGE, start=page, sort=sort)
+    query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
 
     try:
         search_results = search.search_share(query)
@@ -266,7 +259,7 @@ def search_share_atom(**kwargs):
         data=search_results['results'],
         query=q,
         size=RESULTS_PER_PAGE,
-        start=page,
+        start=start,
         url=atom_url,
         to_atom=share_search.to_atom
     )
