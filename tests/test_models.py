@@ -432,12 +432,12 @@ class TestUser(OsfTestCase):
         u = UserFactory.build()
         u.add_unconfirmed_email('foo@bar.com')
         u.save()
-        assert_false(u.verify_confirmation_token('badtoken'))
+        assert_false(u._get_unconfirmed_email_for_token('badtoken'))
         valid_token = u.get_confirmation_token('foo@bar.com')
-        assert_true(u.verify_confirmation_token(valid_token))
+        assert_true(u._get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
-        assert_false(u.verify_confirmation_token(valid_token))
+        assert_false(u._get_unconfirmed_email_for_token(valid_token))
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
         # A user verification token may not have an expiration
@@ -449,7 +449,7 @@ class TestUser(OsfTestCase):
         del u.email_verifications[token]['expiration']
         u.save()
 
-        assert_true(u.verify_confirmation_token(token))
+        assert_true(u._get_unconfirmed_email_for_token(token))
 
     def test_factory(self):
         # Clear users

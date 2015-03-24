@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 import re
 import logging
 import urlparse
@@ -10,10 +11,12 @@ import pytz
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
+from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 import framework
 from framework import analytics
+from framework import exceptions
 from framework.sessions import session
 from framework.auth import utils, signals
 from framework.sentry import log_exception
@@ -595,18 +598,22 @@ class User(GuidStoredObject, AddonModelMixin):
         token = self.get_confirmation_token(email, force=force)
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
-    def verify_confirmation_token(self, token):
+    def _get_unconfirmed_email_for_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
-        if token in self.email_verifications:
-            verification = self.email_verifications[token]
-            # Not all tokens are guaranteed to have expiration dates
-            if 'expiration' in verification:
-                return verification['expiration'] > dt.datetime.utcnow()
-            else:
-                return True
-        return False
+        if token not in self.email_verifications:
+            raise exceptions.HTTPError(http.NOT_FOUND, "Invalid token")
+
+        verification = self.email_verifications[token]
+        # Not all tokens are guaranteed to have expiration dates
+        if (
+            'expiration' in verification and
+            verification['expiration'] < dt.datetime.utcnow()
+        ):
+            raise exceptions.HTTPError(http.BAD_REQUEST, "Expired token")
+
+        return verification['email']
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
@@ -619,26 +626,46 @@ class User(GuidStoredObject, AddonModelMixin):
         return record['token'] == token
 
     def confirm_email(self, token):
-        if self.verify_confirmation_token(token):
-            email = self.email_verifications[token]['email']
-            self.emails.append(email)
-            # Complete registration if primary email
-            if email.lower() == self.username.lower():
-                self.register(self.username)
-                self.date_confirmed = dt.datetime.utcnow()
-            # Revoke token
-            del self.email_verifications[token]
-            # Clear unclaimed records, so user's name shows up correctly on
-            # all projects
-            self.unclaimed_records = {}
-            self.save()
-            # Note: We must manually update search here because the fullname
-            # field has not changed
-            self.update_search()
-            self.update_search_nodes()
-            return True
-        else:
-            return False
+        """Confirm the email address associated with the token"""
+        email = self._get_unconfirmed_email_for_token(token)
+
+        # If this email is confirmed on another account, abort
+        if User.find(Q('emails', 'eq', email)).count() > 0:
+            # TODO: Handle this appropriately.
+            raise Exception("Email is confirmed to another account")
+
+        # If another user has this email as its username, get it
+        try:
+            unregistered_user = User.find_one(Q('username', 'eq', email) &
+                                              Q('_id', 'ne', self._id))
+        except NoResultsFound:
+            unregistered_user = None
+
+        if unregistered_user:
+            self.merge_user(unregistered_user)
+            unregistered_user.username = None
+            unregistered_user.save()
+
+
+        self.emails.append(email)
+        # Complete registration if primary email
+        if email.lower() == self.username.lower():
+            self.register(self.username)
+            self.date_confirmed = dt.datetime.utcnow()
+        # Revoke token
+        del self.email_verifications[token]
+
+        # TODO: We can't assume that all unclaimed records are now claimed.
+        # Clear unclaimed records, so user's name shows up correctly on
+        # all projects
+        self.unclaimed_records = {}
+        self.save()
+
+        # We must manually update search here because fullname wasn't changed
+        self.update_search()
+        self.update_search_nodes()
+
+        return True
 
     @property
     def unconfirmed_emails(self):
@@ -886,6 +913,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :param user: A User object to be merged.
         """
+        # TODO: Thoroughly review
+        # TODO: Handle unclaimed projects
         # Inherit emails
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
