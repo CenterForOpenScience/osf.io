@@ -16,10 +16,10 @@ cache:
 
 env:
   WHEELHOUSE: $HOME/.cache/wheelhouse
+  TOKU_HUGE_PAGES_OK: 1
 
 before_install:
     # tokumx
-    - export TOKU_HUGE_PAGES_OK=1
     - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
     - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz.md5
     - md5sum --check tokumx-2.0.0-linux-x86_64-main.tar.gz.md5
