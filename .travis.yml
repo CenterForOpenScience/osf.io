@@ -2,16 +2,18 @@
 
 language: python
 
-sudo: false
-
 python:
     - "2.7"
 
+sudo: false
+
 cache:
+  pip: true
+  apt: true
   directories:
     - $HOME/wheelhouse
     - node_modules
-    - website/vendor/bower_components
+    - website/static/vendor/bower_components
     # $HOME/virtualenv/python2.7/lib/python2.7/site-packages
 
 before_install:
@@ -39,15 +41,13 @@ install:
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
     - travis_retry invoke assets --dev
+
 before_script:
     - flake8 .
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - echo 'hi'
-    # - invoke test --all
-    # - pkill elasticsearch
-    # - pkill mongod
+    - invoke test --all
 
 
 #notifications:
