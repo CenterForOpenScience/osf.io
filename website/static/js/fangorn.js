@@ -565,18 +565,36 @@ function _removeEvent (event, item, col) {
         });
     }
 
-    if (item.data.permissions.edit) {
-        var mithrilContent = m('div', [
-                m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
-                m('p', 'This action is irreversible.')
-            ]);
-        var mithrilButtons = m('div', [
-                m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
-            ]);
-        tb.modal.update(mithrilContent, mithrilButtons);
+    function doDelete() {
+        if (item.data.permissions.edit) {
+
+            if (item.children.length > 0) {
+                tb.modal.update(m('div', [
+                        m('h3.break-word', '"' + item.data.name + '" must be empty to be deleted.')
+                    ]),
+                    m('button.btn.btn-default', {onclick: function(){cancelDelete.call(tb);}}, 'OK')
+                );
+                tb.modal.update(mithrilContent, mithrilButtons);
+            } else {
+                var mithrilContent = m('div', [
+                        m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
+                        m('p', 'This action is irreversible.')
+                    ]);
+                var mithrilButtons = m('div', [
+                        m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+                    ]);
+                tb.modal.update(mithrilContent, mithrilButtons);
+            }
+        } else {
+            item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+        }
+    }
+
+    if (!item.open) {
+        tb.updateFolder(null, item, doDelete);
     } else {
-        item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+        doDelete();
     }
 }
 
