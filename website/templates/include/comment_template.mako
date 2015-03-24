@@ -86,7 +86,7 @@
                                 <span data-bind="if: mode !== 'widget' && hasChildren() && shouldShowChildren()">
                                     <i data-bind="css: toggleIcon, click: toggle"></i>
                                 </span>
-                                <span class="overflow"
+                                <span class="overflow" style="display: inline-block"
                                   data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
                             </div>
 

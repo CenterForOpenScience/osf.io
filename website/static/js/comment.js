@@ -96,7 +96,7 @@ var BaseComment = function() {
 
     self.pageNumber = ko.observable(0);
 
-    self.level = -1;
+    self.level = 0;
 
     self.displayCount = ko.computed(function() {
         if (self.unreadComments() !== 0) {
@@ -195,6 +195,7 @@ BaseComment.prototype.getThread = function(thread_id) {
             self.comments([]);
             self.comments.push(new CommentModel(response.comment, self, self.$root));
             deferred.resolve(self.comments());
+            self.checkFileExists();
             self._loaded = true;
         }
     );
@@ -370,7 +371,7 @@ var CommentModel = function(data, $parent, $root) {
             return true;
         }
         if (self.isHidden()) {
-            return self.level == 0;
+            return self.level == 1;
         }
         return self.hasChildren() || self.canEdit();
     });
