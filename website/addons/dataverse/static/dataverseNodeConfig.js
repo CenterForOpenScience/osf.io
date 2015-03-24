@@ -6,6 +6,8 @@
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.punches');
+var Raven = require('raven-js');
+
 var osfHelpers = require('js/osfHelpers');
 
 ko.punches.enableAll();
@@ -216,7 +218,7 @@ ViewModel.prototype.updateFromData = function(data) {
 ViewModel.prototype.setInfo = function() {
     var self = this;
     self.submitting(true);
-    osfHelpers.postJSON(
+    return osfHelpers.postJSON(
         self.urls().set,
         ko.toJS({
             dataverse: {
