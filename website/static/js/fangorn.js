@@ -834,6 +834,36 @@ function expandStateLoad(item) {
 }
 
 
+function _fangornToolbar () {
+    var tb = this;
+    var titleContent = tb.options.title();
+    if(!tb.toolbarMode || tb.toolbarMode === 'bar'){
+        return m('.row.tb-header-row', [
+                m('.col-sm-6', [
+                        m('span', titleContent)
+                    ]),
+                m('.col-sm-6', [
+                        m('.pull-right.fa.fa-search', { 
+                            onclick : function () { tb.toolbarMode = 'search' }
+                        })
+                    ])
+            ]);  
+    }
+    if(tb.toolbarMode === 'search'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
+                        m('.col-xs-1', m('.fa.fa-times', {
+                            onclick : function () { tb.toolbarMode = 'bar'; tb.resetFilter(); }
+                        }))
+                    ])
+            ]);  
+    }    
+    
+}  
+
+
+
 /**
  * OSF-specific Treebeard options common to all addons.
  * Check Treebeard API for more information
@@ -961,7 +991,8 @@ tbOptions = {
     },
     removeIcon : function(){
         return m('i.fa.fa-times-circle');
-    }
+    },
+    headerTemplate : _fangornToolbar
 };
 
 /**
