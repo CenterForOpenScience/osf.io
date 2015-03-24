@@ -77,8 +77,7 @@ before_script:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    # - invoke test --all
-    - echo "hi"
+    - invoke test --all
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
@@ -92,5 +91,5 @@ before_cache:
   - rm -Rf node_modules/dropzone
   - rm -Rf node_modules/treebeard
 
-# notifications:
-#    flowdock: 0221882cdda034c0e9ac2a0e766053dd
+notifications:
+   flowdock: 0221882cdda034c0e9ac2a0e766053dd
