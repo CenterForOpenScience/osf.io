@@ -212,7 +212,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))  # TODO(hrybacki): Is there an actual landing page route?
         # Fills in the form with correct password
-        form = res.forms['signInForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
