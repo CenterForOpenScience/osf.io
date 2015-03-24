@@ -10,6 +10,7 @@ python:
 cache:
   directories:
     - $HOME/wheelhouse
+    - node_modules
 
 before_install:
     - export WHEELHOUSE=$HOME/wheelhouse
