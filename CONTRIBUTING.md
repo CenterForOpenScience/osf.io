@@ -32,4 +32,4 @@ When submitting an issue, be as descriptive as possible:
 
 Include pictures (e.g., in OSX press Cmd+Shift+4 to draw a box to screenshot)
 
-Examples of good issue reporting: #382, #713
+Examples of good issue reporting: [#382](https://github.com/CenterForOpenScience/osf.io/issues/382), [#713](https://github.com/CenterForOpenScience/osf.io/issues/713).
