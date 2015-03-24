@@ -146,6 +146,26 @@ class TestProjectViews(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def test_can_view_nested_project_as_admin(self):
+        self.parent_project = NodeFactory(
+            title='parent project',
+            category='project',
+            project=self.project,
+            is_public=False
+        )
+        self.parent_project.save()
+        self.child_project = NodeFactory(
+            title='child project',
+            category='project',
+            project=self.parent_project,
+            is_public=False
+        )
+        self.child_project.save()
+        url = self.child_project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+        assert_not_in('Private Project', res.body)
+        assert_in('parent project', res.body)
+
     def test_edit_description(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         self.app.post_json(url,
@@ -3792,7 +3812,7 @@ class TestProjectCreation(OsfTestCase):
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
         assert_equal(res2.status_code, 401)
-        assert_in("Sign up or Log in", res2.body)
+        assert_in("Sign In", res2.body)
 
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()
