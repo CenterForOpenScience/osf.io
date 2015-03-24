@@ -9,6 +9,7 @@ sudo: false
 
 cache:
   directories:
+    - $HOME/.cache/downloads
     - $HOME/.cache/pip
     - $HOME/.cache/wheelhouse
     - node_modules
@@ -17,16 +18,29 @@ cache:
 env:
   WHEELHOUSE: $HOME/.cache/wheelhouse
   TOKU_HUGE_PAGES_OK: 1
+  TOKUMX_ARCHIVE: tokumx-2.0.0-linux-x86_64-main.tar.gz
+  ELASTICSEARCH_ARCHIVE: tokumx-2.0.0-linux-x86_64-main.tar.gz
 
 before_install:
     # tokumx
-    - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
-    - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz.md5
-    - md5sum --check tokumx-2.0.0-linux-x86_64-main.tar.gz.md5
-    - mkdir /tmp/tokumx
-    - tar xzf tokumx-2.0.0-linux-x86_64-main.tar.gz -C /tmp/tokumx --strip-components=1
-    - mkdir /tmp/tokumx/data
-    - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
+    - |
+      cd $HOME/.cache/downloads
+
+      if [! -f "$HOME/.cache/downloads/$TOKUMX_ARCHIVE" ]; then
+        cd $HOME/.cache/downloads
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE;
+      fi
+
+      if [! -f "$HOME/.cache/downloads/$TOKUMX_ARCHIVE.md5" ]; then
+        cd $HOME/.cache/downloads
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5;
+      fi
+
+      md5sum --check $HOME/.cache/downloads/$TOKUMX_ARCHIVE.md5
+
+      mkdir -p /tmp/tokumx/data
+      tar xzf $HOME/.cache/downloads/$TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
+      /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
     # elasticsearch
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz.sha1.txt
