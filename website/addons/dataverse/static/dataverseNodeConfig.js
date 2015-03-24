@@ -292,7 +292,7 @@ ViewModel.prototype.authorizeNode = function() {
         self.updateFromData(response.result);
         self.changeMessage(self.messages.IMPORT_AUTH_SUCCESS, 'text-success', 3000);
     }).fail(function() {
-        self.changeMessage(self.messages.IMPORTAUTH_ERROR, 'text-danger');
+        self.changeMessage(self.messages.IMPORT_AUTH_ERROR, 'text-danger');
     });
 };
 
