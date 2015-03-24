@@ -107,14 +107,14 @@
 
                         </div>
 
-                        <div>
+                        <div data-bind="ifnot: mode === 'widget'">
 
                             <span class="comment-error">{{errorMessage}}</span>
 
                             <span>&nbsp;</span>
 
                             <!-- Action bar -->
-                            <div data-bind="ifnot: mode === 'widget'" style="display: inline">
+                            <div style="display: inline">
                                 <div data-bind="ifnot: editing, event: {mouseover: setupToolTips('i')}" class="comment-actions pull-right">
                                     <a data-bind="attr:{href: '/'+id()}" style="color: #000000">
                                         <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="fa fa-link"></i>
