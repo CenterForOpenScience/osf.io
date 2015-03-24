@@ -16,7 +16,7 @@ before_install:
     - export WHEELHOUSE=$HOME/wheelhouse
     #tokumx
     - export TOKU_HUGE_PAGES_OK=1
-    - curl -SL https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
+    - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
     - mkdir /tmp/tokumx
     - tar xzf tokumx-2.0.0-linux-x86_64-main.tar.gz -C /tmp/tokumx --strip-components=1
     - mkdir /tmp/tokumx/data
