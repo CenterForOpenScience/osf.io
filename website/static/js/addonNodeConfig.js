@@ -122,34 +122,6 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         this.validCredentials(settings.validCredentials);
         this.canShare(settings.canShare || false);
     },
-    fetchAccounts: function() {
-        var self = this;
-        var request = $.get(self.urls().accounts);
-        request.then(function(data) {
-            return data.accounts;
-        });
-        request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
-            Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
-        return request;
-    },
-    updateAccounts: function() {
-        var self = this;
-        return self.fetchAccounts()
-        .done(function(accounts) {
-            self.accounts(accounts.map(function(account) {
-                return {
-                    name: account.display_name,
-                    id: account.id
-                };
-            }));
-        });
-    },       
     /**
      * Allows a user to create an access token from the nodeSettings page
      */
