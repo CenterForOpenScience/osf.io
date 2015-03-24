@@ -16,7 +16,7 @@
                         </h2>
                     % else:
                         <h2 class="node-parent-title unavailable">
-                            <span>Private Project</span>&nbsp;/
+                            <span>Private Project</span> <i class="fa fa-level-down fa fa-dark-lg"> </i>
                         </h2>
                     % endif
                 % endif
