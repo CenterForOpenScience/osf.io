@@ -33,3 +33,5 @@ HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.s3_hgrid_data
 # 1024 ** 1024  # There really shouldnt be a limit...
 MAX_FILE_SIZE = 128  # MB
+
+NODE_SETTINGS_TEMPLATE = 's3_node_settings.mako'

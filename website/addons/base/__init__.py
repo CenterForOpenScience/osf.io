@@ -129,13 +129,20 @@ class AddonConfig(object):
 
         # Provide the path the the node_settings template
         self.node_settings_template = node_settings_template
+        node_settings_template_name = node_settings_template or '{}_node_settings.mako'.format(self.short_name)
         addon_node_settings_path = os.path.join(
             template_path,
-            '{}_node_settings.mako'.format(self.short_name)
+            node_settings_template_name
         )
         if node_settings_template and os.path.exists(addon_node_settings_path):
             # If NODE_SETTINGS_TEMPLATE is defined, use that path.
-            self.node_settings_template = addon_node_settings_path
+            self.node_settings_template = os.path.join(
+                os.path.pardir,
+                'addons',
+                self.short_name,
+                'templates',
+                node_settings_template_name
+            )
         else:
             # Use the default template (for OAuth addons)
             self.node_settings_template = os.path.join(
