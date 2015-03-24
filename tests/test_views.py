@@ -2764,8 +2764,7 @@ class TestComments(OsfTestCase):
                 'content': content,
                 'isPublic': 'public',
                 'page': 'wiki',
-                'target': name,
-                'root_title': name,
+                'target': name
             },
             **kwargs
         )
@@ -2785,8 +2784,7 @@ class TestComments(OsfTestCase):
                 'content': content,
                 'isPublic': 'public',
                 'page': 'files',
-                'target': guid._id,
-                'root_title': path
+                'target': guid._id
             },
             **kwargs
         )
@@ -3092,7 +3090,7 @@ class TestComments(OsfTestCase):
         res = self.app.get(url, {"view_only": link.key}, auth=user.auth)
         comment = res.json['comments'][0]
         author = comment['author']
-        assert_in('A user', author['name'])
+        assert_in('A user', author['fullname'])
         assert_false(author['gravatarUrl'])
         assert_false(author['url'])
         assert_false(author['id'])
@@ -3107,13 +3105,15 @@ class TestComments(OsfTestCase):
         comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1, page='node')
         CommentFactory(node=self.project, target=comment_l1, user=user_l2, page='node')
 
-        url = self.project.api_url + 'comments/discussion/'
+        url = self.project.api_url + 'comments/'
         res = self.app.get(url, {
             'page': 'node',
-            'target': self.project._primary_key
+            'target': self.project._primary_key,
+            'rootId': 'None',
+            'isCommentList': True
         })
 
-        assert_equal(len(res.json['discussion_by_frequency']), 3)
+        assert_equal(len(res.json['discussionByFrequency']), 3)
 
     def test_discussion_no_repeats(self):
 
@@ -3123,13 +3123,15 @@ class TestComments(OsfTestCase):
         comment_l1 = CommentFactory(node=self.project, target=comment_l0, page='node')
         CommentFactory(node=self.project, target=comment_l1, page='node')
 
-        url = self.project.api_url + 'comments/discussion/'
+        url = self.project.api_url + 'comments/'
         res = self.app.get(url, {
             'page': 'node',
-            'target': self.project._primary_key
+            'target': self.project._primary_key,
+            'rootId': 'None',
+            'isCommentList': True
         })
 
-        assert_equal(len(res.json['discussion_by_frequency']), 1)
+        assert_equal(len(res.json['discussionByFrequency']), 1)
 
     def test_discussion_sort_frequency(self):
 
@@ -3144,14 +3146,16 @@ class TestComments(OsfTestCase):
         for _ in range(2):
             CommentFactory(node=self.project, user=user2, page='node')
 
-        url = self.project.api_url + 'comments/discussion/'
+        url = self.project.api_url + 'comments/'
         res = self.app.get(url, {
             'page': 'node',
-            'target': self.project._primary_key
+            'target': self.project._primary_key,
+            'rootId': 'None',
+            'isCommentList': True
         })
 
-        assert_equal(len(res.json['discussion_by_frequency']), 3)
-        observed = [user['id'] for user in res.json['discussion_by_frequency']]
+        assert_equal(len(res.json['discussionByFrequency']), 3)
+        observed = [user['id'] for user in res.json['discussionByFrequency']]
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
@@ -3168,14 +3172,16 @@ class TestComments(OsfTestCase):
             CommentFactory(node=self.project, user=user2, page='node')
         CommentFactory(node=self.project, page='node')
 
-        url = self.project.api_url + 'comments/discussion/'
+        url = self.project.api_url + 'comments/'
         res = self.app.get(url, {
             'page': 'node',
-            'target': self.project._primary_key
+            'target': self.project._primary_key,
+            'rootId': 'None',
+            'isCommentList': True
         })
 
-        assert_equal(len(res.json['discussion_by_recency']), 3)
-        observed = [user['id'] for user in res.json['discussion_by_recency']]
+        assert_equal(len(res.json['discussionByRecency']), 3)
+        observed = [user['id'] for user in res.json['discussionByRecency']]
         expected = [self.project.creator._id, user2._id, user1._id]
         assert_equal(observed, expected)
 

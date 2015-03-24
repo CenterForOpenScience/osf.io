@@ -98,7 +98,7 @@ def view_comments_single(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     comment = kwargs_to_comment(kwargs)
-    serialized_comment = serialize_comment(comment, node, auth)
+    serialized_comment = serialize_comment(comment, auth)
 
     from website.addons.wiki.model import NodeWikiPage
 
@@ -189,9 +189,9 @@ def serialize_discussion(node, user, num, anonymous=False):
     }
 
 
-def serialize_comment(comment, node, auth, anonymous=False):
+def serialize_comment(comment, auth, anonymous=False):
     from website.addons.wiki.model import NodeWikiPage
-
+    node = comment.node
     if isinstance(comment.root_target, NodeWikiPage):
         # In case the wiki name is changed
         root_id = comment.root_target.page_name
@@ -286,7 +286,7 @@ def add_comment(**kwargs):
             notify(uid=target.user._id, event='comment_replies', **context)
 
     return {
-        'comment': serialize_comment(comment, node, auth)
+        'comment': serialize_comment(comment, auth)
     }, http.CREATED
 
 
@@ -327,7 +327,7 @@ def list_comments(auth, **kwargs):
 
     ret = {
         'comments': [
-            serialize_comment(comment, node, auth, anonymous)
+            serialize_comment(comment, auth, anonymous)
             for comment in comments
         ],
         'nUnread': n_unread
@@ -390,7 +390,7 @@ def edit_comment(**kwargs):
         save=True
     )
 
-    return serialize_comment(comment, node, auth)
+    return serialize_comment(comment, auth)
 
 
 @must_be_logged_in
