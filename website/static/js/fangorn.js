@@ -467,14 +467,13 @@ function _downloadEvent (event, item, col) {
 function createFolder(event, parent, col) {
     var self = this;
     var folderName = m.prop('');
-    self.multimodal.height = 50;
     var creatingFolder = m.prop(false);
 
     if (!parent.open) {
         self.updateFolder(null, parent);
     }
     function redraw() {
-        self.multimodal.update((function() {
+        self.modal.update((function() {
             return m('div', [
                 m('form.form-inline', {
                     onsubmit: function(event) {
@@ -503,7 +502,7 @@ function createFolder(event, parent, col) {
                         }).then(function() {
                             folderName('');
                             creatingFolder(false);
-                            self.multimodal.dismiss();
+                            self.modal.dismiss();
                         });
                     }
                 }, [
