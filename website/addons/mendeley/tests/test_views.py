@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from nose.tools import *  # noqa
 
 import mock
@@ -10,7 +9,7 @@ from tests.factories import AuthUserFactory, ProjectFactory
 
 import urlparse
 
-from framework.auth import authenticate
+from framework.auth import authenticate, Auth
 
 from website.addons.mendeley.tests.factories import (
     MendeleyAccountFactory,
@@ -43,6 +42,10 @@ class MockNode(object):
             return self.addon
         return None
 
+class MockFolder(object):
+    def __init__(self, **kwargs):
+        for k,v in kwargs.iteritems():
+            setattr(self, k, v)
 
 class MendeleyViewsTestCase(OsfTestCase):
 
@@ -76,17 +79,18 @@ class MendeleyViewsTestCase(OsfTestCase):
             self.project.api_url_for('mendeley_get_config'),
             auth=self.user.auth,
         )
-        assert_true(res.json['nodeHasAuth'])
-        assert_true(res.json['userHasAuth'])
-        assert_true(res.json['userIsOwner'])
-        assert_equal(res.json['folder'], '')
-        assert_equal(res.json['ownerName'], self.user.fullname)
-        assert_true(res.json['urls']['auth'])
-        assert_true(res.json['urls']['config'])
-        assert_true(res.json['urls']['deauthorize'])
-        assert_true(res.json['urls']['folders'])
-        assert_true(res.json['urls']['importAuth'])
-        assert_true(res.json['urls']['settings'])
+        result = res.json['result']
+        assert_true(result['nodeHasAuth'])
+        assert_true(result['userHasAuth'])
+        assert_true(result['userIsOwner'])
+        assert_equal(result['folder'], {'name': ''})
+        assert_equal(result['ownerName'], self.user.fullname)
+        assert_true(result['urls']['auth'])
+        assert_true(result['urls']['config'])
+        assert_true(result['urls']['deauthorize'])
+        assert_true(result['urls']['folders'])
+        assert_true(result['urls']['importAuth'])
+        assert_true(result['urls']['settings'])
 
     def test_serialize_settings_non_authorizer(self):
         #"""dict: a serialized version of user-specific addon settings"""
@@ -96,17 +100,18 @@ class MendeleyViewsTestCase(OsfTestCase):
             self.project.api_url_for('mendeley_get_config'),
             auth=non_authorizing_user.auth,
         )
-        assert_true(res.json['nodeHasAuth'])
-        assert_false(res.json['userHasAuth'])
-        assert_false(res.json['userIsOwner'])
-        assert_equal(res.json['folder'], '')
-        assert_equal(res.json['ownerName'], self.user.fullname)
-        assert_true(res.json['urls']['auth'])
-        assert_true(res.json['urls']['config'])
-        assert_true(res.json['urls']['deauthorize'])
-        assert_true(res.json['urls']['folders'])
-        assert_true(res.json['urls']['importAuth'])
-        assert_true(res.json['urls']['settings'])
+        result = res.json['result']
+        assert_true(result['nodeHasAuth'])
+        assert_false(result['userHasAuth'])
+        assert_false(result['userIsOwner'])
+        assert_equal(result['folder'], {'name': ''})
+        assert_equal(result['ownerName'], self.user.fullname)
+        assert_true(result['urls']['auth'])
+        assert_true(result['urls']['config'])
+        assert_true(result['urls']['deauthorize'])
+        assert_true(result['urls']['folders'])
+        assert_true(result['urls']['importAuth'])
+        assert_true(result['urls']['settings'])
 
     def test_set_auth(self):
 
@@ -155,7 +160,9 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_is_none(self.node_addon.user_settings)
         assert_is_none(self.node_addon.external_account)
 
-    def test_set_config_owner(self):
+    @mock.patch('website.addons.mendeley.model.Mendeley._folder_metadata')
+    def test_set_config_owner(self, mock_metadata):
+        mock_metadata.return_value = MockFolder(name='Fake Folder')
         # Settings config updates node settings
         self.node_addon.associated_user_settings = []
         self.node_addon.save()
@@ -169,9 +176,15 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
         self.node_addon.reload()
         assert_equal(self.user_addon, self.node_addon.user_settings)
-        assert_equal(res.json, {})
+        serializer = MendeleySerializer(node_settings=self.node_addon, user_settings=self.user_addon)
+        expected = {
+            'result': serializer.serialized_node_settings
+        }
+        assert_equal(res.json, expected)
 
-    def test_set_config_not_owner(self):
+    @mock.patch('website.addons.mendeley.model.Mendeley._folder_metadata')
+    def test_set_config_not_owner(self, mock_metadata):
+        mock_metadata.return_value = MockFolder(name='Fake Folder')
         user = AuthUserFactory()
         user.add_addon('mendeley')
         self.project.add_contributor(user)
@@ -186,7 +199,11 @@ class MendeleyViewsTestCase(OsfTestCase):
         )
         self.node_addon.reload()
         assert_equal(self.user_addon, self.node_addon.user_settings)
-        assert_equal(res.json, {})
+        serializer = MendeleySerializer(node_settings=self.node_addon, user_settings=None)
+        expected = {
+            'result': serializer.serialized_node_settings
+        }
+        assert_equal(res.json, expected)
 
     def test_mendeley_widget_view_complete(self):
         # JSON: everything a widget needs
