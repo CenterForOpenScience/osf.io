@@ -35,17 +35,16 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.emailList = ko.pureComputed(function() {
             return self.emails().join([', ']);
         });
-        self.canShare = ko.observable(false);
-        self.disableShare = ko.pureComputed(function() {
-            var isRoot = self.folder().path === 'All Files';
-            var notSet = (self.folder().path == null);
-            return !(self.urls().emails) || !self.validCredentials() || isRoot || notSet;
-        });
         self.selectedFolderType = ko.pureComputed(function() {
             var userHasAuth = self.userHasAuth();
             var selected = self.selected();
             return (userHasAuth && selected) ? selected.type : '';
         });
+        self.messages.SUBMIT_SETTINGS_SUCCESS =  ko.pureComputed(function() {
+            return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
+                self.urls().files + '">Files page</a> to view your content.';
+        });
+        
         // Overrides
         self.options = {
             onPickFolder: function(evt, item) {
@@ -152,24 +151,12 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 };
             }));
         });
-    },
+    },       
+    /**
+     * Allows a user to create an access token from the nodeSettings page
+     */
     connectAccount: function() {
-        /**
-         * Allows a user to create an access token from the nodeSettings page
-         */
-        var self = this;
-        window.oauthComplete = function() {
-            self.changeMessage(self.messages.CONNECT_ACCOUNT_SUCCESS(), 'text-success', 3000);
-            return self.updateAccounts()
-                .done(function() {
-                    $osf.postJSON(
-                        self.urls().importAuth, {
-                            external_account_id: self.accounts()[0].id
-                        }
-                    ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
-                });
-        };
-        return window.open(self.urls().auth);
+        window.location.href = this.urls().auth;
     }
 });
 

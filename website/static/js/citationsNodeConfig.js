@@ -22,6 +22,13 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
         self.userAccountId = ko.observable('');
+        // externalAccounts
+        self.accounts = ko.observable([]);
+
+        self.messages.SUBMIT_SETTINGS_SUCCESS = ko.pureComputed(function(){
+            return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
+                self.urls().files + '">Overview page</a> to view your citations.';
+        });
 
         self.treebeardOptions = $.extend(
             {}, 
@@ -49,16 +56,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 }.bind(this)
             });
     },
-    updateAccounts: function() {
+   fetchAccounts: function() {
         var self = this;
         var request = $.get(self.urls().accounts);
-        request.done(function(data) {
-            self.accounts(data.accounts.map(function(account) {
-                return {
-                    name: account.display_name,
-                    id: account.id
-                };
-            }));
+        request.then(function(data) {
+            return data.accounts;
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
@@ -69,6 +71,18 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             });
         });
         return request;
+    },
+    updateAccounts: function() {
+        var self = this;
+        return self.fetchAccounts()
+        .done(function(accounts) {
+            self.accounts(accounts.map(function(account) {
+                return {
+                    name: account.display_name,
+                    id: account.id
+                };
+            }));
+        });
     },
     /**
      * Allows a user to create an access token from the nodeSettings page
