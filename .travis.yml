@@ -26,20 +26,18 @@ before_install:
     - |
       cd $HOME/.cache/downloads
 
-      if [! -f "$HOME/.cache/downloads/$TOKUMX_ARCHIVE" ]; then
-        cd $HOME/.cache/downloads
+      if [ ! -f "$TOKUMX_ARCHIVE" ]; then
         curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE;
       fi
 
-      if [! -f "$HOME/.cache/downloads/$TOKUMX_ARCHIVE.md5" ]; then
-        cd $HOME/.cache/downloads
+      if [ ! -f "$TOKUMX_ARCHIVE.md5" ]; then
         curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5;
       fi
 
-      md5sum --check $HOME/.cache/downloads/$TOKUMX_ARCHIVE.md5
+      md5sum --check $TOKUMX_ARCHIVE.md5
 
       mkdir -p /tmp/tokumx/data
-      tar xzf $HOME/.cache/downloads/$TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
+      tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
       /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
     # elasticsearch
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz
