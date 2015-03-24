@@ -13,7 +13,7 @@ cache:
     - $HOME/wheelhouse
     - node_modules
     - website/static/vendor/bower_components
-    # $HOME/virtualenv/python2.7/lib/python2.7/site-packages
+    - $HOME/virtualenv/python2.7/lib/python2.7/site-packages
 
 before_install:
     - export WHEELHOUSE=$HOME/wheelhouse
@@ -50,9 +50,7 @@ before_script:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    # - invoke test --all
-    - echo 'hi'
-
+    - invoke test --all
 
 #notifications:
 #    flowdock: 0221882cdda034c0e9ac2a0e766053dd
