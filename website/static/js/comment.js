@@ -207,7 +207,7 @@ BaseComment.prototype.checkFileExists = function() {
     var url;
     for (var c in self.comments()) {
         var comment = self.comments()[c];
-        if (comment.page() !== 'files') {
+        if (comment.page() !== 'files' || self.mode == 'pane') {
             comment.loading(false);
             continue;
         }
