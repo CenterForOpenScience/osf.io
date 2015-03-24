@@ -207,6 +207,14 @@ BaseComment.prototype.checkFileExists = function() {
     var url;
     for (var c in self.comments()) {
         var comment = self.comments()[c];
+        if (self.level > 0 && self.loading() == false) {
+            comment.isHidden(self.isHidden());
+            if (!self.isHidden() && self.page() == 'files') {
+                comment.title(self.title());
+            }
+            comment.loading(false);
+            continue;
+        }
         if (comment.page() !== 'files' || self.mode == 'pane') {
             comment.loading(false);
             continue;
@@ -217,6 +225,10 @@ BaseComment.prototype.checkFileExists = function() {
                 method: 'GET',
                 url: url
             }).done(function(response){
+                // figshare filename is not in path
+                if (comment.provider() == 'figshare') {
+                    comment.title(response['data']['name']);
+                }
                 comment.loading(false);
             }).fail(function(xhl){
                 comment.isHidden(true);
