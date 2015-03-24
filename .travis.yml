@@ -9,9 +9,7 @@ sudo: false
 
 cache:
   directories:
-    - $HOME/.cache/downloads
-    - $HOME/.cache/pip
-    - $HOME/.cache/wheelhouse
+    - $HOME/.cache
     - node_modules
     - website/static/vendor/bower_components
 
@@ -23,8 +21,13 @@ env:
   ELASTICSEARCH_ARCHIVE: elasticsearch-1.5.0.tar.gz
 
 before_install:
-    # tokumx
     - |
+      ## cache directories
+      mkdir $HOME/.cache/downloads
+      mkdir $HOME/.cache/pip
+      mkdir $HOME/.cache/wheelhouse
+    - |
+      ## tokumx
       cd $HOME/.cache/downloads
 
       if [ ! -f "$TOKUMX_ARCHIVE" ]; then
@@ -40,8 +43,8 @@ before_install:
       mkdir -p /tmp/tokumx/data
       tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
     - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
-    # elasticsearch
     - |
+      ## elasticsearch
       cd $HOME/.cache/downloads
 
       if [ ! -f "$ELASTICSEARCH_ARCHIVE" ]; then
