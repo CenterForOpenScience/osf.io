@@ -534,6 +534,7 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        # 1 project create log, 1 add contributor log, then 5 generated logs
         assert_equal(res.json['total'], 5 + 2)
         assert_equal(res.json['page'], 0)
         assert_equal(res.json['pages'], 3)
@@ -552,6 +553,7 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+        # 1 project create log, 1 add contributor log, then 5 generated logs
         assert_equal(res.json['total'], 12 + 2)
         assert_equal(res.json['page'], 0)
         assert_equal(res.json['pages'], 2)
@@ -570,6 +572,7 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
+        #1 project create log, 1 add contributor log, then 12 generated logs
         assert_equal(res.json['total'], 12 + 2)
         assert_equal(res.json['page'], 1)
         assert_equal(res.json['pages'], 2)
@@ -600,6 +603,7 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url_for('get_logs')
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
+        # 1 project create log, 1 add contributor log, then 15 generated logs
         assert_equal(res.json['total'], 15 + 2)
         assert_equal(res.json['page'], 0)
         assert_equal(res.json['pages'], 2)
@@ -1974,6 +1978,7 @@ class TestWatchViews(OsfTestCase):
         url = api_url_for("watched_logs_get")
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+        # 1 project create log then 12 generated logs
         assert_equal(res.json['total'], 12 + 1)
         assert_equal(res.json['page'], 0)
         assert_equal(res.json['pages'], 2)
@@ -1992,6 +1997,7 @@ class TestWatchViews(OsfTestCase):
         page = 1
         res = self.app.get(url, {'page': page}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        # 1 project create log then 12 generated logs
         assert_equal(res.json['total'], 12 + 1)
         assert_equal(res.json['page'], page)
         assert_equal(res.json['pages'], 2)
