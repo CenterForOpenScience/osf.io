@@ -736,6 +736,17 @@ function _fangornActionColumn (item, col) {
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: createFolder
         });
+
+        if (item.data.path) {
+            buttons.push({
+                'name' : '',
+                'tooltip' : 'Delete',
+                'icon' : 'fa fa-times',
+                'css' : 'm-l-xs text-danger fg-hover-hide',
+                'style' : 'display:none',
+                'onclick' : _removeEvent
+            });
+        }
     }
     //Download button if this is an item
     if (item.kind === 'file') {
