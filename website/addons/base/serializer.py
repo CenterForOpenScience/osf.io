@@ -29,11 +29,21 @@ class AddonSerializer(object):
         pass
 
     @property
+    def can_share(self):
+        '''
+        Does the third party service expose a way to share content?
+
+        defaults to False unless overidden in subclass
+        '''
+        return False
+
+    @property
     def serialized_node_settings(self):
         result = {
             'nodeHasAuth': self.node_settings.has_auth,
             'userIsOwner': self.user_is_owner,
             'urls': self.serialized_urls,
+            'canShare': self.can_share,
         }
 
         if self.user_settings:
