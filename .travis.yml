@@ -13,11 +13,10 @@ cache:
     - $HOME/wheelhouse
     - node_modules
     - website/static/vendor/bower_components
-    - $HOME/virtualenv/python2.7/lib/python2.7/site-packages
 
 before_install:
     - export WHEELHOUSE=$HOME/wheelhouse
-    #tokumx
+    # tokumx
     - export TOKU_HUGE_PAGES_OK=1
     - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
     - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz.md5
@@ -26,7 +25,7 @@ before_install:
     - tar xzf tokumx-2.0.0-linux-x86_64-main.tar.gz -C /tmp/tokumx --strip-components=1
     - mkdir /tmp/tokumx/data
     - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
-    #elasticsearch
+    # elasticsearch
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz
     - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.0.tar.gz.sha1.txt
     - sha1sum --check elasticsearch-1.5.0.tar.gz.sha1.txt
@@ -39,7 +38,6 @@ install:
     # - travis_retry invoke encryption
     - travis_retry pip install --upgrade pip
     - travis_retry pip install invoke==0.9.0
-    # travis_retry pip install flake8 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
@@ -53,5 +51,5 @@ script:
     # - invoke test --all
     - echo 'hi'
 
-#notifications:
+# notifications:
 #    flowdock: 0221882cdda034c0e9ac2a0e766053dd
