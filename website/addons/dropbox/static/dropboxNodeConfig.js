@@ -95,7 +95,7 @@ var ViewModel = function(url, selector, folderPicker, fetchCallback) {
                     if (self.userIsOwner()) {
                         self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. The Dropbox addon credentials may no longer be valid.' +
-                        ' Try deauthorizing and reauthorizing Dropbox on your <a href="' +
+                        ' Please delete your access token and create a new one on your <a href="' +
                             self.urls().settings + '">account settings page</a>.',
                         'text-warning');
                     } else {
