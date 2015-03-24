@@ -7,7 +7,6 @@ from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from framework.analytics import update_counter
 from framework.auth.decorators import must_be_signed
 from framework.transactions.handlers import no_auto_transaction
 
@@ -56,7 +55,7 @@ def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     if payload.get('mode') != 'render':
         if version_id < 0:
             version_id = len(storage_node.versions) + version_id
-        update_analytics(node_addon.owner, storage_node.path, version_id)
+        utils.update_analytics(node_addon.owner, storage_node.path, version_id)
 
     return {
         'data': {
@@ -159,16 +158,6 @@ def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
 
     file_record.save()
     return {'status': 'success'}
-
-
-def update_analytics(node, path, version_idx):
-    """
-    :param Node node: Root node to update
-    :param str path: Path to file
-    :param int version_idx: One-based version index
-    """
-    update_counter(u'download:{0}:{1}'.format(node._id, path))
-    update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
 
 
 @must_be_signed

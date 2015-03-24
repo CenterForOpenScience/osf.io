@@ -5,11 +5,14 @@ import httplib
 import logging
 import functools
 
+
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
+from framework.analytics import update_counter
+
 from website.addons.osfstorage import settings
 
 
@@ -27,6 +30,16 @@ def handle_odm_errors(func):
         except KeyExistsException:
             raise HTTPError(httplib.CONFLICT)
     return wrapped
+
+
+def update_analytics(node, path, version_idx):
+    """
+    :param Node node: Root node to update
+    :param str path: Path to file
+    :param int version_idx: One-based version index
+    """
+    update_counter(u'download:{0}:{1}'.format(node._id, path))
+    update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
 
 
 def serialize_metadata(item):
