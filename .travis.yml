@@ -16,13 +16,13 @@ before_install:
     - export WHEELHOUSE=$HOME/wheelhouse
     #tokumx
     - export TOKU_HUGE_PAGES_OK=1
-    - curl -L -O https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
+    - curl -SL https://s3.amazonaws.com/tokumx-2.0.0/tokumx-2.0.0-linux-x86_64-main.tar.gz
     - mkdir /tmp/tokumx
     - tar xzf tokumx-2.0.0-linux-x86_64-main.tar.gz -C /tmp/tokumx --strip-components=1
     - mkdir /tmp/tokumx/data
     - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
     #elasticsearch
-    - curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.4.tar.gz
+    - curl -SL https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.4.tar.gz
     - mkdir /tmp/elasticsearch
     - tar -xvf elasticsearch-1.4.4.tar.gz -C /tmp/elasticsearch --strip-components=1
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null &
@@ -31,7 +31,7 @@ install:
     - cp website/settings/local-travis.py website/settings/local.py
     # - travis_retry invoke encryption
     - travis_retry pip install --upgrade pip
-    # travis_retry pip install invoke==0.9.0 --force-reinstall --upgrade
+    - travis_retry pip install invoke==0.9.0
     # travis_retry pip install flake8 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons
     - travis_retry invoke travis_addon_settings
