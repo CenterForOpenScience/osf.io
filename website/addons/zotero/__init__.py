@@ -36,5 +36,3 @@ INCLUDE_CSS = {
 WIDGET_HELP = 'Zotero'
 
 HAS_HGRID_FILES = False
-
-NODE_SETTINGS_TEMPLATE = 'project/addon/citations_folder_picker.mako'
