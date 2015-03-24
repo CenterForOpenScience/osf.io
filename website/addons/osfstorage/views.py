@@ -46,7 +46,7 @@ def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     except ValueError:
         raise make_error(httplib.BAD_REQUEST, 'Version must be an int or null')
 
-    storage_node = model.OsfStorageNode.get_file(path, node_addon)
+    storage_node = model.OsfStorageFileNode.get_file(path, node_addon)
     if storage_node.is_deleted:
         raise HTTPError(httplib.GONE)
 
@@ -104,8 +104,8 @@ def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     try:
         created, record = False, node_addon.root_node.find_child_by_name(child)
     except NoResultsFound:
-        if not isinstance(parent, model.OsfStorageNode):
-            parent = model.OsfStorageNode.get_folder(parent, node_addon)
+        if not isinstance(parent, model.OsfStorageFileNode):
+            parent = model.OsfStorageFileNode.get_folder(parent, node_addon)
         created, record = True, parent.append_file(child)
 
     code = httplib.CREATED if created else httplib.OK
@@ -172,7 +172,7 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     if path == '/':
         fileobj = node_addon.root_node
     else:
-        fileobj = model.OsfStorageNode.get(path.strip('/'), node_addon)
+        fileobj = model.OsfStorageFileNode.get(path.strip('/'), node_addon)
 
     if fileobj.is_deleted:
         raise HTTPError(httplib.GONE)
@@ -212,7 +212,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    record = model.OsfStorageNode.get(path.strip('/'), node_addon)
+    record = model.OsfStorageFileNode.get(path.strip('/'), node_addon)
 
     return {
         'revisions': [
@@ -234,7 +234,7 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if split:
-        parent = model.OsfStorageNode.get(split[0], node_addon)
+        parent = model.OsfStorageFileNode.get(split[0], node_addon)
     else:
         parent = node_addon.root_node
 

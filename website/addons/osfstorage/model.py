@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class OsfStorageNodeSettings(AddonNodeSettingsBase):
     complete = True
     has_auth = True
-    root_node = fields.ForeignField('OsfStorageNode')
+    root_node = fields.ForeignField('OsfStorageFileNode')
     file_tree = fields.ForeignField('OsfStorageFileTree')
 
     def on_add(self):
@@ -38,7 +38,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
             return
 
         self.save()
-        root = OsfStorageNode(name='', kind='folder', node_settings=self)
+        root = OsfStorageFileNode(name='', kind='folder', node_settings=self)
         root.save()
         self.root_node = root
         self.save()
@@ -93,7 +93,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         pass
 
 
-class OsfStorageNode(StoredObject):
+class OsfStorageFileNode(StoredObject):
     __indices__ = [
         {
             'key_or_list': [
@@ -111,7 +111,7 @@ class OsfStorageNode(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
-    parent = fields.ForeignField('OsfStorageNode', index=True)
+    parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
 
@@ -174,7 +174,7 @@ class OsfStorageNode(StoredObject):
 
     @utils.must_be('folder')
     def _create_child(self, name, kind, save=True):
-        child = OsfStorageNode(
+        child = OsfStorageFileNode(
             name=name,
             kind=kind,
             parent=self,

@@ -4,7 +4,7 @@
 from . import routes, views, model
 
 MODELS = [
-    model.OsfStorageNode,
+    model.OsfStorageFileNode,
     model.OsfStorageGuidFile,
     model.OsfStorageFileVersion,
     model.OsfStorageNodeSettings,
