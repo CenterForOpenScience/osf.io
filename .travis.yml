@@ -22,12 +22,12 @@ env:
 
 before_install:
     - |
-      : cache directories
+      # cache directories
       mkdir $HOME/.cache/downloads
       mkdir $HOME/.cache/pip
       mkdir $HOME/.cache/wheelhouse
     - |
-      : tokumx
+      # tokumx
       cd $HOME/.cache/downloads
 
       if [ ! -f "$TOKUMX_ARCHIVE" ]; then
@@ -44,7 +44,7 @@ before_install:
       tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
     - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
     - |
-      : elasticsearch
+      # elasticsearch
       cd $HOME/.cache/downloads
 
       if [ ! -f "$ELASTICSEARCH_ARCHIVE" ]; then
