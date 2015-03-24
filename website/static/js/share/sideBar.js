@@ -48,7 +48,7 @@ SideBar.controller = function(vm) {
                         self.vm.sort(a);
                         utils.search(self.vm);
                     }
-                }, a))
+                }, a));
         });
     };
 
@@ -57,11 +57,11 @@ SideBar.controller = function(vm) {
             return m('li.renderFilter', [
                 m('a', {
                     onclick: function(event){
-                        utils.removeFilter(self.vm, filter)
+                        utils.removeFilter(self.vm, filter);
                     }
                 }, [m('i.fa.fa-close'), ' ' + filter
                 ])
-            ])
+            ]);
         });
     };
 
