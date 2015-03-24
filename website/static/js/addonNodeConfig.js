@@ -30,7 +30,6 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.loadedEmails = ko.observable(false);
         // externalAccounts
         self.accounts = ko.observable([]);
-        
         // List of contributor emails as a comma-separated values
         self.emailList = ko.pureComputed(function() {
             return self.emails().join([', ']);
@@ -44,7 +43,6 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
-        
         // Overrides
         self.options = {
             onPickFolder: function(evt, item) {
