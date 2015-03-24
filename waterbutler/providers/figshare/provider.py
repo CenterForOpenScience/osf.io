@@ -255,7 +255,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
         )
         return (yield from resp.json())
 
-    def _serialize_item(self, item, parent=None):
+    def _serialize_item(self, item, parent):
         defined_type = item.get('defined_type')
         files = item.get('files')
         if defined_type == 'fileset':
@@ -292,12 +292,6 @@ class FigshareArticleProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        metadata = yield from self.metadata(path)
-        if metadata['extra']['status'].lower() != 'drafts':
-            raise exceptions.DeleteError(
-                'Cannot delete public files',
-                code=http.client.FORBIDDEN,
-            )
         figshare_path = FigshareArticlePath(path)
         yield from self.make_request(
             'DELETE',

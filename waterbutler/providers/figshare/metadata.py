@@ -39,12 +39,23 @@ class FigshareFileMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
         return None
 
     @property
+    def can_delete(self):
+        """Files can be deleted if private or if containing fileset contains
+        two or more files.
+        """
+        return (
+            self.parent['status'].lower() == 'drafts' or
+            len(self.parent.get('files', [])) > 1
+        )
+
+    @property
     def extra(self):
         return {
             'fileId': self.raw['id'],
             'articleId': self.article_id,
             'status': self.parent['status'].lower(),
             'downloadUrl': self.raw.get('download_url'),
+            'canDelete': self.can_delete,
         }
 
 

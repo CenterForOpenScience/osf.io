@@ -64,16 +64,20 @@ class CRUDHandler(core.BaseHandler):
         except AttributeError:
             headers = {}
 
-        display_name = (
-            self.arguments.get('displayName') or
-            utils.parse_disposition_name(headers.get('content-disposition')) or
-            os.path.split(self.arguments['path'])[-1]
-        )
         self.set_header('Content-Type', result.content_type)
-
         if result.size:
             self.set_header('Content-Length', str(result.size))
-        self.set_header('Content-Disposition', 'attachment; filename=' + display_name)
+
+        # Build `Content-Disposition` header from `displayName` override,
+        # headers of provider response, or file path, whichever is truthy first
+        if self.arguments.get('displayName'):
+            disposition = utils.make_disposition(self.arguments['displayName'])
+        elif headers.get('content-disposition'):
+            disposition = headers['content-disposition']
+        else:
+            disposition = utils.make_disposition(os.path.split(self.arguments['path'])[-1])
+
+        self.set_header('Content-Disposition', disposition)
 
         while True:
             chunk = yield from result.read(settings.CHUNK_SIZE)
