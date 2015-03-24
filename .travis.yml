@@ -56,9 +56,11 @@ script:
 before_cache:
   - rm -Rf $HOME/.cache/pip/http/
   - rm -f $HOME/.cache/pip/log/debug.log
+  # exclude requirements built from github repo's
   - rm -f $HOME/.cache/wheelhouse/modular_odm-*.whl
   - rm -f $HOME/.cache/wheelhouse/mfr-*.whl
   - rm -f $HOME/.cache/wheelhouse/httpretty-*.whl
+  - rm -f $HOME/.cache/wheelhouse/mendeley-*.whl
 
 notifications:
    flowdock: 0221882cdda034c0e9ac2a0e766053dd
