@@ -5,12 +5,12 @@ require('../../css/share-search.css');
 
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var Stats = require('../share/stats.js');
-var utils = require('../share/utils.js');
-var SideBar = require('../share/sideBar.js');
-var Results = require('../share/results.js');
+var Stats = require('../share/stats');
+var utils = require('../share/utils');
+var SideBar = require('../share/sideBar');
+var Results = require('../share/results');
 var History = require('exports?History!history');
-var SearchBar = require('../share/searchBar.js');
+var SearchBar = require('../share/searchBar');
 var MESSAGES = JSON.parse(require('raw!../share/messages.json'));
 
 var ShareApp = {};

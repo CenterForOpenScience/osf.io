@@ -4,7 +4,7 @@ var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var utils = require('./utils.js');
+var utils = require('./utils');
 
 var Stats = {};
 
