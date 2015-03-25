@@ -1,7 +1,9 @@
+from datetime import datetime
 from modularodm import fields
 from website.addons.citations.utils import serialize_account, serialize_folder
 from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
 from website.addons.googledrive import exceptions
+from website.addons.googledrive.serializer import GoogleDriveSerializer
 from website.oauth.models import ExternalProvider
 from .client import GoogleAuthClient, GoogleDriveClient
 from . import settings
@@ -45,43 +47,34 @@ class GoogleDriveProvider(ExternalProvider):
         folder = client.folders(folder_id=folder_id)
         return folder
 
+    def _refresh_token(self, access_token, refresh_token):
+        client = self._auth_client
+        import pdb; pdb.set_trace()
+        token = client.refresh(access_token, refresh_token)
+        return token
+
 
 class GoogleDriveUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = GoogleDriveProvider
     oauth_grants = fields.DictionaryField()
-
-    def _get_connected_accounts(self):
-        """ Get user's connected Google Drive accounts"""
-        return [
-            x for x in self.owner.external_accounts if x.provider == 'googledrive'
-        ]
-
-
-    # using citations/utils for now. Should be generalized to addons/utils
-    def to_json(self, user):
-        ret = super(GoogleDriveUserSettings, self).to_json(user)
-
-        ret['accounts'] = [
-            serialize_account(each)
-            for each in self._get_connected_accounts()
-        ]
-        return ret
-
-    def fetch_access_token(self):
-        self.refresh_access_token()
-        return self.oauth_provider.account.oauth_key
-
-    def refresh_access_token(self, force=False):
-        if self._needs_refresh() or force:
-            client = GoogleAuthClient()
-            token = client.refresh(self.access_token, self.refresh_token)
-
-            self.access_token = token['access_token']
-            self.refresh_token = token['refresh_token']
-            self.expires_at = datetime.utcfromtimestamp(token['expires_at'])
-            self.save()
-
-
+    serializer = GoogleDriveSerializer
+    #
+    # def _get_connected_accounts(self):
+    #     """ Get user's connected Google Drive accounts"""
+    #     return [
+    #         x for x in self.owner.external_accounts if x.provider == 'googledrive'
+    #     ]
+    #
+    #
+    # # using citations/utils for now. Should be generalized to addons/utils
+    # def to_json(self, user):
+    #     ret = super(GoogleDriveUserSettings, self).to_json(user)
+    #
+    #     ret['accounts'] = [
+    #         serialize_account(each)
+    #         for each in self._get_connected_accounts()
+    #     ]
+    #     return ret
 
 
 class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
@@ -89,6 +82,7 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
 
     drive_folder_id = fields.StringField()
     folder_path = fields.StringField()
+    serializer = GoogleDriveSerializer
 
     _api = None
 
@@ -170,7 +164,7 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.fetch_access_token()}
+        return {'token': self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
@@ -203,3 +197,20 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
                 },
             },
         )
+
+    def fetch_access_token(self):
+        self.refresh_access_token()
+        return self.external_account.oauth_key
+
+    def refresh_access_token(self, force=False):
+        if self._needs_refresh() or force:
+            token = self.api._refresh_token(self.external_account.oauth_key, self.external_account.refresh_token)
+            self.external_account.oauth_key = token['access_token']
+            self.external_account.refresh_token = token['refresh_token']
+            self.external_account.expires_at = datetime.utcfromtimestamp(token['expires_at'])
+            self.save()
+
+    def _needs_refresh(self):
+        if self.external_account.expires_at is None:
+            return False
+        return (self.external_account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME

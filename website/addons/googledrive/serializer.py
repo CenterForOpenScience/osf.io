@@ -1,12 +1,12 @@
-from website.addons.base.serializer import OAuthAddonSerializer
+from website.addons.base.serializer import GenericAddonSerializer
 from website.addons.googledrive.exceptions import ExpiredAuthError
 
 
-class GoogleDriveSerializer(OAuthAddonSerializer):
+class GoogleDriveSerializer(GenericAddonSerializer):
 
     @property
     def addon_serialized_urls(self):
-        super(GoogleDriveSerializer, self).addon_serialized_urls
+
         node = self.node_settings.owner
         return {
             'files': node.web_url_for('collect_file_trees'),
@@ -20,9 +20,9 @@ class GoogleDriveSerializer(OAuthAddonSerializer):
     def serialized_node_settings(self):
         result = super(GoogleDriveSerializer, self).serialized_node_settings
         valid_credentials = True
-        if self.user_settings:
+        if self.node_settings.external_account is not None:
             try:
-                self.user_settings.fetch_access_token()
+                self.node_settings.fetch_access_token()
             except ExpiredAuthError:
                 valid_credentials = False
         result['validCredentials'] = valid_credentials

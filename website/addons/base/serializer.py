@@ -57,8 +57,6 @@ class AddonSerializer(object):
 
 class OAuthAddonSerializer(AddonSerializer):
 
-    REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'files']
-
     @property
     def serialized_accounts(self):
         return [
@@ -90,10 +88,6 @@ class OAuthAddonSerializer(AddonSerializer):
             ]
         }
 
-    def serialized_node_settings(self):
-        result = super(OAuthAddonSerializer, self).serialized_node_settings
-        validCredentials =
-
 
     @collect_auth
     def serialize_granted_node(self, node, auth):
@@ -110,37 +104,6 @@ class OAuthAddonSerializer(AddonSerializer):
             'title': node.title if node.can_view(auth) else None,
             'urls': urls,
         }
-
-    @property
-    def serialized_urls(self):
-        external_account = self.node_settings.external_account
-        ret = {
-            'auth': api_url_for('oauth_connect',
-                                service_name=self.node_settings.provider_name),
-            'settings': web_url_for('user_addons'),
-            'files': self.node_settings.owner.url,
-        }
-        if external_account and external_account.profile_url:
-            ret['owner'] = external_account.profile_url
-
-        addon_urls = self.addon_serialized_urls
-        # Make sure developer returns set of needed urls
-        for url in self.REQUIRED_URLS:
-            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
-        ret.update(addon_urls)
-        return ret
-
-    @property
-    def addon_serialized_urls(self):
-        pass
-
-    @property
-    def user_is_owner(self):
-        pass
-
-    @property
-    def credentials_owner(self):
-        pass
 
 
 class CitationsAddonSerializer(OAuthAddonSerializer):
@@ -199,3 +162,45 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
             'kind': 'file',
             'id': citation['id'],
         }
+
+
+# TODO: change name?
+class GenericAddonSerializer(OAuthAddonSerializer):
+
+    REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'files']
+
+    @property
+    def serialized_urls(self):
+        external_account = self.node_settings.external_account
+        ret = {
+            'auth': api_url_for('oauth_connect',
+                                service_name=self.node_settings.provider_name),
+            'settings': web_url_for('user_addons'),
+            'files': self.node_settings.owner.url,
+        }
+        if external_account and external_account.profile_url:
+            ret['owner'] = external_account.profile_url
+
+        addon_urls = self.addon_serialized_urls
+        # Make sure developer returns set of needed urls
+        for url in self.REQUIRED_URLS:
+            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
+        ret.update(addon_urls)
+        return ret
+
+    @property
+    def user_is_owner(self):
+        if self.user_settings is None:
+            return False
+
+        user_accounts = self.user_settings.external_accounts
+        return bool(
+            (
+                self.node_settings.has_auth and
+                (self.node_settings.external_account in user_accounts)
+            ) or len(user_accounts)
+        )
+
+    @property
+    def credentials_owner(self):
+        return self.node_settings.user_settings.owner

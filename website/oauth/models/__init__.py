@@ -255,7 +255,7 @@ class ExternalProvider(object):
                 )
             except MissingTokenError:
                 raise HTTPError(http.SERVICE_UNAVAILABLE)
-
+        import pdb; pdb.set_trace()
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response
@@ -333,7 +333,7 @@ class ExternalProvider(object):
                 values['expires_at'] = datetime.datetime.fromtimestamp(
                     float(expires_at)
                 )
-
+            import pdb; pdb.set_trace()
             return values
 
     @abc.abstractmethod

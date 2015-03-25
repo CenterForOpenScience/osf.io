@@ -103,7 +103,7 @@ api_routes = {
             ['/project/<pid>/googledrive/config/import-auth/',
              '/project/<pid>/node/<nid>/googledrive/config/import-auth/'],
             'put',
-            views.auth.googledrive_import_user_auth,
+            views.config.googledrive_import_user_auth,
             json_renderer
         ),
     ],

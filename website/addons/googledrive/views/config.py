@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 from flask import request
 
 from framework.auth.decorators import must_be_logged_in
-
+from framework.exceptions import HTTPError, PermissionsError
 from website.util import api_url_for
 from website.util import permissions
 from website.project.decorators import (
@@ -11,6 +12,8 @@ from website.project.decorators import (
     must_not_be_registration,
     must_be_addon_authorizer,
 )
+from framework.exceptions import HTTPError
+
 
 from website.addons.googledrive.utils import serialize_urls
 from website.addons.googledrive.utils import serialize_settings
@@ -23,7 +26,10 @@ from website.addons.googledrive.serializer import GoogleDriveSerializer
 @must_have_permission(permissions.WRITE)
 def googledrive_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    result = GoogleDriveSerializer(node_settings=node_addon).serialized_node_settings
+    result = GoogleDriveSerializer(
+        node_settings=node_addon,
+        user_settings=auth.user.get_addon('googledrive')
+    ).serialized_node_settings
     return result
 
 
@@ -53,3 +59,27 @@ def list_googledrive_user_acccounts(auth):
     Google Drive user settings.
     """
     return GoogleDriveSerializer(user_settings=auth.user.get_addon('googledrive')).serialized_user_settings
+
+
+@must_have_permission(permissions.WRITE)
+@must_have_addon('googledrive', 'node')
+def googledrive_import_user_auth(auth, node_addon, **kwargs):
+    """Import googledrive credentials from the currently logged-in user to a node.
+    """
+
+    user = auth.user
+    external_account = [account
+                        for account in user.external_accounts
+                        if account.provider == 'googledrive']
+
+    # TODO: Make this useful for multiple connected accounts
+    try:
+        node_addon.set_auth(external_account[0], user)
+    except PermissionsError:
+        raise HTTPError(http.FORBIDDEN)
+
+    result = GoogleDriveSerializer(
+        node_settings=node_addon,
+        user_settings=user.get_addon('googledrive'),
+    ).serialized_node_settings
+    return {'result': result}
