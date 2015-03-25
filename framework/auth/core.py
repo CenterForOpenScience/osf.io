@@ -204,23 +204,41 @@ class User(GuidStoredObject, AddonModelMixin):
         'researcherId': u'http://researcherid.com/rid/{}',
     }
 
+    # This is a GuidStoredObject, so this will be a GUID.
     _id = fields.StringField(primary=True)
 
-    # NOTE: In the OSF, username is an email
-    # May be None for unregistered contributors
+    # The primary email address for the account.
+    # This value is unique, but multiple "None" records exist for:
+    #   * unregistered contributors where an email address was not provided.
     username = fields.StringField(required=False, unique=True, index=True)
+
+    # Hashed. Use `User.set_password` and `User.check_password`
     password = fields.StringField()
+
     fullname = fields.StringField(required=True, validate=string_required)
+
+    # user has taken action to register the account
     is_registered = fields.BooleanField(index=True)
 
+    # user has claimed the account
+    # TODO: This should be retired - it always reflects is_registered.
+    #   While a few entries exist where this is not the case, they appear to be
+    #   the result of a bug, as they were all created over a small time span.
     is_claimed = fields.BooleanField(default=False, index=True)
 
-    # Tags for internal use
+    # a list of strings - for internal use
     system_tags = fields.StringField(list=True)
+
+    # a list of strings - records that security emails were manually sent
+    # TODO: This should be removed and/or merged with system_tags
     security_messages = fields.DictionaryField()
+
+    # user was invited (as opposed to registered unprompted)
     is_invited = fields.BooleanField(default=False, index=True)
 
     # Per-project unclaimed user data:
+    # TODO: add validation
+    unclaimed_records = fields.DictionaryField(required=False)
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
@@ -231,34 +249,50 @@ class User(GuidStoredObject, AddonModelMixin):
     #   }
     #   ...
     # }
-    # TODO: add validation
-    unclaimed_records = fields.DictionaryField(required=False)
-    # The user who merged this account
-    merged_by = fields.ForeignField('user', default=None, backref='merged', index=True)
-    #: Verification key used for resetting password
+
+    # The user into which this account was merged
+    merged_by = fields.ForeignField('user',
+                                    default=None,
+                                    backref='merged',
+                                    index=True)
+
+    # verification key used for resetting password
     verification_key = fields.StringField()
+
+    # confirmed emails
     emails = fields.StringField(list=True)
-    # Email verification tokens
+
+    # email verification tokens
+    #   see also ``unconfirmed_emails``
+    email_verifications = fields.DictionaryField()
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
     # }
-    # See also ``unconfirmed_emails``
-    email_verifications = fields.DictionaryField()
 
+
+    # email lists to which the user has chosen a subscription setting
+    mailing_lists = fields.DictionaryField()
     # Format: {
     #   'list1': True,
     #   'list2: False,
     #    ...
     # }
-    mailing_lists = fields.DictionaryField()
 
+    # nicknames, or other names by which this used is known
+    # TODO: remove - unused
     aka = fields.StringField(list=True)
-    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow, index=True)
-    # Watched nodes are stored via a list of WatchConfigs
+
+    # the date this user was registered
+    # TODO: consider removal - this can be derived from date_registered
+    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
+                                           index=True)
+
+
+    # watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
-    # Recently added contributors stored via a list of users
+    # list of users recently added to nodes as a contributor
     recently_added = fields.ForeignField("user", list=True, backref="recently_added")
 
     # Attached external accounts (OAuth)
@@ -273,6 +307,7 @@ class User(GuidStoredObject, AddonModelMixin):
     suffix = fields.StringField()
 
     # Employment history
+    jobs = fields.DictionaryField(list=True, validate=validate_history_item)
     # Format: {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -284,9 +319,9 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'endYear': <end year>,
     #     'ongoing: <boolean>
     # }
-    jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
     # Educational history
+    schools = fields.DictionaryField(list=True, validate=validate_history_item)
     # Format: {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -298,30 +333,33 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'endYear': <end year>,
     #     'ongoing: <boolean>
     # }
-    schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
     # Social links
+    social = fields.DictionaryField(validate=validate_social)
     # Format: {
     #     'personal': <personal site>,
     #     'twitter': <twitter id>,
     # }
-    social = fields.DictionaryField(validate=validate_social)
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
+    # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
+    # date the user last logged in via the web interface
     date_last_login = fields.DateTimeField()
 
+    # date the user first successfully confirmed an email address
     date_confirmed = fields.DateTimeField(index=True)
 
     # When the user was disabled.
     date_disabled = fields.DateTimeField(index=True)
 
+    # when comments for a node were last viewed
+    comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
     #   'node_id': 'timestamp'
     # }
-    comments_viewed_timestamp = fields.DictionaryField()
 
     # timezone for user's locale (e.g. 'America/New_York')
     timezone = fields.StringField(default='Etc/UTC')
@@ -507,6 +545,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'given': self.csl_given_name,
         }
 
+    # TODO: This should not be on the User object.
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
