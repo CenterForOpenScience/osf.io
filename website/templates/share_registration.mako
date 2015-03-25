@@ -9,7 +9,9 @@
         // Mako variables accessible globally
         window.contextVars = $.extend(true, {}, window.contextVars, {
             share: {
-                registration_url: '${registration_url | js_str}'
+                urls: {
+                    registrationURL: '${registrationURL | js_str}'
+                }
             }
         });
     </script>

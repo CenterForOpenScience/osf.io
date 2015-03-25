@@ -650,7 +650,7 @@ def make_url_map(app):
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
-        Rule('/share/registration/', 'get', {'registration_url': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
+        Rule('/share/registration/', 'get', {'registrationURL': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
         Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
         Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),

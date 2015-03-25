@@ -2,10 +2,10 @@
 
 var pym = require('pym.js');
 
-var registration_url = window.contextVars.share.registration_url;
+var registrationURL = window.contextVars.share.urls.registrationURL;
 
-var pymParent = new pym.Parent(
+new pym.Parent(
     'share_registration_iframe',
-    registration_url,
+    registrationURL,
     {}
 );
