@@ -91,8 +91,8 @@ class WaterButlerPath:
                 * Folder with no children ("/")
                 * File with no children ("/path.txt")
             * False if:
-                * Folder with children ("/foo/")
-                * File with children ("/foo/path.txt")
+                * Folder with a parent ("/foo/")
+                * File with a parent ("/foo/path.txt")
         """
         parts = [each for each in self.parts if each]
         return len(parts) == 0 if self.is_dir else len(parts) == 1
