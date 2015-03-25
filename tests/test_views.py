@@ -3812,7 +3812,7 @@ class TestProjectCreation(OsfTestCase):
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
         assert_equal(res2.status_code, 401)
-        assert_in("Sign up or Log in", res2.body)
+        assert_in("Sign In", res2.body)
 
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()
