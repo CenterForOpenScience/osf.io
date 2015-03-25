@@ -20,7 +20,7 @@ SideBar.view = function(ctrl){
                       utils.search(ctrl.vm);
                     }
               }, ['Clear ', m('i.fa.fa-close')]) : []]),
-            m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.render-filters()),
+            m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderFilters()),
             m('.sidebar-header', 'Providers:'),
             m('ul', {style:{'list-style-type': 'none', 'padding-left': 0}}, ctrl.renderProviders()),
     ]);
@@ -52,7 +52,7 @@ SideBar.controller = function(vm) {
         });
     };
 
-    self.render-filters = function(){
+    self.renderFilters = function(){
         return $.map(self.vm.optionalFilters.concat(self.vm.requiredFilters), function(filter){
             return m('li.render-filter', [
                 m('a', {
@@ -65,26 +65,33 @@ SideBar.controller = function(vm) {
         });
     };
 
-    self.renderProviders = function () {
-        return $.map($.map(Object.keys(self.vm.ProviderMap), function(result, index){
+    self.renderProvider = function(result, index) {
+        var checked = (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1) ? 'in-filter' : '';
+
+        return m('li', m('.provider-filter', {
+                'class': checked,
+                onclick: function(cb){
+                    if (checked === 'in-filter') {
+                        utils.removeFilter(self.vm, 'source:' + result.short_name);
+                    } else {
+                        utils.updateFilter(self.vm, 'source:' + result.short_name);
+                    }
+                }
+            }, result.long_name
+        ));
+
+    };
+
+    self.sortProviders = function() {
+        return $.map(Object.keys(self.vm.ProviderMap), function(result, index){
             return self.vm.ProviderMap[result];
         }).sort(function(a,b){
                 return a.long_name > b.long_name ? 1: -1;
-        }), function(result, index){
-            var checked = (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1) ? 'in-filter' : '';
-
-            return m('li', m('.provider-filter', {
-                    'class': checked,
-                    onclick: function(cb){
-                        if (checked === 'in-filter') {
-                            utils.removeFilter(self.vm, 'source:' + result.short_name);
-                        } else {
-                            utils.updateFilter(self.vm, 'source:' + result.short_name);
-                        }
-                    }
-                }, result.long_name
-            ));
         });
+    };
+
+    self.renderProviders = function () {
+        return $.map(self.sortProviders(), self.renderProvider);
     };
 };
 
