@@ -1,7 +1,11 @@
+'use strict';
+
 var pym = require('pym.js');
+
+var registration_url = window.contextVars.share.registration_url;
 
 var pymParent = new pym.Parent(
     'share_registration_iframe',
-    'http://localhost:8000/provider_registration/',
+    registration_url,
     {}
 );

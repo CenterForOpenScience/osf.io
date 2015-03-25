@@ -5,5 +5,13 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    <script>
+        // Mako variables accessible globally
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            share: {
+                registration_url: '${registration_url | js_str}'
+            }
+        });
+    </script>
     <script src=${"/static/public/js/share-embed-page.js" | webpack_asset}></script>
 </%def>
