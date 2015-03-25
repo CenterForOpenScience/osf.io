@@ -953,11 +953,61 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :param user: A User object to be merged.
         """
-        # TODO: Thoroughly review
-        # TODO: Handle unclaimed projects
-        # Inherit emails
+
+        # Move over the other user's attributes
+
+        self.system_tags += user.system_tags
+
+        self.security_messages = list(
+            set(self.security_messages + user.security_messages)
+        )
+
+        self.aka = list(set(self.aka + user.aka))
+
+        self.is_claimed = self.is_claimed or user.is_claimed
+        self.is_invited = self.is_invited or user.is_invited
+
+        # copy over profile only if this user has no profile info
+        if user.jobs and not self.jobs:
+            self.jobs = user.jobs
+
+        if user.schools and not self.schools:
+            self.schools = user.schools
+
+        if user.social and not self.social:
+            self.social = user.social
+
+
+        unclaimed = user.unclaimed_records.copy()
+        unclaimed.update(self.unclaimed_records)
+        self.unclaimed_records = unclaimed
+        # - unclaimed records should be connected to only one user
+        user.unclaimed_records = {}
+
+        for key, value in user.mailing_lists.iteritems():
+            # subscribe to each list if either user was subscribed
+            self.mailing_lists[key] = self.mailing_lists[key] or value
+        # - clear subscriptions for merged user
+        user.mailing_lists = {}
+
+
         self.emails.extend(user.emails)
-        # Inherit projects the user was a contributor for
+
+        # FOREIGN FIELDS
+        for watched in user.watched:
+            if watched not in self.watched:
+                self.watched.append(watched)
+        user.watched = []
+
+        for account in user.external_accounts:
+            if account not in self.external_accounts:
+                self.external_accounts.append(account)
+        user.external_accounts = []
+
+        self.api_keys += user.api_keys
+        user.api_keys = []
+
+        # - projects where the user was a contributor
         for node in user.node__contributed:
             # Skip dashboard node
             if node.is_dashboard:
@@ -979,10 +1029,20 @@ class User(GuidStoredObject, AddonModelMixin):
                     user._id, node._id
                 ))
             node.save()
-        # Inherits projects the user created
+
+        # - projects where the user was the creator
         for node in user.node__created:
             node.creator = self
             node.save()
+
+        # finalize the merge
+
+        # - username is set to None so the resultant user can set it primary
+        #   in the future.
+        user.username = None
+        user.password = None
+        user.email_verifications = {}
+        user.verification_key = None
         user.merged_by = self
         user.save()
         if save:
