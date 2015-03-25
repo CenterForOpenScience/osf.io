@@ -3818,7 +3818,7 @@ class TestProjectCreation(OsfTestCase):
         non_contributor = AuthUserFactory()
         project = ProjectFactory(is_public=True)
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth = non_contributor.auth)
+        res = self.app.post(url, auth=non_contributor.auth)
         assert_equal(res.status_code, 201)
 
     def test_project_new_from_template_contributor(self):
@@ -3828,7 +3828,7 @@ class TestProjectCreation(OsfTestCase):
         project.save()
 
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth = contributor.auth)
+        res = self.app.post(url, auth=contributor.auth)
         assert_equal(res.status_code, 201)
 
 

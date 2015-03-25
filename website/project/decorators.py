@@ -21,14 +21,22 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of project and component
 
     """
+    project = kwargs.get('node') or kwargs.get('project')
+    if not project:
+        project = Node.load(kwargs.get('nid') or kwargs.get('pid'))
+    ''' NODEREFACTOR
     project = kwargs.get('project') or Node.load(kwargs.get('pid', kwargs.get('nid')))
+    '''
     if not project:
         raise HTTPError(http.NOT_FOUND)
+    ''' NODEREFACTOR
     if project.category != 'project':
         raise HTTPError(http.BAD_REQUEST)
+    '''
     if project.is_deleted:
         raise HTTPError(http.GONE)
 
+    ''' NODEREFACTOR
     if kwargs.get('nid') or kwargs.get('node'):
         node = kwargs.get('node') or Node.load(kwargs.get('nid'))
         if not node:
@@ -37,6 +45,13 @@ def _kwargs_to_nodes(kwargs):
             raise HTTPError(http.GONE)
     else:
         node = None
+    '''
+    '''
+    ATM node gets elevated to the value of project everywhere this is used:
+    node = kwargs['node'] or kwargs['project']
+    Consider changing the interface to just return node
+    '''
+    node = kwargs.get('node') or project
 
     return project, node
 
