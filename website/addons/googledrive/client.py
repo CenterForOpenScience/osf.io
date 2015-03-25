@@ -79,7 +79,6 @@ class GoogleAuthClient(BaseClient):
         )
 
     def refresh(self, access_token, refresh_token):
-        import pdb; pdb.set_trace()
         client = OAuth2Session(
             settings.CLIENT_ID,
             token={

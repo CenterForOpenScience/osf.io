@@ -24,7 +24,7 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
     folder_id = request.args.get('folderId', 'root')
 
     try:
-        access_token = user_addon.fetch_access_token()
+        access_token = node_addon.fetch_access_token()
     except exceptions.ExpiredAuthError:
         raise HTTPError(403)
 
@@ -54,12 +54,12 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
 def googledrive_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication
-    if not node_settings.has_auth or not node_settings.folder_id:
+    if not node_settings.has_auth:
         return None
     node = node_settings.owner
     root = rubeus.build_addon_root(
         node_settings=node_settings,
-        name=node_settings.folder_name,
+        name=node_settings.selected_folder_name(),
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,

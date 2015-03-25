@@ -11,7 +11,7 @@ class GoogleDriveSerializer(GenericAddonSerializer):
         return {
             'files': node.web_url_for('collect_file_trees'),
             'config': node.api_url_for('googledrive_config_put'),
-            'deauthorize': node.api_url_for('googledrive_deauthorize'),
+            'deauthorize': node.api_url_for('googledrive_remove_user_auth'),
             'importAuth': node.api_url_for('googledrive_import_user_auth'),
             'folders': node.api_url_for('googledrive_folders'),
         }

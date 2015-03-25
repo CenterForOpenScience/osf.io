@@ -29,7 +29,7 @@
     </h4>
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind='if: showSettings'>
-        <div class="row">`2
+        <div class="row">
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>
@@ -43,11 +43,11 @@
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
-                                       css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                                       css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-addon"><i class="fa fa-pencil-square-o"></i> Change</button>
                     <button data-bind="attr.disabled: disableShare,
                                        visible: urls().emails,
                                        click: toggleShare,
-                                       css: {active: currentDisplay() === SHARE}" class="btn btn-sm btn-addon"><i class="icon-share-alt"></i> Share on ${addon_full_name}
+                                       css: {active: currentDisplay() === SHARE}" class="btn btn-sm btn-addon"><i class="fa fa-share"></i> Share on ${addon_full_name}
                         <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                     </button>
                 </div>
@@ -74,11 +74,11 @@
                                         attr.autofocus: currentDisplay() === SHARE">
                             </textarea>
                             <span data-clipboard-target="contribEmails" class="input-group-addon pointer" id="copyBtn">
-                                <i class="icon-paste"></i>
+                                <i class="fa fa-clipboard"></i>
                             </span>
                         </div>
                         <div class="input-group pull-right">
-                            <a target="_blank" data-bind="attr.href: urls().share" class="btn btn-link"><i class="icon-share-alt"></i> Continue to ${addon_full_name}...</a>
+                            <a target="_blank" data-bind="attr.href: urls().share" class="btn btn-link"><i class="fa fa-share"></i> Continue to ${addon_full_name}...</a>
                         </div>
                     </div>
                     <!-- Queued selection -->

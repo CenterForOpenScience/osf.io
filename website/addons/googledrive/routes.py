@@ -95,7 +95,7 @@ api_routes = {
             ['/project/<pid>/googledrive/config/',
              '/project/<pid>/node/<nid>/googledrive/config/'],
             'delete',
-            views.auth.googledrive_deauthorize,
+            views.config.googledrive_remove_user_auth,
             json_renderer
         ),
 

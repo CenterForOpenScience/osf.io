@@ -41,14 +41,18 @@ def googledrive_config_get(node_addon, auth, **kwargs):
 def googledrive_config_put(node_addon, auth, **kwargs):
     """View for changing a node's linked Google Drive folder/file."""
     selected = request.get_json().get('selected')
-    node_addon.set_folder(selected, auth=auth)
+    node_addon.set_target_folder(selected, auth=auth)
+    import pdb; pdb.set_trace()
     node_addon.save()
     return {
         'result': {
             'folder': {
                 'name': selected['path'],
             },
-            'urls': serialize_urls(node_addon),
+            'urls': GoogleDriveSerializer(
+                node_settings=node_addon,
+                user_settings=auth.user.get_addon('googledrive')
+            ).serialized_node_settings
         },
         'message': 'Successfully updated settings.',
     }
@@ -83,3 +87,15 @@ def googledrive_import_user_auth(auth, node_addon, **kwargs):
         user_settings=user.get_addon('googledrive'),
     ).serialized_node_settings
     return {'result': result}
+
+@must_have_permission(permissions.WRITE)
+@must_have_addon('googledrive', 'node')
+def googledrive_remove_user_auth(node_addon, auth, **kwargs):
+        user = auth.user
+        node_addon.clear_auth()
+        node_addon.reload()
+        result = GoogleDriveSerializer(
+            node_settings=node_addon,
+            user_settings=user.get_addon('googledrive'),
+        ).serialized_node_settings
+        return {'result': result}

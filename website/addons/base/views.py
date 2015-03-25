@@ -158,7 +158,6 @@ def get_auth(**kwargs):
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:
         raise HTTPError(httplib.BAD_REQUEST)
-
     try:
         credentials = provider_settings.serialize_waterbutler_credentials()
         settings = provider_settings.serialize_waterbutler_settings()

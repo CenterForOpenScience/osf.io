@@ -1,25 +1,96 @@
+import base64
 from datetime import datetime
-from modularodm import fields
+import os
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
+from website import settings
 from website.addons.citations.utils import serialize_account, serialize_folder
-from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
+from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile
 from website.addons.googledrive import exceptions
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 from website.oauth.models import ExternalProvider
 from .client import GoogleAuthClient, GoogleDriveClient
-from . import settings
+from . import settings as drive_settings
+
+class GoogleDriveGuidFile(GuidFile):
+    path = fields.StringField(index=True)
+
+    @property
+    def waterbutler_path(self):
+        return self.path.replace(self.folder, '', 1)
+
+    @property
+    def provider(self):
+        return 'googledrive'
+
+    @property
+    def version_identifier(self):
+        return 'revision'
+
+    @property
+    def file_name(self):
+        if self.revision:
+            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
+        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
+
+    @property
+    def mfr_temp_path(self):
+        """Files names from Google Docs metadata doesn't necessarily correspond
+        to download file names. Use the `downloadExt` field in the Docs metadata
+        to save the temporary file with the appropriate extension.
+        """
+        ext = (
+            self._metadata_cache['extra'].get('downloadExt') or
+            os.path.splitext(self.name)[-1]
+        )
+        return os.path.join(
+            settings.MFR_TEMP_PATH,
+            self.node._id,
+            self.provider,
+            # Attempt to keep the original extension of the file for MFR detection
+            self.file_name + ext,
+        )
+
+    @property
+    def folder(self):
+        folder = self.node.get_addon('googledrive').folder_path
+        if folder == '/':
+            return ''
+        return '/' + folder
+
+    @property
+    def unique_identifier(self):
+        return self._metadata_cache['extra']['revisionId']
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        """Get or create a new file record. Return a tuple of the form (obj, created)
+        """
+        try:
+            new = cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            )
+            created = False
+        except ModularOdmException:
+            # Create new
+            new = cls(node=node, path=path)
+            new.save()
+            created = True
+        return new, created
 
 
 class GoogleDriveProvider(ExternalProvider):
     name = 'Google Drive'
     short_name = 'googledrive'
 
-    client_id = settings.CLIENT_ID
-    client_secret = settings.CLIENT_SECRET
+    client_id = drive_settings.CLIENT_ID
+    client_secret = drive_settings.CLIENT_SECRET
 
-    auth_url_base = 'https://accounts.google.com/o/oauth2/auth'
+    auth_url_base = "https://accounts.google.com/o/oauth2/auth?access_type=offline&approval_prompt=force"
     callback_url = 'https://www.googleapis.com/oauth2/v3/token'
 
-    default_scopes = settings.OAUTH_SCOPE
+    default_scopes = drive_settings.OAUTH_SCOPE
     _auth_client = GoogleAuthClient()
     _drive_client = GoogleDriveClient()
 
@@ -38,18 +109,9 @@ class GoogleDriveProvider(ExternalProvider):
         client = self._drive_client
         return client.folders()
 
-    def _folder_metadata(self, folder_id):
-        """
-        :param folder_id: Id of the selected folder
-        :return: subfolders,if any.
-        """
-        client = self._drive_client
-        folder = client.folders(folder_id=folder_id)
-        return folder
 
     def _refresh_token(self, access_token, refresh_token):
         client = self._auth_client
-        import pdb; pdb.set_trace()
         token = client.refresh(access_token, refresh_token)
         return token
 
@@ -81,6 +143,7 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = GoogleDriveProvider
 
     drive_folder_id = fields.StringField()
+    drive_folder_name = fields.StringField()
     folder_path = fields.StringField()
     serializer = GoogleDriveSerializer
 
@@ -101,16 +164,6 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
             external_account=self.external_account,
             metadata={'folder': self.drive_folder_id}
         ))
-
-    @property
-    def selected_folder_name(self):
-        if self.drive_folder_id is None:
-            return ''
-        elif self.drive_folder_id == 'root':
-            return 'All documents'
-        else:
-            folder = self.api._folder_metadata(self.drive_folder_id)
-            return folder.title
 
     def set_folder(self, folder, auth, add_log=True):
         self.drive_folder_id= folder['id']
@@ -141,25 +194,39 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         self.drive_folder_id = None
         return super(GoogleDriveNodeSettings, self).set_auth(*args, **kwargs)
 
-    def set_target_folder(self, drive_folder_id):
+    def set_target_folder(self, folder, auth):
         """Configure this addon to point to a Google Drive folder
 
         :param str drive_folder_id:
         :param ExternalAccount external_account:
         :param User user:
         """
+        self.drive_folder_id= folder['id']
+        self.folder_path = folder['path']
+        self.drive_folder_name = folder['name']
 
         # Tell the user's addon settings that this node is connecting
         self.user_settings.grant_oauth_access(
             node=self.owner,
             external_account=self.external_account,
-            metadata={'folder': drive_folder_id}
+            metadata={'folder': self.drive_folder_id}
         )
         self.user_settings.save()
 
         # update this instance
-        self.drive_folder_id = drive_folder_id
+        self.drive_folder_id = self.drive_folder_id
         self.save()
+
+        self.owner.add_log(
+            'googledrive_folder_selected',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'folder_id': self.drive_folder_id,
+                'folder_name': self.drive_folder_name,
+            },
+            auth=auth,
+        )
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -167,13 +234,13 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         return {'token': self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
-        if not self.folder_id:
+        if not self.drive_folder_id:
             raise exceptions.AddonError('Folder is not configured')
 
         return {
             'folder': {
                 'id': self.drive_folder_id,
-                'name': self.selected_folder_name,
+                'name': self.drive_folder_name,
                 'path': self.folder_path
             }
         }
@@ -198,6 +265,24 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
             },
         )
 
+    def selected_folder_name(self):
+        if self.drive_folder_id is None:
+            return ''
+        elif self.drive_folder_id == 'root':
+            return 'All documents'
+        else:
+            folder = self.folder_metadata(self.drive_folder_id)
+            return self.drive_folder_name
+
+    def folder_metadata(self, folder_id):
+        """
+        :param folder_id: Id of the selected folder
+        :return: subfolders,if any.
+        """
+        client =GoogleDriveClient(self.external_account.oauth_key)
+        folder = client.folders(folder_id=folder_id)
+        return folder
+
     def fetch_access_token(self):
         self.refresh_access_token()
         return self.external_account.oauth_key
@@ -213,4 +298,11 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
     def _needs_refresh(self):
         if self.external_account.expires_at is None:
             return False
-        return (self.external_account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
+        return (self.external_account.expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
+
+    def find_or_create_file_guid(self, path):
+        path = os.path.join(self.folder_path, path.lstrip('/'))
+        if self.folder_path != '/':
+            path = '/' + path
+
+        return GoogleDriveGuidFile.get_or_create(self.owner, path)
