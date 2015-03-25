@@ -25,7 +25,7 @@ from website.project.views.node import _view_project, n_unread_comments
 @must_be_contributor_or_public
 def view_comments_project(**kwargs):
     """
-
+    Returns information needed to get comments for the total discussion page
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -42,7 +42,7 @@ def view_comments_project(**kwargs):
 @must_be_contributor_or_public
 def view_comments_overview(**kwargs):
     """
-
+    Returns information needed to get comments for the discussion overview page
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -59,7 +59,7 @@ def view_comments_overview(**kwargs):
 @must_be_contributor_or_public
 def view_comments_files(**kwargs):
     """
-
+    Returns information needed to get comments for the discussion total files page
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -76,7 +76,7 @@ def view_comments_files(**kwargs):
 @must_be_contributor_or_public
 def view_comments_wiki(**kwargs):
     """
-
+    Returns information needed to get comments for the discussion total wiki page
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -93,7 +93,7 @@ def view_comments_wiki(**kwargs):
 @must_be_contributor_or_public
 def view_comments_single(**kwargs):
     """
-
+    Returns information needed to get a single comment and its replies
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
