@@ -52,13 +52,6 @@
                                         click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-addon"><i class="fa fa-pencil-square-o"></i> Change</button>
-                    <button data-bind="attr.disabled: disableShare,
-                                        visible: validCredentials,
-                                        click: toggleShare,
-                                        css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-addon"><i class="fa fa-share-square-o"></i> Share on Dropbox
-                            <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
-                        </button>
                 </div>
 
 
@@ -70,39 +63,6 @@
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="myDropboxGrid"
                              class="filebrowser dropbox-folder-picker"></div>
-                    </div>
-
-                    <!-- Share -->
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length === 0"
-                        class="help-block">
-                        <p>No contributors to share with.</p>
-                    </div>
-
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length">
-                        <div class="help-block">
-                            <p>To share this folder with other Dropbox users on this project, copy
-                            the email addresses of the contributors (listed below) into the
-                            "Share Folder" dialog on Dropbox.</p>
-                        </div>
-
-                        <label for="contrib-emails">Copy these:</label>
-                        <div class="input-group">
-                            <textarea name="contrib-emails"
-                                    class="form-control" rows="3" id="contribEmails"
-                             data-bind="value: emailList,
-                                        attr.autofocus: currentDisplay() === SHARE">
-                            </textarea>
-                            <span data-clipboard-target="contribEmails"
-                                class="input-group-addon pointer"
-                                id="copyBtn">
-                                <i class="fa fa-clipboard"></i>
-                            </span>
-                        </div>
-
-                        <div class="input-group pull-right">
-                            <a target="_blank" data-bind="attr.href: urls().share"
-                                class="btn btn-link"><i class="fa fa-share-square-o"></i> Continue to Dropbox...</a>
-                        </div>
                     </div>
 
                     <!-- Queued selection -->
