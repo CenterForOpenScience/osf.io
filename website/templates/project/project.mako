@@ -12,7 +12,7 @@
                 % if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
-                            <a href="${parent_node['url']}">${parent_node['title']}</a> <i class="fa fa-level-down fa fa-dark-lg"> </i>
+                            <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
                         </h2>
                     % else:
                         <h2 class="node-parent-title unavailable">
