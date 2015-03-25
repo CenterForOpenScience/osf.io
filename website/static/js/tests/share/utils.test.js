@@ -84,7 +84,7 @@ describe('share/utils', () => {
             sort = 'sort';
         });
 
-        it('build url parameters of the form ?q=&required=&optional&sort=', () => {
+        it('builds url parameters of the form ?q=&required=&optional&sort=', () => {
             query = '1';
             vm.requiredFilters.push('2');
             vm.optionalFilters.push('3');
@@ -111,6 +111,35 @@ describe('share/utils', () => {
             assert.deepEqual('required=2&optional=3&sort=4', utils.buildURLParams(vm));
 
         });
+    });
 
+    describe('#buildQuery', () => {
+        before(() => {
+            query = 'toast';
+        });
+        after(() => {
+            query = '';
+        });
+        afterEach(() => {
+            vm.optionalFilters = [];
+            vm.requiredFilters = [];
+        });
+
+
+        it('makes a query like query AND (optional) AND (required)', () => {
+            vm.optionalFilters.push('1');
+            vm.requiredFilters.push('2');
+
+            assert.deepEqual('toast AND (1) AND (2)', utils.buildQuery(vm));
+        });
+
+        it('doesn\'t create invalid queries with empty filters', () => {
+            vm.optionalFilters.push('1');
+            assert.deepEqual('toast AND (1)', utils.buildQuery(vm));
+
+            vm.optionalFilters = [];
+            vm.requiredFilters.push('2');
+            assert.deepEqual('toast AND (2)', utils.buildQuery(vm));
+        });
     });
 });
