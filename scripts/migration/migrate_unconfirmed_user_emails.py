@@ -1,4 +1,4 @@
-"""Removes User.username from User.emails for unregistered users.
+"""Removes User.username from User.emails for unconfirmed users.
 
 """
 
