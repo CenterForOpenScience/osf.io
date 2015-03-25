@@ -53,6 +53,8 @@ def must_be_valid_project(func=None, are_retractions_valid=False):
             kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
             if not are_retractions_valid and kwargs['project'].is_retracted:
                 raise HTTPError(http.BAD_REQUEST)
+            elif kwargs['node'] and not are_retractions_valid and kwargs['node'].is_retracted:
+                raise HTTPError(http.BAD_REQUEST)
             else:
                 return func(*args, **kwargs)
 
