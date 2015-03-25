@@ -48,32 +48,37 @@ def node_register_page(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_be_public_registration
-def node_registration_retraction(auth, **kwargs):
-    """ Handles retraction of public registrations
+def node_registration_retraction_get(auth, **kwargs):
+    """Prepares node object for registration retraction page."""
+
+    node = kwargs['node'] or kwargs['project']
+    return serialize_node(node, auth, primary=True)
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_be_public_registration
+def node_registration_retraction_post(auth, **kwargs):
+    """Handles retraction of public registrations
 
     :param auth: Authentication object for User
-    :return: Template for GET, redirect URL for successful POST
+    :return: Redirect URL for successful POST
     """
 
     node = kwargs['node'] or kwargs['project']
+    data = request.get_json()
 
-    if request.method == 'POST':
-        data = request.get_json()
+    try:
+        node.retracted_justification = data['justification']
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
 
-        try:
-            node.retracted_justification = data['justification']
-        except KeyError:
-            raise HTTPError(http.BAD_REQUEST)
+    try:
+        node.retract_registration(auth.user, data['justification'])
+        node.save()
+    except ValidationValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
-        try:
-            node.retract_registration(auth.user, data['justification'])
-            node.save()
-        except ValidationValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-        return {'redirectUrl': node.web_url_for('view_project')}
-
-    return serialize_node(node, auth, primary=True)
+    return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
 @must_be_contributor_or_public

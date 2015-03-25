@@ -72,7 +72,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.is_public = True
         self.registration.save()
 
-        self.retraction_url = self.registration.api_url_for('node_registration_retraction')
+        self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.justification = 'I loathe openness...'
 
     def test_retract_private_registration_raises_400(self):
@@ -80,7 +80,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.save()
 
         res = self.app.post_json(
-            self.retraction_url,
+            self.retraction_post_url,
              auth=self.auth,
              expect_errors=True,
         )
@@ -91,7 +91,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_is_none(self.registration.retracted_justification)
 
     def test_non_admin_retract_raises_401(self):
-        res = self.app.post_json(self.retraction_url, expect_errors=True)
+        res = self.app.post_json(self.retraction_post_url, expect_errors=True)
 
         assert_equals(res.status_code, 401)
         self.registration.reload()
@@ -100,7 +100,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
     def test_retract_without_justification_raises_200(self):
         res = self.app.post_json(
-            self.retraction_url,
+            self.retraction_post_url,
              {'justification': ''},
              auth=self.auth,
         )
@@ -113,7 +113,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     def test_redirect_if_retracted(self):
         expected_redirect_url = self.registration.web_url_for('view_project')
         res = self.app.post_json(
-            self.retraction_url,
+            self.retraction_post_url,
              {'justification': self.justification},
              auth=self.auth,
              expect_errors=True,
@@ -129,7 +129,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         # Retract public registration
         expected_redirect_url = self.registration.web_url_for('view_project')
         res = self.app.post_json(
-            self.retraction_url,
+            self.retraction_post_url,
              {'justification': self.justification},
              auth=self.auth,
              expect_errors=True,
