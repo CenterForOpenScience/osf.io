@@ -104,7 +104,7 @@ def serialize_settings(node_settings, current_user, client=None):
         'urls': serialize_urls(node_settings),
         'validCredentials': valid_credentials,
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-        'canShare': True,
+        'canShare': False,
     }
 
     if node_settings.has_auth:
