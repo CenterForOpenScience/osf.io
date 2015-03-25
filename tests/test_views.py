@@ -2388,7 +2388,7 @@ class TestAuthViews(OsfTestCase):
 
         new_user.reload()
         # Password and fullname should be updated
-        assert_true(new_user.is_confirmed())
+        assert_true(new_user.is_confirmed)
         assert_true(new_user.check_password(password))
         assert_equal(new_user.fullname, real_name)
 

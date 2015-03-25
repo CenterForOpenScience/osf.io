@@ -453,7 +453,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.password is not None and
                 not self.is_merged and
                 not self.is_disabled and
-                self.is_confirmed())
+                self.is_confirmed)
 
     def get_unclaimed_record(self, project_id):
         """Get an unclaimed record for a given project_id.
@@ -684,6 +684,7 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in self.node__contributed:
             node.update_search()
 
+    @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
 
@@ -801,7 +802,7 @@ class User(GuidStoredObject, AddonModelMixin):
         from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
-        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
+        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             piwik_tasks.update_user(self._id)

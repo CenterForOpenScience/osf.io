@@ -420,13 +420,13 @@ class TestUser(OsfTestCase):
         )
         u.add_unconfirmed_email('LetsGetTacos@LGT.com')
         u.save()
-        assert_false(u.is_confirmed())  # sanity check
+        assert_false(u.is_confirmed)  # sanity check
 
         token = u.get_confirmation_token('LetsGetTacos@LGT.com')
 
         confirmed = u.confirm_email(token)
         assert_true(confirmed)
-        assert_true(u.is_confirmed())
+        assert_true(u.is_confirmed)
 
     def test_verify_confirmation_token(self):
         u = UserFactory.build()
