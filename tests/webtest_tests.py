@@ -832,7 +832,6 @@ class TestMergingAccounts(OsfTestCase):
         assert_in(self.dupe.fullname, res)
         # The accounts are merged
         self.user.merge_user(self.dupe)
-        self.user.save()
         # Now only the master user is shown at the project page
         res = self.app.get(project.url).maybe_follow()
         assert_in(self.user.fullname, res)
@@ -842,7 +841,6 @@ class TestMergingAccounts(OsfTestCase):
     def test_merged_user_has_alert_message_on_profile(self):
         # Master merges dupe
         self.user.merge_user(self.dupe)
-        self.user.save()
         # At the dupe user's profile there is an alert message at the top
         # indicating that the user is merged
         res = self.app.get('/profile/{0}/'.format(self.dupe._primary_key)).maybe_follow()

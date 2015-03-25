@@ -683,7 +683,6 @@ class User(GuidStoredObject, AddonModelMixin):
         if unregistered_user:
             self.merge_user(unregistered_user)
             unregistered_user.username = None
-            unregistered_user.save()
 
 
         self.emails.append(email)
@@ -955,7 +954,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.get_addons() == []
         )
 
-    def merge_user(self, user, save=False):
+    def merge_user(self, user):
         """Merge a registered user into this account. This user will be
         a contributor on any project
 
@@ -1052,10 +1051,9 @@ class User(GuidStoredObject, AddonModelMixin):
         user.email_verifications = {}
         user.verification_key = None
         user.merged_by = self
+
         user.save()
-        if save:
-            self.save()
-        return None
+        self.save()
 
     def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)

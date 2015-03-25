@@ -367,7 +367,6 @@ def merge_user_post(auth, **kwargs):
     if master and merged_user:
         if merged_user.check_password(merged_password):
             master.merge_user(merged_user)
-            master.save()
             if request.form:
                 status.push_status_message("Successfully merged {0} with this account".format(merged_username))
                 return redirect("/settings/")
