@@ -50,15 +50,20 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         clone, message = super(OsfStorageNodeSettings, self).after_fork(
             node=node, fork=fork, user=user, save=False
         )
-        self.copy_contents_to(clone)
+        clone.save()
+        clone.root_node = utils.copy_files(self.root_node, clone)
+        clone.save()
+
         return clone, message
 
     def after_register(self, node, registration, user, save=True):
         clone = self.clone()
         clone.owner = registration
-        self.copy_contents_to(clone)
-        if save:
-            clone.save()
+        clone.save()
+
+        clone.root_node = utils.copy_files(self.root_node, clone)
+        clone.save()
+
         return clone, None
 
     def serialize_waterbutler_settings(self):
