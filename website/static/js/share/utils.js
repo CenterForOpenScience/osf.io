@@ -5,13 +5,15 @@ var History = require('exports?History!history');
 
 var callbacks = [];
 
-var onSearch = function(fb) {
+var utils = {};
+
+utils.onSearch = function(fb) {
     callbacks.push(fb);
 };
 
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
-var scrubHTML = function(text) {
+utils.scrubHTML = function(text) {
     tags.forEach(function(tag) {
         text = text.replace(new RegExp('<' + tag + '>', 'g'), '');
         text = text.replace(new RegExp('</' + tag + '>', 'g'), '');
@@ -19,7 +21,7 @@ var scrubHTML = function(text) {
     return text;
 };
 
-var formatNumber = function(num) {
+utils.formatNumber = function(num) {
     while (/(\d+)(\d{3})/.test(num.toString())){
         num = num.toString().replace(/(\d+)(\d{3})/, '$1'+','+'$2');
     }
@@ -28,7 +30,7 @@ var formatNumber = function(num) {
 
 var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
 
-var errorState = function(vm){
+utils.errorState = function(vm){
     vm.results = null;
     vm.statsData = undefined;
     vm.time = 0;
@@ -38,52 +40,66 @@ var errorState = function(vm){
     $osf.growl('Error', 'invalid query');
 };
 
-var loadMore = function(vm) {
-    if (buildQuery(vm).length === 0) {
+utils.updateVM = function(vm, data) {
+    if (data === null) {
         return;
     }
-    var page = vm.page++ * 10;
-    var sort = vm.sortMap[vm.sort()] || null;
-
-    vm.resultsLoading(true);
-
-    return m.request({
-        method: 'get',
-        background: true,
-        url: '/api/v1/share/?' + $.param({
-            from: page,
-            q: buildQuery(vm),
-            sort: sort
-        })
-    }).then(function(data) {
-        vm.time = data.time;
-        vm.count = data.count;
-        data.results.forEach(function(result) {
-            result.title = scrubHTML(result.title);
-            result.description = scrubHTML(result.description);
-        });
-
-        vm.results.push.apply(vm.results, data.results);
-
-        vm.resultsLoading(false);
-    }, errorState.bind(this, vm)).then(m.redraw).then(function() {
-        $.map(callbacks, function(cb) {cb();});
+    vm.time = data.time;
+    vm.count = data.count;
+    data.results.forEach(function(result) {
+        result.title = utils.scrubHTML(result.title);
+        result.description = utils.scrubHTML(result.description);
+    });    
+    vm.results.push.apply(vm.results, data.results);   
+    m.redraw();
+    $.map(callbacks, function(cb) {
+        cb();
     });
 };
 
-var search = function(vm) {
+utils.loadMore = function(vm) {    
+    var ret = m.deferred();
+    if (utils.buildQuery(vm).length === 0) {
+        ret.resolve(null);
+    }
+    else {
+        var page = vm.page++ * 10;
+        var sort = vm.sortMap[vm.sort()] || null;
+
+        vm.resultsLoading(true);
+        m.request({
+            method: 'get',
+            background: true,
+            url: '/api/v1/share/?' + $.param({
+                from: page,
+                q: utils.buildQuery(vm),
+                sort: sort
+            })
+        }).then(function(data) {
+            vm.resultsLoading(false);
+            ret.resolve(data);
+        }, function(xhr, status, err) {
+            ret.reject(xhr, status, err);
+            utils.errorState.call(this, vm);
+        });
+    }
+    return ret.promise;
+};
+
+utils.search = function(vm) {
+    var ret = m.deferred();
     if (!vm.query() || vm.query().length === 0){
         vm.query = m.prop('');
         vm.results = null;
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');
-        loadStats(vm);
+        utils.loadStats(vm);
         History.pushState({}, 'OSF | SHARE', '?');
-        return;
+        ret.resolve(null);
     }
-    if (buildQuery(vm).length === 0) {
-        return;
+    if (utils.buildQuery(vm).length === 0) {
+        ret.resolve(null);
     }
     vm.page = 0;
     vm.results = [];
@@ -92,12 +108,17 @@ var search = function(vm) {
         requiredFilters: vm.requiredFilters,
         query: vm.query(),
         sort: vm.sort()
-    }, 'OSF | SHARE', '?'+ buildURLParams(vm));
+    }, 'OSF | SHARE', '?'+ utils.buildURLParams(vm));
 
-    return loadMore(vm);
+    utils.loadMore(vm)
+        .done(function(data) {
+            utils.updateVM(vm, data);
+            ret.resolve(vm);
+        });
+    return ret.promise;
 };
 
-var buildURLParams = function(vm){
+utils.buildURLParams = function(vm){
     var d = {};
     if (vm.query()){
         d.q = vm.query();
@@ -114,7 +135,7 @@ var buildURLParams = function(vm){
     return $.param(d);
 };
 
-var buildQuery = function(vm){
+utils.buildQuery = function(vm){
     return [
         vm.query(),
         '(' + vm.optionalFilters.join(' OR ') + ')',
@@ -124,7 +145,7 @@ var buildQuery = function(vm){
     }).join(' AND ');
 };
 
-var maybeQuashEvent = function(event) {
+utils.maybeQuashEvent = function(event) {
     if (event !== undefined){
         try {
             event.preventDefault();
@@ -135,16 +156,16 @@ var maybeQuashEvent = function(event) {
     }
 };
 
-var updateFilter = function(vm, filter, required){
+utils.updateFilter = function(vm, filter, required){
     if (required && vm.requiredFilters.indexOf(filter) === -1){
         vm.requiredFilters.push(filter);
     } else if (vm.optionalFilters.indexOf(filter) === -1 && !required){
         vm.optionalFilters.push(filter);
     }
-    search(vm);
+    utils.search(vm);
 };
 
-var removeFilter = function(vm, filter){
+utils.removeFilter = function(vm, filter){
     var reqIndex = vm.requiredFilters.indexOf(filter);
     var optIndex = vm.optionalFilters.indexOf(filter);
     if (reqIndex > -1) {
@@ -153,19 +174,19 @@ var removeFilter = function(vm, filter){
     if (optIndex > -1) {
         vm.optionalFilters.splice(optIndex, 1);
     }
-    search(vm);
+    utils.search(vm);
 };
 
-var arrayEqual = function(a, b) {
+utils.arrayEqual = function(a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
 
-var loadStats = function(vm){
+utils.loadStats = function(vm){
     vm.statsLoaded(false);
 
     return m.request({
         method: 'GET',
-        url: '/api/v1/share/stats/?' + $.param({q: buildQuery(vm)}),
+        url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
         background: true
     }).then(function(data) {
         vm.statsData = data;
@@ -175,24 +196,11 @@ var loadStats = function(vm){
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
             }
             vm.graphs[type].load(vm.statsData.charts[type]);
-        }, errorState.bind(this, vm));
+        }, utils.errorState.bind(this, vm));
         vm.statsLoaded(true);
     }).then(m.redraw);
 
 };
 
 
-module.exports = {
-    search: search,
-    onSearch: onSearch,
-    loadMore: loadMore,
-    loadingIcon: loadingIcon,
-    formatNumber: formatNumber,
-    maybeQuashEvent: maybeQuashEvent,
-    buildQuery: buildQuery,
-    updateFilter: updateFilter,
-    removeFilter: removeFilter,
-    arrayEqual: arrayEqual,
-    loadStats: loadStats,
-    errorState: errorState
-};
+module.exports = utils;

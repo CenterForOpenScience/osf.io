@@ -19,7 +19,14 @@ Results.view = function(ctrl) {
         m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
         m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
             len > 0 && len < ctrl.vm.count ?
-            m('a.btn.btn-md.btn-default', {onclick: function(){utils.loadMore(ctrl.vm);}}, 'More') : [])
+            m('a.btn.btn-md.btn-default', {
+                onclick: function(){
+                    utils.loadMore()
+                        .done(function(data) {
+                            utils.updateVM(ctrl.vm, data);
+                        });
+                }
+            }, 'More') : [])
          ))
     ]);
 
