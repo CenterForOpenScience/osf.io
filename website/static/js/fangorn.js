@@ -467,56 +467,74 @@ function _downloadEvent (event, item, col) {
 function createFolder(event, parent, col) {
     var self = this;
     var folderName = m.prop('');
+    var errorMessage = m.prop('');
     var creatingFolder = m.prop(false);
 
     if (!parent.open) {
         self.updateFolder(null, parent);
     }
+
+    function doCreate(event) {
+        event.preventDefault();
+        if (folderName().length < 1) {
+            errorMessage('Please enter a folder name.');
+            redraw();
+            return;
+        }
+        if (folderName().indexOf('/') !== -1) {
+            errorMessage('Folder name contains illegal characters.');
+            redraw();
+            return;
+        }
+
+        errorMessage('');
+        creatingFolder(true);
+        redraw();
+        var path = (parent.data.path || '/') + folderName() + '/';
+
+        m.request({
+            method: 'POST',
+            background: true,
+            url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+        }).then(function(item) {
+            inheritFromParent({data: item}, parent);
+
+            item = self.createItem(item, parent.id);
+            _fangornOrderFolder.call(self, parent);
+            folderName('');
+            self.modal.dismiss();
+            creatingFolder(false);
+            item.notify.update('Created!', 'success', undefined, 1000);
+        }, function(data) {
+            if (data && data.code === 409) {
+                errorMessage(data.message);
+            } else {
+                errorMessage('Folder creation failed.');
+            }
+            creatingFolder(false);
+            redraw();
+        });
+    }
+
     function redraw() {
-        self.modal.update((function() {
+        self.modal.update(m('div', [
+            m('h3.break-word', 'Enter a folder name'),
+            m('form', {onsubmit: doCreate}, [
+                m('input.form-control[autofocus][type=text]', {
+                    placeholder: 'Folder Name',
+                    onchange: m.withAttr('value', folderName),
+                    disabled: creatingFolder() ? 'disabled' : '',
+                })
+            ])
+        ]), (function() {
             return m('div', [
-                m('form.form-inline', {
-                    onsubmit: function(event) {
-                        event.preventDefault();
-                        if (folderName().length < 1) return;
-
-                        creatingFolder(true);
-                        redraw();
-                        var path = (parent.data.path || '/') + folderName() + '/';
-
-                        m.request({
-                            method: 'POST',
-                            background: true,
-                            url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
-                        }).then(function(item) {
-                            inheritFromParent({data: item}, parent);
-
-                            self.createItem(item, parent.id);
-                            _fangornOrderFolder.call(self, parent);
-                        }, function(data) {
-                            if (data && data.code === 409) {
-                                $osf.growl('Error', data.message);
-                            } else {
-                                $osf.growl('Error', 'Folder creation failed.');
-                            }
-                        }).then(function() {
-                            folderName('');
-                            creatingFolder(false);
-                            self.modal.dismiss();
-                        });
-                    }
-                }, [
-                    m('.form-group',
-                        m('input.form-control[autofocus][type=text]', {
-                            placeholder: 'Folder Name',
-                            onchange: m.withAttr('value', folderName),
-                            disabled: creatingFolder() ? 'disabled' : '',
-                        })
-                    ),
+                m('span.pull-left.text-danger', errorMessage()),
+                m('div', [
+                    m('button.btn.btn-default.btn-md', {onclick: self.modal.dismiss.bind(self)}, 'Cancel'),
                     ' ',
                     creatingFolder() ?
                     m('i.fa.fa-spinner.fa-spin') :
-                    m('button.btn.btn-success.btn-md', 'Create')
+                    m('button.btn.btn-success.btn-md', {onclick: doCreate.bind(self)}, 'Create')
                 ])
             ]);
         })());
