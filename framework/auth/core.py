@@ -229,9 +229,13 @@ class User(GuidStoredObject, AddonModelMixin):
     # a list of strings - for internal use
     system_tags = fields.StringField(list=True)
 
-    # a list of strings - records that security emails were manually sent
+    # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
     security_messages = fields.DictionaryField()
+    # Format: {
+    #   <message label>: <datetime>
+    #   ...
+    # }
 
     # user was invited (as opposed to registered unprompted)
     is_invited = fields.BooleanField(default=False, index=True)
@@ -965,10 +969,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
         self.system_tags += user.system_tags
 
-        self.security_messages = list(
-            set(self.security_messages + user.security_messages)
-        )
-
         self.aka = list(set(self.aka + user.aka))
 
         self.is_claimed = self.is_claimed or user.is_claimed
@@ -990,6 +990,10 @@ class User(GuidStoredObject, AddonModelMixin):
         self.unclaimed_records = unclaimed
         # - unclaimed records should be connected to only one user
         user.unclaimed_records = {}
+
+        security_messages = user.security_messages.copy()
+        security_messages.update(self.security_messages)
+        self.security_messages = security_messages
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
