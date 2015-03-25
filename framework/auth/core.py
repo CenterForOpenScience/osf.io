@@ -967,7 +967,10 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # Move over the other user's attributes
 
-        self.system_tags += user.system_tags
+        # TODO: confirm
+        for system_tag in user.system_tags:
+            if system_tag not in self.system_tags:
+                self.system_tags.append(system_tag)
 
         self.aka = list(set(self.aka + user.aka))
 
