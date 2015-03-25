@@ -89,26 +89,26 @@ describe('share/utils', () => {
             vm.requiredFilters.push('2');
             vm.optionalFilters.push('3');
             sort = '4';
-            assert.deepEqual('q=1&required=2&optional=3&sort=4', utils.buildURLParams(vm));
+            assert.equal('q=1&required=2&optional=3&sort=4', utils.buildURLParams(vm));
         });
 
         it('doesn\'t display parameters unless they have meaningful values', () => {
             query = '1';
             vm.requiredFilters.push('2');
             sort = '4';
-            assert.deepEqual('q=1&required=2&sort=4', utils.buildURLParams(vm));
+            assert.equal('q=1&required=2&sort=4', utils.buildURLParams(vm));
 
             vm.optionalFilters.push('3');
             vm.requiredFilters = [];
-            assert.deepEqual('q=1&optional=3&sort=4', utils.buildURLParams(vm));
+            assert.equal('q=1&optional=3&sort=4', utils.buildURLParams(vm));
 
             vm.requiredFilters.push('2');
             sort = null;
-            assert.deepEqual('q=1&required=2&optional=3', utils.buildURLParams(vm));
+            assert.equal('q=1&required=2&optional=3', utils.buildURLParams(vm));
 
             sort = '4';
             query = null;
-            assert.deepEqual('required=2&optional=3&sort=4', utils.buildURLParams(vm));
+            assert.equal('required=2&optional=3&sort=4', utils.buildURLParams(vm));
 
         });
     });
@@ -130,16 +130,16 @@ describe('share/utils', () => {
             vm.optionalFilters.push('1');
             vm.requiredFilters.push('2');
 
-            assert.deepEqual('toast AND (1) AND (2)', utils.buildQuery(vm));
+            assert.equal('toast AND (1) AND (2)', utils.buildQuery(vm));
         });
 
         it('doesn\'t create invalid queries with empty filters', () => {
             vm.optionalFilters.push('1');
-            assert.deepEqual('toast AND (1)', utils.buildQuery(vm));
+            assert.equal('toast AND (1)', utils.buildQuery(vm));
 
             vm.optionalFilters = [];
             vm.requiredFilters.push('2');
-            assert.deepEqual('toast AND (2)', utils.buildQuery(vm));
+            assert.equal('toast AND (2)', utils.buildQuery(vm));
         });
     });
 
