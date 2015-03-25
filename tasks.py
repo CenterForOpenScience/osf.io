@@ -329,6 +329,7 @@ def pip_install(req_file):
     cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
+    return cmd
 
 @task(aliases=['req'])
 def requirements(addons=False, release=False, dev=False):
