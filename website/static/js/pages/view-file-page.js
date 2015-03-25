@@ -31,7 +31,6 @@ $(document).ready(function() {
                 ondataload: function () {
                     var tb = this;
                     tb.options.folderIndex = 0;
-                    tb.scrolled = false;
                     if (window.contextVars.file.path) {
                         tb.options.folderArray = window.contextVars.file.path.split("/");
                         if (tb.options.folderArray.length > 1) {
@@ -76,13 +75,12 @@ $(document).ready(function() {
                             }
                         }
                     }
-                    if (tb.currentFileID && !tb.scrolled) {
+                    if (tb.currentFileID) {
                         var index = tb.returnIndex(tb.currentFileID);
                         var visibleIndex = tb.visibleIndexes.indexOf(index);
                         if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
                             var scrollTo = visibleIndex * tb.options.rowHeight;
                             $('#tb-tbody').scrollTop(scrollTo);
-                            tb.scrolled = true;
                         }
                     }
                 },
