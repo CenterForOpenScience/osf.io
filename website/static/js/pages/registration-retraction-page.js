@@ -2,10 +2,10 @@
  * registration retraction ES
 **/
 
-var RegistrationRetraction = require('js/registrationRetraction.js');
+var RegistrationRetraction = require('js/registrationRetraction');
 
-var submitUrl = contextVars.node.urls.api + 'retract_registration/';
+var submitUrl = window.contextVars.node.urls.api + 'retract_registration/';
 
-var registrationTitle = contextVars.node.title;
+var registrationTitle = window.contextVars.node.title;
 
 new RegistrationRetraction.RegistrationRetraction('#registrationRetraction', submitUrl, registrationTitle);
