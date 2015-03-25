@@ -23,6 +23,9 @@ ShareApp.ViewModel = function() {
     self.count = 0;
     self.results = null;
     self.query = m.prop($osf.urlParams().q || '');
+    self.vm.sort = m.prop($osf.urlParams().sort || 'Relevance');
+    self.vm.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
+    self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 };
 
 
@@ -49,11 +52,6 @@ ShareApp.controller = function() {
     var self = this;
 
     self.vm = new ShareApp.ViewModel(self.vm);
-
-    self.vm.sort = m.prop($osf.urlParams().sort || 'Relevance');
-    self.vm.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
-    self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
-
 
     m.request({
         method: 'get',
