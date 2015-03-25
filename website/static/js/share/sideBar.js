@@ -30,10 +30,6 @@ SideBar.controller = function(vm) {
     var self = this;
     self.vm = vm;
 
-    self.vm.sort = m.prop($osf.urlParams().sort || 'Relevance');
-    self.vm.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
-    self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
-
     self.vm.sortMap = {
         'Date': 'dateUpdated',
         Relevance: null
