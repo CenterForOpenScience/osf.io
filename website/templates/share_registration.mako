@@ -10,7 +10,7 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             share: {
                 urls: {
-                    registrationURL: '${registrationURL | js_str}'
+                    register: '${register | js_str}'
                 }
             }
         });
