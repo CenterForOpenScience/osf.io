@@ -267,7 +267,7 @@ class OsfStorageFileNode(StoredObject):
         return '<{}(name={!r}, node_settings={!r})>'.format(
             self.__class__.__name__,
             self.name,
-            self.node_settings._id,
+            self.to_storage()['node_settings']
         )
 
 
