@@ -642,9 +642,24 @@ function _poResolveIcon(item) {
             registeredComponent :  'project-organizer-icon-reg-component',
             link :  'project-organizer-icon-pointer'
         };
+    var componentIcons = {
+        'hypothesis': 'fa fa-lightbulb-o',
+        'methods and measures': 'fa fa-pencil',
+        'procedure': 'fa fa-cogs',
+        'instrumentation': 'fa fa-flask',
+        'data': 'fa fa-database',
+        'analysis': 'fa fa-bar-chart',
+        'communication': 'fa fa-comment',
+        'other': 'fa fa-question'
+    };
     viewLink = item.data.urls.fetch;
-    function returnView(type) {
-        var template = m('span', { 'class' : icons[type]});
+    function returnView(type, category) {
+        var iconType = icons[type];
+        if (type === 'component' || type === 'registeredComponent') {            
+            iconType = componentIcons[category];
+        }
+
+        var template = m('span', { 'class' : iconType});
         if (viewLink) {
             return m('a', { href : viewLink}, template);
         }
@@ -671,7 +686,7 @@ function _poResolveIcon(item) {
         if (item.data.isRegistration) {
             return returnView('registeredComponent');
         }else {
-            return returnView('component');
+            return returnView('component', item.data.category);
         }
     }
 
