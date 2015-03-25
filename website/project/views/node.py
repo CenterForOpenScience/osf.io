@@ -765,7 +765,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url': parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
+            'can_view': parent.can_view(auth) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),

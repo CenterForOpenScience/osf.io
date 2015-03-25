@@ -43,6 +43,11 @@ class TestFileGuid(OsfTestCase):
         assert_equal(guid.waterbutler_path, 'perth')
         assert_equal(guid.waterbutler_path, guid.path)
 
+    def test_extra_without_metadata(self):
+        guid, _ = self.node_addon.find_or_create_file_guid('perth')
+
+        assert_equal(guid.extra, {})
+
     @mock.patch('website.addons.base.requests.get')
     def test_unique_identifier(self, mock_get):
         mock_response = mock.Mock(ok=True, status_code=200)

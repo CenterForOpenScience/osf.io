@@ -328,6 +328,10 @@ li.pointer {
     overflow-x: hidden;
 }
 
+.comment-actions i {
+    cursor: pointer;
+}
+
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
@@ -347,11 +351,9 @@ li.pointer {
 }
 .edit-comment {
     background-color: #F3F3F3;
-    cursor: pointer;
 }
 
 .comment-body i {
-    cursor: pointer;
     padding-right: 5px;
 }
 
@@ -865,8 +867,6 @@ h1.node-title, h1.node-parent-title {
     color: #808080;
 }
 
-
-
 .wiki-panel-body .superlist li {
     display: block;
     font-size: 20px;
@@ -974,6 +974,13 @@ li.unavailable {
 
 h1.unavailable {
     font-style: italic;
+}
+
+/* Project page has project navigation bar, which is fixed and therefore increases the offset the anchors need */
+.project-page .anchor {
+    margin-top: -100px;
+    padding-top: 100px;
+    display: block;
 }
 
 .anchor {
@@ -1412,7 +1419,6 @@ dl.activity-log dd {
 
 .overflow {
     word-wrap: break-word;
-    word-break: break-all;
     max-width: 100%;
 }
 
@@ -2262,14 +2268,16 @@ span#profileFullname{
 }
 /* Wiki additions */
 .wiki-panel {
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     height: 750px;
     overflow: auto;
     display: block;
     position: relative;
     overflow-x: hidden;
 }
-
+.reset-height {
+    height: auto;
+}
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
@@ -2288,7 +2296,15 @@ span#profileFullname{
     font-size: 16px;
     font-weight: 300;
 }
-
+.wiki-panel-header.no-background {
+    background: transparent;
+}
+.wiki-panel-header.bottom-border {
+    border-bottom: 1px solid #eee;
+}
+.wiki-panel-header.bordered {
+    border: 1px solid #ddd;
+}
 .wiki-panel-footer {
     position: absolute;
     bottom : 0;
@@ -2415,4 +2431,7 @@ span#profileFullname{
   width : 100%;
   padding-left: 20px;
   padding-right: 20px;
+}
+.inline {
+    display: inline-block;
 }

@@ -7,8 +7,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
+var $osf = require('./osfHelpers');
 var LogFeed = require('./logFeed.js');
-var $osf = require('osfHelpers');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions

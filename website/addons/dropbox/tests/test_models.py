@@ -35,6 +35,24 @@ class TestFileGuid(OsfTestCase):
         assert_equals(guid.path, 'baz/foo/bar')
         assert_equals(guid.waterbutler_path, '/foo/bar')
 
+    def test_path_doesnt_crash_without_addon(self):
+        guid = DropboxFile(node=self.project, path='baz/foo/bar')
+        self.project.delete_addon('dropbox', Auth(self.user))
+
+        assert_is(self.project.get_addon('dropbox'), None)
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
+    def test_path_doesnt_crash_nonconfig_addon(self):
+        guid = DropboxFile(node=self.project, path='baz/foo/bar')
+        self.node_addon.folder = None
+        self.node_addon.save()
+        self.node_addon.reload()
+
+        assert_true(guid.path)
+        assert_true(guid.waterbutler_path)
+
     @mock.patch('website.addons.base.requests.get')
     def test_unique_identifier(self, mock_get):
         mock_response = mock.Mock(ok=True, status_code=200)
