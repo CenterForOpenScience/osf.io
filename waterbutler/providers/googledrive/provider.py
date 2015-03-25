@@ -139,7 +139,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         return ' and '.join(queries)
 
     @asyncio.coroutine
-    def metadata(self, path, original_path=None, folder_id=None, raw=False, **kwargs):
+    def metadata(self, path, original_path=None, folder_id=None, raw=False, get_folder=False, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
         original_path = original_path or path
         folder_id = folder_id or self.folder['id']
@@ -163,9 +163,19 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         if not path.is_leaf:
             child_id = data['items'][0]['id']
-            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, raw=raw, **kwargs))
+            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, raw=raw, get_folder=get_folder, **kwargs))
 
         if path.is_dir:
+            if get_folder:
+                resp = yield from self.make_request(
+                    'GET',
+                    self.build_url('files', folder_id),
+                    expects=(200, ),
+                    throws=exceptions.MetadataError,
+                )
+                data = yield from resp.json()
+                return self._serialize_item(original_path, data, raw=raw)
+
             return [
                 self._serialize_item(original_path, item, raw=raw)
                 for item in data['items']
