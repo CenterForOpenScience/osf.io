@@ -3058,8 +3058,8 @@ class TestComments(OsfTestCase):
         assert_equal(len(res.json['comments']), 1)
 
     def test_view_comments_with_anonymous_link(self):
-        self.project.set_privacy('private')
         self.project.save()
+        self.project.set_privacy('private')
         self.project.reload()
         user = AuthUserFactory()
         link = PrivateLinkFactory(anonymous=True)

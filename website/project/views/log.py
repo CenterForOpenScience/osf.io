@@ -61,11 +61,10 @@ def _get_logs(node, count, auth, link=None, offset=0):
 @no_auto_transaction
 @collect_auth
 @must_be_valid_project
-def get_logs(auth, **kwargs):
+def get_logs(auth, node, **kwargs):
     """
 
     """
-    node = kwargs['node'] or kwargs['project']
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
     link = auth.private_key or request.args.get('view_only', '').strip('/')
 

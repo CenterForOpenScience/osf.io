@@ -27,9 +27,7 @@ from .. import clean_template_name
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def node_register_page(auth, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
+def node_register_page(auth, node, **kwargs):
 
     out = {
         'options': [
@@ -46,9 +44,7 @@ def node_register_page(auth, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def node_register_template_page(auth, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
+def node_register_template_page(auth, node, **kwargs):
 
     template_name = kwargs['template'].replace(' ', '_')
     # Error to raise if template can't be found
@@ -112,8 +108,7 @@ def node_register_template_page(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_before_register(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def project_before_register(auth, node, **kwargs):
     user = auth.user
 
     prompts = node.callback('before_register', user=user)
@@ -131,8 +126,7 @@ def project_before_register(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def node_register_template_page_post(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def node_register_template_page_post(auth, node, **kwargs):
     data = request.json
 
     # Sanitize payload data
