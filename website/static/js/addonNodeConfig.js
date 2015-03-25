@@ -17,6 +17,16 @@ var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
 ko.punches.enableAll();
 
+/**
+ * View model to support instances of AddonNodeConfig (folder picker widget)
+ *
+ * @class AddonFolderPickerViewModel
+ * @param {String} addonName Full display name of the addon
+ * @param {String} url API url to initially fetch settings
+ * @param {String} selector CSS selector for containing div
+ * @param {String} folderPicker CSS selector for folderPicker div
+ * @param {Object} opts Optional overrides to the class' default treebeardOptions, in particular onPickFolder
+ */
 var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker, opts) {
         var self = this;

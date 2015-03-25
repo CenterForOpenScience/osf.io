@@ -14,8 +14,15 @@ var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
 ko.punches.enableAll();
+
 /**
- * Knockout view model for citations node settings widget.
+ * View model to support instances of CitationsNodeConfig (folder picker widget)
+ *
+ * @class AddonFolderPickerViewModel
+ * @param {String} addonName Full display name of the addon
+ * @param {String} url API url to initially fetch settings
+ * @param {String} selector CSS selector for containing div
+ * @param {String} folderPicker CSS selector for folderPicker div
  */
 var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker) {
@@ -75,14 +82,16 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     updateAccounts: function() {
         var self = this;
         return self.fetchAccounts()
-        .done(function(accounts) {
-            self.accounts(accounts.map(function(account) {
-                return {
-                    name: account.display_name,
-                    id: account.id
-                };
-            }));
-        });
+            .done(function(accounts) {
+                self.accounts(
+                    $.map(accounts, function(account) {
+                        return {
+                            name: account.display_name,
+                            id: account.id
+                        };
+                    })
+                );
+            });
     },
     /**
      * Allows a user to create an access token from the nodeSettings page

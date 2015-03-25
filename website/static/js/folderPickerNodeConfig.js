@@ -19,14 +19,20 @@ var oop = require('js/oop');
 
 ko.punches.enableAll();
 
+/**
+ * @class FolderPickerViewModel
+ * @param {String} addonName Full display name of the addon
+ * @param {String} url API url to initially fetch settings
+ * @param {String} selector CSS selector for containing div
+ * @param {String} folderPicker CSS selector for folderPicker div
+ *
+ * Notes: 
+ * - Subclasses of this VM can be created using the oop module like: oop.extend(FolderPickerViewModel, { ... });
+ * - Subclasses should:
+ *   - provide a VM.messages.SUBMIT_SETTINGS_SUCCESS() 
+ *   - override VM.treebeardOptions.onPickFolder and VM.treebeardOptions.resolveLazyloadUrl
+ */    
 var FolderPickerViewModel = oop.defclass({
-    /*
-     @class ViewModel
-     @param {String} addonName Full display name of the addon
-     @param {String} url API url to initially fetch settings
-     @param {String} selector CSS selector for containing div
-     @param {String} folderPicker CSS selector for folderPicker div
-     */    
     constructor: function(addonName, url, selector, folderPicker) {
         var self = this;
         self.url = url;

@@ -187,7 +187,7 @@ function ViewModel(url) {
             error: error
         });
     });
-};
+}
 /**
  * Update the view model from data returned from the server.
  */

@@ -36,7 +36,7 @@ function ViewModel(url) {
             if (!self.validCredentials()) {
                 self.changeMessage('Could not retrieve Dropbox settings at ' +
                     'this time. The Dropbox addon credentials may no longer be valid.' +
-                    ' Try deauthorizing and reauthorizing Dropbox.',
+                    ' Please delete your access token and create a new one.',
                     'text-warning');
             } else if (self.userHasAuth() && self.nNodesAuthorized === 0) {
                 self.changeMessage('Add-on successfully authorized. To link this add-on to an OSF project, ' +
