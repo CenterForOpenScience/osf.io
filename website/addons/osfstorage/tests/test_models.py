@@ -200,28 +200,35 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_is(self.node_settings.complete, True)
 
     def test_after_fork_copies_versions(self):
-        path = 'jazz/dreamers-ball.mp3'
         num_versions = 5
-        record, _ = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
+        path = 'jazz/dreamers-ball.mp3'
+
+        record = self.node_settings.root_node.append_file(path)
+
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
         record.save()
+
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
-        cloned_record = model.OsfStorageFileRecord.find_by_path(path, fork_node_settings)
+
+        cloned_record = fork_node_settings.root_node.find_child_by_name(path)
         assert_equal(cloned_record.versions, record.versions)
-        assert_true(fork_node_settings.file_tree)
+        assert_true(fork_node_settings.root_node)
 
     def test_after_register_copies_versions(self):
-        path = 'jazz/dreamers-ball.mp3'
         num_versions = 5
-        record, _ = model.OsfStorageFileRecord.get_or_create(path, self.node_settings)
+        path = 'jazz/dreamers-ball.mp3'
+
+        record = self.node_settings.root_node.append_file(path)
+
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
             record.versions.append(version)
         record.save()
+
         registration = self.project.register_node(
             None,
             self.auth_obj,
@@ -231,9 +238,10 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_true(registration.has_addon('osfstorage'))
         registration_node_settings = registration.get_addon('osfstorage')
         registration_node_settings.reload()
-        cloned_record = model.OsfStorageFileRecord.find_by_path(path, registration_node_settings)
+        cloned_record = registration_node_settings.root_node.find_child_by_name(path)
         assert_equal(cloned_record.versions, record.versions)
-        assert_true(registration_node_settings.file_tree)
+        assert_equal(cloned_record.versions, record.versions)
+        assert_true(registration_node_settings.root_node)
 
 
 class TestOsfStorageFileVersion(OsfTestCase):
