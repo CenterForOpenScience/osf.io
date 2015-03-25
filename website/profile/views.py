@@ -54,7 +54,7 @@ def get_public_components(uid=None, user=None):
         and node.is_public
         and not node.is_registration
         and not node.is_deleted
-    ])
+    ], show_path=True)
 
 
 @must_be_logged_in

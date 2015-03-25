@@ -79,7 +79,7 @@ def _render_node(node, auth=None):
     }
 
 
-def _render_nodes(nodes, auth=None):
+def _render_nodes(nodes, auth=None, show_path=False):
     """
 
     :param nodes:
@@ -91,6 +91,7 @@ def _render_nodes(nodes, auth=None):
             for node in nodes
         ],
         'rescale_ratio': _rescale_ratio(auth, nodes),
+        'show_path': show_path
     }
     return ret
 
