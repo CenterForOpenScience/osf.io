@@ -70,6 +70,125 @@ class TestFileGuid(OsfTestCase):
         assert_equals(guid1, guid2)
 
 
+class TestOsfstorageFileNode(StorageTestCase):
+
+    def test_root_node_exists(self):
+        assert_true(self.node_settings.root_node is not None)
+
+    def test_root_node_has_no_parent(self):
+        assert_true(self.node_settings.root_node.parent is None)
+
+    def test_node_reference(self):
+        assert_equal(self.project, self.node_settings.root_node.node)
+
+    def test_get_folder(self):
+        file = model.OsfStorageFileNode(name='MOAR PYLONS', kind='file', node_settings=self.node_settings)
+        folder = model.OsfStorageFileNode(name='MOAR PYLONS', kind='folder', node_settings=self.node_settings)
+
+        _id = folder._id
+
+        file.save()
+        folder.save()
+
+        assert_equal(folder, model.OsfStorageFileNode.get_folder(_id, self.node_settings))
+
+    def test_get_file(self):
+        file = model.OsfStorageFileNode(name='MOAR PYLONS', kind='file', node_settings=self.node_settings)
+        folder = model.OsfStorageFileNode(name='MOAR PYLONS', kind='folder', node_settings=self.node_settings)
+
+        file.save()
+        folder.save()
+
+        _id = file._id
+
+        assert_equal(file, model.OsfStorageFileNode.get_file(_id, self.node_settings))
+
+    def test_get_child_by_name(self):
+        child = self.node_settings.root_node.append_file('Test')
+        assert_equal(child, self.node_settings.root_node.find_child_by_name('Test'))
+
+    def test_root_node_path(self):
+        assert_equal(self.node_settings.root_node.name, '')
+
+    def test_folder_path(self):
+        path = '/{}/'.format(self.node_settings.root_node._id)
+
+        assert_equal(self.node_settings.root_node.path, path)
+
+    def test_file_path(self):
+        file = model.OsfStorageFileNode(name='MOAR PYLONS', kind='file', node_settings=self.node_settings)
+
+        assert_equal(file.name, 'MOAR PYLONS')
+        assert_equal(file.path, '/{}'.format(file._id))
+
+    def test_append_folder(self):
+        child = self.node_settings.root_node.append_folder('Test')
+        children = self.node_settings.root_node.children
+
+        assert_equal(child.kind, 'folder')
+        assert_equal([child], list(children))
+
+    def test_append_file(self):
+        child = self.node_settings.root_node.append_file('Test')
+        children = self.node_settings.root_node.children
+
+        assert_equal(child.kind, 'file')
+        assert_equal([child], list(children))
+
+    def test_append_to_file(self):
+        child = self.node_settings.root_node.append_file('Test')
+        with assert_raises(ValueError):
+            child.append_file('Cant')
+
+    def test_children(self):
+        assert_equals([
+            self.node_settings.root_node.append_file('Foo{}Bar'.format(x))
+            for x in xrange(100)
+        ], list(self.node_settings.root_node.children))
+
+    def test_download_count_file_defaults(self):
+        child = self.node_settings.root_node.append_file('Test')
+        assert_equals(child.get_download_count(), 0)
+
+    @mock.patch('framework.analytics.session')
+    def test_download_count_file(self, mock_session):
+        mock_session.data = {}
+        child = self.node_settings.root_node.append_file('Test')
+
+        utils.update_analytics(self.project, child.path, 0)
+        utils.update_analytics(self.project, child.path, 1)
+        utils.update_analytics(self.project, child.path, 2)
+
+        assert_equals(child.get_download_count(), 3)
+        assert_equals(child.get_download_count(0), 1)
+        assert_equals(child.get_download_count(1), 1)
+        assert_equals(child.get_download_count(2), 1)
+
+    def test_download_count_folder(self):
+        assert_is(
+            None,
+            self.node_settings.root_node.get_download_count()
+        )
+
+    def test_create_version(self):
+        pass
+
+    def test_update_version_metadata(self):
+        pass
+
+    def test_delete_folder(self):
+        pass
+
+    def test_delete_file(self):
+        pass
+
+    def test_undelete_folder(self):
+        pass
+
+    def test_undelete_file(self):
+        pass
+
+
 class TestNodeSettingsModel(StorageTestCase):
 
     def test_fields(self):
