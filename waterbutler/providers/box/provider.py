@@ -81,7 +81,7 @@ class BoxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         path = BoxPath(path)
-        metadata = yield from self.metadata(str(path), raw=True)
+        metadata = yield from self.metadata(str(path), raw=True, folder=path.is_dir)
 
         if path.is_file:
             url = self.build_url('files', metadata['id'])
@@ -96,11 +96,11 @@ class BoxProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path, raw=False, **kwargs):
+    def metadata(self, path, raw=False, folder=False, **kwargs):
         path = BoxPath(path)
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
-        return (yield from self._get_folder_meta(path, raw=raw))
+        return (yield from self._get_folder_meta(path, raw=raw, folder=folder))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
@@ -193,12 +193,12 @@ class BoxProvider(provider.BaseProvider):
         return data if raw else BoxFileMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine
-    def _get_folder_meta(self, path, raw=False):
+    def _get_folder_meta(self, path, raw=False, folder=False):
         if str(path) == '/':
             path = BoxPath('/{}/'.format(self.folder))
         yield from self._assert_child_folder(path)
 
-        if raw:
+        if folder:
             url = self.build_url('folders', path._id)
         else:
             url = self.build_url('folders', path._id, 'items')
