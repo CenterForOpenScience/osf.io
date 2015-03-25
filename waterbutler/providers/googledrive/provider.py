@@ -121,7 +121,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
-        metadata = yield from self.metadata(str(path), raw=True)
+        metadata = yield from self.metadata(str(path), raw=True, get_folder=True)
         yield from self.make_request(
             'DELETE',
             self.build_url('files', metadata['id']),
