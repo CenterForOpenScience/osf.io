@@ -94,7 +94,7 @@ var search = function(vm) {
         sort: vm.sort()
     }, 'OSF | SHARE', '?'+ buildURLParams(vm));
 
-    loadMore(vm);
+    return loadMore(vm);
 };
 
 var buildURLParams = function(vm){

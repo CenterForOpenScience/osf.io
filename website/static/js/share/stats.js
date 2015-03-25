@@ -117,7 +117,7 @@ Stats.controller = function(vm) {
     };
 
     self.loadStats = function(){
-        utils.loadStats(self.vm);
+        return utils.loadStats(self.vm);
     };
 
     utils.onSearch(self.loadStats);
