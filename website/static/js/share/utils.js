@@ -98,9 +98,10 @@ utils.search = function(vm) {
         History.pushState({}, 'OSF | SHARE', '?');
         ret.resolve(null);
     }
-    if (utils.buildQuery(vm).length === 0) {
+    else if (utils.buildQuery(vm).length === 0) {
         ret.resolve(null);
     }
+    else {
     vm.page = 0;
     vm.results = [];
     History.pushState({
@@ -111,10 +112,11 @@ utils.search = function(vm) {
     }, 'OSF | SHARE', '?'+ utils.buildURLParams(vm));
 
     utils.loadMore(vm)
-        .done(function(data) {
+        .then(function(data) {
             utils.updateVM(vm, data);
             ret.resolve(vm);
         });
+    }
     return ret.promise;
 };
 
