@@ -80,10 +80,17 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        metadata = yield from self.metadata(path, raw=True)
+        path = BoxPath(path)
+        metadata = yield from self.metadata(str(path), raw=True)
+
+        if path.is_file:
+            url = self.build_url('files', metadata['id'])
+        else:
+            url = self.build_url('folders', metadata['id'], recursive=True)
+
         yield from self.make_request(
             'DELETE',
-            self.build_url('files', metadata['id']),
+            url,
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
