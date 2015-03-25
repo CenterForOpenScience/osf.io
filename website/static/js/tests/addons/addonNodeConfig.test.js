@@ -75,7 +75,7 @@ describe('AddonNodeConfig', () => {
                 vm.updateFromData(data)
                     .always(function() {
                         vm.fetchEmailList()
-                            .then(function(emails) {
+                            .always(function(emails) {
                                 assert.deepEqual(endpoints[0].response.results.emails, emails);
                                 done();
                             });
@@ -86,7 +86,7 @@ describe('AddonNodeConfig', () => {
                 vm.emails([email]);
                 vm.loadedEmails(true);
                 vm.fetchEmailList()
-                    .done(function(emails){
+                    .always(function(emails){
                         assert.equal(emails[0], email);
                         done();
                     });

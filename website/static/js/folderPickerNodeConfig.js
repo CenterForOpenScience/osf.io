@@ -28,9 +28,11 @@ ko.punches.enableAll();
  *
  * Notes: 
  * - Subclasses of this VM can be created using the oop module like: oop.extend(FolderPickerViewModel, { ... });
- * - Subclasses should:
+ * - Subclasses must:
  *   - provide a VM.messages.SUBMIT_SETTINGS_SUCCESS() 
  *   - override VM.treebeardOptions.onPickFolder and VM.treebeardOptions.resolveLazyloadUrl
+ * - Subclasses can:
+ *   - implement an _updateCustomFields method to capture additional parameters in updateFromData
  */    
 var FolderPickerViewModel = oop.defclass({
     constructor: function(addonName, url, selector, folderPicker) {
@@ -214,7 +216,7 @@ var FolderPickerViewModel = oop.defclass({
         this.messageClass('text-info');
     },
     /**
-     * Abstract stub where subclasses can capture extra data from the API response
+     * Abstract hook where subclasses can capture extra data from the API response
      *
      * @param {Object} settings Settings passed from server response in #updateFromData
      */
