@@ -245,7 +245,7 @@ def get_dashboard_nodes(auth):
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
         comps = contributed.find(
             # components only
-            Q('category', 'ne', 'project') &
+            #Q('category', 'ne', 'project') &
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
             # exclude deleted nodes

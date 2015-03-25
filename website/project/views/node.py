@@ -28,7 +28,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.util.permissions import ADMIN, WRITE
+from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm

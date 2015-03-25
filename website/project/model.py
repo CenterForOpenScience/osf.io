@@ -923,7 +923,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
-
         update_piwik = kwargs.pop('update_piwik', True)
 
         self.adjust_permissions()
@@ -1715,8 +1714,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def deep_url(self):
-        if self.category == 'project':
-            return '/project/{}/'.format(self._primary_key)
+        #if self.category == 'project':
+        return '/project/{}/'.format(self._primary_key)
+        '''
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
                 return '/project/{}/node/{}/'.format(
@@ -1724,6 +1724,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     self._primary_key
                 )
         logger.error("Node {0} has a parent that is not a project".format(self._id))
+        '''
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
