@@ -63,5 +63,3 @@
 
     </header>
 </div>
-
-<%def name="title()">Retracted Registration: ${ node['title'] }</%def>

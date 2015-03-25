@@ -43,21 +43,19 @@
                                     </li>
                                 % endif
                             % endfor
-                            % if not node['is_retracted']:
 
-                                % if node['is_public'] or user['is_contributor']:
-                                    <li><a href="${node['url']}statistics/">Statistics</a></li>
-                                % endif
-                                % if not node['is_registration']:
-                                    <li><a href="${node['url']}registrations/">Registrations</a></li>
-                                % endif
-                                <li><a href="${node['url']}forks/">Forks</a></li>
-                                % if user['is_contributor']:
-                                    <li><a href="${node['url']}contributors/">Sharing</a></li>
-                                % endif
-                                % if 'write' in user['permissions'] and not node['is_registration']:
-                                    <li><a href="${node['url']}settings/">Settings</a></li>
-                                % endif
+                            % if node['is_public'] or user['is_contributor']:
+                                <li><a href="${node['url']}statistics/">Statistics</a></li>
+                            % endif
+                            % if not node['is_registration']:
+                                <li><a href="${node['url']}registrations/">Registrations</a></li>
+                            % endif
+                            <li><a href="${node['url']}forks/">Forks</a></li>
+                            % if user['is_contributor']:
+                                <li><a href="${node['url']}contributors/">Sharing</a></li>
+                            % endif
+                            % if 'write' in user['permissions'] and not node['is_registration']:
+                                <li><a href="${node['url']}settings/">Settings</a></li>
                             % endif
                         % endif
 
