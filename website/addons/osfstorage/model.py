@@ -98,7 +98,7 @@ class OsfStorageFileNode(StoredObject):
         {
             'key_or_list': [
                 ('name', pymongo.ASCENDING),
-                ('type', pymongo.ASCENDING),
+                ('kind', pymongo.ASCENDING),
                 ('parent', pymongo.ASCENDING),
                 ('node_settings', pymongo.ASCENDING),
             ],
