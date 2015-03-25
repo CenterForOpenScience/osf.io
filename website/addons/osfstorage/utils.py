@@ -121,11 +121,18 @@ def must_be(_type):
     return _must_be
 
 
-def copy_files(file_node, node_settings, parent=None):
-    cloned = file_node.clone()
-    cloned.node_settings = node_settings
+def copy_files(src, target_settings, parent=None):
+    cloned = src.clone()
     cloned.parent = parent
+    cloned.node_settings = target_settings
+
+    if src.is_file:
+        cloned.versions = src.versions
+
     cloned.save()
-    for child in file_node.children:
-        copy_files(child, node_settings, parent=cloned)
+
+    if src.is_folder:
+        for child in src.children:
+            copy_files(child, target_settings, parent=cloned)
+
     return cloned
