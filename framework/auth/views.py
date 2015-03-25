@@ -11,7 +11,7 @@ from modularodm.exceptions import ValidationValueError
 import framework.auth
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
-from framework.auth import exceptions
+from framework.auth import exceptions, signals
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
 from framework.auth import (login, logout, get_user, DuplicateEmailError, verify_two_factor)
@@ -38,8 +38,8 @@ def reset_password(auth, **kwargs):
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
         error_data = {'message_short': 'Invalid url.',
-            'message_long': 'The verification key in the URL is invalid or '
-            'has expired.'}
+                      'message_long': 'The verification key in the URL is invalid or '
+                                      'has expired.'}
         raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
@@ -195,21 +195,30 @@ def confirm_email_get(**kwargs):
     user = User.load(kwargs['uid'])
     token = kwargs['token']
     if user:
-        if user.confirm_email(token):  # Confirm and register the user
-            user.date_last_login = datetime.datetime.utcnow()
-            user.save()
-
-            # Go to settings page
-            status.push_status_message(language.WELCOME_MESSAGE, 'success')
-            response = redirect('/settings/')
-
-            return framework.auth.authenticate(user, response=response)
-    # Return data for the error template
-    return {
-        'code': http.BAD_REQUEST,
-        'message_short': 'Link Expired',
-        'message_long': language.LINK_EXPIRED
-    }, http.BAD_REQUEST
+        if user.confirm_email(token):
+            if user.unconfirmed_username:
+                old_username = user.username
+                user.username = user.unconfirmed_username
+                user.save()
+                # Emit signal that username changed
+                # Must send previous username for mailchimp subscriber lookup
+                signals.username_changed.send(user, old_username=old_username)
+                status.push_status_message(language.UPDATED_EMAIL_CONFIRMATION, 'success')
+                response = redirect(web_url_for('user_profile'))
+                return framework.auth.authenticate(user, response=response)
+            else:  # Confirm and register the user
+                user.date_last_login = datetime.datetime.utcnow()
+                user.save()
+                # Go to settings page
+                status.push_status_message(language.WELCOME_MESSAGE, 'success')
+                response = redirect(web_url_for('user_profile'))
+                return framework.auth.authenticate(user, response=response)
+        # Return data for the error template
+        return {
+            'code': http.BAD_REQUEST,
+            'message_short': 'Link Expired',
+            'message_long': language.LINK_EXPIRED
+        }, http.BAD_REQUEST
 
 
 def send_confirm_email(user, email):
@@ -219,9 +228,25 @@ def send_confirm_email(user, email):
         email.
     """
     confirmation_url = user.get_confirmation_url(email, external=True, force=True)
-    mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
-        user=user,
-        confirmation_url=confirmation_url)
+    mails.send_mail(email,
+                    mails.CONFIRM_EMAIL,
+                    'plain',
+                    user=user,
+                    confirmation_url=confirmation_url)
+
+
+def confirm_update_email(user, email):
+    """Sends a confirmation email to `user` to a given email.
+
+    :raises: KeyError if user does not have a confirmation token for the given
+        email.
+    """
+    confirmation_url = user.get_confirmation_url(email, external=True)
+    mails.send_mail(email,
+                    mails.UPDATE_EMAIL,
+                    'plain',
+                    user=user,
+                    confirmation_url=confirmation_url)
 
 
 def register_user(**kwargs):

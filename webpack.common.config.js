@@ -45,6 +45,7 @@ var entry = {
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
+    'account-config-page': staticPath('js/pages/account-config-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries

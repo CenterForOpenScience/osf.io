@@ -18,6 +18,7 @@ from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.auth.views import confirm_update_email
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
@@ -890,6 +891,24 @@ class TestUserProfile(OsfTestCase):
     def setUp(self):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
+
+    def test_serialize_names(self):
+        self.user.fullname = 'Thomas Jefferson'
+        self.user.given_name = 'Thomas'
+        self.user.middle_names = 'Twizzler'
+        self.user.family_name = 'Jefferson'
+        self.user.save()
+        url = api_url_for('serialize_names')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(res.json.get('full'), 'Thomas Jefferson')
+        assert_equal(res.json.get('given'), 'Thomas')
+        assert_equal(res.json.get('middle'), 'Twizzler')
+        assert_equal(res.json.get('family'), 'Jefferson')
+        assert_false(res.json.get('suffix'))
 
     def test_sanitization_of_edit_profile(self):
         url = api_url_for('edit_profile', uid=self.user._id)
@@ -1308,6 +1327,104 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_blank_confirm_password(self):
         for password in ('', '      '):
             self.test_password_change_invalid_blank_password('password', 'new password', password)
+
+
+class TestChangeUsername(OsfTestCase):
+
+    def setUp(self):
+        super(TestChangeUsername, self).setUp()
+        self.user = AuthUserFactory()
+        self.user.set_password('password')
+        self.user.save()
+        self.user.reload()
+        self.user2 = AuthUserFactory()
+
+    @mock.patch('website.profile.views.send_update_email_confirmation')
+    def test_change_username_valid(self, mock_send_confirmation):
+        payload = {
+            'new_username': 'freddieHg@cos.io',
+            'confirm_new_username': 'freddieHg@cos.io',
+            'password': 'password'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(self.user.unconfirmed_username, 'freddieHg@cos.io')
+        assert_true(mock_send_confirmation.called)
+
+    def test_change_username_empty_fields(self):
+        payload = {
+            'new_username': '',
+            'confirm_new_username': '',
+            'password': 'password'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_change_username_confirmed_email_doesnt_match(self):
+        payload = {
+            'new_username': 'freddieHg@cos.io',
+            'confirm_new_username': 'freddieHggg@cos.io',
+            'password': 'password'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_change_username_to_existing_username(self):
+        payload = {
+            'new_username': self.user.username,
+            'confirm_new_username': self.user.username,
+            'password': 'password'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user2.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def change_username_invalid_password_raises_error(self):
+        payload = {
+            'new_username': 'freddieHg@cos.io',
+            'confirm_new_username': 'freddieHg@cos.io',
+            'password': 'incorrectpassword'
+        }
+        url = api_url_for('user_account_email')
+        res = self.app.post_json(url, payload, auth=self.user2.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    @mock.patch('website.profile.views.confirm_update_email')
+    def test_send_update_email_confirmation(self, mock_confirm_update_email):
+        url = api_url_for('user_account_email')
+        payload = {
+            'new_username': 'bluesuede@shoes.com',
+            'confirm_new_username': 'bluesuede@shoes.com',
+            'password': 'password'
+        }
+        self.app.post_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        token = self.user.get_confirmation_token(self.user.unconfirmed_username)
+        assert_equal(self.user.email_verifications[token]['email'], self.user.unconfirmed_username)
+        assert_true(mock_confirm_update_email.called)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_confirm_update_email_called_with_correct_args(self, send_mail):
+        self.user.unconfirmed_username = 'hounddog@graceland.com'
+        self.user.add_email_verification(self.user.unconfirmed_username)
+        self.user.save()
+
+        confirmation_url = self.user.get_confirmation_url(
+            self.user.unconfirmed_username,
+            external=True
+        )
+        confirm_update_email(user=self.user, email=self.user.unconfirmed_username)
+
+        assert_true(send_mail.called)
+        send_mail.assert_called_with(self.user.unconfirmed_username,
+                                     mails.UPDATE_EMAIL,
+                                     'plain',
+                                     user=self.user,
+                                     confirmation_url=confirmation_url)
 
 
 class TestAddingContributorViews(OsfTestCase):

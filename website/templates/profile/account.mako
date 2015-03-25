@@ -18,6 +18,52 @@
             </div>
         </div>
         <div class="col-md-6">
+            <div id="changeUsername" class="panel panel-default" data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}">
+                <div class="panel-heading"><h3 class="panel-title">Change Account Email</h3></div>
+                <div class="panel-body">
+                    <form>
+                        <div class="form-group">
+                            <label>Old Email</label>
+                            <input type="email"
+                                   class="form-control"
+                                   data-bind="value:username"
+                                   disabled="">
+                        </div>
+                        <div class="form-group">
+                            <label>New Email</label>
+                            <input type="email"
+                                   class="form-control"
+                                   data-bind="value:newUsername">
+                            <div data-bind="visible: showMessages, css:'text-danger'">
+                                <p data-bind="validationMessage: newUsername"></p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Email</label>
+                            <input type="email"
+                                   class="form-control"
+                                   data-bind="value:confirmNewUsername">
+                            <div data-bind="visible: showMessages, css:'text-danger'">
+                                <p data-bind="validationMessage: confirmNewUsername"></p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password"
+                                   class="form-control"
+                                   data-bind="value:password">
+                            <div data-bind="visible: showMessages, css:'text-danger'">
+                                <p data-bind="validationMessage: password"></p>
+                            </div>
+                        </div>
+                        <button type="submit"
+                                class="btn btn-default"
+                                data-bind="click:submit">Update Email</button>
+                        <!-- Flashed Messages -->
+                        <div data-bind="html: message, attr: {class: messageClass}" style="padding-top: 10px"></div>
+                    </form>
+                </div>
+            </div>
             <div id="changePassword" class="panel panel-default">
                 <div class="panel-heading"><h3 class="panel-title">Change Password</h3></div>
                 <div class="panel-body">
@@ -40,4 +86,9 @@
             </div>
         </div>
     </div>
+</%def>
+
+<%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
+    <script src="${"/static/public/js/account-config-page.js" | webpack_asset}"></script>
 </%def>

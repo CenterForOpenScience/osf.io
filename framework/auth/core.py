@@ -206,6 +206,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # NOTE: In the OSF, username is an email
     # May be None for unregistered contributors
     username = fields.StringField(required=False, unique=True, index=True)
+    unconfirmed_username = fields.StringField(required=False, unique=True, index=True)
     password = fields.StringField()
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField(index=True)
