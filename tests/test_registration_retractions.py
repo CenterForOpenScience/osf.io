@@ -2,6 +2,7 @@
 
 import datetime
 from nose.tools import *  # noqa
+import unittest
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, NodeFactory, RegistrationFactory, UserFactory, AuthUserFactory
@@ -27,6 +28,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
     def test_retract(self):
         self.registration.is_public = True
         self.registration.retract_registration(self.user, self.justification)
+        self.registration.save()
 
         self.registration.reload()
         assert_true(self.registration.is_retracted)

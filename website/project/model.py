@@ -2427,6 +2427,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         }
 
     def retract_registration(self, user, justification=None):
+        """Retracts public registration and notes when and by whom
+        """
 
         if not self.is_public or not self.is_registration:
             raise ValidationTypeError
@@ -2436,8 +2438,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.is_retracted = True
         self.retraction_date = datetime.datetime.utcnow()
         self.retracted_by = user
-
-        self.save()
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
