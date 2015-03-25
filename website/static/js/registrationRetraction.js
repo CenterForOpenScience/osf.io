@@ -1,6 +1,5 @@
 /**
- * On page load, focuses on justification input and
- * maintains knockout ViewModel
+ * On page load, maintains knockout ViewModel
 **/
 'use strict';
 
@@ -9,25 +8,18 @@ require('knockout.validation');
 var $ = require('jquery');
 
 var $osf = require('js/osfHelpers');
+var koHelpers = require('js/koHelpers');
 
 var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
 
     var self = this;
-
-    // Custom Validation
-    ko.validation.rules['mustEqual'] = {
-        validator: function (val, otherVal) {
-            return val === otherVal;
-        },
-        message: "The field does not match the required input."
-    };
-    ko.validation.registerExtenders();
+    var mustEqual = koHelpers.mustEqual;
 
     self.registrationTitle = registrationTitle;
     self.justification = ko.observable('');
     self.confirmationText = ko.observable().extend({
         required: true,
-        mustEqual: self.registrationTitle
+        mustEqual : self.registrationTitle
     });
 
     self.submit = function() {
@@ -45,7 +37,7 @@ var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
                 submitUrl,
                 ko.toJS(self)
             ).done(function (response) {
-                    $(location).attr("href", response.redirectUrl);
+                    window.location = response.redirectUrl;
                 }
             );
         }
