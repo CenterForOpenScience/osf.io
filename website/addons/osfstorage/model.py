@@ -164,6 +164,7 @@ class OsfStorageFileNode(StoredObject):
     def node(self):
         return self.node_settings.owner
 
+    @utils.must_be('folder')
     def find_child_by_name(self, name, kind='file'):
         return self.__class__.find_one(
             Q('name', 'eq', name) &
