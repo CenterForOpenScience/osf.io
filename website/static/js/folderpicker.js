@@ -1,7 +1,7 @@
 /**
 * A simple folder picker plugin built on HGrid.
 * Takes the same options as HGrid and additionally requires an
-* `onChooseFolder` option (the callback executed when a folder is selected).
+* `onPickFolder` option (the callback executed when a folder is selected).
 *
 * Usage:
 *
@@ -79,7 +79,7 @@ function treebeardSelectView(item) {
         onchange: function(evt) {
             tb.options.onPickFolder(evt, item);
         },
-        name: '#' + tb.options.divID + INPUT_NAME,
+        name: '#' + tb.options.divID + INPUT_NAME
     }, ' ');
 
     if (tb._tempPicked) {
@@ -174,7 +174,7 @@ var defaults = {
     rowHeight : 35,
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
-    },
+    }
 };
 
 function FolderPicker(selector, opts) {
@@ -184,7 +184,7 @@ function FolderPicker(selector, opts) {
     // Custom Treebeard action to select a folder that uses the passed in
     // "onChooseFolder" callback
     if (!opts.onPickFolder) {
-        throw 'FolderPicker must have the "onPickFolder" option defined';
+        throw new Error('FolderPicker must have the "onPickFolder" option defined');
     }
     self.options = $.extend({}, defaults, opts);
     self.options.divID = selector.substring(1);
@@ -202,7 +202,7 @@ $.fn.folderpicker = function(options) {
     this.each(function() {
         // Treebeard must take an ID as a selector if using as a jQuery plugin
         if (!this.id) {
-            throw 'FolderPicker must have an ID if initializing with jQuery.';
+            throw new Error('FolderPicker must have an ID if initializing with jQuery.');
         }
         var selector = '#' + this.id;
         return new FolderPicker(selector, options);
