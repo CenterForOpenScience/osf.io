@@ -32,9 +32,10 @@ class TestFileGuid(OsfTestCase):
         assert_equal('osfstorage', model.OsfStorageGuidFile().provider)
 
     def test_correct_path(self):
-        guid = model.OsfStorageGuidFile(node=self.project, path='baz/foo/bar')
+        guid = model.OsfStorageGuidFile(node=self.project, path='/baz/foo/bar')
 
-        assert_equals(guid.path, 'baz/foo/bar')
+        assert_equals(guid.path, '/baz/foo/bar')
+        assert_equal(guid.path, guid.waterbutler_path)
         assert_equals(guid.waterbutler_path, '/baz/foo/bar')
 
     @mock.patch('website.addons.base.requests.get')
@@ -56,10 +57,11 @@ class TestFileGuid(OsfTestCase):
         assert_equals('Terran it up', guid.unique_identifier)
 
     def test_node_addon_get_or_create(self):
-        guid, created = self.node_addon.find_or_create_file_guid('baz/foo/bar')
+        guid, created = self.node_addon.find_or_create_file_guid('/baz/foo/bar')
 
         assert_true(created)
-        assert_equal(guid.path, 'baz/foo/bar')
+        assert_equal(guid.path, '/baz/foo/bar')
+        assert_equal(guid.path, guid.waterbutler_path)
         assert_equal(guid.waterbutler_path, '/baz/foo/bar')
 
     def test_node_addon_get_or_create_finds(self):
