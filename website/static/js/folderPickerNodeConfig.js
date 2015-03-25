@@ -278,10 +278,10 @@ var FolderPickerViewModel = oop.defclass({
     _serializeSettings: function(){
         return ko.toJS(this);
     },
+    /**
+     * Send a PUT request to change the linked folder.
+     */    
     submitSettings: function() {
-        /**
-         * Send a PUT request to change the linked folder.
-         */
         var self = this;
         function onSubmitSuccess(response) {
             // Update folder in ViewModel
