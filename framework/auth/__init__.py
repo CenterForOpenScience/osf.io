@@ -138,6 +138,9 @@ def login(username, password):
             if not user.is_claimed:
                 raise LoginNotAllowedError('User is not claimed.')
 
+            if user.is_merged:
+                raise LoginNotAllowedError('Cannot log in to a merged user.')
+
             if user.is_disabled:
                 raise LoginDisabledError('User is disabled.')
 
