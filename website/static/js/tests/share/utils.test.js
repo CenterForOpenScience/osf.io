@@ -142,4 +142,69 @@ describe('share/utils', () => {
             assert.deepEqual('toast AND (2)', utils.buildQuery(vm));
         });
     });
+
+
+    describe('#updateFilter', () => {
+        var stub;
+
+        before(() => {
+            stub = sinon.stub(utils, 'search', function(){});
+        });
+
+        after(() => {
+            utils.search.restore();
+            vm.requiredFilters = [];
+            vm.optionalFilters = [];
+        });
+
+        it('adds filters to the optionalFilters unless it is already there or it is required', () => {
+            utils.updateFilter(vm, 'test');
+            assert.deepEqual(['test'], vm.optionalFilters);
+
+            utils.updateFilter(vm, 'test');
+            assert.deepEqual(['test'], vm.optionalFilters);
+
+            utils.updateFilter(vm, 'test', true);
+            assert.deepEqual(['test'], vm.optionalFilters);
+        });
+
+        it('adds filters to the required filters only if required is true and the filter is not already there', () => {
+            utils.updateFilter(vm, 'test', true);
+            assert.deepEqual(['test'], vm.requiredFilters);
+
+            utils.updateFilter(vm, 'test', true);
+            assert.deepEqual(['test'], vm.requiredFilters);
+
+            utils.updateFilter(vm, 'toast');
+            assert.deepEqual(['test'], vm.requiredFilters);
+        });
+
+    });
+
+    describe('#removeFilter', () => {
+        var stub;
+
+        before(() => {
+            stub = sinon.stub(utils, 'search', function(){});
+        });
+
+        after(() => {
+            utils.search.restore();
+        });
+
+        it('removes filters from optional and required', () => {
+            utils.updateFilter(vm, 'test');
+            utils.updateFilter(vm, 'test', true);
+            assert.deepEqual(['test'], vm.optionalFilters);
+            assert.deepEqual(['test'], vm.requiredFilters);
+
+            utils.removeFilter(vm, 'test');
+            assert.deepEqual([], vm.optionalFilters);
+            assert.deepEqual([], vm.requiredFilters);
+            utils.removeFilter(vm, 'test');
+            assert.deepEqual([], vm.optionalFilters);
+            assert.deepEqual([], vm.requiredFilters);
+        });
+
+    });
 });
