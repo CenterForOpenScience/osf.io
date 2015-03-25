@@ -185,6 +185,14 @@ MEETING_DATA = {
         ],
         'public_projects': True,
     },
+    'VSSEF2015 ': {
+        'name': 'Virginia State Science and Engineering Fair 2015',
+        'info_url': 'http://www.vmi.edu/conferences/vssef/vssef_home/',
+        'logo_url': 'http://www.vmi.edu/uploadedImages/Images/Headers/vssef4.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 
 }
 
