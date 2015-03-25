@@ -191,12 +191,18 @@ class BoxProvider(provider.BaseProvider):
             path = BoxPath('/{}/'.format(self.folder))
         yield from self._assert_child_folder(path)
 
+        if raw:
+            url = self.build_url('folders', path._id)
+        else:
+            url = self.build_url('folders', path._id, 'items')
+
         response = yield from self.make_request(
             'GET',
-            self.build_url('folders', path._id, 'items'),
+            url,
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
+
         data = yield from response.json()
 
         if raw:
