@@ -45,12 +45,12 @@ describe('registrationRetraction', () => {
                 it('growl called if invalid confirmation text submitted', () => {
                     vm.confirmationText(invalidConfirmationText);
                     vm.submit();
-                    assert.isTrue(growlSpy.calledOnce);
+                    assert.calledOnce(growlSpy);
                 });
                 it('growl not called with valid username', () => {
                     vm.confirmationText(registrationTitle);
                     vm.submit();
-                    assert.isFalse(growlSpy.called);
+                    assert.notCalled(growlSpy);
                 });
             });
         });

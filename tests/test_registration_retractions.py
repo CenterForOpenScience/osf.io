@@ -147,11 +147,13 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
 class RegistrationRetractionSearchTestCase(OsfTestCase):
 
+    @unittest.skip('Need to implement')
     def test_retract_wiki_not_in_search(self):
-        pass
+        assert False, 'implement'
 
+    @unittest.skip('Need to implement')
     def test_retract_search_indicator_in_results(self):
-        pass
+        assert False, 'implement'
 
 
 @must_be_valid_project
