@@ -947,6 +947,14 @@ class User(GuidStoredObject, AddonModelMixin):
         )
         return self.get_recent_log_ids(since=midnight)
 
+    @property
+    def can_be_merged(self):
+        """The ability of the `merge_user` method to fully merge the user"""
+        return (
+            self.is_confirmed is False and
+            self.get_addons() == []
+        )
+
     def merge_user(self, user, save=False):
         """Merge a registered user into this account. This user will be
         a contributor on any project
