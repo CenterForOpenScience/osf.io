@@ -30,7 +30,7 @@ SideBar.controller = function(vm) {
     var self = this;
     self.vm = vm;
 
-    self.vm.sort = $osf.urlParams().sort ? m.prop($osf.urlParams().sort) : m.prop('Relevance');
+    self.vm.sort = m.prop($osf.urlParams().sort || 'Relevance');
     self.vm.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 

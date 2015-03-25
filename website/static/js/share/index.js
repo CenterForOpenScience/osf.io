@@ -82,7 +82,7 @@ ShareApp.controller = function() {
 };
 
 var renderSort = function(ctrl){
-        return m('.btn-group', {style: {'float': 'right'}}, [
+        return m('.btn-group.pull-right', [
             m('button.btn.btn-default.dropdown-toggle', {
                     'data-toggle': 'dropdown',
                     'aria-expanded': 'false'

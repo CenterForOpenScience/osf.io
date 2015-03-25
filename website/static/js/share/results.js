@@ -10,7 +10,7 @@ var Results = {};
 Results.view = function(ctrl) {
     var res = [];
     var len = 0;
-    if (ctrl.vm.results !== null){
+    if (ctrl.vm.results){
         res = $.map(ctrl.vm.results, ctrl.renderResult);
         len = ctrl.vm.results.length;
     }
