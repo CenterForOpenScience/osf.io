@@ -50,6 +50,13 @@
 
       <div class="col-md-3">
         <div id="fileRevisions" class="scripted">
+          <ol class="breadcrumb">
+            <li><a href="{{ node.urls.files }}" data-bind="text: node.title"></a></li>
+            <li class="active overflow" data-bind="text: file.provider"></li>
+            <!-- ko foreach: path.slice(1) -->
+            <li class="active overflow" data-bind="text: $data"></li>
+            <!-- /ko -->
+          </ol>
 
           <span data-bind="if: currentVersion">
             <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
