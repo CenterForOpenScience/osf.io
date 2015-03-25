@@ -530,7 +530,7 @@ function createFolder(event, parent, col) {
             return m('div', [
                 m('span.pull-left.text-danger', errorMessage()),
                 m('div', [
-                    m('button.btn.btn-default.btn-md', {onclick: self.modal.dismiss.bind(self)}, 'Cancel'),
+                    m('button.btn.btn-default.btn-md', {onclick: function(){self.modal.dismiss();}}, 'Cancel'),
                     ' ',
                     creatingFolder() ?
                     m('i.fa.fa-spinner.fa-spin') :
