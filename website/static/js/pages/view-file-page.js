@@ -1,4 +1,5 @@
 var Fangorn = require('fangorn');
+var m = require('mithril');
 
 var FileRenderer = require('../filerenderer.js');
 var FileRevisions = require('../fileRevisions.js');
@@ -39,6 +40,10 @@ $(document).ready(function() {
                     } else {
                         tb.options.folderArray = [''];
                     }
+                    m.render($('#files-search').get(0), tb.options.filterTemplate.call(tb));
+                    $('#files-search input[placeholder=Search]').css('width', '95%');
+                    $('#files-search input[placeholder=Search]').removeClass('pull-right').addClass('pull-left');
+                    $('#toggle-icon').css('margin-top', '5px');
                 },
                 columnTitles: function () {
                     return [{
