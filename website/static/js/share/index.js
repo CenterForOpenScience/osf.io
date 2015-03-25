@@ -32,7 +32,7 @@ ShareApp.view = function(ctrl) {
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
             ctrl.vm.results !== null ? renderSort(ctrl) : [],
-            m('.row.searchContent', [
+            m('.row.search-content', [
                m('.col-md-2.col-lg-3', [
                     SideBar.view(ctrl.sideBarController)
                 ]),
