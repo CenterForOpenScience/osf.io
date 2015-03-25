@@ -83,7 +83,7 @@ ShareApp.controller = function() {
 
 var renderSort = function(ctrl){
         return m('.btn-group', {style: {'float': 'right'}}, [
-            m('button.btn.btn-default.dropdown-taggle', {
+            m('button.btn.btn-default.dropdown-toggle', {
                     'data-toggle': 'dropdown',
                     'aria-expanded': 'false'
                 }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
