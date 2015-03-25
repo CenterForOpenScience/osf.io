@@ -233,6 +233,33 @@ class TestCRUD:
         assert aiohttpretty.has_call(method='DELETE', uri=delete_url)
         assert result is None
 
+    @async
+    @pytest.mark.aiohttpretty
+    def test_delete_folder(self, provider):
+        path = '/foobar/'
+        item = fixtures.folder_metadata
+
+        query = provider._build_query(provider.folder['id'], title='foobar')
+        query2 = provider._build_query(item['id'])
+        print(query2)
+        list_file_url = provider.build_url('files', q=query, alt='json')
+        list_file_url2 = provider.build_url('files', q=query2, alt='json')
+        delete_url = provider.build_url('files', item['id'])
+
+        aiohttpretty.register_json_uri('GET', list_file_url, body={
+            'items': [item]
+        })
+        aiohttpretty.register_json_uri('GET', list_file_url2, body={
+            'items': [item]
+        })
+        aiohttpretty.register_json_uri('GET', provider.build_url('files', item['id']), body=item)
+        aiohttpretty.register_uri('DELETE', delete_url, status=204)
+
+        result = yield from provider.delete(path)
+
+        assert aiohttpretty.has_call(method='GET', uri=list_file_url)
+        assert aiohttpretty.has_call(method='DELETE', uri=delete_url)
+
 
 class TestMetadata:
 
