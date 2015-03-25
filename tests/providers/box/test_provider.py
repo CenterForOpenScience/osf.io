@@ -348,6 +348,22 @@ class TestCRUD:
 
         assert aiohttpretty.has_call(method='DELETE', uri=url)
 
+    @async
+    @pytest.mark.aiohttpretty
+    def test_delete_folder(self, provider, folder_object_metadata):
+        item = folder_object_metadata
+        path = BoxPath('/{}/{}/'.format(item['id'], item['name']))
+        url = provider.build_url('folders', path._id)
+        delete_url = url + '?recursive=True'
+
+        aiohttpretty.register_json_uri('GET', url, body=item)
+        aiohttpretty.register_uri('DELETE', delete_url, status=204)
+
+        yield from provider.delete(str(path))
+
+        assert aiohttpretty.has_call(method='GET', uri=url)
+        assert aiohttpretty.has_call(method='DELETE', uri=delete_url)
+
 
 class TestMetadata:
 
