@@ -247,19 +247,31 @@ class OsfStorageFileNode(StoredObject):
         extra = {'version': len(self.versions)} if version else None
         node_logger.log(action, extra=extra, save=True)
 
-    def delete(self, auth, log=True):
+    def delete(self, auth, recurse=True, log=True):
         if self.is_deleted:
             raise errors.DeleteError
+
         self.is_deleted = True
         self.save()
+
+        if recurse and self.is_folder:
+            for child in self.children:
+                child.delete(auth, recurse=recurse, log=log)
+
         if log:
             self.log(auth, NodeLog.FILE_REMOVED, version=False)
 
-    def undelete(self, auth, log=True):
+    def undelete(self, auth, recurse=True, log=True):
         if not self.is_deleted:
             raise errors.UndeleteError
+
         self.is_deleted = False
         self.save()
+
+        if recurse and self.is_folder:
+            for child in self.children:
+                child.undelete(auth, recurse=recurse, log=log)
+
         if log:
             self.log(auth, NodeLog.FILE_ADDED)
 
