@@ -389,6 +389,13 @@ li.pointer {
     text-decoration: none;
 }
 
+.comment-content img{
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .unread-comments-count {
     font-size: small;
     background-color: #428bca;
