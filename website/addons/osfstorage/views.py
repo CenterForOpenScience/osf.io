@@ -222,7 +222,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
     return {
         'revisions': [
             utils.serialize_revision(node, record, version, idx)
-            for idx, version in enumerate(record.versions)
+            for idx, version in enumerate(reversed(record.versions))
         ]
     }
 
