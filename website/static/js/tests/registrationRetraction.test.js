@@ -3,6 +3,7 @@
 var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
+var Raven = require('raven-js');
 
 var registrationRetraction = require('js/registrationRetraction');
 
@@ -17,6 +18,7 @@ describe('registrationRetraction', () => {
             var registrationTitle = 'This is a fake registration';
             var invalidConfirmationText = 'abcd';
             var submitUrl = '/project/abcdef/retraction/';
+            var invalidSubmitUrl = '/notAnEndpoint/';
             var redirectUrl = '/project/abdef/';
             var response = {redirectUrl: redirectUrl};
             var endpoints = [
@@ -24,7 +26,13 @@ describe('registrationRetraction', () => {
                     method: 'POST',
                     url: submitUrl,
                     response: response
+                },
+                {
+                    method: 'POST',
+                    url: invalidConfirmationText,
+                    response: {status: 500}
                 }
+
             ];
             var server;
 
@@ -76,12 +84,31 @@ describe('registrationRetraction', () => {
 
                     vm.confirmationText(registrationTitle);
                     vm.submit().done(() => {
-                        assert.equal(response, redirectUrl)
+                        assert.equal(response, redirectUrl);
                         assert.called(onSubmitSuccessStub);
                         assert.called(postSpy);
                         assert.notCalled(growlSpy);
                     });
+
                     onSubmitSuccessStub.restore();
+                    done();
+                });
+                it('logs error with Raven if submit fails', (done) => {
+                    vm = new registrationRetraction.ViewModel(invalidSubmitUrl, registrationTitle);
+                    var onSubmitErrorSpy = new sinon.spy(vm, 'onSubmitError');
+                    var ravenStub = new sinon.stub(Raven, 'captureMessage');
+
+                    vm.confirmationText(registrationTitle);
+
+                    vm.submit().done(() => {
+                        assert.equal(response, redirectUrl);
+                        assert.called(onSubmitErrorSpy);
+                        assert.called(postSpy);
+                        assert.notCalled(growlSpy);
+                    });
+
+                    onSubmitErrorSpy.restore();
+                    ravenStub.restore();
                     done();
                 });
             });
