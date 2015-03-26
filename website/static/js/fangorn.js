@@ -326,7 +326,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
     };
     var filesArr = treebeard.dropzone.getQueuedFiles();
     if (filesArr.length  > 1) {
-        treebeard.options.iconState.generalIcons[1].on = true;
+        treebeard.options.iconState.generalIcons.cancelUploads.on = true;
     }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
@@ -455,7 +455,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
-    treebeard.options.iconState.generalIcons[1].on = false;
+    treebeard.options.iconState.generalIcons.cancelUploads.on = false;
     treebeard.redraw();
 }
 
@@ -493,7 +493,7 @@ function _fangornDropzoneError(tb, file, message) {
     }
     $osf.growl('Error', msgText);
     tb.options.uploadInProgress = false;
-    tb.options.iconState.generalIcons[1].on = false;
+    tb.options.iconState.generalIcons.cancelUploads.on = false;
 }
 
 /**
@@ -540,19 +540,15 @@ function _downloadEvent (event, item, col) {
  * @param {Object} col Information pertinent to that column where this upload event is run from
  * @private
  */
-function _removeEvent (event, item, col) {
-    try {
-        event.stopPropagation();
-    } catch (e) {
-        window.event.cancelBubble = true;
-    }
-    var tb = this;
 
+function _removeEvent (event, items, col) {
+    var tb = this;
     function cancelDelete() {
-        this.modal.dismiss();
+        tb.modal.dismiss();
     }
-    function runDelete() {
-        var tb = this;
+    function runDelete(item) {
+        var mithrilContent;
+        var mithrilButtons;
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
@@ -785,7 +781,7 @@ function _fangornDefineToolbar (item) {
         if (item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'deleteSingle', template : function(){
                 return m('.fangorn-toolbar-icon.text-danger', {
-                        onclick : function(event) { _removeEvent.call(self, event, item); } 
+                        onclick : function(event) { _removeEvent.call(self, event, [item]); } 
                     }, [
                     m('i.fa.fa-times'),
                     m('span.hidden-xs','Delete')
@@ -965,7 +961,18 @@ function expandStateLoad(item) {
 function _fangornToolbar () {
     var tb = this;
     var titleContent = tb.options.title();
-    if(tb.options.iconState.mode === 'bar'){                   
+    var generalButtons = [];
+    var generalIcons = tb.options.iconState.generalIcons;
+    if (generalIcons.search.on) { 
+        generalButtons.push(generalIcons.search.template.call(tb));
+    }
+    if (generalIcons.deleteMultiple.on) { 
+        generalButtons.push(generalIcons.deleteMultiple.template.call(tb));
+    }
+    if (generalIcons.cancelUploads.on) { 
+        generalButtons.push(generalIcons.cancelUploads.template.call(tb));
+    }
+    if (tb.options.iconState.mode === 'bar'){                   
         return m('.row.tb-header-row', [
                 m('.col-xs-12', [   
                         m('i.m-r-sm','Select rows for further actions.'),
@@ -976,11 +983,7 @@ function _fangornToolbar () {
                                         return icon.template.call(tb);                                    
                                     }
                                 }),
-                                tb.options.iconState.generalIcons.map(function(icon){
-                                    if(icon.on){
-                                        return icon.template.call(tb);
-                                    }
-                                })
+                                generalButtons
                             ]
                         )
                     ])
@@ -1087,8 +1090,9 @@ function filterRowsNotInParent(rows) {
             // $('.tb-row').removeClass('fangorn-selected');
             // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
             tb.select('#tb-tbody').removeClass('unselectable');
+            this.options.iconState.generalIcons.deleteMultiple.on = false;
         } else {
-            this.options.iconState.generalIcons[1].on = true;
+            this.options.iconState.generalIcons.deleteMultiple.on = true;
             tb.select('#tb-tbody').addClass('unselectable');
         }
     }
@@ -1226,11 +1230,11 @@ tbOptions = {
     // Not treebeard options, specific to Fangorn
     iconState : {
         mode : 'bar',
-        generalIcons : [
-            { name : 'search', on : true, template : searchIcon },
-            { name : 'cancelUploads', on : false, template : cancelUploadsIcon },
-            { name : 'deleteMultiple', on : false, template :  deleteMultipleIcon },
-        ],
+        generalIcons : {
+            search : { on : true, template : searchIcon },
+            cancelUploads : { on : false, template : cancelUploadsIcon },
+            deleteMultiple : { on : false, template :  deleteMultipleIcon }           
+        },
         rowIcons : [{}]
 
     },
