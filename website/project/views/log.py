@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
-import math
-import itertools
 
 from flask import request
 
