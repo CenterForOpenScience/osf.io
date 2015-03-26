@@ -109,13 +109,6 @@ text-align: center;
 	font-size: 17px;
 }
 
-
-/* File icons */
-.file-extension {
-	width: 16px;
-	height: 16px;
-}
-
 .fangorn-toolbar {
 }
 .fangorn-toolbar-icon {
@@ -141,6 +134,17 @@ text-align: center;
 	color: #CCC;
 	text-align: center;
 }
+.fangorn-canDelete, .fangorn-noDelete {
+	font-weight: bold;
+}
+
+/* File icons */
+.file-extension {
+	width: 16px;
+	height: 16px;
+}
+
+
 
 .file-extension._3gp {background: url('/static/img/hgrid/fatcowicons/file_extension_3gp.png');	}
 .file-extension._7z  {background: url('/static/img/hgrid/fatcowicons/file_extension_7z.png'); 	}
