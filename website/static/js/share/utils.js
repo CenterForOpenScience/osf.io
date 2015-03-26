@@ -191,12 +191,23 @@ utils.loadStats = function(vm){
         url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
         background: true
     }).then(function(data) {
+        if (vm.statsData){
+            unload = $.map(vm.statsData.charts.shareDonutGraph.columns, function(datum) {
+                return datum[0];
+            });
+        } else {
+            unload = [];
+        }
         vm.statsData = data;
         $.map(Object.keys(vm.graphs), function(type) {
             if(type === 'shareDonutGraph') {
                 var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
+                vm.statsData.charts.shareDonutGraph.columns = vm.statsData.charts[type].columns.filter(function(datum) {
+                    return (datum[1] > 0);
+                })
             }
+            vm.statsData.charts[type].unload = unload;
             vm.graphs[type].load(vm.statsData.charts[type]);
         }, utils.errorState.bind(this, vm));
         vm.statsLoaded(true);
