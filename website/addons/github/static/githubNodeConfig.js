@@ -295,7 +295,6 @@ ViewModel.prototype.updateFromData = function(settings){
     if (settings.urls) {
         self.urls(settings.urls);
     }
-    debugger;
 };
 
 ViewModel.prototype.fetchFromServer = function(callback) {

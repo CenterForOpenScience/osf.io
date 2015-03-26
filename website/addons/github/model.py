@@ -286,8 +286,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         ret = super(AddonGitHubNodeSettings, self).to_json(user)
+
         user_settings = user.get_addon('github')
+
         ret.update({
+            'repo': self.repo or '',
+            'has_repo': self.repo is not None,
             'user_has_auth': user_settings and user_settings.has_auth,
             'node_has_auth': False,
             'user_is_owner': (
@@ -298,7 +302,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             'is_registration': self.owner.is_registration,
         })
         if self.user_settings and self.user_settings.has_auth:
-            valid_credentials = False
             owner = self.user_settings.owner
             if user_settings and user_settings.owner == owner:
                 connection = GitHub.from_settings(user_settings)
@@ -306,18 +309,15 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 # Since /user/repos excludes organization repos to which the
                 # current user has push access, we have to make extra requests to
                 # find them
-                valid_credentials = True
-                try:
-                    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-                    repo_names = [
-                        '{0} / {1}'.format(repo.owner.login, repo.name)
-                        for repo in repos
-                    ]
-                except GitHubError as error:
-                    if error.code == http.UNAUTHORIZED:
-                        repo_names = []
-                        valid_credentials = False
-                ret.update({'repo_names': repo_names})
+                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                repo_names = [
+                    '{0} / {1}'.format(repo.owner.login, repo.name)
+                    for repo in repos
+                ]
+                ret.update({
+                    'repo_names': repo_names,
+                })
+
             ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
@@ -329,8 +329,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'github_user_name': self.user_settings.github_user_name,
                 'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
                 'is_owner': owner == user,
-                'valid_credentials': valid_credentials,
-                'addons_url': web_url_for('user_addons'),
+                'owner': self.user_settings.owner.fullname
             })
         return ret
 
