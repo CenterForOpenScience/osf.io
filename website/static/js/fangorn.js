@@ -290,15 +290,15 @@ function _fangornUploadProgress(treebeard, file, progress) {
         }
     }
 
-    if(treebeard.options.placement === 'dashboard'){
-        column = null;
-        msgWithCancel = m('span', [ fullRowTemplate, cancelUploadTemplate.call(treebeard, item) ]);
-        msgWithoutCancel = fullRowTemplate;
-    } else {
+    // if(treebeard.options.placement === 'dashboard'){
+    //     column = null;
+    //     msgWithCancel = m('span', [ fullRowTemplate, cancelUploadTemplate.call(treebeard, item) ]);
+    //     msgWithoutCancel = fullRowTemplate;
+    // } else {
         column = 1;
         msgWithCancel = m('span', [ columnTemplate, cancelUploadTemplate.call(treebeard, item) ]);
         msgWithoutCancel = columnTemplate;
-    }
+    // }
 
     if (progress < 100) {
         item.notify.update(msgWithCancel, 'success', column, 0);
