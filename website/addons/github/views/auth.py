@@ -29,9 +29,9 @@ def get_profile_view(user_settings):
 @must_have_permission('write')
 @must_have_addon('github', 'user')
 @must_have_addon('github', 'node')
-def github_add_user_auth(user_addon, node_addon, **kwargs):
+def github_add_user_auth(auth, user_addon, node_addon, **kwargs):
     node_addon.authorize(user_addon, save=True)
-    return {}
+    return node_addon.to_json(auth.user)
 
 
 @must_be_logged_in
