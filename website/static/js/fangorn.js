@@ -571,20 +571,75 @@ function _removeEvent (event, item, col) {
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
-
-    if (item.data.permissions.edit) {
-        var mithrilContent = m('div', [
-                m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
-                m('p', 'This action is irreversible.')
-            ]);
-        var mithrilButtons = m('div', [
-                m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
-            ]);
-        tb.modal.update(mithrilContent, mithrilButtons);
-    } else {
-        item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+    function runDeleteMultiple(items){
+        items.forEach(function(item){
+            runDelete(item);
+        });
     }
+
+    // If there is only one item being deleted, don't complicate the issue:
+    if(items.length === 1) {
+        var mithrilContentSingle = m('div', [
+            m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
+            m('p', 'This action is irreversible.')
+        ]);
+        var mithrilButtonsSingle = m('div', [
+            m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete(); } }, 'Cancel'),
+            m('button', { 'class' : 'btn btn-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
+        ]);
+        // This is already being checked before this step but will keep this edit permission check
+        if(items[0].data.permissions.edit){
+            tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
+        }
+    } else {
+        // Check if all items can be deleted
+        var canDelete = true;
+        var deleteList = [];
+        var noDeleteList = [];
+        var mithrilContentMultiple;
+        var mithrilButtonsMultiple;
+        items.forEach(function(item, index, arr){
+            if(!item.data.permissions.edit){
+                canDelete = false;
+                noDeleteList.push(item);
+            } else {
+                deleteList.push(item);
+            }
+        });
+        // If all items can be deleted      
+        if(canDelete){
+            mithrilContentMultiple = m('div', [
+                    m('h3.break-word', 'Delete multiple files?'),
+                    m('p', 'This action is irreversible.'),
+                    deleteList.map(function(item){
+                        return m('.fangorn-canDelete.text-success', item.data.name);
+                    })
+                ]);
+            mithrilButtonsMultiple =  m('div', [
+                    m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('button', { 'class' : 'btn btn-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete All')
+                ]);        
+        } else {
+            mithrilContentMultiple = m('div', [
+                    m('h3.break-word', 'Delete multiple files?'),
+                    m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
+                    deleteList.map(function(n){
+                        return m('.fangorn-canDelete.text-success', n.data.name);
+                    }),
+                    noDeleteList.map(function(n){
+                        return m('.fangorn-noDelete.text-warning', n.data.name);
+                    })
+                ]);            
+            mithrilButtonsMultiple =  m('div', [
+                    m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('button', { 'class' : 'btn btn-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete Some')
+                ]);    
+        }
+        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple); 
+    }
+
+
+
 }
 
 /**
@@ -978,13 +1033,12 @@ function toolbarDismissIcon (){
  function deleteMultipleIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-danger', { 
-            onclick : function () { tb.options.iconState.mode = 'search'; }
+            onclick : function () { _removeEvent.call(tb, null, tb.multiselected); }
         }, [
         m('i.fa.fa-trash'),
         m('span.hidden-xs', 'Delete Selected')
     ]);
  }
-
 
 /**
  * When multiple rows are selected remove those that are not in the parent
