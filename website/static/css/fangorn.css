@@ -45,7 +45,11 @@ text-align: center;
 }
 
 .fangorn-hover {
-    background: #F4F5DF;
+    background: rgba(51, 122, 183, 0.15);
+}
+.fangorn-selected {
+	background: #337AB7;
+	color: #FFF;
 }
 .tb-th {
 	line-height: 14px;
@@ -110,6 +114,32 @@ text-align: center;
 .file-extension {
 	width: 16px;
 	height: 16px;
+}
+
+.fangorn-toolbar {
+}
+.fangorn-toolbar-icon {
+	padding: 6px 10px;
+	display: inline-block;
+	box-shadow: 0 0 2px #DDD;
+	background: #F8F8F8;
+	margin-right: 5px;
+	cursor: pointer;
+}
+.fangorn-toolbar-icon .fa {
+    font-size: 15px;
+}
+.fangorn-toolbar-icon span {
+    margin-left: 5px;
+}
+
+.fangorn-toolbar-icon:hover {
+  background: rgba(51, 122, 183, 0.15);
+}
+.fangorn-select-toggle {
+	font-size: 20px;
+	color: #CCC;
+	text-align: center;
 }
 
 .file-extension._3gp {background: url('/static/img/hgrid/fatcowicons/file_extension_3gp.png');	}
