@@ -61,7 +61,7 @@
 
                     </dd>
                 </dl><!-- end foreach logs -->
-                <div class='help-block'>
+                <div class='help-block absolute-bottom'>
                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                         <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
                     </ul>
