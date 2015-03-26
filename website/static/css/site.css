@@ -867,8 +867,6 @@ h1.node-title, h1.node-parent-title {
     color: #808080;
 }
 
-
-
 .wiki-panel-body .superlist li {
     display: block;
     font-size: 20px;
@@ -2270,14 +2268,16 @@ span#profileFullname{
 }
 /* Wiki additions */
 .wiki-panel {
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     height: 750px;
     overflow: auto;
     display: block;
     position: relative;
     overflow-x: hidden;
 }
-
+.reset-height {
+    height: auto;
+}
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
@@ -2296,7 +2296,15 @@ span#profileFullname{
     font-size: 16px;
     font-weight: 300;
 }
-
+.wiki-panel-header.no-background {
+    background: transparent;
+}
+.wiki-panel-header.bottom-border {
+    border-bottom: 1px solid #eee;
+}
+.wiki-panel-header.bordered {
+    border: 1px solid #ddd;
+}
 .wiki-panel-footer {
     position: absolute;
     bottom : 0;
@@ -2424,7 +2432,6 @@ span#profileFullname{
   padding-left: 20px;
   padding-right: 20px;
 }
-
 .unselectable {
   -webkit-user-select: none;  /* Chrome all / Safari all */
   -moz-user-select: none;     /* Firefox all */
@@ -2433,4 +2440,7 @@ span#profileFullname{
   /* No support for these yet, use at own risk */
   -o-user-select: none;
   user-select: none;          
+}
+.inline {
+    display: inline-block;
 }

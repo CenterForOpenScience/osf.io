@@ -104,10 +104,10 @@
 <p>Send an <a href="mailto:support@osf.io">email</a> with your request. We’ll get that taken care of for you.</p>
 
 <h3>How can I license my data/code/etc.?</h3>
-<p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href=”https://creativecommons.org/licenses/”>here.</a> </p>
+<p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>
 
 <h3>How do I create a lab group/organizational group?</h3>
-<p>The best way to create a lab or organizational group on the OSF is to create a project for that group. Then, individual projects within the lab can either be organized into components of the lab project or into their own projects which are linked to the lab group project. For an example, check out the <a href=”https://osf.io/ezcuj/”>Reproducibility Project: Psychology.</a></p>
+<p>The best way to create a lab or organizational group on the OSF is to create a project for that group. Then, individual projects within the lab can either be organized into components of the lab project or into their own projects which are linked to the lab group project. For an example, check out the <a href="https://osf.io/ezcuj/">Reproducibility Project: Psychology.</a></p>
 
 <h3>Someone added me as an unregistered contributor, but I already have an OSF account under a different email address. What do I do?</h3>
 <p>There are a few ways to solve this issue. If you haven’t clicked the link to confirm this new account - and the project is public - don’t claim the account. Instead, log into your existing OSF account, navigate to the project of interest, and find your name in the contributor list. When you hover over it, a tooltip will ask if you’d like to claim the account. Click to claim the account - this will send an email to the project creator asking to verify your identity to add you to the project.</p> 
