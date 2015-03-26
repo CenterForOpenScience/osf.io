@@ -170,6 +170,7 @@ ViewModel.prototype._importAuthConfirm = function() {
 
 ViewModel.prototype.importAuth = function() {
     var self = this;
+    debugger;
     bootbox.confirm({
         title: 'Import Github credentials?',
         message: 'Are you sure you want to authorize this project with your Github credentials?',
@@ -348,6 +349,7 @@ ViewModel.prototype.importAuth = function() {
 
 
 ViewModel.prototype.createCredentials = function() {
+    debugger;
     var self = this;
     $osf.postJSON(
         self.urls().createAuth,
