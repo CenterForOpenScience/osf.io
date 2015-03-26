@@ -1085,8 +1085,10 @@ tbOptions = {
             // temporarily remove classes until mithril redraws raws with another hover. 
             // $('.tb-row').removeClass('fangorn-selected');
             // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
-    }
-
+            tb.select('#tb-tbody').removeClass('unselectable');
+        } else {
+            tb.select('#tb-tbody').addClass('unselectable');
+        }
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
