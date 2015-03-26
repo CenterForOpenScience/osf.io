@@ -721,7 +721,7 @@ function _fangornDefineToolbar (item) {
     //Download button if this is an item
     if (item.kind === 'file') {
         buttons.push({ name : 'downloadSingle', template : function(){
-            return m('.fangorn-toolbar-icon.text-info', {
+            return m('.fangorn-toolbar-icon.text-primary', {
                     onclick : function(event) { _downloadEvent.call(self, event, item); }
                 }, [
                 m('i.fa.fa-download'),
@@ -775,7 +775,7 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-    if(this.selected === item.id){
+    if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     }
     // define the toolbar icons for this item
@@ -812,7 +812,7 @@ function _fangornResolveRows(item) {
         folderIcons: false,
         filter : false,
         custom : function(){
-            if(item.id === this.selected) {
+            if(this.isMultiselected(item.id)) {
                 return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
             }
             return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
@@ -1001,6 +1001,8 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    hoverClassMultiselect : 'fangorn-selected',
+    multiselect : true,
     title : function() {
         if(window.contextVars.uploadInstruction) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
@@ -1126,12 +1128,13 @@ tbOptions = {
         return m('i.fa.fa-times-circle');
     },
     headerTemplate : _fangornToolbar,
+    // Not treebeard options, specific to Fangorn
     iconState : {
         mode : 'bar',
         generalIcons : [
             { name : 'search', on : true, template : searchIcon },
-            // { name : 'cancelUploads', on : false, template : cancelUploadsIcon },
-            // { name : 'deleteMultiple', on : false, template :  deleteMultipleIcon },
+            { name : 'cancelUploads', on : false, template : cancelUploadsIcon },
+            { name : 'deleteMultiple', on : false, template :  deleteMultipleIcon },
         ],
         rowIcons : [{}]
 
