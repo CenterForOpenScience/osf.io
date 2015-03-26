@@ -43,26 +43,20 @@ class HookTestCase(StorageTestCase):
 
 class TestGetMetadataHook(HookTestCase):
 
-    def test_hgrid_contents(self):
+    def test_file_metata(self):
         path = u'kind/of/magíc.mp3'
-        record, _ = model.OsfStorageFileRecord.get_or_create(
-            path=path,
-            node_settings=self.node_settings,
-        )
+        record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
         record.versions.append(version)
         record.save()
         res = self.send_hook(
             'osf_storage_get_metadata_hook',
-            {'path': 'kind/of/'},
+            {'path': record.parent._id},
         )
         assert_equal(len(res.json), 1)
         assert_equal(
             res.json[0],
-            utils.serialize_metadata_hgrid(
-                record,
-                self.project,
-            )
+            record.serialized()
         )
 
     def test_osf_storage_root(self):
@@ -80,20 +74,43 @@ class TestGetMetadataHook(HookTestCase):
         root = result[0]
         assert_equal(root, expected)
 
-    def test_hgrid_contents_tree_not_found_root_path(self):
+    def test_root_is_slash(self):
         res = self.send_hook(
             'osf_storage_get_metadata_hook',
-            {'path': ''},
+            {'path': '/'},
         )
         assert_equal(res.json, [])
 
-    def test_hgrid_contents_tree_not_found_nested_path(self):
+    def test_metadata_not_found(self):
         res = self.send_hook(
             'osf_storage_get_metadata_hook',
-            {'path': 'not/found'},
+            {'path': '/notfound'},
             expect_errors=True,
         )
         assert_equal(res.status_code, 404)
+
+    def test_metadata_not_found_lots_of_slashes(self):
+        res = self.send_hook(
+            'osf_storage_get_metadata_hook',
+            {'path': '/not/fo/u/nd/'},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+
+    def test_metadata_path_required(self):
+        res = self.send_hook(
+            'osf_storage_get_metadata_hook', {},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    def test_metadata_path_empty(self):
+        res = self.send_hook(
+            'osf_storage_get_metadata_hook',
+            {'path': ''},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
 
 
 class TestUploadFileHook(HookTestCase):
