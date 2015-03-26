@@ -148,6 +148,7 @@ ViewModel.prototype.deauthorizeNode = function() {
 };
 
 ViewModel.prototype._importAuthConfirm = function() {
+    var self = this;
 
     return $osf.postJSON(
         self.urls().import_auth, {}
