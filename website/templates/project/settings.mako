@@ -205,7 +205,7 @@
 <%def name="render_node_settings(data)">
     <%
        template_name = data['node_settings_template']
-       tpl = context.lookup.get_template(template_name).render(**data)
+       tpl = data['template_lookup'].get_template(template_name).render(**data)
     %>
     ${tpl}
 </%def>

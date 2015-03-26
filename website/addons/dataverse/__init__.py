@@ -1,3 +1,5 @@
+import os
+
 from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings, \
     DataverseFile
 from .routes import settings_routes, page_routes, api_routes
@@ -37,3 +39,5 @@ HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.dataverse_hgrid_root
 
 MAX_FILE_SIZE = 1024 * 2  # MB
+
+NODE_SETTINGS_TEMPLATE = os.path.join(os.getcwd(), 'website', 'addons', SHORT_NAME, 'templates', 'dataverse_node_settings.mako')

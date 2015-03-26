@@ -88,22 +88,12 @@ class AddonConfig(object):
         self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
-        # Build template lookup
-        template_path = os.path.join('website', 'addons', short_name, 'templates')
-        if os.path.exists(template_path):
-            self.template_lookup = TemplateLookup(
-                directories=[
-                    template_path,
-                    settings.TEMPLATES_PATH,
-                ]
-            )
-        else:
-            self.template_lookup = None
-
         # Provide the path the the user_settings template
         self.user_settings_template = user_settings_template
         addon_user_settings_path = os.path.join(
-            template_path,
+            'website',
+            'addons',
+            short_name,
             '{}_user_settings.mako'.format(self.short_name)
         )
 
@@ -129,27 +119,31 @@ class AddonConfig(object):
 
         # Provide the path the the node_settings template
         self.node_settings_template = node_settings_template
-        node_settings_template_name = node_settings_template or '{}_node_settings.mako'.format(self.short_name)
-        addon_node_settings_path = os.path.join(
-            template_path,
-            node_settings_template_name
-        )
-        if node_settings_template and os.path.exists(addon_node_settings_path):
-            # If NODE_SETTINGS_TEMPLATE is defined, use that path.
-            self.node_settings_template = os.path.join(
-                os.path.pardir,
-                'addons',
-                self.short_name,
-                'templates',
-                node_settings_template_name
-            )
-        else:
+        if not node_settings_template or not os.path.exists(os.path.dirname(node_settings_template)):
             # Use the default template (for OAuth addons)
             self.node_settings_template = os.path.join(
+                settings.TEMPLATES_PATH,
                 'project',
                 'addon',
                 'node_settings_default.mako',
             )
+
+        # Build template lookup
+        template_dirs = list(
+            set(
+                [
+                    path
+                    for path in [os.path.dirname(self.user_settings_template), os.path.dirname(self.node_settings_template), settings.TEMPLATES_PATH]
+                    if os.path.exists(path)
+                ]
+            )
+        )
+        if template_dirs:
+            self.template_lookup = TemplateLookup(
+                directories=template_dirs
+            )
+        else:
+            self.template_lookup = None
 
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
@@ -434,6 +428,7 @@ class AddonSettingsBase(StoredObject):
         return {
             'addon_short_name': self.config.short_name,
             'addon_full_name': self.config.full_name,
+            'template_lookup': self.config.template_lookup,
         }
 
     #############
@@ -684,7 +679,8 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 'api_url': self.owner.api_url,
                 'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
-            }
+            },
+            'node_settings_template': os.path.basename(self.config.node_settings_template),
         })
         return ret
 
