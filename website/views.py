@@ -281,6 +281,14 @@ def dashboard(auth):
             }
 
 
+def paginate(items, total, page, size):
+    start = page * size
+    paginated_items = itertools.islice(items, start, start + size)
+    pages = math.ceil(total / float(size))
+
+    return paginated_items, pages
+
+
 @must_be_logged_in
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
@@ -297,12 +305,9 @@ def watched_logs_get(**kwargs):
             message_long='Invalid value for "size".'
         ))
 
-    start = page * size
     total = sum(1 for x in user.get_recent_log_ids())
-    recent_log_ids = itertools.islice(user.get_recent_log_ids(), start, start + size)
-    logs = (model.NodeLog.load(id) for id in recent_log_ids)
-
-    pages = math.ceil(total / float(size))
+    paginated_logs, pages = paginate(user.get_recent_log_ids(), total, page, size)
+    logs = (model.NodeLog.load(id) for id in paginated_logs)
 
     return {
         "logs": [serialize_log(log) for log in logs],

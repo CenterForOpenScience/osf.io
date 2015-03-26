@@ -2,7 +2,7 @@
 import httplib as http
 import logging
 import math
-from itertools import islice
+import itertools
 
 from flask import request
 
@@ -11,7 +11,7 @@ from framework.auth.decorators import collect_auth
 from framework.transactions.handlers import no_auto_transaction
 
 
-from website.views import serialize_log
+from website.views import serialize_log, paginate
 from website.project.model import NodeLog
 from website.project.model import has_anonymous_link
 from website.project.decorators import must_be_valid_project
@@ -32,7 +32,7 @@ def get_log(auth, log_id):
     return {'log': serialize_log(log)}
 
 
-def _get_logs(node, count, auth, link=None, start=0):
+def _get_logs(node, count, auth, link=None, page=0):
     """
 
     :param Node node:
@@ -44,7 +44,6 @@ def _get_logs(node, count, auth, link=None, start=0):
     """
     logs = []
     total = 0
-
     for log in reversed(node.logs):
         # A number of errors due to database inconsistency can arise here. The
         # log can be None; its `node__logged` back-ref can be empty, and the
@@ -56,9 +55,9 @@ def _get_logs(node, count, auth, link=None, start=0):
             anonymous = has_anonymous_link(log_node, auth)
             logs.append(serialize_log(log, anonymous))
 
-    pages = math.ceil(total / float(count))
+    paginated_logs, pages = paginate(logs, total, page, count)
 
-    return [log for log in islice(logs, start, start + count)], total, pages
+    return list(paginated_logs), total, pages
 
 
 @no_auto_transaction
@@ -88,9 +87,8 @@ def get_logs(auth, **kwargs):
         count = request.json['count']
     else:
         count = 10
-    start = page * count
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, total, pages = _get_logs(node, count, auth, link, start)
+    logs, total, pages = _get_logs(node, count, auth, link, page)
     return {'logs': logs, 'total': total, 'pages': pages, 'page': page}
