@@ -164,7 +164,7 @@ def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
 @utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
-    path = payload['path']
+    path = payload.get('path')
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
