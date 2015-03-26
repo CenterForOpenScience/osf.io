@@ -87,8 +87,16 @@ class TestUserSettingsModel(OsfTestCase):
     def test_json(self):
         url =  'otpauth://totp/OSF:{}?secret=' + self.TOTP_SECRET_B32
 
+        settings = self.user_settings.to_json(user=None)
+        '''
+        TODO, ATM to_json gets passed to the addon settings views.
+        Addons may need to inject a MakoTemplateLookup into the template
+        context, but this doesn't belong in the json representation of the
+        class
+        '''
+        del settings['template_lookup']
         assert_equal(
-            self.user_settings.to_json(user=None),
+            settings,
             {
                 'addon_full_name': 'Two-factor Authentication',
                 'addon_short_name': 'twofactor',
