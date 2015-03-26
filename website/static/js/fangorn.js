@@ -752,7 +752,7 @@ function _fangornDefineToolbar (item) {
 function _fangornTitleColumn(item, col) {
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span',{
-            onclick: function() {
+            ondblclick: function() {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 window.location = redir.toString() + '/';
