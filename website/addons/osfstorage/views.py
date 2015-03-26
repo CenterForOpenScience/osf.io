@@ -96,10 +96,15 @@ def osf_storage_crud_prepare(node_addon, payload):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)
+    path = path.split('/')
+
+    if len(path) > 2:
+        raise HTTPError(httplib.BAD_REQUEST)
+
     try:
-        parent, child = path.split('/')
+        parent, child = path
     except ValueError:
-        parent, child = node_addon.root_node, path
+        parent, (child, ) = node_addon.root_node, path
 
     try:
         created, record = False, node_addon.root_node.find_child_by_name(child)
