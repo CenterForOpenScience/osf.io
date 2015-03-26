@@ -960,13 +960,32 @@ function toolbarDismissIcon (){
 }
  function searchIcon (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-primary', { 
+    return m('.fangorn-toolbar-icon.text-info', { 
             onclick : function () { tb.options.iconState.mode = 'search'; }
         }, [
         m('i.fa.fa-search'),
         m('span.hidden-xs', 'Search')
     ]);
  }
+ function cancelUploadsIcon (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-warning', { 
+            onclick : function () { tb.options.iconState.mode = 'search'; }
+        }, [
+        m('i.fa.fa-times-circle'),
+        m('span.hidden-xs', 'Cancel All Uploads')
+    ]);
+ }
+ function deleteMultipleIcon (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-danger', { 
+            onclick : function () { tb.options.iconState.mode = 'search'; }
+        }, [
+        m('i.fa.fa-trash'),
+        m('span.hidden-xs', 'Delete Selected')
+    ]);
+ }
+
 
 
 
