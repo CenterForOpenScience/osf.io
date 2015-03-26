@@ -677,7 +677,7 @@ function _fangornLazyLoadOnLoad (tree) {
  * @private
  */
 function _fangornOrderFolder(tree) {
-    var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+    var sortDirection = this.isSorted[1].desc ? 'desc' : 'asc';
     tree.sortChildren(this, sortDirection, 'text', 0);
     this.redraw();
 }
@@ -703,50 +703,43 @@ function _fangornUploadMethod(item) {
  * @returns {Array} Returns an array of mithril template objects using m()
  * @private
  */
-function _fangornActionColumn (item, col) {
+function _fangornDefineToolbar (item) {
     var self = this,
         buttons = [];
-
     // Upload button if this is a folder
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
     if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
-        buttons.push({
-            name: '',
-            icon: 'fa fa-upload',
-            'tooltip' : 'Upload files',
-
-            css: 'fangorn-clickable btn btn-default btn-xs',
-            onclick: _uploadEvent
-        });
+        buttons.push({ name : 'uploadFiles', template : function(){
+            return m('.fangorn-toolbar-icon.text-success', {
+                    onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                },[
+                m('i.fa.fa-upload'),
+                m('span.hidden-xs','Upload')
+            ]);
+        } });
     }
-
     //Download button if this is an item
     if (item.kind === 'file') {
-        buttons.push({
-            'name' : '',
-            'tooltip' : 'Download file',
-            'icon' : 'fa fa-download',
-            'css' : 'btn btn-info btn-xs',
-            'onclick' : _downloadEvent
-        });
-        if (item.data.permissions.edit) {
-            buttons.push({
-                'name' : '',
-                'tooltip' : 'Delete',
-                'icon' : 'fa fa-times',
-                'css' : 'm-l-lg text-danger fg-hover-hide',
-                'style' : 'display:none',
-                'onclick' : _removeEvent
-            });
+        buttons.push({ name : 'downloadSingle', template : function(){
+            return m('.fangorn-toolbar-icon.text-info', {
+                    onclick : function(event) { _downloadEvent.call(self, event, item); }
+                }, [
+                m('i.fa.fa-download'),
+                m('span.hidden-xs','Download')
+            ]);
+        }});
+        if (item.data.permissions && item.data.permissions.edit) {
+            buttons.push({ name : 'deleteSingle', template : function(){
+                return m('.fangorn-toolbar-icon.text-danger', {
+                        onclick : function(event) { _removeEvent.call(self, event, item); } 
+                    }, [
+                    m('i.fa.fa-times'),
+                    m('span.hidden-xs','Delete')
+                ]);
+            }});
         }
     }
-    // Build the template for icons
-    return buttons.map(function (btn) {
-        return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom', style : btn.style, 'onclick' : function(event) { btn.onclick.call(self, event, item, col); } },
-            [ m('span', { 'class' : btn.icon}, btn.name) ])
-            ]);
-    });
+    item.icons = buttons;
 }
 
 /**
@@ -782,7 +775,11 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-
+    if(this.selected === item.id){
+        item.css = 'fangorn-selected';
+    }
+    // define the toolbar icons for this item
+    _fangornDefineToolbar.call(this, item);
     if(item.data.tmpID){
         return [
         {
@@ -809,19 +806,22 @@ function _fangornResolveRows(item) {
         }
     }
 
-    default_columns.push({
+    default_columns.push(
+    {
+        data : null,
+        folderIcons: false,
+        filter : false,
+        custom : function(){
+            if(item.id === this.selected) {
+                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
+            }
+            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
+        }
+    },{
         data : 'name',  // Data field name
         folderIcons : true,
         filter : true,
         custom : _fangornTitleColumn
-    });
-    var actionColumn = (
-        resolveconfigOption.call(this, item, 'resolveActionColumn', [item]) ||
-        _fangornActionColumn
-    );
-    default_columns.push({
-        sortInclude : false,
-        custom : actionColumn
     });
     if (item.data.provider === 'osfstorage' && item.data.kind === 'file') {
         default_columns.push({
@@ -850,18 +850,20 @@ function _fangornResolveRows(item) {
  */
 function _fangornColumnTitles () {
     var columns = [];
-    columns.push({
+    columns.push(
+    {   
+        title : '',
+        width: '5%',
+        sort: false
+    },
+    {
         title: 'Name',
-        width : '65%',
+        width : '85%',
         sort : true,
         sortType : 'text'
     }, {
-        title : 'Actions',
-        width : '20%',
-        sort : false
-    }, {
         title : 'Downloads',
-        width : '15%',
+        width : '10%',
         sort : false
     });
     return columns;
@@ -911,21 +913,21 @@ function _fangornToolbar () {
     var titleContent = tb.options.title();
     if(tb.options.iconState.mode === 'bar'){                   
         return m('.row.tb-header-row', [
-                m('.col-sm-6', [
-                        m('span', titleContent)
-                    ]),
-                m('.col-sm-6', [
+                m('.col-xs-12', [   
+                        m('i.m-r-sm','Select rows for further actions.'),
                         m('.fangorn-toolbar.pull-right', 
-                            tb.options.iconState.generalIcons.map(function(icon){
-                                if(icon.on){
-                                    return icon.template.call(tb);
-                                }
-                            }),
-                            tb.options.iconState.rowIcons.map(function(icon){
-                                return icon.template.call(tb);
-
-                            })
-
+                            [   
+                                tb.options.iconState.rowIcons.map(function(icon){
+                                    if(icon.template){
+                                        return icon.template.call(tb);                                    
+                                    }
+                                }),
+                                tb.options.iconState.generalIcons.map(function(icon){
+                                    if(icon.on){
+                                        return icon.template.call(tb);
+                                    }
+                                })
+                            ]
                         )
                     ])
             ]);  
@@ -950,36 +952,22 @@ function _fangornToolbar () {
  */
 function toolbarDismissIcon (){
     var tb = this;
-    return m('i.fa.fa-times.fangorn-toolbar-icon', {
-        onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
-    });
+    return m('.fangorn-toolbar-icon', {
+            onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
+        },
+        m('i.fa.fa-times')
+    );
 }
-
  function searchIcon (){
     var tb = this;
-    return m('i.fa.fa-search.fangorn-toolbar-icon', { 
-        onclick : function () { tb.options.iconState.mode = 'search' }
-    });
+    return m('.fangorn-toolbar-icon.text-primary', { 
+            onclick : function () { tb.options.iconState.mode = 'search'; }
+        }, [
+        m('i.fa.fa-search'),
+        m('span.hidden-xs', 'Search')
+    ]);
  }
-  function cancelUploadsIcon (){
-    var tb = this;
-    return m();
- } 
-  function deleteMultipleIcon (){
-    var tb = this;
-    return m();
- } 
-  function deleteSingleIcon (){
-    var tb = m();
- } 
-  function downloadSingleIcon (){
-    var tb = this;
-    return m();
- }
-  function uploadFilesIcon (){
-    var tb = this;
-    return m();
- }   
+
 
 
 /**
@@ -998,12 +986,8 @@ tbOptions = {
         if(window.contextVars.uploadInstruction) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
             if (window.File && window.FileReader) {
-                return m('p', { 
-                    'style' : 'margin: 0; line-height: 34px;'
-                }, [
-                    m('span', 'To Upload: Drag files into a folder OR click the '),
-                    m('i.btn.btn-default.btn-xs', { disabled : 'disabled'}, [ m('i.fa.fa-upload')]),
-                    m('span', ' below.')
+                return m('p.p-xs.no-margin', [
+                    m('span', 'Select rows for further actions (i.e. upload, delete) ')
                 ]);
             }
             return m('p', {
@@ -1074,6 +1058,12 @@ tbOptions = {
         reapplyTooltips();
     },
     onselectrow : function(row) {
+        // empty row icons and assign row icons from item information
+        this.options.iconState.rowIcons = row.icons;
+        // temporarily remove classes until mithril redraws raws with another hover. 
+        $('.tb-row').removeClass('fangorn-selected');
+        $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
+        console.log(this.options.iconState);
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
@@ -1116,14 +1106,13 @@ tbOptions = {
         mode : 'bar',
         generalIcons : [
             { name : 'search', on : true, template : searchIcon },
-            { name : 'cancelUploads', on : false, template : cancelUploadsIcon },
-            { name : 'deleteMultiple', on : false, template :  deleteMultipleIcon },
-            // { name : 'deleteSingle', on :  false, template : deleteSingleIcon },
-            // { name : 'downloadSingle', on :  false, template : downloadSingleIcon},
-            // { name : 'uploadFiles', on :  false, template : uploadFilesIcon }
+            // { name : 'cancelUploads', on : false, template : cancelUploadsIcon },
+            // { name : 'deleteMultiple', on : false, template :  deleteMultipleIcon },
         ],
-        rowIcons : []
-    }
+        rowIcons : [{}]
+
+    },
+    defineToolbar : _fangornDefineToolbar
 };
 
 /**
