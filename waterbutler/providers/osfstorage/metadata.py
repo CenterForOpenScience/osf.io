@@ -14,9 +14,7 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        if self.raw['path'][0].startswith('/'):
-            return self.raw['path']
-        return '/' + self.raw['path']
+        return self.raw['path']
 
     @property
     def modified(self):
@@ -46,7 +44,7 @@ class OsfStorageFolderMetadata(BaseOsfStorageMetadata, metadata.BaseFolderMetada
 
     @property
     def path(self):
-        return self.raw['path'] + '/'
+        return self.raw['path']
 
 
 class OsfStorageRevisionMetadata(BaseOsfStorageMetadata, metadata.BaseFileRevisionMetadata):
