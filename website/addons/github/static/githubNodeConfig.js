@@ -7,7 +7,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var $osf = require('js/osfHelpers.js');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
@@ -53,33 +53,33 @@ var ViewModel = function(url, selector) {
     self.showImport = ko.pureComputed(function() {
         return self.userHasAuth() && !self.nodeHasAuth();
     });
-    self.showCreateCredentials = ko.pureComputed(function(){
+    self.showCreateCredentials = ko.pureComputed(function() {
         return !self.nodeHasAuth() && !self.userHasAuth();
     });
-    self.canChange = ko.pureComputed(function(){
+    self.canChange = ko.pureComputed(function() {
         return self.userIsOwner() && self.nodeHasAuth();
     });
     self.allowSelectRepo = ko.pureComputed(function() {
         return (self.repoList().length > 0 || self.loadedRepoList()) && (!self.loading());
     });
 
-    self.fetchFromServer();
 };
 
-
 ViewModel.prototype.toggleSelect = function() {
-    this.showSelect(!this.showSelect());
-    if (!this.loadedRepoList()) {
-        return this.fetchRepoList();
-    }
-    return new $.Deferred().promise();
+    var self = this;
+    self.showSelect(!self.showSelect());
+    return self.fetchRepoList()
+    .done(function(repos){
+        self.repoList(repos);
+        self.selectedRepo(self.currentRepo());
+    });
 };
 
 ViewModel.prototype.selectRepo = function() {
     var self = this;
     self.loading(true);
     return $osf.postJSON(
-            self.urls().setRepo, {
+            self.urls().set_repo, {
                 'github_repo': self.selectedRepo()
             }
         )
@@ -98,7 +98,7 @@ ViewModel.prototype.selectRepo = function() {
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.changeMessage(message, 'text-warning');
             Raven.captureMessage('Could not set Github repo', {
-                url: self.urls().setRepo,
+                url: self.urls().set_repo,
                 textStatus: status,
                 error: error
             });
@@ -107,7 +107,7 @@ ViewModel.prototype.selectRepo = function() {
 
 ViewModel.prototype.createNodeAuth = function() {
     var self = this;
-    window.location.href = self.urls().createAuth;
+    window.location.href = self.urls().create_auth;
 };
 
 
@@ -149,8 +149,9 @@ ViewModel.prototype.deauthorizeNode = function() {
 
 ViewModel.prototype._importAuthConfirm = function() {
     var self = this;
+    debugger;
     return $osf.postJSON(
-        self.urls().importAuth, {}
+        self.urls().import_auth, {}
     ).done(function(response) {
         self.changeMessage('Successfully imported Github credentials.', 'text-success');
         self.updateFromData(response);
@@ -160,7 +161,7 @@ ViewModel.prototype._importAuthConfirm = function() {
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
         self.changeMessage(message, 'text-warning');
         Raven.captureMessage('Could not import Github credentials', {
-            url: self.urls().importAuth,
+            url: self.urls().import_auth,
             textStatus: status,
             error: error
         });
@@ -170,7 +171,6 @@ ViewModel.prototype._importAuthConfirm = function() {
 
 ViewModel.prototype.importAuth = function() {
     var self = this;
-    debugger;
     bootbox.confirm({
         title: 'Import Github credentials?',
         message: 'Are you sure you want to authorize this project with your Github credentials?',
@@ -182,16 +182,17 @@ ViewModel.prototype.importAuth = function() {
     });
 };
 
+
+
+
 ViewModel.prototype.createRepo = function(repoName) {
     var self = this;
     self.creating(true);
-    debugger;
     return $osf.postJSON(
-        self.urls().createRepo, {
+        self.urls().create_repo, {
             repo_name: repoName
         }
     ).done(function(response) {
-            debugger;
         repoName = response.github_user + ' / ' + response.repo;
         self.creating(false);
         self.updateFromData(response);
@@ -206,13 +207,15 @@ ViewModel.prototype.createRepo = function(repoName) {
         self.showSelect(true);
 
     }).fail(function(xhr) {
-        var message = JSON.parse(xhr.responseText).message;
+        var resp = JSON.parse(xhr.responseText);
+        var message = resp.message;
+        var title = resp.title || 'Problem creating repo';
         self.creating(false);
         if (!message) {
             message = 'Looks like that name is taken. Try another name?';
         }
         bootbox.confirm({
-            title: 'Duplicate repo name',
+            title: title,
             message: message,
             callback: function(result) {
                 if (result) {
@@ -247,31 +250,38 @@ ViewModel.prototype.openCreateRepo = function() {
     });
 };
 
+
 ViewModel.prototype.fetchRepoList = function() {
     var self = this;
-    return $.ajax({
-        url: self.urls().repoList,
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            self.repoList(response.repo_names);
+
+    var ret = $.Deferred();
+    if(self.loadedRepoList()){
+        ret.resolve(self.repoList());
+    }
+    else{
+         $.ajax({
+            url: self.urls().repo_list,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
             self.loadedRepoList(true);
-            self.selectedRepo(self.currentRepo());
-        },
-        error: function(xhr, status, error) {
+            ret.resolve(response.repo_names);
+        })
+        .fail(function(xhr, status, error) {
             var message = 'Could not retrieve list of Github repos at' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.changeMessage(message, 'text-warning');
             Raven.captureMessage('Could not GET github repo list', {
-                url: self.urls().repoList,
+                url: self.urls().repo_list,
                 textStatus: status,
                 error: error
             });
-        }
-    });
+            ret.reject(xhr, status, error);
+        });
+    }
+    return ret.promise();
 };
-
 
 ViewModel.prototype.updateFromData = function(settings){
     var self = this;
@@ -286,28 +296,29 @@ ViewModel.prototype.updateFromData = function(settings){
     }
 };
 
-ViewModel.prototype.fetchFromServer = function() {
+ViewModel.prototype.fetchFromServer = function(callback) {
     var self = this;
-    var request = $.ajax({
+    return $.ajax({
             url: self.url,
             type: 'GET',
-            dataType: 'json'
+            dataType: 'json',
+            success: function(response) {
+                var settings = response.result;
+                self.updateFromData(settings);
+            },
+            error: function(xhr, status, error) {
+                var message = 'Could not retrieve Github settings at ' +
+                    'this time. Please refresh the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                self.changeMessage(message, 'text-warning');
+                Raven.captureMessage('Could not GET s3 settings', {
+                    url: self.url,
+                    textStatus: status,
+                    error: error
+                });
+            }
         })
-        .done(function(response) {
-            var settings = response.result;
-            self.updateFromData(settings);
-        })
-        .fail(function(xhr, status, error) {
-            var message = 'Could not retrieve github settings at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
-            Raven.captureMessage('Could not GET github settings', {
-                url: self.url,
-                textStatus: status,
-                error: error
-            });
-        });
+        .done(callback || noop);
 };
 
 
@@ -327,32 +338,10 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 
-ViewModel.prototype.importAuth = function() {
-    var self = this;
-    $osf.postJSON(
-        self.urls().importAuth, {}
-    ).done(function(response) {
-        self.changeMessage('Successfully imported Github credentials.', 'text-success');
-        self.updateFromData(response);
-    }).fail(function(xhr, status, error){
-        var message = 'Could not import Github credentials at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
-        Raven.captureMessage('Could not import Github credentials', {
-            url: self.urls().importAuth,
-            textStatus: status,
-            error: error
-        });
-    });
-};
-
-
 ViewModel.prototype.createCredentials = function() {
-    debugger;
     var self = this;
     $osf.postJSON(
-        self.urls().createAuth,
+        self.urls().create_auth,
         {
             secret_key: self.secretKey(),
             access_key: self.accessKey()
@@ -380,6 +369,7 @@ ViewModel.prototype.createCredentials = function() {
 var githubConfig = function(selector, url){
     var viewModel = new ViewModel(url, selector);
     $osf.applyBindings(viewModel, selector);
+    viewModel.fetchFromServer();
 };
 
 module.exports = {

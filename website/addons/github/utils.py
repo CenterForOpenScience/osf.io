@@ -139,12 +139,12 @@ def serialize_urls(node_addon, user):
     user_settings = node_addon.user_settings
 
     result = {
-        'createRepo': node.api_url_for('github_create_repo'),
-        'importAuth': node.api_url_for('github_add_user_auth'),
-        'createAuth': node.api_url_for('github_oauth_start'),
+        'create_repo': node.api_url_for('github_create_repo'),
+        'import_auth': node.api_url_for('github_add_user_auth'),
+        'create_auth': node.api_url_for('github_oauth_start'),
         'deauthorize': node.api_url_for('github_oauth_deauthorize_node'),
-        'repoList': node.api_url_for('github_repo_list'),
-        'setRepo': node.api_url_for('github_set_config'),
+        'repo_list': node.api_url_for('github_repo_list'),
+        'set_repo': node.api_url_for('github_set_config'),
         'settings': web_url_for('user_addons'),
     }
     if user_settings:
