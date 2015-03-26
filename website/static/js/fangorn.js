@@ -843,9 +843,12 @@ function _fangornToolbar () {
                         m('span', titleContent)
                     ]),
                 m('.col-sm-6', [
-                        m('.pull-right.fa.fa-search', { 
-                            onclick : function () { tb.toolbarMode = 'search' }
-                        })
+                        
+                        m('.fangorn-toolbar.pull-right', 
+                            m('i.fa.fa-search.fangorn-toolbar-icon', { 
+                                onclick : function () { tb.toolbarMode = 'search' }
+                            })
+                        )
                     ])
             ]);  
     }
@@ -853,9 +856,13 @@ function _fangornToolbar () {
         return m('.row.tb-header-row', [
                 m('', [
                         m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
-                        m('.col-xs-1', m('.fa.fa-times', {
-                            onclick : function () { tb.toolbarMode = 'bar'; tb.resetFilter(); }
-                        }))
+                        m('.col-xs-1', 
+                            m('.fangorn-toolbar.pull-right', 
+                                m('i.fa.fa-times.fangorn-toolbar-icon', {
+                                    onclick : function () { tb.toolbarMode = 'bar'; tb.resetFilter(); }
+                                })
+                            )
+                        )
                     ])
             ]);  
     }    

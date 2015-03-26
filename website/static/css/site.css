@@ -2424,3 +2424,10 @@ span#profileFullname{
   padding-left: 20px;
   padding-right: 20px;
 }
+
+.fangorn-toolbar {
+    padding: 6px;
+}
+.fa.fangorn-toolbar-icon {
+    font-size: 18px;
+}
