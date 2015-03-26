@@ -96,14 +96,6 @@ def get_refs(addon, branch=None, sha=None, connection=None):
             break
     return branch, sha, branches
 
-# def get_repo_drop_down(user_settings):
-#     try:
-#         return [
-#             repo.name
-#             for repo in get_repo_list(user_settings)
-#         ]
-#     except BotoServerError:
-#         return None
 
 
 def check_permissions(node_settings, auth, connection, branch, sha=None, repo=None):
@@ -150,9 +142,9 @@ def serialize_urls(node_addon, user):
     result = {
         'createRepo': node.api_url_for('github_create_repo'),
         'importAuth': node.api_url_for('github_add_user_auth'),
-        'createAuth': node.api_url_for('github_add_user_auth'),
+        # 'createAuth': node.api_url_for('github_add_user_auth'),
         'deauthorize': node.api_url_for('github_oauth_deauthorize_node'),
-        # 'repoList': node.api_url_for('github_repo_list'),
+        'repoList': node.api_url_for('github_repo_list'),
         'setRepo': node.api_url_for('github_set_config'),
         'settings': web_url_for('user_addons'),
     }

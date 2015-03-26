@@ -141,7 +141,6 @@ def github_repo_list(auth, node_addon, user_addon, **kwargs):
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
-    #need to make sense of this
     connection = GitHub.from_settings(user_settings)
     repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
     repo_names = [
@@ -149,10 +148,9 @@ def github_repo_list(auth, node_addon, user_addon, **kwargs):
         for repo in repos
     ]
 
-
-
-
-
+    return {
+        'repo_names': repo_names
+    }
 
 
 @must_have_permission('write')
