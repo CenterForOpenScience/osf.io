@@ -4,6 +4,8 @@ import re
 import logging
 import urlparse
 
+import furl
+
 from flask import request, url_for
 
 from website import settings
@@ -17,6 +19,14 @@ logger = logging.getLogger(__name__)
 guid_url_node_pattern = re.compile('^/project/[a-zA-Z0-9]{5,}/node(?=/[a-zA-Z0-9]{5,})')
 guid_url_project_pattern = re.compile('^/project(?=/[a-zA-Z0-9]{5,})')
 guid_url_profile_pattern = re.compile('^/profile(?=/[a-zA-Z0-9]{5,})')
+
+waterbutler_action_map = {
+    'upload': 'file',
+    'delete': 'file',
+    'download': 'file',
+    'metadata': 'data',
+    'create_folder': 'folders',
+}
 
 
 def _get_guid_url_for(url):
@@ -69,3 +79,29 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
+
+
+def waterbutler_url_for(route, provider, path, node, user=None, **query):
+    """Reverse URL lookup for WaterButler routes
+    :param str route: The action to preform, upload, download, delete...
+    :param str provider: The name of the requested provider
+    :param str path: The path of the requested file or folder
+    :param Node node: The node being accessed
+    :param User user: The user whos cookie will be used or None
+    :param dict **query: Addition query parameters to be appended
+    """
+    url = furl.furl(settings.WATERBUTLER_URL)
+    url.path.segments.append(waterbutler_action_map[route])
+
+    url.args.update({
+        'path': path,
+        'nid': node._id,
+        'provider': provider,
+        'cookie': user.get_cookie(settings.SECRET_KEY),
+    })
+
+    if 'view_only' in request.args:
+        url.args['view_only'] = request.args['view_only']
+
+    url.args.update(query)
+    return url.url
