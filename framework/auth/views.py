@@ -201,11 +201,11 @@ def confirm_email_get(**kwargs):
 
     try:
         user.confirm_email(token)
-    except (ValueError, KeyError):
+    except exceptions.EmailConfirmTokenError as e:
         return {
             'code': http.BAD_REQUEST,
-            'message_short': 'Link Expired',
-            'message_long': language.LINK_EXPIRED
+            'message_short': e.message_short,
+            'message_long': e.message_long
         }, http.BAD_REQUEST
 
     if is_initial_confirmation:

@@ -12,6 +12,7 @@ from modularodm import Q
 
 from framework.mongo.utils import to_mongo_key
 
+from framework.auth import exceptions as auth_exc
 from framework.auth.core import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -1217,7 +1218,7 @@ class TestConfirmingEmail(OsfTestCase):
         self.user.save()
         res = self.app.get(self.confirmation_url, expect_errors=True)
 
-        assert_in('Link Expired', res)
+        assert_in(auth_exc.InvalidTokenError.message_short, res)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_flash_message_does_not_break_page_if_email_unconfirmed(self):

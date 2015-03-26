@@ -68,7 +68,9 @@ CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display n
 # ###########
 
 # Shown at error page if an expired/revokes email confirmation link is clicked
-LINK_EXPIRED = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
+EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
+
+INVALID_EMAIL_CONFIRM_TOKEN = 'This confirmation link is invalid. Please <a href="/login/">log in</a> to continue.'
 
 # Node Actions
 

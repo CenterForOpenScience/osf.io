@@ -15,6 +15,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
@@ -433,7 +434,7 @@ class TestUser(OsfTestCase):
         u.add_unconfirmed_email('foo@bar.com')
         u.save()
 
-        with assert_raises(KeyError):
+        with assert_raises(auth_exc.InvalidTokenError):
             u._get_unconfirmed_email_for_token('badtoken')
 
         valid_token = u.get_confirmation_token('foo@bar.com')
@@ -441,7 +442,7 @@ class TestUser(OsfTestCase):
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
 
-        with assert_raises(ValueError):
+        with assert_raises(auth_exc.ExpiredTokenError):
             u._get_unconfirmed_email_for_token(valid_token)
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):

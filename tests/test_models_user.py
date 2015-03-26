@@ -1,6 +1,7 @@
 from nose.tools import *
 
 from framework import auth
+from framework.auth import exceptions
 from website import models
 from tests import base
 from tests import factories
@@ -72,3 +73,41 @@ class UserTestCase(base.OsfTestCase):
         assert_true(self.user.is_invited)
 
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
+
+    def test_unconfirmed_emails(self):
+        assert_equal(
+            self.user.unconfirmed_emails,
+            []
+        )
+        self.user.add_unconfirmed_email('foo@bar.com')
+        assert_equal(
+            self.user.unconfirmed_emails,
+            ['foo@bar.com']
+        )
+
+        assert_equal(
+            self.unregistered.unconfirmed_emails,
+            []
+        )
+
+        assert_equal(
+            self.unconfirmed.unconfirmed_emails,
+            [self.unconfirmed.username]
+        )
+
+    def test_confirm_email(self):
+        token = self.user.add_unconfirmed_email('foo@bar.com')
+        self.user.confirm_email(token)
+
+        assert_not_in('foo@bar.com', self.user.unconfirmed_emails)
+        assert_in('foo@bar.com', self.user.emails)
+
+    def test_confirm_duplicate_email(self):
+        second_user = factories.UserFactory()
+        second_user.emails.append('foo@bar.com')
+        second_user.save()
+
+        token = self.user.add_unconfirmed_email('foo@bar.com')
+
+        with assert_raises(exceptions.DuplicateEmailError):
+            self.user.confirm_email(token)

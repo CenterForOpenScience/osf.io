@@ -16,9 +16,8 @@ from modularodm.exceptions import ValidationError, ValidationValueError
 
 import framework
 from framework import analytics
-from framework import exceptions
 from framework.sessions import session
-from framework.auth import utils, signals
+from framework.auth import exceptions, utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
 from framework.exceptions import PermissionsError
@@ -646,7 +645,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: bool
         """
         if token not in self.email_verifications:
-            raise KeyError()
+            raise exceptions.InvalidTokenError()
 
         verification = self.email_verifications[token]
         # Not all tokens are guaranteed to have expiration dates
@@ -654,7 +653,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'expiration' in verification and
             verification['expiration'] < dt.datetime.utcnow()
         ):
-            raise ValueError()
+            raise exceptions.ExpiredTokenError()
 
         return verification['email']
 
@@ -674,8 +673,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # If this email is confirmed on another account, abort
         if User.find(Q('emails', 'eq', email)).count() > 0:
-            # TODO: Handle this appropriately.
-            raise Exception("Email is confirmed to another account")
+            raise exceptions.DuplicateEmailError()
 
         # If another user has this email as its username, get it
         try:
