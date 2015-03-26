@@ -5,7 +5,7 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -13,7 +13,7 @@ var Raven = require('raven-js');
 var FolderPicker = require('folderpicker');
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
@@ -205,6 +205,7 @@ ViewModel.prototype.updateFromData = function(data) {
         path: null,
         id: null
     });
+    console.log("before urls");
     this.urls(data.urls);
 };
 

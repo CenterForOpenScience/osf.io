@@ -201,9 +201,10 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         :param ExternalAccount external_account:
         :param User user:
         """
-        self.drive_folder_id= folder['id']
+        self.drive_folder_id = folder['id']
         self.folder_path = folder['path']
         self.drive_folder_name = folder['name']
+
 
         # Tell the user's addon settings that this node is connecting
         self.user_settings.grant_oauth_access(
@@ -269,9 +270,8 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         if self.drive_folder_id is None:
             return ''
         elif self.drive_folder_id == 'root':
-            return 'All documents'
+            return 'Full Google Drive'
         else:
-            folder = self.folder_metadata(self.drive_folder_id)
             return self.drive_folder_name
 
     def folder_metadata(self, folder_id):

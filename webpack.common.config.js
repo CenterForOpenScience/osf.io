@@ -113,6 +113,8 @@ var resolve = {
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
+        'addonNodeConfig': staticPath('js/addonNodeConfig.js'),
+        'folderpicker': staticPath('js/folderpicker.js'),
         'tests': staticPath('js/tests')
     }
 };

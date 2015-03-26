@@ -42,7 +42,6 @@ def googledrive_config_put(node_addon, auth, **kwargs):
     """View for changing a node's linked Google Drive folder/file."""
     selected = request.get_json().get('selected')
     node_addon.set_target_folder(selected, auth=auth)
-    import pdb; pdb.set_trace()
     node_addon.save()
     return {
         'result': {
@@ -86,7 +85,7 @@ def googledrive_import_user_auth(auth, node_addon, **kwargs):
         node_settings=node_addon,
         user_settings=user.get_addon('googledrive'),
     ).serialized_node_settings
-    return {'result': result}
+    return result
 
 @must_have_permission(permissions.WRITE)
 @must_have_addon('googledrive', 'node')
@@ -98,4 +97,4 @@ def googledrive_remove_user_auth(node_addon, auth, **kwargs):
             node_settings=node_addon,
             user_settings=user.get_addon('googledrive'),
         ).serialized_node_settings
-        return {'result': result}
+        return result

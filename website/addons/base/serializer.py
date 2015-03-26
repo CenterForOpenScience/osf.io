@@ -47,7 +47,9 @@ class AddonSerializer(object):
                 result['urls']['owner'] = web_url_for('profile_view_id',
                                                   uid=owner._primary_key)
                 result['ownerName'] = owner.fullname
-
+                result['folder'] = {
+                    'name': self.node_settings.selected_folder_name,
+                }
         return result
 
     @property
@@ -180,7 +182,6 @@ class GenericAddonSerializer(OAuthAddonSerializer):
             'auth': api_url_for('oauth_connect',
                                 service_name=self.node_settings.provider_name),
             'settings': web_url_for('user_addons'),
-            'files': self.node_settings.owner.url,
         }
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
