@@ -36,7 +36,7 @@ def update_analytics(node, path, version_idx):
     """
     :param Node node: Root node to update
     :param str path: Path to file
-    :param int version_idx: One-based version index
+    :param int version_idx: Zero-based version index
     """
     update_counter(u'download:{0}:{1}'.format(node._id, path))
     update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
