@@ -326,8 +326,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
     };
     var filesArr = treebeard.dropzone.getQueuedFiles();
     if (filesArr.length  > 1) {
-        treebeard.multimodal.height = 45;
-        treebeard.multimodal.update(cancelAllUploadsTemplate.call(treebeard));        
+        treebeard.options.iconState.generalIcons[1].on = true;
     }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
