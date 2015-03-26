@@ -178,10 +178,10 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
         raise HTTPError(httplib.GONE)
 
     if fileobj.kind == 'file':
-        return utils.serialize_metadata(fileobj)
+        return fileobj.serialized()
 
     return [
-        utils.serialize_metadata(child)
+        child.serialized()
         for child in fileobj.children
     ]
 

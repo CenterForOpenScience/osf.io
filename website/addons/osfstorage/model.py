@@ -281,6 +281,17 @@ class OsfStorageFileNode(StoredObject):
         if log:
             self.log(auth, NodeLog.FILE_ADDED)
 
+    def serialized(self):
+        """Build Treebeard JSON for folder or file.
+        """
+        return {
+            'path': self.path,
+            'name': self.name,
+            'kind': self.kind,
+            'version': len(self.versions),
+            'downloads': self.get_download_count(),
+        }
+
     def __repr__(self):
         return '<{}(name={!r}, node_settings={!r})>'.format(
             self.__class__.__name__,

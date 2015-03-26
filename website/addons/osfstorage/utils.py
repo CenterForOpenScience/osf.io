@@ -42,20 +42,6 @@ def update_analytics(node, path, version_idx):
     update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
 
 
-def serialize_metadata(item):
-    """Build Treebeard JSON for folder or file.
-
-    :param item: `FileTree` or `FileRecord` to serialize
-    """
-    return {
-        'path': item.path,
-        'name': item.name,
-        'kind': item.kind,
-        'version': len(item.versions),
-        'downloads': item.get_download_count(),
-    }
-
-
 def serialize_revision(node, record, version, index):
     """Serialize revision for use in revisions table.
 
