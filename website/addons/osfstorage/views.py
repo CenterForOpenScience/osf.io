@@ -55,7 +55,7 @@ def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     if payload.get('mode') != 'render':
         if version_id < 0:
             version_id = len(storage_node.versions) + version_id
-        utils.update_analytics(node_addon.owner, storage_node.path, version_id)
+        utils.update_analytics(node_addon.owner, storage_node._id, version_id)
 
     return {
         'data': {

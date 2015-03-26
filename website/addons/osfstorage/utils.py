@@ -32,14 +32,14 @@ def handle_odm_errors(func):
     return wrapped
 
 
-def update_analytics(node, path, version_idx):
+def update_analytics(node, file_id, version_idx):
     """
     :param Node node: Root node to update
-    :param str path: Path to file
+    :param str file_id: The _id field of a filenode
     :param int version_idx: Zero-based version index
     """
-    update_counter(u'download:{0}:{1}'.format(node._id, path))
-    update_counter(u'download:{0}:{1}:{2}'.format(node._id, path, version_idx))
+    update_counter(u'download:{0}:{1}'.format(node._id, file_id))
+    update_counter(u'download:{0}:{1}:{2}'.format(node._id, file_id, version_idx))
 
 
 def serialize_revision(node, record, version, index):
