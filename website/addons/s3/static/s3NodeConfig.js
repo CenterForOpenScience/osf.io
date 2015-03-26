@@ -214,7 +214,6 @@ ViewModel.prototype.createBucket = function(bucketName) {
     ).done(function(response) {
         self.creating(false);
         self.updateFromData(response);
-        self.changeMessage('Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.', 'text-success');
         self.bucketList().push(bucketName);
         if (!self.loadedBucketList()) {
             self.updateBucketList();
@@ -223,6 +222,13 @@ ViewModel.prototype.createBucket = function(bucketName) {
         self.selectedBucket();
         self.bucketList();
         self.showSelect(true);
+        var msg = 'Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.';
+        var msgType = 'text-success';
+        if ($.inArray(bucketName, self.bucketList()) > -1) {
+            msg = 'Bucket is already in your bucket list.';
+            msgType = 'text-info';
+        }
+        self.changeMessage(msg, msgType);
     }).fail(function(xhr) {
         var resp = JSON.parse(xhr.responseText);
         var message = resp.message;
