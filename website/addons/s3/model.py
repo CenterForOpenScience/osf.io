@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
+from website.addons.s3.utils import remove_osf_user
 
 
 class S3GuidFile(GuidFile):
@@ -192,7 +192,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         if self.has_auth:
             ret['owner'] = self.user_settings.owner.fullname
             ret['owner_url'] = self.user_settings.owner.url
-            ret['bucket_list'] = get_bucket_drop_down(self.user_settings)
             ret['node_has_auth'] = True
 
         return ret

@@ -102,22 +102,30 @@ utils.search = function(vm) {
         ret.resolve(null);
     }
     else {
-    vm.page = 0;
-    vm.results = [];
-    History.pushState({
-        optionalFilters: vm.optionalFilters,
-        requiredFilters: vm.requiredFilters,
-        query: vm.query(),
-        sort: vm.sort()
-    }, 'OSF | SHARE', '?'+ utils.buildURLParams(vm));
-
-    utils.loadMore(vm)
-        .then(function(data) {
-            utils.updateVM(vm, data);
-            ret.resolve(vm);
-        });
+        vm.page = 0;
+        vm.results = [];
+        if (utils.stateChanged(vm)){
+            History.pushState({
+                optionalFilters: vm.optionalFilters,
+                requiredFilters: vm.requiredFilters,
+                query: vm.query(),
+                sort: vm.sort()
+            }, 'OSF | SHARE', '?'+ utils.buildURLParams(vm));
+        }
+        utils.loadMore(vm)
+            .then(function(data) {
+                utils.updateVM(vm, data);
+                ret.resolve(vm);
+            });
     }
     return ret.promise;
+};
+
+utils.stateChanged = function(vm){
+    var state = History.getState().data;
+    return !(state.query === vm.query() && state.sort === vm.sort() &&
+            utils.arrayEqual(state.optionalFilters, vm.optionalFilters) &&
+            utils.arrayEqual(state.requiredFilters, vm.requiredFilters));
 };
 
 utils.buildURLParams = function(vm){
