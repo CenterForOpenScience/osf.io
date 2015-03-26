@@ -198,9 +198,6 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, **kwargs):
-        if kwargs['path'].startswith('/'):
-            kwargs['path'] = kwargs['path'][1:]
-
         resp = yield from self.make_signed_request(
             'GET',
             self.metadata_url,
@@ -223,9 +220,6 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, **kwargs):
-        if kwargs['path'].startswith('/'):
-            kwargs['path'] = kwargs['path'][1:]
-
         resp = yield from self.make_signed_request(
             'GET',
             self.revisions_url,
