@@ -70,7 +70,6 @@ ViewModel.prototype.toggleSelect = function() {
     self.showSelect(!self.showSelect());
     return self.fetchRepoList()
     .done(function(repos){
-            debugger;
         self.repoList(repos);
         self.selectedRepo(self.currentRepo());
     });
