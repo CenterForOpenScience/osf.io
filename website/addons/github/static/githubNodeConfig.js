@@ -148,14 +148,13 @@ ViewModel.prototype.deauthorizeNode = function() {
 };
 
 ViewModel.prototype._importAuthConfirm = function() {
-    var self = this;
-    debugger;
+
     return $osf.postJSON(
         self.urls().import_auth, {}
     ).done(function(response) {
         self.changeMessage('Successfully imported Github credentials.', 'text-success');
         self.updateFromData(response);
-            debugger;
+
     }).fail(function(xhr, status, error) {
         var message = 'Could not import Github credentials at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
