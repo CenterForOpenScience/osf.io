@@ -50,14 +50,26 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
     def extra(self):
         return {
             'original': self.original_name,
-            'version': self.version
+            'version': self.version,
+            'fileId': self.id
         }
 
 
 class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadata):
     
-    def __init__(self, raw):
+    def __init__(self, raw, state):
         super().__init__(raw)
+
+        # Filter out unpublished datasets
+        if state == 'published':
+            dataset_state = next(
+                item for item in raw['feed']['category']
+                if item['@term'] == 'latestVersionState'
+            )['#text'].lower()
+            if dataset_state == 'draft':
+                self._entries = []
+                return
+
         entry_feed = raw['feed'].get('entry') or []
         if isinstance(entry_feed, dict):
             self._entries = [DataverseFileMetadata(entry_feed)]

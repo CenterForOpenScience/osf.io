@@ -116,7 +116,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, **kwargs):
+    def metadata(self, state='draft', **kwargs):
         url = provider.build_url(settings.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
@@ -128,4 +128,4 @@ class DataverseProvider(provider.BaseProvider):
         data = yield from resp.text()
         data = xmltodict.parse(data)
 
-        return DataverseDatasetMetadata(data).serialized()
+        return DataverseDatasetMetadata(data, state).serialized()
