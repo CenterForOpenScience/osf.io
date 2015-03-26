@@ -227,6 +227,9 @@ def user_addons(auth, **kwargs):
                 if 'user' in addon_config.configs:
                     addon_enabled_settings.append(addon_config.short_name)
                     user_addons_enabled[addon_config.short_name] = user.get_addon(addon_config.short_name).to_json(user)
+                    # inject the MakoTemplateLookup into the template context
+                    # TODO inject only short_name and render fully client side
+                    user_addons_enabled[addon_config.short_name]['template_lookup'] = addon.config.template_lookup
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [

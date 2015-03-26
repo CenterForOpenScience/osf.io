@@ -401,7 +401,6 @@ class AddonSettingsBase(StoredObject):
         return {
             'addon_short_name': self.config.short_name,
             'addon_full_name': self.config.full_name,
-            'template_lookup': self.config.template_lookup,
         }
 
     #############

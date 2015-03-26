@@ -305,6 +305,9 @@ def node_setting(auth, **kwargs):
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
             config = addon.to_json(auth.user)
+            # inject the MakoTemplateLookup into the template context
+            # TODO inject only short_name and render fully client side
+            config['template_lookup'] = addon.config.template_lookup
             addon_enabled_settings.append(config)
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 

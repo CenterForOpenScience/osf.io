@@ -267,9 +267,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         // Make sure that entered email is not already in selection
         for (var i = 0, contrib; contrib = self.selection()[i]; ++i) {
-            var contribEmail = contrib.email.toLowerCase().trim();
-            if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
-                return self.inviteEmail() + ' is already in queue.';
+            if (contrib.email) {
+                var contribEmail = contrib.email.toLowerCase().trim();
+                if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
+                    return self.inviteEmail() + ' is already in queue.';
+                }
             }
         }
         return true;
