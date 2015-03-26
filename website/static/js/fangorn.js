@@ -455,6 +455,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
+    treebeard.options.iconState.generalIcons[1].on = false;
     treebeard.redraw();
 }
 
@@ -492,6 +493,7 @@ function _fangornDropzoneError(tb, file, message) {
     }
     $osf.growl('Error', msgText);
     tb.options.uploadInProgress = false;
+    tb.options.iconState.generalIcons[1].on = false;
 }
 
 /**
