@@ -23,9 +23,9 @@ ShareApp.ViewModel = function() {
     self.count = 0;
     self.results = null;
     self.query = m.prop($osf.urlParams().q || '');
-    self.vm.sort = m.prop($osf.urlParams().sort || 'Relevance');
-    self.vm.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
-    self.vm.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
+    self.sort = m.prop($osf.urlParams().sort || 'Relevance');
+    self.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
+    self.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 };
 
 
