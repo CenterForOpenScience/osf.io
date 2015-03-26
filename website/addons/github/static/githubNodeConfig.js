@@ -70,6 +70,7 @@ ViewModel.prototype.toggleSelect = function() {
     self.showSelect(!self.showSelect());
     return self.fetchRepoList()
     .done(function(repos){
+            debugger;
         self.repoList(repos);
         self.selectedRepo(self.currentRepo());
     });
@@ -197,14 +198,12 @@ ViewModel.prototype.createRepo = function(repoName) {
         self.creating(false);
         self.updateFromData(response);
         self.changeMessage('Successfully created repo \'' + repoName + '\'. You can now select it from the drop down list.', 'text-success');
-        self.repoList().push(repoName);
-        if (!self.loadedRepoList()) {
-            self.fetchRepoList();
-        }
-        self.selectedRepo(repoName);
-        self.selectedRepo();
-        self.repoList();
-        self.showSelect(true);
+        return self.fetchRepoList()
+            .done(function(repos){
+            self.repoList(repos);
+            self.selectedRepo(repoName);
+            self.showSelect(true);
+            });
 
     }).fail(function(xhr) {
         var resp = JSON.parse(xhr.responseText);
@@ -266,6 +265,8 @@ ViewModel.prototype.fetchRepoList = function() {
         }).done(function(response) {
             self.loadedRepoList(true);
             ret.resolve(response.repo_names);
+
+
         })
         .fail(function(xhr, status, error) {
             var message = 'Could not retrieve list of Github repos at' +
