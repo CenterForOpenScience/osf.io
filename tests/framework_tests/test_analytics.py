@@ -114,3 +114,30 @@ class TestUpdateCounters(UpdateCountersTestCase):
         collection.update({'_id': page}, d, True, False)
         count = analytics.get_basic_counters(page, db=self.db)
         assert_equal(count, (3, 5))
+
+    def test_update_counters_different_files(self):
+        # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2281
+        @analytics.update_counters('download:{target_id}:{fid}', db=self.db)
+        def download_file_(**kwargs):
+            return kwargs.get('node') or kwargs.get('project')
+
+        fid1 = 'test.analytics.py'
+        fid2 = 'test_analytics.py'
+
+        download_file_(node=self.node, fid=fid1)
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, fid1), db=self.db)
+        assert_equal(count, (1, 1))
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, fid2), db=self.db)
+        assert_equal(count, (None, None))
+
+        page = 'download:{0}:{1}'.format(self.node, fid1)
+
+        session.data['visited'].append(page)
+        download_file_(node=self.node, fid=fid1)
+        download_file_(node=self.node, fid=fid2)
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, fid1), db=self.db)
+        assert_equal(count, (1, 2))
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, fid2), db=self.db)
+        assert_equal(count, (1, 1))
