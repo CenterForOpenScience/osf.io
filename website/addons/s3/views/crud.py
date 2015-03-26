@@ -3,7 +3,7 @@
 import httplib as http
 
 from flask import request
-from boto.exception import S3ResponseError, BotoClientError
+from boto.exception import S3ResponseError, BotoClientError, S3CreateError
 
 from website.addons.s3.api import create_bucket
 from website.project.decorators import must_have_addon

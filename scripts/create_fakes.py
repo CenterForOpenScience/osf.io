@@ -307,4 +307,3 @@ def main():
 if __name__ == '__main__':
     app = init_app('website.settings', set_backends=True, routes=True)
     main()
-
