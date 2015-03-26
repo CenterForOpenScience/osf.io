@@ -10,8 +10,6 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var ZeroClipboard = require('zeroclipboard');
-ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
 var FolderPicker = require('js/folderpicker');
 var $osf = require('js/osfHelpers');
 
@@ -43,37 +41,22 @@ var ViewModel = function(url, selector, folderPicker, fetchCallback) {
     self.messageClass = ko.observable('text-info');
     // Display names
     self.PICKER = 'picker';
-    self.SHARE = 'share';
     // Current folder display
     self.currentDisplay = ko.observable(null);
     // CSS selector for the folder picker div
     self.folderPicker = folderPicker;
     // Currently selected folder, an Object of the form {name: ..., path: ...}
     self.selected = ko.observable(null);
-    // Emails of contributors, can only be populated by activating the share dialog
-    self.emails = ko.observableArray([]);
-    self.loading = ko.observable(false);
     // Whether the initial data has been fetched form the server. Used for
     // error handling.
     self.loadedSettings = ko.observable(false);
-    // Whether the contributor emails have been loaded from the server
-    self.loadedEmails = ko.observable(false);
-
     // Whether the dropbox folders have been loaded from the server/Dropbox API
     self.loadedFolders = ko.observable(false);
-
-    // List of contributor emails as a comma-separated values
-    self.emailList = ko.computed(function() {
-        return self.emails().join([', ']);
-    });
-
-    self.disableShare = ko.computed(function() {
-        return !self.urls().share;
-    });
+    self.loading = ko.observable(false);
 
     /**
-        * Update the view model from data returned from the server.
-        */
+    * Update the view model from data returned from the server.
+    */
     self.updateFromData = function(data) {
         self.ownerName(data.ownerName);
         self.nodeHasAuth(data.nodeHasAuth);
@@ -95,7 +78,7 @@ var ViewModel = function(url, selector, folderPicker, fetchCallback) {
                     if (self.userIsOwner()) {
                         self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. The Dropbox addon credentials may no longer be valid.' +
-                        ' Try deauthorizing and reauthorizing Dropbox on your <a href="' +
+                        ' Please delete your access token and create a new one on your <a href="' +
                             self.urls().settings + '">account settings page</a>.',
                         'text-warning');
                     } else {
@@ -124,39 +107,9 @@ var ViewModel = function(url, selector, folderPicker, fetchCallback) {
     // Initial fetch from server
     self.fetchFromServer();
 
-    self.toggleShare = function() {
-        if (self.currentDisplay() === self.SHARE) {
-            self.currentDisplay(null);
-        } else {
-            // Clear selection
-            self.cancelSelection();
-            self.currentDisplay(self.SHARE);
-            self.activateShare();
-        }
-    };
-
-
-    function onGetEmailsSuccess(response) {
-        var emails = response.result.emails;
-        self.emails(emails);
-        self.loadedEmails(true);
-    }
-
-    self.activateShare = function() {
-        if (!self.loadedEmails()) {
-            $.ajax({
-                url: self.urls().emails, type: 'GET', dataType: 'json',
-                success: onGetEmailsSuccess
-            });
-        }
-        var $copyBtn = $('#copyBtn');
-        new ZeroClipboard($copyBtn);
-    };
-
-
     /**
-        * Whether or not to show the Import Access Token Button
-        */
+    * Whether or not to show the Import Access Token Button
+    */
     self.showImport = ko.computed(function() {
         // Invoke the observables to ensure dependency tracking
         var userHasAuth = self.userHasAuth();

@@ -197,7 +197,7 @@ def search_contributor(auth):
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
 
-
+@handle_search_errors
 def search_share():
     tick = time.time()
     results = {}
@@ -223,7 +223,7 @@ def search_share():
     results['time'] = round(time.time() - tick, 2)
     return results
 
-
+@handle_search_errors
 def search_share_stats():
     q = request.args.get('q')
     query = build_query(q, 0, 0) if q else {}
@@ -231,22 +231,16 @@ def search_share_stats():
     return search.share_stats(query=query)
 
 
+@handle_search_errors
 def search_share_atom(**kwargs):
     q = request.args.get('q', '*')
     sort = request.args.get('sort', 'dateUpdated')
 
     # we want the results per page to be constant between pages
     # TODO -  move this functionality into build_query in util
+    start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
 
-    try:
-        page = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
-    except ValueError:
-        page = 1
-
-    if page < 1:
-        page = 1
-
-    query = build_query(q, size=RESULTS_PER_PAGE, start=page, sort=sort)
+    query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
 
     try:
         search_results = search.search_share(query)
@@ -265,7 +259,7 @@ def search_share_atom(**kwargs):
         data=search_results['results'],
         query=q,
         size=RESULTS_PER_PAGE,
-        start=page,
+        start=start,
         url=atom_url,
         to_atom=share_search.to_atom
     )
