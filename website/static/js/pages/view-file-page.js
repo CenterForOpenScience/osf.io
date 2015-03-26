@@ -31,7 +31,9 @@ $(document).ready(function() {
                 ondataload: function () {
                     var tb = this;
                     tb.options.folderIndex = 0;
-                    if (window.contextVars.file.path) {
+                    if (window.contextVars.file.provider === 'figshare') {
+                        tb.options.folderArray = [window.contextVars.file.name]
+                    } else if (window.contextVars.file.path) {
                         tb.options.folderArray = window.contextVars.file.path.split("/");
                         if (tb.options.folderArray.length > 1) {
                             tb.options.folderArray.splice(0, 1);
