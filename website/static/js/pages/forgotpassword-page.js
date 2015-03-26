@@ -2,6 +2,6 @@
  * Forgot Password page
  */
 
-var ForgotPassword = require('js/forgotPassword.js');
+var forgotPassword = require('js/forgotPassword');
 
-new ForgotPassword('#forgotPasswordForm', true);
+new forgotPassword.ForgotPassword('#forgotPasswordForm');

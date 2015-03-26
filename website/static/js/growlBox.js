@@ -12,13 +12,13 @@ var oop = require('js/oop');
 * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
 */
 var GrowlBox = oop.defclass({
-    constructor(title, message, type='danger') {
+    constructor: function(title, message, type) {
         this.title = title;
         this.message = message;
-        this.type = type;
+        this.type = type || 'danger';
         this.show();
     },
-    show() {
+    show: function() {
         $.growl({
             title: '<strong>' + this.title + '<strong><br />',
             message: this.message
