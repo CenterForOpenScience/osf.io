@@ -2,7 +2,6 @@ import asyncio
 import tempfile
 import xmltodict
 
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
@@ -10,19 +9,6 @@ from waterbutler.core import exceptions
 from waterbutler.providers.dataverse import settings
 from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 from waterbutler.providers.dataverse import utils as dataverse_utils
-
-
-class DataversePath(utils.WaterButlerPath):
-
-    def __init__(self, path, doi=None, prefix=True, suffix=False):
-        super().__init__(path, prefix=prefix, suffix=suffix)
-
-        self._path = path
-        self._doi = doi
-
-        @property
-        def path(self):
-            return self._path
 
 
 class DataverseProvider(provider.BaseProvider):
@@ -117,7 +103,7 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, state='draft', **kwargs):
-        url = provider.build_url(settings.METADATA_BASE_URL, self.doi)
+        url = provider.build_url(self.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
             url,

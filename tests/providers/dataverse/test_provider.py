@@ -11,7 +11,7 @@ from waterbutler.core import streams
 from waterbutler.core import exceptions
 from waterbutler.core.provider import build_url
 
-from waterbutler.providers.dataverse import DataverseProvider, settings, utils
+from waterbutler.providers.dataverse import DataverseProvider
 from waterbutler.providers.dataverse.metadata import DataverseFileMetadata
 
 
@@ -52,46 +52,6 @@ def file_like(file_content):
 def file_stream(file_like):
     return streams.FileStreamReader(file_like)
 
-
-# @pytest.fixture
-# def folder_metadata():
-#     return {
-#         "size": "0 bytes",
-#         "hash": "37eb1ba1849d4b0fb0b28caf7ef3af52",
-#         "bytes": 0,
-#         "thumb_exists": False,
-#         "rev": "714f029684fe",
-#         "modified": "Wed, 27 Apr 2011 22:18:51 +0000",
-#         "path": "/Photos",
-#         "is_dir": True,
-#         "icon": "folder",
-#         "root": "dropbox",
-#         "contents": [
-#             {
-#                 "size": "2.3 MB",
-#                 "rev": "38af1b183490",
-#                 "thumb_exists": True,
-#                 "bytes": 2453963,
-#                 "modified": "Mon, 07 Apr 2014 23:13:16 +0000",
-#                 "client_mtime": "Thu, 29 Aug 2013 01:12:02 +0000",
-#                 "path": "/Photos/flower.jpg",
-#                 "photo_info": {
-#                 "lat_long": [
-#                     37.77256666666666,
-#                     -122.45934166666667
-#                 ],
-#                 "time_taken": "Wed, 28 Aug 2013 18:12:02 +0000"
-#                 },
-#                 "is_dir": False,
-#                 "icon": "page_white_picture",
-#                 "root": "dropbox",
-#                 "mime_type": "image/jpeg",
-#                 "revision": 14511
-#             }
-#         ],
-#         "revision": 29007
-#     }
-#
 
 @pytest.fixture
 def file_metadata():
@@ -202,50 +162,46 @@ class TestCRUD:
         assert aiohttpretty.has_call(method='DELETE', uri=url)
 
 
-# class TestMetadata:
-#
-#     @async
-#     @pytest.mark.aiohttpretty
-#     def test_metadata(self, provider, folder_metadata):
-#         path = DropboxPath(provider.folder, '/')
-#         url = provider.build_url('metadata', 'auto', path.full_path)
-#         aiohttpretty.register_json_uri('GET', url, body=folder_metadata)
-#         result = yield from provider.metadata(str(path))
-#
-#         assert isinstance(result, list)
-#         assert len(result) == 1
-#         assert result[0]['kind'] == 'file'
-#         assert result[0]['name'] == 'flower.jpg'
-#         assert result[0]['path'] == '/flower.jpg'
-#
-#     @async
-#     @pytest.mark.aiohttpretty
-#     def test_metadata_root_file(self, provider, file_metadata):
-#         path = DropboxPath(provider.folder, '/pfile')
-#         url = provider.build_url('metadata', 'auto', path.full_path)
-#         aiohttpretty.register_json_uri('GET', url, body=file_metadata)
-#         result = yield from provider.metadata(str(path))
-#
-#         assert isinstance(result, dict)
-#         assert result['kind'] == 'file'
-#         assert result['name'] == 'Getting_Started.pdf'
-#         assert result['path'] == '/Getting_Started.pdf'
-#
-#     @async
-#     @pytest.mark.aiohttpretty
-#     def test_metadata_missing(self, provider):
-#         path = DropboxPath(provider.folder, '/pfile')
-#         url = provider.build_url('metadata', 'auto', path.full_path)
-#         aiohttpretty.register_uri('GET', url, status=404)
-#
-#         with pytest.raises(exceptions.MetadataError):
-#             yield from provider.metadata(str(path))
-#
-#
-# class TestOperations:
-#
-#     def test_can_intra_copy(self, provider):
-#         assert provider.can_intra_copy(provider)
-#
-#     def test_can_intra_move(self, provider):
-#         assert provider.can_intra_move(provider)
+class TestMetadata:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata(self, provider, dataset_metadata):
+        url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', url, status=200, body=dataset_metadata)
+
+        result = yield from provider.metadata('draft')
+
+        assert isinstance(result, list)
+        assert len(result) == 4
+        assert result[0]['provider'] == 'dataverse'
+        assert result[0]['kind'] == 'file'
+        assert result[0]['name'] == 'thefile-2.txt'
+        assert result[0]['path'] == '/161'
+        assert result[0]['extra']['original'] == 'thefile.txt'
+        assert result[0]['extra']['version'] == 2
+        assert result[0]['extra']['fileId'] == '161'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_published(self, provider, dataset_metadata):
+        url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', url, status=200, body=dataset_metadata)
+
+        result = yield from provider.metadata('published')
+
+        assert isinstance(result, dict)
+        assert result['provider'] == 'dataverse'
+        assert result['kind'] == 'folder'
+        assert result['name'] == 'A look at wizards'
+        assert result['path'] == '/{0}/'.format(provider.doi)
+
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_missing(self, provider):
+        url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', url, status=404)
+
+        with pytest.raises(exceptions.MetadataError):
+            yield from provider.metadata()

@@ -1,6 +1,7 @@
 from waterbutler.core import metadata
 from waterbutler.providers.dataverse import utils as dataverse_utils
 
+
 class BaseDataverseMetadata(metadata.BaseMetadata):
 
     def __init__(self, raw):
@@ -78,7 +79,7 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
 
     @property
     def id(self):
-        return self.raw['feed']['id']
+        return self.raw['feed']['id'].rsplit('/study/', 1)[-1]
 
     @property
     def name(self):
