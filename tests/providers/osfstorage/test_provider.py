@@ -89,6 +89,14 @@ def osf_response():
         }
     }
 
+@pytest.fixture
+def upload_response():
+    return {
+        'downloads': 10,
+        'version': 8,
+        'path': '/dfl893b1pdn11kd28b'
+    }
+
 
 @async
 @pytest.mark.aiohttpretty
@@ -166,94 +174,94 @@ def test_provider_metadata(monkeypatch, provider):
     aiohttpretty.has_call(method='GET', uri='https://waterbutler.io', parmas={'path': 'unrelatedpath'})
 
 
-@async
-@pytest.mark.aiohttpretty
-def test_upload_new(monkeypatch, provider_and_mock, file_stream):
-    mock_metadata = asyncio.Future()
-    provider, inner_provider = provider_and_mock
-    basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10, 'version': 8})
+class TestUploads:
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_new(self, monkeypatch, provider_and_mock, file_stream, upload_response):
+        mock_metadata = asyncio.Future()
+        provider, inner_provider = provider_and_mock
+        basepath = 'waterbutler.providers.osfstorage.provider.{}'
+        aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body=upload_response)
 
-    mock_metadata.set_result({})
-    inner_provider.metadata.return_value = mock_metadata
-    monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
-    monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
-    monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
+        mock_metadata.set_result({})
+        inner_provider.metadata.return_value = mock_metadata
+        monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
+        monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
+        monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
-    res, created = yield from provider.upload(file_stream, '/foopath')
+        res, created = yield from provider.upload(file_stream, '/foopath')
 
-    assert created is False
-    assert res['name'] == 'foopath'
-    assert res['extra']['version'] == 8
-    assert res['provider'] == 'osfstorage'
-    assert res['extra']['downloads'] == 10
+        assert created is False
+        assert res['name'] == 'foopath'
+        assert res['extra']['version'] == 8
+        assert res['provider'] == 'osfstorage'
+        assert res['extra']['downloads'] == 10
 
-    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
-    inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
-    inner_provider.delete.assert_called_once_with('/uniquepath')
+        inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
+        inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
+        inner_provider.delete.assert_called_once_with('/uniquepath')
 
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_existing(self, monkeypatch, provider_and_mock, file_stream):
+        mock_move = asyncio.Future()
+        provider, inner_provider = provider_and_mock
+        basepath = 'waterbutler.providers.osfstorage.provider.{}'
+        aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10, 'version': 8, 'path': '/24601'})
 
-@async
-@pytest.mark.aiohttpretty
-def test_upload_existing(monkeypatch, provider_and_mock, file_stream):
-    mock_move = asyncio.Future()
-    provider, inner_provider = provider_and_mock
-    basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10, 'version': 8})
+        mock_move.set_result({})
+        inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
+        inner_provider.move.return_value = mock_move
 
-    mock_move.set_result({})
-    inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
-    inner_provider.move.return_value = mock_move
+        monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
+        monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
+        monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
-    monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
-    monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
-    monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
+        res, created = yield from provider.upload(file_stream, '/foopath')
 
-    res, created = yield from provider.upload(file_stream, '/foopath')
+        assert created is False
+        assert res['name'] == 'foopath'
+        assert res['path'] == '/24601'
+        assert res['extra']['version'] == 8
+        assert res['provider'] == 'osfstorage'
+        assert res['extra']['downloads'] == 10
 
-    assert created is False
-    assert res['name'] == 'foopath'
-    assert res['extra']['version'] == 8
-    assert res['provider'] == 'osfstorage'
-    assert res['extra']['downloads'] == 10
+        inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
+        inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
+        inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
 
-    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
-    inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
-    inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_and_tasks(self, monkeypatch, provider_and_mock, file_stream, credentials, settings):
+        mock_parity = mock.Mock()
+        mock_backup = mock.Mock()
+        mock_move = asyncio.Future()
+        provider, inner_provider = provider_and_mock
+        basepath = 'waterbutler.providers.osfstorage.provider.{}'
+        aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=201, body={'version': 42, 'downloads': 30, 'path': '/alkjdaslke09'})
 
+        mock_move.set_result({})
+        inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
+        inner_provider.move.return_value = mock_move
+        monkeypatch.setattr(basepath.format('backup.main'), mock_backup)
+        monkeypatch.setattr(basepath.format('parity.main'), mock_parity)
+        monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), True)
+        monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
+        monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
-@async
-@pytest.mark.aiohttpretty
-def test_upload_and_tasks(monkeypatch, provider_and_mock, file_stream, credentials, settings):
-    mock_parity = mock.Mock()
-    mock_backup = mock.Mock()
-    mock_move = asyncio.Future()
-    provider, inner_provider = provider_and_mock
-    basepath = 'waterbutler.providers.osfstorage.provider.{}'
-    aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=201, body={'version': 42, 'downloads': 30})
+        res, created = yield from provider.upload(file_stream, '/foopath')
 
-    mock_move.set_result({})
-    inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
-    inner_provider.move.return_value = mock_move
-    monkeypatch.setattr(basepath.format('backup.main'), mock_backup)
-    monkeypatch.setattr(basepath.format('parity.main'), mock_parity)
-    monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), True)
-    monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
-    monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
+        assert created is True
+        assert res['name'] == 'foopath'
+        assert res['extra']['version'] == 42
+        assert res['provider'] == 'osfstorage'
+        assert res['extra']['downloads'] == 30
 
-    res, created = yield from provider.upload(file_stream, '/foopath')
-
-    assert created is True
-    assert res['name'] == 'foopath'
-    assert res['extra']['version'] == 42
-    assert res['provider'] == 'osfstorage'
-    assert res['extra']['downloads'] == 30
-
-    inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
-    complete_path = os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest)
-    mock_parity.assert_called_once_with(complete_path, credentials['parity'], settings['parity'])
-    mock_backup.assert_called_once_with(complete_path, 42, 'https://waterbutler.io', credentials['archive'], settings['parity'])
-    inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
-    inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
+        inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
+        complete_path = os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest)
+        mock_parity.assert_called_once_with(complete_path, credentials['parity'], settings['parity'])
+        mock_backup.assert_called_once_with(complete_path, 42, 'https://waterbutler.io', credentials['archive'], settings['parity'])
+        inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
+        inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
 
 
