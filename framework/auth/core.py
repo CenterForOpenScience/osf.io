@@ -7,6 +7,7 @@ import datetime as dt
 
 import bson
 import pytz
+import itsdangerous
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
@@ -18,6 +19,7 @@ from framework.sessions import session
 from framework.auth import utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
+from framework.sessions.model import Session
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -372,6 +374,30 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_claimed = True
         user.date_confirmed = user.date_registered
         return user
+
+    def get_cookie(self, secret):
+        """Find the cookie for the given user
+        Create a new session if no cookie is found
+
+        :param str secret: The key to sign the cookie with
+        :returns: The signed cookie
+        """
+        sessions = Session.find(
+            Q('data.auth_user_id', 'eq', self._id)
+        ).sort(
+            '-date_modified'
+        ).limit(1)
+        if sessions:
+            session = sessions[0]
+        else:
+            session = Session(data={
+                'auth_user_id': self._id,
+                'auth_user_username': self.username,
+                'auth_user_fullname': self.fullname,
+            })
+            session.save()
+        signer = itsdangerous.Signer(secret)
+        return signer.sign(session._id)
 
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
