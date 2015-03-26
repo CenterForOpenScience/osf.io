@@ -224,6 +224,8 @@ class TestUser(OsfTestCase):
         u.save()
         assert_equal(u.username, email)
         assert_false(u.is_registered)
+        assert_false(u.is_claimed)
+        assert_true(u.is_invited)
         assert_true(email in u.emails)
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
@@ -2051,6 +2053,17 @@ class TestProject(OsfTestCase):
         node = NodeFactory(project=self.project, creator=user)
         assert_true(node.is_admin_parent(self.project.creator))
 
+    def test_is_admin_parent_grandparent_admin(self):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            project=self.project,
+            category='project',
+            creator=user
+        )
+        child_node = NodeFactory(project=parent_node, creator=user)
+        assert_true(child_node.is_admin_parent(self.project.creator))
+        assert_true(parent_node.is_admin_parent(self.project.creator))
+
     def test_is_admin_parent_parent_write(self):
         user = UserFactory()
         node = NodeFactory(project=self.project, creator=user)
@@ -2063,11 +2076,43 @@ class TestProject(OsfTestCase):
         assert_true(node.has_permission(self.project.creator, 'read'))
         assert_false(node.has_permission(self.project.creator, 'admin'))
 
+    def test_has_permission_read_grandparent_admin(self):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            project=self.project,
+            category='project',
+            creator=user
+        )
+        child_node = NodeFactory(
+            project=parent_node,
+            creator=user
+        )
+        assert_true(child_node.has_permission(self.project.creator, 'read'))
+        assert_false(child_node.has_permission(self.project.creator, 'admin'))
+        assert_true(parent_node.has_permission(self.project.creator, 'read'))
+        assert_false(parent_node.has_permission(self.project.creator, 'admin'))
+
     def test_can_view_parent_admin(self):
         user = UserFactory()
         node = NodeFactory(project=self.project, creator=user)
         assert_true(node.can_view(Auth(user=self.project.creator)))
         assert_false(node.can_edit(Auth(user=self.project.creator)))
+
+    def test_can_view_grandparent_admin(self):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            project=self.project,
+            creator=user,
+            category='project'
+        )
+        child_node = NodeFactory(
+            project=parent_node,
+            creator=user
+        )
+        assert_true(parent_node.can_view(Auth(user=self.project.creator)))
+        assert_false(parent_node.can_edit(Auth(user=self.project.creator)))
+        assert_true(child_node.can_view(Auth(user=self.project.creator)))
+        assert_false(child_node.can_edit(Auth(user=self.project.creator)))
 
     def test_can_view_parent_write(self):
         user = UserFactory()

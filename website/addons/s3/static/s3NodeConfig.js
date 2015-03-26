@@ -312,7 +312,7 @@ ViewModel.prototype.updateFromData = function(data) {
         if (settings.urls) {
             self.urls(settings.urls);
         }                
-        ret.resolve();
+        ret.resolve(settings);
     };
     if (typeof data === 'undefined'){
         return self.fetchFromServer()
@@ -328,10 +328,11 @@ ViewModel.prototype.fetchFromServer = function() {
     var self = this;
     var ret = $.Deferred();
     $.ajax({
-            url: self.url,
-            type: 'GET',
-            dataType: 'json'
-        })
+        url: self.url,
+        type: 'GET',
+        dataType: 'json',
+        contentType: 'application/json'
+    })
     .done(function(response) {
         var settings = response.result;
         self.loadedSettings(true);

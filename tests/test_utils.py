@@ -213,9 +213,9 @@ class TestWebpackFilter(unittest.TestCase):
         self.asset_paths = {'assets': 'assets.07123e.js'}
 
     def test_resolve_asset(self):
-        asset = paths.webpack_asset('assets.js', self.asset_paths)
+        asset = paths.webpack_asset('assets.js', self.asset_paths, debug=False)
         assert_equal(asset, '/static/public/js/assets.07123e.js')
 
-    def test_resolve_asset_not_found(self):
+    def test_resolve_asset_not_found_and_not_in_debug_mode(self):
         with assert_raises(KeyError):
-            paths.webpack_asset('bundle.js', self.asset_paths)
+            paths.webpack_asset('bundle.js', self.asset_paths, debug=False)

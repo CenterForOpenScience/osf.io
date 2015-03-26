@@ -94,7 +94,7 @@
                     <p class="subHeadFour text-center anchor" id="structure">Structuring Your Work:</p>
                     <span id="dashboards" class="anchor"></span>
                     <p class="gs-header">Dashboards</p>
-                    <p>The Dashboard displays all of your projects and their components in the Project Organizer, and is linked in the black navigation bar at the top of the page. From the Project Organizer, you can open any of your projects or components by clicking on the "open" icon to the right of the project's name. To the right of your project organizer you will find a set of widgets that make it easy to create, register, and add files to your projects</p>
+                    <p><strong>The Dashboard displays all of your projects and their components in the Project Organizer, and is linked in the black navigation bar at the top of the page.</strong> From the Project Organizer, you can open any of your projects or components by clicking on the "open" icon to the right of the project's name. To the right of your project organizer you will find a set of widgets that make it easy to create, register, and add files to your projects</p>
                     <p>You can shrink or expand each project to display nested components by clicking the + or - to the left of the projects name. A more detailed description of how to use the <a href="#organizer">Project Organizer</a> is below.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="CiwtT70rafU"></div>
@@ -104,7 +104,7 @@
 
                     <span id="projects" class="anchor"></span>
                     <p class="gs-header">Projects</p>
-                    <p>Projects are the largest form of categorization that the OSF supports. A project could be an experiment, a lab group, or a paper–anything that has contributing members and files or explanatory texts/images.</p>
+                    <p><strong>Projects are the largest form of categorization that the OSF supports.</strong> A project could be an experiment, a lab group, or a paper–anything that has contributing members and files or explanatory texts/images.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="Qx4MNTz3HMk"></div>
                     </div>
@@ -112,7 +112,7 @@
 
                     <span id="components" class="anchor"></span>
                     <p class="gs-header">Components</p>
-                    <p>Components are like folders in your project. You can assign a component a category upon its creation (data, materials, projects, etc.). A component that is categorized as a project can have more components added within it.</p>
+                    <p><strong>Components are like folders in your project.</strong> You can assign a component a category upon its creation (data, materials, projects, etc.). A component that is categorized as a project can have more components added within it.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="kotF8Pnurpw"></div>
                     </div>
@@ -125,7 +125,7 @@
 
                     <span id="files" class="anchor"></span>
                     <p class="gs-header">Files</p>
-                    <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful groups like datasets or background research.</p>
+                    <p><strong>Each project and component can have its own set of files. This allows you to organize your files into meaningful groups like datasets or background research.</strong></p>
                     <p>To upload a file, click on "Files" in the grey navigation bar under the Project/Component's title. Here you can drag the file from your desktop on to the screen to upload, or click on the upload button in the actions column.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="_8-nrjOWpfE"></div>
@@ -137,7 +137,7 @@
                     <span id="links" class="anchor"></span>
 
                     <p class="gs-header">Links</p>
-                    <p>Links are an alternative to building a component within a project. Adding a link to a project means that instead of building a component within the parent project, the component exists separately and is only being pointed to from the present project.</p>
+                    <p><strong>Links are an alternative to building a component within a project.</strong> Adding a link to a project means that instead of building a component within the parent project, the component exists separately and is only being pointed to from the present project.</p>
                     <p>Any existing public project can be a link.</p>
                     <p>Linking is useful if you want to reference another's work or indicate that something is part of a larger project, while still allowing it to exist independently.</p>
                     <p>A link can be by visiting the project you want to add the link to. Click "Add Links" in the components section of your project dashboard and search for the project you wish to link to.</p>
@@ -148,7 +148,7 @@
                     <span id="forks" class="anchor"></span>
 
                     <p class="gs-header">Forks</p>
-                    <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
+                    <p><strong>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes.</strong> You will be the only contributor to the forked project until you add others.</p>
                     <p>Forks will automatically reference the original project as a functional citation.  Over time, the network of forks trace the evolution of project materials.</p>
                     <p>To fork a project, visit the project and click the button at the top right of the page. This will give you several options on how you can duplicate a project. Click "Fork" and a fork will be created. It is important to note that the fork will contain only public components, or those for which you are a contributor. Private components that you do not have access to will not be forked.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
@@ -159,7 +159,7 @@
                     <span id="registrations" class="anchor"></span>
 
                     <p class="gs-header">Registrations</p>
-                    <p>Registrations are permanent, read only copies of a project. Registration saves the state of a project at a particular point in time - such as right before data collection, or right when a manuscript is submitted.</p>
+                    <p><strong>Registrations are permanent, read only copies of a project.</strong> Registration saves the state of a project at a particular point in time - such as right before data collection, or right when a manuscript is submitted.</p>
                     <p>To register a project, click on the button in the grey navigation bar. Click on "New Registration", select a meta-data template, fill it out, and then confirm the registration.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="rj89AgTdIvA"></div>
@@ -168,7 +168,7 @@
 
                     <span id="organizer" class="anchor"></span>
                     <p class="gs-header">Project Organizer and Folders</p>
-                    <p> The Project Organizer displays your projects, components, and registrations; and makes it easy for you to arrange your projects and components into folders that make sense for your application. Your projects and registrations will be all be shown in Smart Folders called “All My Registrations” and “All My Projects.” Other folders can be created to help you organize projects or components you might like to see grouped in a different way. For example, you may have many projects and find the list overwhelming. It will be helpful for you to have a folder containing only projects or components you work with most often. Alternatively, you might want to be able to easily access all of your analysis scripts from all of your projects. You can create a folder and add to it only analysis scripts components. </p>
+                    <p> <strong>The Project Organizer displays your projects, components, and registrations; and makes it easy for you to arrange your projects and components into folders that make sense for your application.</strong> Your projects and registrations will be all be shown in Smart Folders called “All My Registrations” and “All My Projects.” Other folders can be created to help you organize projects or components you might like to see grouped in a different way. For example, you may have many projects and find the list overwhelming. It will be helpful for you to have a folder containing only projects or components you work with most often. Alternatively, you might want to be able to easily access all of your analysis scripts from all of your projects. You can create a folder and add to it only analysis scripts components. </p>
                     <p>To create a folder, click the “New Folder” button above the Project Organizer and give the folder a name.  </p>
 
                     <p>Then simply drag and drop projects or components you’d like associated with this folder, or click on the folder name and choose “Add Existing Project.” </p>
@@ -182,7 +182,7 @@
 
             <span id="wiki" class="anchor"></span>
                     <p class="gs-header">Collaborative Wiki</p>
-                    <p><strong>The wiki is a versatile tool for interacting with your team or the people who view your work.</strong>Each project and component has a wiki and you can add more pages depending on your needs. You can also turn the wiki off completely in the "Select Add-Ons" section of your project settings.
+                    <p><strong>The wiki is a versatile tool for interacting with your team or the people who view your work.</strong> Each project and component has a wiki and you can add more pages depending on your needs. You can also turn the wiki off completely in the "Select Add-Ons" section of your project settings.
 </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="BWlRGvg3Ro4"></div>
@@ -201,18 +201,18 @@
                     <p class="subHeadFour text-center anchor" id="sharing">Sharing Your Work:</p>
                     <span id="contributors" class="anchor"></span>
                     <p class="gs-header">Contributors</p>
-                    <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and allows them to make changes to the project.</p>
+                    <p><strong>Adding contributors to a project allows credit to be given to those who have worked on the project, and allows them to make changes to the project.</strong></p>
                     <p>Admins on a project can add contributors by visiting the "Sharing" tab in the grey navigation bar under the project's name. Click on the top link labeled "Click to add a contributor." A pop-up will appear where you can search for a person to add. If they have an OSF account, their name will appear and you can add them and select their privileges. If they do not have an OSF account, you can provide them as an unregistered user and they will be notified by email.  You can select what components you would like to add them to.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="eYpAn59G6Yk"></div>
                     </div>
-                    <p><strong>Contributor permissions</strong> are the rules that govern who can see or edit a project. When a project is made, the creator is automatically the administrator, meaning that they can add other people and make changes to the project. The admin can add contributors and make them administrators as well, or they can assign the other contributors to read or read & write priveleges.<p>
+                    <p><strong>Contributor permissions are the rules that govern who can see or edit a project.</strong> When a project is made, the creator is automatically the administrator, meaning that they can add other people and make changes to the project. The admin can add contributors and make them administrators as well, or they can assign the other contributors to read or read & write priveleges.<p>
                     <p>Reading privileges means that the contributor can see any project or component they are listed as a contributor on.</p>
                     <p>Reading and writing privileges means that the contributor can see and edit any project or component they are a contributor on, but they cannot add or remove contributors like an administrator.</p>
                     <P>Admins can also affect the order in which contributors are listed. To re-order, just click on a contributor and drag and drop them to their new position.</P>
                     <span id="privacy" class="anchor"></span>
                     <p class="gs-header">Privacy</p>
-                    <p>All projects are private by default. However, you can choose to make your project's contents available for anyone to view. </p>
+                    <p><strong>All projects are private by default. However, you can choose to make your project's contents available for anyone to view.</strong> </p>
                     <p>Components you have added can have their own privacy settings. Making the project public does not make all of its components public. For example, you can make your methodology component public, but leave the data in a private component.</p>
                     <p>Once you make a project public, you can gain more feedback about the impact of your work by tracking how many people that are visiting your projects and downloading or forking your research materials. You can also create a watchlist of other projects that interest you. </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
@@ -223,7 +223,7 @@
 
                     <span id="comments" class="anchor"></span>
                     <p class="gs-header">Comments</p>
-                    <p>Commenting can be enabled for any OSF project. To leave a comment on a project, if the administrators have allowed chat, you will see blue speech bubbles in the top right corner of your screen. Click on those speech bubbles and add your comment in the text box.</p>
+                    <p><strong>Commenting can be enabled for any OSF project.</strong> To leave a comment on a project, if the administrators have allowed chat, you will see blue speech bubbles in the top right corner of your screen. Click on those speech bubbles and add your comment in the text box.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="ut0ofij_cFA"></div>
                     </div>
@@ -232,7 +232,7 @@
 
                     <span id="notifications" class="anchor"></span>
                     <p class="gs-header">Notifications</p>
-                    <p>Notifications can be enabled for any OSF project or component. To be notified via email when a new comment is added to a project or component, visit the settings page on the project. You can choose to receive an email every time a comment is added or in a daily digest. You can also choose to receive email notifications when someone replies to your comment on a project; configure this in your account settings.</p>
+                    <p><strong>Notifications can be enabled for any OSF project or component.</strong> To be notified via email when a new comment is added to a project or component, visit the settings page on the project. You can choose to receive an email every time a comment is added or in a daily digest. You can also choose to receive email notifications when someone replies to your comment on a project; configure this in your account settings.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="iOkb9OH4x5k"></div>
                     </div>
@@ -252,15 +252,15 @@
                     <p class="subHeadFour text-center anchor" id="metrics">Metrics:</p>
                     <span id="citations" class="anchor"></span>
                     <p class="gs-header">Citations</p>
-                    <p>Every project, component, file, and user has a unique URL on the OSF. This means that anything you upload and make public on the OSF can be cited, giving you credit for your work.</p>
+                    <p><strong>Every project, component, file, and user has a unique URL on the OSF.</strong> This means that anything you upload and make public on the OSF can be cited, giving you credit for your work.</p>
                     <p>To find a pre-formatted citation for a project, look directly below the grey navigation bar on the project's page and you will see the URL to be cited. If you click "more" then you ill see the APA, MLA, and Chicago citations.</p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="Ow7YoAHrflo"></div>
                     </div>
                     <span id="statistics" class="anchor"></span>
                     <p class="gs-header">Statistics</p>
-                    <p>Every project comes with a statistics page where you can view information on how often people are visiting your project and where they are being referred from.</p>
-                    <P>The information displayed on the statistics page can be changed. From the statistics page of your project (found by clicking "Statistics" in the grey navigation bar), click on "Widgets & Dashboard." Select the widget you wish to add by clicking on the orange arrow to the right of the widget's name.</P>
+                    <p><strong>Every project comes with a statistics page where you can view information on how often people are visiting your project and where they are being referred from.</strong></p>
+                    <p>The information displayed on the statistics page can be changed. From the statistics page of your project (found by clicking "Statistics" in the grey navigation bar), click on "Widgets & Dashboard." Select the widget you wish to add by clicking on the orange arrow to the right of the widget's name.</P>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="AfnET4zKNBw"></div>
                     </div>

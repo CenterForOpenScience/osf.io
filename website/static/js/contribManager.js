@@ -1,9 +1,12 @@
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
-var $osf = require('osfHelpers');
 require('knockout-sortable');
+
+var $osf = require('./osfHelpers');
 
 var contribsEqual = function(a, b) {
     return a.id === b.id &&
@@ -75,7 +78,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         self.deleteStaged(true);
     };
     self.unremove = function(data, event) {
-        $target = $(event.target);
+        var $target = $(event.target);
         if (!$target.hasClass('contrib-button')) {
             self.deleteStaged(false);
         }

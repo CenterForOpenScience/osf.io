@@ -41,12 +41,14 @@ def mendeley_set_config(auth, node_addon, **kwargs):
 
     provider = MendeleyCitationsProvider()
     args = request.get_json()
-    #external_account_id = args.get('external_account_id')
     external_list_id = args.get('external_list_id')
+    external_list_name = args.get('external_list_name')
     provider.set_config(
         node_addon,
         auth.user,
         external_list_id,
+        external_list_name,
+        auth,
     )
     # TODO: Return a more useful response body, e.g. the serialized settings
     return {}

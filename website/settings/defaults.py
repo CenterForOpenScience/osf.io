@@ -42,7 +42,7 @@ CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
 BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
 
 DOMAIN = 'http://localhost:5000/'
-OFFLOAD_DOMAIN = 'http://localhost:5001/' if DEBUG_MODE else DOMAIN
+OFFLOAD_DOMAIN = 'http://localhost:5001/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
@@ -235,3 +235,5 @@ DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_ADDRS = ['127.0.0.1']
+
+SHARE_REGISTRATION_URL = ''

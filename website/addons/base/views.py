@@ -309,7 +309,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider, **extras)
+    render_url = node.api_url_for(
+        'addon_render_file',
+        path=file_guid.waterbutler_path.lstrip('/'),
+        provider=file_guid.provider,
+        render=True,
+        **extras
+    )
 
     ret = serialize_node(node, auth, primary=True)
     ret.update({
@@ -334,11 +340,26 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     node_addon = node.get_addon(provider)
 
-    if not path or not node_addon:
+    if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not node_addon:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer attached to the {}.'.format(node.project_or_component)
+        })
+
     if not node_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED)
+        raise HTTPError(httplib.UNAUTHORIZED, {
+            'message_short': 'Unauthorized',
+            'message_long': 'The add-on containing this file is no longer authorized.'
+        })
+
+    if not node_addon.complete:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer configured.'
+        })
 
     if not path.startswith('/'):
         path = '/' + path
