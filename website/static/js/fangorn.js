@@ -455,7 +455,6 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
-    treebeard.multimodal.dismiss();
     treebeard.redraw();
 }
 
@@ -493,7 +492,6 @@ function _fangornDropzoneError(tb, file, message) {
     }
     $osf.growl('Error', msgText);
     tb.options.uploadInProgress = false;
-    tb.multimodal.dismiss();
 }
 
 /**
