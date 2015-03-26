@@ -34,6 +34,7 @@ $(document).ready(function() {
                     if (window.contextVars.file.provider === 'figshare') {
                         tb.options.folderArray = [window.contextVars.file.name]
                     } else if (window.contextVars.file.path) {
+                        window.contextVars.file.path = decodeURIComponent(window.contextVars.file.path);
                         tb.options.folderArray = window.contextVars.file.path.split("/");
                         if (tb.options.folderArray.length > 1) {
                             tb.options.folderArray.splice(0, 1);
