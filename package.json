@@ -39,6 +39,7 @@
     "moment": "^2.9.0",
     "morgan": "^1.5.1",
     "object-assign": "^2.0.0",
+    "pym.js": "^0.4.1",
     "raven": "^0.7.2",
     "raw-loader": "^0.5.1",
     "share": "~0.7.3",
@@ -47,8 +48,7 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
-    "ws": "~0.4.32",
-    "zeroclipboard": "~2.1.6"
+    "ws": "~0.4.32"
   },
   "devDependencies": {
     "chai": "^2.1.1",

@@ -197,7 +197,7 @@ def search_contributor(auth):
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
 
-
+@handle_search_errors
 def search_share():
     tick = time.time()
     results = {}
@@ -223,7 +223,7 @@ def search_share():
     results['time'] = round(time.time() - tick, 2)
     return results
 
-
+@handle_search_errors
 def search_share_stats():
     q = request.args.get('q')
     query = build_query(q, 0, 0) if q else {}
@@ -231,6 +231,7 @@ def search_share_stats():
     return search.share_stats(query=query)
 
 
+@handle_search_errors
 def search_share_atom(**kwargs):
     q = request.args.get('q', '*')
     sort = request.args.get('sort', 'dateUpdated')
