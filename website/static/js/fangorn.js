@@ -909,29 +909,45 @@ function expandStateLoad(item) {
 function _fangornToolbar () {
     var tb = this;
     var titleContent = tb.options.title();
-    if(!tb.toolbarMode || tb.toolbarMode === 'bar'){
+    if(tb.options.iconState.mode === 'bar'){
+        var iconsBar = [];
+        if(tb.options.iconState.icons.search){
+            iconsBar.push(searchIcon.call(tb));
+        }
+        if(tb.options.iconState.icons.cancelUploads){
+            iconsBar.push(cancelUploadsIcon.call(tb));
+        }
+        if(tb.options.iconState.icons.deleteMultiple){
+            iconsBar.push(deleteMultipleIcon.call(tb));
+        }
+        if(tb.options.iconState.icons.deleteSingle){
+            iconsBar.push(deleteSingle.call(tb));
+        }
+        if(tb.options.iconState.icons.downloadSingle){
+            iconsBar.push(downloadSingle.call(tb));
+        }
+        if(tb.options.iconState.icons.uploadFiles){
+            iconsBar.push(uploadFiles.call(tb));
+        }                        
         return m('.row.tb-header-row', [
                 m('.col-sm-6', [
                         m('span', titleContent)
                     ]),
                 m('.col-sm-6', [
-                        
                         m('.fangorn-toolbar.pull-right', 
-                            m('i.fa.fa-search.fangorn-toolbar-icon', { 
-                                onclick : function () { tb.toolbarMode = 'search' }
-                            })
+                            iconsBar
                         )
                     ])
             ]);  
     }
-    if(tb.toolbarMode === 'search'){
+    if(tb.options.iconState.mode === 'search'){
         return m('.row.tb-header-row', [
                 m('', [
                         m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
                         m('.col-xs-1', 
                             m('.fangorn-toolbar.pull-right', 
                                 m('i.fa.fa-times.fangorn-toolbar-icon', {
-                                    onclick : function () { tb.toolbarMode = 'bar'; tb.resetFilter(); }
+                                    onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
                                 })
                             )
                         )
@@ -939,8 +955,37 @@ function _fangornToolbar () {
             ]);  
     }    
     
-}  
+} 
 
+/** 
+ * Toolbar icon templates 
+ *
+ */
+ function searchIcon (){
+    var tb = this;
+    return m('i.fa.fa-search.fangorn-toolbar-icon', { 
+        onclick : function () { tb.options.iconState.mode = 'search' }
+    });
+ }
+  function cancelUploadsIcon (){
+    var tb = this;
+    return m();
+ } 
+  function deleteMultipleIcon (){
+    var tb = this;
+    return m();
+ } 
+  function deleteSingleIcon (){
+    var tb = m();
+ } 
+  function downloadSingleIcon (){
+    var tb = this;
+    return m();
+ }
+  function uploadIcon (){
+    var tb = this;
+    return m();
+ }   
 
 
 /**
@@ -1072,7 +1117,18 @@ tbOptions = {
     removeIcon : function(){
         return m('i.fa.fa-times-circle');
     },
-    headerTemplate : _fangornToolbar
+    headerTemplate : _fangornToolbar,
+    iconState : {
+        mode : 'bar',
+        icons : {
+            search : true,
+            cancelUploads : false,
+            deleteMultiple: false,
+            deleteSingle : false,
+            downloadSingle : false,
+            uploadFiles : false,
+        }
+    }
 };
 
 /**
