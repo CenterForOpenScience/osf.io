@@ -34,5 +34,4 @@ def github_create_repo(node_addon, **kwargs):
         # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)
 
-    import pdb; pdb.set_trace()
     return node_addon.to_json(user)
