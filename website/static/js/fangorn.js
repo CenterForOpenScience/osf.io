@@ -986,6 +986,60 @@ function toolbarDismissIcon (){
  }
 
 
+/**
+ * When multiple rows are selected remove those that are not in the parent
+ * @param {Array} rows List of item objects
+ * @returns {Array} newRows Returns the revised list of rows
+ */
+function filterRowsNotInParent(rows) {
+    if (this.multiselected.length < 2) {
+        return this.multiselected;
+    }
+    var i, newRows = [],
+        originalRow = this.find(this.multiselected[0].id),
+        originalParent,
+        currentItem;
+    if (typeof originalRow !== "undefined") {
+        originalParent = originalRow.parentID;
+        for (i = 0; i < rows.length; i++) {
+            currentItem = rows[i];
+            if (currentItem.parentID === originalParent && currentItem.id !== -1) {
+                newRows.push(rows[i]);
+            }
+        }
+    }
+    this.multiselected = newRows;
+    this.highlightMultiselect();
+    return newRows;
+}
+
+
+/**
+ * Handles multiselect conditions and actions
+ * @this Treebeard.controller
+ * @param {Object} event jQuery click event. 
+ * @param {Object} row A Treebeard _item object. 
+ * @private
+ */
+
+ function _fangornMultiselect (event, row) {
+        var tb = this;
+        var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+        this.options.iconState.rowIcons = [];
+        if(tb.multiselected.length === 1){
+            // empty row icons and assign row icons from item information
+            this.options.iconState.rowIcons = row.icons;
+            // temporarily remove classes until mithril redraws raws with another hover. 
+            // $('.tb-row').removeClass('fangorn-selected');
+            // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
+            tb.select('#tb-tbody').removeClass('unselectable');
+        } else {
+            this.options.iconState.generalIcons[1].on = true;
+            tb.select('#tb-tbody').addClass('unselectable');
+        }
+    }
+
+
 
 
 /**
@@ -1077,21 +1131,7 @@ tbOptions = {
     onscrollcomplete : function(){
         reapplyTooltips();
     },
-    onmultiselect : function(event, row) {
-        var tb = this;
-        event.preventDefault();
-        this.options.iconState.rowIcons = [];
-        if(tb.multiselected.length === 1){
-            // empty row icons and assign row icons from item information
-            this.options.iconState.rowIcons = row.icons;
-            // temporarily remove classes until mithril redraws raws with another hover. 
-            // $('.tb-row').removeClass('fangorn-selected');
-            // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
-            tb.select('#tb-tbody').removeClass('unselectable');
-        } else {
-            tb.select('#tb-tbody').addClass('unselectable');
-        }
-    },
+    onmultiselect : _fangornMultiselect,
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
