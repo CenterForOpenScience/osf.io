@@ -86,7 +86,7 @@ var LogsViewModel = oop.extend(Paginator, {
         self.logs = ko.observableArray(logs);
         self.url = url;
 
-        self.tzname = ko.computed(function() {
+        self.tzname = ko.pureComputed(function() {
             var logs = self.logs();
             if (logs.length) {
                 var tz =  moment(logs[0].date).format('ZZ');

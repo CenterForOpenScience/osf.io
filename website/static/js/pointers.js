@@ -28,11 +28,11 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(true);
 
-        this.foundResults = ko.computed(function() {
+        this.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
 
-        this.noResults = ko.computed(function() {
+        this.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
         });
     },
