@@ -6,6 +6,7 @@
 var ko = require('knockout');
 require('knockout.validation');
 var $ = require('jquery');
+var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 var koHelpers = require('js/koHelpers');
@@ -21,6 +22,14 @@ var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
         required: true,
         mustEqual : self.registrationTitle
     });
+    self.onSubmitSuccess = function(response) {
+        window.location = response.redirectUrl;
+    };
+    self.onSubmitError = function(error) {
+        Raven.captureMessage('Could not submit registration retraction.', {
+           error: error
+        });
+    };
 
     self.submit = function() {
         // Show errors if invalid
@@ -33,13 +42,9 @@ var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
             return false;
         } else {
             // Else Submit
-            $osf.postJSON(
-                submitUrl,
-                ko.toJS(self)
-            ).done(function (response) {
-                    window.location = response.redirectUrl;
-                }
-            );
+            return $osf.postJSON(submitUrl, ko.toJS(self))
+                .done(self.onSubmitSuccess)
+                .fail(self.onSubmitError);
         }
     };
 };
