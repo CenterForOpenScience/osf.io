@@ -177,7 +177,7 @@
         </div>
 
         % if node['is_registration'] and node['is_public']:
-            <a class="btn btn-danger" href="${web_url_for('node_registration_retraction', pid=node['id'])}">Retract Public Registration</a>
+            <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Public Registration</a>
         % endif
 
     % endif
