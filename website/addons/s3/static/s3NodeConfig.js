@@ -90,7 +90,7 @@ ViewModel.prototype.selectBucket = function() {
         )
         .done(function(response) {
             self.updateFromData(response);
-            self.changeMessage('Successfully linked S3 bucket \'' + self.currentBucket() + '\'. Go to the <a href="' +
+            self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
                                self.urls().files + '">Files page</a> to view your content.', 'text-success');
             self.loading(false);
         })
@@ -214,7 +214,7 @@ ViewModel.prototype.createBucket = function(bucketName) {
     ).done(function(response) {
         self.creating(false);
         self.updateFromData(response);
-        self.changeMessage('Successfully created bucket \'' + bucketName + '\'. You can now select it from the drop down list.', 'text-success');
+        self.changeMessage('Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.', 'text-success');
         self.bucketList().push(bucketName);
         if (!self.loadedBucketList()) {
             self.updateBucketList();
