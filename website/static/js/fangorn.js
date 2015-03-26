@@ -1076,13 +1076,18 @@ tbOptions = {
     onscrollcomplete : function(){
         reapplyTooltips();
     },
-    onselectrow : function(row) {
-        // empty row icons and assign row icons from item information
-        this.options.iconState.rowIcons = row.icons;
-        // temporarily remove classes until mithril redraws raws with another hover. 
-        $('.tb-row').removeClass('fangorn-selected');
-        $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
-        console.log(this.options.iconState);
+    onmultiselect : function(event, row) {
+        var tb = this;
+        event.preventDefault();
+        this.options.iconState.rowIcons = [];
+        if(tb.multiselected.length === 1){
+            // empty row icons and assign row icons from item information
+            this.options.iconState.rowIcons = row.icons;
+            // temporarily remove classes until mithril redraws raws with another hover. 
+            // $('.tb-row').removeClass('fangorn-selected');
+            // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
+    }
+
     },
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
