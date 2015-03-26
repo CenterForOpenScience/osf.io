@@ -9,7 +9,7 @@ from website.project.decorators import must_have_addon
 from website.util import rubeus
 
 
-def dataverse_hgrid_root(node_addon, auth):
+def dataverse_hgrid_root(node_addon, auth, **kwargs):
     node = node_addon.owner
     user_settings = node_addon.user_settings
 
