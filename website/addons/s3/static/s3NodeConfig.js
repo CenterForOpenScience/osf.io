@@ -12,12 +12,11 @@ ko.punches.enableAll();
 
 var noop = function() {};
 
-var ViewModel = function(url, selector, filesUrl) {
+var ViewModel = function(url, selector) {
     var self = this;
 
     self.url = url;
     self.selector = selector;
-    self.filesUrl = filesUrl;
 
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
@@ -92,7 +91,7 @@ ViewModel.prototype.selectBucket = function() {
         .done(function(response) {
             self.updateFromData(response);
             self.changeMessage('Successfully linked S3 bucket \'' + self.currentBucket() + '\'. Go to the <a href="' +
-                               self.filesUrl + '">Files page</a> to view your content.', 'text-success');
+                               self.urls().files + '">Files page</a> to view your content.', 'text-success');
             self.loading(false);
         })
         .fail(function(xhr, status, error) {
@@ -311,7 +310,7 @@ ViewModel.prototype.updateFromData = function(data) {
         self.currentBucket(settings.has_bucket ? settings.bucket : 'None');
         if (settings.urls) {
             self.urls(settings.urls);
-        }                
+        }
         ret.resolve(settings);
     };
     if (typeof data === 'undefined'){
@@ -368,9 +367,9 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-var S3Config = function(selector, url, filesUrl) {
+var S3Config = function(selector, url) {
     var viewModel = new ViewModel(url, selector);
-    $osf.applyBindings(viewModel, selector, filesUrl);
+    $osf.applyBindings(viewModel, selector);
     viewModel.updateFromData();
 };
 

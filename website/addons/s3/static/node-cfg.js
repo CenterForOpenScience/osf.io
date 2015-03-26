@@ -5,5 +5,4 @@ var AddonHelper = require('js/addonHelper');
 var S3NodeConfig = require('./s3NodeConfig').S3NodeConfig;
 
 var url = window.contextVars.node.urls.api + 's3/settings/';
-var filesUrl = window.contextVars.node.urls.web + 'files/';
-new S3NodeConfig('#s3Scope', url, filesUrl);
+new S3NodeConfig('#s3Scope', url);
