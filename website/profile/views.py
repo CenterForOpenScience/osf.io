@@ -226,11 +226,7 @@ def user_addons(auth, **kwargs):
                 addons_enabled.append(addon_config.short_name)
                 if 'user' in addon_config.configs:
                     addon_enabled_settings.append(addon_config.short_name)
-                    user_addons_enabled[addon_config.short_name] = {
-                        'urls': {
-                            'user_settings': addon_config.user_settings_template
-                        }
-                    }
+                    user_addons_enabled[addon_config.short_name] = user.get_addon(addon_config.short_name).to_json(user)
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [

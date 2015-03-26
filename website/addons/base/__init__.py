@@ -23,6 +23,7 @@ from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
+from website.addons.base import defaults as addon_defaults
 
 lookup = TemplateLookup(
     directories=[
@@ -90,43 +91,15 @@ class AddonConfig(object):
 
         # Provide the path the the user_settings template
         self.user_settings_template = user_settings_template
-        addon_user_settings_path = os.path.join(
-            'website',
-            'addons',
-            short_name,
-            '{}_user_settings.mako'.format(self.short_name)
-        )
-
-        if user_settings_template:
-            # If USER_SETTINGS_TEMPLATE is defined, use that path.
-            self.user_settings_template = user_settings_template
-        elif os.path.exists(addon_user_settings_path):
-            # An implicit template exists
-            self.user_settings_template = os.path.join(
-                os.path.pardir,
-                'addons',
-                self.short_name,
-                'templates',
-                '{}_user_settings.mako'.format(self.short_name),
-            )
-        else:
-            # Use the default template (for OAuth addons)
-            self.user_settings_template = os.path.join(
-                'project',
-                'addon',
-                'user_settings_default.mako',
-            )
+        if not user_settings_template or not os.path.exists(os.path.dirname(user_settings_template)):
+            # Use the default template (ATM for OAuth addons)
+            self.user_settings_template = addon_defaults.USER_SETTINGS_TEMPLATE_DEFAULT
 
         # Provide the path the the node_settings template
         self.node_settings_template = node_settings_template
         if not node_settings_template or not os.path.exists(os.path.dirname(node_settings_template)):
-            # Use the default template (for OAuth addons)
-            self.node_settings_template = os.path.join(
-                settings.TEMPLATES_PATH,
-                'project',
-                'addon',
-                'node_settings_default.mako',
-            )
+            # Use the default template
+            self.node_settings_template = addon_defaults.NODE_SETTINGS_TEMPLATE_DEFAULT
 
         # Build template lookup
         template_dirs = list(
@@ -501,7 +474,8 @@ class AddonUserSettingsBase(AddonSettingsBase):
                     'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
-            ]
+            ],
+            'user_settings_template': os.path.basename(self.config.user_settings_template),
         })
         return ret
 

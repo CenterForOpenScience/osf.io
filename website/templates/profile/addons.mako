@@ -71,10 +71,7 @@
                 <div class="panel-body">
 
                     % for name in addon_enabled_settings:
-                        <div mod-meta='{
-                                "tpl": "${user_addons_enabled[name]['urls']['user_settings']}",
-                                "uri": "${user_api_url}${name}/settings/"
-                            }'></div>
+                        ${render_user_settings(user_addons_enabled[name])}
                         % if not loop.last:
                             <hr />
                         % endif
@@ -92,6 +89,14 @@
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
 
+</%def>
+
+<%def name="render_user_settings(data)">
+    <%
+       template_name = data['user_settings_template']
+       tpl = data['template_lookup'].get_template(template_name).render(**data)
+    %>
+    ${tpl}
 </%def>
 
 
