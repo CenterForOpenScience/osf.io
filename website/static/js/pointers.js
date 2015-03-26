@@ -16,7 +16,7 @@ var nodeId = window.contextVars.node.id;
 
 var AddPointerViewModel = oop.extend(Paginator, {
     constructor: function(nodeTitle) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         var self = this;
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);

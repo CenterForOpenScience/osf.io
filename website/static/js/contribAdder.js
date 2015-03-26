@@ -29,7 +29,7 @@ function Contributor(data) {
 
 var AddContributorViewModel = oop.extend(Paginator, {
     constructor: function(title, parentId, parentTitle) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         var self = this;
 
         self.permissions = ['read', 'write', 'admin'];

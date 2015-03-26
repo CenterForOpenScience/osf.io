@@ -81,7 +81,7 @@ var Log = function(params) {
   */
 var LogsViewModel = oop.extend(Paginator, {
     constructor: function(logs, url) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         var self = this;
         self.logs = ko.observableArray(logs);
         self.url = url;
