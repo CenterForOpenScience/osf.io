@@ -21,8 +21,8 @@ Results.view = function(ctrl) {
             len > 0 && len < ctrl.vm.count ?
             m('a.btn.btn-md.btn-default', {
                 onclick: function(){
-                    utils.loadMore()
-                        .done(function(data) {
+                    utils.loadMore(ctrl.vm)
+                        .then(function(data) {
                             utils.updateVM(ctrl.vm, data);
                         });
                 }
