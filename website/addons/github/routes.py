@@ -124,8 +124,8 @@ settings_routes = {
             [
                 '/project/<pid>/github/oauth/',
                 '/project/<pid>/node/<nid>/github/oauth/',
-                '/project/<pid>/github/config/',
-                '/project/<pid>/node/<nid>/github/config/'
+                '/project/<pid>/github/settings/',
+                '/project/<pid>/node/<nid>/github/settings/'
 
             ],
             'delete',
