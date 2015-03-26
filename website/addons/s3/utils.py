@@ -111,6 +111,7 @@ def serialize_urls(node_addon, user):
         'bucket_list': node.api_url_for('s3_bucket_list'),
         'set_bucket': node.api_url_for('s3_node_settings'),
         'settings': web_url_for('user_addons'),
+        'files': node.web_url_for('collect_file_trees'),
     }
     if user_settings:
         result['owner'] = web_url_for('profile_view_id',
