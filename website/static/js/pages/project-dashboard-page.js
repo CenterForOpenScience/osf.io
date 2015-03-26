@@ -64,21 +64,35 @@ $(document).ready(function() {
             columnTitles : function(){
                 return [
                     {
+                        title : 'Select',
+                        width: '10%',
+                        sort: false
+                    },
+                    {
                     title: 'Name',
-                    width : '100%',
+                    width : '90%',
                     sort : true,
                     sortType : 'text'
                     }
                 ];
             },
             resolveRows : function(item){
-                var defaultColumns = [{
+                var defaultColumns = [
+                {
+                    data : null,
+                    folderIcons: false,
+                    filter : false,
+                    custom : function(){
+                        return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
+                    }
+                },
+                {
                     data: 'name',
                     folderIcons: true,
                     filter: true,
                     custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }];
-
+                this.options.defineToolbar.call(this,item);
                 if (item.parentID) {
                     item.data.permissions = item.data.permissions || item.parent().data.permissions;
                     if (item.data.kind === 'folder') {
