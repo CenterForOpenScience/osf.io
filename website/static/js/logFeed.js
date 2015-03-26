@@ -4,9 +4,10 @@
  */
 'use strict';
 var ko = require('knockout');
+require('knockout.punches');
 var $ = require('jquery');
 var moment = require('moment');
-require('knockout.punches');
+
 
 var $osf = require('./osfHelpers');
 

@@ -1,13 +1,13 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
-require('knockout-mapping');
+require('knockout.punches');
+require('knockout.mapping');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers.js');
 
 ko.punches.enableAll();
 
