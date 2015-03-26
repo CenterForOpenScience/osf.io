@@ -195,26 +195,32 @@ def confirm_email_get(**kwargs):
     user = User.load(kwargs['uid'])
     is_initial_confirmation = not user.date_confirmed
     token = kwargs['token']
-    if user and user.confirm_email(token):  # Confirm and register the user
 
-        if is_initial_confirmation:
-            user.date_last_login = datetime.datetime.utcnow()
-            user.save()
+    if user is None:
+        raise HTTPError(http.NOT_FOUND)
 
-            # Go to settings page
-            status.push_status_message(language.WELCOME_MESSAGE, 'success')
-            response = redirect('/settings/')
-        else:
-            status.push_status_message(language.CONFIRMED_EMAIL, 'success')
-            response = redirect(web_url_for('user_account'))
+    try:
+        user.confirm_email(token)
+    except (ValueError, KeyError):
+        return {
+            'code': http.BAD_REQUEST,
+            'message_short': 'Link Expired',
+            'message_long': language.LINK_EXPIRED
+        }, http.BAD_REQUEST
 
-        return framework.auth.authenticate(user, response=response)
-    # Return data for the error template
-    return {
-        'code': http.BAD_REQUEST,
-        'message_short': 'Link Expired',
-        'message_long': language.LINK_EXPIRED
-    }, http.BAD_REQUEST
+    if is_initial_confirmation:
+        user.date_last_login = datetime.datetime.utcnow()
+        user.save()
+
+        # Go to settings page
+        status.push_status_message(language.WELCOME_MESSAGE, 'success')
+        response = redirect('/settings/')
+    else:
+        status.push_status_message(language.CONFIRMED_EMAIL, 'success')
+        response = redirect(web_url_for('user_account'))
+
+    return framework.auth.authenticate(user, response=response)
+
 
 
 def send_confirm_email(user, email):

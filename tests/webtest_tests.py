@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
+import httplib as http
 import unittest
 import re
 import mock
@@ -1211,11 +1212,13 @@ class TestConfirmingEmail(OsfTestCase):
         assert_in('Welcome to the OSF!', res, 'shows flash message')
         assert_in('Please update the following settings.', res)
 
-    def test_error_page_if_confirm_link_is_expired(self):
+    def test_error_page_if_confirm_link_is_used(self):
         self.user.confirm_email(self.confirmation_token)
         self.user.save()
         res = self.app.get(self.confirmation_url, expect_errors=True)
+
         assert_in('Link Expired', res)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_flash_message_does_not_break_page_if_email_unconfirmed(self):
         # set a password for user

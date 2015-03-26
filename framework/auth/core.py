@@ -646,7 +646,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: bool
         """
         if token not in self.email_verifications:
-            raise exceptions.HTTPError(http.NOT_FOUND, "Invalid token")
+            raise KeyError()
 
         verification = self.email_verifications[token]
         # Not all tokens are guaranteed to have expiration dates
@@ -654,7 +654,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'expiration' in verification and
             verification['expiration'] < dt.datetime.utcnow()
         ):
-            raise exceptions.HTTPError(http.BAD_REQUEST, "Expired token")
+            raise ValueError()
 
         return verification['email']
 

@@ -2490,20 +2490,6 @@ class TestAuthViews(OsfTestCase):
         user.reload()
         assert_true(user.is_registered)
 
-    def test_expired_link_returns_400(self):
-        user = User.create_unconfirmed(
-            'brian1@queen.com',
-            'bicycle123',
-            'Brian May',
-        )
-        user.save()
-        token = user.get_confirmation_token('brian1@queen.com')
-        url = user.get_confirmation_url('brian1@queen.com', external=False)
-        user.confirm_email(token)
-        user.save()
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
 
 # TODO: Use mock add-on
 class TestAddonUserViews(OsfTestCase):

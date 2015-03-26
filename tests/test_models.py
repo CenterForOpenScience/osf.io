@@ -432,12 +432,17 @@ class TestUser(OsfTestCase):
         u = UserFactory.build()
         u.add_unconfirmed_email('foo@bar.com')
         u.save()
-        assert_false(u._get_unconfirmed_email_for_token('badtoken'))
+
+        with assert_raises(KeyError):
+            u._get_unconfirmed_email_for_token('badtoken')
+
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u._get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
-        assert_false(u._get_unconfirmed_email_for_token(valid_token))
+
+        with assert_raises(ValueError):
+            u._get_unconfirmed_email_for_token(valid_token)
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
         # A user verification token may not have an expiration
@@ -595,7 +600,7 @@ class TestUser(OsfTestCase):
     def test_serialize_user(self):
         master = UserFactory()
         user = UserFactory.build()
-        master.merge_user(user, save=True)
+        master.merge_user(user)
         d = serialize_user(user)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
@@ -609,7 +614,7 @@ class TestUser(OsfTestCase):
     def test_serialize_user_full(self):
         master = UserFactory()
         user = UserFactory.build()
-        master.merge_user(user, save=True)
+        master.merge_user(user)
         d = serialize_user(user, full=True)
         gravatar = filters.gravatar(
             user,
