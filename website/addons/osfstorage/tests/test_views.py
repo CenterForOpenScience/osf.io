@@ -276,20 +276,18 @@ class TestGetRevisions(StorageTestCase):
     def setUp(self):
         super(TestGetRevisions, self).setUp()
         self.path = 'tie/your/mother/down.mp3'
-        self.record = self.node_settings.root_node.append_file(self.path)
+        self.record = recursively_create_file(self.node_settings, self.path)
         self.record.versions = [factories.FileVersionFactory() for __ in range(15)]
         self.record.save()
 
-    def get_revisions(self, path=None, page=None, **kwargs):
-
+    def get_revisions(self, path=None, **kwargs):
         return self.app.get(
             self.project.api_url_for(
                 'osf_storage_get_revisions',
                 **signing.sign_data(
                     signing.default_signer,
                     {
-                        'path': path or self.path,
-                        'page': page,
+                        'path': path or self.record.path,
                     }
                 )
             ),
@@ -297,47 +295,37 @@ class TestGetRevisions(StorageTestCase):
             **kwargs
         )
 
-    def test_get_revisions_page_specified(self):
-        res = self.get_revisions(path=self.path, page=1)
+    def test_get_revisions(self):
+        res = self.get_revisions()
         expected = [
             utils.serialize_revision(
                 self.project,
                 self.record,
-                self.record.versions[idx - 1],
+                version,
                 idx
             )
-            for idx in range(5, 0, -1)
+            for idx, version in enumerate(reversed(self.record.versions))
         ]
-        assert_equal(res.json['revisions'], expected)
-        assert_equal(res.json['more'], False)
 
-    def test_get_revisions_page_not_specified(self):
-        res = self.get_revisions(path=self.path)
-        expected = [
-            utils.serialize_revision(
-                self.project,
-                self.record,
-                self.record.versions[idx - 1],
-                idx
-            )
-            for idx in range(15, 5, -1)
-        ]
+        assert_equal(len(res.json['revisions']), 15)
         assert_equal(res.json['revisions'], expected)
-        assert_equal(res.json['more'], True)
+        assert_equal(res.json['revisions'][0]['index'], 1)
+        assert_equal(res.json['revisions'][-1]['index'], 15)
 
-    def test_get_revisions_invalid_page(self):
-        res = self.get_revisions(path=self.path, page='pizza', expect_errors=True)
+    def test_get_revisions_no_path(self):
+        res = self.app.get(
+            self.project.api_url_for(
+                'osf_storage_get_revisions',
+                **signing.sign_data(
+                    signing.default_signer,
+                    {}
+                )
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
         assert_equal(res.status_code, 400)
 
     def test_get_revisions_path_not_found(self):
         res = self.get_revisions(path='missing', expect_errors=True)
         assert_equal(res.status_code, 404)
-
-
-def assert_urls_equal(url1, url2):
-    furl1 = furl.furl(url1)
-    furl2 = furl.furl(url2)
-    for attr in ['scheme', 'host', 'port']:
-        setattr(furl1, attr, None)
-        setattr(furl2, attr, None)
-    assert_equal(furl1, furl2)
