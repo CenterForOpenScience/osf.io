@@ -1,6 +1,6 @@
 'use strict';
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 require('knockout-mapping');
 var $ = require('jquery');
 var bootbox = require('bootbox');
