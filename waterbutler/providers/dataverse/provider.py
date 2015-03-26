@@ -8,7 +8,7 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import settings
-from waterbutler.providers.dataverse.metadata import DataverseFileMetadata, DataverseDatasetMetadata
+from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 from waterbutler.providers.dataverse import utils as dataverse_utils
 
 
