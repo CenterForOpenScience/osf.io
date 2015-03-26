@@ -2,18 +2,13 @@
 
 import datetime
 from nose.tools import *  # noqa
-import unittest
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, NodeFactory, RegistrationFactory, UserFactory, AuthUserFactory
+from tests.factories import ProjectFactory, RegistrationFactory, UserFactory, AuthUserFactory
 
-import werkzeug
 from modularodm.exceptions import ValidationTypeError
 
 from framework.auth.core import Auth
-from framework.exceptions import HTTPError
-
-from website.project.decorators import must_be_valid_project
 
 
 class RegistrationRetractionModelsTestCase(OsfTestCase):
@@ -145,77 +140,3 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, 400)
-
-
-class RegistrationRetractionSearchTestCase(OsfTestCase):
-
-    @unittest.skip('Need to implement')
-    def test_retract_wiki_not_in_search(self):
-        assert False, 'implement'
-
-    @unittest.skip('Need to implement')
-    def test_retract_search_indicator_in_results(self):
-        assert False, 'implement'
-
-
-@must_be_valid_project
-def valid_project_helper(**kwargs):
-    return kwargs
-
-@must_be_valid_project(are_retractions_valid=True)
-def as_factory_allow_retractions(**kwargs):
-    return kwargs
-
-
-class TestValidProject(OsfTestCase):
-
-    def setUp(self):
-        super(TestValidProject, self).setUp()
-        self.project = ProjectFactory()
-        self.node = NodeFactory(project=self.project)
-
-    def test_populates_kwargs_project(self):
-        res = valid_project_helper(pid=self.project._id)
-        assert_equal(res['project'], self.project)
-        assert_is_none(res['node'])
-
-    def test_populates_kwargs_node(self):
-        res = valid_project_helper(pid=self.project._id, nid=self.node._id)
-        assert_equal(res['project'], self.project)
-        assert_equal(res['node'], self.node)
-
-    def test_project_not_found(self):
-        with assert_raises(HTTPError) as exc_info:
-            valid_project_helper(pid='fakepid')
-        assert_equal(exc_info.exception.code, 404)
-
-    def test_project_category_mismatch(self):
-        with assert_raises(HTTPError) as exc_info:
-            valid_project_helper(pid=self.node._id)
-        assert_equal(exc_info.exception.code, 400)
-
-    def test_project_deleted(self):
-        self.project.is_deleted = True
-        self.project.save()
-        with assert_raises(HTTPError) as exc_info:
-            valid_project_helper(pid=self.project._id)
-        assert_equal(exc_info.exception.code, 410)
-
-    def test_node_not_found(self):
-        with assert_raises(HTTPError) as exc_info:
-            valid_project_helper(pid=self.project._id, nid='fakenid')
-        assert_equal(exc_info.exception.code, 404)
-
-    def test_node_deleted(self):
-        self.node.is_deleted = True
-        self.node.save()
-        with assert_raises(HTTPError) as exc_info:
-            valid_project_helper(pid=self.project._id, nid=self.node._id)
-        assert_equal(exc_info.exception.code, 410)
-
-    def test_valid_project_as_factory_allow_retractions_is_retracted(self):
-        self.project.is_registration = True
-        self.project.is_retracted = True
-        self.project.save()
-        res = as_factory_allow_retractions(pid=self.project._id)
-        assert_equal(res['project'], self.project)
