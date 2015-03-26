@@ -1,5 +1,3 @@
-import asyncio
-
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
