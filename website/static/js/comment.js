@@ -1,3 +1,6 @@
+/**
+ * Controller for the Add Contributor modal.
+ */
 'use strict';
 
 var $ = require('jquery');
@@ -8,10 +11,13 @@ require('knockout-mapping');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
+var Raven = require('raven-js');
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
+
+var nodeApiUrl = window.contextVars.node.urls.api;
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -60,8 +66,6 @@ var exclusifyGroup = function() {
 var BaseComment = function() {
 
     var self = this;
-
-    console.log(self.url);
 
     self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
@@ -134,10 +138,8 @@ BaseComment.prototype.fetch = function() {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    console.log(self);
-    console.log(self.url);
     $.getJSON(
-        self.url + 'comments/',
+        nodeApiUrl + 'comments/',
         {target: self.id()},
         function(response) {
             self.comments(
@@ -165,15 +167,15 @@ BaseComment.prototype.submitReply = function() {
     }
     self.submittingReply(true);
     osfHelpers.postJSON(
-        self.url + 'comment/',
+        nodeApiUrl + 'comment/',
         {
             target: self.id(),
-            content: self.replyContent()
+            content: self.replyContent(),
         }
     ).done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        self.comments.unshift(new CommentModel(self.url, response.comment, self, self.$root));
+        self.comments.unshift(new CommentModel(response.comment, self, self.$root));
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -191,42 +193,21 @@ BaseComment.prototype.submitReply = function() {
     });
 };
 
-//Maps an object two deep into a given object as ko observables.
-var mapJS = function(data, parent) {
-    for (var key in data) {
-        if (data[key] !== null && typeof data[key] === 'object') {
-            if (typeof parent[key] === "undefined") {
-                parent[key] = {};
-                for (var subkey in data[key]) {
-                    parent[key][subkey] = ko.observable(data[key][subkey]);
-                }
-            } else {
-                for (var subkey in data[key]) {
-                    console.log(key + " " + data[key][subkey]);
-                    parent[key][subkey](data[key][subkey]);
-                }
-            }
-        } else {
-            parent[key] = ko.observable(data[key]);
-        }
-    }
-};
+var CommentModel = function(data, $parent, $root) {
 
-var CommentModel = function(url, data, $parent, $root) {
+    BaseComment.prototype.constructor.call(this);
 
     var self = this;
-
-    self.url = url;
-    BaseComment.prototype.constructor.call(self);
 
     self.$parent = $parent;
     self.$root = $root;
 
-    mapJS(data, self); //data is a two deep object.
+    // Note: assigns self.content()
+    $.extend(self, ko.mapping.fromJS(data));
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
-    // Update contentDisplay with rednered markdown whenever content changes
+    // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
         self.contentDisplay(markdown.full.render(newContent));
     });
@@ -317,7 +298,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
         return;
     }
     osfHelpers.putJSON(
-        self.url + 'comment/' + self.id() + '/',
+        nodeApiUrl + 'comment/' + self.id() + '/',
         {content: self.content()}
     ).done(function(response) {
         self.content(response.content);
@@ -347,7 +328,7 @@ CommentModel.prototype.cancelAbuse = function() {
 CommentModel.prototype.submitAbuse = function() {
     var self = this;
     osfHelpers.postJSON(
-        self.url + 'comment/' + self.id() + '/report/',
+        nodeApiUrl + 'comment/' + self.id() + '/report/',
         {
             category: self.abuseCategory(),
             text: self.abuseText()
@@ -367,7 +348,7 @@ CommentModel.prototype.submitDelete = function() {
     var self = this;
     $.ajax({
         type: 'DELETE',
-        url: self.url + 'comment/' + self.id() + '/'
+        url: nodeApiUrl + 'comment/' + self.id() + '/',
     }).done(function() {
         self.isDeleted(true);
         self.deleting(false);
@@ -387,7 +368,7 @@ CommentModel.prototype.startUndelete = function() {
 CommentModel.prototype.submitUndelete = function() {
     var self = this;
     osfHelpers.putJSON(
-        self.url + 'comment/' + self.id() + '/undelete/',
+        nodeApiUrl + 'comment/' + self.id() + '/undelete/',
         {}
     ).done(function() {
         self.isDeleted(false);
@@ -407,7 +388,7 @@ CommentModel.prototype.startUnreportAbuse = function() {
 CommentModel.prototype.submitUnreportAbuse = function() {
     var self = this;
     osfHelpers.postJSON(
-        self.url + 'comment/' + self.id() + '/unreport/',
+        nodeApiUrl + 'comment/' + self.id() + '/unreport/',
         {}
     ).done(function() {
         self.isAbuse(false);
@@ -440,12 +421,11 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(url, userName, canComment, hasChildren) {
+var CommentListModel = function(userName, canComment, hasChildren) {
+
+    BaseComment.prototype.constructor.call(this);
 
     var self = this;
-    self.url = url;
-    BaseComment.prototype.constructor.call(self);
-
 
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
@@ -469,7 +449,7 @@ CommentListModel.prototype.onSubmitSuccess = function() {};
 CommentListModel.prototype.fetchDiscussion = function() {
     var self = this;
     $.getJSON(
-        self.url + 'comments/discussion/',
+        nodeApiUrl + 'comments/discussion/',
         function(response) {
             self.discussion(response.discussion);
         }
@@ -486,8 +466,8 @@ CommentListModel.prototype.initListeners = function() {
     });
 };
 
-var onOpen = function(url) {
-    var timestampUrl = url + 'comments/timestamps/';
+var timestampUrl = nodeApiUrl + 'comments/timestamps/';
+var onOpen = function() {
     var request = osfHelpers.putJSON(timestampUrl);
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
@@ -498,9 +478,9 @@ var onOpen = function(url) {
     });
 };
 
-var init = function(selector, url, userName, canComment, hasChildren) {
-    new CommentPane(selector, {onOpen: onOpen(url)});
-    var viewModel = new CommentListModel(url, userName, canComment, hasChildren);
+var init = function(selector, userName, canComment, hasChildren) {
+    new CommentPane(selector, {onOpen: onOpen});
+    var viewModel = new CommentListModel(userName, canComment, hasChildren);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

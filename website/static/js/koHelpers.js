@@ -69,6 +69,33 @@ var sanitizedObservable = function(value) {
     });
 };
 
+//Maps an object two deep into a given object as ko observables.
+var mapJStoko = function(data, parent, array, deep) {
+    array = typeof array !== 'undefined' ? array : false; //Default no observableArray
+    deep = typeof deep !== 'undefined' ? deep : false; //Default top level no recursion
+    //TODO: Remove as implemented.
+    if (array || deep) {
+        console.log("Not implemented yet");
+    }
+    for (var key in data) {
+        if (data[key] !== null && typeof data[key] === 'object') {
+            if (typeof parent[key] === "undefined") {
+                parent[key] = {};
+                for (var subkey in data[key]) {
+                    parent[key][subkey] = ko.observable(data[key][subkey]);
+                }
+            } else {
+                for (var subkey in data[key]) {
+                    console.log(key + " " + data[key][subkey]);
+                    parent[key][subkey](data[key][subkey]);
+                }
+            }
+        } else {
+            parent[key] = ko.observable(data[key]);
+        }
+    }
+};
+
 // Add custom validators
 
 ko.validation.rules.minDate = {
