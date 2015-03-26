@@ -97,8 +97,10 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
         'path': path,
         'nid': node._id,
         'provider': provider,
-        'cookie': user.get_cookie(settings.SECRET_KEY),
     })
+
+    if user:
+        url.args['cookie'] = user.get_cookie(settings.SECRET_KEY)
 
     if 'view_only' in request.args:
         url.args['view_only'] = request.args['view_only']
