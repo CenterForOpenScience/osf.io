@@ -9,12 +9,14 @@ import datetime
 import urlparse
 from dateutil import parser
 
+from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.sessions.model import Session
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
@@ -697,7 +699,7 @@ class TestUser(OsfTestCase):
     def test_display_full_name_unregistered(self):
         name = fake.name()
         u = UnregUserFactory()
-        project =ProjectFactory()
+        project = ProjectFactory()
         project.add_unregistered_contributor(fullname=name, email=u.username,
             auth=Auth(project.creator))
         project.save()
@@ -727,6 +729,41 @@ class TestUser(OsfTestCase):
 
         assert_equal(self.user.n_projects_in_common(user2), 1)
         assert_equal(self.user.n_projects_in_common(user3), 0)
+
+    @mock.patch('framework.auth.core.itsdangerous')
+    def test_user_get_cookie(self, mock_signer):
+        mock_signer.Signer().sign.side_effect = lambda x: x
+        user = UserFactory()
+        session = Session(data={
+            'auth_user_id': user._id,
+            'auth_user_username': user.username,
+            'auth_user_fullname': user.fullname,
+        })
+        session.save()
+
+        assert_equal(user.get_cookie('foo'), session._id)
+        mock_signer.Signer.assert_called_with('foo')
+        assert_is(mock_signer.Signer().sign.called, True)
+
+    @mock.patch('framework.auth.core.itsdangerous')
+    def test_user_get_cookie_no_session(self, mock_signer):
+        user = UserFactory()
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+        mock_signer.Signer().sign.side_effect = lambda x: x
+
+        cookie = user.get_cookie('foo')
+
+        session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
+
+        assert_equal(session._id, cookie)
+        assert_equal(session.data['auth_user_id'], user._id)
+        assert_equal(session.data['auth_user_username'], user.username)
+        assert_equal(session.data['auth_user_fullname'], user.fullname)
+        mock_signer.Signer.assert_called_with('foo')
+        assert_is(mock_signer.Signer().sign.called, True)
 
 
 class TestUserParse(unittest.TestCase):
