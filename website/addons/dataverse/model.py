@@ -7,6 +7,7 @@ import pymongo
 from modularodm import fields
 
 from framework.auth.decorators import Auth
+from website import settings
 from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
@@ -30,8 +31,13 @@ class DataverseFile(GuidFile):
     file_id = fields.StringField(required=True, index=True)
 
     @property
-    def file_url(self):
-        return os.path.join('dataverse', 'file', self.file_id)
+    def mfr_temp_path(self):
+        return os.path.join(
+            settings.MFR_TEMP_PATH,
+            self.node._id,
+            self.provider,
+            self.file_name + self.file_ext,
+        )
 
     @property
     def waterbutler_path(self):
@@ -42,11 +48,26 @@ class DataverseFile(GuidFile):
         return 'dataverse'
 
     @property
-    def deep_url(self):
-        if self.node is None:
-            raise ValueError('Node field must be defined.')
-        return os.path.join(
-            self.node.deep_url, self.file_url,
+    def version_identifier(self):
+        return 'state'
+
+    @property
+    def unique_identifier(self):
+        return self.file_id
+
+    @property
+    def name(self):
+        return self.file_meta['name']
+
+    @property
+    def file_ext(self):
+        return os.path.splitext(self.name)[-1]
+
+    @property
+    def file_meta(self):
+        return next(
+            item for item in self._metadata_cache
+            if item['path'] == self.waterbutler_path
         )
 
 
@@ -86,7 +107,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     )
 
     @property
-    def is_fully_configured(self):
+    def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
 
     @property

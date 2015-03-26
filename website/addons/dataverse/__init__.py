@@ -1,13 +1,13 @@
 from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings, \
     DataverseFile
-from .routes import settings_routes, page_routes, api_routes
+from .routes import settings_routes, api_routes
 import views
 
 MODELS = [AddonDataverseNodeSettings, AddonDataverseUserSettings, DataverseFile]
 USER_SETTINGS_MODEL = AddonDataverseUserSettings
 NODE_SETTINGS_MODEL = AddonDataverseNodeSettings
 
-ROUTES = [settings_routes, page_routes, api_routes]
+ROUTES = [settings_routes, api_routes]
 
 SHORT_NAME = 'dataverse'
 FULL_NAME = 'Dataverse'

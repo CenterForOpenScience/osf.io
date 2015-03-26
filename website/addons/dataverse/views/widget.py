@@ -15,7 +15,7 @@ def dataverse_widget(node_addon, **kwargs):
     widget_url = node.api_url_for('dataverse_get_widget_contents')
 
     ret = {
-        'complete': node_addon.is_fully_configured,
+        'complete': node_addon.complete,
         'widget_url': widget_url,
     }
     ret.update(node_addon.config.to_json())
@@ -31,7 +31,7 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
         'connected': False,
     }
 
-    if not node_addon.is_fully_configured:
+    if not node_addon.complete:
         return {'data': data}, http.OK
 
     doi = node_addon.dataset_doi

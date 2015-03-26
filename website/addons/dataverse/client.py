@@ -54,6 +54,8 @@ def get_files(dataset, published=False):
 
 
 def publish_dataset(dataset):
+    if dataset.get_state() == 'RELEASED':
+        raise HTTPError(http.CONFLICT)
     if not dataset.dataverse.is_published:
         raise HTTPError(http.METHOD_NOT_ALLOWED)
 

@@ -1,31 +1,24 @@
 'use strict';
 
 var m = require('mithril');
+var URI = require('URIjs');
 var $ = require('jquery');
-var Fangorn = require('js/fangorn');
 
-function refreshDataverseTree(grid, item, state) {
-    var data = item.data || {};
-    var url = item.data.urls.state + '?' + $.param({state: state});
-    data.state = state;
-    $.ajax({
-        type: 'get',
-        url: url,
-        success: function(data) {
-            // Update the item with the new state data
-            $.extend(item.data, data[0]);
-            grid.updateFolder(null, item);
-        }
-    });
+var Fangorn = require('js/fangorn');
+var waterbutler = require('js/waterbutler');
+
+function changeState(grid, item, state) {
+    item.data.state = state;
+    grid.updateFolder(null, item);
 }
 
 function _uploadUrl(item, file) {
-    return item.data.urls.upload + '?' + $.param({name: file.name});
+    return waterbutler.buildTreeBeardUpload(item, file);
 }
 
 function _downloadEvent(event, item, col) {
     event.stopPropagation();
-    window.location = item.data.urls.download;
+    window.location = waterbutler.buildTreeBeardDownload(item, {path: item.data.extra.fileId});
 }
 
 // Define Fangorn Button Actions
@@ -33,45 +26,40 @@ function _fangornActionColumn (item, col) {
     var self = this;
     var buttons = [];
 
-    function _uploadEvent (event, item, col){
-        event.stopPropagation();
-        this.dropzone.hiddenFileInput.click();
-        this.dropzoneItemCache = item;
-    }
-
-    function dataverseRelease(event, item, col) {
+    function dataversePublish(event, item, col) {
         var self = this; // treebeard
-        var url = item.data.urls.release;
+        var url = item.data.urls.publish;
         var modalContent = [
-            m('h3', 'Release this study?'),
-            m('p.m-md', 'By releasing this study, all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings.'),
-            m('p.font-thick.m-md', 'Are you sure you want to release this study?')
+            m('h3', 'Publish this dataset?'),
+            m('p.m-md', 'By releasing this dataset, all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings.'),
+            m('p.font-thick.m-md', 'Are you sure you want to publish this dataset?')
         ];
         var modalActions = [
             m('button.btn.btn-default.m-sm', { 'onclick' : function (){ self.modal.dismiss(); }},'Cancel'),
-            m('button.btn.btn-primary.m-sm', { 'onclick' : function() { releaseStudy(); } }, 'Release Study')
+            m('button.btn.btn-primary.m-sm', { 'onclick' : function() { publishDataset(); } }, 'Publish Dataset')
         ];
 
         this.modal.update(modalContent, modalActions);
 
-        function releaseStudy() {
+        function publishDataset() {
             self.modal.dismiss();
-            item.notify.update('Releasing Study', 'info', 1, 3000);
+            item.notify.update('Releasing Dataset', 'info', 1, 3000);
             $.osf.putJSON(
                 url,
                 {}
             ).done(function(data) {
                 var modalContent = [
-                    m('p.m-md', 'Your study has been released. Please allow up to 24 hours for the released version to appear on your OSF project\'s file page.')
+                    m('p.m-md', 'Your dataset has been published. Please allow up to 24 hours for the published version to appear on your OSF project\'s file page.')
                 ];
                 var modalActions = [
                     m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
                 ];
                 self.modal.update(modalContent, modalActions);
             }).fail( function(args) {
-                var message = args.responseJSON.code === 400 ?
-                    'Error: Something went wrong when attempting to release your study.' :
-                    'Error: This version has already been released.';
+                var message = args.responseJSON.code ===
+                    405 ? 'Error: This dataset cannot be published until ' + item.data.name + ' is published.' :
+                    409 ? 'Error: This version has already been published.' :
+                    'Error: Something went wrong when attempting to publish your dataset.';
 
                 var modalContent = [
                     m('p.m-md', message)
@@ -92,24 +80,14 @@ function _fangornActionColumn (item, col) {
                 'tooltip' : 'Upload file',
                 'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : _uploadEvent
+                'onclick' : Fangorn.ButtonEvents._uploadEvent
             },
             {
-                'name' : ' Release Study',
-                'tooltip' : '',
+                'name' : '',
+                'tooltip' : 'Publish Dataset',
                 'icon' : 'fa fa-globe',
                 'css' : 'btn btn-primary btn-xs',
-                'onclick' : dataverseRelease
-            }
-        );
-    } else if (item.kind === 'folder' && !item.data.addonFullname) {
-        buttons.push(
-            {
-                'name' : '',
-                'tooltip' : 'Upload file',
-                'icon' : 'fa fa-upload',
-                'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : _uploadEvent
+                'onclick' : dataversePublish
             }
         );
     } else if (item.kind === 'file') {
@@ -142,34 +120,50 @@ function _fangornDataverseTitle(item, col) {
     var tb = this;
     if (item.data.addonFullname) {
         var contents = [m('dataverse-name', item.data.name + ' ')];
-        if (item.data.hasReleasedFiles) {
+        if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
                 var options = [
                     m('option', {selected: item.data.state === 'draft', value: 'draft'}, 'Draft'),
-                    m('option', {selected: item.data.state === 'released', value: 'released'}, 'Released')
+                    m('option', {selected: item.data.state === 'published', value: 'published'}, 'Published')
                 ];
                 contents.push(
                     m('span', [
                         m('select', {
                             class: 'dataverse-state-select',
                             onchange: function(e) {
-                                refreshDataverseTree(tb, item, e.target.value);
-                            },
+                                changeState(tb, item, e.target.value);
+                            }
                         }, options)
                     ])
                 );
             } else {
                 contents.push(
-                    m('span', '[Released]')
+                    m('span.text-muted', '[Published]')
                 );
             }
+        } else {
+            contents.push(
+                m('span', {
+                    class: 'fa fa-warning text-warning',
+                    'data-toggle': 'tooltip',
+                    title: 'This data is only visible to contributors with write-permission until the dataset is published',
+                    'data-placement': 'top'
+
+                })
+            );
+
         }
         return m('span', contents);
     } else {
         return m('span',[
             m('dataverse-name', {
                 onclick: function() {
-                    window.location = item.data.urls.view;
+                    var redir = new URI(item.data.nodeUrl);
+                    window.location = redir
+                        .segment('files')
+                        .segment(item.data.provider)
+                        .segment(item.data.extra.fileId)
+                        .toString();
                 },
                 'data-toggle': 'tooltip',
                 title: 'View file',
@@ -207,6 +201,7 @@ function _fangornColumns(item) {
     return columns;
 }
 
+
 function _fangornFolderIcons(item){
     if(item.data.iconUrl){
         return m('img',{src:item.data.iconUrl, style:{width:'16px', height:'auto'}}, ' ');
@@ -215,11 +210,11 @@ function _fangornFolderIcons(item){
 }
 
 function _fangornDeleteUrl(item) {
-    return item.data.urls.delete;
+    return waterbutler.buildTreeBeardDelete(item, {path: item.data.extra.fileId});
 }
 
 function _fangornLazyLoad(item) {
-    return item.data.urls.fetch;
+    return waterbutler.buildTreeBeardMetadata(item, {state: item.data.state});
 }
 
 function _canDrop(item) {
@@ -231,10 +226,10 @@ function _canDrop(item) {
 
 Fangorn.config.dataverse = {
     // Handle changing the branch select
-    //folderIcon: _fangornFolderIcons,
-    //resolveDeleteUrl: _fangornDeleteUrl,
-    //resolveRows: _fangornColumns,
-    //lazyload:_fangornLazyLoad,
-    //uploadUrl: _uploadUrl,
-    //canDrop: _canDrop
+    folderIcon: _fangornFolderIcons,
+    resolveDeleteUrl: _fangornDeleteUrl,
+    resolveRows: _fangornColumns,
+    lazyload: _fangornLazyLoad,
+    uploadUrl: _uploadUrl,
+    canDrop: _canDrop
 };

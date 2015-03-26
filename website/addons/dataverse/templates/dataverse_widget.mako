@@ -16,7 +16,7 @@
                     <dd><a data-bind="attr: {href: datasetUrl}">{{ doi }}</a></dd>
 
                     <dt>Dataverse</dt>
-                    <dd><a data-bind="attr: {href: dataverseUrl}">{{ dataverse }}</a></dd>
+                    <dd><a data-bind="attr: {href: dataverseUrl}">{{ dataverse }} Dataverse</a></dd>
 
                     <dt>Citation</dt>
                     <dd>{{ citation }}</dd>

@@ -32,7 +32,7 @@
             <span data-bind="ifnot: submitting">
                 <span data-bind="if: showLinkedDataset">
                     <a data-bind="attr.href: savedDatasetUrl()"> {{ savedDatasetTitle }}</a> on
-                    <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }}</a>.
+                    <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }} Dataverse</a>.
                 </span>
                 <span data-bind="ifnot: showLinkedDataset" class="text-muted">
                     None
