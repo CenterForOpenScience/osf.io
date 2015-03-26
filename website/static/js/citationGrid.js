@@ -11,8 +11,7 @@ var apaStyle = require('raw!styles/apa.csl');
 
 var errorPage = require('raw!citations_load_error.html');
 
-require('../vendor/bower_components/treebeard/dist/treebeard.css');
-require('../css/fangorn.css');
+require('css/fangorn.css');
 
 function resolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' ');
@@ -292,12 +291,12 @@ CitationGrid.prototype.initTreebeard = function() {
         // TODO remove special case for Zotero
         if (self.provider === 'Zotero') {
             if (data.length >= 200) {
-		data.push({
+        data.push({
                     name: 'Only 200 citations may be displayed',
                     kind: 'message'
                 });
             }
-        }        
+        }
         return data;
     };
     self.treebeard = new Treebeard(options);

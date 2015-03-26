@@ -2,20 +2,21 @@
  * Module that controls the Dropbox node settings. Includes Knockout view-model
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
-    'use strict';
+'use strict';
 
-    var ko = require('knockout');
-    require('knockout-punches');
-    var $ = require('jquery');
-    var bootbox = require('bootbox');
-    var Raven = require('raven-js');
+var ko = require('knockout');
+require('knockout.punches');
+var $ = require('jquery');
+var bootbox = require('bootbox');
+var Raven = require('raven-js');
+var ZeroClipboard = require('zeroclipboard');
+ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
 
-    var FolderPicker = require('folderpicker');
-    var ZeroClipboard = require('zeroclipboard');
-    ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-    var $osf = require('osfHelpers');
+var FolderPicker = require('js/folderpicker');
+var $osf = require('js/osfHelpers');
 
-    ko.punches.enableAll();
+ko.punches.enableAll();
+
 /**
  * Knockout view model for the Figshare node settings widget.
  */

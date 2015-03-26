@@ -1,12 +1,12 @@
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 
-var mathrender = require('mathrender');
-var md = require('markdown').full;
-var mdQuick = require('markdown').quick;
-var diffTool = require('diffTool');
+var $osf = require('js/osfHelpers');
+var mathrender = require('js/mathrender');
+var md = require('js/markdown').full;
+var mdQuick = require('js/markdown').quick;
+var diffTool = require('js/diffTool');
 
 var THROTTLE = 500;
 

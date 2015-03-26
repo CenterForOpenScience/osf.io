@@ -7,11 +7,11 @@
 
 var $ = require('jquery');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var URI = require('URIjs');
-var waterbutler = require('waterbutler');
+var Treebeard = require('treebeard');
 
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
+var waterbutler = require('./waterbutler');
 
 // CSS
 require('../css/fangorn.css');
@@ -906,6 +906,43 @@ function expandStateLoad(item) {
 }
 
 
+function _fangornToolbar () {
+    var tb = this;
+    var titleContent = tb.options.title();
+    if(!tb.toolbarMode || tb.toolbarMode === 'bar'){
+        return m('.row.tb-header-row', [
+                m('.col-sm-6', [
+                        m('span', titleContent)
+                    ]),
+                m('.col-sm-6', [
+                        
+                        m('.fangorn-toolbar.pull-right', 
+                            m('i.fa.fa-search.fangorn-toolbar-icon', { 
+                                onclick : function () { tb.toolbarMode = 'search' }
+                            })
+                        )
+                    ])
+            ]);  
+    }
+    if(tb.toolbarMode === 'search'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
+                        m('.col-xs-1', 
+                            m('.fangorn-toolbar.pull-right', 
+                                m('i.fa.fa-times.fangorn-toolbar-icon', {
+                                    onclick : function () { tb.toolbarMode = 'bar'; tb.resetFilter(); }
+                                })
+                            )
+                        )
+                    ])
+            ]);  
+    }    
+    
+}  
+
+
+
 /**
  * OSF-specific Treebeard options common to all addons.
  * Check Treebeard API for more information
@@ -1034,7 +1071,8 @@ tbOptions = {
     },
     removeIcon : function(){
         return m('i.fa.fa-times-circle');
-    }
+    },
+    headerTemplate : _fangornToolbar
 };
 
 /**

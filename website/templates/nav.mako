@@ -4,14 +4,12 @@
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
                 <span class="sr-only">Toggle navigation</span>
-                <span class="fa fa-bar"></span>
-                <span class="fa fa-bar"></span>
-                <span class="fa fa-bar"></span>
+                <span class="fa fa-bars fa-lg fa-inverse"></span>
             </button>
             <!-- ko ifnot: onSearchPage -->
             <span class="visible-xs" data-bind="click : toggleSearch, css: searchCSS">
                 <a class="osf-xs-search pull-right" >
-                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg" ></span>
+                  <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg fa-inverse" ></span>
                 </a>
             </span>
             <!-- /ko -->

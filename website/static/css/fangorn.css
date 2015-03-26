@@ -89,6 +89,12 @@ text-align: center;
   margin-top: 4px;
   margin-right: 11px;
 }
+.tb-header-row {
+	margin: 0 0 10px 0;
+	background: #efefef;
+	padding: 5px 0;
+
+}
 
 
 .tb-multimodal-inner {

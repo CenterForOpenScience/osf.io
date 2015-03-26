@@ -22,8 +22,9 @@ class FigShareGuidFile(GuidFile):
 
     @property
     def waterbutler_path(self):
-        if self.node.get_addon('figshare').figshare_type == 'project':
+        if getattr(self.node.get_addon('figshare'), 'figshare_type', None) == 'project':
             return '/{}/{}'.format(self.article_id, self.file_id)
+
         return '/' + str(self.file_id)
 
     @property
