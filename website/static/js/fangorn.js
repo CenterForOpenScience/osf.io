@@ -580,8 +580,8 @@ function _removeEvent (event, items, col) {
             m('p', 'This action is irreversible.')
         ]);
         var mithrilButtonsSingle = m('div', [
-            m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete(); } }, 'Cancel'),
-            m('button', { 'class' : 'btn btn-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
+            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
         ]);
         // This is already being checked before this step but will keep this edit permission check
         if(items[0].data.permissions.edit){
@@ -612,8 +612,8 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                    m('button', { 'class' : 'btn btn-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete All')
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete All')
                 ]);        
         } else {
             mithrilContentMultiple = m('div', [
@@ -627,8 +627,8 @@ function _removeEvent (event, items, col) {
                     })
                 ]);            
             mithrilButtonsMultiple =  m('div', [
-                    m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                    m('button', { 'class' : 'btn btn-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete Some')
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete Some')
                 ]);    
         }
         tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple); 
@@ -1224,7 +1224,7 @@ tbOptions = {
         return m('i.fa.fa-refresh.fa-spin');
     },
     removeIcon : function(){
-        return m('i.fa.fa-times-circle');
+        return m.trust('&times;');
     },
     headerTemplate : _fangornToolbar,
     // Not treebeard options, specific to Fangorn
