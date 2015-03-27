@@ -214,7 +214,6 @@ utils.loadStats = function(vm){
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
             }
             vm.graphs[type].load(vm.statsData.charts[type]);
-            vm.graphs[type].flush();
         }, utils.errorState.bind(this, vm));
         vm.statsLoaded(true);
     }).then(m.redraw);
