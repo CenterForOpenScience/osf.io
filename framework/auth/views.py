@@ -207,6 +207,13 @@ def confirm_email_get(**kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         }, http.BAD_REQUEST
+    except exceptions.DuplicateEmailError as e:
+        return {
+            'code': http.BAD_REQUEST,
+            'message_short': 'Email Confirmation Failed',
+            'message_long': 'This email address has already been confirmed by '
+                            'another user.'
+        }, http.BAD_REQUEST
 
     if is_initial_confirmation:
         user.date_last_login = datetime.datetime.utcnow()
