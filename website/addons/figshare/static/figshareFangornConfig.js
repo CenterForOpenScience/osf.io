@@ -11,7 +11,6 @@ function _figshareDefineToolbar (item, col) {
     var buttons = [];
 
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
-    console.log(item);
     if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit && item.kind === 'folder') {
         buttons.push(
             { name : 'uploadFiles', template : function(){
