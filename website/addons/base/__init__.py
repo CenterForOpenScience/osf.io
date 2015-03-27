@@ -24,6 +24,8 @@ from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
 
+from website.oauth.signals import oauth_complete
+
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
@@ -526,6 +528,15 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             x for x in self.owner.external_accounts
             if x.provider == self.oauth_provider.short_name
         ]
+
+    @oauth_complete.connect
+    def oauth_complete(args):
+        external_account = args.get('external_account')
+        user = args.get('user')
+        if not user or not external_account:
+            return
+
+        user.get_or_add_addon(external_account.provider)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""

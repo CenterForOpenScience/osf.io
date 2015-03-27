@@ -8,7 +8,7 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from website.oauth.models import ExternalAccount
 from website.oauth.utils import get_service
-
+from website.oauth.signals import oauth_complete
 
 @must_be_logged_in
 def oauth_disconnect(external_account_id, auth):
@@ -49,6 +49,9 @@ def oauth_callback(service_name, auth):
     if provider.account not in user.external_accounts:
         user.external_accounts.append(provider.account)
         user.save()
-    user.get_or_add_addon(service_name)
 
+    oauth_complete.send({
+        'account': provider.account,
+        'user': user
+    })
     return {}
