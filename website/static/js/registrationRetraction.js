@@ -17,7 +17,9 @@ var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
     var mustEqual = koHelpers.mustEqual;
 
     self.registrationTitle = registrationTitle;
-    self.justification = ko.observable('');
+    self.justification = ko.observable('').extend({
+        maxLength: 2048
+    });
     self.confirmationText = ko.observable().extend({
         required: true,
         mustEqual : self.registrationTitle
@@ -33,7 +35,7 @@ var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
 
     self.submit = function() {
         // Show errors if invalid
-        if (!self.confirmationText.isValid()) {
+        if (!self.confirmationText.isValid() || !self.justification.isValid()) {
             $osf.growl(
                 'Error',
                 'Please enter the registration title before clicking Retract Registration',

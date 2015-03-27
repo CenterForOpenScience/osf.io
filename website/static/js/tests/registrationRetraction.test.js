@@ -4,6 +4,7 @@ var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 var Raven = require('raven-js');
+var faker = require('faker');
 
 var registrationRetraction = require('js/registrationRetraction');
 
@@ -16,6 +17,7 @@ describe('registrationRetraction', () => {
         describe('RegistrationRetractionViewModel', () => {
             var vm;
             var registrationTitle = 'This is a fake registration';
+            var invalidJustification = faker.lorem.paragraphs(50);
             var invalidConfirmationText = 'abcd';
             var submitUrl = '/project/abcdef/retraction/';
             var invalidSubmitUrl = '/notAnEndpoint/';
@@ -75,6 +77,13 @@ describe('registrationRetraction', () => {
 
                 it('calls growl if invalid confirmation text submitted', () => {
                     vm.confirmationText(invalidConfirmationText);
+                    vm.submit();
+                    assert.calledOnce(growlSpy);
+                    assert.notCalled(postSpy);
+                });
+                it('calls growl if justification is too long', () => {
+                    vm.confirmationText(registrationTitle);
+                    vm.justification(invalidJustification);
                     vm.submit();
                     assert.calledOnce(growlSpy);
                     assert.notCalled(postSpy);

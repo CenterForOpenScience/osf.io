@@ -574,7 +574,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
     is_retracted = fields.BooleanField(default=False)
-    retracted_justification = fields.StringField()
+    retracted_justification = fields.StringField(validate=MaxLengthValidator(2048))
     retraction_date = fields.DateTimeField()
     retracted_by = fields.ForeignField('user', backref='retracted_registration')
 
