@@ -175,7 +175,9 @@ def format_result(result, parent_id=None):
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'description': result['description'] if parent_info is None else None,
-        'category': result.get('category')
+        'category': result.get('category'),
+        'date_created': result.get('iso_timestamp'),
+        'date_registered': result.get('registration_date')
     }
 
     return formatted_result
