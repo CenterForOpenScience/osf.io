@@ -130,7 +130,6 @@ def update_user(auth):
         if username and username in user.emails:
             user.username = username
 
-
     if 'locale' in data:
         if data['locale']:
             locale = data['locale'].replace('-', '_')
@@ -142,7 +141,6 @@ def update_user(auth):
     user.save()
 
     return _profile_view(user)
-
 
 
 def _profile_view(profile, is_profile=False):

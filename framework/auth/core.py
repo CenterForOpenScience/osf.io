@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 import re
 import logging
 import urlparse
@@ -273,7 +272,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #              'expiration': <datetime>}
     # }
 
-
     # email lists to which the user has chosen a subscription setting
     mailing_lists = fields.DictionaryField()
     # Format: {
@@ -290,7 +288,6 @@ class User(GuidStoredObject, AddonModelMixin):
     # TODO: consider removal - this can be derived from date_registered
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
                                            index=True)
-
 
     # watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
@@ -692,7 +689,6 @@ class User(GuidStoredObject, AddonModelMixin):
             self.merge_user(unregistered_user)
             unregistered_user.username = None
 
-
         self.emails.append(email)
         # Complete registration if primary email
         if email.lower() == self.username.lower():
@@ -991,7 +987,6 @@ class User(GuidStoredObject, AddonModelMixin):
         if user.social and not self.social:
             self.social = user.social
 
-
         unclaimed = user.unclaimed_records.copy()
         unclaimed.update(self.unclaimed_records)
         self.unclaimed_records = unclaimed
@@ -1007,7 +1002,6 @@ class User(GuidStoredObject, AddonModelMixin):
             self.mailing_lists[key] = self.mailing_lists[key] or value
         # - clear subscriptions for merged user
         user.mailing_lists = {}
-
 
         self.emails.extend(user.emails)
 

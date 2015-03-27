@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from modularodm import Q
-from modularodm.exceptions import QueryException
-
 from framework.sessions import session, create_session, goback
 from framework import bcrypt
 from framework.auth.exceptions import (

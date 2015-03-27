@@ -229,7 +229,6 @@ def confirm_email_get(**kwargs):
     return framework.auth.authenticate(user, response=response)
 
 
-
 def send_confirm_email(user, email):
     """Sends a confirmation email to `user` to a given email.
 
