@@ -65,7 +65,6 @@ def get_logs(auth, node, **kwargs):
     """
 
     """
-    node = kwargs['node'] or kwargs['project']
     try:
         page = int(request.args.get('page', 0))
     except ValueError:
