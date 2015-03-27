@@ -1211,6 +1211,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         descendants = list(itertools.chain.from_iterable([node.get_nodes_recursive(include) for node in self.nodes]))
         return children + [desc for desc in descendants if include(desc)]
 
+    def get_aggregate_logs(self, user):
+        ids = [self._id] + [n[0] for n in self.get_nodes_recursive(lambda node: Node.load(node[0]).can_edit(user=user))]
+        queries = [(Q('params.node', 'eq', id) | Q('params.project', 'eq', id)) for id in ids]
+        query = reduce(lambda part, q: (part | q), queries)
+        return list(NodeLog.find(query))
+
     @property
     def nodes_pointer(self):
         return [
