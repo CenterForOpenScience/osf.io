@@ -15,7 +15,9 @@ var userEmail = oop.defclass({
         this.address = ko.observable();
         this.isConfirmed = ko.observable();
         this.isPrimary = ko.observable();
-        this.unserialize(data);
+        if (typeof(data) !== 'undefined') {
+            this.unserialize(data);
+        }
     },
     serialize: function() {
         return {
@@ -44,6 +46,38 @@ var userProfile = oop.defclass({
 
         this.id = ko.observable();
         this.emails = ko.observableArray();
+
+        this.primaryEmail = ko.computed(function () {
+            var emails = this.emails();
+            for (var i = 0; i < this.emails().length; i++) {
+                if(emails[i].isPrimary()) {
+                    return emails[i];
+                }
+            }
+            return new userEmail();
+        }.bind(this));
+
+        this.alternateEmails = ko.computed(function () {
+            var emails = this.emails();
+            var retval = [];
+            for (var i = 0; i < this.emails().length; i++) {
+                if (emails[i].isConfirmed() && !emails[i].isPrimary()) {
+                    retval.push(emails[i]);
+                }
+            }
+            return retval;
+        }.bind(this));
+
+        this.unconfirmedEmails = ko.computed(function () {
+            var emails = this.emails();
+            var retval = [];
+            for (var i = 0; i < this.emails().length; i++) {
+                if(!emails[i].isConfirmed()) {
+                    retval.push(emails[i]);
+                }
+            }
+            return retval;
+        }.bind(this));
 
         // user inputs
         this.emailInput = ko.observable();
@@ -101,8 +135,15 @@ var userProfile = oop.defclass({
     },
     removeEmail: function (email) {
         this.emails.remove(email);
+        this.pushUpdates().done(function() {
+            $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
+        });
+    },
+    makeEmailPrimary: function (email) {
+        this.primaryEmail().isPrimary(false);
+        email.isPrimary(true);
         this.pushUpdates();
-    }
+    },
 });
 
 module.exports = {

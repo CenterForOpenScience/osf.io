@@ -86,7 +86,9 @@ def update_user(auth):
     data = request.get_json()
 
     # TODO: Expand this to support other user attributes
+
     if 'emails' in data:
+        # removals
         removed_emails = [
             each
             for each in user.emails + user.unconfirmed_emails
@@ -98,7 +100,7 @@ def update_user(auth):
                 user.emails.remove(address)
             user.remove_unconfirmed_emails(address)
 
-
+        # additions
         added_emails = [
             each['address']
             for each in data['emails']
@@ -111,6 +113,17 @@ def update_user(auth):
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=address)
+
+        # set username
+        username = None
+        try:
+            username = [each for each in data['emails']
+                        if each.get('primary')][0]['address']
+        except IndexError:
+            pass
+
+        if username and username in user.emails:
+            user.username = username
 
 
     if 'locale' in data:

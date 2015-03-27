@@ -22,21 +22,60 @@
                 <div id="connectedEmails" class="panel panel-default">
                     <div class="panel-heading"><h3 class="panel-title">Connected Emails</h3></div>
                     <div class="panel-body">
-                        <ul data-bind="foreach: emails()">
-                            <li>
-                                {{ address }}
-                                <!-- ko if: isPrimary() -->
-                                    <em>(primary)</em>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Primary Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ primaryEmail().address }}</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="3">Alternate Emails</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: alternateEmails()">
+                                <tr>
+                                    <td style="width:100%">{{ $data.address }}</td>
+                                    <td><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
+                                    <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Unconfirmed Emails</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- ko foreach: unconfirmedEmails() -->
+                                <tr>
+                                    <td style="width:100%">{{ $data.address }}</td>
+                                    <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                </tr>
                                 <!-- /ko -->
-                                <!-- ko if: !isConfirmed() -->
-                                    <em>(unconfirmed)</em>
-                                <!-- /ko -->
-                                <!-- ko if: !isPrimary() -->
-                                    <a data-bind="click: $root.removeEmail">Remove</a>
-                                <!-- /ko -->
-                            </li>
-                        </ul>
-                        <input type="text" data-bind="value: emailInput"><a data-bind="click: addEmail" class="btn btn-primary">Add</a>
+                                <tr>
+                                    <td colspan="2">
+                                        <form data-bind="submit: addEmail">
+                                            <div class="form-group">
+                                                <input data-bind="value: emailInput" class="form-control" name="addEmail">
+                                            </div>
+                                        <input type="submit" value="Add Email" class="btn btn-default">
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div id="changePassword" class="panel panel-default">
