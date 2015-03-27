@@ -2188,7 +2188,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         try:
             contributor.save()
         except ValidationValueError:  # User with same email already exists
-            contributor = get_user(username=email)
+            contributor = get_user(email=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):

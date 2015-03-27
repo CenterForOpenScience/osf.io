@@ -66,7 +66,7 @@ def forgot_password():
 
     if form.validate():
         email = form.email.data
-        user_obj = get_user(username=email)
+        user_obj = get_user(email=email)
         if user_obj:
             user_obj.verification_key = security.random_string(20)
             user_obj.save()
@@ -318,7 +318,7 @@ def resend_confirmation():
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data
-            user = get_user(username=clean_email)
+            user = get_user(email=clean_email)
             if not user:
                 return {'form': form}
             try:

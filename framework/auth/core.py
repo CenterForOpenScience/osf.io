@@ -102,21 +102,21 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(username=None, password=None, verification_key=None):
+def get_user(email=None, password=None, verification_key=None):
     """Get an instance of User matching the provided params.
 
     :return: The instance of User requested
     :rtype: User or None
     """
     # tag: database
-    if password and not username:
-        raise AssertionError("If a password is provided, a username must also "
+    if password and not email:
+        raise AssertionError("If a password is provided, an email must also "
                              "be provided.")
 
     query_list = []
-    if username:
-        username = username.strip().lower()
-        query_list.append(Q('username', 'eq', username))
+    if email:
+        email = email.strip().lower()
+        query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
     if password:
         password = password.strip()
         try:

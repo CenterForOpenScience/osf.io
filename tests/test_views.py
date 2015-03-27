@@ -1390,7 +1390,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(len(self.project.contributors),
                      n_contributors_pre + len(payload['users']))
 
-        new_unreg = auth.get_user(username=email)
+        new_unreg = auth.get_user(email=email)
         assert_false(new_unreg.is_registered)
         # unclaimed record was added
         new_unreg.reload()

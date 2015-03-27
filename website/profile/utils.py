@@ -154,7 +154,7 @@ def add_contributor_json(user, current_user=None):
 def serialize_unregistered(fullname, email):
     """Serializes an unregistered user.
     """
-    user = framework.auth.get_user(username=email)
+    user = framework.auth.get_user(email=email)
     if user is None:
         serialized = {
             'fullname': fullname,

@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from modularodm import Q
+from modularodm.exceptions import QueryException
+
 from framework.sessions import session, create_session, goback
 from framework import bcrypt
 from framework.auth.exceptions import (
@@ -117,20 +120,17 @@ def verify_two_factor(user_id, two_factor_code):
     return response
 
 
-def login(username, password):
+def login(email, password):
     """View helper function for logging in a user. Either authenticates a user
     and returns a ``Response`` or raises an ``AuthError``.
 
     :raises: AuthError on a bad login
     :returns: Redirect response to settings page on successful login.
     """
-    username = username.strip().lower()
+    email = email.strip().lower()
     password = password.strip()
-    if username and password:
-        user = get_user(
-            username=username,
-            password=password
-        )
+    if email and password:
+        user = get_user(email=email, password=password)
         if user:
             if not user.is_registered:
                 raise LoginNotAllowedError('User is not registered.')
@@ -161,7 +161,7 @@ def logout():
 
 
 def register_unconfirmed(username, password, fullname):
-    user = get_user(username=username)
+    user = get_user(email=username)
     if not user:
         user = User.create_unconfirmed(username=username,
             password=password,
