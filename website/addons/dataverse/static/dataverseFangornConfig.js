@@ -29,7 +29,7 @@ function _downloadEvent(event, item, col) {
 }
 
 // Define Fangorn Button Actions
-function _fangornActionColumn (item, col) {
+function _dataverseDefineToolbar (item) {
     var self = this;
     var buttons = [];
 
@@ -87,54 +87,59 @@ function _fangornActionColumn (item, col) {
 
     if (item.kind === 'folder' && item.data.addonFullname && item.data.state === 'draft' && item.data.permissions.edit) {
         buttons.push(
-            {
-                'name' : '',
-                'tooltip' : 'Upload file',
-                'icon' : 'fa fa-upload',
-                'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : _uploadEvent
-            },
-            {
-                'name' : ' Release Study',
-                'tooltip' : '',
-                'icon' : 'fa fa-globe',
-                'css' : 'btn btn-primary btn-xs',
-                'onclick' : dataverseRelease
-            }
+            { name : 'uploadFiles', template : function(){
+                return m('.fangorn-toolbar-icon.text-success', {
+                        onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                    },[
+                    m('i.fa.fa-upload'),
+                    m('span.hidden-xs','Upload')
+                ]);
+            }},
+            { name : 'dataverseRelease', template : function(){
+                return m('.fangorn-toolbar-icon.text-primary', {
+                        onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                    },[
+                    m('i.fa.fa-globe'),
+                    m('span.hidden-xs','Release Study')
+                ]);
+            }}            
         );
     } else if (item.kind === 'folder' && !item.data.addonFullname) {
         buttons.push(
-            {
-                'name' : '',
-                'tooltip' : 'Upload file',
-                'icon' : 'fa fa-upload',
-                'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : _uploadEvent
-            }
+            { name : 'uploadFiles', template : function(){
+                return m('.fangorn-toolbar-icon.text-success', {
+                        onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                    },[
+                    m('i.fa.fa-upload'),
+                    m('span.hidden-xs','Upload')
+                ]);
+            }}
         );
     } else if (item.kind === 'file') {
-        buttons.push({
-            name : '',
-            'tooltip' : 'Download file',
-            icon : 'fa fa-download',
-            css : 'btn btn-info btn-xs',
-            onclick: _downloadEvent
-        });
+        buttons.push(
+            { name : 'downloadFile', template : function(){
+                return m('.fangorn-toolbar-icon.text-info', {
+                        onclick : function(event) { _downloadEvent.call(self, event, item); } 
+                    },[
+                    m('i.fa.fa-download'),
+                    m('span.hidden-xs','Upload')
+                ]);
+            }}
+        );
         if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
-            buttons.push({
-                name: '',
-                tooltip : 'Delete',
-                icon: 'fa fa-times',
-                css: 'm-l-lg text-danger fg-hover-hide',
-                style: 'display:none',
-                onclick: Fangorn.ButtonEvents._removeEvent
-            });
+            buttons.push(
+                { name : 'deleteFile', template : function(){
+                    return m('.fangorn-toolbar-icon.text-danger', {
+                            onclick : function(event) { Fangorn.ButtonEvents._removeEvent.call(self, event, item); } 
+                        },[
+                        m('i.fa.fa-times'),
+                        m('span.hidden-xs','Delete')
+                    ]);
+                }}
+                );
         }
     }
-    return buttons.map(function(btn){
-                return m('i', { 'data-col' : item.id, 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',  style : btn.style, 'onclick' : function(event){ btn.onclick.call(self, event, item, col); } },
-                    [ m('span', { 'class' : btn.icon}, btn.name) ]);
-            });
+    item.icons = buttons;
     
 }
 
@@ -182,7 +187,17 @@ function _fangornDataverseTitle(item, col) {
 
 function _fangornColumns(item) {
     var columns = [];
-    columns.push({
+    _dataverseDefineToolbar.call(this,item);
+    columns.push(
+    {
+        data : null,
+        folderIcons: false,
+        filter : false,
+        custom : function(){
+            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
+        }
+    },
+    {
         data : 'name',
         folderIcons : true,
         filter : true,
@@ -191,11 +206,6 @@ function _fangornColumns(item) {
 
     if (this.options.placement === 'project-files') {
         columns.push(
-            {
-                css: 'action-col',
-                filter: false,
-                custom: _fangornActionColumn
-            },
             {
                 data: 'downloads',
                 filter: false,
