@@ -474,8 +474,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
                     'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
-            ],
-            'user_settings_template': os.path.basename(self.config.user_settings_template),
+            ]
         })
         return ret
 
