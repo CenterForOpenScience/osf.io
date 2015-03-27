@@ -199,14 +199,6 @@ utils.loadStats = function(vm){
         url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
         background: true
     }).then(function(data) {
-        var unload;
-        if (vm.statsData){
-            unload = $.map(vm.statsData.charts.shareDonutGraph.columns, function(datum) {
-                return datum[0];
-            });
-        } else {
-            unload = [];
-        }
         vm.statsData = data;
         $.map(Object.keys(vm.graphs), function(type) {
             if(type === 'shareDonutGraph') {
