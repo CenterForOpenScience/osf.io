@@ -19,6 +19,7 @@ var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 
+
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
@@ -181,6 +182,6 @@ $(document).ready(function() {
     // Comment pane trigger
     $(".openCommentPane").click(function(){
         $(".cp-handle").click();
-    })
+    });
 
 });
