@@ -122,7 +122,7 @@ function _dataverseDefineToolbar (item) {
                         onclick : function(event) { _downloadEvent.call(self, event, item); } 
                     },[
                     m('i.fa.fa-download'),
-                    m('span.hidden-xs','Upload')
+                    m('span.hidden-xs','Download')
                 ]);
             }}
         );
@@ -187,7 +187,7 @@ function _fangornDataverseTitle(item, col) {
 
 function _fangornColumns(item) {
     var columns = [];
-    _dataverseDefineToolbar.call(this,item);
+    _dataverseDefineToolbar.call(this, item);
     columns.push(
     {
         data : null,
