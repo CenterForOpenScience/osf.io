@@ -24,6 +24,8 @@ from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
 
+from website.oauth.signals import oauth_complete
+
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
@@ -487,6 +489,14 @@ class AddonUserSettingsBase(AddonSettingsBase):
             ]
         })
         return ret
+
+
+@oauth_complete.connect
+def oauth_complete(provider, account, user):
+    if not user or not account:
+        return
+    user.add_addon(account.provider)
+    user.save()
 
 
 class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
