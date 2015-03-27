@@ -47,9 +47,6 @@ class AddonSerializer(object):
                 result['urls']['owner'] = web_url_for('profile_view_id',
                                                   uid=owner._primary_key)
                 result['ownerName'] = owner.fullname
-                result['folder'] = {
-                    'name': self.node_settings.selected_folder_name,
-                }
         return result
 
     @property
@@ -209,3 +206,9 @@ class GenericAddonSerializer(OAuthAddonSerializer):
     @property
     def credentials_owner(self):
         return self.node_settings.user_settings.owner
+
+    @property
+    def serialized_node_settings(self):
+        result = super(GenericAddonSerializer, self).serialized_node_settings
+        result['folder'] = {'name': self.node_settings.selected_folder_name}
+        return result

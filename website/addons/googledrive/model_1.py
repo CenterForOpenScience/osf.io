@@ -265,13 +265,14 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
                 },
             },
         )
-
+    @property
     def selected_folder_name(self):
         if self.drive_folder_id is None:
             return ''
         elif self.drive_folder_id == 'root':
             return 'Full Google Drive'
         else:
+            # folder = self.folder_metadata(self.drive_folder_id)
             return self.drive_folder_name
 
     def folder_metadata(self, folder_id):
@@ -280,7 +281,7 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         :return: subfolders,if any.
         """
         client =GoogleDriveClient(self.external_account.oauth_key)
-        folder = client.folders(folder_id=folder_id)
+        folder = client.file_or_folder_metadata(fileId=folder_id)
         return folder
 
     def fetch_access_token(self):

@@ -51,7 +51,7 @@ def googledrive_config_put(node_addon, auth, **kwargs):
             'urls': GoogleDriveSerializer(
                 node_settings=node_addon,
                 user_settings=auth.user.get_addon('googledrive')
-            ).serialized_node_settings
+            ).serialized_urls
         },
         'message': 'Successfully updated settings.',
     }
@@ -61,6 +61,7 @@ def list_googledrive_user_acccounts(auth):
     """View for getting a JSON representation of the logged-in user's
     Google Drive user settings.
     """
+
     return GoogleDriveSerializer(user_settings=auth.user.get_addon('googledrive')).serialized_user_settings
 
 

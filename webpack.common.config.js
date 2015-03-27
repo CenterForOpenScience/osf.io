@@ -114,6 +114,7 @@ var resolve = {
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
         'addonNodeConfig': staticPath('js/addonNodeConfig.js'),
+        'oauthAddonNodeConfig': staticPath('js/oauthAddonNodeConfig.js'),
         'folderpicker': staticPath('js/folderpicker.js'),
         'tests': staticPath('js/tests')
     }

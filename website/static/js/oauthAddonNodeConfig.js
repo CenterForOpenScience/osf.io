@@ -8,6 +8,8 @@ var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
+var bootbox = require('bootbox');
+
 
 var ZeroClipboard = require('zeroclipboard');
 ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
@@ -27,7 +29,7 @@ ko.punches.enableAll();
  * @param {String} folderPicker CSS selector for folderPicker div
  * @param {Object} opts Optional overrides to the class' default treebeardOptions, in particular onPickFolder
  */
-var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
+var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker, opts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
@@ -163,7 +165,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.updateAccounts(function() {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + self.properName + ' Access Token to Import',
+                    title: 'Choose ' + self.addonName + ' Access Token to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
@@ -179,7 +181,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import ' + self.properName + ' Access Token?',
+                    title: 'Import ' + self.addonName + ' Access Token?',
                     message: self.messages.CONFIRM_AUTH(),
                     callback: function(confirmed) {
                         if (confirmed) {
@@ -192,17 +194,17 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     }
 });
 
-AddonFolderPickerViewModel.prototype.connectExistingAccount = function(account_id) {
+OauthAddonFolderPickerViewModel.prototype.connectExistingAccount = function(account_id) {
      var self = this;
 
-    $osf.postJSON(
+    $osf.putJSON(
         self.urls().importAuth, {
             external_account_id: account_id
         }
     ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
 };
 
-AddonFolderPickerViewModel.prototype.updateAccounts = function(callback) {
+OauthAddonFolderPickerViewModel.prototype.updateAccounts = function(callback) {
     var self = this;
     var request = $.get(self.urls().accounts);
     request.done(function(data) {
@@ -216,7 +218,7 @@ AddonFolderPickerViewModel.prototype.updateAccounts = function(callback) {
     });
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
-        Raven.captureMessage('Could not GET ' + self.properName + ' accounts for user', {
+        Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
             url: self.url,
             textStatus: textStatus,
             error: error
@@ -225,19 +227,19 @@ AddonFolderPickerViewModel.prototype.updateAccounts = function(callback) {
 };
 
 // Public API
-function AddonNodeConfig(addonName, selector, url, folderPicker, opts) {
+function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts) {
     var self = this;
     self.url = url;
     self.folderPicker = folderPicker;
     if (typeof opts === 'undefined') {
         opts = {};
     }
-    self.viewModel = new AddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts);
+    self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts);
     self.viewModel.updateFromData();
     $osf.applyBindings(self.viewModel, selector);
 }
 
 module.exports = {
-    AddonNodeConfig: AddonNodeConfig,
-    _AddonNodeConfigViewModel: AddonFolderPickerViewModel
+    OauthAddonNodeConfig: OauthAddonNodeConfig,
+    _OauthAddonNodeConfigViewModel: OauthAddonFolderPickerViewModel
 };

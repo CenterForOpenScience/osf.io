@@ -146,7 +146,7 @@ class GoogleDriveClient(BaseClient):
             "'{0}' in parents".format(folder_id),
             'trashed = false',
             "mimeType = 'application/vnd.google-apps.folder'",
-        ])
+            ])
         res = self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ),
@@ -155,3 +155,12 @@ class GoogleDriveClient(BaseClient):
             throws=HTTPError(401)
         )
         return res.json()['items']
+
+    def file_or_folder_metadata(self, fileId='root'):
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', fileId),
+            expects=(200,),
+            throws=HTTPError(401)
+        )
+        return res.json()
