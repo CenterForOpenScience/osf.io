@@ -108,6 +108,7 @@ var userProfile = oop.defclass({
         var request = $.get(url);
         request.done(callback);
         request.fail(function(xhr, status, error) {
+            $osf.growl('Error', 'Could not fetch user profile.', 'error');
             Raven.captureMessage('Error fetching user profile', {
                 url: url,
                 status: status,
@@ -120,8 +121,13 @@ var userProfile = oop.defclass({
         request.done(function(data) {
            console.log(data);
         });
-        request.fail(function() {
-            console.log('fail');
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error', 'User profile not updated.', 'error');
+            Raven.captureMessage('Error fetching user profile', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
         });
 
         return request;
