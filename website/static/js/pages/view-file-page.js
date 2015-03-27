@@ -1,5 +1,7 @@
 var Fangorn = require('fangorn');
 var m = require('mithril');
+var nodeApiUrl = window.contextVars.node.urls.api;
+
 
 var FileRenderer = require('../filerenderer.js');
 var FileRevisions = require('../fileRevisions.js');

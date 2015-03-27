@@ -134,6 +134,10 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    % for script in tree_js:
+        <script type="text/javascript" src="${script | webpack_asset}"></script>
+    % endfor
+
     % if 'osf.io' in domain:
     <script>
         // IE10 Same Origin (CORS) fix
