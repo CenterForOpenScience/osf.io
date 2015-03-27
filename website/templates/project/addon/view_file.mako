@@ -1,4 +1,8 @@
 <%inherit file="../project_base.mako"/>
+
+## Use full page width
+<%def name="container_class()">container-xxl</%def>
+
 <%def name="title()">${file_name}</%def>
 
     <div>
@@ -12,12 +16,34 @@
     </div>
 
 <div id="file-container" class="row">
+    <div id="file-navigation" class="panel-toggle col-md-3">
+        <div class="osf-panel osf-panel-flex hidden-xs">
+            <div class="osf-panel-header osf-panel-header-flex">
+                <div id="files-search"></div>
+                <div id="toggle-icon" class="pull-right">
+                    <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div>
+                </div>
+            </div>
+            <div class="osf-panel-body osf-panel-body-flex file-page">
+                <div id="grid"></div>
+            </div>
+        </div>
 
-    <div class="col-md-8">
+    <!-- Menu toggle closed -->
+            <div class="osf-panel panel-collapsed hidden-xs text-center"  style="display: none">
+              <div class="osf-panel-header">
+                <i class="fa fa-file"> </i>
+                <i class="fa fa-angle-right"> </i>
+              </div>
+            </div>
+
+    </div>
+
+    <div class="col-md-6">
         ${self.file_contents()}
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         ${self.file_versions()}
     </div>
 
@@ -41,11 +67,30 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    % for script in tree_js:
+        <script type="text/javascript" src="${script | webpack_asset}"></script>
+    % endfor
     % if rendered is None:
         <script type="text/javascript">
             window.contextVars = window.contextVars || {};
             window.contextVars.renderURL = '${render_url}';
         </script>
         <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
+    % else:
+        <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+                file: {
+                    name: '${file_name | js_str}',
+                    path: '${path | js_str}',
+                    provider: 'dataverse'
+                },
+                node: {
+                    urls: {
+                        files: '${urls['files'] | js_str}'
+                    }
+                }
+        });
+        </script>
+        <script src=${"/static/public/js/view-file-page-dataverse.js" | webpack_asset}></script>
     % endif
 </%def>

@@ -191,10 +191,12 @@ def dataverse_view_file(node_addon, auth, **kwargs):
         render=True
     )
     ret = {
+        'path': filename,
         'file_name': filename,
         'rendered': rendered,
         'render_url': render_url,
         'urls': {
+            'files': node.web_url_for('collect_file_trees'),
             'render': render_url,
             'download': node.web_url_for('dataverse_download_file',
                                          path=file_id),
@@ -204,6 +206,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
 
     }
     ret.update(_view_project(node, auth))
+    ret.update(rubeus.collect_addon_assets(node))
     return ret
 
 
