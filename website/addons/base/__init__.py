@@ -972,7 +972,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         if self.has_auth:
             return (
                 u'The contents of {addon} add-ons cannot be registered at this time; '
-                u'the {addon} add-on linked to this {category} will not be included '
+                u'the {addon} add-on linked to this {cat} will not be included '
                 u'as part of this registration.'
             ).format(
                 addon=self.config.full_name,
