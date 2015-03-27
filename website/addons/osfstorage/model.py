@@ -31,7 +31,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     complete = True
     has_auth = True
     root_node = fields.ForeignField('OsfStorageFileNode')
-    # file_tree = fields.ForeignField('OsfStorageFileTree')
+    file_tree = fields.ForeignField('OsfStorageFileTree')
 
     def on_add(self):
         if self.root_node:
