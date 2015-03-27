@@ -757,7 +757,7 @@ function _fangornDefineToolbar (item) {
         buttons = [];
     // Upload button if this is a folder
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
-    if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
+    if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
         buttons.push({ name : 'uploadFiles', template : function(){
             return m('.fangorn-toolbar-icon.text-success', {
                     onclick : function(event) { _uploadEvent.call(self, event, item); } 
@@ -827,6 +827,7 @@ function _fangornResolveRows(item) {
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     }
+
     // define the toolbar icons for this item
     configOption = resolveconfigOption.call(this, item, 'defineToolbar', [item]);
     if (!configOption){
