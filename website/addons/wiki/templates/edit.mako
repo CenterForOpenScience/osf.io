@@ -156,8 +156,8 @@
                     </div>
                 </div>
 
-                <div id="wikiViewPanel"  class="wiki-panel-body" data-bind"css: { 'wiki-panel-body-flex': $root.singleVis() !== 'view' }">
-                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 215, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+                <div id="wikiViewPanel"  class="wiki-panel-body" data-bind="css: { 'wiki-panel-body-flex': $root.singleVis() !== 'view' }">
+                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
                       % if wiki_content:
                           ${wiki_content | n}
                       % else:

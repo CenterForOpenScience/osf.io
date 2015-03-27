@@ -45,6 +45,14 @@ def get_total_activity_count(user_id, db=None):
     return 0
 
 
+def clean_page(page):
+    return page.replace(
+        '.', '_'
+    ).replace(
+        '$', '_'
+    )
+
+
 def build_page(rex, kwargs):
     """Build page key from format pattern and request data.
 
@@ -75,6 +83,8 @@ def update_counter(page, db=None):
 
     date = datetime.utcnow()
     date = date.strftime('%Y/%m/%d')
+
+    page = clean_page(page)
 
     d = {'$inc': {}}
 
@@ -133,7 +143,7 @@ def get_basic_counters(page, db=None):
     total = 0
     collection = database['pagecounters']
     result = collection.find_one(
-        {'_id': page},
+        {'_id': clean_page(page)},
         {'total': 1, 'unique': 1}
     )
     if result:

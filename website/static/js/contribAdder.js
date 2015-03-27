@@ -29,7 +29,7 @@ function Contributor(data) {
 
 var AddContributorViewModel = oop.extend(Paginator, {
     constructor: function(title, parentId, parentTitle) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         var self = this;
 
         self.permissions = ['read', 'write', 'admin'];
@@ -63,11 +63,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 self.nodes(result.children);
             }
         );
-        self.foundResults = ko.computed(function() {
+        self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
 
-        self.noResults = ko.computed(function() {
+        self.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
         });
 
@@ -105,9 +105,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
      */
     startSearch: function() {
         this.currentPage(0);
-        this.search();
+        this.fetchResults();
     },
-    search: function() {
+    fetchResults: function() {
         var self = this;
         self.notification(false);
         if (self.query()) {
@@ -267,9 +267,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         // Make sure that entered email is not already in selection
         for (var i = 0, contrib; contrib = self.selection()[i]; ++i) {
-            var contribEmail = contrib.email.toLowerCase().trim();
-            if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
-                return self.inviteEmail() + ' is already in queue.';
+            if (contrib.email) {
+                var contribEmail = contrib.email.toLowerCase().trim();
+                if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
+                    return self.inviteEmail() + ' is already in queue.';
+                }
             }
         }
         return true;

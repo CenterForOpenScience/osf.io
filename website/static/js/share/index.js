@@ -53,6 +53,14 @@ ShareApp.controller = function() {
 
     self.vm = new ShareApp.ViewModel(self.vm);
 
+    History.replaceState({
+        query: self.vm.query(),
+        sort: self.vm.sort(),
+        optionalFilters: self.vm.optionalFilters,
+        requiredFilters: self.vm.requiredFilters
+    }, 'OSF | SHARE', '?' + utils.buildURLParams(self.vm));
+
+
     m.request({
         method: 'get',
         background: false,
@@ -70,12 +78,10 @@ ShareApp.controller = function() {
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
-        if (state.query === self.vm.query() && state.sort === self.vm.sort() &&
-            utils.arrayEqual(state.optionalFilters, self.vm.optionalFilters) &&
-            utils.arrayEqual(state.requiredFilters, self.vm.requiredFilters)) {
-
+        if (!utils.stateChanged(self.vm)){
             return;
         }
+
         self.vm.optionalFilters = state.optionalFilters;
         self.vm.requiredFilters = state.requiredFilters;
         self.vm.query(state.query);
