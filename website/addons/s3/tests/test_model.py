@@ -59,6 +59,42 @@ class TestFileGuid(OsfTestCase):
         assert_false(created2)
         assert_equals(guid1, guid2)
 
+class TestNodeSettings(OsfTestCase):
+    def setUp(self):
+        super(TestNodeSettings, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.user.add_addon('s3')
+        self.project.add_addon('s3', auth=Auth(self.user))
+
+        self.user_settings = self.user.get_addon('s3')
+        self.node_settings = self.project.get_addon('s3')
+
+        self.user_settings.access_key = 'We-Will-Rock-You'
+        self.user_settings.secret_key = 'Idontknowanyqueensongs'
+        self.user_settings.save()
+
+        self.node_settings.bucket = 'Sheer-Heart-Attack'
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.bucket = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
 
 class TestCallbacks(OsfTestCase):
 
@@ -85,32 +121,32 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_empty_bucket(self, mock_drop):
         mock_drop.return_value = ''
         s3 = AddonS3NodeSettings(owner=self.project)
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 0)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_full_bucket(self, mock_drop):
         mock_drop.return_value = ''
         s3 = AddonS3NodeSettings(owner=self.project)
         s3.bucket = 'bucket'
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 1)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_user_auth(self, mock_drop):
         mock_drop.return_value = ''
         s3 = AddonS3NodeSettings(owner=self.project)
         assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 1)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_moar_use(self, mock_drop):
         mock_drop.return_value = ''
         assert_equals(self.node_settings.to_json(
             self.project.creator)['user_has_auth'], 1)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_no_contributor_user_settings(self, mock_drop):
         mock_drop.return_value = ''
         user2 = UserFactory()
@@ -137,14 +173,6 @@ class TestCallbacks(OsfTestCase):
             self.project, fork, self.non_authenticator,
         )
         assert_equal(clone.user_settings, None)
-
-    @mock.patch('website.addons.s3.utils.get_bucket_list')
-    def test_drop_down_disabled(self, mock_drop):
-        bucket = mock.create_autospec(Bucket)
-        bucket.name = 'Atticus'
-        mock_drop.return_value = [bucket]
-        drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
-        assert_true('Atticus' in drop_list)
 
     def test_after_remove_contributor_self(self):
         message = self.node_settings.after_remove_contributor(

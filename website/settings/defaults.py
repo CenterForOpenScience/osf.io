@@ -30,6 +30,10 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+# May set these to True in local.py for development
+DEV_MODE = False
+DEBUG_MODE = False
+
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
@@ -38,6 +42,7 @@ CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
 BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
 
 DOMAIN = 'http://localhost:5000/'
+OFFLOAD_DOMAIN = 'http://localhost:5001/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
@@ -55,11 +60,6 @@ SHARE_ELASTIC_URI = ELASTIC_URI
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'
-
-# May set these to True in local.py for development
-DEV_MODE = False
-DEBUG_MODE = False
-
 
 # TODO: Remove after migration to OSF Storage
 COPY_GIT_REPOS = False
@@ -235,3 +235,5 @@ DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_ADDRS = ['127.0.0.1']
+
+SHARE_REGISTRATION_URL = ''

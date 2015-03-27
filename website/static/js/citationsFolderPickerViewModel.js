@@ -1,11 +1,13 @@
+'use strict';
+
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
-var $osf = require('osfHelpers');
+var FolderPicker = require('./folderpicker');
+var $osf = require('./osfHelpers');
 var ctx = window.contextVars;
 
 ko.punches.enableAll();
@@ -272,10 +274,10 @@ CitationsFolderPickerViewModel.prototype.submitSettings = function() {
         self.changeMessage(self.messages.SUBMIT_SETTINGS_ERROR(), 'text-danger');
     }
 
-
     $osf.putJSON(self.urls().config, {
             external_account_id: self.userAccountId(),
-            external_list_id: self.selected().id
+            external_list_id: self.selected().id,
+            external_list_name: self.selected().name
         })
         .done(onSubmitSuccess)
         .fail(onSubmitError);

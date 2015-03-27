@@ -1,6 +1,8 @@
-var AddonHelper = require('addonHelper');
+'use strict';
+
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var AddonHelper = require('js/addonHelper');
 
 $('#s3RemoveAccess').on('click', function() {
     bootbox.confirm({

@@ -7,9 +7,9 @@
 var Treebeard = require('treebeard');
 
 // CSS
-require('../css/typeahead.css');
-require('../css/fangorn.css');
-require('../css/projectorganizer.css');
+require('css/typeahead.css');
+require('css/fangorn.css');
+require('css/projectorganizer.css');
 
 var Handlebars = require('handlebars');
 var $ = require('jquery');
@@ -20,7 +20,7 @@ var moment = require('moment');
 var Raven = require('raven-js');
 
 
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
@@ -533,16 +533,16 @@ function _poContributors(item) {
  * @private
  */
 function _poModified(item) {
-    var personString,
-        dateString;
+    var personString = '';
+    var dateString = '';
     if (item.data.modifiedDelta === 0) {
         return m('span');
     }
     dateString = moment.utc(item.data.dateModified).fromNow();
     if (item.data.modifiedBy !== '') {
-        personString = item.data.modifiedBy.toString();
+        personString = ', by ' + item.data.modifiedBy.toString();
     }
-    return m('span', dateString + ', by ' + personString);
+    return m('span', dateString + personString);
 }
 
 /**

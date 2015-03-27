@@ -75,6 +75,8 @@ class TestNodeSettingsModel(StorageTestCase):
     def test_fields(self):
         assert_true(self.node_settings._id)
         assert_is(self.node_settings.file_tree, None)
+        assert_is(self.node_settings.has_auth, True)
+        assert_is(self.node_settings.complete, True)
 
     def test_after_fork_copies_versions(self):
         path = 'jazz/dreamers-ball.mp3'
@@ -450,13 +452,13 @@ class TestStorageObject(OsfTestCase):
         existing = model.OsfStorageGuidFile(node=self.project, path=self.path)
         existing.save()
         n_objs = model.OsfStorageGuidFile.find().count()
-        result, _ = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
+        result, _ = model.OsfStorageGuidFile.get_or_create(node=self.project, path=self.path)
         assert_equal(result, existing)
         assert_equal(n_objs, model.OsfStorageGuidFile.find().count())
 
     def test_get_or_create_does_not_exist(self):
         n_objs = model.OsfStorageGuidFile.find().count()
-        result, _ = model.OsfStorageGuidFile.get_or_create(self.project, self.path)
+        result, _ = model.OsfStorageGuidFile.get_or_create(node=self.project, path=self.path)
         assert_equal(result.node, self.project)
         assert_equal(result.path, self.path)
         assert_equal(n_objs + 1, model.OsfStorageGuidFile.find().count())

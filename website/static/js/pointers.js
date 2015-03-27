@@ -6,7 +6,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 
-var osfHelpers = require('osfHelpers');
+var osfHelpers = require('js/osfHelpers');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
 
@@ -15,8 +15,8 @@ var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
 
 var AddPointerViewModel = oop.extend(Paginator, {
-    constructor(nodeTitle) {
-        this.super.constructor();
+    constructor: function(nodeTitle) {
+        this.super.constructor.call(this);
         var self = this;
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
@@ -28,23 +28,23 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(true);
 
-        this.foundResults = ko.computed(function() {
+        this.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
 
-        this.noResults = ko.computed(function() {
+        this.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
         });
     },
-    searchAllProjects() {
+    searchAllProjects: function() {
         this.includePublic(true);
-        this.search();
+        this.fetchResults();
     },
-    searchMyProjects() {
+    searchMyProjects: function() {
         this.includePublic(false);
-        this.search();
+        this.fetchResults();
     },
-    search() {
+    fetchResults: function() {
         var self = this;
         self.errorMsg('');
         if (self.query()) {
@@ -72,18 +72,18 @@ var AddPointerViewModel = oop.extend(Paginator, {
             self.totalPages(0);
         }
     },
-    addTips(elements) {
+    addTips: function(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
     },
-    add(data) {
+    add: function(data) {
         this.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    remove(data) {
+    remove: function(data) {
         var self = this;
         self.selection.splice(
             self.selection.indexOf(data), 1
@@ -92,7 +92,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    addAll() {
+    addAll: function() {
         var self = this;
         $.each(self.results(), function(idx, result) {
             if (self.selection().indexOf(result) === -1) {
@@ -100,13 +100,13 @@ var AddPointerViewModel = oop.extend(Paginator, {
             }
         });
     },
-    removeAll() {
+    removeAll: function() {
         var self = this;
         $.each(self.selection(), function(idx, selected) {
             self.remove(selected);
         });
     },
-    selected(data) {
+    selected: function(data) {
         var self = this;
         for (var idx = 0; idx < self.selection().length; idx++) {
             if (data.id === self.selection()[idx].id) {
@@ -115,7 +115,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
         return false;
     },
-    submit() {
+    submit: function() {
         var self = this;
         self.submitEnabled(false);
         var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
@@ -130,12 +130,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
             osfHelpers.handleJSONError(data);
         });
     },
-    clear() {
+    clear: function() {
         this.query('');
         this.results([]);
         this.selection([]);
     },
-    authorText(node) {
+    authorText: function(node) {
         var rv = node.firstAuthor;
         if (node.etal) {
             rv += ' et al.';

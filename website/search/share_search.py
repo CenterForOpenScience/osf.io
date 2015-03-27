@@ -1,14 +1,20 @@
+from __future__ import unicode_literals
+
 from time import gmtime
 from calendar import timegm
 from datetime import datetime
 
+import pytz
+
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 from elasticsearch import Elasticsearch
 
 from website import settings
+from website.search.elastic_search import requires_search
 
-from util import generate_color
+from util import generate_color, html_and_illegal_unicode_replace
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
@@ -16,6 +22,7 @@ share_es = Elasticsearch(
 )
 
 
+@requires_search
 def search(query, raw=False):
     # Run the real query and get the results
     results = share_es.search(index='share', doc_type=None, body=query)
@@ -26,6 +33,7 @@ def search(query, raw=False):
     }
 
 
+@requires_search
 def count(query):
     if query.get('from') is not None:
         del query['from']
@@ -40,6 +48,7 @@ def count(query):
     }
 
 
+@requires_search
 def providers():
 
     provider_map = share_es.search(index='share_providers', doc_type=None, body={
@@ -55,6 +64,7 @@ def providers():
         }
     }
 
+@requires_search
 def stats(query=None):
     query = query or {"query": {"match_all": {}}}
     three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
@@ -243,3 +253,39 @@ def data_for_charts(elastic_results):
     }
 
     return all_data
+
+
+def to_atom(result):
+    return {
+        'title': html_and_illegal_unicode_replace(result.get('title')) or 'No title provided.',
+        'summary': html_and_illegal_unicode_replace(result.get('description')) or 'No summary provided.',
+        'id': result['id']['url'],
+        'updated': get_date_updated(result),
+        'links': [
+            {'href': result['id']['url'], 'rel': 'alternate'}
+        ],
+        'author': format_contributors_for_atom(result['contributors']),
+        'categories': [{"term": html_and_illegal_unicode_replace(tag)} for tag in result.get('tags')],
+        'published': parse(result.get('dateUpdated'))
+    }
+
+
+def format_contributors_for_atom(contributors_list):
+    return [
+        {
+            'name': '{} {}'.format(
+                html_and_illegal_unicode_replace(entry['given']),
+                html_and_illegal_unicode_replace(entry['family'])
+            )
+        }
+        for entry in contributors_list
+    ]
+
+
+def get_date_updated(result):
+    try:
+        updated = pytz.utc.localize(parse(result.get('dateUpdated')))
+    except ValueError:
+        updated = parse(result.get('dateUpdated'))
+
+    return updated

@@ -2,25 +2,23 @@
 
 from nose.tools import *  # noqa
 
-import responses
 import mock
-import unittest
+import responses
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
 import urlparse
 
+from framework.auth.core import Auth
+
 from website.addons.mendeley.tests.factories import (
-    MendeleyAccountFactory, MendeleyUserSettingsFactory,
+    MendeleyAccountFactory,
+    MendeleyUserSettingsFactory,
     MendeleyNodeSettingsFactory
 )
 
-from website.util import api_url_for
-from website.addons.mendeley import utils
 from website.addons.mendeley import views
-from website.addons.citations.utils import serialize_folder
-from website.addons.mendeley.serializer import MendeleySerializer
 
 from utils import mock_responses
 
@@ -75,7 +73,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.project.api_url_for('mendeley_get_config'),
             auth=self.user.auth,
-        )        
+        )
         assert_true(res.json['nodeHasAuth'])
         assert_true(res.json['userHasAuth'])
         assert_true(res.json['userIsOwner'])
@@ -192,7 +190,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         # JSON: everything a widget needs
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
-        self.node_addon.set_target_folder('ROOT')
+        self.node_addon.set_target_folder('ROOT-ID', 'ROOT', auth=Auth(user=self.user))
         res = views.mendeley_widget(node_addon=self.node_addon,
                                     project=self.project,
                                     node=self.node,
@@ -200,7 +198,7 @@ class MendeleyViewsTestCase(OsfTestCase):
                                     pid=self.project._id,
                                     auth=self.user.auth)
         assert_true(res['complete'])
-        assert_equal(res['list_id'], 'ROOT')
+        assert_equal(res['list_id'], 'ROOT-ID')
 
     def test_widget_view_incomplete(self):
         # JSON: tell the widget when it hasn't been configured

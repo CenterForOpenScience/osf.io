@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import mock
-from datetime import datetime
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
@@ -197,7 +196,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.user = UserFactory()
         self.user.add_addon('box')
         self.user.save()
-        self.oauth = BoxOAuthSettings(user_id='not sleep')
+        self.oauth = BoxOAuthSettings(user_id='not sleep', access_token='seems legit')
         self.oauth.save()
 
         self.user_settings = self.user.get_addon('box')
@@ -206,9 +205,25 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.project = ProjectFactory()
         self.node_settings = BoxNodeSettingsFactory(
             user_settings=self.user_settings,
-            folder_id = '1234567890',
+            folder_id='1234567890',
             owner=self.project
         )
+
+    def test_complete_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+
+    def test_complete_false(self):
+        self.node_settings.folder_id = None
+
+        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
+
+    def test_complete_auth_false(self):
+        self.node_settings.user_settings = None
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.node_settings.complete)
 
     def test_fields(self):
         node_settings = BoxNodeSettings(user_settings=self.user_settings)
@@ -224,7 +239,8 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_is_none(node_settings.folder_id)
 
     def test_has_auth(self):
-        settings = BoxNodeSettings(user_settings=self.user_settings, )
+        self.user_settings.access_token = None
+        settings = BoxNodeSettings(user_settings=self.user_settings)
         settings.save()
         assert_false(settings.has_auth)
 

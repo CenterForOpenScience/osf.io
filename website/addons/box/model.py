@@ -6,6 +6,7 @@ import httplib as http
 from datetime import datetime
 
 import furl
+import pymongo
 import requests
 from flask import request, redirect
 from box import CredentialsV2, refresh_v2_token, BoxClient
@@ -220,8 +221,15 @@ class BoxFile(GuidFile):
     """A Box file model with a GUID. Created lazily upon viewing a
     file's detail page.
     """
-
-    #: Full path to the file, e.g. 'My Pictures/foo.png'
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
     path = fields.StringField(required=True, index=True)
 
     @property
@@ -241,23 +249,6 @@ class BoxFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        """Get or create a new file record. Return a tuple of the form (obj, created)
-        """
-        try:
-            new = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-            created = False
-        except ModularOdmException:
-            # Create new
-            new = cls(node=node, path=path)
-            new.save()
-            created = True
-        return new, created
 
 
 class BoxOAuthSettings(StoredObject):
@@ -468,6 +459,10 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def complete(self):
+        return self.has_auth and self.folder_id is not None
+
     def fetch_folder_name(self):
         self._update_folder_data()
         return self.folder_name
@@ -511,7 +506,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
         nodelogger.log(action="node_authorized", save=True)
 
     def find_or_create_file_guid(self, path):
-        return BoxFile.get_or_create(self.owner, path)
+        return BoxFile.get_or_create(node=self.owner, path=path)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
