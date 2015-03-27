@@ -44,20 +44,22 @@
             </button>
           </span>
 
-
+##          <div >
           <table class="table" data-bind="if: versioningSupported && revisions().length">
-            <thead>
+            <thead class="file-version-thread">
               <tr>
-                <th>Version ID</th>
-                <th>Date</th>
-                <th data-bind="if: userColumn">User</th>
-                <th colspan="2">Download</th>
+                <th width="20%">Version ID</th>
+                <th width="30%">Date</th>
+                <th width="30%" data-bind="if: userColumn">User</th>
+                <th width="20%" colspan="2">Download</th>
               </tr>
             </thead>
 
-            <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
+
+
+            <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
-                <td>
+                <td width="20%">
                   <a href="{{ revision.osfViewUrl }}" data-bind="if: revision !== $parent.currentVersion()">
                     {{ revision.displayVersion }}
                   </a>
@@ -65,8 +67,8 @@
                     {{ revision.displayVersion }}
                   </span>
                 </td>
-                <td>{{ revision.displayDate }}</td>
-                <td data-bind="if: $parent.userColumn">
+                <td width="30%">{{ revision.displayDate }}</td>
+                <td width="30%" data-bind="if: $parent.userColumn">
                   <a data-bind="if: revision.extra.user.url"
                     href="{{ revision.extra.user.url }}">
                     {{ revision.extra.user.name }}
@@ -75,7 +77,7 @@
                     {{ revision.extra.user.name }}
                   </span>
                 </td>
-                <td>
+                <td width="20%">
                   <span class="badge" data-bind="if: revision.extra.downloads !== undefined">
                     {{ revision.extra.downloads }}
                   </span>
@@ -88,7 +90,9 @@
                 </td>
               </tr>
             </tbody>
+
           </table>
+
 
           <div data-bind="ifnot: versioningSupported">
             <hr>

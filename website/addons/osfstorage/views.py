@@ -319,7 +319,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     indices, versions, more = record.get_versions(
         page,
-        size=osf_storage_settings.REVISIONS_PAGE_SIZE,
+        size=len(record.versions)
     )
 
     return {
