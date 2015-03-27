@@ -64,6 +64,9 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     id: item.data.id
                 });
                 return false; // Prevent event propagation
+            },
+            connectAccount: function() {
+                window.location.href = this.urls().auth;
             }
         };
         // Overrides
@@ -136,7 +139,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
      * Allows a user to create an access token from the nodeSettings page
      */
     connectAccount: function() {
-        window.location.href = this.urls().auth;
+        this.options.connectAccount.call(this);
     }
 });
 
