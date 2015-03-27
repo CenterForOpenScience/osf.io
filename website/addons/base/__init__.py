@@ -530,13 +530,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         ]
 
     @oauth_complete.connect
-    def oauth_complete(args):
-        external_account = args.get('external_account')
-        user = args.get('user')
-        if not user or not external_account:
+    def oauth_complete(provider, account, user):
+        if not user or not account:
             return
-
-        user.get_or_add_addon(external_account.provider)
+        user.get_or_add_addon(account.provider)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""

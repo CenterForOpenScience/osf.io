@@ -50,8 +50,6 @@ def oauth_callback(service_name, auth):
         user.external_accounts.append(provider.account)
         user.save()
 
-    oauth_complete.send({
-        'account': provider.account,
-        'user': user
-    })
+    oauth_complete.send(provider, account=provider.account, user=user)
+
     return {}
