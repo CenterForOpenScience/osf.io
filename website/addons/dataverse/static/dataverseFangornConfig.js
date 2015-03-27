@@ -97,7 +97,7 @@ function _dataverseDefineToolbar (item) {
             }},
             { name : 'dataverseRelease', template : function(){
                 return m('.fangorn-toolbar-icon.text-primary', {
-                        onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                        onclick : function(event) { /* TODO */ } 
                     },[
                     m('i.fa.fa-globe'),
                     m('span.hidden-xs','Release Study')
@@ -239,7 +239,7 @@ function _canDrop(item) {
     return item.data.provider &&
         item.kind === 'folder' &&
         item.data.permissions.edit &&
-        item.data.state === 'draft'
+        item.data.state === 'draft';
 }
 
 Fangorn.config.dataverse = {
