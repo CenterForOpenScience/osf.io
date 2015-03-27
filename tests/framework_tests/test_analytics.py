@@ -3,8 +3,9 @@
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
 
-from nose.tools import *  # noqa  (PEP8 asserts)
+import unittest
 
+from nose.tools import *  # flake8: noqa  (PEP8 asserts)
 from flask import Flask
 
 from datetime import datetime
@@ -115,6 +116,7 @@ class TestUpdateCounters(UpdateCountersTestCase):
         count = analytics.get_basic_counters(page, db=self.db)
         assert_equal(count, (3, 5))
 
+    @unittest.skip('Reverted the fix for #2281. Unskip this once we use GUIDs for keys in the download counts collection')
     def test_update_counters_different_files(self):
         # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2281
         @analytics.update_counters('download:{target_id}:{fid}', db=self.db)
