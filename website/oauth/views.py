@@ -49,5 +49,6 @@ def oauth_callback(service_name, auth):
     if provider.account not in user.external_accounts:
         user.external_accounts.append(provider.account)
         user.save()
+    user.get_or_add_addon(service_name)
 
     return {}
