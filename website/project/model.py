@@ -7,6 +7,7 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
+import itertools
 
 import pytz
 import blinker
@@ -1205,10 +1206,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             if node.primary
         ]
 
-    @property
-    def nodes_recursive(self):
-        flat_nodes = self.nodes + [node.nodes_recursive() for node in self.nodes]
-        return flat_nodes
+    def get_nodes_recursive(self, include):
+        children = self.nodes
+        descendants = list(itertools.chain.from_iterable([node.get_nodes_recursive(include) for node in self.nodes]))
+        return children + [desc for desc in descendants if include(desc)]
 
     @property
     def nodes_pointer(self):
