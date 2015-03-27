@@ -44,13 +44,6 @@
                 <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
                                        css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
-                    <span data-bind="if: canShare">
-                    <button data-bind="attr.disabled: disableShare,
-                                       click: toggleShare,
-                                       css: {active: currentDisplay() === SHARE}" class="btn btn-sm btn-addon"><i class="icon-share-alt"></i> Share on ${addon_full_name}
-                        <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
-                    </button>
-                    </span>
                 </div>
                 <!-- Folder picker -->
                 <div class="${addon_short_name}-widget">
@@ -58,31 +51,6 @@
                         Loading folders...</p>
                     <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="${addon_short_name}Grid" class="filebrowser ${addon_short_name}-folder-picker"></div>
-                    </div>
-
-                    <!-- Share -->
-                    <div data-bind="if: canShare">
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length === 0" class="help-block">
-                        <p>No contributors to share with.</p>
-                    </div>
-
-                    <div data-bind="visible: currentDisplay() === SHARE && emails().length">
-                        <div class="help-block">
-                            <p>To share this folder with other ${addon_full_name} users on this project, copy the email addresses of the contributors (listed below) into the "Share Folder" dialog on ${addon_full_name}.</p>
-                        </div>
-                        <label for="contrib-emails">Copy these:</label>
-                        <div class="input-group">
-                            <textarea name="contrib-emails" class="form-control" rows="3" id="contribEmails" data-bind="value: emailList,
-                                        attr.autofocus: currentDisplay() === SHARE">
-                            </textarea>
-                            <span data-clipboard-target="contribEmails" class="input-group-addon pointer" class="copyBtn">
-                                <i class="icon-paste"></i>
-                            </span>
-                        </div>
-                        <div class="input-group pull-right">
-                            <a target="_blank" data-bind="attr.href: urls().share" class="btn btn-link"><i class="icon-share-alt"></i> Continue to ${addon_full_name}...</a>
-                        </div>
-                    </div>
                     </div>
                     <!-- Queued selection -->
                     <div class="${addon_short_name}-confirm-selection" data-bind="visible: currentDisplay() == PICKER && selected()">

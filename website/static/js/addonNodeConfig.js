@@ -85,52 +85,6 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }
         );
     },
-    toggleShare: function() {
-        if (this.currentDisplay() === this.SHARE) {
-            this.currentDisplay(null);
-        } else {
-            // Clear selection
-            this.cancelSelection();
-            this.currentDisplay(this.SHARE);
-            this.activateShare();
-        }
-    },
-    fetchEmailList: function(){
-        var self = this;
-        
-        var ret = $.Deferred();
-        var promise = ret.promise();
-        if(!self.loadedEmails()){
-            $.ajax({
-                url: self.urls().emails,
-                type: 'GET',
-                dataType: 'json'
-            }).done(function(res){
-                self.loadedEmails(true);
-                ret.resolve(res.results.emails);
-            }).fail(function(xhr, status, error){
-                Raven.captureMessage('Could not GET ' + self.addonName + ' email list', {
-                    url: self.urls().emails,
-                    textStatus: status,
-                    error: error
-                });
-                ret.reject(xhr, status, error);
-            });
-        }
-        else{
-            ret.resolve(self.emails());
-        }
-        return promise;
-    },
-    activateShare: function() {
-        var self = this;
-        self.fetchEmailList()
-            .done(function(emails){
-                self.emails(emails);
-            });
-        var $copyBtn = $(self.selector).find('.copyBtn');
-        new ZeroClipboard($copyBtn);
-    },
     _updateCustomFields: function(settings){
         this.validCredentials(settings.validCredentials);
         this.canShare(settings.canShare || false);
