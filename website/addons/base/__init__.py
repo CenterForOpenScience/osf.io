@@ -23,7 +23,20 @@ from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
-from website.addons.base.defaults import get_default_templates
+
+NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
+    settings.TEMPLATES_PATH,
+    'project',
+    'addon',
+    'node_settings_default.mako',
+)
+
+USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
+    settings.TEMPLATES_PATH,
+    'project',
+    'addon',
+    'user_settings_default.mako',
+)
 
 lookup = TemplateLookup(
     directories=[
@@ -89,7 +102,6 @@ class AddonConfig(object):
         self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
-        NODE_SETTINGS_TEMPLATE_DEFAULT, USER_SETTINGS_TEMPLATE_DEFAULT = get_default_templates(settings.TEMPLATES_PATH)
         # Provide the path the the user_settings template
         self.user_settings_template = user_settings_template
         if not user_settings_template or not os.path.exists(os.path.dirname(user_settings_template)):
