@@ -25,6 +25,6 @@ CONFIGS = ['user']
 
 CATEGORIES = ['security']
 
-curdir = os.path.dirname(os.path.realpath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # no node settings view
-USER_SETTINGS_TEMPLATE = os.path.join(curdir, 'templates', 'twofactor_user_settings.mako')
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'twofactor_user_settings.mako')

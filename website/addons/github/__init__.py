@@ -37,6 +37,6 @@ GET_HGRID_DATA = views.hgrid.github_hgrid_data
 # downloads through their API are capped at 1 MB.
 MAX_FILE_SIZE = 1
 
-curdir = os.path.dirname(os.path.realpath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(curdir, 'template', 'github_node_settings.mako')
-USER_SETTINGS_TEMPLATE = os.path.join(curdir, 'template', 'github_user_settings.mako')
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'template', 'github_node_settings.mako')
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'template', 'github_user_settings.mako')

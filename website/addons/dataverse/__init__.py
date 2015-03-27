@@ -40,6 +40,6 @@ GET_HGRID_DATA = views.hgrid.dataverse_hgrid_root
 
 MAX_FILE_SIZE = 1024 * 2  # MB
 
-curdir = os.path.dirname(os.path.realpath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(curdir, 'templates', 'dataverse_node_settings.mako')
-USER_SETTINGS_TEMPLATE = os.path.join(curdir, 'templates', 'dataverse_user_settings.mako')
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dataverse_node_settings.mako')
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dataverse_user_settings.mako')

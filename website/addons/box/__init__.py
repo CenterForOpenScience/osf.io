@@ -45,6 +45,6 @@ GET_HGRID_DATA = utils.box_addon_folder
 
 # MAX_FILE_SIZE = 5  # MB
 
-curdir = os.path.dirname(os.path.realpath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # use default node settings template
-USER_SETTINGS_TEMPLATE = os.path.join(curdir, 'templates', 'box_user_settings.mako')
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'box_user_settings.mako')

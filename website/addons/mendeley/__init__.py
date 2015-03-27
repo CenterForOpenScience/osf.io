@@ -37,6 +37,6 @@ WIDGET_HELP = 'Mendeley'
 
 HAS_HGRID_FILES = False
 
-# curdir = os.path.dirname(os.path.realpath(__file__))
+# HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # use default nodes settings templates
 USER_SETTINGS_TEMPLATE = None  # use default user settings templates
