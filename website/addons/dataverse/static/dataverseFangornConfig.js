@@ -140,6 +140,8 @@ function _dataverseDefineToolbar (item) {
         }
     }
     item.icons = buttons;
+
+    return true; // Tell fangorn this function is used. 
     
 }
 
@@ -187,7 +189,6 @@ function _fangornDataverseTitle(item, col) {
 
 function _fangornColumns(item) {
     var columns = [];
-    _dataverseDefineToolbar.call(this, item);
     columns.push(
     {
         data : null,
@@ -213,7 +214,6 @@ function _fangornColumns(item) {
             }
         );
     }
-
     return columns;
 }
 
@@ -246,5 +246,7 @@ Fangorn.config.dataverse = {
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
     uploadUrl: _uploadUrl,
-    canDrop: _canDrop
+    canDrop: _canDrop,
+    defineToolbar: _dataverseDefineToolbar,
+
 };
