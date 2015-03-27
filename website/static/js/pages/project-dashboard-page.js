@@ -103,6 +103,10 @@ $(document).ready(function() {
 
                 if(item.data.tmpID){
                     defaultColumns = [
+                        {   
+                            data : '',  // Data field name
+                            custom : function(){ return m('span', ''); }
+                        },
                         {
                             data : 'name',  // Data field name
                             folderIcons : true,
