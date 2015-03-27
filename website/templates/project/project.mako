@@ -160,7 +160,7 @@
             <div class="addon-widget-body">
                 <div id="treeGrid">
                     <div class="fangorn-loading">
-                        <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        <img src="/static/img/hgrid/load.gif" alt="loader"> <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>
