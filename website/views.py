@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import itertools
+import math
 import httplib as http
 
 from modularodm import Q
@@ -280,25 +281,40 @@ def dashboard(auth):
             }
 
 
+def paginate(items, total, page, size):
+    start = page * size
+    paginated_items = itertools.islice(items, start, start + size)
+    pages = math.ceil(total / float(size))
+
+    return paginated_items, pages
+
+
 @must_be_logged_in
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
-    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
-    page_size = 10
-    offset = page_num * page_size
-    recent_log_ids = itertools.islice(user.get_recent_log_ids(), offset, offset + page_size + 1)
-    logs = (model.NodeLog.load(id) for id in recent_log_ids)
-    watch_logs = []
-    has_more_logs = False
+    try:
+        page = int(request.args.get('page', 0))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page".'
+        ))
+    try:
+        size = int(request.args.get('size', 10))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "size".'
+        ))
 
-    for log in logs:
-        if len(watch_logs) < page_size:
-            watch_logs.append(serialize_log(log))
-        else:
-            has_more_logs = True
-            break
+    total = sum(1 for x in user.get_recent_log_ids())
+    paginated_logs, pages = paginate(user.get_recent_log_ids(), total, page, size)
+    logs = (model.NodeLog.load(id) for id in paginated_logs)
 
-    return {"logs": watch_logs, "has_more_logs": has_more_logs}
+    return {
+        "logs": [serialize_log(log) for log in logs],
+        "total": total,
+        "pages": pages,
+        "page": page
+    }
 
 
 def serialize_log(node_log, anonymous=False):

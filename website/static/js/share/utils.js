@@ -49,15 +49,15 @@ utils.updateVM = function(vm, data) {
     data.results.forEach(function(result) {
         result.title = utils.scrubHTML(result.title);
         result.description = utils.scrubHTML(result.description);
-    });    
-    vm.results.push.apply(vm.results, data.results);   
+    });
+    vm.results.push.apply(vm.results, data.results);
     m.redraw();
     $.map(callbacks, function(cb) {
         cb();
     });
 };
 
-utils.loadMore = function(vm) {    
+utils.loadMore = function(vm) {
     var ret = m.deferred();
     if (utils.buildQuery(vm).length === 0) {
         ret.resolve(null);
@@ -102,22 +102,30 @@ utils.search = function(vm) {
         ret.resolve(null);
     }
     else {
-    vm.page = 0;
-    vm.results = [];
-    History.pushState({
-        optionalFilters: vm.optionalFilters,
-        requiredFilters: vm.requiredFilters,
-        query: vm.query(),
-        sort: vm.sort()
-    }, 'OSF | SHARE', '?'+ utils.buildURLParams(vm));
-
-    utils.loadMore(vm)
-        .then(function(data) {
-            utils.updateVM(vm, data);
-            ret.resolve(vm);
-        });
+        vm.page = 0;
+        vm.results = [];
+        if (utils.stateChanged(vm)){
+            History.pushState({
+                optionalFilters: vm.optionalFilters,
+                requiredFilters: vm.requiredFilters,
+                query: vm.query(),
+                sort: vm.sort()
+            }, 'OSF | SHARE', '?'+ utils.buildURLParams(vm));
+        }
+        utils.loadMore(vm)
+            .then(function(data) {
+                utils.updateVM(vm, data);
+                ret.resolve(vm);
+            });
     }
     return ret.promise;
+};
+
+utils.stateChanged = function(vm){
+    var state = History.getState().data;
+    return !(state.query === vm.query() && state.sort === vm.sort() &&
+            utils.arrayEqual(state.optionalFilters, vm.optionalFilters) &&
+            utils.arrayEqual(state.requiredFilters, vm.requiredFilters));
 };
 
 utils.buildURLParams = function(vm){
@@ -191,12 +199,24 @@ utils.loadStats = function(vm){
         url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
         background: true
     }).then(function(data) {
+        var unload;
+        if (vm.statsData){
+            unload = $.map(vm.statsData.charts.shareDonutGraph.columns, function(datum) {
+                return datum[0];
+            });
+        } else {
+            unload = [];
+        }
         vm.statsData = data;
         $.map(Object.keys(vm.graphs), function(type) {
             if(type === 'shareDonutGraph') {
                 var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
+                vm.statsData.charts.shareDonutGraph.columns = vm.statsData.charts[type].columns.filter(function(datum) {
+                    return (datum[1] > 0);
+                });
             }
+            vm.statsData.charts[type].unload = unload;
             vm.graphs[type].load(vm.statsData.charts[type]);
         }, utils.errorState.bind(this, vm));
         vm.statsLoaded(true);
