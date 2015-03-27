@@ -23,7 +23,7 @@ from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
-from website.addons.base import defaults as addon_defaults
+from website.addons.base.defaults import get_default_templates
 
 lookup = TemplateLookup(
     directories=[
@@ -89,17 +89,18 @@ class AddonConfig(object):
         self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
+        NODE_SETTINGS_TEMPLATE_DEFAULT, USER_SETTINGS_TEMPLATE_DEFAULT = get_default_templates(settings.TEMPLATES_PATH)
         # Provide the path the the user_settings template
         self.user_settings_template = user_settings_template
         if not user_settings_template or not os.path.exists(os.path.dirname(user_settings_template)):
             # Use the default template (ATM for OAuth addons)
-            self.user_settings_template = addon_defaults.USER_SETTINGS_TEMPLATE_DEFAULT
+            self.user_settings_template = USER_SETTINGS_TEMPLATE_DEFAULT
 
         # Provide the path the the node_settings template
         self.node_settings_template = node_settings_template
         if not node_settings_template or not os.path.exists(os.path.dirname(node_settings_template)):
             # Use the default template
-            self.node_settings_template = addon_defaults.NODE_SETTINGS_TEMPLATE_DEFAULT
+            self.node_settings_template = NODE_SETTINGS_TEMPLATE_DEFAULT
 
         # Build template lookup
         template_dirs = list(
