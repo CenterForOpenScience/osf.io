@@ -4,8 +4,8 @@ var $ = require('jquery');
 var m = require('mithril');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
-var citations = require('./citations');
-var clipboard = require('./clipboard');
+var citations = require('js/citations');
+var clipboard = require('js/clipboard');
 
 var apaStyle = require('raw!styles/apa.csl');
 

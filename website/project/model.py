@@ -622,7 +622,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     def __init__(self, *args, **kwargs):
         super(Node, self).__init__(*args, **kwargs)
 
-        # Crash if parent provided and not project
         if kwargs.get('_is_loaded', False):
             return
 
@@ -658,6 +657,10 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def private_link_keys_deleted(self):
         return [x.key for x in self.private_links if x.is_deleted]
+
+    @property
+    def log_list(self, auth=None):
+        pass
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1201,6 +1204,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             for node in self.nodes
             if node.primary
         ]
+
+    @property
+    def nodes_recursive(self):
+        flat_nodes = self.nodes + [node.nodes_recursive() for node in self.nodes]
+        return flat_nodes
 
     @property
     def nodes_pointer(self):
