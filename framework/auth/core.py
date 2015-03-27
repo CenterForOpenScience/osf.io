@@ -587,6 +587,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
+        # TODO: If the unconfirmed email is already on the User, refresh the token
+
+        # verify email
+        if not re.match(r'^.+@[^.].*\.[a-z]{2,10}$', email, re.IGNORECASE):
+            raise ValueError("Invalid Email")
+
         token = generate_confirm_token()
 
         self.email_verifications[token] = {'email': email.lower()}

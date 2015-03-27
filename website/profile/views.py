@@ -109,7 +109,11 @@ def update_user(auth):
         ]
 
         for address in added_emails:
-            user.add_unconfirmed_email(address)
+            try:
+                user.add_unconfirmed_email(address)
+            except ValueError:
+                continue
+
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=address)
@@ -122,6 +126,7 @@ def update_user(auth):
         except IndexError:
             pass
 
+        # make sure the new username has already been confirmed
         if username and username in user.emails:
             user.username = username
 

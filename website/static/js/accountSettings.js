@@ -99,6 +99,7 @@ var userProfile = oop.defclass({
         var profile = data.profile;
 
         this.id(profile.id);
+        self.emails([]);
         ko.utils.arrayMap(profile.emails, function(each) {
             self.emails.push(new userEmail(each));
         });
@@ -108,7 +109,7 @@ var userProfile = oop.defclass({
         var request = $.get(url);
         request.done(callback);
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error', 'Could not fetch user profile.', 'error');
+            $osf.growl('Error', 'Could not fetch user profile.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
                 url: url,
                 status: status,
@@ -116,13 +117,16 @@ var userProfile = oop.defclass({
             });
         });
     },
-    pushUpdates: function () {
+    pushUpdates: function (callback) {
         var request = $osf.putJSON(this.urls.update, this.serialize());
         request.done(function(data) {
-           console.log(data);
-        });
+            this.unserialize(data);
+            if (typeof(callback) !== 'undefined') {
+                callback();
+            }
+        }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error', 'User profile not updated.', 'error');
+            $osf.growl('Error', 'User profile not updated.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
                 url: this.urls.update,
                 status: status,
@@ -134,10 +138,19 @@ var userProfile = oop.defclass({
 
     },
     addEmail: function () {
-        this.emails.push(
-            new userEmail({address: this.emailInput()})
-        );
-        this.pushUpdates();
+        var email = new userEmail({address: this.emailInput()});
+        this.emails.push(email);
+        this.pushUpdates(function () {
+            var emails = this.emails();
+            for (var i=0; i<emails.length; i++) {
+                if (emails[i].address() === email.address()) {
+                    this.emailInput('');
+                    return;
+                }
+            }
+            $osf.growl('Error', 'Email validation failed', 'danger');
+        }.bind(this));
+        foo = this;
     },
     removeEmail: function (email) {
         this.emails.remove(email);
