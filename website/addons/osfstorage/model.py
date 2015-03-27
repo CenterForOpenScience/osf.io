@@ -194,7 +194,7 @@ class OsfStorageFileNode(StoredObject):
         if self.is_folder:
             return None
 
-        parts = ['download', self.node._id, self.path]
+        parts = ['download', self.node._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
