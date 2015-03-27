@@ -491,6 +491,14 @@ class AddonUserSettingsBase(AddonSettingsBase):
         return ret
 
 
+@oauth_complete.connect
+def oauth_complete(provider, account, user):
+    if not user or not account:
+        return
+    user.add_addon(account.provider)
+    user.save()
+
+
 class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     _meta = {
         'abstract': True,
@@ -528,12 +536,6 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             x for x in self.owner.external_accounts
             if x.provider == self.oauth_provider.short_name
         ]
-
-    @oauth_complete.connect
-    def oauth_complete(provider, account, user):
-        if not user or not account:
-            return
-        user.get_or_add_addon(account.provider)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
