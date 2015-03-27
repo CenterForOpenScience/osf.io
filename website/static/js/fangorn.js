@@ -81,30 +81,30 @@ function cancelUploads (row) {
             }
         }
     }
-
+    treebeard.options.iconState.generalIcons.cancelUploads.on = false;
 }
 
 var cancelUploadTemplate = function(row){
     var treebeard = this;
-    return m('.btn.btn-xs.btn-danger.m-l-sm', { 
+    return m('.btn.m-l-sm.text-muted', { 
             'onclick' : function (e) {
                 cancelUploads.call(treebeard, row);
             }},
         m('.fa.fa-times'));
-}
+};
 
 
-var cancelAllUploadsTemplate = function(){
-    var treebeard = this;
-    return m('div', [
-        m('span', 'Uploads in progress'),
-        m('.btn.btn-xs.m-l-sm.btn-danger', {
-            'onclick' : function() { 
-                cancelUploads.call(treebeard);
-            } 
-        }, 'Cancel All Uploads')
-    ]);
-}
+// var cancelAllUploadsTemplate = function(){
+//     var treebeard = this;
+//     return m('div', [
+//         m('span', 'Uploads in progress'),
+//         m('.btn.btn-xs.m-l-sm.btn-danger', {
+//             'onclick' : function() { 
+//                 cancelUploads.call(treebeard);
+//             } 
+//         }, 'Cancel All Uploads')
+//     ]);
+// }
 
 
 /**
@@ -455,7 +455,6 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
-    treebeard.options.iconState.generalIcons.cancelUploads.on = false;
     treebeard.redraw();
 }
 
@@ -493,7 +492,6 @@ function _fangornDropzoneError(tb, file, message) {
     }
     $osf.growl('Error', msgText);
     tb.options.uploadInProgress = false;
-    tb.options.iconState.generalIcons.cancelUploads.on = false;
 }
 
 /**
@@ -571,6 +569,7 @@ function _removeEvent (event, items, col) {
         items.forEach(function(item){
             runDelete(item);
         });
+        this.options.iconState.generalIcons.deleteMultiple.on = false;
     }
 
     // If there is only one item being deleted, don't complicate the issue:
@@ -613,7 +612,7 @@ function _removeEvent (event, items, col) {
                 ]);
             mithrilButtonsMultiple =  m('div', [
                     m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete All')
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);        
         } else {
             mithrilContentMultiple = m('div', [
@@ -628,7 +627,7 @@ function _removeEvent (event, items, col) {
                 ]);            
             mithrilButtonsMultiple =  m('div', [
                     m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple(deleteList); }  }, 'Delete Some')
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
                 ]);    
         }
         tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple); 
@@ -830,21 +829,32 @@ function _fangornResolveRows(item) {
     }
     // define the toolbar icons for this item
     _fangornDefineToolbar.call(this, item);
+    // Column that does the toggles : 
+    var toggleTemplate = {
+        data : null,
+        folderIcons: false,
+        filter : false,
+        custom : function(){
+            if(this.isMultiselected(item.id)) {
+                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
+            }
+            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
+        }
+    }; 
     if(item.data.tmpID){
         return [
         {
-            data : 'name',  // Data field name
-            folderIcons : true,
-            filter : true,
-            custom : function(){ return m('span.text-muted', item.data.name); }
-        },
-        {
-            data : '',  // Data field name
-            custom : function(){ return m('span.text-muted', [m('span','Upload pending...'), cancelUploadTemplate.call(this, item) ]); }
-        },
-        {
             data : '',  // Data field name
             custom : function(){ return m('span', ''); }
+        },
+        {
+            data : '',  // Data field name
+            css : '.t-a-c',
+            custom : function(){ return m('span.text-muted', [m('span', ' Uploading:' + item.data.name) ]); }
+        },
+        {
+            data : '',  // Data field name
+            custom : function(){ return m('span', cancelUploadTemplate.call(this, item)); }
         }
         ];
     }
@@ -855,19 +865,9 @@ function _fangornResolveRows(item) {
             item.data.accept = item.data.accept || item.parent().data.accept;
         }
     }
-
     default_columns.push(
+    toggleTemplate,
     {
-        data : null,
-        folderIcons: false,
-        filter : false,
-        custom : function(){
-            if(this.isMultiselected(item.id)) {
-                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
-            }
-            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
-        }
-    },{
         data : 'name',  // Data field name
         folderIcons : true,
         filter : true,
@@ -963,14 +963,14 @@ function _fangornToolbar () {
     var titleContent = tb.options.title();
     var generalButtons = [];
     var generalIcons = tb.options.iconState.generalIcons;
-    if (generalIcons.search.on) { 
-        generalButtons.push(generalIcons.search.template.call(tb));
-    }
     if (generalIcons.deleteMultiple.on) { 
         generalButtons.push(generalIcons.deleteMultiple.template.call(tb));
     }
     if (generalIcons.cancelUploads.on) { 
         generalButtons.push(generalIcons.cancelUploads.template.call(tb));
+    }
+    if (generalIcons.search.on) { 
+        generalButtons.push(generalIcons.search.template.call(tb));
     }
     if (tb.options.iconState.mode === 'bar'){                   
         return m('.row.tb-header-row', [
@@ -1027,7 +1027,7 @@ function toolbarDismissIcon (){
  function cancelUploadsIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-warning', { 
-            onclick : function () { tb.options.iconState.mode = 'search'; }
+            onclick : function () {cancelUploads.call(tb); }
         }, [
         m('i.fa.fa-times-circle'),
         m('span.hidden-xs', 'Cancel All Uploads')
