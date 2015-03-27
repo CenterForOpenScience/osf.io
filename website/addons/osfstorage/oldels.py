@@ -18,7 +18,7 @@ from website.models import NodeLog
 from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
-from website.addons.osfstorage.models import OsfStorageFileVersion
+from website.addons.osfstorage.model import OsfStorageFileVersion
 
 
 logger = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ class BaseFileObject(StoredObject):
         return '<{}(path={!r}, node_settings={!r})>'.format(
             self.__class__.__name__,
             self.path,
-            self.node_settings._id,
+            self.to_storage()['node_settings']
         )
 
 
