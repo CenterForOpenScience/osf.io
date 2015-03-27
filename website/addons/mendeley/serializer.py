@@ -25,5 +25,5 @@ class MendeleySerializer(CitationsAddonSerializer):
             'folders': node.api_url_for('mendeley_citation_list'),
             'config': node.api_url_for('mendeley_set_config'),
             'deauthorize': node.api_url_for('mendeley_remove_user_auth'),
-            'accounts': node.api_url_for('mendeley_get_user_settings'),
+            'accounts': node.api_url_for('mendeley_get_user_accounts'),
         }

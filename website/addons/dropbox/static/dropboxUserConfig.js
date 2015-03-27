@@ -3,14 +3,15 @@
 */
 'use strict';
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 ko.punches.enableAll();
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-var language = require('osfLanguage').Addons.dropbox;
-var osfHelpers = require('osfHelpers');
+var language = require('js/osfLanguage').Addons.dropbox;
+var osfHelpers = require('js/osfHelpers');
+
 function ViewModel(url) {
     var self = this;
     self.userHasAuth = ko.observable(false);
@@ -35,7 +36,7 @@ function ViewModel(url) {
             if (!self.validCredentials()) {
                 self.changeMessage('Could not retrieve Dropbox settings at ' +
                     'this time. The Dropbox addon credentials may no longer be valid.' +
-                    ' Try deauthorizing and reauthorizing Dropbox.',
+                    ' Please delete your access token and create a new one.',
                     'text-warning');
             } else if (self.userHasAuth() && self.nNodesAuthorized === 0) {
                 self.changeMessage('Add-on successfully authorized. To link this add-on to an OSF project, ' +

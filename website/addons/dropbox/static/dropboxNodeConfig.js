@@ -5,21 +5,21 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
-var $osf = require('osfHelpers');
+var FolderPicker = require('js/folderpicker');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
 function noop() {}
 
 /**
-    * Knockout view model for the Dropbox node settings widget.
-    */
+ * Knockout view model for the Dropbox node settings widget.
+ */
 var ViewModel = function(url, selector, folderPicker, fetchCallback) {
     var self = this;
     // TODO: Remove selector?
@@ -78,7 +78,7 @@ var ViewModel = function(url, selector, folderPicker, fetchCallback) {
                     if (self.userIsOwner()) {
                         self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. The Dropbox addon credentials may no longer be valid.' +
-                        ' Try deauthorizing and reauthorizing Dropbox on your <a href="' +
+                        ' Please delete your access token and create a new one on your <a href="' +
                             self.urls().settings + '">account settings page</a>.',
                         'text-warning');
                     } else {

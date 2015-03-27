@@ -1,14 +1,16 @@
 /**
  * Controller for the Add Contributor modal.
  */
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-var Paginator = require('js/paginator');
-
 require('bootstrap-editable');
-var oop = require('js/oop');
+
+var oop = require('./oop');
+var $osf = require('./osfHelpers');
+var Paginator = require('./paginator');
 
 var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show
@@ -27,7 +29,7 @@ function Contributor(data) {
 
 var AddContributorViewModel = oop.extend(Paginator, {
     constructor: function(title, parentId, parentTitle) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         var self = this;
 
         self.permissions = ['read', 'write', 'admin'];
@@ -61,11 +63,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 self.nodes(result.children);
             }
         );
-        self.foundResults = ko.computed(function() {
+        self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
 
-        self.noResults = ko.computed(function() {
+        self.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
         });
 
@@ -103,9 +105,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
      */
     startSearch: function() {
         this.currentPage(0);
-        this.search();
+        this.fetchResults();
     },
-    search: function() {
+    fetchResults: function() {
         var self = this;
         self.notification(false);
         if (self.query()) {

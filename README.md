@@ -341,6 +341,16 @@ Many addons require application credentials (typically an app key and secret) to
 
 For local development, the COS provides test app credentials for a number of services. A listing of these can be found here: https://osf.io/m2hig/wiki/home/ .
 
+## Livereload support
+
+You can run the app server in livereload mode with:
+
+```bash
+$ invoke server --live
+```
+
+This will make your browser automatically refresh whenever a code change is made.
+
 ## Summary
 
 If you have all the above services installed, you can start *everything* up with this sequence
