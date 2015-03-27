@@ -45,6 +45,7 @@ var entry = {
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
+    'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -97,6 +98,7 @@ var resolve = {
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
+        'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
