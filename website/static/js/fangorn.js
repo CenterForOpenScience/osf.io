@@ -828,7 +828,12 @@ function _fangornResolveRows(item) {
         item.css = 'fangorn-selected';
     }
     // define the toolbar icons for this item
-    _fangornDefineToolbar.call(this, item);
+    configOption = resolveconfigOption.call(this, item, 'defineToolbar', [item]);
+    if (!configOption){
+        _fangornDefineToolbar.call(this, item);
+    }
+
+
     // Column that does the toggles : 
     var toggleTemplate = {
         data : null,
