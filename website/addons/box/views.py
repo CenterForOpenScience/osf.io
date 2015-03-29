@@ -31,7 +31,7 @@ def box_get_user_settings(auth):
 def box_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     return {
-        'result': BoxSerializer.serialize_settings(node_addon, auth.user),
+        'result': BoxSerializer().serialize_settings(node_addon, auth.user),
     }
 
 
@@ -68,12 +68,11 @@ def box_set_config(node_addon, user_addon, auth, **kwargs):
 def box_add_user_auth(auth, node_addon, user_addon, **kwargs):
     """Import box credentials from the currently logged-in user to a node.
     """
-    serializer = BoxSerializer
     node_addon.set_user_auth(user_addon)
     node_addon.save()
 
     return {
-        'result': serializer.serialize_settings(node_addon, auth.user),
+        'result': BoxSerializer().serialize_settings(node_addon, auth.user),
         'message': 'Successfully imported access token from profile.',
     }
 

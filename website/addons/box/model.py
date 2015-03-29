@@ -48,7 +48,7 @@ class Box(ExternalProvider):
 
     auth_url_base = settings.BOX_OAUTH_AUTH_ENDPOINT
     callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
-    default_scopes = ['all']
+    default_scopes = ['root_readwrite']
 
     def get_auth_flow(self, csrf_token):
         url = furl.furl(settings.BOX_OAUTH_AUTH_ENDPOINT)
@@ -76,7 +76,7 @@ class Box(ExternalProvider):
         # Default to empty string over None because of below assertion
         state = request.args.get('state', '')
 
-        if state != session.data.pop('box_oauth_state', None):
+        if state != session.data['oauth_states']['box']['state']:
             raise HTTPError(http.FORBIDDEN)
 
         data = {
@@ -122,10 +122,11 @@ class Box(ExternalProvider):
         return redirect(self.get_auth_flow(csrf_token))
 
     @must_be_logged_in
-    def box_oauth_finish(self, auth, **kwargs):
+    def handle_callback(self, *args, **kwargs):
         """View called when the Oauth flow is completed. Adds a new BoxUserSettings
         record to the user and saves the user's access token and account info.
         """
+        auth = kwargs.get('auth')
         user = auth.user
         node = Node.load(session.data.pop('box_auth_nid', None))
 
@@ -150,35 +151,44 @@ class Box(ExternalProvider):
         ))
 
         about = client.get_user_info()
-        oauth_settings = BoxOAuthSettings.load(about['id'])
+        #oauth_settings = BoxOAuthSettings.load(about['id'])
+#
+        #if not oauth_settings:
+        #    oauth_settings = BoxOAuthSettings(user_id=about['id'], username=about['name'])
+        #    oauth_settings.save()
+#
+        #oauth_settings.refresh_token = result['refresh_token']
+        #oauth_settings.access_token = result['access_token']
+        #oauth_settings.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
 
-        if not oauth_settings:
-            oauth_settings = BoxOAuthSettings(user_id=about['id'], username=about['name'])
-            oauth_settings.save()
+        vals = {}
 
-        oauth_settings.refresh_token = result['refresh_token']
-        oauth_settings.access_token = result['access_token']
-        oauth_settings.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
+        vals['provider_id'] = about['id']
+        vals['oauth_key'] = result['access_token']
+        vals['refresh_token'] = result['refresh_token']
+        vals['expires_at'] = datetime.utcfromtimestamp(time.time() + 3600)
 
         # Make sure user has box enabled
         user.add_addon('box')
         user.save()
 
         user_settings = user.get_addon('box')
-        user_settings.oauth_settings = oauth_settings
+        #user_settings.oauth_settings = oauth_settings
+#
+        #user_settings.save()
+#
+        #flash('Successfully authorized Box', 'success')
+#
+        #if node:
+        #    # Automatically use newly-created auth
+        #    if node.has_addon('box'):
+        #        node_addon = node.get_addon('box')
+        #        node_addon.set_user_auth(user_settings)
+        #        node_addon.save()
+        #    redirect(node.web_url_for('node_setting'))
+        #redirect(web_url_for('user_addons'))
 
-        user_settings.save()
-
-        flash('Successfully authorized Box', 'success')
-
-        if node:
-            # Automatically use newly-created auth
-            if node.has_addon('box'):
-                node_addon = node.get_addon('box')
-                node_addon.set_user_auth(user_settings)
-                node_addon.save()
-            return redirect(node.web_url_for('node_setting'))
-        return redirect(web_url_for('user_addons'))
+        return vals
 
     @must_be_logged_in
     @must_have_addon('box', 'user')

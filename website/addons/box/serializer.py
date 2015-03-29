@@ -28,7 +28,7 @@ class BoxSerializer(OAuthAddonSerializer):
 
     @property
     def user_is_owner(self):
-        if self.user_settings is None:
+        if self.user_settings is None or self.node_settings is None:
             return False
 
         user_accounts = self.user_settings.external_accounts
@@ -45,7 +45,7 @@ class BoxSerializer(OAuthAddonSerializer):
 
         return {
             'auth': api_url_for('oauth_connect',
-                                service_name=self.node_settings.provider_name),
+                                service_name='box'),
             'settings': web_url_for('user_addons'),
             'importAuth': node.api_url_for('box_add_user_auth'),
             'files': node.web_url_for('collect_file_trees'),
@@ -80,6 +80,7 @@ class BoxSerializer(OAuthAddonSerializer):
         """
         valid_credentials = True
         user_settings = node_settings.user_settings
+        self.node_settings = node_settings
         current_user_settings = current_user.get_addon('box')
         user_is_owner = user_settings is not None and user_settings.owner == current_user
 
@@ -93,7 +94,7 @@ class BoxSerializer(OAuthAddonSerializer):
         result = {
             'userIsOwner': user_is_owner,
             'nodeHasAuth': node_settings.has_auth,
-            'urls': self.serialize_urls(node_settings),
+            'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
             'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
         }
