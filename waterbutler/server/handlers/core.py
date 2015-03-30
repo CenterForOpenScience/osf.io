@@ -126,3 +126,45 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
             headers={'Content-Type': 'application/json'},
         )
         return resp
+
+
+class BaseCrossProviderHandler(BaseHandler):
+    JSON_REQUIRED = False
+
+    @asyncio.coroutine
+    def prepare(self):
+        yield from super().prepare()
+
+        try:
+            self.json['action'] = self.ACTION_MAP[self.request.method]
+        except KeyError:
+            return
+
+        if self.json['path'].endswith('/'):
+            self.json['path'] += os.path.split(self.arguments['path'])[1]
+        self.dest_provider = yield from self.make_dest_provider(self.json)
+
+    @asyncio.coroutine
+    def make_dest_provider(self, data):
+        payload = yield from get_identity(settings.IDENTITY_METHOD, **data)
+        return utils.make_provider(
+            data['provider'],
+            payload['auth'],
+            payload['credentials'],
+            payload['settings'],
+        )
+
+    @property
+    def json(self):
+        try:
+            return self._json
+        except AttributeError:
+            pass
+        try:
+            self._json = json.loads(self.request.body.decode('utf-8'))
+        except ValueError:
+            if self.JSON_REQUIRED:
+                raise Exception  # TODO
+            self._json = None
+
+        return self._json
