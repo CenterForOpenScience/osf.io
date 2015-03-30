@@ -847,8 +847,7 @@ def _get_user_activity(node, auth, rescale_ratio):
 
 @must_be_valid_project
 def get_recent_logs(node, **kwargs):
-    node_to_use = node
-    logs = list(reversed(node_to_use.logs._to_primary_keys()))[:3]
+    logs = list(reversed(node.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
 
