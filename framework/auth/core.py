@@ -1003,7 +1003,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = self.mailing_lists[key] or value
+            self.mailing_lists[key] = self.mailing_lists.get(key, value)
         # - clear subscriptions for merged user
         user.mailing_lists = {}
 
