@@ -19,6 +19,11 @@ function FileViewTreebeard(data) {
     showFilter: false,
     title: undefined,
     hideColumnTitles: true,
+    onload: function(tree) {
+        var tb = this;
+        Fangorn.DefaultOptions.onload.call(tb, tree);
+        $('.osf-panel-header.osf-panel-header-flex').show();
+    },
     ondataload: function () {
         var tb = this;
         tb.options.folderIndex = 0;

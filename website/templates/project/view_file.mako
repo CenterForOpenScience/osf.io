@@ -19,14 +19,17 @@
 
     <div id="file-navigation" class="panel-toggle col-md-3">
         <div class="osf-panel osf-panel-flex hidden-xs">
-            <div class="osf-panel-header osf-panel-header-flex">
+            <div class="osf-panel-header osf-panel-header-flex" style="display:none">
                 <div id="files-search"></div>
                 <div id="toggle-icon" class="pull-right">
                     <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div>
                 </div>
             </div>
+
             <div class="osf-panel-body osf-panel-body-flex file-page">
-                <div id="grid"></div>
+                <div id="grid">
+                    <div class="fangorn-loading"> <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+                </div>
             </div>
         </div>
 
