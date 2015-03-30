@@ -48,7 +48,7 @@ function _githubDefineToolbar (item){
                 item.notify.update('Delete failed.', 'danger', undefined, 3000);
             });
         }
-        if (item.data.permissions.edit) {
+        if (item.data.permissions && item.data.permissions.edit) {
             var mithrilContent = m('div', [
                     m('h3', 'Delete "' + item.data.name+ '"?'),
                     m('p', 'This action is irreversible.')
@@ -72,7 +72,7 @@ function _githubDefineToolbar (item){
     // Download Zip File
     if (item.kind === 'folder') {
         // If File and FileRead are not defined dropzone is not supported and neither is uploads
-        if (window.File && window.FileReader && item.data.permissions.edit) {
+        if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'uploadFiles', template : function(){
                 return m('.fangorn-toolbar-icon.text-success', {
                         onclick : function(event) { _uploadEvent.call(self, event, item); } 
@@ -115,7 +115,7 @@ function _githubDefineToolbar (item){
                 }}
             );
 
-        if (item.data.permissions.edit) {
+        if (item.data.permissions && item.data.permissions.edit) {
             buttons.push(
                 { name : 'deleteFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-danger', {
@@ -191,7 +191,19 @@ function _fangornGithubTitle(item, col)  {
 
 function _fangornColumns (item) {
     var columns = [];
-    columns.push({
+    columns.push(
+    {
+        data : null,
+        folderIcons: false,
+        filter : false,
+        custom : function(){
+            if(this.isMultiselected(item.id)) {
+                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
+            }
+            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
+        }
+    },
+    {
         data : 'name',
         folderIcons : true,
         filter: true,
@@ -200,11 +212,6 @@ function _fangornColumns (item) {
 
     if(this.options.placement === 'project-files') {
         columns.push(
-            {
-            css : 'action-col',
-            filter : false,
-            custom : _fangornActionColumn
-        },
         {
             data  : 'downloads',
             filter : false,
