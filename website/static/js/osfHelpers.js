@@ -422,5 +422,5 @@ module.exports = window.$.osf = {
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
-    tableResize: tableResize,
+    tableResize: tableResize
 };

@@ -1487,13 +1487,13 @@ dl.activity-log dd {
     /*margin-bottom: 625px;*/
 /*}*/
 thead.file-version-thread{
-    display: block;
+    display: inline-block;
 }
 
 tbody.file-version{
     max-height: 580px;
     overflow-y: auto;
-    display: block;
+    display: inline-block;
     /*position: absolute;*/
 }
 /** The project and wiki name editable inputs should be larger
