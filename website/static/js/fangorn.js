@@ -20,6 +20,21 @@ var tbOptions;
 
 var tempCounter = 1;
 
+var STATE_MAP = {
+    upload: {
+        display: 'Upload pending...'
+    },
+    copy: {
+        display: 'Copying...'
+    },
+    delete: {
+        display: 'Deleting...'
+    },
+    move: {
+        display: 'Moving...'
+    }
+};
+
 var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
     'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
     'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
@@ -232,6 +247,19 @@ function moveItem(to, from) {
 }
 
 function copyItem(to, from) {
+}
+
+/**
+ * Find out what the upload URL is for each item
+ * Because we use add ons each item will have something different. This needs to be in the json data.
+ * @param {Object} item A Treebeard _item object. Node information is inside item.data
+ * @this Treebeard.controller
+ * @returns {String} Returns the url string from data or resolved through add on settings.
+ * @private
+ */
+function _fangornResolveUploadUrl(item, file) {
+    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]); // jshint ignore:line
+    return configOption || waterbutler.buildTreeBeardUpload(item, file);
 }
 
 /**
@@ -775,8 +803,7 @@ function _fangornResolveRows(item) {
         }
         ];
     }
-
-    if(item.data.status === 'copying'){
+    if(item.data.status) {
         return [{
             data : 'name',
             folderIcons : true,
@@ -785,7 +812,7 @@ function _fangornResolveRows(item) {
         },
         {
             data : '',
-            custom : function(){ return m('span.text-muted', 'Copy pending...'); }
+            custom : function(){ return m('span.text-muted', STATE_MAP[item.data.status].display); }
         },
         {
             data : '',
