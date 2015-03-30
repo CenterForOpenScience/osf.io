@@ -36,7 +36,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         try:
             return (
                 type(self) == type(other) and
-                self.identity == other.identity
+                self.credentials == other.credentials
             )
         except AttributeError:
             return False
