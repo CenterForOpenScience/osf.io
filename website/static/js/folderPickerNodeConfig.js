@@ -9,6 +9,8 @@ require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var m = require('mithril');
+
 
 var FolderPicker = require('js/folderpicker');
 var ZeroClipboard = require('zeroclipboard');
@@ -432,7 +434,26 @@ var FolderPickerViewModel = oop.defclass({
                 self.loading(false);
                 // Set flag to prevent repeated requests
                 self.loadedFolders(true);
+            },
+            resolveRows: function(item) {
+                item.css = '';
+                return [
+                {
+                    data : 'name',  // Data field name
+                    folderIcons : true,
+                    filter : false,
+                    custom : function(item, col) {
+                        return m('span', decodeURIComponent(item.data.name));
+                    }
+                },
+                {
+                    css : 'p-l-xs',
+                    sortInclude : false,
+                    custom : FolderPicker.selectView
+                }
+            ];
             }
+
         }, self.treebeardOptions);
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested

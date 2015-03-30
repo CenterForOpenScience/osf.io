@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
+import pymongo
 from website import settings
 from website.addons.citations.utils import serialize_account, serialize_folder
 from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile
@@ -13,6 +14,16 @@ from .client import GoogleAuthClient, GoogleDriveClient
 from . import settings as drive_settings
 
 class GoogleDriveGuidFile(GuidFile):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
+
     path = fields.StringField(index=True)
 
     @property
@@ -53,7 +64,11 @@ class GoogleDriveGuidFile(GuidFile):
 
     @property
     def folder(self):
-        folder = self.node.get_addon('googledrive').folder_path
+        addon = self.node.get_addon('googledrive')
+        if not addon:
+            return ''  # Must return a str value this will error out properly later
+
+        folder = addon.folder_path
         if folder == '/':
             return ''
         return '/' + folder
@@ -173,18 +188,18 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         self.drive_folder_id= folder['id']
         self.folder_path = folder['path']
 
-
-    # using citations/utils for now. Should be generalized to addons/utils
-    # TODO: Why am I used?
-    @property
-    def root_folder(self):
-        root = serialize_folder(
-            'All Documents',
-            id='root',
-            parent_id='__'
-        )
-        root['kind'] = 'folder'
-        return root
+    #
+    # # using citations/utils for now. Should be generalized to addons/utils
+    # # TODO: Why am I used?
+    # @property
+    # def root_folder(self):
+    #     root = serialize_folder(
+    #         'All Documents',
+    #         id='root',
+    #         parent_id='__'
+    #     )
+    #     root['kind'] = 'folder'
+    #     return root
 
     @property
     def provider_name(self):
