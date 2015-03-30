@@ -3,6 +3,8 @@
 from framework.routing import Rule, json_renderer
 
 from website.addons.osfstorage import views
+from website.project import views as project_views
+
 
 
 api_routes = {
@@ -112,6 +114,17 @@ api_routes = {
             views.osfstorage_copy_hook,
             json_renderer,
         ),
+
+         Rule([
+            '/file/addfiletag/<tag>/',
+            '/file/addfiletag/<tag>/',
+        ], 'post', project_views.tag.file_addtag, json_renderer),
+         Rule([
+            '/project/<pid>/removefiletag/<tag>/',
+            '/project/<pid>/node/<nid>/removefiletag/<tag>/',
+        ], 'post', project_views.tag.file_removetag, json_renderer),
+
+
     ],
 
 }

@@ -9,8 +9,8 @@ require('jquery-tagsinput');
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
-            console.log(url);
+            var url = 'file/addfiletag/' + tag + '/';
+            console.log(url)
             var request = $.ajax({
                 url: url,
                 type: 'POST',
