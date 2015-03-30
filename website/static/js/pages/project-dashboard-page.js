@@ -114,6 +114,7 @@ $(document).ready(function() {
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
+            console.log("HI MEGAN")
             var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
             var request = $.ajax({
                 url: url,
@@ -176,4 +177,6 @@ $(document).ready(function() {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
+
+    console.log("HELLO HIMICA")
 });

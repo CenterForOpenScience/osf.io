@@ -149,6 +149,9 @@ class BaseFileObject(StoredObject):
     ]
 
     path = fields.StringField(required=True, index=True)
+    tags = fields.ForeignField('tag', list=True, backref='tagged')
+
+
     node_settings = fields.ForeignField(
         'OsfStorageNodeSettings',
         required=True,
@@ -235,6 +238,44 @@ class BaseFileObject(StoredObject):
             self.path,
             self.node_settings._id,
         )
+
+    def remove_tag(self, tag, auth, save=True):
+       if tag in self.tags2:
+            self.tags2.remove(tag)
+            self.add_log(
+                action=NodeLog.TAG_REMOVED,
+                params={
+                    'file': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
+
+    def add_tag(self, tag, auth, save=True):
+        if tag not in self.tags2:
+            new_tag = Tag.load(tag)
+            if not new_tag:
+                new_tag = Tag(_id=tag)
+            new_tag.save()
+            self.tags2.append(new_tag)
+            self.add_log(
+                action=NodeLog.TAG_ADDED,
+                params={
+                    'file': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
+
+
 
 
 class OsfStorageFileTree(BaseFileObject):
@@ -453,40 +494,6 @@ class OsfStorageGuidFile(GuidFile):
         })
         return url.url
 
-    def remove_tag(self, tag, auth, save=True):
-       if tag in self.tags2:
-            self.tags2.remove(tag)
-            self.add_log(
-                action=NodeLog.TAG_REMOVED,
-                params={
-                    'file': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
 
-    def add_tag(self, tag, auth, save=True):
-        if tag not in self.tags2:
-            new_tag = Tag.load(tag)
-            if not new_tag:
-                new_tag = Tag(_id=tag)
-            new_tag.save()
-            self.tags2.append(new_tag)
-            self.add_log(
-                action=NodeLog.TAG_ADDED,
-                params={
-                    'file': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
 
 

@@ -12,6 +12,8 @@ new FileRevisions(
     window.contextVars.currentUser.canEdit
 );
 
+var ctx = window.contextVars;
+var nodeApiUrl = ctx.node.urls.api;
 
 
 var $ = require('jquery');
@@ -21,12 +23,13 @@ require('jquery-tagsinput');
 
     // Tag input
     $('#node-tags').tagsInput({
+
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
-            console.log(url);
+            var url = 'file/addfiletag/' + tag + '/';
+            console.log(url)
             var request = $.ajax({
                 url: url,
                 type: 'POST',
