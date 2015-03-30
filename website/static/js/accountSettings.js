@@ -1,9 +1,9 @@
 'use strict';
 
 var $ = require('jquery');
-var $osf = require('js/osfHelpers.js');
+var $osf = require('js/osfHelpers');
 var ko = require('knockout');
-var oop = require('js/oop.js');
+var oop = require('js/oop');
 var Raven = require('raven-js');
 
 require('knockout.punches');
@@ -83,7 +83,7 @@ var UserProfile = oop.defclass({
         this.emailInput = ko.observable();
     },
     init: function () {
-        this.fetchData(this.unserialize.bind(this));
+        this.fetchData().done(this.unserialize.bind(this));
     },
     serialize: function () {
         var emails = ko.utils.arrayMap(this.emails(), function(each) {
@@ -104,10 +104,9 @@ var UserProfile = oop.defclass({
             self.emails.push(new UserEmail(each));
         });
     },
-    fetchData: function (callback) {
+    fetchData: function () {
         var url = '/api/v1/profile/';
         var request = $.get(url);
-        request.done(callback);
         request.fail(function(xhr, status, error) {
             $osf.growl('Error', 'Could not fetch user profile.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
@@ -116,14 +115,12 @@ var UserProfile = oop.defclass({
                 error: error
             });
         });
+        return request;
     },
-    pushUpdates: function (callback) {
+    pushUpdates: function () {
         var request = $osf.putJSON(this.urls.update, this.serialize());
         request.done(function(data) {
             this.unserialize(data);
-            if (typeof(callback) !== 'undefined') {
-                callback();
-            }
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error', 'User profile not updated.', 'danger');
@@ -133,24 +130,23 @@ var UserProfile = oop.defclass({
                 error: error
             });
         });
-
         return request;
 
     },
     addEmail: function () {
         var email = new UserEmail({address: this.emailInput()});
         this.emails.push(email);
-        this.pushUpdates(function () {
+        this.pushUpdates().done(function () {
             var emails = this.emails();
             for (var i=0; i<emails.length; i++) {
                 if (emails[i].address() === email.address()) {
                     this.emailInput('');
+                    $osf.growl('Email Added', '<em>' + email.address()  + '<em>', 'success');
                     return;
                 }
             }
             $osf.growl('Error', 'Email validation failed', 'danger');
         }.bind(this));
-        foo = this;
     },
     removeEmail: function (email) {
         this.emails.remove(email);

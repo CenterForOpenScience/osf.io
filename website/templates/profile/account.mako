@@ -83,15 +83,15 @@
                     <div class="panel-body">
                         <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
                             <div class="form-group">
-                                <label for="old-password">Old password</label>
+                                <label for="old_password">Old password</label>
                                 <input type="password" class="form-control" name="old_password">
                             </div>
                             <div class="form-group">
-                                <label for="password">New password</label>
+                                <label for="new_password">New password</label>
                                 <input type="password" class="form-control" name="new_password">
                             </div>
                             <div class="form-group">
-                                <label for="password2">Confirm new password</label>
+                                <label for="confirm_password">Confirm new password</label>
                                 <input type="password" class="form-control" name="confirm_password">
                             </div>
                             <button type="submit" class="btn btn-default">Update password</button>
