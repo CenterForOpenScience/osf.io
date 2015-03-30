@@ -94,6 +94,12 @@ def validate_personal_site(value):
 def validate_social(value):
     validate_personal_site(value.get('personal'))
 
+
+def validate_email(item):
+    if item and not re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE):
+        raise ValidationError("Invalid Email")
+
+
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -586,9 +592,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """Add an email verification token for a given email."""
         # TODO: If the unconfirmed email is already on the User, refresh the token
 
-        # verify email
-        if not re.match(r'^.+@[^.].*\.[a-z]{2,10}$', email, re.IGNORECASE):
-            raise ValueError("Invalid Email")
+        validate_email(email)
 
         token = generate_confirm_token()
 
