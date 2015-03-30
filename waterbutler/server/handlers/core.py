@@ -104,7 +104,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
 
     def options(self):
         self.set_status(204)
-        self.set_header('Access-Control-Allow-Methods', 'PUT, DELETE'),
+        self.set_header('Access-Control-Allow-Methods', 'PUT, POST, DELETE'),
 
     @utils.async_retry(retries=5, backoff=5)
     def _send_hook(self, action, metadata):
