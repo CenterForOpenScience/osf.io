@@ -140,13 +140,12 @@ def validate_comment_reports(value, *args, **kwargs):
 
 class Comment(GuidStoredObject):
 
-    redirect_mode = 'proxy'
-
     _id = fields.StringField(primary=True)
 
     user = fields.ForeignField('user', required=True, backref='commented')
     node = fields.ForeignField('node', required=True, backref='comment_owner')
     target = fields.AbstractForeignField(required=True, backref='commented')
+    # The file/wiki/overview's page that the comment is for
     root_target = fields.AbstractForeignField(backref='comment_target')
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -154,7 +153,9 @@ class Comment(GuidStoredObject):
     modified = fields.BooleanField()
 
     is_deleted = fields.BooleanField(default=False)
+    # Whether the original file/wiki is deleted
     is_hidden = fields.BooleanField(default=False)
+    # The type root_target: node/files/wiki
     page = fields.StringField()
     content = fields.StringField()
 
@@ -222,8 +223,9 @@ class Comment(GuidStoredObject):
             self.save()
 
     def delete(self, auth, save=False):
+        FILES = 'files'
         self.is_deleted = True
-        if self.page == 'files':
+        if self.page == FILES:
             self.node.commented_files[self.root_target._id] -= 1
             if self.node.commented_files[self.root_target._id] == 0:
                 del self.node.commented_files[self.root_target._id]
@@ -242,8 +244,9 @@ class Comment(GuidStoredObject):
             self.save()
 
     def undelete(self, auth, save=False):
+        FILES = 'files'
         self.is_deleted = False
-        if self.page == 'files':
+        if self.page == FILES:
             file_key = self.root_target._id
             self.node.commented_files[file_key] = \
                 self.node.commented_files.get(file_key, 0) + 1
@@ -655,7 +658,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
-    # Files that contains comments
+    # Files that contains comments and the number of comments each contains
+    # {<File1.id>: int, <File2.id>: int}
     commented_files = fields.DictionaryField(default=dict)
 
     _meta = {

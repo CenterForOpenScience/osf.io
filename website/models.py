@@ -9,7 +9,7 @@ from framework.sessions.model import Session
 from website.project.model import (
     ApiKey, Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
-    Comment, PrivateLink, MetaData
+    Comment, PrivateLink, MetaData,
 )
 from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord

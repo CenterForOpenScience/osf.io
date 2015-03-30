@@ -138,8 +138,8 @@ ${parent.javascript_bottom()}
             window.contextVars.comment = ${json.dumps(comment)};
         % endif
 
-        window.contextVars.comment_target = '${comment_target}';
-        window.contextVars.comment_target_id = '${comment_target_id}';
+        window.contextVars.commentTarget = '${comment_target}';
+        window.contextVars.commentTargetId = '${comment_target_id}';
 </script>
 
 <script src=${"/static/public/js/discussions-page.js" | webpack_asset}></script>

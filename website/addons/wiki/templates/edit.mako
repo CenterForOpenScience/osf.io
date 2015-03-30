@@ -7,7 +7,6 @@
 % if user['can_comment'] or node['has_comments']:
     % if page:
         <%include file="include/comment_pane_template.mako"/>
-        <%include file="include/comment_template.mako"/>
     %endif
 % endif
 
@@ -340,7 +339,7 @@ ${parent.javascript_bottom()}
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
-        name: "${wiki_name}",
+        name: ${json.dumps(wiki_name) | n},
         canEdit: canEdit,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},

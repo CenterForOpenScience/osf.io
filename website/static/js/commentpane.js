@@ -61,7 +61,14 @@
             } else {
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
-                options.onOpen.call(self, self.page, self.host_name);
+                var open = options.onOpen.call(self, self.page, self.host_name);
+                open.fail(function(xhr, textStatus, errorThrown) {
+                    Raven.captureMessage('Could not update comment timestamp', {
+                        url: window.contextVars.node.urls.api + 'comments/timestamps/',
+                        textStatus: textStatus,
+                        errorThrown: errorThrown
+                    });
+                });
             }
             $handle.tooltip('hide');
             $toggleElm.animate(

@@ -23,10 +23,11 @@ var nodeUrl = '/' + nodeId + '/';
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
-var MAXLEVEL = new Array();
-MAXLEVEL['page'] = 10;
-MAXLEVEL['pane'] = 5;
-MAXLEVEL['widget'] = 5;
+var MAXLEVEL = {
+    'page': 10,
+    'pane': 5,
+    'widget': 5
+}
 
 var TOGGLELEVEL = 2
 
@@ -98,7 +99,7 @@ var BaseComment = function() {
 
     self.level = 0;
 
-    self.displayCount = ko.computed(function() {
+    self.displayCount = ko.pureComputed(function() {
         if (self.unreadComments() !== 0) {
             return self.unreadComments().toString();
         } else {
@@ -111,10 +112,10 @@ var BaseComment = function() {
         self.unreadComments(0);
     };
 
-    self.replyNotEmpty = ko.computed(function() {
+    self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
-    self.saveButtonText = ko.computed(function() {
+    self.saveButtonText = ko.pureComputed(function() {
         return self.submittingReply() ? 'Saving' : 'Comment';
     });
 
@@ -175,7 +176,7 @@ BaseComment.prototype.fetch = function(isCommentList, thread) {
             }
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
-            self.checkFileExists();
+            self.configureCommentVisibility();
             self._loaded = true;
         }
     );
@@ -188,70 +189,78 @@ BaseComment.prototype.getThread = function(thread_id) {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    $.getJSON(
-        nodeApiUrl + 'comment/' + thread_id + '/',
-        {},
-        function(response) {
-            self.comments([]);
-            self.comments.push(new CommentModel(response.comment, self, self.$root));
-            deferred.resolve(self.comments());
-            self.checkFileExists();
-            self._loaded = true;
-        }
-    );
-    return deferred;
+    var request = $.getJSON(nodeApiUrl + 'comment/' + thread_id + '/');
+    request.done(function(response){
+        self.comments([new CommentModel(response.comment, self, self.$root)]);
+        deferred.resolve(self.comments());
+        self.configureCommentVisibility();
+        self._loaded = true;
+    })
+    return deferred.promise();
 }
 
-BaseComment.prototype.checkFileExists = function() {
+BaseComment.prototype.configureCommentVisibility = function() {
     var self = this;
-    var url;
+    var FILES = 'files';
+    var PANE = 'pane';
     for (var c in self.comments()) {
         var comment = self.comments()[c];
-        if (self.level > 0 && self.loading() == false) {
+        if (self.level > 0 && self.loading() === false) {
             comment.isHidden(self.isHidden());
-            if (!self.isHidden() && self.page() == 'files') {
+            if (!self.isHidden() && self.page() === FILES) {
                 comment.title(self.title());
             }
             comment.loading(false);
             continue;
         }
-        if (comment.page() !== 'files' || self.mode == 'pane') {
+        if (comment.page() !== FILES || self.mode === PANE) {
             comment.loading(false);
             continue;
         }
-        (function(comment) {
-            url  = waterbutler.buildMetadataUrl(comment.title(), comment.provider(), nodeId, {}); // waterbutler url
-            $.ajax({
-                method: 'GET',
-                url: url
-            }).done(function(response){
-                // figshare filename is not in path
-                if (comment.provider() == 'figshare') {
-                    comment.title(response['data']['name']);
-                }
-                comment.loading(false);
-            }).fail(function(xhl){
-                comment.isHidden(true);
-                $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(ls) {
-                    var commenter_id = comment.author.id();
-                    var ind;
-                    for (var i in ls()) {
-                        if (ls()[i].id == commenter_id) {
-                            var commenter = ls()[i];
-                            ind = i;
-                            commenter.numOfComments -= 1;
-                            if (commenter.numOfComments == 0) {
-                                ls.splice(ind, 1);
-                            }
-                            break;
-                        }
-                    }
-                });
-                comment.loading(false);
+        var visible = comment.checkCommentExists();
+        if (visible) {
+            if (comment.provider() === 'figshare') {
+                comment.title(response.data.name);
+            }
+        } else {
+            comment.isHidden(true);
+            $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(discussions) {
+                comment.decrementUserFromDiscussion(discussions);
             });
-        })(comment);
+        }
+        comment.loading(false);
     }
-}
+};
+
+BaseComment.prototype.checkCommentExists = function() {
+    var self = this;
+    var url  = waterbutler.buildMetadataUrl(self.title(), self.provider(), nodeId, {}); // waterbutler url
+    $.ajax({
+        method: 'GET',
+        url: url
+    }).done(function(response){
+        return true;
+    }).fail(function(xhl){
+        return false;
+    });
+};
+
+BaseComment.prototype.decrementUserFromDiscussion = function(discussions) {
+    var self = this;
+    var commenterId = self.author.id();
+    var ind;
+    for (var i in discussions()) {
+        if (discussions()[i].id === commenterId) {
+            var commenter = discussions()[i];
+            ind = i;
+            commenter.numOfComments -= 1;
+            if (commenter.numOfComments === 0) {
+                arr.splice(ind, 1);
+            }
+            break;
+        }
+    }
+};
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
@@ -285,7 +294,7 @@ BaseComment.prototype.submitReply = function() {
         var hasCommented = false;
         var discussion = self.$root.discussion();
         for (var i in discussion) {
-            if (discussion[i].id == response.comment.id) {
+            if (discussion[i].id === response.comment.id) {
                 hasCommented = true;
                 break;
             }
@@ -327,10 +336,10 @@ var CommentModel = function(data, $parent, $root) {
     self.dateCreated(data.dateCreated);
     self.dateModified(data.dateModified);
 
-    self.prettyDateCreated = ko.computed(function() {
+    self.prettyDateCreated = ko.pureComputed(function() {
         return relativeDate(self.dateCreated());
     });
-    self.prettyDateModified = ko.computed(function() {
+    self.prettyDateModified = ko.pureComputed(function() {
         return 'Modified ' + relativeDate(self.dateModified());
     });
 
@@ -360,35 +369,35 @@ var CommentModel = function(data, $parent, $root) {
         self.unreporting, self.undeleting
     );
 
-    self.isVisible = ko.computed(function() {
+    self.isVisible = ko.pureComputed(function() {
         return !self.isDeleted() && !self.isHidden() && !self.isAbuse();
     });
 
-    self.editNotEmpty = ko.computed(function() {
+    self.editNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.content());
     });
 
-    self.toggleIcon = ko.computed(function() {
-            return self.showChildren() ? 'fa fa-minus-square-o' : 'fa fa-plus-square-o';
+    self.toggleIcon = ko.pureComputed(function() {
+        return self.showChildren() ? 'fa fa-minus-square-o' : 'fa fa-plus-square-o';
     });
-    self.editHighlight = ko.computed(function() {
+    self.editHighlight = ko.pureComputed(function() {
         return self.canEdit() && self.hoverContent() && self.mode !== 'widget';
     });
-    self.canReport = ko.computed(function() {
+    self.canReport = ko.pureComputed(function() {
         return self.$root.canComment() && !self.canEdit();
     });
 
-    self.shouldShow = ko.computed(function() {
+    self.shouldShow = ko.pureComputed(function() {
         if (!self.isDeleted() && !self.isHidden()) {
             return true;
         }
         if (self.isHidden()) {
-            return self.level == 1;
+            return self.level === 1;
         }
         return self.hasChildren() || self.canEdit();
     });
 
-    self.shouldShowChildren = ko.computed(function() {
+    self.shouldShowChildren = ko.pureComputed(function() {
         if (self.isHidden()) {
             self.showChildren(false);
             return false;
@@ -396,12 +405,12 @@ var CommentModel = function(data, $parent, $root) {
         return self.level < self.MAXLEVEL;
     });
 
-    self.shouldContinueThread = ko.computed(function() {
+    self.shouldContinueThread = ko.pureComputed(function() {
         if (self.shouldShowChildren()) { return false;}
         return ((!self.isHidden()) && self.hasChildren());
     })
 
-    self.cleanTitle = ko.computed(function() {
+    self.cleanTitle = ko.pureComputed(function() {
         var cleaned;
         switch(self.page()) {
             case 'wiki':
@@ -423,9 +432,9 @@ var CommentModel = function(data, $parent, $root) {
         return cleaned;
     });
 
-    self.rootUrl = ko.computed(function(){
+    self.rootUrl = ko.pureComputed(function(){
         var url = 'discussions';
-        if (self.page() == 'node') {
+        if (self.page() === 'node') {
             url = url + '/overview';
         } else {
             url = url + '/' + self.page();
@@ -433,26 +442,26 @@ var CommentModel = function(data, $parent, $root) {
         return url;
     });
 
-    self.parentUrl = ko.computed(function(){
+    self.parentUrl = ko.pureComputed(function(){
         if (self.targetId() === self.rootId()) {
             return nodeUrl + self.rootUrl();
         }
         return '/' + self.targetId();
     });
 
-    self.targetUrl = ko.computed(function(){
-        if (self.page() == 'node') {
+    self.targetUrl = ko.pureComputed(function(){
+        if (self.page() === 'node') {
             return nodeUrl;
-        } else if (self.page() == 'wiki') {
+        } else if (self.page() === 'wiki') {
             return nodeUrl + self.page() + '/' + self.rootId();
-        } else if (self.page() == 'files') {
+        } else if (self.page() === 'files') {
             return '/' + self.rootId() + '/';
         }
     });
 
-    if ((self.mode == 'pane' &&
+    if ((self.mode === 'pane' &&
         self.level < TOGGLELEVEL) ||
-        (self.mode == 'page' &&
+        (self.mode === 'page' &&
         self.level < self.MAXLEVEL)) {
         self.toggle();
     }
@@ -614,7 +623,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, host_page, host_name, mode, canComment, hasChildren, thread) {
+var CommentListModel = function(userName, hostPage, hostName, mode, canComment, hasChildren, thread) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -643,35 +652,35 @@ var CommentListModel = function(userName, host_page, host_name, mode, canComment
         }
     })
 
-    self.page(host_page);
-    self.id = ko.observable(host_name);
-    self.rootId = ko.observable(host_name);
+    self.page(hostPage);
+    self.id = ko.observable(hostName);
+    self.rootId = ko.observable(hostName);
 
-    self.commented = ko.computed(function(){
+    self.commented = ko.pureComputed(function(){
         return self.comments().length > 0;
     });
-    self.rootUrl = ko.computed(function(){
-        if (self.comments().length == 0) {
+    self.rootUrl = ko.pureComputed(function(){
+        if (self.comments().length === 0) {
             return '';
         }
         return self.comments()[0].rootUrl();
     });
 
-    self.parentUrl = ko.computed(function() {
-        if (self.comments().length == 0) {
+    self.parentUrl = ko.pureComputed(function() {
+        if (self.comments().length === 0) {
             return '';
         }
         return self.comments()[0].parentUrl();
     });
 
-    self.recentComments = ko.computed(function(){
+    self.recentComments = ko.pureComputed(function(){
         var comments = [];
         for (var c in self.comments()) {
             var comment = self.comments()[c];
             if (comment.isVisible()) {
                 comments.push(comment);
             }
-            if (comments.length == 5) {
+            if (comments.length === 5) {
                 break;
             }
         }
@@ -706,27 +715,21 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-var onOpen = function(host_page, host_name) {
+var onOpen = function(hostPage, hostName) {
     var request = osfHelpers.putJSON(
         timestampUrl,
         {
-            page: host_page,
-            rootId: host_name
+            page: hostPage,
+            rootId: hostName
         }
     );
-    request.fail(function(xhr, textStatus, errorThrown) {
-        Raven.captureMessage('Could not update comment timestamp', {
-            url: timestampUrl,
-            textStatus: textStatus,
-            errorThrown: errorThrown
-        });
-    });
+    return request;
 };
 
-var init = function(selector, host_page, host_name, mode, userName, canComment, hasChildren, thread_id) {
+var init = function(selector, hostPage, hostName, mode, userName, canComment, hasChildren, thread_id) {
 
-    new CommentPane(selector, host_page, host_name, mode, {onOpen: onOpen});
-    var viewModel = new CommentListModel(userName, host_page, host_name, mode, canComment, hasChildren, thread_id);
+    new CommentPane(selector, hostPage, hostName, mode, {onOpen: onOpen});
+    var viewModel = new CommentListModel(userName, hostPage, hostName, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

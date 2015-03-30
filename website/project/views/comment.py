@@ -23,12 +23,11 @@ from website.project.views.node import _view_project, n_unread_comments
 
 
 @must_be_contributor_or_public
-def view_comments_project(**kwargs):
+def view_comments_project(auth, **kwargs):
     """
     Returns information needed to get comments for the total discussion page
     """
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
     ret = {
         'comment_target': 'total',
@@ -40,12 +39,11 @@ def view_comments_project(**kwargs):
 
 
 @must_be_contributor_or_public
-def view_comments_overview(**kwargs):
+def view_comments_overview(auth, **kwargs):
     """
     Returns information needed to get comments for the discussion overview page
     """
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
     ret = {
         'comment_target': 'node',
@@ -57,12 +55,11 @@ def view_comments_overview(**kwargs):
 
 
 @must_be_contributor_or_public
-def view_comments_files(**kwargs):
+def view_comments_files(auth, **kwargs):
     """
     Returns information needed to get comments for the discussion total files page
     """
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
     ret = {
         'comment_target': 'files',
@@ -74,12 +71,11 @@ def view_comments_files(**kwargs):
 
 
 @must_be_contributor_or_public
-def view_comments_wiki(**kwargs):
+def view_comments_wiki(auth, **kwargs):
     """
     Returns information needed to get comments for the discussion total wiki page
     """
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
     ret = {
         'comment_target': 'wiki',
@@ -91,12 +87,11 @@ def view_comments_wiki(**kwargs):
 
 
 @must_be_contributor_or_public
-def view_comments_single(**kwargs):
+def view_comments_single(auth, **kwargs):
     """
     Returns information needed to get a single comment and its replies
     """
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     comment = kwargs_to_comment(kwargs)
     serialized_comment = serialize_comment(comment, auth)
 
@@ -190,16 +185,15 @@ def serialize_discussion(node, user, num, anonymous=False):
 
 
 def serialize_comment(comment, auth, anonymous=False):
-    from website.addons.wiki.model import NodeWikiPage
     node = comment.node
-    if isinstance(comment.root_target, NodeWikiPage):
+    if hasattr(comment.root_target, 'page_name'):  # Wiki
         # In case the wiki name is changed
         root_id = comment.root_target.page_name
         title = comment.root_target.page_name
-    elif isinstance(comment.root_target, GuidFile):
+    elif isinstance(comment.root_target, GuidFile):  # File
         root_id = comment.root_target._id
         title = comment.root_target.waterbutler_path
-    else:
+    else:  # Node or comment
         root_id = comment.root_target._id
         title = ''
     return {
@@ -246,11 +240,12 @@ def add_comment(**kwargs):
 
     if not node.can_comment(auth):
         raise HTTPError(http.FORBIDDEN)
-    page = request.json.get('page')
-    guid = request.json.get('target')
+    comment_info = request.get_json()
+    page = comment_info.get('page')
+    guid = comment_info.get('target')
     target = resolve_target(node, page, guid)
 
-    content = request.json.get('content').strip()
+    content = comment_info.get('content').strip()
     content = sanitize(content)
     if not content:
         raise HTTPError(http.BAD_REQUEST)
@@ -376,7 +371,7 @@ def edit_comment(**kwargs):
 
     comment = kwargs_to_comment(kwargs, owner=True)
 
-    content = request.json.get('content').strip()
+    content = request.get_json.get('content').strip()
     content = sanitize(content)
     if not content:
         raise HTTPError(http.BAD_REQUEST)
@@ -414,13 +409,14 @@ def undelete_comment(**kwargs):
 
 def _update_comments_timestamp(auth, node, page='node', root_id=None):
     if node.is_contributor(auth.user) and page != 'total':
-        if not auth.user.comments_viewed_timestamp.get(node._id, None):
-            auth.user.comments_viewed_timestamp[node._id] = dict()
-        if auth.user.comments_viewed_timestamp.get(node._id, None) and \
-                isinstance(auth.user.comments_viewed_timestamp[node._id], datetime):
-            overview_timestamp = auth.user.comments_viewed_timestamp[node._id]
-            auth.user.comments_viewed_timestamp[node._id] = dict()
-            auth.user.comments_viewed_timestamp[node._id]['node'] = overview_timestamp
+        user_timestamp = auth.user.comments_viewed_timestamp
+        if not user_timestamp.get(node._id, None):
+            user_timestamp[node._id] = dict()
+        node_timestamp = user_timestamp.get(node._id, None)
+        if node_timestamp and isinstance(node_timestamp, datetime):
+            overview_timestamp = user_timestamp[node._id]
+            user_timestamp[node._id] = dict()
+            user_timestamp[node._id]['node'] = overview_timestamp
         timestamps = auth.user.comments_viewed_timestamp[node._id]
 
         # update node timestamp
@@ -465,8 +461,9 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
 @must_be_contributor_or_public
 def update_comments_timestamp(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    page = request.json.get('page')
-    root_id = request.json.get('rootId')
+    timestamp_info = request.get_json()
+    page = timestamp_info.get('page')
+    root_id = timestamp_info.get('rootId')
     return _update_comments_timestamp(auth, node, page, root_id)
 
 
@@ -478,8 +475,8 @@ def report_abuse(**kwargs):
 
     comment = kwargs_to_comment(kwargs)
 
-    category = request.json.get('category')
-    text = request.json.get('text', '')
+    category = request.get_json.get('category')
+    text = request.get_json.get('text', '')
     if not category:
         raise HTTPError(http.BAD_REQUEST)
 

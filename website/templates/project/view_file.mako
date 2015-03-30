@@ -4,7 +4,6 @@
 % if (user['can_comment'] or node['has_comments']):
     % if provider in ['github', 'figshare', 'dropbox', 's3', 'osfstorage']:
         <%include file="include/comment_pane_template.mako"/>
-        <%include file="include/comment_template.mako"/>
     % else:
         <div class="alert alert-warning" role="alert">
             Comments for this addon is not yet supported.

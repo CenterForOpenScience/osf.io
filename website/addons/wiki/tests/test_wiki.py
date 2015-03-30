@@ -1133,7 +1133,6 @@ class TestWikiComments(OsfTestCase):
                 'isPublic': 'public',
                 'page': 'wiki',
                 'target': 'snow',
-                'root_title': 'Snow',
             },
             auth=self.auth
         )
@@ -1210,7 +1209,7 @@ class TestWikiComments(OsfTestCase):
         assert_false(data[0]['isHidden'])
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
-    def test_remame_wiki_see_comments_exists(self, mock_sharejs):
+    def test_rename_wiki_see_comments_exists(self, mock_sharejs):
         assert_in('snow', self.project.wiki_pages_current)
 
         # create comment
