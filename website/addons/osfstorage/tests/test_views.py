@@ -227,7 +227,7 @@ class TestGetRevisions(StorageTestCase):
         self.record.versions = [factories.FileVersionFactory() for __ in range(15)]
         self.record.save()
 
-    def get_revisions(self, path=None, page=None, **kwargs):
+    def get_revisions(self, path=None, page=None, size=None, **kwargs):
 
         return self.app.get(
             self.project.api_url_for(
@@ -237,6 +237,7 @@ class TestGetRevisions(StorageTestCase):
                     {
                         'path': path or self.path,
                         'page': page,
+                        'size': size
                     }
                 )
             ),
@@ -244,8 +245,8 @@ class TestGetRevisions(StorageTestCase):
             **kwargs
         )
 
-    def test_get_revisions_page_specified(self):
-        res = self.get_revisions(path=self.path, page=1)
+    def test_get_revisions_page_specified_size_specified(self):
+        res = self.get_revisions(path=self.path, page=1, size=10)
         expected = [
             utils.serialize_revision(
                 self.project,
@@ -258,8 +259,8 @@ class TestGetRevisions(StorageTestCase):
         assert_equal(res.json['revisions'], expected)
         assert_equal(res.json['more'], False)
 
-    def test_get_revisions_page_not_specified(self):
-        res = self.get_revisions(path=self.path)
+    def test_get_revisions_page_not_specified_size_specified(self):
+        res = self.get_revisions(path=self.path, size=10)
         expected = [
             utils.serialize_revision(
                 self.project,
@@ -271,6 +272,20 @@ class TestGetRevisions(StorageTestCase):
         ]
         assert_equal(res.json['revisions'], expected)
         assert_equal(res.json['more'], True)
+
+    def test_get_revisions_size_not_specified(self):
+        res = self.get_revisions(path=self.path)
+        expected = [
+            utils.serialize_revision(
+                self.project,
+                self.record,
+                self.record.versions[idx - 1],
+                idx
+            )
+            for idx in range(15, 0, -1)
+        ]
+        assert_equal(res.json['revisions'], expected)
+        assert_equal(res.json['more'], False)
 
     def test_get_revisions_invalid_page(self):
         res = self.get_revisions(path=self.path, page='pizza', expect_errors=True)

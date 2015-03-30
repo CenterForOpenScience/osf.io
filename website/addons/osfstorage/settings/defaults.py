@@ -5,8 +5,6 @@ import os
 from website import settings
 
 
-REVISIONS_PAGE_SIZE = 10
-
 WATERBUTLER_CREDENTIALS = {
     'storage': {}
 }
