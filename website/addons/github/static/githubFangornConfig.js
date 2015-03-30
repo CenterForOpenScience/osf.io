@@ -142,9 +142,34 @@ function _resolveLazyLoad(item) {
 }
 
 function _fangornLazyLoadOnLoad (tree) {
+    var tb = this;
     tree.children.forEach(function(item) {
         Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
     });
+
+    if (tb.options.folderIndex < tb.options.folderArray.length) {
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            if (window.contextVars.node.id === child.data.nodeId && child.data.provider === window.contextVars.file.provider && child.data.name === tb.options.folderArray[tb.options.folderIndex]) {
+                tb.options.folderIndex++;
+                if (child.data.kind === 'folder') {
+                    tb.updateFolder(null, child);
+                    tree = child;
+                }
+                else {
+                    tb.currentFileID = child.id;
+                }
+            }
+        }
+    }
+    if (tb.currentFileID) {
+        var index = tb.returnIndex(tb.currentFileID);
+        var visibleIndex = tb.visibleIndexes.indexOf(index);
+        if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
+            var scrollTo = visibleIndex * tb.options.rowHeight;
+            $('#tb-tbody').scrollTop(scrollTo);
+        }
+    }
 }
 
 function _fangornGithubTitle(item, col)  {
@@ -190,11 +215,18 @@ function _fangornGithubTitle(item, col)  {
 
 
 function _fangornColumns (item) {
+    var selectClass = '';
+    var node = item.parent().parent();
+    if (item.data.kind === 'file' && this.currentFileID === item.id) {
+        selectClass = 'fangorn-hover';
+    }
+
     var columns = [];
     columns.push({
         data : 'name',
         folderIcons : true,
         filter: true,
+        css: selectClass,
         custom : _fangornGithubTitle
     });
 
