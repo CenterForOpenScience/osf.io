@@ -11,38 +11,16 @@ ko.punches.enableAll();
 
 
 var UserEmail = oop.defclass({
-    constructor: function(data) {
+    constructor: function() {
         this.address = ko.observable();
         this.isConfirmed = ko.observable();
         this.isPrimary = ko.observable();
-        if (typeof(data) !== 'undefined') {
-            this.unserialize(data);
-        }
-    },
-    serialize: function() {
-        return {
-            address: this.address(),
-            primary: this.isPrimary(),
-            confirmed: this.isConfirmed()
-        };
-    },
-    unserialize: function(data) {
-        this.address(data.address);
-        this.isPrimary(data.primary || false);
-        this.isConfirmed(data.confirmed || false);
     }
 });
 
 
 var UserProfile = oop.defclass({
-    constructor: function(urls) {
-        this.urls = urls;
-
-        // TODO: Pass these in instead!
-        this.urls = {
-            fetch: '/api/v1/profile/',
-            update: '/api/v1/profile/'
-        };
+    constructor: function () {
 
         this.id = ko.observable();
         this.emails = ko.observableArray();
@@ -79,65 +57,106 @@ var UserProfile = oop.defclass({
             return retval;
         }.bind(this));
 
-        // user inputs
-        this.emailInput = ko.observable();
-    },
-    init: function () {
-        this.fetchData().done(this.unserialize.bind(this));
-    },
-    serialize: function () {
-        var emails = ko.utils.arrayMap(this.emails(), function(each) {
-            return each.serialize();
-        });
-        return {
-            id: this.id(),
-            emails: emails
+    }
+});
+
+
+var UserProfileClient = oop.defclass({
+    constructor: function () {
+        this.urls = {
+            fetch: '/api/v1/profile/',
+            update: '/api/v1/profile/'
         };
     },
-    unserialize: function (data) {
-        var self = this;
-        var profile = data.profile;
+    fetch: function () {
+        var ret = $.Deferred();
 
-        this.id(profile.id);
-        self.emails([]);
-        ko.utils.arrayMap(profile.emails, function(each) {
-            self.emails.push(new UserEmail(each));
-        });
-    },
-    fetchData: function () {
-        var url = '/api/v1/profile/';
-        var request = $.get(url);
+        var request = $.get(this.urls.fetch);
+        request.done(function(data) {
+            var profile = new UserProfile();
+            this.unserialize(data, profile);
+            ret.resolve(profile);
+
+        }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error', 'Could not fetch user profile.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
-                url: url,
+                url: this.urls.fetch,
                 status: status,
                 error: error
             });
-        });
-        return request;
-    },
-    pushUpdates: function () {
-        var request = $osf.putJSON(this.urls.update, this.serialize());
-        request.done(function(data) {
-            this.unserialize(data);
         }.bind(this));
-        request.fail(function(xhr, status, error) {
+
+        return ret.promise();
+    },
+    update: function (profile) {
+        var request = $osf.putJSON(
+            this.urls.update,
+            this.serialize(profile)
+        ).done(function (data) {
+            profile = this.unserialize(data, profile);
+        }.bind(this)).fail(function(xhr, status, error) {
             $osf.growl('Error', 'User profile not updated.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
                 url: this.urls.update,
                 status: status,
                 error: error
             });
-        });
-        return request;
+        }.bind(this));
 
+        return request;
+    },
+    serialize: function (profile) {
+        return {
+            id: profile.id(),
+            emails: ko.utils.arrayMap(profile.emails(), function(email) {
+                return {
+                    address: email.address(),
+                    primary: email.isPrimary(),
+                    confirmed: email.isConfirmed()
+                };
+            })
+        };
+    },
+    unserialize: function (data, profile) {
+        if (typeof(profile) === 'undefined') {
+            profile = new UserProfile();
+        }
+
+        profile.id(data.profile.id);
+        profile.emails(
+            ko.utils.arrayMap(data.profile.emails, function (emailData){
+                var email = new UserEmail();
+                email.address(emailData.address);
+                email.isPrimary(emailData.primary || false);
+                email.isConfirmed(emailData.confirmed || false);
+                return email;
+            })
+        );
+    }
+});
+
+
+var UserProfileViewModel = oop.defclass({
+    constructor: function() {
+        this.client = new UserProfileClient();
+        this.profile = ko.observable(new UserProfile());
+        this.emailInput = ko.observable();
+    },
+    init: function () {
+        this.client.fetch().done(
+            function(profile) { this.profile(profile); }.bind(this)
+        );
     },
     addEmail: function () {
-        var email = new UserEmail({address: this.emailInput()});
-        this.emails.push(email);
-        this.pushUpdates().done(function () {
-            var emails = this.emails();
+        var email = new UserEmail();
+        email.address(this.emailInput());
+        this.profile().emails.push(email);
+
+        this.client.update(this.profile()).done(function (profile) {
+            this.profile(profile);
+
+            var emails = profile.emails();
             for (var i=0; i<emails.length; i++) {
                 if (emails[i].address() === email.address()) {
                     this.emailInput('');
@@ -149,18 +168,20 @@ var UserProfile = oop.defclass({
         }.bind(this));
     },
     removeEmail: function (email) {
-        this.emails.remove(email);
-        this.pushUpdates().done(function() {
+        this.profile().emails.remove(email);
+        this.client.update(this.profile()).done(function() {
             $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
         });
     },
     makeEmailPrimary: function (email) {
-        this.primaryEmail().isPrimary(false);
+        this.profile().primaryEmail().isPrimary(false);
         email.isPrimary(true);
-        this.pushUpdates();
-    },
+        this.client.update(this.profile()).done(function () {
+            $osf.growl('Made Primary', '<em>' + email.address()  + '<em>', 'success');
+        });
+    }
 });
 
 module.exports = {
-    UserProfile: UserProfile
+    UserProfileViewModel: UserProfileViewModel
 };
