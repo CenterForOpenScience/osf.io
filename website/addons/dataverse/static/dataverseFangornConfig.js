@@ -175,7 +175,7 @@ function _fangornDataverseTitle(item, col) {
     } else {
         return m('span',[
             m('dataverse-name', {
-                onclick: function() {
+                ondblclick: function() {
                     window.location = item.data.urls.view;
                 },
                 'data-toggle': 'tooltip',

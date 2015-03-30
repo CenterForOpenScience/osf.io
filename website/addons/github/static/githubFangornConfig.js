@@ -169,7 +169,7 @@ function _fangornGithubTitle(item, col)  {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
                 m('github-name', {
-                    onclick: function() {
+                    ondblclick: function() {
                         var redir = new URI(item.data.nodeUrl);
                         window.location = new URI(item.data.nodeUrl)
                             .segment('files')
