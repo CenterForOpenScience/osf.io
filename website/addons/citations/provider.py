@@ -126,11 +126,12 @@ class CitationsProvider(object):
         if list_id is None:
             contents = [node_addon.root_folder]
         else:
+            user_settings = user.get_addon(self.provider_name) if user else None
             if show in ('all', 'folders'):
                 contents += [
                     self.serializer(
                         node_settings=node_addon,
-                        user_settings=user.get_addon(self.provider_name),
+                        user_settings=user_settings,
                     ).serialize_folder(each)
                     for each in account_folders
                     if each.get('parent_list_id') == list_id
@@ -140,7 +141,7 @@ class CitationsProvider(object):
                 contents += [
                     self.serializer(
                         node_settings=node_addon,
-                        user_settings=user.get_addon(self.provider_name),
+                        user_settings=user_settings,
                     ).serialize_citation(each)
                     for each in node_addon.api.get_list(list_id)
                 ]
