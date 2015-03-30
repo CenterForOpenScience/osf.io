@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
+import math
 
 from flask import request
 
@@ -40,23 +41,15 @@ def _get_logs(node, count, auth, link=None, page=0):
             boolean: if there are more logs
 
     """
-    logs = []
-    total = 0
-    for log in reversed(node.logs):
-        # A number of errors due to database inconsistency can arise here. The
-        # log can be None; its `node__logged` back-ref can be empty, and the
-        # 0th logged node can be None. Catch and log these errors and ignore
-        # the offending logs.
-        log_node = log.resolve_node(node)
-        if log.can_view(node, auth):
-            total += 1
-            anonymous = has_anonymous_link(log_node, auth)
-            logs.append(serialize_log(log, anonymous))
-
-    paginated_logs, pages = paginate(logs, total, page, count)
-
-    return list(paginated_logs), total, pages
-
+    logs_set = node.get_aggregate_logs(auth.user)
+    total = logs_set.count()
+    start = page * count
+    logs = [
+        serialize_log(l, has_anonymous_link(node, auth))
+        for l in logs_set[start:(start + count)]
+    ]
+    pages = math.ceil(total / float(count))
+    return logs, total, pages
 
 @no_auto_transaction
 @collect_auth
