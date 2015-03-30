@@ -69,6 +69,27 @@ var sanitizedObservable = function(value) {
     });
 };
 
+//Maps an object two deep into a given object as ko observables.
+var mapJStoKO = function(data, parent, array, deep) {
+    array = typeof array !== 'undefined' ? array : false; //Default no observableArray
+    deep = typeof deep !== 'undefined' ? deep : false; //Default top level no recursion
+    //TODO: Remove as implemented.
+    if (array || deep) {
+        console.log("Not implemented yet");
+    }
+    for (var key in data) {
+        if (data.hasOwnProperty(key)) {
+            if (typeof data[key] !== 'object') {
+                parent[key] = ko.observable(data[key]);
+            } else {
+                parent[key] = data[key];
+            }
+
+            //add check for array
+        }
+    }
+};
+
 // Add custom validators
 
 ko.validation.rules.minDate = {
@@ -180,5 +201,6 @@ module.exports = {
     makeExtender: makeExtender,
     addExtender: addExtender,
     makeRegexValidator: makeRegexValidator,
-    sanitizedObservable: sanitizedObservable
+    sanitizedObservable: sanitizedObservable,
+    mapJStoKO: mapJStoKO
 };

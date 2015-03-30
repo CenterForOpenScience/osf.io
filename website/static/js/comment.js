@@ -7,7 +7,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
-require('knockout-mapping');
+var koHelpers = require('./koHelpers');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
@@ -203,11 +203,11 @@ var CommentModel = function(data, $parent, $root) {
     self.$root = $root;
 
     // Note: assigns self.content()
-    $.extend(self, ko.mapping.fromJS(data));
+    koHelpers.mapJStoKO(data, self);
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
-    // Update contentDisplay with rednered markdown whenever content changes
+    // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
         self.contentDisplay(markdown.full.render(newContent));
     });
