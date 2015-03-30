@@ -2450,3 +2450,23 @@ span#profileFullname{
 .inline {
     display: inline-block;
 }
+
+/* OSF themed panel */
+.panel-osf {
+  border-color: #214762;
+}
+.panel-osf > .panel-heading {
+  color: #fff;
+  background-color: #214762;
+  border-color: #214762;
+}
+.panel-osf > .panel-heading + .panel-collapse > .panel-body {
+  border-top-color: #214762;
+}
+.panel-osf > .panel-heading .badge {
+  color: #214762;
+  background-color: #fff;
+}
+.panel-osf > .panel-footer + .panel-collapse > .panel-body {
+  border-bottom-color: #214762;
+}
