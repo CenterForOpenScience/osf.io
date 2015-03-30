@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import functools
+from concurrent.futures import ProcessPoolExecutor
 
 import aiohttp
 
@@ -192,3 +193,30 @@ def async_retry(retries=5, backoff=1, exceptions=(Exception, ), raven=client):
         return wrapped
 
     return _async_retry
+
+def __coroutine_unwrapper(func, *args, **kwargs):
+    try:
+        return asyncio.get_event_loop().run_until_complete(func(*args, **kwargs))
+    except AssertionError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+    # Note: No clever tricks are used here to dry up code
+    # This avoids an infinite loop if settings the event loop ever fails
+    return asyncio.get_event_loop().run_until_complete(func(*args, **kwargs))
+
+
+def backgrounded(func, *args, **kwargs):
+    loop = asyncio.get_event_loop()
+    if asyncio.iscoroutinefunction(func):
+        args = (func, ) + args
+        func = __coroutine_unwrapper
+
+    return loop.run_in_executor(
+        None,
+        # executor,
+        functools.partial(
+            func,
+            *args,
+            **kwargs
+        )
+    )
