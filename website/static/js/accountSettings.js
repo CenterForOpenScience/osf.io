@@ -10,7 +10,7 @@ require('knockout.punches');
 ko.punches.enableAll();
 
 
-var userEmail = oop.defclass({
+var UserEmail = oop.defclass({
     constructor: function(data) {
         this.address = ko.observable();
         this.isConfirmed = ko.observable();
@@ -34,7 +34,7 @@ var userEmail = oop.defclass({
 });
 
 
-var userProfile = oop.defclass({
+var UserProfile = oop.defclass({
     constructor: function(urls) {
         this.urls = urls;
 
@@ -54,7 +54,7 @@ var userProfile = oop.defclass({
                     return emails[i];
                 }
             }
-            return new userEmail();
+            return new UserEmail();
         }.bind(this));
 
         this.alternateEmails = ko.computed(function () {
@@ -101,7 +101,7 @@ var userProfile = oop.defclass({
         this.id(profile.id);
         self.emails([]);
         ko.utils.arrayMap(profile.emails, function(each) {
-            self.emails.push(new userEmail(each));
+            self.emails.push(new UserEmail(each));
         });
     },
     fetchData: function (callback) {
@@ -138,7 +138,7 @@ var userProfile = oop.defclass({
 
     },
     addEmail: function () {
-        var email = new userEmail({address: this.emailInput()});
+        var email = new UserEmail({address: this.emailInput()});
         this.emails.push(email);
         this.pushUpdates(function () {
             var emails = this.emails();
@@ -166,5 +166,5 @@ var userProfile = oop.defclass({
 });
 
 module.exports = {
-    userProfile: userProfile
+    UserProfile: UserProfile
 };

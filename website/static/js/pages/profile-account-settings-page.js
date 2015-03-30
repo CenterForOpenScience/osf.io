@@ -5,7 +5,7 @@ var $osf = require('js/osfHelpers.js');
 var accountSettings = require('js/accountSettings.js');
 
 $(function() {
-    var viewModel = new accountSettings.userProfile();
+    var viewModel = new accountSettings.UserProfile();
     $osf.applyBindings(viewModel, '#accountSettings');
     viewModel.init();
 });
