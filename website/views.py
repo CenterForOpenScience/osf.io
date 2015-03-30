@@ -317,7 +317,7 @@ def watched_logs_get(**kwargs):
     }
 
 
-def serialize_log(node_log, anonymous=False):
+def serialize_log(node_log, auth=None, anonymous=False):
     '''Return a dictionary representation of the log.'''
     return {
         'id': str(node_log._primary_key),
@@ -329,7 +329,7 @@ def serialize_log(node_log, anonymous=False):
         'action': node_log.action,
         'params': node_log.params,
         'date': utils.iso8601format(node_log.date),
-        'node': node_log.node.serialize() if node_log.node else None,
+        'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous
     }
 
