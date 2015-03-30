@@ -53,7 +53,7 @@ class DropboxProvider(provider.BaseProvider):
                 'POST',
                 self.build_url('fileops', 'copy'),
                 data={
-                    'folder': 'auto',
+                    'root': 'auto',
                     'from_path': source_path.full_path,
                     'to_path': dest_path.full_path,
                 },
@@ -68,6 +68,7 @@ class DropboxProvider(provider.BaseProvider):
             from_ref_data = yield from from_ref_resp.json()
             resp = yield from self.make_request(
                 'POST',
+                self.build_url('fileops', 'copy'),
                 data={
                     'root': 'auto',
                     'from_copy_ref': from_ref_data['copy_ref'],
@@ -89,8 +90,8 @@ class DropboxProvider(provider.BaseProvider):
             self.build_url('fileops', 'move'),
             data={
                 'root': 'auto',
-                'from_path': source_path.full_path,
                 'to_path': dest_path.full_path,
+                'from_path': source_path.full_path,
             },
             expects=(200, ),
             throws=exceptions.IntraMoveError,
