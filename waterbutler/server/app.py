@@ -7,6 +7,7 @@ import tornado.platform.asyncio
 from waterbutler import settings
 from waterbutler.core.utils import AioSentryClient
 from waterbutler.server.handlers import crud
+from waterbutler.server.handlers import copy
 from waterbutler.server.handlers import status
 from waterbutler.server.handlers import metadata
 from waterbutler.server.handlers import revisions
@@ -17,6 +18,7 @@ def make_app(debug):
     app = tornado.web.Application(
         [
             (r'/file', crud.CRUDHandler),
+            (r'/copy', copy.CopyHandler),
             (r'/data', metadata.MetadataHandler),
             (r'/status', status.StatusHandler),
             (r'/revisions', revisions.RevisionHandler),
