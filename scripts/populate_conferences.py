@@ -193,6 +193,22 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'RMPA2015': {
+        'name': 'Rocky Mountain Psychological Association 2015',
+        'info_url': 'http://www.rockymountainpsych.org/uploads/7/4/2/6/7426961/85th_annual_rmpa_conference_program_hr.pdf',
+        'logo_url': 'http://www.rockymountainpsych.org/uploads/7/4/2/6/7426961/header_images/1397234084.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'ARP2015': {
+        'name': 'Association for Research in Personality 2015',
+        'info_url': 'http://www.personality-arp.org/conference/',
+        'logo_url': 'http://www.personality-arp.org/wp-content/uploads/conference/st-louis-arp.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 
 }
 
