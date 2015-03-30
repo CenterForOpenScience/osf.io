@@ -179,17 +179,59 @@ function _fangornToggleCheck(item) {
     return false;
 }
 
-/**
- * Find out what the upload URL is for each item
- * Because we use add ons each item will have something different. This needs to be in the json data.
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {String} Returns the url string from data or resolved through add on settings.
- * @private
- */
-function _fangornResolveUploadUrl(item, file) {
-    var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]); // jshint ignore:line
-    return configOption || waterbutler.buildTreeBeardUpload(item, file);
+function onItemDrop(e) {
+    var tb = this;
+    var folder = tb.find($(e.target).attr('data-id'));
+    var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected;
+
+    if (items.length < 1) return;
+    if (!folder.open) {
+        tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
+    }
+
+    $.each(items, function(index, item) {
+        moveItem.call(tb, folder, item);
+    });
+}
+
+function moveItem(to, from) {
+    var tb = this;
+    var ogParent = from.parentID;
+    if (to.id === ogParent) return;
+
+    var data = waterbutler.toJsonBlob(to);
+
+    from.move(to.id);
+    from.data.status = 'move';
+    data.path += from.data.name;
+    tb.redraw();
+
+    $.ajax({
+        type: 'POST',
+        url: waterbutler.buildTreeBeardMove(from),
+        headers: {
+            'Content-Type': 'Application/json'
+        },
+        data: JSON.stringify(data)
+    }).done(function(resp) {
+        from.data = resp;
+        from.data.status = undefined;
+        inheritFromParent(from, from.parent());
+        tb.redraw();
+
+        //TODO potentially remove duplicates
+        from.notify.update('Successfully moved.', 'success', 1, 1000);
+    }).fail(function() {
+        console.log(arguments);
+        from.move(ogParent);
+        from.data.status = undefined;
+        $osf.growl('Error', 'Move failed.');
+
+        tb.redraw();
+    });
+}
+
+function copyItem(to, from) {
 }
 
 /**
@@ -894,48 +936,7 @@ tbOptions = {
     dragOptions : {},
     dropOptions : {},
     dropEvents: {
-        drop: function(e){
-            var folder = this.find($(e.target).attr('data-id'));
-            var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected;
-            if (items.length < 1) return;
-
-            var data = waterbutler.toJsonBlob(folder);
-            data.path += items[0].data.name;
-
-            var item = this.createItem({
-                kind: 'file',
-                status: 'copying',
-                name: items[0].data.name,
-                provider: items[0].data.provider,
-                children: [],
-                permissions: {
-                    view: false,
-                    edit: false
-                },
-            }, folder.id);
-
-            $.ajax({
-                type: 'POST',
-                url: waterbutler.buildTreeBeardCopy(items[0]),
-                headers: {
-                    'Content-Type': 'Application/json'
-                },
-                data: JSON.stringify(data)
-            }).done(function(resp) {
-                item.data = resp;
-                inheritFromParent(item, item.parent());
-                debugger;
-                item.parent().children.forEach(function(child) {
-                    if (child.data.name === item.data.name && child.id !== item.id) {
-                        child.removeSelf();
-                    }
-                });
-            }).fail(function() {
-                $osf.growl('Error', 'Copy failed.');
-                item.removeSelf();
-            });
-
-        }
+        drop: onItemDrop
     },
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
