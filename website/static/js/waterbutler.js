@@ -29,6 +29,8 @@ function buildUrl(suffix, path, provider, nid, options) {
 }
 
 var buildCrudUrl = buildUrl.bind(this, 'file?');
+var buildCopyUrl = buildUrl.bind(this, 'copy?');
+var buildMoveUrl = buildUrl.bind(this, 'move?');
 var buildMetadataUrl = buildUrl.bind(this, 'data?');
 var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
 
@@ -46,13 +48,20 @@ function buildFromTreebeardFile(item, file, options) {
     return buildUploadUrl(item.data.path, item.data.provider, item.data.nodeId, file, options);
 }
 
+function toJsonBlob(item, options) {
+    return $.extend(getDefaultOptions(item.data.path || '/', item.data.provider), {nid: item.data.nodeId}, options);
+}
+
 module.exports = {
+    toJsonBlob: toJsonBlob,
     buildDeleteUrl: buildCrudUrl,
     buildUploadUrl: buildUploadUrl,
     buildDownloadUrl: buildCrudUrl,
     buildMetadataUrl: buildMetadataUrl,
     buildRevisionsUrl: buildRevisionsUrl,
     buildTreeBeardUpload: buildFromTreebeardFile,
+    buildTreeBeardCopy: buildFromTreebeard.bind(this, 'copy?'),
+    buildTreeBeardMove: buildFromTreebeard.bind(this, 'move?'),
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?')
