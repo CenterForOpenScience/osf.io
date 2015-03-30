@@ -658,10 +658,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     def private_link_keys_deleted(self):
         return [x.key for x in self.private_links if x.is_deleted]
 
-    @property
-    def log_list(self, auth=None):
-        pass
-
     def path_above(self, auth):
         parents = self.parents
         return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
