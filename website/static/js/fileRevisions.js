@@ -105,6 +105,8 @@ RevisionsViewModel.prototype.fetch = function() {
         if (Object.keys(self.currentVersion()).length === 0) {
             self.currentVersion(self.revisions()[0]);
         }
+
+        $osf.tableResize('#fileRevisions', 4);
     });
 
     request.fail(function(response) {
