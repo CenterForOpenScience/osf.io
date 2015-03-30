@@ -9,6 +9,7 @@ import logging
 from modularodm import Q
 
 from website import models
+from website.app import init_app
 
 from scripts import utils as scripts_utils
 
@@ -37,7 +38,7 @@ def migrate_node(node, conference, staff_user, personal_accounts, dry_run=True):
     for admin in conference.admins:
         if admin.username in personal_accounts and admin in node.contributors:
             logger.info(
-                'Removing admin {0} from node {1}'.format(
+                u'Removing admin {0} from node {1}'.format(
                     admin.fullname,
                     node.title,
                 )
@@ -46,7 +47,7 @@ def migrate_node(node, conference, staff_user, personal_accounts, dry_run=True):
                 node.remove_contributor(admin, log=False, auth=None)
     if staff_user not in node.contributors:
         logger.info(
-            'Adding staff email {0} to node {1}'.format(
+            u'Adding staff email {0} to node {1}'.format(
                 staff_user.fullname,
                 node.title,
             )
@@ -57,6 +58,7 @@ def migrate_node(node, conference, staff_user, personal_accounts, dry_run=True):
 
 
 def main(dry_run=True):
+    init_app(set_backend=True, routes=False, mfr=False)
     staff_user = models.User.find_one(Q('username', 'eq', STAFF_EMAIL))
     for conference in models.Conference.find():
         migrate_conference(conference, staff_user, PERSONAL_ACCOUNTS, dry_run=dry_run)
