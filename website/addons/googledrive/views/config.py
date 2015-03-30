@@ -4,6 +4,7 @@ from flask import request
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
+from website.oauth.models import ExternalAccount
 from website.util import api_url_for
 from website.util import permissions
 from website.project.decorators import (
@@ -70,15 +71,15 @@ def list_googledrive_user_acccounts(auth):
 def googledrive_import_user_auth(auth, node_addon, **kwargs):
     """Import googledrive credentials from the currently logged-in user to a node.
     """
-
     user = auth.user
-    external_account = [account
-                        for account in user.external_accounts
-                        if account.provider == 'googledrive']
+    external_account_id = request.get_json().get('external_account_id')
+    external_account = ExternalAccount.load(external_account_id)
 
-    # TODO: Make this useful for multiple connected accounts
+    if external_account not in user.external_accounts:
+            raise HTTPError(http.FORBIDDEN)
+
     try:
-        node_addon.set_auth(external_account[0], user)
+        node_addon.set_auth(external_account, user)
     except PermissionsError:
         raise HTTPError(http.FORBIDDEN)
 

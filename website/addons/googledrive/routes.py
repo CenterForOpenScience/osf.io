@@ -43,15 +43,15 @@ api_routes = {
         ##### OAuth #####
 
         # avoid nginx rewrite (lack of 307 support)
-        Rule(
-            [
-                '/project/<pid>/oauth/connect/googledrive/',
-                '/project/<pid>/node/<nid>/oauth/connect/googledrive/'
-            ],
-            'post',
-            views.auth.googledrive_oauth_start,
-            json_renderer,
-        ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/oauth/connect/googledrive/',
+        #         '/project/<pid>/node/<nid>/oauth/connect/googledrive/'
+        #     ],
+        #     'post',
+        #     views.auth.googledrive_oauth_start,
+        #     json_renderer,
+        # ),
 
         #### Profile settings ###
 

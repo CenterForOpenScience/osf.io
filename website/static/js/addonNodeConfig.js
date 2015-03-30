@@ -65,31 +65,15 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 });
                 return false; // Prevent event propagation
             },
-            /**
-             * Allows a user to create an access token from the nodeSettings page
-             */
             connectAccount: function() {
-                var self = this;
-
-                window.oauthComplete = function(res) {
-                    // Update view model based on response
-                    self.changeMessage(self.messages.CONNECT_ACCOUNT_SUCCESS(), 'text-success', 3000);
-                    self.updateAccounts(function() {
-                        $osf.putJSON(
-                            self.urls().importAuth, {
-                                external_account_id: self.accounts()[0].id
-                            }
-                        ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
-                    });
-                };
-                window.open(self.urls().auth);
+                window.location.href = this.urls().auth;
             }
         };
         // Overrides
         self.options = $.extend({}, defaults, opts);
         // Treebeard config
         self.treebeardOptions = $.extend(
-            {},
+            {}, 
             FolderPickerViewModel.prototype.treebeardOptions,
             {
                 onPickFolder: function(evt, item) {
@@ -113,7 +97,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     },
     fetchEmailList: function(){
         var self = this;
-
+        
         var ret = $.Deferred();
         var promise = ret.promise();
         if(!self.loadedEmails()){
@@ -151,78 +135,13 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         this.validCredentials(settings.validCredentials);
         this.canShare(settings.canShare || false);
     },
-     /**
+    /**
      * Allows a user to create an access token from the nodeSettings page
      */
     connectAccount: function() {
         this.options.connectAccount.call(this);
-    },
-    importAuth: function(){
-        var self = this;
-
-        self.updateAccounts(function() {
-            if (self.accounts().length > 1) {
-                bootbox.prompt({
-                    title: 'Choose ' + self.properName + ' Access Token to Import',
-                    inputType: 'select',
-                    inputOptions: ko.utils.arrayMap(
-                        self.accounts(),
-                        function(item) {
-                            return {
-                                text: item.name,
-                                value: item.id
-                            };
-                        }
-                    ),
-                    value: self.accounts()[0].id,
-                    callback: (self.connectExistingAccount.bind(self))
-                });
-            } else {
-                bootbox.confirm({
-                    title: 'Import ' + self.properName + ' Access Token?',
-                    message: self.messages.CONFIRM_AUTH(),
-                    callback: function(confirmed) {
-                        if (confirmed) {
-                            self.connectExistingAccount.call(self, (self.accounts()[0].id));
-                        }
-                    }
-                });
-            }
-        });
     }
 });
-
-AddonFolderPickerViewModel.prototype.connectExistingAccount = function(account_id) {
-     var self = this;
-
-    $osf.postJSON(
-        self.urls().importAuth, {
-            external_account_id: account_id
-        }
-    ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
-};
-
-AddonFolderPickerViewModel.prototype.updateAccounts = function(callback) {
-    var self = this;
-    var request = $.get(self.urls().accounts);
-    request.done(function(data) {
-        self.accounts(data.accounts.map(function(account) {
-            return {
-                name: account.display_name,
-                id: account.id
-            };
-        }));
-        callback();
-    });
-    request.fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
-        Raven.captureMessage('Could not GET ' + self.properName + ' accounts for user', {
-            url: self.url,
-            textStatus: textStatus,
-            error: error
-        });
-    });
-};
 
 // Public API
 function AddonNodeConfig(addonName, selector, url, folderPicker, opts) {

@@ -308,6 +308,7 @@ var FolderPickerViewModel = oop.defclass({
         // Update view model based on response
         self.changeMessage(msg, 'text-success', 3000);
         self.updateFromData(response.result);
+        self.loadedFolders(false);
         self.activatePicker();
     },
     onImportError: function(xhr, status, error) {
