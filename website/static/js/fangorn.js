@@ -464,6 +464,10 @@ function _downloadEvent (event, item, col) {
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
+function copyFile(event, item, col) {
+
+}
+
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -730,6 +734,23 @@ function _fangornResolveRows(item) {
         ];
     }
 
+    if(item.data.status === 'copying'){
+        return [{
+            data : 'name',
+            folderIcons : true,
+            filter : true,
+            custom : function(){ return m('span.text-muted', item.data.name); }
+        },
+        {
+            data : '',
+            custom : function(){ return m('span.text-muted', 'Copy pending...'); }
+        },
+        {
+            data : '',
+            custom : function(){ return m('span', ''); }
+        }];
+    }
+
     if (item.parentID) {
         item.data.permissions = item.data.permissions || item.parent().data.permissions;
         if (item.data.kind === 'folder') {
@@ -869,7 +890,53 @@ tbOptions = {
         return undefined;
     },
     showFilter : true,     // Gives the option to filter by showing the filter box.
-    allowMove : false,       // Turn moving on or off.
+    allowMove : true,       // Turn moving on or off.
+    dragOptions : {},
+    dropOptions : {},
+    dropEvents: {
+        drop: function(e){
+            var folder = this.find($(e.target).attr('data-id'));
+            var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected;
+            if (items.length < 1) return;
+
+            var data = waterbutler.toJsonBlob(folder);
+            data.path += items[0].data.name;
+
+            var item = this.createItem({
+                kind: 'file',
+                status: 'copying',
+                name: items[0].data.name,
+                provider: items[0].data.provider,
+                children: [],
+                permissions: {
+                    view: false,
+                    edit: false
+                },
+            }, folder.id);
+
+            $.ajax({
+                type: 'POST',
+                url: waterbutler.buildTreeBeardCopy(items[0]),
+                headers: {
+                    'Content-Type': 'Application/json'
+                },
+                data: JSON.stringify(data)
+            }).done(function(resp) {
+                item.data = resp;
+                inheritFromParent(item, item.parent());
+                debugger;
+                item.parent().children.forEach(function(child) {
+                    if (child.data.name === item.data.name && child.id !== item.id) {
+                        child.removeSelf();
+                    }
+                });
+            }).fail(function() {
+                $osf.growl('Error', 'Copy failed.');
+                item.removeSelf();
+            });
+
+        }
+    },
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
     sortButtonSelector : {
@@ -884,8 +951,8 @@ tbOptions = {
         });
 
         $(window).on('beforeunload', function() {
-            if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
-              return 'You have pending uploads, if you leave this page they may not complete.';
+            if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
+                return 'You have pending uploads, if you leave this page they may not complete.';
             }
         });
     },
