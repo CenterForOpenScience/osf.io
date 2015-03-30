@@ -175,7 +175,7 @@ def format_result(result, parent_id=None):
                                                         else parent_info.get('is_registration')),
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
-        'date_created': result.get('iso_timestamp'),
+        'date_created': result.get('date_created'),
         'date_registered': result.get('registration_date')
     }
 
@@ -246,10 +246,10 @@ def update_node(node, index=INDEX):
             'description': node.description,
             'url': node.url,
             'is_registration': node.is_registration,
-            'registered_date': str(node.registered_date)[:10],
+            'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,
-            'iso_timestamp': node.date_created,
+            'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         for wiki in [
