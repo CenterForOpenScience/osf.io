@@ -48,10 +48,10 @@
           <table class="table" data-bind="if: versioningSupported && revisions().length">
             <thead class="file-version-thread">
               <tr>
-                <th class="col-sm-2">Version ID</th>
-                <th class="col-sm-3">Date</th>
-                <th class="col-sm-4" data-bind="if: userColumn">User</th>
-                <th class="col-sm-3" colspan="2">Download</th>
+                <th class="col-md-2">Version ID</th>
+                <th class="col-md-3">Date</th>
+                <th class="col-md-4" data-bind="if: userColumn">User</th>
+                <th class="col-md-3" colspan="2">Download</th>
               </tr>
             </thead>
 
@@ -59,7 +59,7 @@
 
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
-                <td class="col-sm-2">
+                <td class="col-md-2">
                   <a href="{{ revision.osfViewUrl }}" data-bind="if: revision !== $parent.currentVersion()">
                     {{ revision.displayVersion }}
                   </a>
@@ -67,8 +67,9 @@
                     {{ revision.displayVersion }}
                   </span>
                 </td>
-                <td class="col-sm-3">{{ revision.displayDate }}</td>
-                <td class="col-sm-4" data-bind="if: $parent.userColumn">
+                <td class="col-md-3">{{ revision.displayDate }}</td>
+
+                <td class="col-md-5" data-bind="if: $parent.userColumn">
                   <a data-bind="if: revision.extra.user.url"
                     href="{{ revision.extra.user.url }}">
                     {{ revision.extra.user.name }}
@@ -77,12 +78,12 @@
                     {{ revision.extra.user.name }}
                   </span>
                 </td>
-                <td class="col-sm-1">
+                <td class="col-md-1">
                   <span class="badge" data-bind="if: revision.extra.downloads !== undefined">
                     {{ revision.extra.downloads }}
                   </span>
                 </td>
-                <td class="col-sm-2">
+                <td class="col-md-1">
                   <a class="btn btn-primary btn-sm file-download" href="{{ revision.osfDownloadUrl }}"
                     data-bind="click: revision.download">
                     <i class="fa fa-download"></i>
