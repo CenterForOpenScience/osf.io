@@ -213,7 +213,7 @@ class DropboxProvider(provider.BaseProvider):
         return type(self) == type(dest_provider)
 
     def can_intra_move(self, dest_provider):
-        return self.can_intra_copy(dest_provider)
+        return self == dest_provider
 
     def _build_content_url(self, *segments, **query):
         return provider.build_url(settings.BASE_CONTENT_URL, *segments, **query)
