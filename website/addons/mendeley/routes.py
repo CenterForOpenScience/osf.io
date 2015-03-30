@@ -11,7 +11,7 @@ api_routes = {
                 '/settings/mendeley/accounts/',
             ],
             'get',
-            views.mendeley_get_user_settings,
+            views.mendeley_get_user_accounts,
             json_renderer,
         ),
         Rule(
