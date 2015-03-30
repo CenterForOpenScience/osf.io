@@ -97,7 +97,7 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.IntraMoveError,
         )
         data = yield from resp.json()
-        return DropboxFileMetadata(data, self.folder).serialized()
+        return DropboxFileMetadata(data, self.folder).serialized(), True
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
