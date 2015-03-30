@@ -10,7 +10,7 @@ from framework.auth.decorators import collect_auth
 from framework.transactions.handlers import no_auto_transaction
 
 
-from website.views import serialize_log, paginate
+from website.views import serialize_log
 from website.project.model import NodeLog
 from website.project.model import has_anonymous_link
 from website.project.decorators import must_be_valid_project
@@ -28,7 +28,7 @@ def get_log(auth, log_id):
     if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    return {'log': serialize_log(log)}
+    return {'log': serialize_log(log, auth=auth)}
 
 
 def _get_logs(node, count, auth, link=None, page=0):
@@ -45,7 +45,7 @@ def _get_logs(node, count, auth, link=None, page=0):
     total = logs_set.count()
     start = page * count
     logs = [
-        serialize_log(l, has_anonymous_link(node, auth))
+        serialize_log(l, auth=auth, anonymous=has_anonymous_link(node, auth))
         for l in logs_set[start:(start + count)]
     ]
     pages = math.ceil(total / float(count))

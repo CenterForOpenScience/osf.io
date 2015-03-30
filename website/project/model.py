@@ -662,6 +662,10 @@ class Node(GuidStoredObject, AddonModelMixin):
     def log_list(self, auth=None):
         pass
 
+    def path_above(self, auth):
+        parents = self.parents
+        return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -1213,7 +1217,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_aggregate_logs(self, user):
         ids = [n._id for n in self.get_nodes_recursive(lambda p: p.can_view(Auth(user)))]
         query = Q('params.node', 'in', ids)
-        return NodeLog.find(query).sort('date')
+        return NodeLog.find(query).sort('-_id')
 
     @property
     def nodes_pointer(self):
@@ -2413,7 +2417,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     # TODO: Deprecate this; it duplicates much of what serialize_project already
     # does
-    def serialize(self):
+    def serialize(self, auth):
         """Dictionary representation of node that is nested within a NodeLog's
         representation.
         """
@@ -2425,9 +2429,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),
+            'path': self.path_above(auth),
             'api_url': self.api_url,
             'is_public': self.is_public,
-            'is_registration': self.is_registration
+            'is_registration': self.is_registration,
         }
 
 
