@@ -26,7 +26,8 @@ class CopyHandler(core.BaseCrossProviderHandler):
     @utils.coroutine
     def post(self):
         metadata, created = (
-            yield from self.provider.copy(
+            yield from waterbutler.core.backgrounded(
+                self.provider.copy,
                 self.dest_provider,
                 self.arguments,
                 self.json

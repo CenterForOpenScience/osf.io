@@ -5,6 +5,7 @@ import asyncio
 
 from tornado import web
 
+import waterbutler.core
 from waterbutler.core.streams import RequestStreamReader
 
 from waterbutler.server import utils
@@ -26,7 +27,8 @@ class MoveHandler(core.BaseCrossProviderHandler):
     @utils.coroutine
     def post(self):
         metadata, created = (
-            yield from self.provider.move(
+            yield from waterbutler.core.backgrounded(
+                self.provider.move,
                 self.dest_provider,
                 self.arguments,
                 self.json
