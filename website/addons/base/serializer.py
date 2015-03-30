@@ -66,7 +66,6 @@ class OAuthAddonSerializer(AddonSerializer):
     @property
     def serialized_user_settings(self):
         retval = super(OAuthAddonSerializer, self).serialized_user_settings
-
         retval['accounts'] = []
         if self.user_settings:
             retval['accounts'] = self.serialized_accounts

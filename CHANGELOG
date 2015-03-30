@@ -2,12 +2,11 @@
 Changelog
 *********
 
-0.30.0 (unreleased)
+0.30.0 (2015-03-27)
 ===================
 
 - Wiki: Single-column view: uses page scrolling rather than container
 scrolling when only one column is enabled.
-- Comments support Markdown syntax.
 - SHARE: Updated UI: added filtering by provider.
 - Remove combined login/register/forgot-password page. Sign-in can be done in the navbar.
 Registration can be done on the landing page.

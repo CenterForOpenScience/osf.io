@@ -171,7 +171,6 @@ def format_result(result, parent_id=None):
         'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
-        'contributors_url': result['contributors_url'],
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'description': result['description'] if parent_info is None else None,
@@ -230,13 +229,12 @@ def update_node(node, index=INDEX):
         elastic_document = {
             'id': elastic_document_id,
             'contributors': [
-                x.fullname for x in node.visible_contributors
+                {
+                    'fullname': x.fullname,
+                    'url': x.profile_url if x.is_active else None
+                }
+                for x in node.visible_contributors
                 if x is not None
-            ],
-            'contributors_url': [
-                x.profile_url for x in node.visible_contributors
-                if x is not None
-                and x.is_active
             ],
             'title': node.title,
             'normalized_title': normalized_title,

@@ -15,7 +15,7 @@ from .provider import MendeleyCitationsProvider
 
 
 @must_be_logged_in
-def mendeley_get_user_settings(auth):
+def mendeley_get_user_accounts(auth):
     """ Returns the list of all of the current user's authorized Mendeley accounts """
 
     provider = MendeleyCitationsProvider()
