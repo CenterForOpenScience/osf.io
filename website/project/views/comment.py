@@ -40,7 +40,7 @@ def view_comments_project(auth, **kwargs):
         ret = _view_comments_overview(auth, node)
     elif page == FILES:
         ret = _view_comments_files(auth, node)
-    elif page == WIKI: # Wiki
+    elif page == WIKI:  # Wiki
         ret = _view_comments_wiki(auth, node)
     else:
         raise HTTPError(http.BAD_REQUEST)

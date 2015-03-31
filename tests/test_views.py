@@ -3486,7 +3486,6 @@ class TestComments(OsfTestCase):
         self.project.reload()
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['files'], 3)
-
     """
     def test_n_unread_comments_wiki(self):
         self._add_comment_wiki(self.project, auth=self.project.creator.auth)
@@ -3495,7 +3494,6 @@ class TestComments(OsfTestCase):
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['wiki'], 2)
     """
-
     def test_n_unread_comments_total(self):
 
         self._add_comment_files(self.project, auth=self.project.creator.auth)
