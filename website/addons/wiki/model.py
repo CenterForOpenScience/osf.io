@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import datetime
+from datetime import datetime
 import functools
 import logging
+import pytz
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -18,7 +19,8 @@ from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
-from website.project.model import write_permissions_revoked
+from website.project.model import write_permissions_revoked, wiki_updated
+from website.notifications.emails import notify
 
 from .exceptions import (
     NameEmptyError,
@@ -49,6 +51,30 @@ def subscribe_on_write_permissions_revoked(node):
     # Migrate every page on the node
     for wiki_name in node.wiki_private_uuids:
         wiki_utils.migrate_uuid(node, wiki_name)
+
+
+@wiki_updated.connect
+def subscribe_wiki_updates(page):
+    print page
+    node = page['node']
+    user = page['user']
+    version = page['version']
+    old_version = version - 1
+    url = node.absolute_url + 'wiki/' + page['page_name'] + '/?view&compare=' + str(old_version)
+    context = dict (
+        node_type=node.project_or_component,
+        timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
+        commenter=user,
+        gravatar_url=user.gravatar_url,
+        content=url,
+        target_user=None,
+        parent_comment="",
+        title=node.title,
+        node_id=node._id,
+        url=node.absolute_url
+    )
+    sent_subscribers = notify(uid=node._id, event="comment", **context)
+    print sent_subscribers
 
 
 def build_wiki_url(node, label, base, end):
@@ -97,7 +123,7 @@ class NodeWikiPage(GuidStoredObject):
 
     page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
-    date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date = fields.DateTimeField(auto_now_add=datetime.utcnow)
     is_current = fields.BooleanField()
     content = fields.StringField(default='')
 
@@ -147,7 +173,7 @@ class NodeWikiPage(GuidStoredObject):
             sharejs_version = doc_item['_v']
             sharejs_timestamp = doc_item['_m']['mtime']
             sharejs_timestamp /= 1000   # Convert to appropriate units
-            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp)
+            sharejs_date = datetime.utcfromtimestamp(sharejs_timestamp)
 
             if sharejs_version > 1 and sharejs_date > self.date:
                 return doc_item['_data']

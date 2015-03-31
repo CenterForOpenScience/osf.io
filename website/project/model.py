@@ -75,6 +75,7 @@ signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
 write_permissions_revoked = signals.signal('write-permissions-revoked')
+wiki_updated = signals.signal('wiki-updated')
 
 
 class MetaSchema(StoredObject):
@@ -2261,7 +2262,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def update_node_wiki(self, name, content, auth):
         """Update the node's wiki page with new content.
 
-        :param page: A string, the page's name, e.g. ``"home"``.
+        :param name: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
@@ -2290,6 +2291,15 @@ class Node(GuidStoredObject, AddonModelMixin):
             content=content
         )
         new_page.save()
+
+        updated_page = dict(
+            page_name=name,
+            version=version,
+            user=auth.user,
+            node=self
+        )
+
+        wiki_updated.send(updated_page)
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
