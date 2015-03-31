@@ -1172,7 +1172,6 @@ class TestWikiComments(OsfTestCase):
                 'isPublic': 'public',
                 'page': 'wiki',
                 'target': 'snow',
-                'root_title': 'Snow',
             },
             auth=self.auth
         )
@@ -1221,7 +1220,6 @@ class TestWikiComments(OsfTestCase):
                 'isPublic': 'public',
                 'page': 'wiki',
                 'target': 'snow',
-                'root_title': 'Snow',
             },
             auth=self.auth
         )

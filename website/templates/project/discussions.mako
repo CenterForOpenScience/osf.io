@@ -24,7 +24,7 @@
             <!-- Overview -->
             <li ${'class="active"' if comment_target == 'node' else '' | n}>
                 <div class="row">
-                    <a href="${node['url']}discussions/overview">
+                    <a href="${node['url']}discussions/?page=overview">
                         <div class="col-xs-12">Overview
                             % if user['unread_comments']['node'] > 0:
                                 <span class="badge pull-right">${user['unread_comments']['node']}</span>
@@ -39,7 +39,7 @@
                 % if 'wiki' in addons_enabled:
                     <li ${'class="active"' if comment_target == 'wiki' else '' | n}>
                         <div class="row">
-                            <a href="${node['url']}discussions/wiki">
+                            <a href="${node['url']}discussions/?page=wiki">
                                 <div class="col-xs-12">Wiki
                                     % if user['unread_comments']['wiki'] > 0:
                                         <span class="badge pull-right">${user['unread_comments']['wiki']}</span>
@@ -54,7 +54,7 @@
             <!-- files -->
             <li ${'class="active"' if comment_target == 'files' else '' | n}>
                 <div class="row">
-                    <a href="${node['url']}discussions/files">
+                    <a href="${node['url']}discussions/?page=files">
                         <div class="col-xs-12">Files
                         % if user['unread_comments']['files'] > 0:
                             <span class="badge pull-right">${user['unread_comments']['files']}</span>

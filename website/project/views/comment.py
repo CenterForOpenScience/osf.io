@@ -27,63 +27,59 @@ def view_comments_project(auth, **kwargs):
     """
     Returns information needed to get comments for the total discussion page
     """
-    node = kwargs['node'] or kwargs['project']
+    OVERVIEW = "overview"
+    FILES = "files"
+    WIKI = "wiki"
 
-    ret = {
+    node = kwargs['node'] or kwargs['project']
+    page = request.args.get('page', None)
+
+    if not page:
+        ret = _view_comments_total()
+    elif page == OVERVIEW:
+        ret = _view_comments_overview(auth, node)
+    elif page == FILES:
+        ret = _view_comments_files(auth, node)
+    elif page == WIKI: # Wiki
+        ret = _view_comments_wiki(auth, node)
+    else:
+        raise HTTPError(http.BAD_REQUEST)
+    ret.update(_view_project(node, auth, primary=True, check_files=(not page)))
+    return ret
+
+
+def _view_comments_total():
+    return {
         'comment_target': 'total',
         'comment_target_id': None
     }
 
-    ret.update(_view_project(node, auth, primary=True, check_files=True))
-    return ret
 
-
-@must_be_contributor_or_public
-def view_comments_overview(auth, **kwargs):
-    """
-    Returns information needed to get comments for the discussion overview page
-    """
-    node = kwargs['node'] or kwargs['project']
-
-    ret = {
+def _view_comments_overview(auth, node):
+    _update_comments_timestamp(auth, node, page='node', root_id=node._id)
+    return {
         'comment_target': 'node',
         'comment_target_id': node._id
     }
-    _update_comments_timestamp(auth, node, page='node', root_id=node._id)
-    ret.update(_view_project(node, auth, primary=True))
-    return ret
 
 
-@must_be_contributor_or_public
-def view_comments_files(auth, **kwargs):
-    """
-    Returns information needed to get comments for the discussion total files page
-    """
-    node = kwargs['node'] or kwargs['project']
-
-    ret = {
+def _view_comments_files(auth, node):
+    _update_comments_timestamp(auth, node, page='files')
+    return {
         'comment_target': 'files',
         'comment_target_id': None
     }
-    _update_comments_timestamp(auth, node, page='files')
-    ret.update(_view_project(node, auth, primary=True))
-    return ret
 
 
-@must_be_contributor_or_public
-def view_comments_wiki(auth, **kwargs):
+def _view_comments_wiki(auth, node):
     """
     Returns information needed to get comments for the discussion total wiki page
     """
-    node = kwargs['node'] or kwargs['project']
-
-    ret = {
+    _update_comments_timestamp(auth, node, page='wiki')
+    return {
         'comment_target': 'wiki',
         'comment_target_id': None
     }
-    _update_comments_timestamp(auth, node, page='wiki')
-    ret.update(_view_project(node, auth, primary=True))
-    return ret
 
 
 @must_be_contributor_or_public
@@ -371,7 +367,7 @@ def edit_comment(**kwargs):
 
     comment = kwargs_to_comment(kwargs, owner=True)
 
-    content = request.get_json.get('content').strip()
+    content = request.get_json().get('content').strip()
     content = sanitize(content)
     if not content:
         raise HTTPError(http.BAD_REQUEST)
@@ -475,8 +471,8 @@ def report_abuse(**kwargs):
 
     comment = kwargs_to_comment(kwargs)
 
-    category = request.get_json.get('category')
-    text = request.get_json.get('text', '')
+    category = request.get_json().get('category')
+    text = request.get_json().get('text', '')
     if not category:
         raise HTTPError(http.BAD_REQUEST)
 

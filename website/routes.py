@@ -869,36 +869,6 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/discussions/overview/',
-                '/project/<pid>/node/<nid>/discussions/overview/',
-            ],
-            'get',
-            project_views.comment.view_comments_overview,
-            OsfWebRenderer('project/discussions.mako'),
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/discussions/files/',
-                '/project/<pid>/node/<nid>/discussions/files/',
-            ],
-            'get',
-            project_views.comment.view_comments_files,
-            OsfWebRenderer('project/discussions.mako'),
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/discussions/wiki/',
-                '/project/<pid>/node/<nid>/discussions/wiki/',
-            ],
-            'get',
-            project_views.comment.view_comments_wiki,
-            OsfWebRenderer('project/discussions.mako'),
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/discussions/<cid>/',
                 '/project/<pid>/node/<nid>/discussions/<cid>/',
             ],

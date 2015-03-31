@@ -180,7 +180,7 @@ BaseComment.prototype.fetch = function(isCommentList, thread) {
             self._loaded = true;
         }
     );
-    return deferred;
+    return deferred.promise();
 };
 
 BaseComment.prototype.getThread = function(thread_id) {
@@ -217,41 +217,43 @@ BaseComment.prototype.configureCommentVisibility = function() {
             comment.loading(false);
             continue;
         }
-        var visible = comment.checkCommentExists();
-        if (visible) {
-            if (comment.provider() === 'figshare') {
-                comment.title(response.data.name);
-            }
-        } else {
-            comment.isHidden(true);
-            $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(discussions) {
-                comment.decrementUserFromDiscussion(discussions);
+        (function (cmt) {
+            var request = cmt.checkCommentFileExists();
+            request.done(function (resp) {
+                var FIGSHARE = 'figshare';
+                if (cmt.provider() == FIGSHARE) {
+                    cmt.title(resp.data.name);
+                }
+                cmt.loading(false);
             });
-        }
-        comment.loading(false);
+            request.fail(function (xhl) {
+                cmt.isHidden(true);
+                $.map([self.$root.discussionByFrequency(), self.$root.discussionByRecency()], function(discussion){
+                    return cmt.decrementUserFromDiscussion(discussion);
+                });
+                cmt.loading(false);
+            });
+        })(comment);
     }
 };
 
-BaseComment.prototype.checkCommentExists = function() {
+BaseComment.prototype.checkCommentFileExists = function() {
     var self = this;
     var url  = waterbutler.buildMetadataUrl(self.title(), self.provider(), nodeId, {}); // waterbutler url
-    $.ajax({
+    var request = $.ajax({
         method: 'GET',
         url: url
-    }).done(function(response){
-        return true;
-    }).fail(function(xhl){
-        return false;
     });
+    return request;
 };
 
 BaseComment.prototype.decrementUserFromDiscussion = function(discussions) {
     var self = this;
     var commenterId = self.author.id();
     var ind;
-    for (var i in discussions()) {
-        if (discussions()[i].id === commenterId) {
-            var commenter = discussions()[i];
+    for (var i in discussions) {
+        if (discussions[i].id === commenterId) {
+            var commenter = discussions[i];
             ind = i;
             commenter.numOfComments -= 1;
             if (commenter.numOfComments === 0) {
