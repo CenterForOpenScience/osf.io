@@ -69,7 +69,10 @@ var sanitizedObservable = function(value) {
     });
 };
 
-// maps js data one deep to observables
+/* maps js data one deep to observables
+    options:
+        exclude: adds listed parameters without making observable
+*/
 var mapJStoKO = function(data, options) {
     var settings = $.extend({
         exclude: []   //List of object parameters to exclude
@@ -85,7 +88,7 @@ var mapJStoKO = function(data, options) {
                 dataOut[key] = ko.observable(data[key]);
             }
         } else if (data.hasOwnProperty(key)) {
-            dataOut[key] = data[key];
+            dataOut[key] = data[key]; //excluded parameters
         }
     }
     return dataOut;
