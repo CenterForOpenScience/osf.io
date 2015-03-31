@@ -57,49 +57,35 @@ class TestDataverseFile(DataverseAddonTestCase):
         mock_response = mock.Mock(ok=True, status_code=200)
         mock_get.return_value = mock_response
         mock_response.json.return_value = {
-            'data': [
-                {
-                    'name': 'Morty.foo',
-                    'path': '/12345',
-                },
-                {
-                    'name': 'Rick.foo',
-                    'path': '/23456',
-                }
-            ],
+            'data': {
+                'name': 'Morty.foo',
+                'path': '/12345',
+            },
         }
 
         dvf, created = self.node_settings.find_or_create_file_guid('12345')
         dvf.enrich()
 
         assert_equal(dvf.name, 'Morty.foo')
-        assert_equal(dvf.file_ext, '.foo')
 
     @mock.patch('website.addons.base.requests.get')
     def test_mfr_temp_path(self, mock_get):
         mock_response = mock.Mock(ok=True, status_code=200)
         mock_get.return_value = mock_response
         mock_response.json.return_value = {
-            'data': [
-                {
-                    'name': 'Morty.foo',
-                    'path': '/12345',
-                },
-                {
-                    'name': 'Rick.foo',
-                    'path': '/23456',
-                }
-            ],
+            'data': {
+                'name': 'Morty.foo',
+                'path': '/12345',
+            },
         }
 
         dvf, created = self.node_settings.find_or_create_file_guid('12345')
         dvf.enrich()
 
-        # Included fields ensure uniqueness and correct extension
+        # Included fields ensure uniqueness
         assert_in(self.project._id, dvf.mfr_temp_path)
         assert_in(dvf.provider, dvf.mfr_temp_path)
         assert_in(dvf.unique_identifier, dvf.mfr_temp_path)
-        assert_true(dvf.mfr_temp_path.endswith(dvf.file_ext))
 
 
 class TestDataverseUserSettings(DataverseAddonTestCase):

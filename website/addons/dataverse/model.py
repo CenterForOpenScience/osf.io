@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os
 import logging
+import urlparse
 
 import pymongo
 from modularodm import fields
@@ -29,16 +29,6 @@ class DataverseFile(GuidFile):
     ]
 
     file_id = fields.StringField(required=True, index=True)
-    # Note: _metadata_cache includes all files in the dataset
-
-    @property
-    def mfr_temp_path(self):
-        return os.path.join(
-            settings.MFR_TEMP_PATH,
-            self.node._id,
-            self.provider,
-            self.file_name + self.file_ext,
-        )
 
     @property
     def waterbutler_path(self):
@@ -55,21 +45,6 @@ class DataverseFile(GuidFile):
     @property
     def unique_identifier(self):
         return self.file_id
-
-    @property
-    def name(self):
-        return self.file_meta['name']
-
-    @property
-    def file_ext(self):
-        return os.path.splitext(self.name)[-1]
-
-    @property
-    def file_meta(self):
-        return next(
-            item for item in self._metadata_cache
-            if item['path'] == self.waterbutler_path
-        )
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
@@ -164,24 +139,28 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         return {'doi': self.dataset_doi}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        # TODO: This
-        print 'log log log LOG LOG LOG'
-        pass
-        # url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
-        # self.owner.add_log(
-        #     'dropbox_{0}'.format(action),
-        #     auth=auth,
-        #     params={
-        #         'project': self.owner.parent_id,
-        #         'node': self.owner._id,
-        #         'path': cleaned_path,
-        #         'folder': self.folder,
-        #         'urls': {
-        #             'view': url,
-        #             'download': url + '?action=download'
-        #         },
-        #     },
-        # )
+        path = metadata['path']
+        if 'name' in metadata:
+            name = metadata['name']
+        else:
+            query_string = urlparse.urlparse(metadata['full_path']).query
+            name = urlparse.parse_qs(query_string).get('name')
+
+        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dataverse')
+        self.owner.add_log(
+            'dataverse_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'dataset': self.dataset,
+                'filename': name,
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                },
+            },
+        )
 
 
     ##### Callback overrides #####

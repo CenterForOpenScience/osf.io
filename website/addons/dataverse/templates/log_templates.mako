@@ -1,6 +1,6 @@
 <script type="text/html" id="dataverse_file_added">
 added file
-<a class="overflow log-file-link" data-bind="attr: {href: params.path}, text: params.filename"></a> to
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.filename"></a> to
 Dataverse dataset <span class="overflow">{{ params.dataset }}</span>
 in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
