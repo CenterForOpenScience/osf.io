@@ -13,56 +13,107 @@ function _uploadUrl(item, file) {
     return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
 }
 
+// TODO: Refactor, repeating from core function too much
+function _removeEvent (event, items) {
+    var tb = this;
+    function cancelDelete() {
+        tb.modal.dismiss();
+    }
+
+    function runDelete (item) {
+        $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
+        // delete from server, if successful delete from view
+        $.ajax({
+            url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
+            type : 'DELETE'
+        })
+        .done(function(data) {
+            // delete view
+            tb.deleteNode(item.parentID, item.id);
+            tb.modal.dismiss();
+        })
+        .fail(function(data){
+            tb.modal.dismiss();
+            item.notify.update('Delete failed.', 'danger', undefined, 3000);
+        });
+    }
+
+    function runDeleteMultiple(items){
+        items.forEach(function(item){
+            runDelete(item);
+        });
+        this.options.iconState.generalIcons.deleteMultiple.on = false;
+    }
+
+    // If there is only one item being deleted, don't complicate the issue:
+    if(items.length === 1) {
+        var mithrilContentSingle = m('div', [
+            m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
+            m('p', 'This action is irreversible.')
+        ]);
+        var mithrilButtonsSingle = m('div', [
+            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
+        ]);
+        // This is already being checked before this step but will keep this edit permission check
+        if(items[0].data.permissions.edit){
+            tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
+        }
+    } else {
+        // Check if all items can be deleted
+        var canDelete = true;
+        var deleteList = [];
+        var noDeleteList = [];
+        var mithrilContentMultiple;
+        var mithrilButtonsMultiple;
+        items.forEach(function(item, index, arr){
+            if(!item.data.permissions.edit){
+                canDelete = false;
+                noDeleteList.push(item);
+            } else {
+                deleteList.push(item);
+            }
+        });
+        // If all items can be deleted      
+        if(canDelete){
+            mithrilContentMultiple = m('div', [
+                    m('h3.break-word', 'Delete multiple files?'),
+                    m('p', 'This action is irreversible.'),
+                    deleteList.map(function(item){
+                        return m('.fangorn-canDelete.text-success', item.data.name);
+                    })
+                ]);
+            mithrilButtonsMultiple =  m('div', [
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
+                ]);        
+        } else {
+            mithrilContentMultiple = m('div', [
+                    m('h3.break-word', 'Delete multiple files?'),
+                    m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
+                    deleteList.map(function(n){
+                        return m('.fangorn-canDelete.text-success', n.data.name);
+                    }),
+                    noDeleteList.map(function(n){
+                        return m('.fangorn-noDelete.text-warning', n.data.name);
+                    })
+                ]);            
+            mithrilButtonsMultiple =  m('div', [
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
+                ]);    
+        }
+        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple); 
+    }
+
+    return true; // Let fangorn know this config option was used. 
+}
+
 
 // Define Fangorn Button Actions
 function _githubDefineToolbar (item){
     var self = this;
     var buttons = [];
-
-    function _removeEvent (event, item, col) {
-        try {
-            event.stopPropagation();
-        } catch (e) {
-            window.event.cancelBubble = true;
-        }
-        var tb = this;
-
-        function cancelDelete () {
-            this.modal.dismiss();
-        }
-        function runDelete () {
-            var tb = this;
-            $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
-            // delete from server, if successful delete from view
-            $.ajax({
-                url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
-                type : 'DELETE'
-            })
-            .done(function(data) {
-                // delete view
-                tb.deleteNode(item.parentID, item.id);
-                tb.modal.dismiss();
-            })
-            .fail(function(data){
-                tb.modal.dismiss();
-                item.notify.update('Delete failed.', 'danger', undefined, 3000);
-            });
-        }
-        if (item.data.permissions && item.data.permissions.edit) {
-            var mithrilContent = m('div', [
-                    m('h3', 'Delete "' + item.data.name+ '"?'),
-                    m('p', 'This action is irreversible.')
-                ]);
-            var mithrilButtons = m('div', [
-                    m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                    m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
-                ]);
-            tb.modal.update(mithrilContent, mithrilButtons);
-        } else {
-            item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
-        }
-    }
-
 
     function _downloadEvent (event, item, col) {
         event.stopPropagation();
@@ -119,7 +170,7 @@ function _githubDefineToolbar (item){
             buttons.push(
                 { name : 'deleteFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-danger', {
-                            onclick : function(event) { _removeEvent.call(self, event, item); } 
+                            onclick : function(event) { _removeEvent.call(self, event, [item]); } 
                         },[
                         m('i.fa.fa-times'),
                         m('span.hidden-xs','Delete')
@@ -249,5 +300,6 @@ Fangorn.config.github = {
     lazyLoadOnLoad: _fangornLazyLoadOnLoad,
     uploadSuccess: _fangornUploadSuccess,
     defineToolbar: _githubDefineToolbar,
+    removeEvent : _removeEvent
 
 };
