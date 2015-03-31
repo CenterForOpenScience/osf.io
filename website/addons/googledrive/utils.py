@@ -47,7 +47,7 @@ class GoogleDriveNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'folder': self.node.get_addon('googledrive', deleted=True).folder_path
+            'folder': self.node.get_addon('googledrive', deleted=True).folder_name
         }
         if extra:
             params.update(extra)
