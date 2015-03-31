@@ -45,13 +45,15 @@ def _get_logs(node, count, auth, link=None, page=0):
     for log in reversed(node.logs):
         # A number of errors due to database inconsistency can arise here. The
         # log can be None; its `node__logged` back-ref can be empty, and the
-        # 0th logged node can be None. Catch and log these errors and ignore
-        # the offending logs.
-        log_node = log.resolve_node(node)
-        if log.can_view(node, auth):
-            total += 1
-            anonymous = has_anonymous_link(log_node, auth)
-            logs.append(serialize_log(log, anonymous))
+        # 0th logged node can be None. Need to make sure that log is not None
+        if log:
+            log_node = log.resolve_node(node)
+            if log.can_view(node, auth):
+                total += 1
+                anonymous = has_anonymous_link(log_node, auth)
+                logs.append(serialize_log(log, anonymous))
+        else:
+            logger.warn('Log on node {} is None'.format(node._id))
 
     paginated_logs, pages = paginate(logs, total, page, count)
 
