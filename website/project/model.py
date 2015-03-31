@@ -7,7 +7,6 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
-import itertools
 import pymongo
 
 import pytz
@@ -1216,6 +1215,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             for node in self.nodes
             if node.primary
         ]
+
+    @property
+    def depth(self):
+        return len(self.parents)
 
     def get_nodes_recursive(self, include):
         children = list(self.nodes)
