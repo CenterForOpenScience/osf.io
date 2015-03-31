@@ -39,7 +39,7 @@ function _dataverseDefineToolbar (item) {
         this.dropzoneItemCache = item;
     }
 
-    function dataverseRelease(event, item, col) {
+    function dataverseRelease(event, item) {
         var self = this; // treebeard
         var url = item.data.urls.release;
         var modalContent = [
@@ -52,7 +52,7 @@ function _dataverseDefineToolbar (item) {
             m('button.btn.btn-primary.m-sm', { 'onclick' : function() { releaseStudy(); } }, 'Release Study')
         ];
 
-        this.modal.update(modalContent, modalActions);
+        self.modal.update(modalContent, modalActions);
 
         function releaseStudy() {
             self.modal.dismiss();
@@ -97,7 +97,7 @@ function _dataverseDefineToolbar (item) {
             }},
             { name : 'dataverseRelease', template : function(){
                 return m('.fangorn-toolbar-icon.text-primary', {
-                        onclick : function(event) { /* TODO */ } 
+                        onclick : function(event) { dataverseRelease.call(self, event, item) } 
                     },[
                     m('i.fa.fa-globe'),
                     m('span.hidden-xs','Release Study')
