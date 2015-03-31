@@ -23,7 +23,7 @@
             method="POST"
             name="signin"
         >
-        <div class="panel panel-primary">
+        <div class="panel panel-osf">
             <div class="panel-heading">Two Factor Code</div>
                 <div class="panel-body">
                     <input class="form-control" name="twoFactorCode" placeholder="Enter two factor code" autocomplete="off" autofocus=""/>

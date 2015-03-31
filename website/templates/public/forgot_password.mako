@@ -22,7 +22,7 @@
             method="POST"
             data-bind="submit: submit"
         >
-        <div class="panel panel-primary">
+        <div class="panel panel-osf">
             <div class="panel-heading">Password Reset Request</div>
                 <div class="panel-body">
                     <input type="email" class="form-control" data-bind="value: username" name="forgot_password-email" placeholder="Enter your email address" autofocus/>
