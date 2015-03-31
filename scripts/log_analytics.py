@@ -106,6 +106,7 @@ def parse_args():
     parser.add_argument('-u', '--user', dest='user', required=True)
     parser.add_argument('-d', '--depth', dest='depth', default=2)
     parser.add_argument('-l', '--num-logs', dest='num_logs', default=10)
+    parser.add_argument('-c', '--clean_up', dest='clean_up', default='true')
     return parser.parse_args()
 
 def run(username, depth, num_logs):
@@ -113,7 +114,8 @@ def run(username, depth, num_logs):
     creator = models.User.find(Q('username', 'eq', username))[0]
     project = create_fake_projects(creator, depth, num_logs)
     ret = get_logs(creator, project, depth)
-    clean_up(creator, project)
+    if clean_up in ('true', 'True', True):
+        clean_up(creator, project)
     return ret
 
 def main():
@@ -123,4 +125,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
