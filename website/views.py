@@ -147,9 +147,8 @@ def get_all_projects_smart_folder(auth, **kwargs):
     user = auth.user
 
     contributed = user.node__contributed
-
     nodes = contributed.find(
-        Q('category', 'eq', 'project') &
+        #Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False) &
@@ -157,13 +156,14 @@ def get_all_projects_smart_folder(auth, **kwargs):
         Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
+    '''
     parents_to_exclude = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
     )
-
+    
     comps = contributed.find(
         Q('is_folder', 'eq', False) &
         # parent is not in the nodes list
@@ -175,10 +175,10 @@ def get_all_projects_smart_folder(auth, **kwargs):
         # exclude registrations
         Q('is_registration', 'eq', False)
     )
-
-    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
-    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return return_value
+    '''
+    # return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
+    # return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes]
 
 
 @must_be_logged_in
@@ -236,7 +236,7 @@ def get_dashboard_nodes(auth):
     contributed = user.node__contributed  # nodes user contributed to
 
     nodes = contributed.find(
-        Q('category', 'eq', 'project') &
+        #Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
@@ -257,7 +257,7 @@ def get_dashboard_nodes(auth):
     else:
         comps = []
 
-    nodes = list(nodes) + list(comps)
+    nodes = list(nodes)  # + list(comps)
     if request.args.get('permissions'):
         perm = request.args['permissions'].strip().lower()
         if perm not in permissions.PERMISSIONS:
