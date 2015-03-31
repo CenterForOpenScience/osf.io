@@ -4,16 +4,20 @@ from website.util.permissions import reduce_permissions
 from website.filters import gravatar
 from website import settings
 
+from modularodm import Q
 
 def get_projects(user):
     '''Return a list of user's projects, excluding registrations and folders.'''
     return [
         node
-        for node in user.node__contributed
-        if node.category == 'project'
-        and not node.is_registration
-        and not node.is_deleted
-        and not node.is_folder
+        for node in user.node__contributed.find(
+            (
+                Q('category', 'eq', 'project') &
+                Q('is_registration', 'eq', False) &
+                Q('is_deleted', 'eq', False) &
+                Q('is_folder', 'eq', False)
+            )
+        )
     ]
 
 
