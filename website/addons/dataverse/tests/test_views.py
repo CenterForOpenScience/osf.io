@@ -5,19 +5,17 @@ from nose.tools import *  # noqa
 import mock
 
 import httplib as http
-from tests.factories import AuthUserFactory, PrivateLinkFactory
+from tests.factories import AuthUserFactory
 
 from dataverse.exceptions import UnauthorizedError
 
 from framework.auth.decorators import Auth
-from framework.exceptions import HTTPError
 
 from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.config import serialize_settings
 from website.addons.dataverse.tests.utils import (
-    create_mock_connection, create_mock_dataset,
-    create_mock_draft_file, DataverseAddonTestCase, mock_responses,
+    create_mock_connection, DataverseAddonTestCase,
 )
 
 
@@ -297,7 +295,6 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
     def test_dataverse_root_published(self, mock_files, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
-        mock_request.args = {'state': 'published'}
         mock_files.return_value = ['mock_file']
 
         self.project.set_privacy('public')
@@ -308,42 +305,16 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
-        assert_in('published', res.json[0]['urls']['fetch'])
+        assert_true(res.json[0]['permissions']['edit'])
         assert_true(res.json[0]['hasPublishedFiles'])
         assert_equal(res.json[0]['state'], 'published')
 
         # Non-contributor gets published version, no options
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
-        assert_in('published', res.json[0]['urls']['fetch'])
         assert_false(res.json[0]['permissions']['edit'])
         assert_true(res.json[0]['hasPublishedFiles'])
-
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
-    @mock.patch('website.addons.dataverse.views.hgrid.request')
-    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
-    def test_dataverse_root_draft(self, mock_files, mock_request, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-        mock_request.referrer = 'some_url/files/'
-        mock_request.args = {'state': 'draft'}
-        mock_files.return_value = ['mock_file']
-
-        self.project.set_privacy('public')
-        self.project.save()
-
-        url = api_url_for('dataverse_root_folder_public',
-                          pid=self.project._primary_key)
-
-        # Contributor can select between states, current state is correct
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in('draft', res.json[0]['urls']['fetch'])
-        assert_true(res.json[0]['permissions']['edit'])
-        assert_true(res.json[0]['hasPublishedFiles'])
-
-        # Non-contributor gets published version, no options
-        user2 = AuthUserFactory()
-        res = self.app.get(url, auth=user2.auth)
-        assert_in('published', res.json[0]['urls']['fetch'])
+        assert_equal(res.json[0]['state'], 'published')
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
@@ -351,7 +322,6 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
     def test_dataverse_root_not_published(self, mock_files, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
-        mock_request.args = {'state': 'published'}
         mock_files.return_value = []
 
         self.project.set_privacy('public')
@@ -362,9 +332,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
         # Contributor gets draft, no options
         res = self.app.get(url, auth=self.user.auth)
-        assert_in('draft', res.json[0]['urls']['fetch'])
         assert_true(res.json[0]['permissions']['edit'])
         assert_false(res.json[0]['hasPublishedFiles'])
+        assert_equal(res.json[0]['state'], 'draft')
 
         # Non-contributor gets nothing
         user2 = AuthUserFactory()
@@ -385,6 +355,16 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
                           pid=self.project._primary_key)
 
         mock_connection.return_value = None
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json, [])
+
+    def test_dataverse_root_incomplete(self):
+        self.node_settings.dataset_doi = None
+        self.node_settings.save()
+
+        url = api_url_for('dataverse_root_folder_public',
+                  pid=self.project._primary_key)
+
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
