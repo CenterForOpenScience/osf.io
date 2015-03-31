@@ -6,8 +6,8 @@ var Fangorn = require('js/fangorn');
 
 
 // Define Fangorn Button Actions
-function _figshareDefineToolbar (item, col) {
-    var self = this;  // jshint ignore:line
+function _figshareDefineToolbar (item) {
+    var tb = this;  // jshint ignore:line
     var buttons = [];
 
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
@@ -15,7 +15,7 @@ function _figshareDefineToolbar (item, col) {
         buttons.push(
             { name : 'uploadFiles', template : function(){
                 return m('.fangorn-toolbar-icon.text-success', {
-                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(self, event, item); } 
+                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(tb, event, item); } 
                     },[
                     m('i.fa.fa-upload'),
                     m('span.hidden-xs','Upload')
@@ -27,7 +27,7 @@ function _figshareDefineToolbar (item, col) {
         buttons.push(
             { name : 'downloadFile', template : function(){
                 return m('.fangorn-toolbar-icon.text-info', {
-                        onclick : function(event) { Fangorn.ButtonEvents._downloadEvent.call(self, event, item); } 
+                        onclick : function(event) { Fangorn.ButtonEvents._downloadEvent.call(tb, event, item); } 
                     },[
                     m('i.fa.fa-download'),
                     m('span.hidden-xs','Download')
@@ -43,7 +43,7 @@ function _figshareDefineToolbar (item, col) {
         buttons.push(
             { name : 'deleteFile', template : function(){
                 return m('.fangorn-toolbar-icon.text-danger', {
-                        onclick : function(event) { Fangorn.ButtonEvents._removeEvent.call(self, event, item); } 
+                        onclick : function(event) { Fangorn.ButtonEvents._removeEvent.call(tb, event, tb.multiselected); } 
                     },[
                     m('i.fa.fa-times'),
                     m('span.hidden-xs','Delete')
