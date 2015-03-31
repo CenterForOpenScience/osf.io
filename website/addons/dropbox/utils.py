@@ -43,7 +43,7 @@ class DropboxNodeLogger(object):
         :param dict extra: Extra parameters to add to the ``params`` dict of the
             new NodeLog.
         """
-        if self.node.get_addon('dropbox', deleted=True).folder != '/':
+        if self.node.get_addon('dropbox', deleted=True).folder == '/':
             folder = '/(Full DropBox)'
         else:
             folder = self.node.get_addon('dropbox', deleted=True).folder
