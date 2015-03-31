@@ -96,7 +96,10 @@ def validate_social(value):
 
 
 def validate_email(item):
-    if item and not re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE):
+    if item and (
+        not re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE)
+        or item != item.strip().lower()
+    ):
         raise ValidationError("Invalid Email")
 
 
