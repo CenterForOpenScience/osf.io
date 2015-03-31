@@ -92,7 +92,8 @@ def update_user(auth):
         removed_emails = [
             each
             for each in user.emails + user.unconfirmed_emails
-            if each not in [x['address'] for x in data['emails']]
+            if each not in [x['address'].strip().lower()
+                            for x in data['emails']]
         ]
 
         for address in removed_emails:
@@ -102,10 +103,10 @@ def update_user(auth):
 
         # additions
         added_emails = [
-            each['address']
+            each['address'].strip().lower()
             for each in data['emails']
-            if each['address'] not in user.emails
-            and each['address'] not in user.unconfirmed_emails
+            if each['address'].strip().lower() not in user.emails
+            and each['address'].strip().lower() not in user.unconfirmed_emails
         ]
 
         for address in added_emails:
@@ -122,7 +123,7 @@ def update_user(auth):
         username = None
         try:
             username = [each for each in data['emails']
-                        if each.get('primary')][0]['address']
+                        if each.get('primary')][0]['address'].strip().lower()
         except IndexError:
             pass
 

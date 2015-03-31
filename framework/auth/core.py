@@ -268,6 +268,7 @@ class User(GuidStoredObject, AddonModelMixin):
     verification_key = fields.StringField()
 
     # confirmed emails
+    #   emails should be stripped of whitespace and lower-cased before appending
     emails = fields.StringField(list=True)
 
     # email verification tokens
