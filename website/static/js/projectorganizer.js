@@ -17,10 +17,20 @@ var m = require('mithril');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
-var Raven = require('raven-js');
-
-
+var Raven = require('raven-js');    
 var $osf = require('js/osfHelpers');
+
+var componentIcons = {
+    'hypothesis': 'fa fa-lightbulb-o',
+    'methods and measures': 'fa fa-pencil',
+    'procedure': 'fa fa-cogs',
+    'instrumentation': 'fa fa-flask',
+    'data': 'fa fa-database',
+    'analysis': 'fa fa-bar-chart',
+    'communication': 'fa fa-comment',
+    'other': 'fa fa-question',
+    '': 'fa fa-circle-thin'
+};
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
@@ -650,7 +660,8 @@ function _poResolveIcon(item) {
         'data': 'fa fa-database',
         'analysis': 'fa fa-bar-chart',
         'communication': 'fa fa-comment',
-        'other': 'fa fa-question'
+        'other': 'fa fa-question',
+        '': 'fa fa-circle-thin'
     };
     viewLink = item.data.urls.fetch;
     function returnView(type, category) {
