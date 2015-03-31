@@ -24,7 +24,6 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     :param context: context variables for email template
     :return:
     """
-    print "Here"
     template = event + '.html.mako'
     subject = Template(EMAIL_SUBJECT_MAP[event]).render(**context)
 

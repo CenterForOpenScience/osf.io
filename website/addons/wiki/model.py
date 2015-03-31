@@ -73,7 +73,7 @@ def subscribe_wiki_updates(page):
         node_id=node._id,
         url=node.absolute_url
     )
-    sent_subscribers = notify(uid=node._id, event="comment", **context)
+    sent_subscribers = notify(uid=node._id, event="comments", **context)
     print sent_subscribers
 
 
