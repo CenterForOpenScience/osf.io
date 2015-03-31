@@ -29,6 +29,7 @@ class DataverseFile(GuidFile):
     ]
 
     file_id = fields.StringField(required=True, index=True)
+    # Note: _metadata_cache includes all files in the dataset
 
     @property
     def mfr_temp_path(self):
