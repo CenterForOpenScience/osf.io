@@ -1,4 +1,4 @@
-var Fangorn = require('fangorn');
+var Fangorn = require('js/fangorn');
 var m = require('mithril');
 
 function FileViewTreebeard(data) {

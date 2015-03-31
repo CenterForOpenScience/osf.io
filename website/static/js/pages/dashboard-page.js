@@ -1,19 +1,21 @@
 /**
  * Initialization code for the dashboard pages. Starts up the Project Organizer
  * and binds the onboarder Knockout components.
- * */
+ */
+
+'use strict';
+
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
-var $osf = require('osfHelpers');
-var projectOrganizer = require('js/projectorganizer');
-var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
-
-var LogFeed = require('../logFeed.js');
 // Knockout components for the onboarder
 require('../onboarder.js');
+var $osf = require('../osfHelpers');
+var LogFeed = require('js/logFeed');
+var projectOrganizer = require('..//projectorganizer');
+var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
@@ -33,7 +35,7 @@ var request = $.getJSON(url, function(response) {
 
     function ProjectCreateViewModel() {
         var self = this;
-        self.isOpen = ko.observable(false),
+        self.isOpen = ko.observable(false);
         self.focus = ko.observable(false);
         self.toggle = function() {
             self.isOpen(!self.isOpen());
@@ -41,7 +43,7 @@ var request = $.getJSON(url, function(response) {
         };
         self.nodes = response.nodes;
     }
-    $osf.applyBindings(ProjectCreateViewModel, '#projectCreate');
+    $osf.applyBindings(new ProjectCreateViewModel(), '#projectCreate');
 });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
@@ -97,8 +99,7 @@ $(document).ready(function() {
         });
     });
 
-
-
 });
+
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

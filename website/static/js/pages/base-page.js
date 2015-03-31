@@ -14,13 +14,13 @@ require('font-awesome-webpack');
 
 var $ = require('jquery');
 require('jquery.cookie');
-require('../crossOrigin.js');
 
-var NavbarControl = require('navbar-control');
-var $osf = require('osfHelpers');
+require('js/crossOrigin.js');
+var $osf = require('js/osfHelpers');
+var NavbarControl = require('js/navbarControl');
 
 // Prevent IE from caching responses
-$.ajaxSetup({ cache: false });
+$.ajaxSetup({cache: false});
 
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler
 // can be used

@@ -1,18 +1,26 @@
 # -*- coding: utf-8 -*-
 
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
-
+import pymongo
+from modularodm import fields
 from boto.exception import BotoServerError
 
 from framework.auth.core import Auth
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.s3.utils import get_bucket_drop_down, remove_osf_user
+from website.addons.s3.utils import remove_osf_user
 
 
 class S3GuidFile(GuidFile):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(index=True)
 
@@ -88,19 +96,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
     def find_or_create_file_guid(self, path):
         path = path.lstrip('/')
-
-        try:
-            return S3GuidFile.find_one(
-                Q('path', 'eq', path) &
-                Q('node', 'eq', self.owner)
-            ), False
-        except ModularOdmException:
-            pass
-
-        # Create new
-        new = S3GuidFile(node=self.owner, path=path)
-        new.save()
-        return new, True
+        return S3GuidFile.get_or_create(node=self.owner, path=path)
 
     @property
     def display_name(self):
@@ -196,7 +192,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         if self.has_auth:
             ret['owner'] = self.user_settings.owner.fullname
             ret['owner_url'] = self.user_settings.owner.url
-            ret['bucket_list'] = get_bucket_drop_down(self.user_settings)
             ret['node_has_auth'] = True
 
         return ret

@@ -2,7 +2,7 @@
 
 var m = require('mithril');
 var $ = require('jquery');
-var Fangorn = require('fangorn');
+var Fangorn = require('js/fangorn');
 
 function refreshDataverseTree(grid, item, state) {
     var data = item.data || {};

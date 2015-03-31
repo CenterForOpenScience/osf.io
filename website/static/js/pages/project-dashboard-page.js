@@ -6,7 +6,7 @@ require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 
 var m = require('mithril');
-var Fangorn = require('fangorn');
+var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
@@ -18,6 +18,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -175,5 +176,4 @@ $(document).ready(function() {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
-
 });

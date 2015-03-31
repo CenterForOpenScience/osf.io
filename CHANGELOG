@@ -2,6 +2,19 @@
 Changelog
 *********
 
+0.30.0 (2015-03-27)
+===================
+
+- Wiki: Single-column view: uses page scrolling rather than container
+scrolling when only one column is enabled.
+- SHARE: Updated UI: added filtering by provider.
+- Remove combined login/register/forgot-password page. Sign-in can be done in the navbar.
+Registration can be done on the landing page.
+- Dev: Add unique compound indices for addon file GUID collections.
+- Dev: Improved speed of Travis CI builds.
+- Dev: Cleanup of dead frontend code.
+- Dev: Automated auditing of Glacier backups and parity files.
+
 0.29.0 (2015-03-19)
 ===================
 
