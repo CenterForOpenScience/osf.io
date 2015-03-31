@@ -87,6 +87,10 @@ def update_user(auth):
 
     # TODO: Expand this to support other user attributes
 
+    ##########
+    # Emails #
+    ##########
+
     if 'emails' in data:
         # removals
         removed_emails = [
@@ -119,22 +123,38 @@ def update_user(auth):
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=address)
 
-        # set username
-        username = None
-        try:
-            username = [each for each in data['emails']
-                        if each.get('primary')][0]['address'].strip().lower()
-        except IndexError:
-            pass
+        ############
+        # Username #
+        ############
+
+        # get the first email that is set to primary and has an address
+        primary_email = next(
+            (
+                each for each in data['emails']
+                # email is primary
+                if each.get('primary')
+                # an address is specified (can't trust those sneaky users!)
+                and each.get('address')
+            )
+        )
+
+        if primary_email:
+            username = primary_email['address'].strip().lower()
 
         # make sure the new username has already been confirmed
         if username and username in user.emails:
             user.username = username
 
+    ###################
+    # Timezone/Locale #
+    ###################
+
     if 'locale' in data:
         if data['locale']:
             locale = data['locale'].replace('-', '_')
             user.locale = locale
+    # TODO: Refactor to something like:
+    #   user.timezone = data.get('timezone', user.timezone)
     if 'timezone' in data:
         if data['timezone']:
             user.timezone = data['timezone']
