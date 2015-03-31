@@ -194,6 +194,24 @@ function _fangornToggleCheck(item) {
     return false;
 }
 
+function checkMoveConflicts(tb, item, folder, cb) {
+    for(var i = 0; i < folder.children.length; i++) {
+        var child = folder.children[i];
+        if (child.data.name === item.data.name && child.id !== item.id) {
+            tb.modal.update(m('', [
+                m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
+                m('p', 'Do you want to replace it?')
+            ]), m('', [
+                m('button.btn.btn-md.btn-primary.m-r-sm', {onclick: cb.bind('keep')}, 'Keep Both'),
+                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: tb.modal.dismiss.bind()}, 'Cancel'),
+                m('button.btn.btn-md.btn-warn', {onclick: cb.bind('replace')},'Replace'),
+            ]));
+            return;
+        }
+    }
+    cb('overwrite');
+}
+
 function onItemDrop(e) {
     var tb = this;
     var folder = tb.find($(e.target).attr('data-id'));
