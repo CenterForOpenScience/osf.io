@@ -2249,11 +2249,6 @@ span#profileFullname{
     width : 0;
 }
 
-/* Remove border for files page treebeard*/
-.file-page #tb-tbody {
-    border: none;
-}
-
 
 .alert-notify-success {
     padding: 5px;
@@ -2288,7 +2283,7 @@ span#profileFullname{
 }
 /* Wiki additions */
 .osf-panel {
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     height: 750px;
     overflow: auto;
     display: block;
@@ -2313,11 +2308,14 @@ span#profileFullname{
     height: auto;
 }
 
+.reset-height {
+    height: auto;
+}
+
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
 }
-
 .osf-panel-body {
     overflow: auto;
     overflow-x: hidden;
@@ -2333,6 +2331,18 @@ span#profileFullname{
     font-weight: 300;
 }
 
+.osf-panel-header.no-background {
+    background: transparent;
+}
+
+.osf-panel-header.bottom-border {
+    border-bottom: 1px solid #eee;
+}
+
+.osf-panel-header.bordered {
+    border: 1px solid #ddd;
+}
+
 .osf-panel-footer {
     position: absolute;
     bottom : 0;
@@ -2342,6 +2352,7 @@ span#profileFullname{
     width: 100%;
     z-index: 99;
 }
+
 #wiki-form {
     padding: 10px;
 }
@@ -2443,6 +2454,10 @@ span#profileFullname{
     height: 500px;
 }
 
+/* Remove border for files page treebeard*/
+.file-page #tb-tbody {
+    border: none;
+}
 
 /* scroll fix for wherever treebeard is used */
 #tb-tbody::-webkit-scrollbar  {
