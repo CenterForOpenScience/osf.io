@@ -212,12 +212,18 @@ describe('FolderPickerNodeConfigViewModel', () => {
             });
         });
         describe('#updateFromData', () => {
+            var spy;
+            before(() => {
+                spy = sinon.spy(vm, 'fetchFromServer');
+            });
+            after(() => {
+                vm.fetchFromServer.restore();
+            });
+
             it('makes a call to fetchFromServer if no data passed as an argument', (done) => {
-                var spy = sinon.spy(vm, 'fetchFromServer');
                 vm.updateFromData()
                     .always(function() {
                         assert.calledOnce(spy);
-                        vm.fetchFromServer.restore();
                         done();
                     });
             });

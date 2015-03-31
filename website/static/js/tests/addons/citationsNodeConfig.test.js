@@ -47,14 +47,15 @@ describe('CitationsNodeConfig', () => {
             after(() => {
                 server.restore();
             });
-            it('makes a GET request to the "accounts" url passed in settings, and returns a promise that resolves to that value', () => {
+            it('makes a GET request to the "accounts" url passed in settings, and returns a promise that resolves to that value', (done) => {
                 var data = testUtils.makeFakeData();
                 data.urls.accounts = accountsUrl;
                 vm.updateFromData(data)
                     .always(function() {
                         vm.fetchAccounts()
                             .done(function(fetched) {
-                                assert.deepEqual(fetched, endpoints[0].response.accounts);
+                                assert.deepEqual(fetched, endpoints[0].response);
+                                done();
                             });
                     });
             });
