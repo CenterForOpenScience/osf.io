@@ -426,24 +426,8 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
             timestamps[page] = dict()
 
         # if updating timestamp on the files/wiki total page...
-        from website.addons.wiki.model import NodeWikiPage
-
         if root_id is None or root_id == 'None':
-            ret = {}
-            if page == 'files':
-                root_targets = node.commented_files.keys()
-                for root_target_id in root_targets:
-                    root_target = Guid.load(root_target_id).referent
-                    if root_target.commented[0].is_hidden:
-                        continue
-                    ret = _update_comments_timestamp(auth, node, page, root_target._id)
-            elif page == 'wiki':
-                root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
-                for root_target in root_targets:
-                    wiki_page = NodeWikiPage.load(root_target)
-                    if hasattr(wiki_page, 'commented'):
-                        ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
-            return ret
+            return _update_comments_timestamp_total(node, auth, page)
 
         # if updating timestamp on a specific file/wiki page
         timestamps[page][root_id] = datetime.utcnow()
@@ -451,6 +435,25 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
         return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}
     else:
         return {}
+
+
+def _update_comments_timestamp_total(node, auth, page):
+    from website.addons.wiki.model import NodeWikiPage
+    ret = {}
+    if page == 'files':
+        root_targets = node.commented_files.keys()
+        for root_target_id in root_targets:
+            root_target = Guid.load(root_target_id).referent
+            if root_target.commented[0].is_hidden:
+                continue
+            ret = _update_comments_timestamp(auth, node, page, root_target._id)
+    elif page == 'wiki':
+        root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
+        for root_target in root_targets:
+            wiki_page = NodeWikiPage.load(root_target)
+            if hasattr(wiki_page, 'commented'):
+                ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
+    return ret
 
 
 @must_be_logged_in

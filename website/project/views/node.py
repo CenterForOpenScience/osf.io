@@ -868,52 +868,60 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
 def n_unread_total(node, user, page, check=False):
     if not node.is_contributor(user):
         return 0
-    from website.addons.wiki.model import NodeWikiPage
-    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    if page != 'total':
-        if isinstance(view_timestamp, dict):
-            view_timestamp = view_timestamp.get(page, default_timestamp)
-        # files/wiki
-        if isinstance(view_timestamp, dict):
-            n_unread = 0
-            if page == 'files':
-                for file_id in node.commented_files.keys():
-                    n_unread += n_unread_comments(node, user, page, file_id, check)
-            elif page == 'wiki':
-                root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
-                for root_target in root_targets:
-                    wiki_page = NodeWikiPage.load(root_target)
-                    if hasattr(wiki_page, 'commented'):
-                        root_id = wiki_page.page_name
-                        n_unread += n_unread_comments(node, user, page, root_id)
+    if page == 'node':
+        return n_unread_total_node(user, node)
+    elif page == 'files':
+        return n_unread_total_files(user, node, check=check)
+    elif page == 'wiki':
+        return n_unread_total_wiki(user, node)
+    return n_unread_total_node(user, node) + n_unread_total_wiki(user, node) + n_unread_total_files(user, node, check=check)
 
-            return n_unread
-        else:
-            if not (user.comments_viewed_timestamp.get(node._id) and
-                            isinstance(user.comments_viewed_timestamp[node._id], dict)):
-                user.comments_viewed_timestamp[node._id] = dict()
-                user.comments_viewed_timestamp[node._id]['node'] = default_timestamp
-            # unopened files
-            if page == 'files':
-                n_unread = 0
-                file_timestamps = dict()
-                user.comments_viewed_timestamp[node._id]['files'] = file_timestamps
-                for file_id in node.commented_files.keys():
-                    file_timestamps[file_id] = default_timestamp
-                    n_unread += n_unread_comments(node, user, page, file_id, check)
-                user.save()
-                return n_unread
-            # node
-            return Comment.find(Q('node', 'eq', node) &
-                                Q('user', 'ne', user) &
-                                Q('date_created', 'gt', view_timestamp) &
-                                Q('date_modified', 'gt', view_timestamp) &
-                                Q('is_deleted', 'eq', False) &
-                                Q('is_hidden', 'eq', False) &
-                                Q('page', 'eq', page)).count()
-    return n_unread_total(node, user, 'node') + n_unread_total(node, user, 'wiki') + \
-        n_unread_total(node, user, 'files', check=check)
+
+def n_unread_total_node(user, node):
+    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+    view_timestamp = user.comments_viewed_timestamp.get(node._id, dict())
+    view_timestamp = view_timestamp.get('node', None)
+    if not view_timestamp:
+        user.comments_viewed_timestamp[node._id] = dict()
+        user.comments_viewed_timestamp[node._id]['node'] = default_timestamp
+        view_timestamp = default_timestamp
+    return Comment.find(Q('node', 'eq', node) &
+                        Q('user', 'ne', user) &
+                        Q('date_created', 'gt', view_timestamp) &
+                        Q('date_modified', 'gt', view_timestamp) &
+                        Q('is_deleted', 'eq', False) &
+                        Q('is_hidden', 'eq', False) &
+                        Q('page', 'eq', 'node')).count()
+
+
+def n_unread_total_wiki(user, node):
+    from website.addons.wiki.model import NodeWikiPage
+    root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
+    n_unread = 0
+    for root_target in root_targets:
+        wiki_page = NodeWikiPage.load(root_target)
+        if hasattr(wiki_page, 'commented'):
+            root_id = wiki_page.page_name
+            n_unread += n_unread_comments(node, user, 'wiki', root_id)
+    return n_unread
+
+
+def n_unread_total_files(user, node, check=False):
+    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+    view_timestamp = user.comments_viewed_timestamp.get(node._id, dict())
+    view_timestamp = view_timestamp.get('files', default_timestamp)
+    n_unread = 0
+    if isinstance(view_timestamp, dict):
+        for file_id in node.commented_files.keys():
+            n_unread += n_unread_comments(node, user, 'files', file_id, check)
+    else:
+        file_timestamps = dict()
+        user.comments_viewed_timestamp[node._id]['files'] = file_timestamps
+        for file_id in node.commented_files.keys():
+            file_timestamps[file_id] = default_timestamp
+            n_unread += n_unread_comments(node, user, 'files', file_id, check)
+        user.save()
+    return n_unread
 
 
 def check_file_exists(node, file_id):
@@ -921,12 +929,10 @@ def check_file_exists(node, file_id):
     try:
         file_guid = Guid.load(file_id).referent
         file_guid.enrich()
-    except (FileDoesntExistError, FileDeletedError):
+    except AddonEnrichmentError:
         del node.commented_files[file_id]
         node.save()
         return False, num_of_comments
-    except AddonEnrichmentError:
-        pass
     return True, num_of_comments
 
 

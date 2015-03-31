@@ -431,7 +431,7 @@ var CommentModel = function(data, $parent, $root) {
                 break;
         }
         cleaned += ')';
-        return cleaned;
+        return unescape(cleaned);
     });
 
     self.rootUrl = ko.pureComputed(function(){
