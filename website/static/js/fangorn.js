@@ -545,8 +545,6 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        var mithrilContent;
-        var mithrilButtons;
         $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
@@ -632,9 +630,6 @@ function _removeEvent (event, items, col) {
         }
         tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple); 
     }
-
-
-
 }
 
 /**
@@ -1248,7 +1243,10 @@ tbOptions = {
         rowIcons : [{}]
 
     },
-    defineToolbar : _fangornDefineToolbar
+    defineToolbar : _fangornDefineToolbar,
+    onselectrow : function(row) {
+        console.log(row);
+    }
 };
 
 /**
