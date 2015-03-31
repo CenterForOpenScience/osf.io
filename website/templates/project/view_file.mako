@@ -2,7 +2,7 @@
 <%def name="title()">${file_name | h}</%def>
 
 % if (user['can_comment'] or node['has_comments']):
-    % if provider in ['github', 'figshare', 'dropbox', 's3', 'osfstorage']:
+    % if allow_comment:
         <%include file="include/comment_pane_template.mako"/>
     % else:
         <div class="alert alert-warning" role="alert">

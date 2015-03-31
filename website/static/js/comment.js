@@ -228,7 +228,7 @@ BaseComment.prototype.configureCommentVisibility = function() {
             });
             request.fail(function (xhl) {
                 cmt.isHidden(true);
-                $.map([self.$root.discussionByFrequency(), self.$root.discussionByRecency()], function(discussion){
+                $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(discussion){
                     return cmt.decrementUserFromDiscussion(discussion);
                 });
                 cmt.loading(false);
@@ -251,13 +251,13 @@ BaseComment.prototype.decrementUserFromDiscussion = function(discussions) {
     var self = this;
     var commenterId = self.author.id();
     var ind;
-    for (var i in discussions) {
-        if (discussions[i].id === commenterId) {
-            var commenter = discussions[i];
+    for (var i in discussions()) {
+        if (discussions()[i].id === commenterId) {
+            var commenter = discussions()[i];
             ind = i;
             commenter.numOfComments -= 1;
             if (commenter.numOfComments === 0) {
-                arr.splice(ind, 1);
+                discussions.splice(ind, 1);
             }
             break;
         }
