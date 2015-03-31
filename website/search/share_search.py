@@ -64,6 +64,7 @@ def providers():
         }
     }
 
+
 @requires_search
 def stats(query=None):
     query = query or {"query": {"match_all": {}}}
@@ -231,6 +232,10 @@ def data_for_charts(elastic_results):
         'date_numbers': numbers,
         'group_names': names
     }
+
+    if date_totals.get('date_numbers') == [[u'x']]:
+        for name in date_totals.get('group_names'):
+            date_totals.get('date_numbers').append([name, 0])
 
     for_charts['date_totals'] = date_totals
 
