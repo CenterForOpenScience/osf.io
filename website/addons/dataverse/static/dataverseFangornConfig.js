@@ -7,6 +7,11 @@ var $ = require('jquery');
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
 
+function changeState(grid, item, state) {
+    item.data.state = state;
+    grid.updateFolder(null, item);
+}
+
 function _uploadUrl(item, file) {
     return waterbutler.buildTreeBeardUpload(item, file);
 }
@@ -44,7 +49,7 @@ function _fangornActionColumn (item, col) {
                 {}
             ).done(function(data) {
                 var modalContent = [
-                    m('p.m-md', 'Your dataset has been published. These files will be visible to any user with read-permission until changes to the dataset are made.')
+                    m('p.m-md', 'Your dataset has been published.')
                 ];
                 var modalActions = [
                     m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
@@ -60,7 +65,6 @@ function _fangornActionColumn (item, col) {
                         break;
                     case 409:
                         message = 'This dataset version has already been published.';
-                        item.data.state = 'published';
                         break;
                     default:
                         message = 'Error: Something went wrong when attempting to publish your dataset.';
@@ -77,7 +81,7 @@ function _fangornActionColumn (item, col) {
         }
     }
 
-    if (item.kind === 'folder' && item.data.addonFullname && item.data.permissions.edit) {
+    if (item.kind === 'folder' && item.data.addonFullname && item.data.state === 'draft' && item.data.permissions.edit) {
         buttons.push(
             {
                 'name' : '',
@@ -85,17 +89,15 @@ function _fangornActionColumn (item, col) {
                 'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : Fangorn.ButtonEvents._uploadEvent
-            }
-        );
-        if (item.data.state === 'draft') {
-            buttons.push({
+            },
+            {
                 'name' : '',
                 'tooltip' : 'Publish Dataset',
                 'icon' : 'fa fa-globe',
                 'css' : 'btn btn-primary btn-xs',
                 'onclick' : dataversePublish
-            })
-        }
+            }
+        );
     } else if (item.kind === 'file') {
         buttons.push({
             name : '',
@@ -104,7 +106,7 @@ function _fangornActionColumn (item, col) {
             css : 'btn btn-info btn-xs',
             onclick: _downloadEvent
         });
-        if (item.data.permissions.edit) {
+        if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
@@ -126,7 +128,28 @@ function _fangornDataverseTitle(item, col) {
     var tb = this;
     if (item.data.addonFullname) {
         var contents = [m('dataverse-name', item.data.name + ' ')];
-        if (item.data.state == 'draft') {
+        if (item.data.hasPublishedFiles) {
+            if (item.data.permissions.edit) {
+                var options = [
+                    m('option', {selected: item.data.state === 'published', value: 'published'}, 'Published'),
+                    m('option', {selected: item.data.state === 'draft', value: 'draft'}, 'Draft')
+                ];
+                contents.push(
+                    m('span', [
+                        m('select', {
+                            class: 'dataverse-state-select',
+                            onchange: function(e) {
+                                changeState(tb, item, e.target.value);
+                            }
+                        }, options)
+                    ])
+                );
+            } else {
+                contents.push(
+                    m('span.text-muted', '[Published]')
+                );
+            }
+        } else {
             contents.push(
                 m('span', {
                     class: 'fa fa-warning text-warning',
@@ -201,14 +224,11 @@ function _fangornLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item, {state: item.data.state});
 }
 
-function _fangornUploadSuccess(file, item) {
-    item.parent().data.state = 'draft';
-}
-
 function _canDrop(item) {
     return item.data.provider &&
         item.kind === 'folder' &&
-        item.data.permissions.edit
+        item.data.permissions.edit &&
+        item.data.state === 'draft'
 }
 
 Fangorn.config.dataverse = {
@@ -217,6 +237,5 @@ Fangorn.config.dataverse = {
     resolveRows: _fangornColumns,
     lazyload: _fangornLazyLoad,
     uploadUrl: _uploadUrl,
-    uploadSuccess: _fangornUploadSuccess,
     canDrop: _canDrop
 };

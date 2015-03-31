@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from flask import request
 
-from website.addons.dataverse.client import get_dataset, \
+from website.addons.dataverse.client import get_dataset, get_files, \
     get_dataverse, connect_from_settings
 
 from website.project.decorators import must_be_contributor_or_public
@@ -9,16 +10,18 @@ from website.project.decorators import must_have_addon
 from website.util import rubeus
 
 
-def dataverse_hgrid_root(node_addon, auth, **kwargs):
+def dataverse_hgrid_root(node_addon, auth,  **kwargs):
     node = node_addon.owner
     user_settings = node_addon.user_settings
 
-    connection = connect_from_settings(user_settings)
+    default_state = 'published'
+    state = 'published' if not node.can_edit(auth) else default_state
 
     # Quit if no dataset linked
-    if not node_addon.complete or connection is None:
+    if not node_addon.complete:
         return []
 
+    connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, node_addon.dataverse_alias)
     dataset = get_dataset(dataverse, node_addon.dataset_doi)
 
@@ -26,11 +29,15 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
     if dataset is None:
         return []
 
-    is_published = dataset.get_state() == 'RELEASED'
+    published_files = get_files(dataset, published=True)
     can_edit = node.can_edit(auth)
 
-    if not is_published and not can_edit:
-        return []
+    # Produce draft version or quit if no published version is available
+    if not published_files:
+        if can_edit:
+            state = 'draft'
+        else:
+            return []
 
     dataset_name = node_addon.dataset
     if len(dataset_name) > 23:
@@ -53,7 +60,8 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
         dataset=dataset_name,
         doi=dataset.doi,
         dataverse=dataverse.title,
-        state='published' if is_published else 'draft',
+        hasPublishedFiles=bool(published_files),
+        state=state,
     )]
 
 
