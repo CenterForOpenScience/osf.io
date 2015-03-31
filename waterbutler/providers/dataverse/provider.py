@@ -1,4 +1,5 @@
 import asyncio
+import http
 import tempfile
 import xmltodict
 
@@ -102,7 +103,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, state='draft', **kwargs):
+    def metadata(self, path, state='draft', **kwargs):
         url = provider.build_url(self.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
@@ -114,4 +115,20 @@ class DataverseProvider(provider.BaseProvider):
         data = yield from resp.text()
         data = xmltodict.parse(data)
 
-        return DataverseDatasetMetadata(data, state).serialized()
+        dataset_metadata = DataverseDatasetMetadata(data, state).serialized()
+
+        # Dataset metadata
+        if path == '/':
+            return dataset_metadata
+
+        # File metadata
+        else:
+            try:
+                return next(
+                    item for item in dataset_metadata if item['path'] == path
+                )
+            except StopIteration:
+                raise exceptions.MetadataError(
+                    "Could not retrieve file '{}'".format(path),
+                    code=http.client.NOT_FOUND,
+                )
