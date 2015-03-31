@@ -24,6 +24,7 @@ from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
 
+<<<<<<< HEAD
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
     'project',
@@ -37,6 +38,9 @@ USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     'addon',
     'user_settings_default.mako',
 )
+=======
+from website.oauth.signals import oauth_complete
+>>>>>>> 31253cab2800d3556f3a1276545973fe293715df
 
 lookup = TemplateLookup(
     directories=[
@@ -489,6 +493,14 @@ class AddonUserSettingsBase(AddonSettingsBase):
             ]
         })
         return ret
+
+
+@oauth_complete.connect
+def oauth_complete(provider, account, user):
+    if not user or not account:
+        return
+    user.add_addon(account.provider)
+    user.save()
 
 
 class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
@@ -965,7 +977,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         if self.has_auth:
             return (
                 u'The contents of {addon} add-ons cannot be registered at this time; '
-                u'the {addon} add-on linked to this {category} will not be included '
+                u'the {addon} add-on linked to this {cat} will not be included '
                 u'as part of this registration.'
             ).format(
                 addon=self.config.full_name,
