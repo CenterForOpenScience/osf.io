@@ -400,8 +400,7 @@ class TestGithubSettings(OsfTestCase):
         self.app.post_json(
             url,
             {
-                'github_user': 'queen',
-                'github_repo': 'night at the opera',
+                'github_repo': 'queen / night at the opera',
             },
             auth=self.auth
         ).maybe_follow()
@@ -426,8 +425,7 @@ class TestGithubSettings(OsfTestCase):
         self.app.post_json(
             url,
             {
-                'github_user': 'Queen',
-                'github_repo': 'Sheer-Heart-Attack',
+                'github_repo': 'Queen / Sheer-Heart-Attack',
             },
             auth=self.auth
         ).maybe_follow()
@@ -447,8 +445,7 @@ class TestGithubSettings(OsfTestCase):
         res = self.app.post_json(
             url,
             {
-                'github_user': 'queen',
-                'github_repo': 'night at the opera',
+                'github_repo': 'queen / night at the opera',
             },
             auth=self.auth,
             expect_errors=True
@@ -670,6 +667,8 @@ class TestAuthViews(OsfTestCase):
         assert_equal(user_settings2.oauth_token_type, "testing token type")
         assert_equal(user_settings2.oauth_access_token, "testing access token")
         assert_equal(user_settings2.github_user_name, "testing user")
+
+
 
 if __name__ == '__main__':
     unittest.main()

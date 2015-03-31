@@ -29,7 +29,6 @@ def github_create_repo(node_addon, **kwargs):
 
     try:
         repo = connection.create_repo(repo_name)
-        node_addon.repo = repo_name
     except GitHubError:
         # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)

@@ -185,78 +185,14 @@ ViewModel.prototype.updateRepoList = function(){
     var self = this;
     return self.fetchRepoList()
         .done(function(repos){
+
             self.repoList(repos);
             self.selectedRepo(self.currentRepo());
+
         });
 };
 
 
-//ViewModel.prototype.createRepo = function(repoName) {
-//    var self = this;
-//    self.creating(true);
-//    return $osf.postJSON(
-//        self.urls().create_repo, {
-//            repo_name: repoName
-//        }
-//    ).done(function(response) {
-//        repoName = response.github_user + ' / ' + response.repo;
-//        self.creating(false);
-//        self.updateFromData(response);
-//        self.changeMessage('Successfully created repo \'' + repoName + '\'. You can now select it from the drop down list.', 'text-success');
-//        return self.fetchRepoList()
-//            .done(function(repos){
-//                self.repoList(repos);
-//                self.creating(false);
-//                self.selectedRepo(repoName);
-//                self.showSelect(true);
-//                if (!self.loadedRepoList()) {
-//                    self.updateRepoList();
-//                }
-//            });
-//
-//    }).fail(function(xhr) {
-//        var resp = JSON.parse(xhr.responseText);
-//        var message = resp.message;
-//        var title = resp.title || 'Problem creating repo';
-//        self.creating(false);
-//        if (!message) {
-//            message = 'Looks like that name is taken. Try another name?';
-//        }
-//        bootbox.confirm({
-//            title: title,
-//            message: message,
-//            callback: function(result) {
-//                if (result) {
-//                    self.openCreateRepo();
-//                }
-//            }
-//        });
-//    });
-//};
-//
-//ViewModel.prototype.openCreateRepo = function() {
-//    var self = this;
-//
-//    var isValidRepo = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
-//
-//    bootbox.prompt('Name your new repo', function(repoName) {
-//        if (!repoName) {
-//            return;
-//        } else if (isValidRepo.exec(repoName) == null) {
-//            bootbox.confirm({
-//                title: 'Invalid repo name',
-//                message: 'Sorry, that\'s not a valid repo name. Try another name?',
-//                callback: function(result) {
-//                    if (result) {
-//                        self.openCreateRepo();
-//                    }
-//                }
-//            });
-//        } else {
-//            self.createRepo(repoName);
-//        }
-//    });
-//};
 
 ViewModel.prototype.createRepo = function(repoName) {
     var self = this;
@@ -269,15 +205,16 @@ ViewModel.prototype.createRepo = function(repoName) {
     ).done(function(response) {
         self.creating(false);
         self.updateFromData(response);
-        self.changeMessage('Successfully created repo \'' + repoName + '\'. You can now select it from the drop down list.', 'text-success');
-        self.repoList().push(repoName);
         if (!self.loadedRepoList()) {
             self.updateRepoList();
         }
-        self.selectedRepo(repoName);
-        self.selectedRepo();
-        self.repoList();
+        //self.selectedRepo(repoName);
+        //self.selectedRepo();
+        //self.repoList();
         self.showSelect(true);
+        var msg = 'Successfully created repo "' + repoName + '". You can now select it from the drop down list.';
+        var msgType = 'text-success';
+        self.changeMessage(msg, msgType);
     }).fail(function(xhr) {
         var resp = JSON.parse(xhr.responseText);
         var message = resp.message;
@@ -336,7 +273,6 @@ ViewModel.prototype.fetchRepoList = function() {
             dataType: 'json'
         }).done(function(response) {
             self.loadedRepoList(true);
-            debugger;
             ret.resolve(response.repo_names);
         })
         .fail(function(xhr, status, error) {
@@ -365,7 +301,7 @@ ViewModel.prototype.updateFromData = function(data) {
         self.userHasAuth(settings.user_has_auth);
         self.userIsOwner(settings.user_is_owner);
         self.ownerName(settings.owner);
-        self.currentRepo(settings.has_repo ? settings.repo : 'None');
+        self.currentRepo( settings.has_repo ? settings.github_repo_full_name : 'None');
         if (settings.urls) {
             self.urls(settings.urls);
         }

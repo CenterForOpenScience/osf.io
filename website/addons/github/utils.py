@@ -146,6 +146,7 @@ def serialize_urls(node_addon, user):
         'repo_list': node.api_url_for('github_repo_list'),
         'set_repo': node.api_url_for('github_set_config'),
         'settings': web_url_for('user_addons'),
+        'files': node.web_url_for('collect_file_trees'),
     }
     if user_settings:
         result['owner'] = web_url_for('profile_view_id',

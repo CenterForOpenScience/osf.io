@@ -28,7 +28,10 @@
     <div data-bind="if: showSettings">
         <p>
             <strong>Current Repo:</strong>
-            <span data-bind="text: currentRepo"></span>
+
+            <a data-bind="attr.href: urls().files">
+                {{currentRepo}}
+            </a>
         </p>
         <div class="btn-group" role="group" data-bind="attr.disabled: creating">
 
@@ -52,8 +55,13 @@
                     class="btn btn-primary">
               Submit
             </button> 
-          </div>         
+          </div>
+
         </div>          
+    </div>
+    <!-- Flashed Messages -->
+    <div class="help-block">
+        <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
 
 </div>
