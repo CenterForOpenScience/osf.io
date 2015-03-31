@@ -1042,7 +1042,11 @@ function toolbarDismissIcon (){
  function deleteMultipleIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-danger', { 
-            onclick : function () { _removeEvent.call(tb, null, tb.multiselected); }
+            onclick : function (event) { 
+                    var configOption = resolveconfigOption.call(tb, tb.multiselected[0], 'removeEvent', [event, tb.multiselected]); // jshint ignore:line
+                if(!configOption){ _removeEvent.call(tb, null, tb.multiselected); } 
+
+            }
         }, [
         m('i.fa.fa-trash'),
         m('span.hidden-xs', 'Delete Selected')
