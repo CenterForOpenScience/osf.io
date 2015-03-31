@@ -146,7 +146,7 @@ function _githubDefineToolbar (item){
                 }},
                 { name : 'gotoRepo', template : function(){
                     return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { window.location = item.data.urls.repo;} 
+                            onclick : function(event) { window.open(item.data.urls.repo, '_blank');} 
                         },[
                         m('i.fa.fa-external-link'),
                         m('span.hidden-xs','Go to Repository')
