@@ -303,6 +303,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
     page = payload.get('page') or 0
     path = payload.get('path')
+    size = payload.get('size')
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -314,7 +315,8 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
 
-    size = payload.get('size')
+    if record is None:
+        raise HTTPError(httplib.NOT_FOUND)
 
     try:
         size = int(size)
@@ -323,9 +325,6 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     if size > len(record.versions):
         size = len(record.versions)
-
-    if record is None:
-        raise HTTPError(httplib.NOT_FOUND)
 
     indices, versions, more = record.get_versions(
         page=page,
