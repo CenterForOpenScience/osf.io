@@ -185,13 +185,10 @@ ViewModel.prototype.updateRepoList = function(){
     var self = this;
     return self.fetchRepoList()
         .done(function(repos){
-
             self.repoList(repos);
             self.selectedRepo(self.currentRepo());
-
         });
 };
-
 
 
 ViewModel.prototype.createRepo = function(repoName) {
@@ -206,11 +203,10 @@ ViewModel.prototype.createRepo = function(repoName) {
         self.creating(false);
         self.updateFromData(response);
         if (!self.loadedRepoList()) {
-            self.updateRepoList();
+            self.updateRepoList().done(function() {
+                self.selectedRepo(response.github_user + " / "+ repoName)
+            });
         }
-        //self.selectedRepo(repoName);
-        //self.selectedRepo();
-        //self.repoList();
         self.showSelect(true);
         var msg = 'Successfully created repo "' + repoName + '". You can now select it from the drop down list.';
         var msgType = 'text-success';

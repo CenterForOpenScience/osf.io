@@ -18,6 +18,23 @@ from website.addons.github.utils import check_permissions
 from website.addons.github.tests.utils import create_mock_github
 
 
+from faker import Faker
+fake = Faker()
+
+class MockGithubRepo(object):
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
+
+class MockGithubOwner(object):
+
+    def __init__(self, **kwargs):
+        self.login = fake.domain_word()
+
+
+
+
 # TODO: Test remaining CRUD methods
 # TODO: Test exception handling
 class TestCRUD(OsfTestCase):
@@ -63,6 +80,21 @@ class TestGithubViews(OsfTestCase):
         self.node_settings.user = self.github.repo.return_value.owner.login
         self.node_settings.repo = self.github.repo.return_value.name
         self.node_settings.save()
+
+
+    @mock.patch('website.addons.github.api.GitHub.repos')
+    @mock.patch('website.addons.github.api.GitHub.my_org_repos')
+    def test_github_repo_list(self, mock_my_org_repos, mock_repos):
+
+        fake_repos = [
+            MockGithubRepo(name=fake.domain_word(), owner=MockGithubOwner())
+            for i in range(10)
+        ]
+        mock_repos.return_value = fake_repos
+        url = self.node_settings.owner.api_url_for('github_repo_list')
+        ret = self.app.get(url, auth=self.user.auth)
+
+        assert_equals(ret.json, {'repo_names': ['{0} / {1}'.format(repo.owner.login, repo.name) for repo in fake_repos]})
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
         github_mock = self.github
@@ -389,6 +421,7 @@ class TestGithubSettings(OsfTestCase):
         self.node_settings.user = 'Queen'
         self.node_settings.repo = 'Sheer-Heart-Attack'
         self.node_settings.save()
+
 
     @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.add_hook')
     @mock.patch('website.addons.github.api.GitHub.repo')
