@@ -5,26 +5,41 @@ import sys
 import argparse
 from faker import Faker
 import itertools
+from random import choice
 
 from modularodm import Q
 
 from framework.auth import Auth
 from website.app import init_app
 from website import models, security
-from tests.factories import ProjectFactory
+from tests.factories import NodeFactory
 
 from website.models import NodeLog, Node
 
 fake = Faker()
 
 app = None
+CATEGORY_MAP = {
+    '': 'Uncategorized',
+    'project': 'Project',
+    'hypothesis': 'Hypothesis',
+    'methods and measures': 'Methods and Measures',
+    'procedure': 'Procedure',
+    'instrumentation': 'Instrumentation',
+    'data': 'Data',
+    'analysis': 'Analysis',
+    'communication': 'Communication',
+    'other': 'Other',
+}
+descriptors = CATEGORY_MAP.keys()
 
 def create_fake_projects(creator, depth, num_logs, level=1, parent=None):
     #auth = Auth(user=creator)
-    if depth == 0:
+    if depth < 0:
         return None
-    project_title = fake.sentence()
-    project = ProjectFactory.build(title=project_title, description=fake.sentences(), creator=creator, project=parent, privacy='public')
+    descriptor = choice(descriptors) if (level % 2 == 0) else 'project'
+    project_title = parent.title + (': ' + CATEGORY_MAP[descriptor]) if (level % 2 == 0) else fake.word()
+    project = NodeFactory.build(title=project_title, description=fake.sentences(), creator=creator, project=parent, is_public=True, privacy='public', category=descriptor)
     for i in range(int(num_logs)):
         project.add_log('wiki_updated', {
             'project': project._id,
