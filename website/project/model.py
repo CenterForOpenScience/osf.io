@@ -7,6 +7,8 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
+import itertools
+import pymongo
 
 import pytz
 import blinker
@@ -282,6 +284,16 @@ class ApiKey(StoredObject):
 
 
 class NodeLog(StoredObject):
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('params.node', pymongo.ASCENDING),
+                ('_id', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -1660,6 +1672,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
+        params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
