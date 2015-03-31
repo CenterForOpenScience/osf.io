@@ -84,6 +84,7 @@ var UserProfileClient = oop.defclass({
                 status: status,
                 error: error
             });
+            ret.reject(xhr, status, error);
         }.bind(this));
 
         return ret.promise();
