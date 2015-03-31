@@ -103,7 +103,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path, state='draft', **kwargs):
+    def metadata(self, path='/', state='draft', **kwargs):
         url = provider.build_url(self.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
