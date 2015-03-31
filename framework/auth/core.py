@@ -192,10 +192,14 @@ class User(GuidStoredObject, AddonModelMixin):
         'suffix',
         'merged_by',
         'date_disabled',
+        'date_confirmed',
         'jobs',
         'schools',
         'social',
     }
+
+    # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
+    #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
         'orcid': u'http://orcid.com/{}',
@@ -708,8 +712,6 @@ class User(GuidStoredObject, AddonModelMixin):
         self.unclaimed_records = {}
         self.save()
 
-        # We must manually update search here because fullname wasn't changed
-        self.update_search()
         self.update_search_nodes()
 
         return True
