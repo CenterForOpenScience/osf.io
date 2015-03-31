@@ -394,6 +394,9 @@ var tableResize = function(selector, checker) {
         }).get();
         // Set the width of thead columns
         $table.find('thead tr').children().each(function(i, v) {
+            if(i ===0 && $(v).width()>colWidth[i]){
+                $($bodyCells[i]).width($(v).width());
+            }
             if(checker && i === checker) {
                 $(v).width(colWidth[i] + colWidth[i + 1]);
             }else{

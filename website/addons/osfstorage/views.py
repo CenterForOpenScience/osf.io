@@ -314,9 +314,11 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     record = model.OsfStorageFileRecord.find_by_path(path, node_addon)
 
+    size = payload.get('size')
+
     try:
-        size = payload.get('size')
-    except AttributeError:
+        size = int(size)
+    except (TypeError, ValueError):
         size = len(record.versions)
 
     if size > len(record.versions):
