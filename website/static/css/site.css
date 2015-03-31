@@ -2291,25 +2291,9 @@ span#profileFullname{
     overflow-x: hidden;
 }
 
-#file-navigation .osf-panel {
-    height: auto;
-}
-
 #file-navigation #tb-tbody {
     max-height: 500px;
     height: inherit;
-}
-
-#file-navigation .osf-panel-flex{
-    height: auto;
-}
-
-#file-navigation .osf-panel-body-flex {
-    height: auto;
-}
-
-.reset-height {
-    height: auto;
 }
 
 .superlist li.active {
@@ -2452,6 +2436,10 @@ span#profileFullname{
     -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px;
+}
+
+.reset-height {
+    height: auto;
 }
 
 /* Remove border for files page treebeard*/
