@@ -76,7 +76,8 @@ def _render_node(node, auth=None):
         'primary': node.primary,
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
-        'permissions': perm,  # A string, e.g. 'admin', or None
+        'permissions': perm,  # A string, e.g. 'admin', or None,
+        'path': node.path_above(auth)
     }
 
 
