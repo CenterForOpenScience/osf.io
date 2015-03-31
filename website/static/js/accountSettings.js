@@ -25,7 +25,7 @@ var UserProfile = oop.defclass({
         this.id = ko.observable();
         this.emails = ko.observableArray();
 
-        this.primaryEmail = ko.computed(function () {
+        this.primaryEmail = ko.pureComputed(function () {
             var emails = this.emails();
             for (var i = 0; i < this.emails().length; i++) {
                 if(emails[i].isPrimary()) {
@@ -35,7 +35,7 @@ var UserProfile = oop.defclass({
             return new UserEmail();
         }.bind(this));
 
-        this.alternateEmails = ko.computed(function () {
+        this.alternateEmails = ko.pureComputed(function () {
             var emails = this.emails();
             var retval = [];
             for (var i = 0; i < this.emails().length; i++) {
@@ -46,7 +46,7 @@ var UserProfile = oop.defclass({
             return retval;
         }.bind(this));
 
-        this.unconfirmedEmails = ko.computed(function () {
+        this.unconfirmedEmails = ko.pureComputed(function () {
             var emails = this.emails();
             var retval = [];
             for (var i = 0; i < this.emails().length; i++) {
