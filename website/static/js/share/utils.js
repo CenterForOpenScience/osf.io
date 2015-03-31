@@ -49,15 +49,15 @@ utils.updateVM = function(vm, data) {
     data.results.forEach(function(result) {
         result.title = utils.scrubHTML(result.title);
         result.description = utils.scrubHTML(result.description);
-    });    
-    vm.results.push.apply(vm.results, data.results);   
+    });
+    vm.results.push.apply(vm.results, data.results);
     m.redraw();
     $.map(callbacks, function(cb) {
         cb();
     });
 };
 
-utils.loadMore = function(vm) {    
+utils.loadMore = function(vm) {
     var ret = m.deferred();
     if (utils.buildQuery(vm).length === 0) {
         ret.resolve(null);
@@ -199,12 +199,24 @@ utils.loadStats = function(vm){
         url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
         background: true
     }).then(function(data) {
+        var unload;
+        if (vm.statsData){
+            unload = $.map(vm.statsData.charts.shareDonutGraph.columns, function(datum) {
+                return datum[0];
+            });
+        } else {
+            unload = [];
+        }
         vm.statsData = data;
         $.map(Object.keys(vm.graphs), function(type) {
             if(type === 'shareDonutGraph') {
                 var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
+                vm.statsData.charts.shareDonutGraph.columns = vm.statsData.charts[type].columns.filter(function(datum) {
+                    return (datum[1] > 0);
+                });
             }
+            vm.statsData.charts[type].unload = unload;
             vm.graphs[type].load(vm.statsData.charts[type]);
         }, utils.errorState.bind(this, vm));
         vm.statsLoaded(true);
