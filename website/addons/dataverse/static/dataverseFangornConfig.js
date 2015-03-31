@@ -130,7 +130,7 @@ function _dataverseDefineToolbar (item) {
             buttons.push(
                 { name : 'deleteFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-danger', {
-                            onclick : function(event) { Fangorn.ButtonEvents._removeEvent.call(self, event, item); } 
+                            onclick : function(event) { Fangorn.ButtonEvents._removeEvent.call(self, event, [item]); } 
                         },[
                         m('i.fa.fa-times'),
                         m('span.hidden-xs','Delete')
