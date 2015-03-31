@@ -37,6 +37,7 @@ from website.project.views.node import _view_project, abbrev_authors, _should_sh
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.wiki.model import NodeWikiPage
 
 from tests.base import (
     OsfTestCase,
@@ -2858,7 +2859,7 @@ class TestComments(OsfTestCase):
         content = content if content is not None else 'the quick brown fox jumps over the lazy dog'
         url = project.api_url + 'comment/'
         project.update_node_wiki(name=name, content='a wiki page', auth=Auth(project.creator))
-        return self.app.post_json(
+        self.app.post_json(
             url,
             {
                 'content': content,
@@ -2868,6 +2869,10 @@ class TestComments(OsfTestCase):
             },
             **kwargs
         )
+        wiki_keys = NodeWikiPage.find(Q('node', 'eq', self.project)).get_keys()
+        for root_target in wiki_keys:
+            wiki_page = NodeWikiPage.load(root_target)
+            wiki_page.reload()
 
     def _add_comment_files(self, project, content=None, path=None, provider='osfstorage', **kwargs):
         project.add_addon(provider, auth=Auth(self.user))
@@ -3486,26 +3491,26 @@ class TestComments(OsfTestCase):
         self.project.reload()
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['files'], 3)
-    """
+
     def test_n_unread_comments_wiki(self):
         self._add_comment_wiki(self.project, auth=self.project.creator.auth)
         self._add_comment_wiki(self.project, content='yellow', name='Cold play', auth=self.project.creator.auth)
         self.project.reload()
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['wiki'], 2)
-    """
+
     def test_n_unread_comments_total(self):
 
         self._add_comment_files(self.project, auth=self.project.creator.auth)
         self.project.reload()
 
         self._add_comment(self.project, auth=self.project.creator.auth)
-        #self._add_comment_wiki(
-        #    self.project,
-        #    content='yellow',
-        #    name='Cold play',
-        #    auth=self.project.creator.auth
-        #)
+        self._add_comment_wiki(
+            self.project,
+            content='yellow',
+            name='Cold play',
+            auth=self.project.creator.auth
+        )
         self._add_comment_files(
             self.project,
             content=None,
@@ -3515,7 +3520,7 @@ class TestComments(OsfTestCase):
         )
         self.project.reload()
 
-        #self._add_comment_wiki(self.project, auth=self.project.creator.auth)
+        self._add_comment_wiki(self.project, auth=self.project.creator.auth)
         self._add_comment_files(
             self.project,
             content='I failed my test',
@@ -3527,7 +3532,7 @@ class TestComments(OsfTestCase):
 
         res = _view_project(self.project, auth=Auth(user=self.user))['user']['unread_comments']
         assert_equal(res['node'], 1)
-        #assert_equal(res['wiki'], 2)
+        assert_equal(res['wiki'], 2)
         assert_equal(res['files'], 3)
 
 
