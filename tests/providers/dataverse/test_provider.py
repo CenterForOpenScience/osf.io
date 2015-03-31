@@ -63,6 +63,7 @@ def file_metadata():
             <updated>2015-03-26T20:00:12.361Z</updated>
         </entry>'''
 
+
 @pytest.fixture
 def dataset_metadata():
     return b'''<feed xmlns="http://www.w3.org/2005/Atom">
@@ -106,6 +107,21 @@ def dataset_metadata():
         <category term="latestVersionState" scheme="http://purl.org/net/sword/terms/state" label="State">DRAFT</category>
     </feed>'''
 
+
+@pytest.fixture
+def empty_dataset_metadata():
+    return b'''<feed xmlns="http://www.w3.org/2005/Atom">
+        <id>https://apitest.dataverse.org/dvn/api/data-deposit/v1.1/swordv2/edit/study/doi:10.5072/FK2/ABCDEF</id>
+        <link href="https://apitest.dataverse.org/dvn/api/data-deposit/v1.1/swordv2/edit/study/doi:10.5072/FK2/ABCDEF" rel="self"/>
+        <title type="text">A look at wizards</title>
+        <author>
+            <name>Potter, Harry</name>
+        </author>
+        <updated>2015-03-26T18:53:50.917Z</updated>
+        <category term="isMinorUpdate" scheme="http://purl.org/net/sword/terms/state" label="State">true</category>
+        <category term="locked" scheme="http://purl.org/net/sword/terms/state" label="State">false</category>
+        <category term="latestVersionState" scheme="http://purl.org/net/sword/terms/state" label="State">DRAFT</category>
+    </feed>'''
 
 class TestCRUD:
 
@@ -181,6 +197,20 @@ class TestMetadata:
         assert result[0]['extra']['original'] == 'thefile.txt'
         assert result[0]['extra']['version'] == 2
         assert result[0]['extra']['fileId'] == '161'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_no_files(self, provider, empty_dataset_metadata):
+        url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', url, status=200, body=empty_dataset_metadata)
+
+        result = yield from provider.metadata('draft')
+
+        assert isinstance(result, dict)
+        assert result['provider'] == 'dataverse'
+        assert result['kind'] == 'folder'
+        assert result['name'] == 'A look at wizards'
+        assert result['path'] == '/{0}/'.format(provider.doi)
 
     @async
     @pytest.mark.aiohttpretty
