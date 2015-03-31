@@ -62,11 +62,10 @@ var UserProfile = oop.defclass({
 
 
 var UserProfileClient = oop.defclass({
-    constructor: function () {
-        this.urls = {
-            fetch: '/api/v1/profile/',
-            update: '/api/v1/profile/'
-        };
+    constructor: function () {},
+    urls: {
+        fetch: '/api/v1/profile/',
+        update: '/api/v1/profile/'
     },
     fetch: function () {
         var ret = $.Deferred();
