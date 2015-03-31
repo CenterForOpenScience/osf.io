@@ -67,7 +67,6 @@ class GoogleDriveGuidFile(GuidFile):
         addon = self.node.get_addon('googledrive')
         if not addon:
             return ''  # Must return a str value this will error out properly later
-
         folder = addon.folder_path
         if folder == '/':
             return ''
@@ -112,17 +111,13 @@ class GoogleDriveProvider(ExternalProvider):
     def handle_callback(self, response):
         client = self._auth_client
         info = client.userinfo(response['access_token'])
-        #TODO(kush): Remove this if else loop. Used only for debugging
-        if 'KushagraGuptaKG' in info['profile']:
-            display_name = info['name'] + '[GMAIL]'
-        else:
-            display_name = info['name'] + '[RIT]'
         return {
             'provider_id': info['sub'],
-            'display_name': display_name,
+            'display_name': info['display_name'],
             'profile_url': info['profile']
         }
 
+    # TODO: Remove, if not used
     def _get_folders(self):
         """ Get a list of a user's folders"""
         client = self._drive_client
@@ -131,32 +126,16 @@ class GoogleDriveProvider(ExternalProvider):
 
     def _refresh_token(self, access_token, refresh_token):
         client = self._auth_client
-        token = client.refresh(access_token, refresh_token)
-        return token
+        if refresh_token:
+            token = client.refresh(access_token, refresh_token)
+            return token
+        else:
+            exceptions.AddonError("Refresh Token is not Obtained")
 
 
 class GoogleDriveUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = GoogleDriveProvider
     oauth_grants = fields.DictionaryField()
-    serializer = GoogleDriveSerializer
-    #
-    # def _get_connected_accounts(self):
-    #     """ Get user's connected Google Drive accounts"""
-    #     return [
-    #         x for x in self.owner.external_accounts if x.provider == 'googledrive'
-    #     ]
-    #
-    #
-    # # using citations/utils for now. Should be generalized to addons/utils
-    # def to_json(self, user):
-    #     ret = super(GoogleDriveUserSettings, self).to_json(user)
-    #
-    #     ret['accounts'] = [
-    #         serialize_account(each)
-    #         for each in self._get_connected_accounts()
-    #     ]
-    #     return ret
-
 
 class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = GoogleDriveProvider
@@ -188,18 +167,6 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         self.drive_folder_id= folder['id']
         self.folder_path = folder['path']
 
-    #
-    # # using citations/utils for now. Should be generalized to addons/utils
-    # # TODO: Why am I used?
-    # @property
-    # def root_folder(self):
-    #     root = serialize_folder(
-    #         'All Documents',
-    #         id='root',
-    #         parent_id='__'
-    #     )
-    #     root['kind'] = 'folder'
-    #     return root
 
     @property
     def provider_name(self):
@@ -218,8 +185,7 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
     def set_target_folder(self, folder, auth):
         """Configure this addon to point to a Google Drive folder
 
-        :param str drive_folder_id:
-        :param ExternalAccount external_account:
+        :param dict folder:
         :param User user:
         """
         self.drive_folder_id = folder['id']
@@ -236,7 +202,6 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         self.user_settings.save()
 
         # update this instance
-        self.drive_folder_id = self.drive_folder_id
         self.save()
 
         self.owner.add_log(
@@ -249,6 +214,26 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
             },
             auth=auth,
         )
+
+    @property
+    def selected_folder_name(self):
+        if self.drive_folder_id is None:
+            return ''
+        elif self.drive_folder_id == 'root':
+            return 'Full Google Drive'
+        else:
+            # folder = self.folder_metadata(self.drive_folder_id)
+            return self.drive_folder_name
+
+    # TODO: Remove me, if not required
+    def folder_metadata(self, folder_id):
+        """
+        :param folder_id: Id of the selected folder
+        :return: subfolders,if any.
+        """
+        client =GoogleDriveClient(self.external_account.oauth_key)
+        folder = client.file_or_folder_metadata(fileId=folder_id)
+        return folder
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -286,24 +271,6 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
                 },
             },
         )
-    @property
-    def selected_folder_name(self):
-        if self.drive_folder_id is None:
-            return ''
-        elif self.drive_folder_id == 'root':
-            return 'Full Google Drive'
-        else:
-            # folder = self.folder_metadata(self.drive_folder_id)
-            return self.drive_folder_name
-
-    def folder_metadata(self, folder_id):
-        """
-        :param folder_id: Id of the selected folder
-        :return: subfolders,if any.
-        """
-        client =GoogleDriveClient(self.external_account.oauth_key)
-        folder = client.file_or_folder_metadata(fileId=folder_id)
-        return folder
 
     def fetch_access_token(self):
         self.refresh_access_token()
