@@ -205,19 +205,21 @@ def update_node(node, index=INDEX):
     component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
     category = 'component' if node.category in component_categories else node.category
 
+    '''
     if category == 'project':
         elastic_document_id = node._id
         parent_id = None
         category = 'registration' if node.is_registration else category
     else:
-        try:
-            elastic_document_id = node._id
-            parent_id = node.parent_id
-            category = 'registration' if node.is_registration else category
-        except IndexError:
-            # Skip orphaned components
-            return
-    if node.is_deleted or not node.is_public:
+    '''
+    try:
+        elastic_document_id = node._id
+        parent_id = node.parent_id
+        category = 'registration' if node.is_registration else category
+    except IndexError:
+        # Skip orphaned components
+        return
+    if node.is_deleted or not node.is_public or node.is_dashboard:
         delete_doc(elastic_document_id, node)
     else:
         try:
@@ -225,6 +227,9 @@ def update_node(node, index=INDEX):
         except TypeError:
             normalized_title = node.title
         normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+
+        boost = int(not node.is_registration) + 1  # This is for making registered projects less relevant
+        boost = boost + (-1.0 * (node.depth / 5.0))
 
         elastic_document = {
             'id': elastic_document_id,
@@ -248,7 +253,7 @@ def update_node(node, index=INDEX):
             'wikis': {},
             'parent_id': parent_id,
             'iso_timestamp': node.date_created,
-            'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
+            'boost': boost,
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -256,7 +261,7 @@ def update_node(node, index=INDEX):
         ]:
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+        es.index(index=index, doc_type='project', id=elastic_document_id, body=elastic_document, refresh=True)
 
 
 @requires_search
