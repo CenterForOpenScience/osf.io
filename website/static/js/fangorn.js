@@ -228,9 +228,12 @@ function moveItem(to, from) {
             'Content-Type': 'Application/json'
         },
         data: JSON.stringify(data)
-    }).done(function(resp) {
-        from.data = resp;
-        from.data.status = undefined;
+    }).done(function(resp, _, xhr) {
+        if (xhr.status !== 202) {
+            from.data = resp;
+            from.data.status = undefined;
+            from.notify.update('Successfully moved.', 'success', 1, 1000);
+        }
         inheritFromParent(from, from.parent());
         tb.redraw();
 
