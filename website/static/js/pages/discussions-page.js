@@ -7,7 +7,6 @@ var userName = window.contextVars.currentUser.name;
 var canComment = window.contextVars.currentUser.canComment;
 var hasChildren = window.contextVars.node.hasChildren;
 var target = window.contextVars.commentTarget;
-target = (target==='None')? 'node' : target;
 var targetId = window.contextVars.commentTargetId;
 var id = null;
 if (window.contextVars.comment) {

@@ -689,7 +689,6 @@ var CommentListModel = function(userName, hostPage, hostName, mode, canComment, 
         return comments;
     });
 
-
     self.fetch(true, thread);
 
 };

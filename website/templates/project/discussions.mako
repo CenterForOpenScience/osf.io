@@ -108,7 +108,7 @@
             <!-- Comment thread page -->
             <h6>You are viewing a single comment's thread.
             <a data-bind="attr:{href: '${node['url']}'+rootUrl()}">View the rest of the comments in this section</a></h6>
-            <a data-bind="attr:{href: parentUrl()}"><h6><i class="icon-caret-up"></i> Parent comment</h6></a>
+            <a data-bind="attr:{href: parentUrl()}"><h6><i class="fa fa-caret-up"></i> Parent comment</h6></a>
         % endif
         <div class="comment-list" data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
         % if not comment is UNDEFINED:
@@ -139,7 +139,7 @@ ${parent.javascript_bottom()}
         % endif
 
         window.contextVars.commentTarget = '${comment_target}';
-        window.contextVars.commentTargetId = '${comment_target_id}';
+        window.contextVars.commentTargetId = ${json.dumps(comment_target_id)};
 </script>
 
 <script src=${"/static/public/js/discussions-page.js" | webpack_asset}></script>

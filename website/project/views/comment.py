@@ -295,12 +295,12 @@ def list_comments(auth, **kwargs):
     is_list = request.args.get('isCommentList')
     is_widget = False
 
-    if page == 'total' and root_id == 'None':  # "Total" on discussion page
+    if page == 'total' and not root_id:  # "Total" on discussion page
         comments = list_total_comments(node, auth, 'total')
     elif page == 'total':  # Discussion widget on overview's page
         comments = list_total_comments_widget(node, auth)
         is_widget = True
-    elif root_id == 'None':  # Overview/Files/Wiki page on discussion page
+    elif not root_id:  # Overview/Files/Wiki page on discussion page
         comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
@@ -426,7 +426,7 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
             timestamps[page] = dict()
 
         # if updating timestamp on the files/wiki total page...
-        if root_id is None or root_id == 'None':
+        if root_id is None:
             return _update_comments_timestamp_total(node, auth, page)
 
         # if updating timestamp on a specific file/wiki page

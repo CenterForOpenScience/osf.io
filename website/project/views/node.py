@@ -839,7 +839,7 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
     """Return the number of unread comments on a node for a user."""
     if not node.is_contributor(user):
         return 0
-    if root_id is None or root_id == 'None' or page == 'node':
+    if root_id is None or page == 'node':
         return n_unread_total(node, user, page, check=check)
     root_target = Guid.load(root_id)
     if root_target:
