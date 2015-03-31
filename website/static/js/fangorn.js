@@ -1085,22 +1085,24 @@ function filterRowsNotInParent(rows) {
  */
 
  function _fangornMultiselect (event, row) {
-        var tb = this;
-        var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
-        this.options.iconState.rowIcons = [];
-        if(tb.multiselected.length === 1){
-            // empty row icons and assign row icons from item information
-            this.options.iconState.rowIcons = row.icons;
-            // temporarily remove classes until mithril redraws raws with another hover. 
-            // $('.tb-row').removeClass('fangorn-selected');
-            // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
-            tb.select('#tb-tbody').removeClass('unselectable');
-            this.options.iconState.generalIcons.deleteMultiple.on = false;
-        } else {
-            this.options.iconState.generalIcons.deleteMultiple.on = true;
-            tb.select('#tb-tbody').addClass('unselectable');
+    var tb = this;
+    var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+    this.options.iconState.rowIcons = [];
+    if(tb.multiselected.length === 1){
+        // empty row icons and assign row icons from item information
+        this.options.iconState.rowIcons = row.icons;
+        // temporarily remove classes until mithril redraws raws with another hover. 
+        // $('.tb-row').removeClass('fangorn-selected');
+        // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
+        tb.select('#tb-tbody').removeClass('unselectable');
+        tb.options.iconState.generalIcons.deleteMultiple.on = false;
+    } else {
+        if(tb.multiselected[0].data.provider !== 'github') {
+            tb.options.iconState.generalIcons.deleteMultiple.on = true;
         }
+            tb.select('#tb-tbody').addClass('unselectable');
     }
+}   
 
 
 
