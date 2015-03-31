@@ -24,7 +24,8 @@ from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
 
-<<<<<<< HEAD
+from website.oauth.signals import oauth_complete
+
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
     'project',
@@ -38,9 +39,6 @@ USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     'addon',
     'user_settings_default.mako',
 )
-=======
-from website.oauth.signals import oauth_complete
->>>>>>> 31253cab2800d3556f3a1276545973fe293715df
 
 lookup = TemplateLookup(
     directories=[
@@ -494,9 +492,11 @@ class AddonUserSettingsBase(AddonSettingsBase):
         })
         return ret
 
-
 @oauth_complete.connect
 def oauth_complete(provider, account, user):
+    """
+    Callback to completion of OAuth flow in website/oauth/views.py
+    """
     if not user or not account:
         return
     user.add_addon(account.provider)
