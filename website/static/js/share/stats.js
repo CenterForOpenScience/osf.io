@@ -62,6 +62,9 @@ function timeGraph (data) {
         },
         legend: {
             show: false
+        },
+        tooltip: {
+          grouped: false
         }
     });
 }
