@@ -836,6 +836,45 @@ function expandStateLoad(item) {
     reapplyTooltips();
 }
 
+/**
+ * @param tree A Treebeard _item object for the row
+ * @param nodeID Current node._id
+ * @param file window.contextVars.file object
+ */
+function findCurrentFileID(tree, nodeID, file) {
+    var tb = this;
+    if (tb.options.folderIndex !== undefined && tb.options.folderArray !== undefined && tb.options.folderIndex < tb.options.folderArray.length) {
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.name === tb.options.folderArray[tb.options.folderIndex]) {
+                tb.options.folderIndex++;
+                if (child.data.kind === 'folder') {
+                    tb.updateFolder(null, child);
+                    tree = child;
+                }
+                else {
+                    tb.currentFileID = child.id;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Scroll to the Treebeard item corresponding to the given ID
+ * @param fileID id of a Treebeard _item object
+ */
+function scrollToFile(fileID) {
+    var tb = this;
+    if (fileID !== undefined) {
+        var index = tb.returnIndex(fileID);
+        var visibleIndex = tb.visibleIndexes.indexOf(index);
+        if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
+            var scrollTo = visibleIndex * tb.options.rowHeight;
+            $('#tb-tbody').scrollTop(scrollTo);
+        }
+    }
+}
 
 /**
  * OSF-specific Treebeard options common to all addons.
@@ -1007,7 +1046,9 @@ Fangorn.DefaultColumns = {
 Fangorn.Utils = {
     inheritFromParent: inheritFromParent,
     resolveconfigOption: resolveconfigOption,
-    reapplyTooltips : reapplyTooltips
+    reapplyTooltips : reapplyTooltips,
+    findCurrentFileID: findCurrentFileID,
+    scrollToFile: scrollToFile
 };
 
 Fangorn.DefaultOptions = tbOptions;

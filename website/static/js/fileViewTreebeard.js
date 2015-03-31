@@ -58,30 +58,8 @@ function FileViewTreebeard(data) {
     lazyLoadOnLoad: function(tree) {
         var tb = this;
         Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree);
-
-        if (tb.options.folderIndex < tb.options.folderArray.length) {
-            for (var i = 0; i < tree.children.length; i++) {
-                var child = tree.children[i];
-                if (window.contextVars.node.id === child.data.nodeId && child.data.provider === window.contextVars.file.provider && child.data.name === tb.options.folderArray[tb.options.folderIndex]) {
-                    tb.options.folderIndex++;
-                    if (child.data.kind === 'folder') {
-                        tb.updateFolder(null, child);
-                        tree = child;
-                    }
-                    else {
-                        tb.currentFileID = child.id;
-                    }
-                }
-            }
-        }
-        if (tb.currentFileID) {
-            var index = tb.returnIndex(tb.currentFileID);
-            var visibleIndex = tb.visibleIndexes.indexOf(index);
-            if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
-                var scrollTo = visibleIndex * tb.options.rowHeight;
-                $('#tb-tbody').scrollTop(scrollTo);
-            }
-        }
+        Fangorn.Utils.findCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
+        Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
     },
     resolveRows: function (item) {
         var selectClass = '';
