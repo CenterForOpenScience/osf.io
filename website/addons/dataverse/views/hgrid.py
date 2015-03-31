@@ -39,10 +39,6 @@ def dataverse_hgrid_root(node_addon, auth,  **kwargs):
         else:
             return []
 
-    dataset_name = node_addon.dataset
-    if len(dataset_name) > 23:
-        dataset_name = u'{0}...'.format(dataset_name[:20])
-
     permissions = {
         'edit': can_edit and not node.is_registration,
         'view': node.can_view(auth)
@@ -54,10 +50,10 @@ def dataverse_hgrid_root(node_addon, auth,  **kwargs):
 
     return [rubeus.build_addon_root(
         node_addon,
-        dataset_name,
+        node_addon.dataset,
         urls=urls,
         permissions=permissions,
-        dataset=dataset_name,
+        dataset=node_addon.dataset,
         doi=dataset.doi,
         dataverse=dataverse.title,
         hasPublishedFiles=bool(published_files),
