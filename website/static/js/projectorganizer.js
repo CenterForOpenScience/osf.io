@@ -1226,7 +1226,6 @@ function toolbarDismissIcon (){
                     }).fail($osf.handleJSONError);
 
                 });
-                // Add folder action
                 tb.options.iconState.mode = 'bar'; 
             }
         }, [
@@ -1234,7 +1233,36 @@ function toolbarDismissIcon (){
         m('span.hidden-xs', 'Add')
     ]);
  }
+ function renameButton (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-info', { 
+            onclick : function () { 
+                var val = $.trim($('#renameInput').val());
+                if(tb.multiselected.length !== 1 || val.length < 1){
+                    tb.options.iconState.mode = 'bar'; 
+                    return; 
+                }
+                var item = tb.multiselected[0];
+                var theItem = item.data;
+                var url = theItem.apiURL + 'edit/',
+                    postAction,
+                    postData = {
+                        name: 'title',
+                        value: val
+                    };
+                postAction = $osf.postJSON(url, postData);
+                postAction.done(function () {
+                    tb.updateFolder(null, tb.find(1));
+                    // Also update every
+                }).fail($osf.handleJSONError);
+                tb.options.iconState.mode = 'bar'; 
 
+            }
+        }, [
+        m('i.fa.fa-pencil'),
+        m('span.hidden-xs', 'Rename')
+    ]);
+ }
 
 function _poToolbar (){
     var tb = this; 
@@ -1286,7 +1314,21 @@ function _poToolbar (){
                     ])
             ]);  
     }    
-
+    if(tb.options.iconState.mode === 'rename'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
+                        m('.col-xs-3.tb-buttons-col', 
+                            m('.fangorn-toolbar.pull-right', 
+                                [
+                                renameButton.call(tb),
+                                toolbarDismissIcon.call(tb)
+                                ]
+                            )
+                        )
+                    ])
+            ]);  
+    }    
 
 } 
 
@@ -1345,7 +1387,9 @@ function _poDefineToolbar (item){
         buttons.push(
         { name : 'renameItem', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
-                    onclick : function(event) {  }
+                    onclick : function(event) {  
+                        tb.options.iconState.mode = 'rename';
+                    }
                 }, [
                 m('span','Rename')
             ]);
