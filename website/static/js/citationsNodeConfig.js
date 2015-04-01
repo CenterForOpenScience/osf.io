@@ -32,7 +32,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         // externalAccounts
         self.accounts = ko.observable([]);
 
-        self.messages.SUBMIT_SETTINGS_SUCCESS = ko.pureComputed(function(){
+        self.messages.submitSettingsSuccess = ko.pureComputed(function(){
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Overview page</a> to view your citations.';
         });
@@ -70,7 +70,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return data.accounts;
         });
         request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
+            self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
                 url: self.url,
                 textStatus: textStatus,
@@ -101,7 +101,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 
         window.oauthComplete = function(res) {
             // Update view model based on response
-            self.changeMessage(self.messages.CONNECT_ACCOUNT_SUCCESS(), 'text-success', 3000);
+            self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
             self.updateAccounts()
                 .done(function() {
                     $osf.postJSON(

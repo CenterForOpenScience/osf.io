@@ -41,7 +41,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             var selected = self.selected();
             return (userHasAuth && selected) ? selected.type : '';
         });
-        self.messages.SUBMIT_SETTINGS_SUCCESS =  ko.pureComputed(function() {
+        self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
