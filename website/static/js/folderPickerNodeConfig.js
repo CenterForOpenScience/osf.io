@@ -237,7 +237,8 @@ var FolderPickerViewModel = oop.defclass({
         };
         if (typeof data === 'undefined'){
             self.fetchFromServer()
-            .done(applySettings);
+                .done(applySettings)
+                .fail(ret.reject);
         }
         else{
             applySettings(data);
