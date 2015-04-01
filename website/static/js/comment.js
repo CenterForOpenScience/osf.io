@@ -302,7 +302,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
         self.content(response.content);
         self.dateModified(response.dateModified);
         self.editing(false);
-        self.modified(true);
+        self.modified = true;
         self.editErrorMessage('');
         self.$root.editors -= 1;
         // Refresh tooltip on date modified, if present
