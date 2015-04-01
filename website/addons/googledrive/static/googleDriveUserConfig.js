@@ -27,7 +27,7 @@ var ViewModel = function(url) {
     $.ajax({
         url: url,
         type: 'GET',
-        dataType: 'json',
+        dataType: 'json'
     }).done(function(response) {
         var data =response.result;
         self.userHasAuth(data.userHasAuth);
