@@ -95,6 +95,18 @@ class UserTestCase(base.OsfTestCase):
             [self.unconfirmed.username]
         )
 
+    def test_remove_unconfirmed_email(self):
+        self.user.add_unconfirmed_email('foo@bar.com')
+        self.user.save()
+
+        assert_in('foo@bar.com', self.user.unconfirmed_emails) # sanity check
+
+        self.user.remove_unconfirmed_email('foo@bar.com')
+        self.user.save()
+
+        assert_not_in('foo@bar.com', self.user.unconfirmed_emails)
+
+
     def test_confirm_email(self):
         token = self.user.add_unconfirmed_email('foo@bar.com')
         self.user.confirm_email(token)
