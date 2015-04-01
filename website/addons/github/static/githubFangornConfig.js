@@ -122,6 +122,16 @@ function _githubDefineToolbar (item){
 
     // Download Zip File
     if (item.kind === 'folder') {
+    var branchArray = [];
+    if (item.data.branches) {
+        item.data.branch = item.data.branch || item.data.defaultBranch;
+        for (var i = 0; i < item.data.branches.length; i++) {
+            var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
+            branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
+        }
+    }
+
+
         // If File and FileRead are not defined dropzone is not supported and neither is uploads
         if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'uploadFiles', template : function(){
@@ -141,7 +151,7 @@ function _githubDefineToolbar (item){
                             onclick : function(event) { window.location = item.data.urls.zip; } 
                         },[
                         m('i.fa.fa-download'),
-                        m('span.hidden-xs','Download Repository')
+                        m('span.hidden-xs','Download')
                     ]);
                 }},
                 { name : 'gotoRepo', template : function(){
@@ -149,9 +159,19 @@ function _githubDefineToolbar (item){
                             onclick : function(event) { window.open(item.data.urls.repo, '_blank');} 
                         },[
                         m('i.fa.fa-external-link'),
-                        m('span.hidden-xs','Go to Repository')
+                        m('span.hidden-xs','Open')
                     ]);
-                }}
+                }},
+                {
+                    name : 'changeBranch', template : function(){
+                        return m('.fangorn-toolbar-icon.text-info', 
+                            [ 
+                               m('span.hidden-xs','Branch :'),
+                               m('select[name=branch-selector].no-border', { onchange: function(ev) { changeBranch.call(self, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
+                            ]
+                        );
+                    }
+                }
             );
         }
     } else if (item.kind === 'file') {
@@ -200,21 +220,9 @@ function _fangornLazyLoadOnLoad (tree) {
 
 function _fangornGithubTitle(item, col)  {
     var tb = this;
-    var branchArray = [];
-    if (item.data.branches) {
-        item.data.branch = item.data.branch || item.data.defaultBranch;
-        for (var i = 0; i < item.data.branches.length; i++) {
-            var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
-            branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
-        }
-    }
-
     if (item.data.addonFullname) {
         return m('span',[
-            m('github-name', item.data.name + ' '),
-            m('span',[
-                m('select[name=branch-selector]', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
-            ])
+            m('github-name', item.data.name + ' (' + item.data.branch + ')')
         ]);
     } else {
         if (item.kind === 'file' && item.data.permissions.view) {
