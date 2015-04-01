@@ -4,6 +4,7 @@ from datetime import datetime
 import functools
 import logging
 import pytz
+from furl import furl
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -53,20 +54,24 @@ def subscribe_on_write_permissions_revoked(node):
         wiki_utils.migrate_uuid(node, wiki_name)
 
 
+# subscribes to project model wiki update
 @wiki_updated.connect
 def subscribe_wiki_updates(page):
-    print page
     node = page['node']
     user = page['user']
     version = page['version']
-    old_version = version - 1
-    url = node.absolute_url + 'wiki/' + page['page_name'] + '/?view&compare=' + str(old_version)
+    f = furl(node.absolute_url)
+    f.path = build_wiki_url(node, page['page_name'])  # will pass this if version is 1
+    if version != 1:
+        # Sends link with compare
+        old_version = version - 1
+        f.add({'view': '', 'compare': str(old_version)})
     context = dict (
         node_type=node.project_or_component,
         timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
         commenter=user,
         gravatar_url=user.gravatar_url,
-        content=url,
+        content=f.url,
         target_user=None,
         parent_comment="",
         title=node.title,
@@ -74,10 +79,9 @@ def subscribe_wiki_updates(page):
         url=node.absolute_url
     )
     sent_subscribers = notify(uid=node._id, event="wiki_updated", **context)
-    print sent_subscribers
 
 
-def build_wiki_url(node, label, base, end):
+def build_wiki_url(node, label, base=None, end=None):
     return node.web_url_for('project_wiki_view', wname=label)
 
 

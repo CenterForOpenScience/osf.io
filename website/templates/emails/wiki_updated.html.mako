@@ -6,7 +6,10 @@
         <td style="line-height: 17px;border-collapse: collapse;">
             <span class="person" style="font-weight: bold;">${commenter.fullname} </span>
             <span class="timestamp" style="color: grey;"> at ${localized_timestamp}: </span>
-            <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">"${content}"</span>
+            <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">
+                Changes to <a href="${content}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">wiki</a>
+                <p>If you can't click the link above please copy and paste: ${content}</p>
+            </span>
         </td>
         <td class="link text-center" width="25" style="border-collapse: collapse;text-align: center;font-size: 18px;border-left: 1px solid #ddd;">
             <a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">&#10095;</a>
