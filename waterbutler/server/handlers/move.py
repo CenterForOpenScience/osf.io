@@ -6,6 +6,7 @@ import asyncio
 from tornado import web
 
 import waterbutler.core
+from waterbutler import tasks
 from waterbutler.core.streams import RequestStreamReader
 
 from waterbutler.server import utils
@@ -26,8 +27,19 @@ class MoveHandler(core.BaseCrossProviderHandler):
 
     @utils.coroutine
     def post(self):
+        if not self.provider.can_intra_move(self.dest_provider):
+            resp = yield from tasks.move({
+                'args': self.arguments,
+                'provider': self.provider.serialized()
+            }, {
+                'args': self.json,
+                'provider': self.dest_provider.serialized()
+            })
+            self.set_status(202)
+            return
+
         metadata, created = (
-            yield from waterbutler.core.backgrounded(
+            yield from tasks.backgrounded(
                 self.provider.move,
                 self.dest_provider,
                 self.arguments,
