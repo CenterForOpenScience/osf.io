@@ -1266,8 +1266,8 @@ var tbOptions = {
     title : false,          // Title of the grid, boolean, string OR function that returns a string.
     allowMove : true,       // Turn moving on or off.
     moveClass : 'po-draggable',
-    hoverClass : 'po-hover',
-    hoverClassMultiselect : 'po-hover-multiselect',
+    hoverClass : 'fangorn-hover',
+    hoverClassMultiselect : 'fangorn-selected',
     togglecheck : _poToggleCheck,
     sortButtonSelector : {
         up : 'i.fa.fa-chevron-up',
