@@ -615,20 +615,12 @@ class User(GuidStoredObject, AddonModelMixin):
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
-    def remove_unconfirmed_emails(self, *args):
-        """Remove one or more unconfirmed email addresses and their tokens."""
-        emails_to_remove = set(args)
-        removed_emails = []
-        tokens = []
+    def remove_unconfirmed_email(self, email):
+        """Remove an unconfirmed email addresses and their tokens."""
         for token, value in self.email_verifications.iteritems():
-            if value.get('email') in emails_to_remove:
-                removed_emails.append(value.get('email'))
-                tokens.append(token)
-
-        for token in tokens:
-            del self.email_verifications[token]
-
-        return removed_emails
+            if value.get('email') == email:
+                del self.email_verifications[token]
+                return
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
