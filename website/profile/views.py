@@ -20,6 +20,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.models import User
@@ -142,7 +143,11 @@ def update_user(auth):
             username = primary_email['address'].strip().lower()
 
         # make sure the new username has already been confirmed
-        if username and username in user.emails:
+        if username and username in user.emails and username != user.username:
+            mails.send_mail(user.username,
+                            mails.PRIMARY_EMAIL_CHANGED,
+                            user=user,
+                            new_address=username)
             user.username = username
 
     ###################
