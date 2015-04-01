@@ -208,6 +208,68 @@ ViewModel.prototype.submit = function() {
     self.search();
 };
 
+ViewModel.prototype.updateFromSearch = function(validate, noPush, data) {
+    var self = this;
+    //Clear out our variables
+    self.tags([]);
+    self.tagMaxCount(1);
+    self.results.removeAll();
+    self.categories.removeAll();
+
+    data.results.forEach(function(result) {
+        if (result.category === 'user') {
+            self.results.push(new User(result));
+        } else {
+            if (typeof result.url !== 'undefined') {
+                result.wikiUrl = result.url + 'wiki/';
+                result.filesUrl = result.url + 'files/';
+            }
+            self.results.push(result);
+        }
+    });
+
+    //Load our categories
+    var categories = data.counts;
+    $.each(categories, function(key, value) {
+        if (value === null) {
+            value = 0;
+        }
+        self.categories.push(new Category(key, value, data.typeAliases[key]));
+    });
+
+    self.categories(self.categories().sort(self.sortCategories));
+
+    // If our category is named attempt to load its total else set it to the total total
+    if (self.category().name !== undefined) {
+        self.totalResults(data.counts[self.category().name] || 0);
+    } else {
+        self.totalResults(self.self.categories()[0].count);
+    }
+
+    // Load up our tags
+    $.each(data.tags, function(key, value) {
+        self.tags.push(new Tag(value));
+        self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
+    });
+
+    self.searchStarted(true);
+
+    if (validate) {
+        self.validateSearch();
+    }
+
+    if (!noPush) {
+        self.pushState();
+    }
+};
+
+ViewModel.prototype.updateShareCount = function(jsonData) {
+    var self = this;
+    return $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
+        self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+    });    
+};
+
 ViewModel.prototype.search = function(noPush, validate) {
     var self = this;
 
@@ -217,73 +279,21 @@ ViewModel.prototype.search = function(noPush, validate) {
         'size': self.resultsPerPage()
     };
     var url = self.queryUrl + self.category().url();
-
-    $osf.postJSON(url, jsonData).success(function(data) {
-
-        //Clear out our variables
-        self.tags([]);
-        self.tagMaxCount(1);
-        self.results.removeAll();
-        self.categories.removeAll();
-
-        data.results.forEach(function(result) {
-            if (result.category === 'user') {
-                self.results.push(new User(result));
-            } else {
-                if (typeof result.url !== 'undefined') {
-                    result.wikiUrl = result.url + 'wiki/';
-                    result.filesUrl = result.url + 'files/';
-                }
-                self.results.push(result);
-            }
+  
+    return $osf.postJSON(url, jsonData)
+        .success([
+            self.updateFromSearch.bind(self, validate, noPush),
+            self.updateShareCount.bind(self, jsonData)
+        ])
+        .fail(function(response) {
+            self.totalResults(0);
+            self.currentPage(0);
+            self.results([]);
+            self.tags([]);
+            self.categories([]);
+            self.searchStarted(false);
+            $osf.handleJSONError(response);
         });
-
-        //Load our categories
-        var categories = data.counts;
-        $.each(categories, function(key, value) {
-            if (value === null) {
-                value = 0;
-            }
-            self.categories.push(new Category(key, value, data.typeAliases[key]));
-        });
-
-        self.categories(self.categories().sort(self.sortCategories));
-
-        // If our category is named attempt to load its total else set it to the total total
-        if (self.category().name !== undefined) {
-            self.totalResults(data.counts[self.category().name] || 0);
-        } else {
-            self.totalResults(self.self.categories()[0].count);
-        }
-
-        // Load up our tags
-        $.each(data.tags, function(key, value) {
-            self.tags.push(new Tag(value));
-            self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
-        });
-
-        self.searchStarted(true);
-
-        if (validate) {
-            self.validateSearch();
-        }
-
-        if (!noPush) {
-            self.pushState();
-        }
-        $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
-            self.categories.push(new Category('SHARE', data.count, 'SHARE'));
-        });
-    }).fail(function(response) {
-        self.totalResults(0);
-        self.currentPage(0);
-        self.results([]);
-        self.tags([]);
-        self.categories([]);
-        self.searchStarted(false);
-        $osf.handleJSONError(response);
-    });
-
 };
 
 ViewModel.prototype.paginate = function(val) {
@@ -388,7 +398,7 @@ function Search(selector, url, appURL) {
         filter: $osf.urlParams().filter
     };
     //Ensure our state keeps its URL paramaters
-    History.replaceState(data, 'OSF | Search', location.search);
+    History.replaceState(data, 'OSF | Search', window.location.search);
     //Set out observables from the newly replaced state
     self.viewModel.loadState();
     //Preform search from url params
