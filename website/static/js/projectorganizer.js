@@ -1183,6 +1183,28 @@ function _cleanupMithril() {
     });
 }
 
+/** 
+ * Toolbar icon templates 
+ *
+ */
+function toolbarDismissIcon (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon', {
+            onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
+        },
+        m('i.fa.fa-times')
+    );
+}
+ function searchIcon (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-info', { 
+            onclick : function () { tb.options.iconState.mode = 'search'; }
+        }, [
+        m('i.fa.fa-search'),
+        m('span.hidden-xs', 'Search')
+    ]);
+ }
+
 
 function _poToolbar (){
     var tb = this; 
