@@ -117,7 +117,7 @@ function _poTitleColumn(item) {
  * @private
  */
 function _gotoEvent(event, item, col) {
-    window.location = item.data.urls.fetch;
+    window.open(item.data.urls.fetch, '_blank');
 }
 
 /**
