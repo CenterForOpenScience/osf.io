@@ -76,7 +76,7 @@ class FigshareProvider:
 
 
 class BaseFigshareProvider(provider.BaseProvider):
-
+    NAME = 'figshare'
     BASE_URL = 'http://api.figshare.com/v1/my_data'
 
     def __init__(self, *args, **kwargs):

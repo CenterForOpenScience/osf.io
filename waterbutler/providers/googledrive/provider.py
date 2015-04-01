@@ -54,7 +54,7 @@ class GoogleDrivePath(utils.WaterButlerPath):
 
 
 class GoogleDriveProvider(provider.BaseProvider):
-
+    NAME = 'googledrive'
     BASE_URL = settings.BASE_URL
 
     def __init__(self, auth, credentials, settings):

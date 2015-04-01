@@ -30,7 +30,7 @@ class DropboxPath(utils.WaterButlerPath):
 
 
 class DropboxProvider(provider.BaseProvider):
-
+    NAME = 'dropbox'
     BASE_URL = settings.BASE_URL
 
     def __init__(self, auth, credentials, settings):

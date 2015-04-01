@@ -28,6 +28,7 @@ class OSFPath(utils.WaterButlerPath):
 
 
 class OSFStorageProvider(provider.BaseProvider):
+    NAME = 'osfstorage'
     __version__ = '0.0.1'
 
     def __init__(self, auth, credentials, settings):
@@ -37,10 +38,11 @@ class OSFStorageProvider(provider.BaseProvider):
         self.revisions_url = settings.get('revisions')
         self.provider_name = settings['storage'].get('provider')
 
-        self.parity_credentials = credentials.get('parity')
         self.parity_settings = settings.get('parity')
-        self.archive_credentials = credentials.get('archive')
+        self.parity_credentials = credentials.get('parity')
+
         self.archive_settings = settings.get('archive')
+        self.archive_credentials = credentials.get('archive')
 
     def make_provider(self, settings):
         """Requests on different files may need to use different providers,
@@ -236,6 +238,12 @@ class OSFStorageProvider(provider.BaseProvider):
             OsfStorageRevisionMetadata(item).serialized()
             for item in (yield from resp.json())['revisions']
         ]
+
+    def can_intra_move(self, other):
+        return self.can_intra_copy(other)
+
+    def can_intra_copy(self, other):
+        return self.provider == other.provider
 
     def _create_paths(self):
         try:

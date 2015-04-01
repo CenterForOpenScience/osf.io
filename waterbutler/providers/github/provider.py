@@ -27,7 +27,7 @@ class GitHubPath(utils.WaterButlerPath):
 
 
 class GitHubProvider(provider.BaseProvider):
-
+    NAME = 'github'
     BASE_URL = settings.BASE_URL
 
     def __init__(self, auth, credentials, settings):

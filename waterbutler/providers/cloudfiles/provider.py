@@ -39,6 +39,8 @@ class CloudFilesPath(utils.WaterButlerPath):
 class CloudFilesProvider(provider.BaseProvider):
     """Provider for Rackspace CloudFiles
     """
+    NAME = 'cloudfiles'
+
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = None

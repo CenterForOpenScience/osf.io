@@ -25,7 +25,7 @@ class BoxPath(utils.WaterButlerPath):
 
 
 class BoxProvider(provider.BaseProvider):
-
+    NAME = 'box'
     BASE_URL = settings.BASE_URL
 
     def __init__(self, auth, credentials, settings):

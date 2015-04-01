@@ -32,6 +32,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
         self.credentials = credentials
         self.settings = settings
 
+    @abc.abstractproperty
+    def NAME(self):
+        raise NotImplementedError
+
     def __eq__(self, other):
         try:
             return (
@@ -40,6 +44,14 @@ class BaseProvider(metaclass=abc.ABCMeta):
             )
         except AttributeError:
             return False
+
+    def serialized(self):
+        return {
+            'name': self.NAME,
+            'auth': self.auth,
+            'settings': self.settings,
+            'credentials': self.credentials,
+        }
 
     def build_url(self, *segments, **query):
         return build_url(self.BASE_URL, *segments, **query)
