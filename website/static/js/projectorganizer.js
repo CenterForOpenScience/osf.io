@@ -25,28 +25,8 @@ var $osf = require('./osfHelpers');
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
 var copyMode = null;
-
 // Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
 var projectOrganizer = {};
-
-// Templates load once
-var detailTemplateSource = $('#project-detail-template').html();
-if(detailTemplateSource) {
-    var detailTemplate = Handlebars.compile(detailTemplateSource);
-}
-
-var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
-if(multiItemDetailTemplateSource) {
-    var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
-}
-
-var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-no-action').html();
-if(multiItemDetailTemplateSourceNoAction) {
-    var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
-}
-
-
-var $detailDiv = $('.project-details');
 
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
@@ -133,24 +113,6 @@ function addFormKeyBindings(nodeID) {
     });
 }
 
-/**
- * The project detail popup is populated based on the row that it was clicked from
- * @param {Object} theItem Only the item.data portion of A Treebeard _item object for the row involved.
- */
-function createProjectDetailHTMLFromTemplate(theItem) {
-    var detailTemplateContext = {
-        theItem: theItem,
-        parentIsSmartFolder: theItem.parentIsSmartFolder
-    };
-    var displayHTML = detailTemplate(detailTemplateContext);
-    $detailDiv.html(displayHTML);
-    addFormKeyBindings(theItem.node_id);
-}
-
-function createBlankProjectDetail(message) {
-    var text = message || 'Select a row to view further actions.';
-    $detailDiv.html('<div class="row text-muted "> <div class="col-xs-8"> <i class="text-center po-placeholder"> ' + text + ' </i> </div> <div class="col-xs-4"><i class="po-placeholder pull-right"> No Actions </i> </div>');
-}
 
 function triggerClickOnItem(item, force) {
     var row = $('.tb-row[data-id="'+ item.id+'"]');
@@ -252,7 +214,7 @@ function _showProjectDetails(event, item, col) {
     theItem.parentIsSmartFolder = theParentNode.data.isSmartFolder;
     theItem.parentNodeID = theParentNodeID;
     if (!theItem.isSmartFolder) {
-        createProjectDetailHTMLFromTemplate(theItem);
+        //createProjectDetailHTMLFromTemplate(theItem);
         $('#findNode' + theItem.node_id).hide();
         $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
             highlight: true
@@ -754,36 +716,36 @@ function _poMultiselect(event, tree) {
         });
         var detailTemplateContext;
         if(!selectedRows[0].parent().data.isFolder){
-            detailTemplateContext = {
-                itemsCount: selectedRows.length
-            };
-            var theParentNode = selectedRows[0].parent();
-            var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-            $detailDiv.html(displayHTML).show();
+            // detailTemplateContext = {
+            //     itemsCount: selectedRows.length
+            // };
+            // var theParentNode = selectedRows[0].parent();
+            // var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
+            // $detailDiv.html(displayHTML).show();
         } else {
             if (!someItemsAreFolders) {
-                detailTemplateContext = {
-                    multipleItems: true,
-                    itemsCount: selectedRows.length
-                };
-                var theParentNode = selectedRows[0].parent();
-                var displayHTML = multiItemDetailTemplate(detailTemplateContext);
-                $detailDiv.html(displayHTML).show();
-                $('#remove-links-multiple').click(function () {
-                    deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                    createBlankProjectDetail();
-                });
-                $('#close-multi-select').click(function () {
-                    createBlankProjectDetail();
-                    return false;
-                });
+                // detailTemplateContext = {
+                //     multipleItems: true,
+                //     itemsCount: selectedRows.length
+                // };
+                // var theParentNode = selectedRows[0].parent();
+                // var displayHTML = multiItemDetailTemplate(detailTemplateContext);
+                // $detailDiv.html(displayHTML).show();
+                // $('#remove-links-multiple').click(function () {
+                //     deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
+                //     createBlankProjectDetail();
+                // });
+                // $('#close-multi-select').click(function () {
+                //     createBlankProjectDetail();
+                //     return false;
+                // });
             } else {
-                detailTemplateContext = {
-                    itemsCount: selectedRows.length
-                };
-                var theParentNode = selectedRows[0].parent();
-                var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-                $detailDiv.html(displayHTML).show();
+                // detailTemplateContext = {
+                //     itemsCount: selectedRows.length
+                // };
+                // var theParentNode = selectedRows[0].parent();
+                // var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
+                // $detailDiv.html(displayHTML).show();
             }
         }
 
