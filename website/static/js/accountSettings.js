@@ -11,10 +11,11 @@ ko.punches.enableAll();
 
 
 var UserEmail = oop.defclass({
-    constructor: function() {
-        this.address = ko.observable();
-        this.isConfirmed = ko.observable();
-        this.isPrimary = ko.observable();
+    constructor: function(params) {
+        params = params || {};
+        this.address = ko.observable(params.address);
+        this.isConfirmed = ko.observable(params.isConfirmed || false);
+        this.isPrimary = ko.observable(params.isPrimary || false);
     }
 });
 
@@ -72,10 +73,7 @@ var UserProfileClient = oop.defclass({
 
         var request = $.get(this.urls.fetch);
         request.done(function(data) {
-            var profile = new UserProfile();
-            this.unserialize(data, profile);
-            ret.resolve(profile);
-
+            ret.resolve(this.unserialize(data));
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error', 'Could not fetch user profile.', 'danger');
@@ -90,11 +88,12 @@ var UserProfileClient = oop.defclass({
         return ret.promise();
     },
     update: function (profile) {
+        var ret = $.Deferred();
         var request = $osf.putJSON(
             this.urls.update,
             this.serialize(profile)
         ).done(function (data) {
-            profile = this.unserialize(data, profile);
+            ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
             $osf.growl('Error', 'User profile not updated.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
@@ -102,9 +101,10 @@ var UserProfileClient = oop.defclass({
                 status: status,
                 error: error
             });
+                ret.reject(xhr, status, error);
         }.bind(this));
 
-        return request;
+        return ret;
     },
     serialize: function (profile) {
         return {
@@ -133,6 +133,8 @@ var UserProfileClient = oop.defclass({
                 return email;
             })
         );
+
+        return profile;
     }
 });
 
@@ -149,8 +151,9 @@ var UserProfileViewModel = oop.defclass({
         );
     },
     addEmail: function () {
-        var email = new UserEmail();
-        email.address(this.emailInput());
+        var email = new UserEmail({
+            address: this.emailInput()
+        });
         this.profile().emails.push(email);
 
         this.client.update(this.profile()).done(function (profile) {

@@ -694,7 +694,7 @@ class User(GuidStoredObject, AddonModelMixin):
         email = self._get_unconfirmed_email_for_token(token)
 
         # If this email is confirmed on another account, abort
-        if User.find(Q('emails', 'eq', email)).count() > 0:
+        if User.find(Q('emails', 'iexact', email)).count() > 0:
             raise exceptions.DuplicateEmailError()
 
         # If another user has this email as its username, get it
