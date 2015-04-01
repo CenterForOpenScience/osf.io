@@ -273,19 +273,25 @@ ViewModel.prototype.updateShareCount = function(jsonData) {
 ViewModel.prototype.search = function(noPush, validate) {
     var self = this;
 
-    var jsonData = {
-        'query': self.fullQuery(),
-        'from': self.currentIndex(),
-        'size': self.resultsPerPage()
-    };
-    var url = self.queryUrl + self.category().url();
-  
-    return $osf.postJSON(url, jsonData)
-        .success([
-            self.updateFromSearch.bind(self, validate, noPush),
-            self.updateShareCount.bind(self, jsonData)
-        ])
-        .fail(function(response) {
+            // Load up our tags
+            $.each(data.tags, function(key, value){
+                self.tags.push(new Tag(value));
+                self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
+            });
+
+            self.searchStarted(true);
+
+            if (validate) {
+                self.validateSearch();
+            }
+
+            if (!noPush) {
+                self.pushState();
+            }
+            $osf.postJSON('/api/v1/share/search/?count', jsonData).success(function(data) {
+                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+            });
+        }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);
             self.results([]);
