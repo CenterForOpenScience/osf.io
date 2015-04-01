@@ -33,17 +33,9 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
         // whether the auth token is valid
         self.validCredentials = ko.observable(true);
-        // Emails of contributors, can only be populated by activating the share dialog
-        self.emails = ko.observableArray([]);
         self.loading = ko.observable(false);
-        // Whether the contributor emails have been loaded from the server
-        self.loadedEmails = ko.observable(false);
         // externalAccounts
         self.accounts = ko.observable([]);
-        // List of contributor emails as a comma-separated values
-        self.emailList = ko.pureComputed(function() {
-            return self.emails().join([', ']);
-        });
         self.selectedFolderType = ko.pureComputed(function() {
             var userHasAuth = self.userHasAuth();
             var selected = self.selected();
@@ -87,7 +79,6 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     },
     _updateCustomFields: function(settings){
         this.validCredentials(settings.validCredentials);
-        this.canShare(settings.canShare || false);
     },
     /**
      * Allows a user to create an access token from the nodeSettings page
