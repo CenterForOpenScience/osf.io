@@ -611,6 +611,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     def get_attached_nodes(self, external_account):
         for node in self.get_nodes_with_oauth_grants(external_account):
+            if node is None:
+                continue
             node_settings = node.get_addon(self.oauth_provider.short_name)
 
             if node_settings is None:

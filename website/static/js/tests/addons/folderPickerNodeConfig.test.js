@@ -20,7 +20,7 @@ var TestSubclassVM = oop.extend(FolderPickerNodeConfigVM, {
         this.super.constructor.call(this, addonName, url, selector, folderPicker);
         this.customField = ko.observable('');
 
-        this.messages.SUBMIT_SETTINGS_SUCCESS = ko.pureComputed(function(){
+        this.messages.submitSettingsSuccess = ko.pureComputed(function(){
             return 'SUCCESS';
         });
     },
