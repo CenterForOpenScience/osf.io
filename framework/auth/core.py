@@ -637,8 +637,6 @@ class User(GuidStoredObject, AddonModelMixin):
                             user=self,
                             removed_email=email)
 
-
-
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
 
