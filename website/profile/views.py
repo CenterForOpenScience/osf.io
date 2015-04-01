@@ -3,6 +3,7 @@
 import logging
 import operator
 import httplib as http
+import os
 
 from dateutil.parser import parse as parse_date
 
@@ -225,12 +226,13 @@ def user_addons(auth, **kwargs):
             if addon_config.categories[0] == category:
                 addons_enabled.append(addon_config.short_name)
                 if 'user' in addon_config.configs:
-                    addon_enabled_settings.append(addon_config.short_name)
-                    user_addons_enabled[addon_config.short_name] = {
-                        'urls': {
-                            'user_settings': addon_config.user_settings_template
-                        }
-                    }
+                    short_name = addon_config.short_name
+                    addon_enabled_settings.append(short_name)
+                    user_addons_enabled[addon_config.short_name] = user.get_addon(short_name).to_json(user)
+                    # inject the MakoTemplateLookup into the template context
+                    # TODO inject only short_name and render fully client side
+                    user_addons_enabled[short_name]['template_lookup'] = addon_config.template_lookup
+                    user_addons_enabled[short_name]['user_settings_template'] = os.path.basename(addon_config.user_settings_template)
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [

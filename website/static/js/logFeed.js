@@ -6,6 +6,8 @@
 var ko = require('knockout');
 var $ = require('jquery');
 var moment = require('moment');
+var Paginator = require('js/paginator');
+var oop = require('js/oop');
 require('knockout.punches');
 
 var $osf = require('./osfHelpers');
@@ -75,47 +77,56 @@ var Log = function(params) {
 /**
   * View model for a log list.
   * @param {Log[]} logs An array of Log model objects to render.
-  * @param hasMoreLogs boolean value if there are more logs or not
   * @param url the url ajax request post to
   */
-var LogsViewModel = function(logs, hasMoreLogs, url) {
-    var self = this;
-    self.enableMoreLogs = ko.observable(hasMoreLogs);
-    self.logs = ko.observableArray(logs);
-    var pageNum=  0;
-    self.url = url;
+var LogsViewModel = oop.extend(Paginator, {
+    constructor: function(logs, url) {
+        this.super.constructor.call(this);
+        var self = this;
+        self.loading = ko.observable(false);
+        self.logs = ko.observableArray(logs);
+        self.url = url;
 
+        self.tzname = ko.pureComputed(function() {
+            var logs = self.logs();
+            if (logs.length) {
+                var tz =  moment(logs[0].date).format('ZZ');
+                return tz;
+            }
+            return '';
+        });
+    },
     //send request to get more logs when the more button is clicked
-    self.moreLogs = function(){
-        pageNum+=1;
-        $.ajax({
+    fetchResults: function(){
+        var self = this;
+        self.loading(true);
+        return $.ajax({
             type: 'get',
             url: self.url,
             data:{
-                pageNum: pageNum
+                page: self.currentPage()
             },
             cache: false
         }).done(function(response) {
+            self.loading(false);
             // Initialize LogViewModel
+            self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
-            self.enableMoreLogs(response.has_more_logs);
+            self.currentPage(response.page);
+            self.numberOfPages(response.pages);
+            self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
-        );
-    };
+        ).fail(function() {
+            self.loading(false);
+        });
 
-    self.tzname = ko.computed(function() {
-        var logs = self.logs();
-        if (logs.length) {
-            var tz =  moment(logs[0].date.date).format('ZZ');
-            return tz;
-        }
-        return '';
-    });
-};
+    }
+});
+
 
 /**
   * Create an Array of Log model objects from data returned from an endpoint
@@ -155,9 +166,12 @@ var defaults = {
 };
 
 
-var initViewModel = function(self, logs, hasMoreLogs, url){
+var initViewModel = function(self, logs, url){
     self.logs = createLogs(logs);
-    self.viewModel = new LogsViewModel(self.logs, hasMoreLogs, url);
+    self.viewModel = new LogsViewModel(self.logs, url);
+    if(url) {
+        self.viewModel.fetchResults();
+    }
     self.init();
 };
 
@@ -173,12 +187,12 @@ function LogFeed(selector, data, options) {
     self.$element = $(selector);
     self.options = $.extend({}, defaults, options);
     self.$progBar = $(self.options.progBar);
+    //for recent activities logs
     if (Array.isArray(data)) { // data is an array of log object from server
-        initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
-    } else { // data is an URL
-        $.getJSON(data, function(response) {
-            initViewModel(self, response.logs, response.has_more_logs, data);
-        });
+        initViewModel(self, data, self.options.url);
+    } else { // data is an URL, for watch logs and project logs
+        var noLogs =[];
+        initViewModel(self, noLogs, data);
     }
 }
 
