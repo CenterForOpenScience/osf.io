@@ -1263,6 +1263,20 @@ function toolbarDismissIcon (){
         m('span.hidden-xs', 'Rename')
     ]);
  }
+ function addProjectButton (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-info', { 
+            onclick : function () { 
+                
+                tb.options.iconState.mode = 'bar'; 
+
+            }
+        }, [
+        m('i.fa.fa-plus'),
+        m('span.hidden-xs', 'Add')
+    ]);
+ }
+
 
 function _poToolbar (){
     var tb = this; 
@@ -1328,7 +1342,27 @@ function _poToolbar (){
                         )
                     ])
             ]);  
-    }    
+    }
+    if(tb.options.iconState.mode === 'addProject'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-9', [
+                                m('input#addprojectInput.typeahead', { type : 'text', placeholder : 'Name of the project to find'}),
+                                m('span.add-link-warning')
+                            ]
+                        ),
+                        m('.col-xs-3.tb-buttons-col', 
+                            m('.fangorn-toolbar.pull-right', 
+                                [
+                                addProjectButton.call(tb),
+                                toolbarDismissIcon.call(tb)
+                                ]
+                            )
+                        )
+                    ])
+            ]);  
+    }   
+
 } 
 
 function _poDefineToolbar (item){
