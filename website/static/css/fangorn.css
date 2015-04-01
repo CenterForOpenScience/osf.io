@@ -51,6 +51,9 @@ text-align: center;
 	background: #337AB7;
 	color: #FFF;
 }
+.fangorn-selected a {
+	color : white;
+}
 .tb-th {
 	line-height: 14px;
 	background: url('/static/img/hgrid/header-columns-bg.gif');
@@ -122,10 +125,17 @@ text-align: center;
 .tb-header-row {
 	margin: 0 0 10px 0;
 	background: #efefef;
-	padding: 5px 0;
-
 }
-
+.tb-buttons-col{
+	padding: 5px 0px;
+}
+.tb-header-input {
+  border: none;
+  background: #FFF;
+  padding: 4px 8px;
+  width: 100%;
+  margin-top: 3px;
+}
 
 .tb-multimodal-inner {
 	background: #B8ECC0;
