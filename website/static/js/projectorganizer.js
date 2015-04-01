@@ -1293,9 +1293,7 @@ var tbOptions = {
     iconState : {
         mode : 'bar',
         generalIcons : {
-            search : { on : true, template : searchIcon },
-            cancelUploads : { on : false, template : cancelUploadsIcon },
-            deleteMultiple : { on : false, template :  deleteMultipleIcon }           
+            search : { on : true, template : searchIcon }         
         },
         rowIcons : [{}]
     },
