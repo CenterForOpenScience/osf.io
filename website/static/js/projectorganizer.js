@@ -564,9 +564,9 @@ function _poToggleCheck(item) {
 function _poResolveIcon(item) {
     var viewLink,
         icons = {
-            folder : 'fa-circle-o',
-            smartFolder : 'fa-sun-o',
-            project : 'fa-th-list',
+            folder : 'fa-cubes',
+            smartFolder : 'fa-certificate',
+            project : 'fa-cube',
             registration :  'fa-th-list text-muted',
             component :  'fa-th-large',
             registeredComponent :  'fa-th-large text-muted',
@@ -695,6 +695,7 @@ function _poMultiselect(event, tree) {
         someItemsAreFolders,
         pointerIds;
     tb.options.iconState.rowIcons = [];
+    tb.options.iconState.mode = 'bar';
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = tree.icons;
@@ -1191,7 +1192,7 @@ function toolbarDismissIcon (){
         m('i.fa.fa-times')
     );
 }
- function searchIcon (){
+ function searchButton (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', { 
             onclick : function () { tb.options.iconState.mode = 'search'; }
@@ -1200,7 +1201,39 @@ function toolbarDismissIcon (){
         m('span.hidden-xs', 'Search')
     ]);
  }
+ function addFolderButton (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-info', { 
+            onclick : function () { 
+                var val = $.trim($('#addNewFolder').val());
+                if(tb.multiselected.length !== 1 || val.length < 1){
+                    tb.options.iconState.mode = 'bar'; 
+                    return; 
+                }
+                var item = tb.multiselected[0];
+                var theItem = item.data;
+                var url = '/api/v1/folder/',
+                postData = {
+                    node_id: theItem.node_id,
+                    title: val
+                };
+                theItem.expand = false;
+                saveExpandState(theItem, function () {
+                    var putAction = $osf.putJSON(url, postData);
+                    putAction.done(function () {
+                        tb.updateFolder(null, item);
+                        triggerClickOnItem.call(tb, item);
+                    }).fail($osf.handleJSONError);
 
+                });
+                // Add folder action
+                tb.options.iconState.mode = 'bar'; 
+            }
+        }, [
+        m('i.fa.fa-plus'),
+        m('span.hidden-xs', 'Add')
+    ]);
+ }
 
 
 function _poToolbar (){
@@ -1212,7 +1245,7 @@ function _poToolbar (){
     }
     if (tb.options.iconState.mode === 'bar'){                   
         return m('.row.tb-header-row', [
-                m('.col-xs-12', [   
+                m('.col-xs-12.tb-buttons-col', [   
                         m('.fangorn-toolbar.pull-right', 
                             [   
                                 tb.options.iconState.rowIcons.map(function(icon){
@@ -1229,21 +1262,36 @@ function _poToolbar (){
     if(tb.options.iconState.mode === 'search'){
         return m('.row.tb-header-row', [
                 m('', [
-                        m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
-                        m('.col-xs-1', 
+                        m('.col-xs-11', tb.options.filterTemplate.call(tb)),
+                        m('.col-xs-1.tb-buttons-col', 
                             m('.fangorn-toolbar.pull-right', 
                                 toolbarDismissIcon.call(tb)
                             )
                         )
                     ])
             ]);  
+    }
+    if(tb.options.iconState.mode === 'addFolder'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-9', m('input#addNewFolder.tb-header-input')),
+                        m('.col-xs-3.tb-buttons-col', 
+                            m('.fangorn-toolbar.pull-right', 
+                                [
+                                addFolderButton.call(tb),
+                                toolbarDismissIcon.call(tb)
+                                ]
+                            )
+                        )
+                    ])
+            ]);  
     }    
+
+
 } 
 
 function _poDefineToolbar (item){
-    var tb = this; 
-
-    var self = this,
+    var tb = this, 
         buttons = [],
         url = item.data.urls.fetch;
     if (!item.data.isSmartFolder) {
@@ -1251,9 +1299,9 @@ function _poDefineToolbar (item){
             buttons.push(
             { name : 'gotoEvent', template : function(){
                 return m('.fangorn-toolbar-icon.text-primary', {
-                        onclick : function(event) { _gotoEvent.call(self, event, item); }
+                        onclick : function(event) { _gotoEvent.call(tb, event, item); }
                     }, [
-                    m('i.fa.fa-chevron-right'),
+                    m('i.fa.fa-external-link'),
                     m('span.hidden-xs','Open')
                 ]);
             }}
@@ -1265,7 +1313,9 @@ function _poDefineToolbar (item){
         buttons.push(
         { name : 'addFolder', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
-                    onclick : function(event) {  }
+                    onclick : function(event) {  
+                        tb.options.iconState.mode = 'addFolder';
+                    }
                 }, [
                 m('i.fa.fa-circle'),
                 m('span','Add Collection')
@@ -1381,7 +1431,7 @@ var tbOptions = {
     iconState : {
         mode : 'bar',
         generalIcons : {
-            search : { on : true, template : searchIcon }         
+            search : { on : true, template : searchButton }         
         },
         rowIcons : [{}]
         },
