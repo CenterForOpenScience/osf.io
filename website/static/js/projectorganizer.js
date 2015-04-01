@@ -543,7 +543,7 @@ function _poResolveRows(item) {
         css : css,
         custom : _poTitleColumn
     }, {
-        filter : true,
+        filter : false,
         custom : _poContributors
     }, {
         filter : false,
