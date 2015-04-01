@@ -727,8 +727,9 @@ function _poLoadOpenChildren() {
  */
 function _poMultiselect(event, tree) {
     var tb = this,
-        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
-
+        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
+        someItemsAreFolders,
+        pointerIds;
     tb.options.iconState.rowIcons = [];
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
@@ -739,6 +740,55 @@ function _poMultiselect(event, tree) {
         tb.select('#tb-tbody').removeClass('unselectable');
     } else {
         tb.select('#tb-tbody').addClass('unselectable');
+
+       someItemsAreFolders = false;
+        pointerIds = [];
+        selectedRows.forEach(function (item) {
+            var thisItem = item.data;
+            someItemsAreFolders = someItemsAreFolders ||
+                                  thisItem.isFolder ||
+                                  thisItem.isSmartFolder ||
+                                  thisItem.parentIsSmartFolder ||
+                                  !thisItem.permissions.movable;
+            pointerIds.push(thisItem.node_id);
+        });
+        var detailTemplateContext;
+        if(!selectedRows[0].parent().data.isFolder){
+            detailTemplateContext = {
+                itemsCount: selectedRows.length
+            };
+            var theParentNode = selectedRows[0].parent();
+            var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
+            $detailDiv.html(displayHTML).show();
+        } else {
+            if (!someItemsAreFolders) {
+                detailTemplateContext = {
+                    multipleItems: true,
+                    itemsCount: selectedRows.length
+                };
+                var theParentNode = selectedRows[0].parent();
+                var displayHTML = multiItemDetailTemplate(detailTemplateContext);
+                $detailDiv.html(displayHTML).show();
+                $('#remove-links-multiple').click(function () {
+                    deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
+                    createBlankProjectDetail();
+                });
+                $('#close-multi-select').click(function () {
+                    createBlankProjectDetail();
+                    return false;
+                });
+            } else {
+                detailTemplateContext = {
+                    itemsCount: selectedRows.length
+                };
+                var theParentNode = selectedRows[0].parent();
+                var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
+                $detailDiv.html(displayHTML).show();
+            }
+        }
+
+
+
     }
 
 
@@ -1188,6 +1238,7 @@ function toolbarDismissIcon (){
  }
 
 
+
 function _poToolbar (){
     var tb = this; 
     var generalButtons = [];
@@ -1246,6 +1297,38 @@ function _poDefineToolbar (item){
             );
         }
     }
+
+    if(!item.data.isSmartFolder && (item.data.isDashboard || item.data.isFolder) ) {
+        buttons.push(
+        { name : 'addFolder', template : function(){
+            return m('.fangorn-toolbar-icon.text-primary', {
+                    onclick : function(event) {  }
+                }, [
+                m('span','Add Folder')
+            ]);
+        }},
+        { name : 'addExistingProject', template : function(){
+            return m('.fangorn-toolbar-icon.text-primary', {
+                    onclick : function(event) {  }
+                }, [
+                m('span','Add Existing Project')
+            ]);
+        }}
+        );
+    }
+    if(!item.data.isFolder && item.data.parentIsFolder && !item.parent().data.isSmartFolder) {
+        buttons.push(
+        { name : 'removeFromFolder', template : function(){
+            return m('.fangorn-toolbar-icon.text-primary', {
+                    onclick : function(event) {  }
+                }, [
+                m('span','Remove From Folder')
+            ]);
+        }}
+        );
+    }
+
+
    item.icons = buttons;
 }
 
