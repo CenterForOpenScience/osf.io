@@ -4,8 +4,11 @@ var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
-var $osf = require('./osfHelpers');
 var waterbutler = require('./waterbutler');
+var oop = require('js/oop');
+var Paginator = require('js/paginator');
+var $osf = require('./osfHelpers');
+
 
 ko.punches.enableAll();
 
@@ -51,45 +54,45 @@ var Revision = function(data, index, file, node) {
     };
 };
 
-var RevisionsViewModel = function(node, file, editable) {
-    var self = this;
-    var fileExtra = file.extra || {};
-    var revisionsOptions = {};
+var RevisionsViewModel = oop.extend(Paginator, {
+    constructor: function(node, file, editable) {
+        var self = this;
+        var fileExtra = file.extra || {};
+        var revisionsOptions = {};
 
-    if (urlParams.branch !== undefined) {
-        fileExtra.branch = urlParams.branch;
-        revisionsOptions.sha = urlParams.branch;
-    }
+        if (urlParams.branch !== undefined) {
+            fileExtra.branch = urlParams.branch;
+            revisionsOptions.sha = urlParams.branch;
+        }
 
-    self.node = node;
-    self.file = file;
-    self.path = file.provider !== 'googledrive' ?
-        file.path.split('/') :
-        file.path.split('/').map(decodeURIComponent);
+        self.node = node;
+        self.file = file;
+        self.path = file.provider !== 'googledrive' ?
+            file.path.split('/') :
+            file.path.split('/').map(decodeURIComponent);
 
-    // Hack: Set Figshare files to uneditable by default, then update after
-    // fetching file metadata after revisions request fails
-    self.editable = ko.observable(editable && file.provider !== 'figshare');
-    self.urls = {
-        delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
-        download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
-        metadata: waterbutler.buildMetadataUrl(file.path, file.provider, node.id, revisionsOptions),
-        revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id, revisionsOptions)
-    };
+        // Hack: Set Figshare files to uneditable by default, then update after
+        // fetching file metadata after revisions request fails
+        self.editable = ko.observable(editable && file.provider !== 'figshare');
+        self.urls = {
+            delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
+            download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
+            metadata: waterbutler.buildMetadataUrl(file.path, file.provider, node.id, revisionsOptions),
+            revisions: waterbutler.buildRevisionsUrl(file.path, file.provider, node.id, revisionsOptions)
+        };
 
-    self.errorMessage = ko.observable('');
-    self.currentVersion = ko.observable({});
-    self.revisions = ko.observableArray([]);
-    self.versioningSupported = ko.observable(true);
+        self.errorMessage = ko.observable('');
+        self.currentVersion = ko.observable({});
+        self.revisions = ko.observableArray([]);
+        self.versioningSupported = ko.observable(true);
 
-    self.userColumn = ko.computed(function() {
-        return self.revisions()[0] &&
-            self.revisions()[0].extra &&
-            self.revisions()[0].extra.user;
-    });
-};
-
-RevisionsViewModel.prototype.fetch = function() {
+        self.userColumn = ko.computed(function () {
+            return self.revisions()[0] &&
+                self.revisions()[0].extra &&
+                self.revisions()[0].extra.user;
+        });
+    },
+    fetch: function() {
     var self = this;
     var request = $.getJSON(self.urls.revisions);
 
@@ -105,6 +108,9 @@ RevisionsViewModel.prototype.fetch = function() {
         if (Object.keys(self.currentVersion()).length === 0) {
             self.currentVersion(self.revisions()[0]);
         }
+        self.currentPage(response.page);
+        self.numberOfPages(response.pages);
+        self.addNewPaginators();
     });
 
     request.fail(function(response) {
@@ -138,13 +144,16 @@ RevisionsViewModel.prototype.fetch = function() {
             }
         });
     });
-};
+}
+
+
+});
 
 RevisionsViewModel.prototype.delete = function() {
     var self = this;
     $.ajax({
         type: 'DELETE',
-        url: self.urls.delete,
+        url: self.urls.delete
     }).done(function() {
         window.location = self.node.urls.files;
     }).fail(function() {
