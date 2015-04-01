@@ -25,3 +25,8 @@ CELERY_IMPORTS = [
     entry.module_name
     for entry in iter_entry_points(group='waterbutler.providers.tasks', name=None)
 ]
+
+CELERY_ALWAYS_EAGER = True
+CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+REDIS_HOST = config.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(config.get('REDIS_PORT', 6379))
