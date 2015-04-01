@@ -1369,6 +1369,9 @@ function _poDefineToolbar (item){
     var tb = this, 
         buttons = [],
         url = item.data.urls.fetch;
+
+
+
     if (!item.data.isSmartFolder) {
         if (url !== null) {
             buttons.push(
@@ -1398,7 +1401,109 @@ function _poDefineToolbar (item){
         }},
         { name : 'addExistingProject', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
-                    onclick : function(event) {  
+                    onclick : function(event) {
+                        projectOrganizer.myProjects.initialize();
+                        projectOrganizer.publicProjects.initialize();
+                        // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
+                        mySourceWithEmptySelectable = function (q, cb) {
+                            var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
+                            projectOrganizer.myProjects.get(q, injectEmptySelectable);
+                            function injectEmptySelectable(suggestions) {
+                                if (suggestions.length === 0) {
+                                    cb(emptyMyProjects);
+                                } else {
+                                    cb(suggestions);
+                                }
+                            }
+                        };
+                        publicSourceWithEmptySelectable = function (q, cb) {
+                            var emptyPublicProjects = { error: 'There are no matching public projects.' };
+                            projectOrganizer.publicProjects.get(q, injectEmptySelectable);
+                            function injectEmptySelectable(suggestions) {
+                                if (suggestions.length === 0) {
+                                    cb([emptyPublicProjects]);
+                                } else {
+                                    cb(suggestions);
+                                }
+                            }
+                        };
+
+
+                            if (!theItem.isSmartFolder) {
+                            //createProjectDetailHTMLFromTemplate(theItem);
+                            $('#findNode' + theItem.node_id).hide();
+                            $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
+                                highlight: true
+                            }, {
+                                name: 'my-projects',
+                                displayKey: function (data) {
+                                    return data.name;
+                                },
+                                source: mySourceWithEmptySelectable,
+                                templates: {
+                                    header: function () {
+                                        return '<h3 class="category">My Projects</h3>';
+                                    },
+                                    suggestion: function (data) {
+                                        if (typeof data.name !== 'undefined') {
+                                            return '<p>' + data.name + '</p>';
+                                        }
+                                        return '<p>' + data.error + '</p>';
+                                    }
+                                }
+                            }, {
+                                name: 'public-projects',
+                                displayKey: function (data) {
+                                    return data.name;
+                                },
+                                source: publicSourceWithEmptySelectable,
+                                templates: {
+                                    header: function () {
+                                        return '<h3 class="category">Public Projects</h3>';
+                                    },
+                                    suggestion: function (data) {
+                                        if (typeof data.name !== 'undefined') {
+                                            return '<p>' + data.name + '</p>';
+                                        }
+                                        return '<p>' + data.error + '</p>';
+                                    }
+                                }
+                            });
+                            $('#input' + theItem.node_id).bind('keyup', function (event) {
+                                var key = event.keyCode || event.which,
+                                    buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== 'undefined');
+
+                                if (key === 13) {
+                                    if (buttonEnabled) {
+                                        $('#add-link-' + theItem.node_id).click(); //submits if the control is active
+                                    }
+                                } else {
+                                    $('#add-link-warn-' + theItem.node_id).text('');
+                                    $('#add-link-' + theItem.node_id).attr('disabled', 'disabled');
+                                    linkName = '';
+                                    linkID = '';
+                                }
+                            });
+                            $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
+                                var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
+                                    children;
+                                $.getJSON(getChildrenURL, function (data) {
+                                    children = data;
+                                    if (children.indexOf(datum.node_id) === -1) {
+                                        $('#add-link-' + theItem.node_id).removeAttr('disabled');
+                                        linkName = datum.name;
+                                        linkID = datum.node_id;
+                                    } else {
+                                        $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
+                                    }
+                                }).fail($osf.handleJSONError);
+                            });
+
+
+
+
+
+
                         tb.options.iconState.mode = 'addProject';
                     }
                 }, [
