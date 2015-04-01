@@ -1276,7 +1276,7 @@ function _poDefineToolbar (item){
                 return m('.fangorn-toolbar-icon.text-primary', {
                         onclick : function(event) { _gotoEvent.call(self, event, item); }
                     }, [
-                    m('i.fa.fa-download'),
+                    m('i.fa.fa-chevron-right'),
                     m('span.hidden-xs','Open')
                 ]);
             }}
