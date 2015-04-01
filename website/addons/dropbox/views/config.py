@@ -74,8 +74,6 @@ def serialize_urls(node_settings):
         'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('dropbox_hgrid_data_contents', root=1),
-        'share': share_url,
-        'emails': node.api_url_for('dropbox_get_share_emails'),
         'settings': web_url_for('user_addons')
     }
     return urls
@@ -108,7 +106,6 @@ def serialize_settings(node_settings, current_user, client=None):
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
         'validCredentials': valid_credentials,
         'urls': serialize_urls(node_settings),
-        'canShare': True,
     }
 
     if node_settings.has_auth:
