@@ -120,7 +120,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def upload(self, stream, **kwargs):
+    def upload(self, stream, conflict='replace', **kwargs):
         pass
 
     @abc.abstractmethod
