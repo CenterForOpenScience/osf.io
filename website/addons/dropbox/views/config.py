@@ -60,12 +60,6 @@ def get_folders(client):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
-    if node_settings.folder and node_settings.folder != '/':
-        # The link to share a the folder with other Dropbox users
-        share_url = utils.get_share_folder_uri(node_settings.folder)
-    else:
-        share_url = None
-
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
