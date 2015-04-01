@@ -142,6 +142,24 @@ class HashStreamWriter:
     def close(self):
         pass
 
+class ProgressStreamWriter:
+    def __init__(self, size):
+        self._so_far = 0
+        self.total = size
+
+    def write(self, data):
+        self._so_far += len(data)
+
+    def can_write_eof(self):
+        return False
+
+    def close(self):
+        pass
+
+    @property
+    def progress(self):
+        return int(self._so_far / self.total * 100)
+
 
 class StringStream(asyncio.StreamReader):
     def __init__(self, data):
