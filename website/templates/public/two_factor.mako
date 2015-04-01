@@ -3,13 +3,6 @@
 <%def name="title()">Two Factor Authentication</%def>
 
 <%def name="content()">
-    ## TODO refactor base.mako to inherit from another, higher level
-    ## template with just the assets to avoid this css magic /hrybacki
-    <style>
-          .footer, .copyright, .osf-nav-wrapper  {
-            display: none;
-          }
-    </style>
 
     <form class="form col-md-4 col-md-offset-4"
             id="twoFactorSignInForm"
