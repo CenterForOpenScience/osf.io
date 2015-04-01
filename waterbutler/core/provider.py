@@ -115,6 +115,31 @@ class BaseProvider(metaclass=abc.ABCMeta):
         yield from self.delete(**source_options)
         return metadata
 
+    @asyncio.coroutine
+    def exists(self, path, **kwargs):
+        try:
+            return (yield from self.metadata(path, **kwargs))
+        except exceptions.MetadataError:
+            return False
+
+    @asyncio.coroutine
+    def handle_name_conflict(self, path, conflict='replace', **kwargs):
+        """Given a name and a conflict resolution pattern determine
+        the correct file path to upload to and indicate if that file exists or not
+        :param WaterbutlerPath path: An object supporting the waterbutler path API
+        :param str conflict: replace or keep
+        :rtype (WaterButlerPath, bool):
+        """
+        exists = self.exists(path)
+        if not exists or conflict != 'keep':
+            return path, exists
+
+        while self.exists(str(path.increment_name())):
+            pass
+        # path.increment_name()
+        # exists = self.exists(str(path))
+        return path, False
+
     @abc.abstractmethod
     def download(self, **kwargs):
         pass
