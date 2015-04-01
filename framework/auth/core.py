@@ -598,13 +598,20 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
-        # TODO: If the unconfirmed email is already on the User, refresh the token
+        # TODO: If the unconfirmed email is already present, refresh the token
+
+        # TODO: This is technically not compliant with RFC 822, which requires
+        #       that case be preserved in the "local-part" of an address. From
+        #       a practical standpoint, the vast majority of email servers do
+        #       not preserve case.
+        #       ref: https://tools.ietf.org/html/rfc822#section-6
+        email = email.lower().strip()
 
         validate_email(email)
 
         token = generate_confirm_token()
 
-        self.email_verifications[token] = {'email': email.lower()}
+        self.email_verifications[token] = {'email': email}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 

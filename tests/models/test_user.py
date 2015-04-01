@@ -111,3 +111,19 @@ class UserTestCase(base.OsfTestCase):
 
         with assert_raises(exceptions.DuplicateEmailError):
             self.user.confirm_email(token)
+
+    def test_confirm_email_comparison_is_case_insensitive(self):
+        u = factories.UserFactory.build(
+            username='letsgettacos@lgt.com',
+            is_registered=False,
+            date_confirmed=None
+        )
+        u.add_unconfirmed_email('LetsGetTacos@LGT.com')
+        u.save()
+        assert_false(u.is_confirmed)  # sanity check
+
+        token = u.get_confirmation_token('LetsGetTacos@LGT.com')
+
+        confirmed = u.confirm_email(token)
+        assert_true(confirmed)
+        assert_true(u.is_confirmed)
