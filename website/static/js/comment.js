@@ -325,8 +325,8 @@ var CommentModel = function(data, $parent, $root) {
     self.$root = $root;
 
     // Note: assigns observables: canEdit, content, dateCreated, dateModified
-    //       hasChildren, id, isAbuse, isDeleted. Leaves out author and modified.
-    $.extend(self, koHelpers.mapJStoKO(data, {exclude: ['author', 'modified']}));
+    //       hasChildren, id, isAbuse, isDeleted. Leaves out author.
+    $.extend(self, koHelpers.mapJStoKO(data, {exclude: ['author']}));
 
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
@@ -362,7 +362,6 @@ var CommentModel = function(data, $parent, $root) {
     self.abuseText = ko.observable();
 
     self.editing = ko.observable(false);
-    self.editVerb = self.modified ? 'edited' : 'posted';
 
     exclusifyGroup(
         self.editing, self.replying, self.reporting, self.deleting,
