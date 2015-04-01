@@ -476,7 +476,7 @@ function _showProjectDetails(event, item, col) {
  * @returns {Array} An array of buttons in mithril view format using mithril's m()
  * @private
  */
-function _poActionColumn(item, col) {
+function _poActionColumn(item, col) { // TODO: will become obsolete. 
     var self = this,
         buttons = [],
         url = item.data.urls.fetch;
@@ -562,6 +562,9 @@ function _poResolveRows(item) {
     if (draggable) {
         css = 'po-draggable';
     }
+    // define the toolbar icons for this item
+    _poDefineToolbar.call(this, item);
+
     item.css = '';
     default_columns = [{
         data : 'name',  // Data field name
@@ -1296,7 +1299,7 @@ var tbOptions = {
     uploads : false,         // Turns dropzone on/off.
     columnTitles : _poColumnTitles,
     resolveRows : _poResolveRows,
-    showFilter : false,     // Gives the option to filter by showing the filter box.
+    showFilter : true,     // Gives the option to filter by showing the filter box.
     title : false,          // Title of the grid, boolean, string OR function that returns a string.
     allowMove : true,       // Turn moving on or off.
     moveClass : 'po-draggable',
@@ -1325,8 +1328,6 @@ var tbOptions = {
         $('.gridWrapper').on('mouseout', function(){
             rowDiv.removeClass('po-hover');
         });
-
-
     },
     createcheck : function (item, parent) {
         return true;
@@ -1362,7 +1363,8 @@ var tbOptions = {
         generalIcons : {
             search : { on : true, template : searchIcon }         
         },
-        rowIcons : [{}]
+        rowIcons : [{}],
+        title : 'Select rows for further actions.'
     },
     defineToolbar : _poDefineToolbar,
 };
