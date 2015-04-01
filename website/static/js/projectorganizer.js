@@ -1254,7 +1254,19 @@ var tbOptions = {
     lazyLoadOnLoad : expandStateLoad,
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
-    }
+    },
+    headerTemplate : _poToolbar,
+    // Not treebeard options, specific to Fangorn
+    iconState : {
+        mode : 'bar',
+        generalIcons : {
+            search : { on : true, template : searchIcon },
+            cancelUploads : { on : false, template : cancelUploadsIcon },
+            deleteMultiple : { on : false, template :  deleteMultipleIcon }           
+        },
+        rowIcons : [{}]
+    },
+    defineToolbar : _poDefineToolbar,
 };
 
 /**
