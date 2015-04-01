@@ -1224,12 +1224,63 @@ function toolbarDismissIcon (){
 
 function _poToolbar (){
     var tb = this; 
-
-}
+    var generalButtons = [];
+    var generalIcons = tb.options.iconState.generalIcons;
+    if (generalIcons.search.on) { 
+        generalButtons.push(generalIcons.search.template.call(tb));
+    }
+    if (tb.options.iconState.mode === 'bar'){                   
+        return m('.row.tb-header-row', [
+                m('.col-xs-12', [   
+                        m('i.m-r-sm', tb.options.iconState.title ),
+                        m('.fangorn-toolbar.pull-right', 
+                            [   
+                                tb.options.iconState.rowIcons.map(function(icon){
+                                    if(icon.template){
+                                        return icon.template.call(tb);                                    
+                                    }
+                                }),
+                                generalButtons
+                            ]
+                        )
+                    ])
+            ]);  
+    }
+    if(tb.options.iconState.mode === 'search'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
+                        m('.col-xs-1', 
+                            m('.fangorn-toolbar.pull-right', 
+                                toolbarDismissIcon.call(tb)
+                            )
+                        )
+                    ])
+            ]);  
+    }    
+} 
 
 function _poDefineToolbar (item){
     var tb = this; 
 
+    var self = this,
+        buttons = [],
+        url = item.data.urls.fetch;
+    if (!item.data.isSmartFolder) {
+        if (url !== null) {
+            buttons.push(
+            { name : 'gotoEvent', template : function(){
+                return m('.fangorn-toolbar-icon.text-primary', {
+                        onclick : function(event) { _gotoEvent.call(self, event, item); }
+                    }, [
+                    m('i.fa.fa-download'),
+                    m('span.hidden-xs','Open')
+                ]);
+            }}
+            );
+        }
+    }
+   item.icons = buttons;
 }
 
 //
