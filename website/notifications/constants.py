@@ -1,5 +1,6 @@
 NODE_SUBSCRIPTIONS_AVAILABLE = {
-    'comments': 'Comments Added'
+    'comments': 'Comments Added',
+    'wiki_updated': 'Wiki Updated'
 }
 
 USER_SUBSCRIPTIONS_AVAILABLE = {

@@ -12,7 +12,8 @@ from website.util import web_url_for
 LOCALTIME_FORMAT = '%H:%M on %A, %B %d %Z'
 EMAIL_SUBJECT_MAP = {
     'comments': '${commenter.fullname} commented on "${title}".',
-    'comment_replies': '${commenter.fullname} replied to your comment on "${title}".'
+    'comment_replies': '${commenter.fullname} replied to your comment on "${title}".',
+    'wiki_updated': '${commenter.fullname} updated the wiki on "${title}".'
 }
 
 
@@ -81,8 +82,6 @@ EMAIL_FUNCTION_MAP = {
 def notify(uid, event, **context):
     node_subscribers = []
     subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
-
-    print subscription
 
     if subscription:
         for notification_type in constants.NOTIFICATION_TYPES:
