@@ -81,7 +81,7 @@ Stats.view = function(ctrl) {
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('.row', ctrl.vm.statsData ? [
+                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
                         m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
                         m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
                     ] : [])
