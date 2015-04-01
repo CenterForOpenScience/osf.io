@@ -761,58 +761,74 @@ function _poLoadOpenChildren() {
  */
 function _poMultiselect(event, tree) {
     var tb = this,
-        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
-        someItemsAreFolders,
-        pointerIds;
-    if (selectedRows.length > 1) {
-        someItemsAreFolders = false;
-        pointerIds = [];
-        selectedRows.forEach(function (item) {
-            var thisItem = item.data;
-            someItemsAreFolders = someItemsAreFolders ||
-                                  thisItem.isFolder ||
-                                  thisItem.isSmartFolder ||
-                                  thisItem.parentIsSmartFolder ||
-                                  !thisItem.permissions.movable;
-            pointerIds.push(thisItem.node_id);
-        });
-        var detailTemplateContext;
-        if(!selectedRows[0].parent().data.isFolder){
-            detailTemplateContext = {
-                itemsCount: selectedRows.length
-            };
-            var theParentNode = selectedRows[0].parent();
-            var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-            $detailDiv.html(displayHTML).show();
-        } else {
-            if (!someItemsAreFolders) {
-                detailTemplateContext = {
-                    multipleItems: true,
-                    itemsCount: selectedRows.length
-                };
-                var theParentNode = selectedRows[0].parent();
-                var displayHTML = multiItemDetailTemplate(detailTemplateContext);
-                $detailDiv.html(displayHTML).show();
-                $('#remove-links-multiple').click(function () {
-                    deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                    createBlankProjectDetail();
-                });
-                $('#close-multi-select').click(function () {
-                    createBlankProjectDetail();
-                    return false;
-                });
-            } else {
-                detailTemplateContext = {
-                    itemsCount: selectedRows.length
-                };
-                var theParentNode = selectedRows[0].parent();
-                var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-                $detailDiv.html(displayHTML).show();
-            }
-        }
+        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+
+    tb.options.iconState.rowIcons = [];
+    if(tb.multiselected.length === 1){
+        // empty row icons and assign row icons from item information
+        tb.options.iconState.rowIcons = tree.icons;
+        tb.options.iconState.title = tree.data.title;
+
+        // temporarily remove classes until mithril redraws raws with another hover. 
+        tb.select('#tb-tbody').removeClass('unselectable');
     } else {
-        _showProjectDetails.call(tb, event, tb.multiselected[0]);
+        tb.select('#tb-tbody').addClass('unselectable');
     }
+
+
+
+
+    //     someItemsAreFolders,
+    //     pointerIds;
+    // if (selectedRows.length > 1) {
+    //     someItemsAreFolders = false;
+    //     pointerIds = [];
+    //     selectedRows.forEach(function (item) {
+    //         var thisItem = item.data;
+    //         someItemsAreFolders = someItemsAreFolders ||
+    //                               thisItem.isFolder ||
+    //                               thisItem.isSmartFolder ||
+    //                               thisItem.parentIsSmartFolder ||
+    //                               !thisItem.permissions.movable;
+    //         pointerIds.push(thisItem.node_id);
+    //     });
+    //     var detailTemplateContext;
+    //     if(!selectedRows[0].parent().data.isFolder){
+    //         detailTemplateContext = {
+    //             itemsCount: selectedRows.length
+    //         };
+    //         var theParentNode = selectedRows[0].parent();
+    //         var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
+    //         $detailDiv.html(displayHTML).show();
+    //     } else {
+    //         if (!someItemsAreFolders) {
+    //             detailTemplateContext = {
+    //                 multipleItems: true,
+    //                 itemsCount: selectedRows.length
+    //             };
+    //             var theParentNode = selectedRows[0].parent();
+    //             var displayHTML = multiItemDetailTemplate(detailTemplateContext);
+    //             $detailDiv.html(displayHTML).show();
+    //             $('#remove-links-multiple').click(function () {
+    //                 deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
+    //                 createBlankProjectDetail();
+    //             });
+    //             $('#close-multi-select').click(function () {
+    //                 createBlankProjectDetail();
+    //                 return false;
+    //             });
+    //         } else {
+    //             detailTemplateContext = {
+    //                 itemsCount: selectedRows.length
+    //             };
+    //             var theParentNode = selectedRows[0].parent();
+    //             var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
+    //             $detailDiv.html(displayHTML).show();
+    //         }
+    //     }
+    // } else {
+    //     _showProjectDetails.call(tb, event, tb.multiselected[0]);
+    // }
 }
 
 
