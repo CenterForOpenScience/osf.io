@@ -24,7 +24,7 @@ from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 
-from website import settings, filters, security
+from website import mails, settings, filters, security
 
 
 name_formatters = {
@@ -620,7 +620,24 @@ class User(GuidStoredObject, AddonModelMixin):
         for token, value in self.email_verifications.iteritems():
             if value.get('email') == email:
                 del self.email_verifications[token]
-                return
+                return True
+
+        return False
+
+    def remove_email(self, email):
+        """Remove a confirmed email"""
+        if email in self.emails:
+            self.emails.remove(email)
+            mails.send_mail(self.username,
+                            mails.REMOVED_EMAIL,
+                            user=self,
+                            removed_email=email)
+            mails.send_mail(email,
+                            mails.REMOVED_EMAIL,
+                            user=self,
+                            removed_email=email)
+
+
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.

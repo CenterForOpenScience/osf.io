@@ -102,7 +102,7 @@ def update_user(auth):
 
         for address in removed_emails:
             if address in user.emails:
-                user.emails.remove(address)
+                user.remove_email(address)
             user.remove_unconfirmed_email(address)
 
         # additions
