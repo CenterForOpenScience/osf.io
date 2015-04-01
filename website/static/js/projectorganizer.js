@@ -1329,7 +1329,6 @@ function _poToolbar (){
                     ])
             ]);  
     }    
-
 } 
 
 function _poDefineToolbar (item){
@@ -1376,7 +1375,22 @@ function _poDefineToolbar (item){
         buttons.push(
         { name : 'removeFromFolder', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
-                    onclick : function(event) {  }
+                    onclick : function(event) {  
+                        var theItem = item.data;
+                        var theParentNode = item.parent();
+                        var theParentNodeID = theParentNode.data.node_id;
+                        var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id,
+                            deleteAction = $.ajax({
+                                type: 'DELETE',
+                                url: url,
+                                contentType: 'application/json',
+                                dataType: 'json'
+                            });
+                        deleteAction.done(function () {
+                            tb.updateFolder(null, theParentNode);
+
+                        });
+                    }
                 }, [
                 m('span','Remove From Folder')
             ]);
