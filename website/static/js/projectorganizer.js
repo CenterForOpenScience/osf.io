@@ -85,7 +85,9 @@ projectOrganizer.myProjects = new Bloodhound({
  */
 function _poTitleColumn(item) {
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    return m('span', { 'class' : css }, item.data.name);
+    return m('span', { 'class' : css , ondblclick : function(event){ 
+            window.open(item.data.urls.fetch);
+        }}, item.data.name);
 }
 
 /**
@@ -562,17 +564,17 @@ function _poToggleCheck(item) {
 function _poResolveIcon(item) {
     var viewLink,
         icons = {
-            folder : 'project-organizer-icon-folder',
-            smartFolder : 'project-organizer-icon-smart-folder',
-            project : 'project-organizer-icon-project',
-            registration :  'project-organizer-icon-reg-project',
-            component :  'project-organizer-icon-component',
-            registeredComponent :  'project-organizer-icon-reg-component',
-            link :  'project-organizer-icon-pointer'
+            folder : 'fa-circle-o',
+            smartFolder : 'fa-sun-o',
+            project : 'fa-th-list',
+            registration :  'fa-th-list text-muted',
+            component :  'fa-th-large',
+            registeredComponent :  'fa-th-large text-muted',
+            link :  'fa-link'
         };
     viewLink = item.data.urls.fetch;
     function returnView(type) {
-        var template = m('span', { 'class' : icons[type]});
+        var template = m('.fa', { 'class' : icons[type]});
         if (viewLink) {
             return m('a', { href : viewLink}, template);
         }
@@ -696,7 +698,7 @@ function _poMultiselect(event, tree) {
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = tree.icons;
-        tb.options.iconState.title = tree.data.name;
+        //tb.options.iconState.title = tree.data.name;
 
         // temporarily remove classes until mithril redraws raws with another hover. 
         tb.select('#tb-tbody').removeClass('unselectable');
@@ -1211,7 +1213,6 @@ function _poToolbar (){
     if (tb.options.iconState.mode === 'bar'){                   
         return m('.row.tb-header-row', [
                 m('.col-xs-12', [   
-                        m('i.m-r-sm', tb.options.iconState.title ),
                         m('.fangorn-toolbar.pull-right', 
                             [   
                                 tb.options.iconState.rowIcons.map(function(icon){
@@ -1266,7 +1267,8 @@ function _poDefineToolbar (item){
             return m('.fangorn-toolbar-icon.text-primary', {
                     onclick : function(event) {  }
                 }, [
-                m('span','Add Folder')
+                m('i.fa.fa-circle'),
+                m('span','Add Collection')
             ]);
         }},
         { name : 'addExistingProject', template : function(){
@@ -1381,9 +1383,8 @@ var tbOptions = {
         generalIcons : {
             search : { on : true, template : searchIcon }         
         },
-        rowIcons : [{}],
-        title : 'Select rows for further actions.'
-    },
+        rowIcons : [{}]
+        },
     defineToolbar : _poDefineToolbar,
     onselectrow : function(row) {
         console.log(row);
