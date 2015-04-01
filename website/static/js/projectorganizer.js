@@ -1336,15 +1336,15 @@ function toolbarDismissIcon (){
         });
         $('#addprojectInput').bind('keyup', function (event) {
             var key = event.keyCode || event.which,
-                buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== 'undefined');
+                buttonEnabled = (typeof $('#add-link-button').prop('disabled') !== 'undefined');
 
             if (key === 13) {
                 if (buttonEnabled) {
-                    $('#add-link-' + theItem.node_id).click(); //submits if the control is active
+                    $('#add-link-button').click(); //submits if the control is active
                 }
             } else {
                 $('#add-link-warn-' + theItem.node_id).text('');
-                $('#add-link-' + theItem.node_id).attr('disabled', 'disabled');
+                $('#add-link-button').attr('disabled', 'disabled');
                 linkName = '';
                 linkID = '';
             }
@@ -1366,7 +1366,8 @@ function toolbarDismissIcon (){
     }
 
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', { 
+    return m('#add-link-button.fangorn-toolbar-icon.text-info', { 
+            disabled : 'disabled',
             onclick : function () { 
                 
                 tb.options.iconState.mode = 'bar'; 
