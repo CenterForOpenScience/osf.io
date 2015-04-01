@@ -11,7 +11,7 @@ master_doc = "index"
 project = "WaterButler"
 copyright = "2014, Center For Open Science"
 
-version = release = '0.0.1'
+version = release = waterbutler.__version__
 
 extensions = [
     "sphinx.ext.autodoc",
