@@ -1183,6 +1183,17 @@ function _cleanupMithril() {
     });
 }
 
+
+function _poToolbar (){
+    var tb = this; 
+
+}
+
+function _poDefineToolbar (item){
+    var tb = this; 
+
+}
+
 //
 /**
  * OSF-specific Treebeard options common to all addons.
