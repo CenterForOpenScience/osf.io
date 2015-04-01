@@ -770,7 +770,7 @@ function _poMultiselect(event, tree) {
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = tree.icons;
-        tb.options.iconState.title = tree.data.title;
+        tb.options.iconState.title = tree.data.name;
 
         // temporarily remove classes until mithril redraws raws with another hover. 
         tb.select('#tb-tbody').removeClass('unselectable');
@@ -1367,6 +1367,9 @@ var tbOptions = {
         title : 'Select rows for further actions.'
     },
     defineToolbar : _poDefineToolbar,
+    onselectrow : function(row) {
+        console.log(row);
+    }
 };
 
 /**
