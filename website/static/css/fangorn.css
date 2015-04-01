@@ -138,12 +138,13 @@ text-align: center;
 .fangorn-toolbar {
 }
 .fangorn-toolbar-icon {
-	padding: 6px 10px;
-	display: inline-block;
-	box-shadow: 0 0 2px #DDD;
-	background: #F8F8F8;
-	margin-right: 5px;
-	cursor: pointer;
+	padding: 4px 8px;
+  display: inline-block;
+  box-shadow: 0 0 2px #DDD;
+  background: #F8F8F8;
+  margin-right: 5px;
+  cursor: pointer;
+  font-size: 13px;
 }
 .fangorn-toolbar-icon .fa {
     font-size: 15px;
