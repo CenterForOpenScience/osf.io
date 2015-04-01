@@ -26,6 +26,20 @@ from website.project.model import Node
 
 from website.oauth.signals import oauth_complete
 
+NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
+    settings.TEMPLATES_PATH,
+    'project',
+    'addon',
+    'node_settings_default.mako',
+)
+
+USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
+    settings.TEMPLATES_PATH,
+    'project',
+    'addon',
+    'user_settings_default.mako',
+)
+
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
@@ -90,46 +104,34 @@ class AddonConfig(object):
         self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
+        # Provide the path the the user_settings template
+        self.user_settings_template = user_settings_template
+        if not user_settings_template or not os.path.exists(os.path.dirname(user_settings_template)):
+            # Use the default template (ATM for OAuth addons)
+            self.user_settings_template = USER_SETTINGS_TEMPLATE_DEFAULT
+
+        # Provide the path the the node_settings template
+        self.node_settings_template = node_settings_template
+        if not node_settings_template or not os.path.exists(os.path.dirname(node_settings_template)):
+            # Use the default template
+            self.node_settings_template = NODE_SETTINGS_TEMPLATE_DEFAULT
+
         # Build template lookup
-        template_path = os.path.join('website', 'addons', short_name, 'templates')
-        if os.path.exists(template_path):
-            self.template_lookup = TemplateLookup(
-                directories=[
-                    template_path,
-                    settings.TEMPLATES_PATH,
+        template_dirs = list(
+            set(
+                [
+                    path
+                    for path in [os.path.dirname(self.user_settings_template), os.path.dirname(self.node_settings_template), settings.TEMPLATES_PATH]
+                    if os.path.exists(path)
                 ]
+            )
+        )
+        if template_dirs:
+            self.template_lookup = TemplateLookup(
+                directories=template_dirs
             )
         else:
             self.template_lookup = None
-
-        # Provide the path the the user_settings template
-        self.user_settings_template = user_settings_template
-        addon_user_settings_path = os.path.join(
-            template_path,
-            '{}_user_settings.mako'.format(self.short_name)
-        )
-
-        if user_settings_template:
-            # If USER_SETTINGS_TEMPLATE is defined, use that path.
-            self.user_settings_template = user_settings_template
-        elif os.path.exists(addon_user_settings_path):
-            # An implicit template exists
-            self.user_settings_template = os.path.join(
-                os.path.pardir,
-                'addons',
-                self.short_name,
-                'templates',
-                '{}_user_settings.mako'.format(self.short_name),
-            )
-        else:
-            # Use the default template (for OAuth addons)
-            self.user_settings_template = os.path.join(
-                'project',
-                'addon',
-                'user_settings_default.mako',
-            )
-
-        self.node_settings_template = node_settings_template
 
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
@@ -672,7 +674,8 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 'api_url': self.owner.api_url,
                 'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
-            }
+            },
+            'node_settings_template': os.path.basename(self.config.node_settings_template),
         })
         return ret
 

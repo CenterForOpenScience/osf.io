@@ -81,7 +81,7 @@ Stats.view = function(ctrl) {
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('.row', ctrl.vm.statsData ? [
+                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
                         m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
                         m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
                     ] : [])
@@ -128,7 +128,7 @@ Stats.controller = function(vm) {
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/?size=1',
+        url: '/api/v1/share/search/?size=1',
     }).then(function(data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;

@@ -54,7 +54,7 @@ var ViewModel = function(url, selector) {
         return self.userHasAuth() && !self.nodeHasAuth();
     });
     self.showCreateCredentials = ko.pureComputed(function() {
-        return !self.nodeHasAuth() && !self.userHasAuth();
+        return self.loadedSettings() && (!self.nodeHasAuth() && !self.userHasAuth());
     });
     self.canChange = ko.pureComputed(function() {
         return self.userIsOwner() && self.nodeHasAuth();
