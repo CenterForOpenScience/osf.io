@@ -1327,7 +1327,17 @@ function _poDefineToolbar (item){
         }}
         );
     }
-
+    if(!item.data.isDashboard && !item.data.isRegistration && item.data.permissions && item.data.permissions.edit){
+        buttons.push(
+        { name : 'renameItem', template : function(){
+            return m('.fangorn-toolbar-icon.text-primary', {
+                    onclick : function(event) {  }
+                }, [
+                m('span','Rename')
+            ]);
+        }}
+        );
+    }
 
    item.icons = buttons;
 }
