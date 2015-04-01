@@ -29,7 +29,7 @@ ko.punches.enableAll();
  * Notes: 
  * - Subclasses of this VM can be created using the oop module like: oop.extend(FolderPickerViewModel, { ... });
  * - Subclasses must:
- *   - provide a VM.messages.submitSettingSuccess()
+ *   - provide a VM.messages.submitSettingsSuccess()
  *   - override VM.treebeardOptions.onPickFolder and VM.treebeardOptions.resolveLazyloadUrl
  * - Subclasses can:
  *   - implement an _updateCustomFields method to capture additional parameters in updateFromData
@@ -107,7 +107,7 @@ var FolderPickerViewModel = oop.defclass({
             connectAccountSuccess: ko.pureComputed(function() {
                 return 'Successfully created a ' + self.addonName + ' Access Token';
             }),
-            submitSettingSuccess: ko.pureComputed(function() {
+            submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
                                 'This should take the form: "Successfully linked \'{FOLDER_NAME}\'. Go to the <a href="{URL}"> ' +
                                 '{PAGE_NAME} to view your {CONTENT_TYPE}.');
@@ -281,7 +281,7 @@ var FolderPickerViewModel = oop.defclass({
             self.folder(response.result.folder);
             self.urls(response.result.urls);
             self.cancelSelection();
-            self.changeMessage(self.messages.submitSettingSuccess(), 'text-success');
+            self.changeMessage(self.messages.submitSettingsSuccess(), 'text-success');
         }
         function onSubmitError(xhr, status, error) {
             self.changeMessage(self.messages.submitSettingsError(), 'text-danger');
@@ -312,9 +312,12 @@ var FolderPickerViewModel = oop.defclass({
             error: error
         });    
     },
+    _importAuthPayload: function() {
+        return {};
+    },
     _importAuthConfirm: function() {
         var self = this;
-        return $osf.putJSON(self.urls().importAuth, {})
+        return $osf.putJSON(self.urls().importAuth, self._importAuthPayload())
             .done(self.onImportSuccess.bind(self))
             .fail(self.onImportError.bind(self));
     },
