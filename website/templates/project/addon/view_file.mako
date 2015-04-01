@@ -69,11 +69,9 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    % if tree_js:
-        % for script in tree_js:
-            <script type="text/javascript" src="${script | webpack_asset}"></script>
-        % endfor
-    % endif
+    % for script in tree_js:
+        <script type="text/javascript" src="${script | webpack_asset}"></script>
+    % endfor
     % if rendered is None:
         <script type="text/javascript">
             window.contextVars = window.contextVars || {};
