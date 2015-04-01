@@ -64,14 +64,6 @@ var FolderPickerViewModel = oop.defclass({
         self.messageClass = ko.observable('text-info');
         // Display names
         self.PICKER = 'picker';
-        self.SHARE = 'share';
-        // Does the external service support sharing
-        self.canShare = ko.observable(false);
-        self.disableShare = ko.pureComputed(function() {
-            var isRoot = self.folder().path === 'All Files';
-            var notSet = (self.folder().path == null);
-            return !(self.urls().emails) || !self.validCredentials() || isRoot || notSet;
-        });
         // Currently selected folder name
         self.selected = ko.observable(false);
         self.loading = ko.observable(false);
@@ -116,8 +108,8 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Successfully created a ' + self.addonName + ' Access Token';
             }),
             SUBMIT_SETTINGS_SUCCESS: ko.pureComputed(function() {
-                throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' + 
-                                'This should take the form: "Successfully linked \'{FOLDER_NAME}\'. Go to the <a href="{URL}"> ' + 
+                throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
+                                'This should take the form: "Successfully linked \'{FOLDER_NAME}\'. Go to the <a href="{URL}"> ' +
                                 '{PAGE_NAME} to view your {CONTENT_TYPE}.');
             }),
             SUBMIT_SETTINGS_ERROR: ko.pureComputed(function() {
