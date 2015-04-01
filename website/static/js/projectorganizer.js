@@ -470,36 +470,6 @@ function _showProjectDetails(event, item, col) {
 }
 
 /**
- * Project Organizer actions, has info and go to project
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Column information for the column where click happened.
- * @returns {Array} An array of buttons in mithril view format using mithril's m()
- * @private
- */
-function _poActionColumn(item, col) { // TODO: will become obsolete. 
-    var self = this,
-        buttons = [],
-        url = item.data.urls.fetch;
-    if (!item.data.isSmartFolder) {
-        if (url !== null) {
-            buttons.push({
-                'name' : '',
-                'icon' : 'fa fa-chevron-right',
-                'css' : 'project-organizer-icon-visit fangorn-clickable btn btn-info btn-xs',
-                'onclick' : _gotoEvent
-            });
-        }
-    }
-    // Build the template for icons
-    return buttons.map(function (btn) {
-        return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, 'data-toggle' : 'tooltip', title : 'Go to page', 'data-placement': 'bottom','style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
-            [ m('span', { 'class' : btn.icon}, btn.name) ])
-            ]);
-    });
-}
-
-/**
  * Contributors have first person's name and then number of contributors. This functio nreturns the proper html
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @returns {Object} A Mithril virtual DOM template object
@@ -573,9 +543,6 @@ function _poResolveRows(item) {
         css : css,
         custom : _poTitleColumn
     }, {
-        sortInclude : false,
-        custom : _poActionColumn
-    }, {
         filter : true,
         custom : _poContributors
     }, {
@@ -594,15 +561,11 @@ function _poColumnTitles() {
     var columns = [];
     columns.push({
         title: 'Name',
-        width : '45%',
-        sort : false
-    }, {
-        title : 'Actions',
-        width : '10%',
+        width : '50%',
         sort : false
     }, {
         title : 'Contributors',
-        width : '20%',
+        width : '25%',
         sort : false
     }, {
         title : 'Modified',
