@@ -18,9 +18,9 @@
 
 ${next.body()}
 
-% if node['node_type'] == 'project':
+## % if node['node_type'] == 'project':
     <%include file="modal_duplicate.mako"/>
-% endif
+## % endif
 
 </%def>
 

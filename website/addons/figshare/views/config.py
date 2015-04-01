@@ -89,11 +89,19 @@ def serialize_settings(node_settings, current_user, client=None):
         user_settings.owner._primary_key == current_user._primary_key
     )
 
+    valid_credentials = True
+    if user_settings:
+        client = client or Figshare.from_settings(user_settings)
+        articles, status = client.articles(node_settings)
+        if status == 401:
+            valid_credentials = False
+
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userHasAuth': user_has_auth,
         'userIsOwner': user_is_owner,
-        'urls': serialize_urls(node_settings)
+        'urls': serialize_urls(node_settings),
+        'validCredentials': valid_credentials,
     }
 
     if node_settings.has_auth:
@@ -115,7 +123,9 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
+        'folders': node.api_url_for('figshare_get_options'),
         'files': node.web_url_for('collect_file_trees'),
+        'settings': web_url_for('user_addons')
     }
 
 
