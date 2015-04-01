@@ -1,3 +1,5 @@
+import os
+
 from website.addons.dropbox import model, routes, views
 
 
@@ -37,3 +39,7 @@ HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.dropbox_addon_folder
 
 # MAX_FILE_SIZE = 5  # MB
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = None  # use default node settings template
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dropbox_user_settings.mako')
