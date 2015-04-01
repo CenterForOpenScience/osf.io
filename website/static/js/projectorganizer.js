@@ -1347,7 +1347,7 @@ function _poToolbar (){
         return m('.row.tb-header-row', [
                 m('', [
                         m('.col-xs-9', [
-                                m('input#addprojectInput.typeahead', { type : 'text', placeholder : 'Name of the project to find'}),
+                                m('input#addprojectInput.typeahead.tb-header-input', { type : 'text', placeholder : 'Name of the project to find'}),
                                 m('span.add-link-warning')
                             ]
                         ),
@@ -1398,7 +1398,9 @@ function _poDefineToolbar (item){
         }},
         { name : 'addExistingProject', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
-                    onclick : function(event) {  }
+                    onclick : function(event) {  
+                        tb.options.iconState.mode = 'addProject';
+                    }
                 }, [
                 m('span','Add Existing Project')
             ]);
