@@ -39,60 +39,65 @@ function ViewModel(url) {
     self.studyWasFound = ko.observable(false);
 
     self.messages = {
-        USER_SETTINGS_ERROR: ko.pureComputed(function() {
+        userSettingsError: ko.pureComputed(function() {
             return 'Could not retrieve settings. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        CONFIRM_NODE_DEAUTH: ko.pureComputed(function() {
+        confirmNodeDeauth: ko.pureComputed(function() {
             return 'Are you sure you want to unlink this Dataverse account? This will ' +
                 'revoke the ability to view, download, modify, and upload files ' +
                 'to studies on the Dataverse from the OSF. This will not remove your ' +
                 'Dataverse authorization from your <a href="' + self.urls().settings + '">user settings</a> ' +
                 'page.';
         }),
-        CONFIRM_IMPORT_AUTH: ko.pureComputed(function() {
+        confirmImportAuth: ko.pureComputed(function() {
             return 'Are you sure you want to authorize this project with your Dataverse credentials?';
         }),
-        DEAUTH_ERROR: ko.pureComputed(function() {
+        deauthError: ko.pureComputed(function() {
             return 'Could not unlink Dataverse at this time. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        DEAUTH_SUCCESS: ko.pureComputed(function() {
+        deauthSuccess: ko.pureComputed(function() {
             return 'Successfully unlinked your Dataverse account.';
         }),
-        AUTH_INVALID: ko.pureComputed(function() {
+        authInvalid: ko.pureComputed(function() {
             return 'Your Dataverse username or password is invalid.';
         }),
-        IMPORT_AUTH_SUCCESS: ko.pureComputed(function() {
-            return 'Successfully linked your Dataverse account';
-        }),
-        IMPORT_AUTH_ERROR: ko.pureComputed(function() {
+        authError: ko.pureComputed(function() {
             return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        STUDY_DAACCESSIONED: ko.pureComputed(function() {
+        importAuthSuccess: ko.pureComputed(function() {
+            return 'Successfully linked your Dataverse account';
+        }),
+        importAuthError: ko.pureComputed(function() {
+            return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'problem persists.';
+        }),
+        studyDeaccessioned: ko.pureComputed(function() {
             return 'This study has already been deaccessioned on the Dataverse ' +
                 'and cannot be connected to the OSF.';
         }),
-        FORBIDDEN_CHARACTERS: ko.pureComputed(function() {
+        forbiddenCharacters: ko.pureComputed(function() {
             return 'This study cannot be connected due to forbidden characters ' +
                 'in one or more of the study\'s file names. This issue has been forwarded to our ' +
                 'development team.';
         }),
-        SET_INFO_SUCCESS: ko.pureComputed(function() {
+        setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
             return 'Successfully linked study \'' + self.savedStudyTitle() + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
-        SET_STUDY_ERROR: ko.pureComputed(function() {
+        setStudyError: ko.pureComputed(function() {
             return 'Could not connect to this study. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        GET_STUDIES_ERROR: ko.pureComputed(function() {
+        getStudiesError: ko.pureComputed(function() {
             return 'Could not load studies. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
@@ -180,7 +185,7 @@ function ViewModel(url) {
         self.updateFromData(response.result);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.USER_SETTINGS_ERROR, 'text-warning');
+        self.changeMessage(self.messages.userSettingsError, 'text-warning');
         Raven.captureMessage('Could not GET dataverse settings', {
             url: url,
             textStatus: textStatus,
@@ -235,12 +240,12 @@ ViewModel.prototype.setInfo = function() {
         self.savedStudyHdl(self.selectedStudyHdl());
         self.savedStudyTitle(self.selectedStudyTitle());
         self.studyWasFound(true);
-        self.changeMessage(self.messages.SET_INFO_SUCCESS, 'text-success');
+        self.changeMessage(self.messages.setInfoSuccess, 'text-success');
     }).fail(function(xhr, textStatus, error) {
         self.submitting(false);
-        var errorMessage = (xhr.status === 410) ? self.messages.STUDY_DEACCESSIONED :
-            (xhr.status = 406) ? self.messages.FORBIDDEN_CHARACTERS : self.messages.SET_STUDY_ERROR;
-        self.changeMessage(errorMessage, 'text-danger');
+        var errorMessage = (xhr.status === 410) ? self.messages.studyDeaccessioned :
+            (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setStudyError;
+ self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
             url: self.urls().set,
             textStatus: textStatus,
@@ -280,7 +285,7 @@ ViewModel.prototype.getStudies = function() {
         self.selectedStudyHdl(self.savedStudyHdl());
         self.findStudy();
     }).fail(function() {
-        self.changeMessage(self.messages.GET_STUDIES_ERROR, 'text-danger');
+        self.changeMessage(self.messages.getStudiesError, 'text-danger');
     });
 };
 
@@ -290,9 +295,9 @@ ViewModel.prototype.authorizeNode = function() {
         self.urls().importAuth, {}
     ).done(function(response) {
         self.updateFromData(response.result);
-        self.changeMessage(self.messages.IMPORT_AUTH_SUCCESS, 'text-success', 3000);
+        self.changeMessage(self.messages.importAuthSuccess, 'text-success', 3000);
     }).fail(function() {
-        self.changeMessage(self.messages.IMPORT_AUTH_ERROR, 'text-danger');
+        self.changeMessage(self.messages.importAuthError, 'text-danger');
     });
 };
 
@@ -309,7 +314,7 @@ ViewModel.prototype.sendAuth = function() {
         // User now has auth
         self.authorizeNode();
     }).fail(function(xhr) {
-        var errorMessage = (xhr.status === 401) ? self.messages.AUTH_INVALID : self.messages.AUTH_ERROR;
+        var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
         self.changeMessage(errorMessage, 'text-danger');
     });
 };
@@ -321,7 +326,7 @@ ViewModel.prototype.importAuth = function() {
     var self = this;
     bootbox.confirm({
         title: 'Link to Dataverse Account?',
-        message: self.messages.CONFIRM_IMPORT_AUTH(),
+        message: self.messages.confirmImportAuth(),
         callback: function(confirmed) {
             if (confirmed) {
                 self.authorizeNode();
@@ -341,15 +346,15 @@ ViewModel.prototype.clickDeauth = function() {
             self.nodeHasAuth(false);
             self.userIsOwner(false);
             self.connected(false);
-            self.changeMessage(self.messages.DEAUTH_SUCCESS, 'text-success', 3000);
+            self.changeMessage(self.messages.deauthSuccess, 'text-success', 3000);
         }).fail(function() {
-            self.changeMessage(self.messages.DEAUTH_ERROR, 'text-danger');
+            self.changeMessage(self.messages.deauthError, 'text-danger');
         });
     }
 
     bootbox.confirm({
         title: 'Deauthorize?',
-        message: self.messages.CONFIRM_NODE_DEAUTH(),
+        message: self.messages.confirmNodeDeauth(),
         callback: function(confirmed) {
             if (confirmed) {
                 sendDeauth();
