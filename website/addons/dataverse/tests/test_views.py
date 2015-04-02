@@ -250,6 +250,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(self.node_settings.dataverse_alias, 'ALIAS3')
         assert_equal(self.node_settings.dataset, 'Example (DVN/00003)')
         assert_equal(self.node_settings.dataset_doi, 'doi:12.3456/DVN/00003')
+        assert_equal(self.node_settings.dataset_id, '18')
 
         # Log states that a dataset was selected
         last_log = self.project.logs[-1]

@@ -76,6 +76,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
     dataset_doi = fields.StringField()
+    dataset_id = fields.StringField()
     dataset = fields.StringField()
 
     user_settings = fields.ForeignField(
@@ -116,6 +117,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.dataverse_alias = None
         self.dataverse = None
         self.dataset_doi = None
+        self.dataset_id = None
         self.dataset = None
         self.user_settings = None
 
@@ -136,7 +138,11 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         return {'token': self.user_settings.api_token}
 
     def serialize_waterbutler_settings(self):
-        return {'doi': self.dataset_doi}
+        return {
+            'doi': self.dataset_doi,
+            'id': self.dataset_id,
+            'name': self.dataset,
+        }
 
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']

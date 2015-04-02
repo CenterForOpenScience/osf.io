@@ -176,6 +176,7 @@ def set_dataverse_and_dataset(node_addon, auth, **kwargs):
     node_addon.dataverse = dataverse.title
 
     node_addon.dataset_doi = dataset.doi
+    node_addon.dataset_id = dataset.id
     node_addon.dataset = dataset.title
 
     node = node_addon.owner

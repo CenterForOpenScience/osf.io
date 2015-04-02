@@ -24,6 +24,7 @@ class DataverseAddonTestCase(AddonTestCase):
         settings.dataverse_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
         settings.dataset_doi = 'doi:12.3456/DVN/00001'
+        settings.dataset_id = '18'
         settings.dataset = 'Example (DVN/00001)'
 
 
@@ -45,7 +46,7 @@ def create_mock_connection(token='snowman-frosty'):
     mock_connection.get_dataverses.return_value = [
         create_mock_dataverse('Example 1'),
         create_mock_dataverse('Example 2'),
-        create_mock_dataverse('Example 3')
+        create_mock_dataverse('Example 3'),
     ]
 
     def _get_dataverse(alias):
@@ -75,7 +76,7 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     mock_dataverse.get_datasets.return_value = [
         create_mock_dataset('DVN/00001'),
         create_mock_dataset('DVN/00002'),
-        create_mock_dataset('DVN/00003')
+        create_mock_dataset('DVN/00003'),
     ]
 
     def _get_dataset_by_doi(doi):
@@ -97,6 +98,7 @@ def create_mock_dataset(id='DVN/12345'):
     mock_dataset.citation = 'Example Citation for {0}'.format(id)
     mock_dataset.title = 'Example ({0})'.format(id)
     mock_dataset.doi = 'doi:12.3456/{0}'.format(id)
+    mock_dataset.id = '18'
     mock_dataset.get_state.return_value = 'DRAFT'
 
     def _create_file(name, published=False):
