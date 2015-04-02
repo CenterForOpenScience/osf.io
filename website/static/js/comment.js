@@ -433,9 +433,9 @@ var CommentModel = function(data, $parent, $root) {
     self.rootUrl = ko.pureComputed(function(){
         var url = 'discussions';
         if (self.page() === 'node') {
-            url = url + '/overview';
+            url = url + '/?page=overview';
         } else {
-            url = url + '/' + self.page();
+            url = url + '/?page=' + self.page();
         }
         return url;
     });

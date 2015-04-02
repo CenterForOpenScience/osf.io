@@ -31,9 +31,11 @@ def view_comments_project(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     page = request.args.get('page', None)
 
+    OVERVIEW = "overview"
+
     if not page:
         ret = _view_comments_total()
-    elif page == Comment.OVERVIEW:
+    elif page == OVERVIEW:
         ret = _view_comments_overview(auth, node)
     elif page == Comment.FILES:
         ret = _view_comments_files(auth, node)
@@ -55,7 +57,7 @@ def _view_comments_total():
 def _view_comments_overview(auth, node):
     _update_comments_timestamp(auth, node, page='node', root_id=node._id)
     return {
-        'comment_target': 'node',
+        'comment_target': Comment.OVERVIEW,
         'comment_target_id': node._id
     }
 
