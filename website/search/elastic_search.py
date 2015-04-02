@@ -255,7 +255,7 @@ def update_node(node, index=INDEX):
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
-            'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
+            'boost': boost,
         }
         for wiki in [
             NodeWikiPage.load(x)
