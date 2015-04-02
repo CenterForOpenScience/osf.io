@@ -16,12 +16,12 @@ from waterbutler.providers.box.metadata import BoxFolderMetadata
 
 class BoxPath(utils.WaterButlerPath):
 
-    def __init__(self, path, prefix=False, suffix=False):
+    def __init__(self, path, _id=None, prefix=False, suffix=False):
         super().__init__(path, prefix=prefix, suffix=suffix)
-        if path != '/':
-            self._id = path.split('/')[1]
-        else:
-            self._id = path
+        try:
+            self._id = str(int(self.parts[1]))
+        except:
+            self._id = _id
 
 
 class BoxProvider(provider.BaseProvider):
