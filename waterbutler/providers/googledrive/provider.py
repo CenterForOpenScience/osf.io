@@ -113,7 +113,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
 
         if exists:
-            segments = (exists['id'])
+            segments = (exists['id'], )
         else:
             segments = ()
 
