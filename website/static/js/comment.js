@@ -222,7 +222,7 @@ BaseComment.prototype.configureCommentVisibility = function() {
         (function (cmt) {
             var request = cmt.checkCommentFileExists();
             request.done(function (resp) {
-                if (cmt.provider() == FIGSHARE) {
+                if (cmt.provider() === FIGSHARE) {
                     cmt.title(resp.data.name);
                 }
                 cmt.loading(false);

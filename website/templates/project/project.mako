@@ -181,7 +181,7 @@
                 </div>
                 <div data-bind="ifnot: commented">There are no comments in this ${node['node_type']} yet.</div>
                 <div>
-                    <span>Open the <a class="openCommentPane">comment pane</a> on the right to make a comment.</span>
+                    <span>Open the <a class="open-comment-pane">comment pane</a> on the right to make a comment.</span>
                 </div>
             </div>
         </div>

@@ -12,7 +12,7 @@ new FileRevisions(
     window.contextVars.currentUser.canEdit
 );
 
-var Comment = require('../comment.js');
+var Comment = require('js/comment');
 
 // Initialize comment pane w/ it's viewmodel
 var $comments = $('.comments');
@@ -21,6 +21,6 @@ if ($comments.length) {
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
     var id = window.contextVars.file.id;
-    Comment.init('.commentPane', 'files', id, 'pane', userName, canComment, hasChildren);
+    Comment.init('.comment-pane', 'files', id, 'pane', userName, canComment, hasChildren);
 }
 

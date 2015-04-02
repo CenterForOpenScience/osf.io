@@ -40,7 +40,7 @@ if ($comments.length) {
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
     var node_id = window.contextVars.node.id;
-    Comment.init('.commentPane', 'node', node_id, 'pane', userName, canComment, hasChildren);
+    Comment.init('.comment-pane', 'node', node_id, 'pane', userName, canComment, hasChildren);
     Comment.init('#comments-widget-container', 'total', node_id, 'widget', userName, canComment, hasChildren);
 }
 
@@ -180,7 +180,7 @@ $(document).ready(function() {
     }
 
     // Comment pane trigger
-    $(".openCommentPane").click(function(){
+    $(".open-comment-pane").click(function(){
         $(".cp-handle").click();
     });
 

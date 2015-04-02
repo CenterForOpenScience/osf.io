@@ -1,6 +1,6 @@
 /** Initialization code for the project discussion page. */
 var $ = require('jquery');
-var Comment = require('../comment.js');
+var Comment = require('js/comment');
 
 // Initialize comment pane w/ it's viewmodel
 var userName = window.contextVars.currentUser.name;

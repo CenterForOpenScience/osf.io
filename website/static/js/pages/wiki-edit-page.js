@@ -11,7 +11,7 @@ require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 
-var Comment = require('../comment.js');
+var Comment = require('js/comment');
 var $osf = require('js/osfHelpers');
 
 
@@ -149,5 +149,5 @@ if ($comments.length) {
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
     var title = window.contextVars.wiki.name;
-    Comment.init('.commentPane', 'wiki', title, 'pane', userName, canComment, hasChildren);
+    Comment.init('.comment-pane', 'wiki', title, 'pane', userName, canComment, hasChildren);
 }
