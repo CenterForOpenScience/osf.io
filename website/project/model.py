@@ -140,7 +140,7 @@ def validate_comment_reports(value, *args, **kwargs):
 
 class Comment(GuidStoredObject):
 
-    OVERVIEW = "overview"
+    OVERVIEW = "node"
     FILES = "files"
     WIKI = "wiki"
 
