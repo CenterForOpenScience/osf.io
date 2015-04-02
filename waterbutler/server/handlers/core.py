@@ -47,6 +47,14 @@ signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
 
 
 class BaseHandler(tornado.web.RequestHandler, SentryMixin):
+    """Base Handler to inherit from when defining a new view.
+    Handles CORs headers, additional status codes, and translating
+    :class:`waterbutler.core.exceptions.ProviderError`s into http responses
+
+    .. note::
+        For IE compatability passing a ?method=<httpmethod> will cause that request, regardless of the
+        actual method, to be interpreted as the specified method.
+    """
 
     ACTION_MAP = {}
 
