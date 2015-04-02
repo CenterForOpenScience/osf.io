@@ -40,10 +40,10 @@ class MoveHandler(core.BaseCrossProviderHandler):
 
         metadata, created = (
             yield from tasks.backgrounded(
-                self.provider.move,
-                self.dest_provider,
-                self.arguments,
-                self.json
+                self.source_provider.move,
+                self.destination_provider,
+                self.json['source'],
+                self.json['destination']
             )
         )
 
