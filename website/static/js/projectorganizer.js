@@ -1301,6 +1301,7 @@ function applyTypeahead () {
 
 
     if (!theItem.isSmartFolder) {
+        $('#addprojectInput').typeahead('destroy');
         $('#addprojectInput').typeahead({
             highlight: true
         }, {
