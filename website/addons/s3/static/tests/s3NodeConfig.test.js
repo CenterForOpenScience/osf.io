@@ -392,12 +392,19 @@ describe('s3NodeConfigViewModel', () => {
         });
     });
     describe('#createBucket', () => {
-        var createEndpoint = makeSettingsEndpoint({
-            buckets: new Array(10).map(faker.internet.password)
-        });
-        createEndpoint.method = 'POST';
-        createEndpoint.url = URLS.create_bucket;
-        createEndpoint.response = createEndpoint.response.result;
+        var name = faker.internet.password().toLowerCase();
+        var buckets = [];
+        for (var i = 0; i < 10; i++){
+            buckets.push(faker.internet.password());
+        }
+        buckets.push(name);
+        var createEndpoint = {
+            method:  'POST',    
+            url: URLS.create_bucket,
+            response: {
+                buckets: buckets
+            }
+        };
         var endpoints = [
             makeSettingsEndpoint(),
             createEndpoint
@@ -415,11 +422,10 @@ describe('s3NodeConfigViewModel', () => {
             var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
             vm.updateFromData()
                 .always(function() {
-                    var name = faker.internet.password();
                     vm.createBucket(name)
                         .always(function() {
                             assert.isFalse(vm.creating());
-                            assert.notEqual(vm.bucketList().indexOf(name.toLowerCase()), -1);
+                            assert.notEqual(vm.bucketList().indexOf(name), -1);
                             done();
                         });
                 });
