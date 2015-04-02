@@ -19,10 +19,10 @@ def make_app(debug):
     app = tornado.web.Application(
         [
             (r'/file', crud.CRUDHandler),
-            (r'/copy', copy.CopyHandler),
-            (r'/move', move.MoveHandler),
             (r'/data', metadata.MetadataHandler),
             (r'/status', status.StatusHandler),
+            (r'/ops/copy', copy.CopyHandler),
+            (r'/ops/move', move.MoveHandler),
             (r'/revisions', revisions.RevisionHandler),
         ],
         debug=debug,
