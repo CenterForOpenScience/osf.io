@@ -170,268 +170,268 @@ function saveExpandState(item, callback) {
  * @this Treebeard.controller.
  * @private
  */
-function _showProjectDetails(event, item, col) {
-    event.stopImmediatePropagation();
-    var treebeard = this,
-        mySourceWithEmptySelectable,
-        publicSourceWithEmptySelectable,
-        linkName,
-        linkID,
-        theItem = item.data,
-        theParentNode,
-        theParentNodeID;
-    projectOrganizer.myProjects.initialize();
-    projectOrganizer.publicProjects.initialize();
-    // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
-    mySourceWithEmptySelectable = function (q, cb) {
-        var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
-        projectOrganizer.myProjects.get(q, injectEmptySelectable);
-        function injectEmptySelectable(suggestions) {
-            if (suggestions.length === 0) {
-                cb(emptyMyProjects);
-            } else {
-                cb(suggestions);
-            }
-        }
-    };
-    publicSourceWithEmptySelectable = function (q, cb) {
-        var emptyPublicProjects = { error: 'There are no matching public projects.' };
-        projectOrganizer.publicProjects.get(q, injectEmptySelectable);
-        function injectEmptySelectable(suggestions) {
-            if (suggestions.length === 0) {
-                cb([emptyPublicProjects]);
-            } else {
-                cb(suggestions);
-            }
-        }
-    };
+// function _showProjectDetails(event, item, col) {
+//     event.stopImmediatePropagation();
+//     var treebeard = this,
+//         mySourceWithEmptySelectable,
+//         publicSourceWithEmptySelectable,
+//         linkName,
+//         linkID,
+//         theItem = item.data,
+//         theParentNode,
+//         theParentNodeID;
+//     projectOrganizer.myProjects.initialize();
+//     projectOrganizer.publicProjects.initialize();
+//     // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
+//     mySourceWithEmptySelectable = function (q, cb) {
+//         var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
+//         projectOrganizer.myProjects.get(q, injectEmptySelectable);
+//         function injectEmptySelectable(suggestions) {
+//             if (suggestions.length === 0) {
+//                 cb(emptyMyProjects);
+//             } else {
+//                 cb(suggestions);
+//             }
+//         }
+//     };
+//     publicSourceWithEmptySelectable = function (q, cb) {
+//         var emptyPublicProjects = { error: 'There are no matching public projects.' };
+//         projectOrganizer.publicProjects.get(q, injectEmptySelectable);
+//         function injectEmptySelectable(suggestions) {
+//             if (suggestions.length === 0) {
+//                 cb([emptyPublicProjects]);
+//             } else {
+//                 cb(suggestions);
+//             }
+//         }
+//     };
 
-    theParentNode = item.parent();
-    if (theParentNode === 'undefined') {
-        theParentNode = theItem;
-        theItem.parentIsSmartFolder = true;
-    }
-    theItem.parentNode = theParentNode;
-    theParentNodeID = theParentNode.data.node_id;
-    theItem.parentIsSmartFolder = theParentNode.data.isSmartFolder;
-    theItem.parentNodeID = theParentNodeID;
-    if (!theItem.isSmartFolder) {
-        //createProjectDetailHTMLFromTemplate(theItem);
-        $('#findNode' + theItem.node_id).hide();
-        $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
-            highlight: true
-        }, {
-            name: 'my-projects',
-            displayKey: function (data) {
-                return data.name;
-            },
-            source: mySourceWithEmptySelectable,
-            templates: {
-                header: function () {
-                    return '<h3 class="category">My Projects</h3>';
-                },
-                suggestion: function (data) {
-                    if (typeof data.name !== 'undefined') {
-                        return '<p>' + data.name + '</p>';
-                    }
-                    return '<p>' + data.error + '</p>';
-                }
-            }
-        }, {
-            name: 'public-projects',
-            displayKey: function (data) {
-                return data.name;
-            },
-            source: publicSourceWithEmptySelectable,
-            templates: {
-                header: function () {
-                    return '<h3 class="category">Public Projects</h3>';
-                },
-                suggestion: function (data) {
-                    if (typeof data.name !== 'undefined') {
-                        return '<p>' + data.name + '</p>';
-                    }
-                    return '<p>' + data.error + '</p>';
-                }
-            }
-        });
-        $('#input' + theItem.node_id).bind('keyup', function (event) {
-            var key = event.keyCode || event.which,
-                buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== 'undefined');
+//     theParentNode = item.parent();
+//     if (theParentNode === 'undefined') {
+//         theParentNode = theItem;
+//         theItem.parentIsSmartFolder = true;
+//     }
+//     theItem.parentNode = theParentNode;
+//     theParentNodeID = theParentNode.data.node_id;
+//     theItem.parentIsSmartFolder = theParentNode.data.isSmartFolder;
+//     theItem.parentNodeID = theParentNodeID;
+//     if (!theItem.isSmartFolder) {
+//         //createProjectDetailHTMLFromTemplate(theItem);
+//         $('#findNode' + theItem.node_id).hide();
+//         $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
+//             highlight: true
+//         }, {
+//             name: 'my-projects',
+//             displayKey: function (data) {
+//                 return data.name;
+//             },
+//             source: mySourceWithEmptySelectable,
+//             templates: {
+//                 header: function () {
+//                     return '<h3 class="category">My Projects</h3>';
+//                 },
+//                 suggestion: function (data) {
+//                     if (typeof data.name !== 'undefined') {
+//                         return '<p>' + data.name + '</p>';
+//                     }
+//                     return '<p>' + data.error + '</p>';
+//                 }
+//             }
+//         }, {
+//             name: 'public-projects',
+//             displayKey: function (data) {
+//                 return data.name;
+//             },
+//             source: publicSourceWithEmptySelectable,
+//             templates: {
+//                 header: function () {
+//                     return '<h3 class="category">Public Projects</h3>';
+//                 },
+//                 suggestion: function (data) {
+//                     if (typeof data.name !== 'undefined') {
+//                         return '<p>' + data.name + '</p>';
+//                     }
+//                     return '<p>' + data.error + '</p>';
+//                 }
+//             }
+//         });
+//         $('#input' + theItem.node_id).bind('keyup', function (event) {
+//             var key = event.keyCode || event.which,
+//                 buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== 'undefined');
 
-            if (key === 13) {
-                if (buttonEnabled) {
-                    $('#add-link-' + theItem.node_id).click(); //submits if the control is active
-                }
-            } else {
-                $('#add-link-warn-' + theItem.node_id).text('');
-                $('#add-link-' + theItem.node_id).attr('disabled', 'disabled');
-                linkName = '';
-                linkID = '';
-            }
-        });
-        $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
-            var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
-                children;
-            $.getJSON(getChildrenURL, function (data) {
-                children = data;
-                if (children.indexOf(datum.node_id) === -1) {
-                    $('#add-link-' + theItem.node_id).removeAttr('disabled');
-                    linkName = datum.name;
-                    linkID = datum.node_id;
-                } else {
-                    $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
-                }
-            }).fail($osf.handleJSONError);
-        });
-        $('#close-' + theItem.node_id).click(function () {
-            createBlankProjectDetail();
-            return false;
-        });
-        $('#add-link-' + theItem.node_id).click(function () {
-            var url = '/api/v1/pointer/',
-                postData = JSON.stringify({
-                    pointerID: linkID,
-                    toNodeID: theItem.node_id
-                });
-            theItem.expand = false;
-            saveExpandState(theItem, function () {
-                var tb = treebeard,
-                    postAction = $.ajax({
-                        type: 'POST',
-                        url: url,
-                        data: postData,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    });
-                postAction.done(function () {
-                    tb.updateFolder(null, item);
-                });
-            });
-            triggerClickOnItem.call(treebeard, item);
-            return false;
-        });
-        $('#remove-link-' + theItem.node_id).click(function () {
-            var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id,
-                deleteAction = $.ajax({
-                    type: 'DELETE',
-                    url: url,
-                    contentType: 'application/json',
-                    dataType: 'json'
-                });
-            deleteAction.done(function () {
-                treebeard.updateFolder(null, theParentNode);
-                createBlankProjectDetail();
+//             if (key === 13) {
+//                 if (buttonEnabled) {
+//                     $('#add-link-' + theItem.node_id).click(); //submits if the control is active
+//                 }
+//             } else {
+//                 $('#add-link-warn-' + theItem.node_id).text('');
+//                 $('#add-link-' + theItem.node_id).attr('disabled', 'disabled');
+//                 linkName = '';
+//                 linkID = '';
+//             }
+//         });
+//         $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
+//             var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
+//                 children;
+//             $.getJSON(getChildrenURL, function (data) {
+//                 children = data;
+//                 if (children.indexOf(datum.node_id) === -1) {
+//                     $('#add-link-' + theItem.node_id).removeAttr('disabled');
+//                     linkName = datum.name;
+//                     linkID = datum.node_id;
+//                 } else {
+//                     $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
+//                 }
+//             }).fail($osf.handleJSONError);
+//         });
+//         $('#close-' + theItem.node_id).click(function () {
+//             createBlankProjectDetail();
+//             return false;
+//         });
+//         $('#add-link-' + theItem.node_id).click(function () {
+//             var url = '/api/v1/pointer/',
+//                 postData = JSON.stringify({
+//                     pointerID: linkID,
+//                     toNodeID: theItem.node_id
+//                 });
+//             theItem.expand = false;
+//             saveExpandState(theItem, function () {
+//                 var tb = treebeard,
+//                     postAction = $.ajax({
+//                         type: 'POST',
+//                         url: url,
+//                         data: postData,
+//                         contentType: 'application/json',
+//                         dataType: 'json'
+//                     });
+//                 postAction.done(function () {
+//                     tb.updateFolder(null, item);
+//                 });
+//             });
+//             triggerClickOnItem.call(treebeard, item);
+//             return false;
+//         });
+//         $('#remove-link-' + theItem.node_id).click(function () {
+//             var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id,
+//                 deleteAction = $.ajax({
+//                     type: 'DELETE',
+//                     url: url,
+//                     contentType: 'application/json',
+//                     dataType: 'json'
+//                 });
+//             deleteAction.done(function () {
+//                 treebeard.updateFolder(null, theParentNode);
+//                 createBlankProjectDetail();
 
-            });
-        });
-        $('#delete-folder-' + theItem.node_id).click(function () {
-            bootbox.confirm({
-                title: 'Delete this folder?',
-                message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
-                    'inside this one. You will not delete any projects in this folder.',
-                callback: function (result) {
-                    if (result !== null && result) {
-                        var url = '/api/v1/folder/' + theItem.node_id,
-                            deleteAction = $.ajax({
-                                type: 'DELETE',
-                                url: url,
-                                contentType: 'application/json',
-                                dataType: 'json'
-                            });
-                        deleteAction.done(function () {
-                            treebeard.updateFolder(null, item.parent());
-                            createBlankProjectDetail();
-                        });
-                    }
-                }
-            });
-        });
-        $('#add-folder-' + theItem.node_id).click(function () {
-            $('#buttons' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).hide();
-            $('#afc-' + theItem.node_id).show();
-            $('#add-folder-input' + theItem.node_id).focus();
-        });
-        $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
-            var contents = $.trim($(this).val());
-            if (contents === '') {
-                $('#add-folder-button' + theItem.node_id).attr('disabled', 'disabled');
-            } else {
-                $('#add-folder-button' + theItem.node_id).removeAttr('disabled');
-            }
-        });
-        $('#add-folder-button' + theItem.node_id).click(function () {
-            var url = '/api/v1/folder/',
-                postData = {
-                    node_id: theItem.node_id,
-                    title: $.trim($('#add-folder-input' + theItem.node_id).val())
-                };
-            theItem.expand = false;
-            saveExpandState(theItem, function () {
-                var putAction = $osf.putJSON(url, postData);
-                putAction.done(function () {
-                    //var icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
-                    //    iconTemplate = treebeard.options.resolveToggle.call(treebeard, item);
-                    //if (icon.get(0)) {
-                    //    m.render(icon.get(0), iconTemplate);
-                    //}
-                    treebeard.updateFolder(null, item);
-                    triggerClickOnItem.call(treebeard, item);
-                }).fail($osf.handleJSONError);
+//             });
+//         });
+//         $('#delete-folder-' + theItem.node_id).click(function () {
+//             bootbox.confirm({
+//                 title: 'Delete this folder?',
+//                 message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
+//                     'inside this one. You will not delete any projects in this folder.',
+//                 callback: function (result) {
+//                     if (result !== null && result) {
+//                         var url = '/api/v1/folder/' + theItem.node_id,
+//                             deleteAction = $.ajax({
+//                                 type: 'DELETE',
+//                                 url: url,
+//                                 contentType: 'application/json',
+//                                 dataType: 'json'
+//                             });
+//                         deleteAction.done(function () {
+//                             treebeard.updateFolder(null, item.parent());
+//                             createBlankProjectDetail();
+//                         });
+//                     }
+//                 }
+//             });
+//         });
+//         $('#add-folder-' + theItem.node_id).click(function () {
+//             $('#buttons' + theItem.node_id).hide();
+//             $('#rnc-' + theItem.node_id).hide();
+//             $('#findNode' + theItem.node_id).hide();
+//             $('#afc-' + theItem.node_id).show();
+//             $('#add-folder-input' + theItem.node_id).focus();
+//         });
+//         $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
+//             var contents = $.trim($(this).val());
+//             if (contents === '') {
+//                 $('#add-folder-button' + theItem.node_id).attr('disabled', 'disabled');
+//             } else {
+//                 $('#add-folder-button' + theItem.node_id).removeAttr('disabled');
+//             }
+//         });
+//         $('#add-folder-button' + theItem.node_id).click(function () {
+//             var url = '/api/v1/folder/',
+//                 postData = {
+//                     node_id: theItem.node_id,
+//                     title: $.trim($('#add-folder-input' + theItem.node_id).val())
+//                 };
+//             theItem.expand = false;
+//             saveExpandState(theItem, function () {
+//                 var putAction = $osf.putJSON(url, postData);
+//                 putAction.done(function () {
+//                     //var icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+//                     //    iconTemplate = treebeard.options.resolveToggle.call(treebeard, item);
+//                     //if (icon.get(0)) {
+//                     //    m.render(icon.get(0), iconTemplate);
+//                     //}
+//                     treebeard.updateFolder(null, item);
+//                     triggerClickOnItem.call(treebeard, item);
+//                 }).fail($osf.handleJSONError);
 
-            });
-            return false;
-        });
-        $('#rename-node-' + theItem.node_id).click(function () {
-            $('#buttons' + theItem.node_id).hide();
-            $('#afc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).hide();
-            $('#nc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
-            $('#rename-node-input' + theItem.node_id).focus();
-        });
-        $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
-            var contents = $.trim($(this).val());
-            if (contents === '' || contents === theItem.name) {
-                $('#rename-node-button' + theItem.node_id).attr('disabled', 'disabled');
-            } else {
-                $('#rename-node-button' + theItem.node_id).removeAttr('disabled');
-            }
-        });
-        $('#rename-node-button' + theItem.node_id).click(function () {
-            var url = theItem.apiURL + 'edit/',
-                postAction,
-                postData = {
-                    name: 'title',
-                    value: $.trim($('#rename-node-input' + theItem.node_id).val())
-                };
-            postAction = $osf.postJSON(url, postData);
-            postAction.done(function () {
-                treebeard.updateFolder(null, treebeard.find(1));
-                // Also update every
-            }).fail($osf.handleJSONError);
-            return false;
-        });
-        $('.cancel-button-' + theItem.node_id).click(function () {
-            $('#afc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).hide();
-            $('#nc-' + theItem.node_id).show();
-            $('#buttons' + theItem.node_id).show();
-        });
-        $('#add-item-' + theItem.node_id).click(function () {
-            $('#buttons' + theItem.node_id).hide();
-            $('#afc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).show();
-            $('#input' + theItem.node_id).focus();
-        });
-    } else {
-        createBlankProjectDetail(theItem.name);
-    }
-}
+//             });
+//             return false;
+//         });
+//         $('#rename-node-' + theItem.node_id).click(function () {
+//             $('#buttons' + theItem.node_id).hide();
+//             $('#afc-' + theItem.node_id).hide();
+//             $('#findNode' + theItem.node_id).hide();
+//             $('#nc-' + theItem.node_id).hide();
+//             $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
+//             $('#rename-node-input' + theItem.node_id).focus();
+//         });
+//         $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
+//             var contents = $.trim($(this).val());
+//             if (contents === '' || contents === theItem.name) {
+//                 $('#rename-node-button' + theItem.node_id).attr('disabled', 'disabled');
+//             } else {
+//                 $('#rename-node-button' + theItem.node_id).removeAttr('disabled');
+//             }
+//         });
+//         $('#rename-node-button' + theItem.node_id).click(function () {
+//             var url = theItem.apiURL + 'edit/',
+//                 postAction,
+//                 postData = {
+//                     name: 'title',
+//                     value: $.trim($('#rename-node-input' + theItem.node_id).val())
+//                 };
+//             postAction = $osf.postJSON(url, postData);
+//             postAction.done(function () {
+//                 treebeard.updateFolder(null, treebeard.find(1));
+//                 // Also update every
+//             }).fail($osf.handleJSONError);
+//             return false;
+//         });
+//         $('.cancel-button-' + theItem.node_id).click(function () {
+//             $('#afc-' + theItem.node_id).hide();
+//             $('#rnc-' + theItem.node_id).hide();
+//             $('#findNode' + theItem.node_id).hide();
+//             $('#nc-' + theItem.node_id).show();
+//             $('#buttons' + theItem.node_id).show();
+//         });
+//         $('#add-item-' + theItem.node_id).click(function () {
+//             $('#buttons' + theItem.node_id).hide();
+//             $('#afc-' + theItem.node_id).hide();
+//             $('#rnc-' + theItem.node_id).hide();
+//             $('#findNode' + theItem.node_id).show();
+//             $('#input' + theItem.node_id).focus();
+//         });
+//     } else {
+//         createBlankProjectDetail(theItem.name);
+//     }
+// }
 
 /**
  * Contributors have first person's name and then number of contributors. This functio nreturns the proper html
@@ -1263,7 +1263,9 @@ function toolbarDismissIcon (){
         m('span.hidden-xs', 'Rename')
     ]);
  }
- function addProjectButton (){
+
+
+function applyTypeahead () {
     var tb = this;
     var item = tb.multiselected[0];
     var theItem = item.data;
@@ -1334,38 +1336,44 @@ function toolbarDismissIcon (){
                 }
             }
         });
-        $('#addprojectInput').bind('keyup', function (event) {
-            var key = event.keyCode || event.which,
-                buttonEnabled = (typeof $('#add-link-button').prop('disabled') !== 'undefined');
+        // $('#addprojectInput').bind('keyup', function (event) {
+        //     var key = event.keyCode || event.which,
+        //         buttonEnabled = (typeof $('#add-link-button').prop('disabled') !== 'undefined');
 
-            if (key === 13) {
-                if (buttonEnabled) {
-                    $('#add-link-button').click(); //submits if the control is active
-                }
-            } else {
-                $('#add-link-warn-' + theItem.node_id).text('');
-                $('#add-link-button').attr('disabled', 'disabled');
-                linkName = '';
-                linkID = '';
-            }
-        });
-        $('#addprojectInput').bind('typeahead:selected', function (obj, datum, name) {
-            var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
-                children;
-            $.getJSON(getChildrenURL, function (data) {
-                children = data;
-                if (children.indexOf(datum.node_id) === -1) {
-                    $('#add-link-' + theItem.node_id).removeAttr('disabled');
-                    linkName = datum.name;
-                    linkID = datum.node_id;
-                } else {
-                    $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
-                }
-            }).fail($osf.handleJSONError);
-        });
+        //     if (key === 13) {
+        //         if (buttonEnabled) {
+        //             $('#add-link-button').click(); //submits if the control is active
+        //         }
+        //     } else {
+        //         $('#add-link-warn-' + theItem.node_id).text('');
+        //         $('#add-link-button').attr('disabled', 'disabled');
+        //         linkName = '';
+        //         linkID = '';
+        //     }
+        // });
+        // $('#addprojectInput').bind('typeahead:selected', function (obj, datum, name) {
+        //     var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
+        //         children;
+        //     $.getJSON(getChildrenURL, function (data) {
+        //         children = data;
+        //         if (children.indexOf(datum.node_id) === -1) {
+        //             $('#add-link-' + theItem.node_id).removeAttr('disabled');
+        //             linkName = datum.name;
+        //             linkID = datum.node_id;
+        //         } else {
+        //             $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
+        //         }
+        //     }).fail($osf.handleJSONError);
+        // });
     }
 
+}
+
+ function addProjectButton (){
     var tb = this;
+    var item = tb.multiselected[0];
+    var theItem = item.data;
+
     return m('#add-link-button.fangorn-toolbar-icon.text-info', { 
             disabled : 'disabled',
             onclick : function () { 
@@ -1449,7 +1457,7 @@ function _poToolbar (){
         return m('.row.tb-header-row', [
                 m('', [
                         m('.col-xs-9', [
-                                m('input#addprojectInput.tb-header-input', { type : 'text', placeholder : 'Name of the project to find'}),
+                                m('input#addprojectInput.tb-header-input', { config : function(){ applyTypeahead.call(tb);}, type : 'text', placeholder : 'Name of the project to find'}),
                                 m('span.add-link-warning')
                             ]
                         ),
@@ -1506,8 +1514,6 @@ function _poDefineToolbar (item){
         { name : 'addExistingProject', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
                     onclick : function(event) {
-
-
 
 
 
