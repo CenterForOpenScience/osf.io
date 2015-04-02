@@ -208,7 +208,7 @@ ViewModel.prototype.submit = function() {
     self.search();
 };
 
-ViewModel.prototype.updateFromSearch = function(validate, noPush, data) {
+ViewModel.prototype.updateFromSearch = function(noPush, validate, data) {
     var self = this;
     //Clear out our variables
     self.tags([]);
@@ -273,25 +273,15 @@ ViewModel.prototype.updateShareCount = function(jsonData) {
 ViewModel.prototype.search = function(noPush, validate) {
     var self = this;
 
-            // Load up our tags
-            $.each(data.tags, function(key, value){
-                self.tags.push(new Tag(value));
-                self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
-            });
+    var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
+    var url = self.queryUrl + self.category().url();
 
-            self.searchStarted(true);
-
-            if (validate) {
-                self.validateSearch();
-            }
-
-            if (!noPush) {
-                self.pushState();
-            }
-            $osf.postJSON('/api/v1/share/search/?count', jsonData).success(function(data) {
-                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
-            });
-        }).fail(function(response){
+    $osf.postJSON(url, jsonData)
+        .done([
+            self.updateFromSearch.bind(self, noPush, validate),
+            self.updateShareCount.bind(self, jsonData)
+        ])
+        .fail(function(response){
             self.totalResults(0);
             self.currentPage(0);
             self.results([]);
