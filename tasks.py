@@ -790,23 +790,3 @@ def update_citation_styles():
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
     print("Parsed {} styles".format(total))
-
-
-# KEEP ME LAST
-@task
-def gen_completion():
-    f = open(__file__, 'r')
-    tasks = []
-    lines = f.read().split('\n')
-    f.close()
-    for i in range(len(lines)):
-        line = lines[i]
-        if '@task' in line:
-            opt = lines[i + 1].replace('def ', '').split('(')[0]
-            tasks.append(opt)
-    tasks = tasks[:-1]
-    templ = open('.invoke_completion_template', 'r').read()
-    templ = templ.replace('__OPTS__', ' '.join(tasks))
-    out = open('.invoke_completion.sh', 'wb')
-    out.write(templ)
-    out.close()
