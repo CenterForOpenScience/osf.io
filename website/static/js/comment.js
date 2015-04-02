@@ -178,7 +178,7 @@ BaseComment.prototype.fetch = function(isCommentList, thread) {
             }
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
-            self.configureCommentVisibility();
+            self.configureCommentsVisibility();
             self._loaded = true;
         }
     );
@@ -195,13 +195,13 @@ BaseComment.prototype.getThread = function(thread_id) {
     request.done(function(response){
         self.comments([new CommentModel(response.comment, self, self.$root)]);
         deferred.resolve(self.comments());
-        self.configureCommentVisibility();
+        self.configureCommentsVisibility();
         self._loaded = true;
     })
     return deferred.promise();
 }
 
-BaseComment.prototype.configureCommentVisibility = function() {
+BaseComment.prototype.configureCommentsVisibility = function() {
     var self = this;
     var FILES = 'files';
     var PANE = 'pane';
@@ -219,38 +219,36 @@ BaseComment.prototype.configureCommentVisibility = function() {
             comment.loading(false);
             continue;
         }
-        (function (cmt) {
-            var request = cmt.checkCommentFileExists();
-            request.done(function (resp) {
-                if (cmt.provider() === FIGSHARE) {
-                    cmt.title(resp.data.name);
-                }
-                cmt.loading(false);
-            });
-            request.fail(function (xhl) {
-                cmt.isHidden(true);
-                $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(discussion){
-                    return cmt.decrementUserFromDiscussion(discussion);
-                });
-                cmt.loading(false);
-            });
-        })(comment);
+        comment.checkFileExistsAndConfigure();
     }
 };
 
-BaseComment.prototype.checkCommentFileExists = function() {
+BaseComment.prototype.checkFileExistsAndConfigure = function() {
     var self = this;
     var url  = waterbutler.buildMetadataUrl(self.title(), self.provider(), nodeId, {}); // waterbutler url
     var request = $.ajax({
         method: 'GET',
         url: url
     });
+    request.done(function (resp) {
+        if (self.provider() === FIGSHARE) {
+            self.title(resp.data.name);
+        }
+        self.loading(false);
+    });
+    request.fail(function (xhl) {
+        self.isHidden(true);
+        $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(discussion){
+            return self.decrementUserFromDiscussion(discussion);
+        });
+        self.loading(false);
+    });
     return request;
 };
 
 BaseComment.prototype.decrementUserFromDiscussion = function(discussions) {
     var self = this;
-    var commenterId = self.author.id();
+    var commenterId = self.author.id;
     var ind;
     for (var i in discussions()) {
         if (discussions()[i].id === commenterId) {

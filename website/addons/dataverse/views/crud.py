@@ -193,6 +193,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     )
     ret = {
         'file_name': filename,
+        'file_id': file_id,
         'rendered': rendered,
         'render_url': render_url,
         'urls': {
