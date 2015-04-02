@@ -94,29 +94,33 @@ class GoogleDriveProvider(provider.BaseProvider):
         return streams.ResponseStreamReader(download_resp)
 
     @asyncio.coroutine
-    def upload(self, stream, path, **kwargs):
+    def upload(self, stream, path, conflict='replace', **kwargs):
         path = path.split('/')
-        path = '/'.join(path[:-1] + [parse.quote(path[-1])])
-        path = GoogleDrivePath(self.folder['name'], path)
+        name = '/' + parse.quote(path.pop(-1))
 
-        try:
-            metadata = yield from self.metadata(str(path), raw=True)
-            folder_id = metadata['parents'][0]['id']
-            segments = (metadata['id'], )
-            created = False
-        except exceptions.MetadataError:
-            if path.parent.is_root:
-                folder_id = self.folder['id']
-            else:
-                parent_path = str(path.parent).rstrip('/')
-                metadata = yield from self.metadata(parent_path, raw=True)
-                folder_id = metadata['id']
+        parent_id = yield from self._materialized_path_to_id(
+            GoogleDrivePath(
+                self.folder['name'],
+                ('/'.join(path) or '/')
+            )
+        )
+
+        path, exists = yield from self.handle_name_conflict(
+            GoogleDrivePath(self.folder['name'], name),
+            conflict=conflict,
+            parent_id=parent_id,
+        )
+
+        if exists:
+            segments = (exists['id'])
+        else:
             segments = ()
-            created = True
-        upload_metadata = self._build_upload_metadata(folder_id, path.name)
-        upload_id = yield from self._start_resumable_upload(created, segments, stream.size, upload_metadata)
+
+        upload_metadata = self._build_upload_metadata(parent_id, path.name)
+        upload_id = yield from self._start_resumable_upload(not exists, segments, stream.size, upload_metadata)
         data = yield from self._finish_resumable_upload(segments, stream, upload_id)
-        return GoogleDriveFileMetadata(data, path.parent).serialized(), created
+
+        return GoogleDriveFileMetadata(data, path.parent).serialized(), not exists
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
