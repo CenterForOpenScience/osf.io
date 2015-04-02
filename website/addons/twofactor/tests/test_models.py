@@ -87,8 +87,9 @@ class TestUserSettingsModel(OsfTestCase):
     def test_json(self):
         url =  'otpauth://totp/OSF:{}?secret=' + self.TOTP_SECRET_B32
 
+        settings = self.user_settings.to_json(user=None)
         assert_equal(
-            self.user_settings.to_json(user=None),
+            settings,
             {
                 'addon_full_name': 'Two-factor Authentication',
                 'addon_short_name': 'twofactor',

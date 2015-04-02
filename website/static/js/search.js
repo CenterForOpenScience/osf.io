@@ -257,7 +257,7 @@ var ViewModel = function(params) {
             if (!noPush) {
                 self.pushState();
             }
-            $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
+            $osf.postJSON('/api/v1/share/search/?count', jsonData).success(function(data) {
                 self.categories.push(new Category('SHARE', data.count, 'SHARE'));
             });
         }).fail(function(response){
