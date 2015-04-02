@@ -232,7 +232,6 @@ def must_have_permission(permission):
 
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-
             # Ensure `project` and `node` kwargs
             kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
             node = kwargs['node'] or kwargs['project']
