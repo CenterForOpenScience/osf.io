@@ -68,9 +68,27 @@ class BaseProvider(metaclass=abc.ABCMeta):
         return response
 
     def can_intra_copy(self, other):
+        """Indicates if a quick copy can be performed
+        between the current and `other`.
+
+        .. note::
+            Defaults to False
+
+        :param waterbutler.core.provider.BaseProvider other: The provider to check against
+        :rtype: bool
+        """
         return False
 
     def can_intra_move(self, other):
+        """Indicates if a quick move can be performed
+        between the current and `other`.
+
+        .. note::
+            Defaults to False
+
+        :param waterbutler.core.provider.BaseProvider other: The provider to check against
+        :rtype: bool
+        """
         return False
 
     def intra_copy(self, dest_provider, source_options, dest_options):
