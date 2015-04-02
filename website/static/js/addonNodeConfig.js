@@ -33,23 +33,15 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
         // whether the auth token is valid
         self.validCredentials = ko.observable(true);
-        // Emails of contributors, can only be populated by activating the share dialog
-        self.emails = ko.observableArray([]);
         self.loading = ko.observable(false);
-        // Whether the contributor emails have been loaded from the server
-        self.loadedEmails = ko.observable(false);
         // externalAccounts
         self.accounts = ko.observable([]);
-        // List of contributor emails as a comma-separated values
-        self.emailList = ko.pureComputed(function() {
-            return self.emails().join([', ']);
-        });
         self.selectedFolderType = ko.pureComputed(function() {
             var userHasAuth = self.userHasAuth();
             var selected = self.selected();
             return (userHasAuth && selected) ? selected.type : '';
         });
-        self.messages.SUBMIT_SETTINGS_SUCCESS =  ko.pureComputed(function() {
+        self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
@@ -85,55 +77,8 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }
         );
     },
-    toggleShare: function() {
-        if (this.currentDisplay() === this.SHARE) {
-            this.currentDisplay(null);
-        } else {
-            // Clear selection
-            this.cancelSelection();
-            this.currentDisplay(this.SHARE);
-            this.activateShare();
-        }
-    },
-    fetchEmailList: function(){
-        var self = this;
-        
-        var ret = $.Deferred();
-        var promise = ret.promise();
-        if(!self.loadedEmails()){
-            $.ajax({
-                url: self.urls().emails,
-                type: 'GET',
-                dataType: 'json'
-            }).done(function(res){
-                self.loadedEmails(true);
-                ret.resolve(res.results.emails);
-            }).fail(function(xhr, status, error){
-                Raven.captureMessage('Could not GET ' + self.addonName + ' email list', {
-                    url: self.urls().emails,
-                    textStatus: status,
-                    error: error
-                });
-                ret.reject(xhr, status, error);
-            });
-        }
-        else{
-            ret.resolve(self.emails());
-        }
-        return promise;
-    },
-    activateShare: function() {
-        var self = this;
-        self.fetchEmailList()
-            .done(function(emails){
-                self.emails(emails);
-            });
-        var $copyBtn = $(self.selector).find('.copyBtn');
-        new ZeroClipboard($copyBtn);
-    },
     _updateCustomFields: function(settings){
         this.validCredentials(settings.validCredentials);
-        this.canShare(settings.canShare || false);
     },
     /**
      * Allows a user to create an access token from the nodeSettings page

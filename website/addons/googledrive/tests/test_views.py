@@ -70,6 +70,7 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         self.node_settings.save()
         url = self.project.api_url_for('googledrive_config_get', Auth(self.user))
         res = self.app.get(url)
+        assert_equal(res.status_code, 200)
         result = res.json['result']
         assert_true(result['nodeHasAuth'])
 
@@ -158,3 +159,61 @@ class TestGoogleDriveHgridViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json[0]['id'], '24601')
 
+
+class TestGoogleDriveUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestGoogleDriveUtils, self).setUp()
+        self.user = AuthUserFactory()
+        self.user.add_addon('googledrive')
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('googledrive', Auth(self.user))
+        self.node_settings = self.project.get_addon('googledrive')
+        self.user_settings = self.user.get_addon('googledrive')
+        oauth_settings = GoogleDriveOAuthSettingsFactory()
+        self.user_settings.oauth_settings = oauth_settings
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.folder_id = '09120912'
+        self.node_settings.folder_path = 'foo/bar'
+
+        self.user_settings.save()
+        self.node_settings.save()
+        # Log user in
+        self.app.authenticate(*self.user.auth)
+
+    def test_serialize_settings_helper_returns_correct_urls(self):
+        result = serialize_settings(self.node_settings, self.user)
+        urls = result['urls']
+
+        assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
+        assert_equal(urls['config'], self.project.api_url_for('googledrive_config_put'))
+        assert_equal(urls['deauthorize'], self.project.api_url_for('googledrive_deauthorize'))
+        assert_equal(urls['importAuth'], self.project.api_url_for('googledrive_import_user_auth'))
+        # Includes endpoint for fetching folders only
+        # NOTE: Querystring params are in camelCase
+        assert_equal(urls['get_folders'], self.project.api_url_for('googledrive_folders'))
+
+    def test_serialize_settings_helper_returns_correct_auth_info(self):
+        self.user_settings.access_token = 'abc123'
+        result = serialize_settings(self.node_settings, self.user)
+        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
+        assert_true(result['userHasAuth'])
+        assert_true(result['userIsOwner'])
+
+    def test_serialize_settings_for_user_no_auth(self):
+        no_addon_user = AuthUserFactory()
+        result = serialize_settings(self.node_settings, no_addon_user)
+        assert_false(result['userIsOwner'])
+        assert_false(result['userHasAuth'])
+
+    def test_googledrive_import_user_auth_returns_serialized_settings(self):
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        url = api_url_for('googledrive_import_user_auth', pid=self.project._primary_key)
+        res = self.app.put(url, auth=self.user.auth)
+        self.project.reload()
+        self.node_settings.reload()
+
+        expected_result = serialize_settings(self.node_settings, self.user)
+        result = res.json['result']
+        assert_equal(result, expected_result)

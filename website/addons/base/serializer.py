@@ -134,7 +134,9 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
     @property
     def serialized_node_settings(self):
         result = super(CitationsAddonSerializer, self).serialized_node_settings
-        result['folder'] = self.node_settings.selected_folder_name
+        result['folder'] = {
+            'name': self.node_settings.selected_folder_name
+        }
         return result
 
     @property

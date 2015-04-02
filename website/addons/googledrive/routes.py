@@ -62,8 +62,8 @@ api_routes = {
             'get',
             views.config.list_googledrive_user_accounts,
             json_renderer,
-        ),
 
+        ),
 
         ##### Node settings #####
 

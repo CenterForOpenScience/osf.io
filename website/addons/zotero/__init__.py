@@ -36,3 +36,7 @@ INCLUDE_CSS = {
 WIDGET_HELP = 'Zotero'
 
 HAS_HGRID_FILES = False
+
+# HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = None  # use default node settings template
+USER_SETTINGS_TEMPLATE = None  # use default user settings template
