@@ -85,17 +85,30 @@ class DropboxProvider(provider.BaseProvider):
     def intra_move(self, dest_provider, source_options, dest_options):
         source_path = DropboxPath(self.folder, source_options['path'])
         dest_path = DropboxPath(self.folder, dest_options['path'])
-        resp = yield from self.make_request(
-            'POST',
-            self.build_url('fileops', 'move'),
-            data={
-                'root': 'auto',
-                'to_path': dest_path.full_path,
-                'from_path': source_path.full_path,
-            },
-            expects=(200, ),
-            throws=exceptions.IntraMoveError,
-        )
+
+        try:
+            resp = yield from self.make_request(
+                'POST',
+                self.build_url('fileops', 'move'),
+                data={
+                    'root': 'auto',
+                    'to_path': dest_path.full_path,
+                    'from_path': source_path.full_path,
+                },
+                expects=(200, ),
+                throws=exceptions.IntraMoveError,
+            )
+        except exceptions.IntraMoveError as e:
+            if e.code != 403:
+                raise
+
+            if dest_options.get('conflict') == 'keep':
+                dest_options['path'] = str(dest_path.increment_name())
+            else:
+                yield from dest_provider.delete(**dest_options)
+
+            return (yield from self.intra_move(dest_provider, source_options, dest_options))
+
         data = yield from resp.json()
         return DropboxFileMetadata(data, self.folder).serialized(), True
 
