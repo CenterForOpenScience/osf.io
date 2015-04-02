@@ -120,24 +120,18 @@ class S3Provider(provider.BaseProvider):
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
-    def upload(self, stream, path, **kwargs):
+    def upload(self, stream, path, conflict='replace', **kwargs):
         """Uploads the given stream to S3
         :param ResponseWrapper stream: The stream to put to S3
         :param str path: The full path of the key to upload to/into
         :rtype ResponseWrapper:
         """
-        path = S3Path(path)
+        path, exists = yield from self.handle_name_conflict(S3Path(path), conflict=conflict)
 
-        try:
-            yield from self.metadata(str(path), **kwargs)
-        except exceptions.MetadataError:
-            created = True
-        else:
-            created = False
-
-        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         key = self.bucket.new_key(path.path)
         url = key.generate_url(settings.TEMP_URL_SECS, 'PUT')
+        stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
+
         resp = yield from self.make_request(
             'PUT', url,
             data=stream,
@@ -149,7 +143,7 @@ class S3Provider(provider.BaseProvider):
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return (yield from self.metadata(str(path), **kwargs)), created
+        return (yield from self.metadata(str(path), **kwargs)), not exists
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
