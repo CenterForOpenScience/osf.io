@@ -1258,6 +1258,39 @@ function _poDefineToolbar (item){
         }}
         );
     }
+    if(item.data.isFolder && !item.data.isDashboard && !item.data.isSmartFolder){
+        buttons.push(
+        { name : 'deleteFolder', template : function(){
+            return m('.fangorn-toolbar-icon.text-primary', {
+                    onclick : function(event) {  
+                        bootbox.confirm({
+                            title: 'Delete this folder?',
+                            message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
+                                'inside this one. You will not delete any projects in this folder.',
+                            callback: function (result) {
+                                if (result !== null && result) {
+                                    var url = '/api/v1/folder/' + theItem.node_id,
+                                        deleteAction = $.ajax({
+                                            type: 'DELETE',
+                                            url: url,
+                                            contentType: 'application/json',
+                                            dataType: 'json'
+                                        });
+                                    deleteAction.done(function () {
+                                        tb.updateFolder(null, item.parent());
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }, [
+                m('i.fa.fa-trash'),
+                m('span','Delete Folder')
+            ]);
+        }}
+        );
+    }
+
 
    item.icons = buttons;
 }
