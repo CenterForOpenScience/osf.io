@@ -131,15 +131,8 @@ class DropboxProvider(provider.BaseProvider):
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
-    def upload(self, stream, path, **kwargs):
-        path = DropboxPath(self.folder, path)
-
-        try:
-            yield from self.metadata(str(path))
-        except exceptions.MetadataError:
-            created = True
-        else:
-            created = False
+    def upload(self, stream, path, conflict='replace', **kwargs):
+        path, exists = yield from self.handle_name_conflict(DropboxPath(self.folder, path), conflict=conflict)
 
         resp = yield from self.make_request(
             'PUT',
@@ -151,7 +144,7 @@ class DropboxProvider(provider.BaseProvider):
         )
 
         data = yield from resp.json()
-        return DropboxFileMetadata(data, self.folder).serialized(), created
+        return DropboxFileMetadata(data, self.folder).serialized(), not exists
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
