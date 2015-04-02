@@ -24,34 +24,38 @@ function _fangornActionColumn (item, col) {
 
     function dataversePublish(event, item, col) {
         var self = this; // treebeard
-        var url = item.data.urls.publish;
+        var both = !item.data.dataverseIsPublished;
+        var url = both ? item.data.urls.publishBoth : item.data.urls.publish;
+        var toPublish = both ? 'Dataverse and dataset' : 'dataset';
         var modalContent = [
-            m('h3', 'Publish this dataset?'),
-            m('p.m-md', 'By publishing this dataset, all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings.'),
-            m('p.font-thick.m-md', 'Are you sure you want to publish this dataset?')
+            m('h3', 'Publish this ' + toPublish + '?'),
+            m('p.m-md', both ? 'This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published. ' : ''),
+            m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings. '),
+            m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')
         ];
         var modalActions = [
             m('button.btn.btn-default.m-sm', { 'onclick' : function (){ self.modal.dismiss(); }},'Cancel'),
-            m('button.btn.btn-primary.m-sm', { 'onclick' : function() { publishDataset(); } }, 'Publish Dataset')
+            m('button.btn.btn-primary.m-sm', { 'onclick' : function() { publishDataset(); } }, 'Publish ' + toPublish)
         ];
 
         this.modal.update(modalContent, modalActions);
 
         function publishDataset() {
             self.modal.dismiss();
-            item.notify.update('Publishing Dataset', 'info', 1, 3000);
+            item.notify.update('Publishing ' + toPublish, 'info', 1, 3000);
             $.osf.putJSON(
                 url,
                 {}
             ).done(function(data) {
                 var modalContent = [
-                    m('p.m-md', 'Your dataset has been published.')
+                    m('p.m-md', 'Your content has been published.')
                 ];
                 var modalActions = [
                     m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
                 ];
                 self.modal.update(modalContent, modalActions);
                 item.data.state = 'published';
+                item.data.hasPublishedFiles = item.children.length > 0;
             }).fail(function(args) {
                 var statusCode = args.responseJSON.code;
                 var message;
@@ -147,13 +151,7 @@ function _fangornDataverseTitle(item, col) {
             }
         } else {
             contents.push(
-                m('span', {
-                    class: 'fa fa-warning text-warning',
-                    'data-toggle': 'tooltip',
-                    title: 'This data will only be visible to contributors with write-permission until the dataset is published',
-                    'data-placement': 'top'
-
-                })
+                m('span.text.text-muted', '[Draft]')
             );
         }
         return m('span', contents);

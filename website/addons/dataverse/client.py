@@ -53,6 +53,13 @@ def get_files(dataset, published=False):
     return dataset.get_files(published)
 
 
+def publish_dataverse(dataverse):
+    try:
+        dataverse.publish()
+    except OperationFailedError:
+        raise HTTPError(http.BAD_REQUEST)
+
+
 def publish_dataset(dataset):
     if dataset.get_state() == 'RELEASED':
         raise HTTPError(http.CONFLICT)

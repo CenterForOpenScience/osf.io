@@ -46,6 +46,7 @@ def dataverse_hgrid_root(node_addon, auth,  **kwargs):
 
     urls = {
         'publish': node.api_url_for('dataverse_publish_dataset'),
+        'publishBoth': node.api_url_for('dataverse_publish_both')
     }
 
     return [rubeus.build_addon_root(
@@ -57,6 +58,7 @@ def dataverse_hgrid_root(node_addon, auth,  **kwargs):
         doi=dataset.doi,
         dataverse=dataverse.title,
         hasPublishedFiles=bool(published_files),
+        dataverseIsPublished=dataverse.is_published,
         state=state,
     )]
 

@@ -88,6 +88,15 @@ api_routes = {
         ),
         Rule(
             [
+                '/project/<pid>/dataverse/publish-both/',
+                '/project/<pid>/node/<nid>/dataverse/publish-both/',
+            ],
+            'put',
+            views.crud.dataverse_publish_both,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/dataverse/widget/',
                 '/project/<pid>/node/<nid>/dataverse/widget/',
             ],

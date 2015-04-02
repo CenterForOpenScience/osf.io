@@ -382,6 +382,18 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         self.app.put(url, auth=self.user.auth)
         assert_true(mock_publish.called)
 
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_401')
+    @mock.patch('website.addons.dataverse.views.crud.publish_dataset')
+    @mock.patch('website.addons.dataverse.views.crud.publish_dataverse')
+    def test_dataverse_publish_both(self, mock_publish_dv, mock_publish_ds, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = api_url_for('dataverse_publish_both',
+                          pid=self.project._primary_key)
+        self.app.put(url, auth=self.user.auth)
+        assert_true(mock_publish_dv.called)
+        assert_true(mock_publish_ds.called)
+
 
 class TestDataverseRestrictions(DataverseAddonTestCase):
 
