@@ -18,7 +18,7 @@ def oauth_start_url(user, node=None):
     :param User user: OSF user
     :param Node node: OSF node
     :return tuple: Tuple of authorization URL and OAuth state
-
+1
     """
     uri_parts = [
         settings.DOMAIN, 'api', 'v1', 'addons', 'github',

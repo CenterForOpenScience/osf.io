@@ -74,11 +74,11 @@ def create_and_attach_oauth(user_settings, access_token, token_type):
 
 
     """
+
     gh = GitHub(access_token, token_type)
     github_user = gh.user()
 
     oauth_settings = AddonGitHubOauthSettings.load(github_user.id)
-
     if not oauth_settings:
         oauth_settings = AddonGitHubOauthSettings()
         oauth_settings.github_user_id = str(github_user.id)

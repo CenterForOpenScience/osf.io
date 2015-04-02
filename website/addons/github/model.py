@@ -18,17 +18,21 @@ from website.util import web_url_for
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonOAuthNodeSettingsBase
+from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.base import GuidFile
 
 from website.addons.github import utils
-from website.addons.github.api import GitHub
+from website.addons.github.api import GitHub as GitHubWrap
 from website.addons.github import settings as github_settings
+from website.addons.github import serializer
 from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
 from website.oauth.models import ExternalProvider
 
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
 
 class GitHub(ExternalProvider):
     name = "GitHub"
@@ -41,6 +45,20 @@ class GitHub(ExternalProvider):
     callback_url = 'https://github.com/login/oauth/access_token'
     default_scopes = github_settings.SCOPE
 
+    _client = None
+
+    def handle_callback(self, response):
+        client = self.client
+        
+
+        pass
+
+    @property
+    def client(self):
+        """An API session with Mendeley"""
+        if not self._client:
+            self._client = GitHubWrap(self.account.oauth_key, 'bearer') #Token Type bearer correct?
+        return self._client
 
 
 class GithubGuidFile(GuidFile):
@@ -118,6 +136,11 @@ class AddonGitHubOauthSettings(StoredObject):
     oauth_token_type = fields.StringField()
 
 
+class GitHubUserSettings(AddonOAuthUserSettingsBase):
+    oauth_provider = GitHub
+    #need to implement serializer
+    serializer = serializer.GitHubSerializer
+
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     oauth_state = fields.StringField()
@@ -183,7 +206,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return ret
 
     def revoke_token(self):
-        connection = GitHub.from_settings(self)
+        connection = GitHubWrap.from_settings(self)
         try:
             connection.revoke_token()
         except GitHubError as error:
@@ -294,7 +317,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     @property
     def is_private(self):
-        connection = GitHub.from_settings(self.user_settings)
+        connection = GitHubWrap.from_settings(self.user_settings)
         return connection.repo(user=self.user, repo=self.repo).private
 
     # TODO: Delete me and replace with serialize_settings / Knockout
@@ -319,7 +342,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             owner = self.user_settings.owner
             if user_settings and user_settings.owner == owner:
-                connection = GitHub.from_settings(user_settings)
+                connection = GitHubWrap.from_settings(user_settings)
                 # TODO: Fetch repo list client-side
                 # Since /user/repos excludes organization repos to which the
                 # current user has push access, we have to make extra requests to
@@ -418,7 +441,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings is None:
             return messages
 
-        connect = GitHub.from_settings(self.user_settings)
+        connect = GitHubWrap.from_settings(self.user_settings)
 
         try:
             repo = connect.repo(self.user, self.repo)
@@ -517,7 +540,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if not github_settings.SET_PRIVACY:
             return
 
-        connect = GitHub.from_settings(self.user_settings)
+        connect = GitHubWrap.from_settings(self.user_settings)
 
         data = connect.set_privacy(
             self.user, self.repo, permissions == 'private'
@@ -647,7 +670,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def add_hook(self, save=True):
 
         if self.user_settings:
-            connect = GitHub.from_settings(self.user_settings)
+            connect = GitHubWrap.from_settings(self.user_settings)
             secret = utils.make_hook_secret()
             hook = connect.add_hook(
                 self.user, self.repo,
@@ -677,7 +700,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         """
         if self.user_settings and self.hook_id:
-            connection = GitHub.from_settings(self.user_settings)
+            connection = GitHubWrap.from_settings(self.user_settings)
             try:
                 response = connection.delete_hook(self.user, self.repo, self.hook_id)
             except (GitHubError, NotFoundError):
