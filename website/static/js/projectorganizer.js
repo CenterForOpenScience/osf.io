@@ -1240,6 +1240,7 @@ function _poDefineToolbar (item){
                         });
                     }
                 }, [
+                m('i.fa.fa-minus'),
                 m('span','Remove From Folder')
             ]);
         }}
@@ -1253,6 +1254,7 @@ function _poDefineToolbar (item){
                         tb.options.iconState.mode = 'rename';
                     }
                 }, [
+                m('i.fa.fa-font'),
                 m('span','Rename')
             ]);
         }}
