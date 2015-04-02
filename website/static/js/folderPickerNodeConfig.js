@@ -299,7 +299,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     onImportSuccess: function(response) {
         var self = this;       
-        var msg = response.message || self.messages.TOKEN_IMPORT_SUCCESS();
+        var msg = response.message || self.messages.tokenImportSuccess();
         // Update view model based on response
         self.changeMessage(msg, 'text-success', 3000);
         self.updateFromData(response.result);

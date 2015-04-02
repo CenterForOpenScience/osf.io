@@ -51,7 +51,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             var selected = self.selected();
             return (userHasAuth && selected) ? selected.type : '';
         });
-        self.messages.SUBMIT_SETTINGS_SUCCESS =  ko.pureComputed(function() {
+        self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
@@ -75,7 +75,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 
                 window.oauthComplete = function(res) {
                     // Update view model based on response
-                    self.changeMessage(self.messages.CONNECT_ACCOUNT_SUCCESS(), 'text-success', 3000);
+                    self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
                     self.updateAccounts(function() {
                         $osf.putJSON(
                             self.urls().importAuth, {
@@ -151,7 +151,6 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     },
     _updateCustomFields: function(settings){
         this.validCredentials(settings.validCredentials);
-        this.canShare(settings.canShare || false);
     },
      /**
      * Allows a user to create an access token from the nodeSettings page
@@ -182,7 +181,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             } else {
                 bootbox.confirm({
                     title: 'Import ' + self.addonName + ' Access Token?',
-                    message: self.messages.CONFIRM_AUTH(),
+                    message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {
                             self.connectExistingAccount.call(self, (self.accounts()[0].id));
