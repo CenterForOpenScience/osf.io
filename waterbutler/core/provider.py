@@ -144,11 +144,12 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def handle_name_conflict(self, path, conflict='replace', **kwargs):
         """Given a name and a conflict resolution pattern determine
         the correct file path to upload to and indicate if that file exists or not
+
         :param WaterbutlerPath path: An object supporting the waterbutler path API
         :param str conflict: replace or keep
-        :rtype (WaterButlerPath, bool):
+        :rtype: (WaterButlerPath, dict or None)
         """
-        exists = self.exists(path)
+        exists = yield from self.exists(str(path))
         if not exists or conflict != 'keep':
             return path, exists
 
