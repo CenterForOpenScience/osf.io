@@ -62,6 +62,10 @@ class WaterButlerPath:
 
         # after class variables have been setup
         self._path = self._format_path(path)
+        # For name confliction resolution
+        # foo.txt -> foo (1).txt -> foo (2).txt
+        self._count = 0
+        self._orig_name = self.name
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self._orig_path)
@@ -101,6 +105,15 @@ class WaterButlerPath:
     @property
     def name(self):
         return self._parts[-1]
+
+    def increment_name(self):
+        self._count += 1
+        name, ext = os.path.splitext(self._orig_name)
+        new_name = '{} ({}){}'.format(name, self._count, ext)
+        self._orig_path = self._orig_path.replace(self.name, new_name)
+        self._parts[-1] = new_name
+        self._path = self._format_path(self._orig_path)
+        return self
 
     @property
     def parts(self):
