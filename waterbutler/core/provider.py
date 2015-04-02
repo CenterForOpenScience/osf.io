@@ -134,7 +134,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         if not exists or conflict != 'keep':
             return path, exists
 
-        while self.exists(str(path.increment_name())):
+        while (yield from self.exists(str(path.increment_name()))):
             pass
         # path.increment_name()
         # exists = self.exists(str(path))
