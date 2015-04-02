@@ -54,23 +54,65 @@ class BoxProvider(provider.BaseProvider):
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
-    def upload(self, stream, path, **kwargs):
-        parts = path.split('/')
-        if len(parts) == 2:
-            parts.insert(1, self.folder)
-        _, parent_id, name = parts
-        parent_path = '/{}/'.format(parent_id)
-        meta = yield from self.metadata(parent_path, raw=True)
-        matches = [each for each in meta['entries'] if each['name'] == name]
-        if matches:
-            created = False
-            data = yield from self._send_upload(stream, name, parent_id, matches[0]['id'])
-        else:
-            created = True
-            data = yield from self._send_upload(stream, name, parent_id)
+    def upload(self, stream, path, file_id=None, conflict='replace', box_path=None, **kwargs):
+        path = box_path or BoxPath(path, _id=self.folder)
 
-        data['entries'][0]['fullPath'] = self._build_full_path(data['entries'][0]['path_collection']['entries'][1:], name)
-        return BoxFileMetadata(data['entries'][0], self.folder).serialized(), created
+        preflight_resp = yield from self.make_request(
+            'OPTIONS',
+            self.build_url(*[x for x in ['files', file_id, 'content'] if x is not None]),
+            data=json.dumps({
+                'name': path.name,
+                'parent': {
+                    'id': path._id
+                }
+            }),
+            headers={'Content-Type': 'application/json'},
+            expects=(200, 409),
+            throws=exceptions.UploadError,
+        )
+
+        preflight = yield from preflight_resp.json()
+
+        if preflight_resp.status == 409:
+            if preflight['context_info']['conflicts']['type'] != 'file':
+                raise exceptions.UploadError(code=409)
+
+            if conflict == 'keep':
+                return (yield from self.upload(
+                    stream,
+                    str(path),
+                    conflict=conflict,
+                    box_path=path.increment_name(),
+                    **kwargs
+                ))
+            else:
+                return (yield from self.upload(
+                    stream,
+                    str(path),
+                    conflict=conflict,
+                    box_path=path,
+                    file_id=preflight['context_info']['conflicts']['id'],
+                    **kwargs
+                ))
+
+        data_stream = streams.FormDataStream(
+            attributes=json.dumps({'name': path.name, 'parent': {'id': path._id}}),
+        )
+        data_stream.add_file('file', stream, path.name, disposition='form-data')
+
+        resp = yield from self.make_request(
+            'POST',
+            self._build_upload_url(*[x for x in ['files', file_id, 'content'] if x is not None]),
+            data=data_stream,
+            headers=data_stream.headers,
+            expects=(201, 409),
+            throws=exceptions.UploadError,
+        )
+
+        data = yield from resp.json()
+
+        data['entries'][0]['fullPath'] = self._build_full_path(data['entries'][0]['path_collection']['entries'][1:], path.name)
+        return BoxFileMetadata(data['entries'][0], self.folder).serialized(), file_id is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -178,24 +220,6 @@ class BoxProvider(provider.BaseProvider):
         else:
             serializer = BoxFileMetadata
         return serializer(item, self.folder).serialized()
-
-    def _send_upload(self, stream, name, parent_id, file_id=None):
-        data_stream = streams.FormDataStream(
-            attributes=json.dumps({'name': name, 'parent': {'id': parent_id}}),
-        )
-        segments = ['files', 'content']
-        if file_id:
-            segments.insert(1, file_id)
-        data_stream.add_file('file', stream, name, disposition='form-data')
-        resp = yield from self.make_request(
-            'POST',
-            self._build_upload_url(*segments),
-            data=data_stream,
-            headers=data_stream.headers,
-            expects=(201, ),
-            throws=exceptions.UploadError,
-        )
-        return (yield from resp.json())
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
