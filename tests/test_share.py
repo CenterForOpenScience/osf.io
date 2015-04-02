@@ -76,7 +76,7 @@ class TestShareSearch(OsfTestCase):
                 'total': 0
             }
         }
-        self.app.get('/api/v1/share/', params={
+        self.app.get('/api/v1/share/search/', params={
             'q': '*',
             'from': '1',
             'size:': '20',
@@ -87,7 +87,7 @@ class TestShareSearch(OsfTestCase):
     @patch.object(share_search.share_es, 'count')
     def test_share_count(self, mock_count):
         mock_count.return_value = {'count': 0}
-        self.app.get('/api/v1/share/', params={
+        self.app.get('/api/v1/share/search/', params={
             'q': '*',
             'from': '1',
             'size:': '20',

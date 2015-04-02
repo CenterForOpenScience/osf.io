@@ -1,3 +1,5 @@
+import os
+
 from . import routes, views, model
 
 MODELS = [
@@ -34,3 +36,7 @@ GET_HGRID_DATA = views.hgrid.github_hgrid_data
 # Note: Even though GitHub supports file sizes over 1 MB, uploads and
 # downloads through their API are capped at 1 MB.
 MAX_FILE_SIZE = 1
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'github_node_settings.mako')
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'github_user_settings.mako')
