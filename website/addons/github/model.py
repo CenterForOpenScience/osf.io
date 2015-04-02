@@ -30,16 +30,16 @@ from website.oauth.models import ExternalProvider
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
-# class GitHub(ExternalProvider):
-#     name = "GitHub"
-#     short_name = "github"
-#
-#     client_id = github_settings.GITHUB_CLIENT_ID
-#     client_SECRET = github_settings.GITHUB_CLIENT_SECRET
-#
-#     auth_url_base =
-#     callback_url =
-#     default_scopes =
+class GitHub(ExternalProvider):
+    name = "GitHub"
+    short_name = "github"
+
+    client_id = github_settings.GITHUB_CLIENT_ID
+    client_SECRET = github_settings.GITHUB_CLIENT_SECRET
+
+    auth_url_base = 'https://github.com/login/oauth/authorize'
+    callback_url = 'https://github.com/login/oauth/access_token'
+    default_scopes = github_settings.SCOPE
 
 
 
