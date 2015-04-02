@@ -137,26 +137,27 @@ class BaseCrossProviderHandler(BaseHandler):
 
     @asyncio.coroutine
     def prepare(self):
-        yield from super().prepare()
-
         try:
-            self.json['action'] = self.ACTION_MAP[self.request.method]
+            self.action = self.ACTION_MAP[self.request.method]
         except KeyError:
             return
 
-        if self.json['path'].endswith('/'):
-            self.json['path'] += os.path.split(self.arguments['path'])[1]
-        self.dest_provider = yield from self.make_dest_provider(self.json)
+        self.source_provider = yield from self.make_provider(**self.json['source'])
+        self.destination_provider = yield from self.make_provider(**self.json['destination'])
+
+        if self.json['destination']['path'].endswith('/'):
+            self.json['destination']['path'] += os.path.split(self.json['source']['path'])[1]
 
     @asyncio.coroutine
-    def make_dest_provider(self, data):
-        payload = yield from get_identity(settings.IDENTITY_METHOD, **data)
-        return utils.make_provider(
-            data['provider'],
-            payload['auth'],
-            payload['credentials'],
-            payload['settings'],
+    def make_provider(self, provider, **kwargs):
+        payload = yield from get_identity(
+            settings.IDENTITY_METHOD,
+            action=self.ACTION_MAP[self.request.method],
+            provider=provider,
+            **kwargs
         )
+        self.callback_url = payload.pop('callback_url')
+        return utils.make_provider(provider, **payload)
 
     @property
     def json(self):
