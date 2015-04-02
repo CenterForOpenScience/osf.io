@@ -27,13 +27,13 @@ class MoveHandler(core.BaseCrossProviderHandler):
 
     @utils.coroutine
     def post(self):
-        if not self.provider.can_intra_move(self.dest_provider):
+        if not self.source_provider.can_intra_move(self.destination_provider):
             resp = yield from tasks.move({
-                'args': self.arguments,
-                'provider': self.provider.serialized()
+                'args': self.json['source'],
+                'provider': self.source_provider.serialized()
             }, {
-                'args': self.json,
-                'provider': self.dest_provider.serialized()
+                'args': self.json['destination'],
+                'provider': self.destination_provider.serialized()
             })
             self.set_status(202)
             return
