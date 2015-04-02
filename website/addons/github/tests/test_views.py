@@ -61,6 +61,7 @@ class TestGithubViews(OsfTestCase):
         super(TestGithubViews, self).setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
+        # self.auth = ('test', self.user.api_keys[0]._primary_key)
 
         self.project = ProjectFactory(creator=self.user)
         self.non_authenticator = UserFactory()
@@ -73,6 +74,9 @@ class TestGithubViews(OsfTestCase):
         self.project.creator.add_addon('github')
 
         self.github = create_mock_github(user='fred', private=False)
+        #
+        # self.user_settings = self.user.get_addon('github')
+        # self.user_settings.save()
 
         self.node_settings = self.project.get_addon('github')
         self.node_settings.user_settings = self.project.creator.get_addon('github')
@@ -537,6 +541,7 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(self.node_settings.user_settings, None)
 
         assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
+
 
 
 class TestAuthViews(OsfTestCase):

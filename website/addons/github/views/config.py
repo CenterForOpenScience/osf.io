@@ -167,3 +167,4 @@ def github_set_privacy(**kwargs):
     connection = GitHub.from_settings(github.user_settings)
 
     connection.set_privacy(github.user, github.repo, private)
+
