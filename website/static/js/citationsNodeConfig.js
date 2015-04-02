@@ -8,6 +8,7 @@ var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
+var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
@@ -63,11 +64,12 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 }.bind(this)
             });
     },
-   fetchAccounts: function() {
+    fetchAccounts: function() {
         var self = this;
+        var ret = $.Deferred();
         var request = $.get(self.urls().accounts);
         request.then(function(data) {
-            return data.accounts;
+            ret.resolve(data.accounts);
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
@@ -76,8 +78,9 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 textStatus: textStatus,
                 error: error
             });
+            ret.reject(xhr, textStatus, error);
         });
-        return request;
+        return ret.promise();
     },
     updateAccounts: function() {
         var self = this;
@@ -104,7 +107,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
             self.updateAccounts()
                 .done(function() {
-                    $osf.postJSON(
+                    $osf.putJSON(
                         self.urls().importAuth, {
                             external_account_id: self.accounts()[0].id
                         }
@@ -116,7 +119,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     connectExistingAccount: function(account_id) {
         var self = this;
 
-        return $osf.postJSON(
+        return $osf.putJSON(
             self.urls().importAuth, {
                 external_account_id: account_id
             }
@@ -131,9 +134,41 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             external_list_id: this.selected().id,
             external_list_name: this.selected().name
         };
+    },
+    importAuth: function() {
+        var self = this;
+        self.updateAccounts()
+            .then(function(){
+                if (self.accounts().length > 1) {
+                    bootbox.prompt({
+                        title: 'Choose ' + self.addonName + ' Access Token to Import',
+                        inputType: 'select',
+                        inputOptions: ko.utils.arrayMap(
+                            self.accounts(),
+                            function(item) {
+                                return {
+                                    text: item.name,
+                                    value: item.id
+                                };
+                            }
+                        ),
+                        value: self.accounts()[0].id,
+                        callback: (self.connectExistingAccount.bind(self))
+                    });
+                } else {
+                    bootbox.confirm({
+                        title: 'Import ' + self.addonName + ' Access Token?',
+                        message: self.messages.confirmAuth(),
+                        callback: function(confirmed) {
+                            if (confirmed) {
+                                self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                            }
+                        }
+                    });
+                }
+            });
     }
 });
-
 // Public API
 function CitationsNodeConfig(addonName, selector, url, folderPicker) {
     var self = this;
