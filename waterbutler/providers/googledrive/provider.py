@@ -107,6 +107,7 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         path, exists = yield from self.handle_name_conflict(
             GoogleDrivePath(self.folder['name'], name),
+            raw=True,
             conflict=conflict,
             parent_id=parent_id,
         )
