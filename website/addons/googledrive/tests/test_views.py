@@ -79,29 +79,6 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         result = res.json['result']
         assert_false(result['nodeHasAuth'])
 
-
-    #
-    # def test_drive_user_config_get_has_auth(self):
-    #     self.user.add_addon('googledrive')
-    #     user_settings = self.user.get_addon('googledrive')
-    #     user_settings.access_token = 'abc123'
-    #     user_settings.save()
-    #     url = api_url_for('googledrive_user_config_get', Auth(self.user))
-    #     res = self.app.get(url)
-    #     assert_equal(res.status_code, 200)
-    #     result = res.json['result']
-    #     assert_true(result['userHasAuth'])
-    #
-    # def test_drive_user_config_get_not_has_auth(self):
-    #     self.user_settings.access_token = None
-    #     self.user_settings.save()
-    #     url = api_url_for('googledrive_user_config_get', Auth(self.user))
-    #     res = self.app.get(url)
-    #     assert_equal(res.status_code, 200)
-    #     result = res.json['result']
-    #     assert_false(result['userHasAuth'])
-
-    # TODO
     def test_googledrive_config_put(self):
         self.node_settings.set_auth(external_account=self.account, user=self.user)
         self.node_settings.save()
@@ -129,13 +106,17 @@ class TestGoogleDriveConfigViews(OsfTestCase):
     def test_googledrive_import_user_auth(self):
         url = self.project.api_url_for('googledrive_import_user_auth', auth=self.user.auth)
         self.app.put_json(url, {'external_account_id': self.account._id})
-        import pdb; pdb.set_trace()
-
-
+        self.node_settings.reload()
         assert_equal(self.node_settings.external_account, self.account)
 
-
-
+    def test_googledrive_remove_user_auth(self):
+        self.node_settings.set_auth(external_account=self.account, user=self.user)
+        self.node_settings.save()
+        assert_equal(self.node_settings.external_account, self.account)
+        url = self.project.api_url_for('googledrive_remove_user_auth', auth=self.user.auth)
+        self.app.delete(url)
+        self.node_settings.reload()
+        assert_equal(self.node_settings.external_account, None)
 
 
 class TestGoogleDriveHgridViews(OsfTestCase):

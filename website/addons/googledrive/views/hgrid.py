@@ -47,8 +47,6 @@ def googledrive_folders(node_addon, **kwargs):
         to_hgrid(item, node, path=path)
         for item in client.folders(folder_id)
     ]
-    import pdb;pdb.set_trace()
-
     return contents
 
 

@@ -69,7 +69,6 @@ def googledrive_import_user_auth(auth, node_addon, **kwargs):
     user = auth.user
     external_account_id = request.get_json().get('external_account_id')
     external_account = ExternalAccount.load(external_account_id)
-    import pdb; pdb.set_trace()
     if external_account not in user.external_accounts:
             raise HTTPError(http.FORBIDDEN)
 
