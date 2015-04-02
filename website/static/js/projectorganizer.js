@@ -28,6 +28,10 @@ var copyMode = null;
 // Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
 var projectOrganizer = {};
 
+// Link ID's used to add existing project to folder
+    var linkName;
+    var linkID;
+
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
@@ -1269,8 +1273,6 @@ function applyTypeahead () {
     var tb = this;
     var item = tb.multiselected[0];
     var theItem = item.data;
-    var linkName;
-    var linkID;
     projectOrganizer.myProjects.initialize();
     projectOrganizer.publicProjects.initialize();
     // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
