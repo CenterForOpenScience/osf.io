@@ -1,4 +1,3 @@
-
 import unittest
 from nose.tools import *  # PEP8 asserts
 

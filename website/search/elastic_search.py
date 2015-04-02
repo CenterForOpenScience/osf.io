@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 # These are the doc_types that exist in the search database
 ALIASES = {
+    'node': 'Nodes',
     'project': 'Projects',
     'component': 'Components',
     'registration': 'Registrations',
@@ -153,7 +154,7 @@ def format_results(results):
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
-        elif result.get('category') in {'project', 'component', 'registration'}:
+        elif result.get('is_node'):
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
     return ret
@@ -204,8 +205,8 @@ def load_parent(parent_id):
 def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
 
-    component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
-    category = 'component' if node.category in component_categories else node.category
+    # component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
+    category = node.category  # 'component' if node.category in component_categories else node.category
 
     '''
     if category == 'project':
@@ -217,7 +218,6 @@ def update_node(node, index=INDEX):
     try:
         elastic_document_id = node._id
         parent_id = node.parent_id
-        category = 'registration' if node.is_registration else category
     except IndexError:
         # Skip orphaned components
         return
@@ -246,6 +246,8 @@ def update_node(node, index=INDEX):
             'title': node.title,
             'normalized_title': normalized_title,
             'category': category,
+            'is_registration': node.is_registration,
+            'is_node': True,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
@@ -263,7 +265,7 @@ def update_node(node, index=INDEX):
         ]:
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        es.index(index=index, doc_type='project', id=elastic_document_id, body=elastic_document, refresh=True)
+        es.index(index=index, doc_type='node', id=elastic_document_id, body=elastic_document, refresh=True)
 
 
 @requires_search
@@ -333,7 +335,7 @@ def create_index(index=INDEX):
         }
     }
     es.indices.create(index, ignore=[400])
-    for type_ in ['project', 'component', 'registration', 'user']:
+    for type_ in ['node', 'user']:
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 

@@ -14,12 +14,12 @@
 
                                     <!-- ko if: $parent.category().name === name -->
                                             <li class="active">
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
+                                                <a data-bind="click: $parent.filter">{{ display }}<span class="badge pull-right">{{count}}</span></a>
                                             </li>
                                         <!-- /ko -->
                                         <!-- ko if: $parent.category().name !== name -->
                                             <li>
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
+                                                <a data-bind="click: $parent.filter">{{ display }}<span class="badge pull-right">{{count}}</span></a>
                                             </li>
                                         <!-- /ko -->
 
@@ -59,7 +59,7 @@
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">
-                            <div class="search-result" data-bind="template: { name: category, data: $data}"></div>
+                            <div class="search-result" data-bind="template: { name: $data.is_registration ? 'registration' : 'node', data: $data}"></div>
                         </div>
                         <ul class="pager">
                             <li data-bind="css: {disabled: !prevPageExists()}">
@@ -235,7 +235,7 @@
         </p>
         <!-- /ko -->
     </script>
-    <script type="text/html" id="component">
+    <script type="text/html" id="node">
         <!-- ko if: parent_url -->
             <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
@@ -313,6 +313,4 @@
     </script>
 
     <script src=${"/static/public/js/search-page.js" | webpack_asset}></script>
-
-
 </%def>

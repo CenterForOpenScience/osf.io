@@ -234,7 +234,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
             nid=node._id,
             user=self.project.creator,
         )
-        assert_equal(res, self.project)
+        assert_equal(res, node)
 
     def test_must_be_contributor_parent_write(self):
         user = UserFactory()

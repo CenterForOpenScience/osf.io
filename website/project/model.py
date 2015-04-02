@@ -1831,7 +1831,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def project_or_component(self):
-        return 'project'  # if self.category == 'project' else 'component'
+        return 'project' if self.category == 'project' else 'component'
+
     def is_contributor(self, user):
         return (
             user is not None
@@ -2429,7 +2430,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     # TODO: Deprecate this; it duplicates much of what serialize_project already
     # does
-    def serialize(self, auth):
+    def serialize(self, auth=None):
         """Dictionary representation of node that is nested within a NodeLog's
         representation.
         """

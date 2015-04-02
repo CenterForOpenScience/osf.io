@@ -265,7 +265,7 @@ ViewModel.prototype.updateFromSearch = function(noPush, validate, data) {
 
 ViewModel.prototype.updateShareCount = function(jsonData) {
     var self = this;
-    return $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
+    return $osf.postJSON('/api/v1/share/search/?count', jsonData).success(function(data) {
         self.categories.push(new Category('SHARE', data.count, 'SHARE'));
     });    
 };
@@ -385,7 +385,7 @@ function Search(selector, url, appURL) {
         'url': url,
         'appURL': appURL
     });
-    History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
+    History.Adapter.bind(window, 'statechange', self.viewModel.pageChange.bind(self.viewModel));
 
     var data = {
         query: $osf.urlParams().q,
