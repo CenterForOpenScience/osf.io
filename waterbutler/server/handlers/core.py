@@ -64,26 +64,6 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
     def set_status(self, code, reason=None):
         return super().set_status(code, reason or HTTP_REASONS.get(code))
 
-    @asyncio.coroutine
-    def prepare(self):
-        self.arguments = {
-            key: list_or_value(value)
-            for key, value in self.request.query_arguments.items()
-        }
-        try:
-            self.arguments['action'] = self.ACTION_MAP[self.request.method]
-        except KeyError:
-            return
-
-        self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
-
-        self.provider = utils.make_provider(
-            self.arguments['provider'],
-            self.payload['auth'],
-            self.payload['credentials'],
-            self.payload['settings'],
-        )
-
     def write_error(self, status_code, exc_info):
         self.captureException(exc_info)
         etype, exc, _ = exc_info
@@ -106,6 +86,29 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
     def options(self):
         self.set_status(204)
         self.set_header('Access-Control-Allow-Methods', 'PUT, POST, DELETE'),
+
+
+class BaseProviderHandler(BaseHandler):
+
+    @asyncio.coroutine
+    def prepare(self):
+        self.arguments = {
+            key: list_or_value(value)
+            for key, value in self.request.query_arguments.items()
+        }
+        try:
+            self.arguments['action'] = self.ACTION_MAP[self.request.method]
+        except KeyError:
+            return
+
+        self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
+
+        self.provider = utils.make_provider(
+            self.arguments['provider'],
+            self.payload['auth'],
+            self.payload['credentials'],
+            self.payload['settings'],
+        )
 
     @utils.async_retry(retries=5, backoff=5)
     def _send_hook(self, action, metadata):
