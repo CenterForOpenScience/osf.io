@@ -721,13 +721,20 @@ var onOpen = function(hostPage, hostName) {
             page: hostPage,
             rootId: hostName
         }
-    );
+    );    
+    request.fail(function(xhr, textStatus, errorThrown) {
+        Raven.captureMessage('Could not update comment timestamp', {
+            url: window.contextVars.node.urls.api + 'comments/timestamps/',
+            textStatus: textStatus,
+            errorThrown: errorThrown
+        });
+    });
     return request;
 };
 
 var init = function(selector, hostPage, hostName, mode, userName, canComment, hasChildren, thread_id) {
 
-    new CommentPane(selector, hostPage, hostName, mode, {onOpen: onOpen});
+    new CommentPane(selector, mode, {onOpen: onOpen(hostPage, hostName)});
     var viewModel = new CommentListModel(userName, hostPage, hostName, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {

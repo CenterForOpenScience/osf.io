@@ -14,7 +14,7 @@
     /*
        mode: 'widget', 'pane' or 'page'
      */
-    var CommentPane = CommentPane || function(selector, hostPage, hostName, mode, options) {
+    var CommentPane = CommentPane || function(selector, mode, options) {
         var self = this;
 
         var $pane = $(selector);
@@ -24,8 +24,6 @@
         var $toggleElm = $.merge($pane, $sidebar);
 
         self.mode = mode;
-        self.page = hostPage;
-        self.hostName = hostName;
 
         $handle.tooltip();
 
@@ -61,14 +59,7 @@
             } else {
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
-                var open = options.onOpen.call(self, self.page, self.hostName);
-                open.fail(function(xhr, textStatus, errorThrown) {
-                    Raven.captureMessage('Could not update comment timestamp', {
-                        url: window.contextVars.node.urls.api + 'comments/timestamps/',
-                        textStatus: textStatus,
-                        errorThrown: errorThrown
-                    });
-                });
+                var open = options.onOpen;
             }
             $handle.tooltip('hide');
             $toggleElm.animate(

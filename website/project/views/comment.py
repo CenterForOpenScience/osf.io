@@ -449,7 +449,7 @@ def _update_comments_timestamp_total(node, auth, page):
         for root_target in root_targets:
             wiki_page = NodeWikiPage.load(root_target)
             if hasattr(wiki_page, 'commented'):
-                ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
+                ret = _update_comment_timestamp(auth, node, page, wiki_page.page_name)
     return ret
 
 
