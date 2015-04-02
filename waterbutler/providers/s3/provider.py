@@ -32,8 +32,11 @@ class S3Provider(provider.BaseProvider):
 
     def __init__(self, auth, credentials, settings):
         """
-        Note: Neither `S3Connection#__init__` nor `S3Connection#get_bucket`
-        sends a request.
+        .. note::
+
+            Neither `S3Connection#__init__` nor `S3Connection#get_bucket`
+            sends a request.
+
         :param dict auth: Not used
         :param dict credentials: Dict containing `access_key` and `secret_key`
         :param dict settings: Dict containing `bucket`
@@ -80,9 +83,9 @@ class S3Provider(provider.BaseProvider):
         raises FileNotFoundError if the status from S3 is not 200
 
         :param str path: Path to the key you want to download
-        :param dict **kwargs: Additional arguments that are ignored
-        :rtype ResponseWrapper:
-        :raises: waterbutler.FileNotFoundError
+        :param dict \*\*kwargs: Additional arguments that are ignored
+        :rtype: :class:`waterbutler.core.streams.ResponseStreamReader`
+        :raises: :class:`waterbutler.core.exceptions.DownloadError`
         """
         path = S3Path(path)
 
@@ -122,9 +125,11 @@ class S3Provider(provider.BaseProvider):
     @asyncio.coroutine
     def upload(self, stream, path, conflict='replace', **kwargs):
         """Uploads the given stream to S3
-        :param ResponseWrapper stream: The stream to put to S3
+
+        :param waterbutler.core.streams.RequestWrapper stream: The stream to put to S3
         :param str path: The full path of the key to upload to/into
-        :rtype ResponseWrapper:
+
+        :rtype: dict, bool
         """
         path, exists = yield from self.handle_name_conflict(S3Path(path), conflict=conflict)
 
@@ -148,8 +153,8 @@ class S3Provider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         """Deletes the key at the specified path
+
         :param str path: The path of the key to delete
-        :rtype ResponseWrapper:
         """
         path = S3Path(path)
         key = self.bucket.new_key(path.path)
@@ -164,6 +169,7 @@ class S3Provider(provider.BaseProvider):
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
         """Get past versions of the requested key
+
         :param str path: The path to a key
         :rtype list:
         """
@@ -191,9 +197,9 @@ class S3Provider(provider.BaseProvider):
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
         """Get Metadata about the requested file or folder
+
         :param str path: The path to a key or folder
-        :rtype dict:
-        :rtype list:
+        :rtype: dict or list
         """
         path = S3Path(path)
 

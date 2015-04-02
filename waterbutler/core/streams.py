@@ -219,12 +219,17 @@ class MultiStream(asyncio.StreamReader):
 class FormDataStream(MultiStream):
     """A child of MultiSteam used to create stream friendly multipart form data requests.
     Usage:
-        >>> stream = FormDataStream(key1='value1', file=FileStream(...))
+
+    >>> stream = FormDataStream(key1='value1', file=FileStream(...))
+
     Or:
+
         >>> stream = FormDataStream()
         >>> stream.add_field('key1', 'value1')
         >>> stream.add_file('file', FileStream(...), mime='text/plain')
+
     Additional options for files can be passed as a tuple ordered as:
+
         >>> FormDataStream(fieldName=(FileStream(...), 'fileName', 'Mime', 'encoding'))
 
     Auto generates boundaries and properly concatenates them
@@ -234,7 +239,7 @@ class FormDataStream(MultiStream):
 
     @classmethod
     def make_boundary(cls):
-        """Creates a randomeque boundary for
+        """Creates a random-ish boundary for
         form data seperator
         """
         return uuid.uuid4().hex

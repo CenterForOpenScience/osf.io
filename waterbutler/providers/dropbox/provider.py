@@ -203,7 +203,7 @@ class DropboxProvider(provider.BaseProvider):
         path = DropboxPath(self.folder, path)
         response = yield from self.make_request(
             'GET',
-            self.build_url('revisions', 'auto', path.full_path),
+            self.build_url('revisions', 'auto', path.full_path, rev_limit=250),
             expects=(200, ),
             throws=exceptions.RevisionsError
         )
