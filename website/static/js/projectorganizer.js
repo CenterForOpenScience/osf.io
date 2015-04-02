@@ -1499,7 +1499,7 @@ function _poDefineToolbar (item){
                         tb.options.iconState.mode = 'addFolder';
                     }
                 }, [
-                m('i.fa.fa-circle'),
+                m('i.fa.fa-cubes'),
                 m('span','Add Collection')
             ]);
         }},
@@ -1515,6 +1515,7 @@ function _poDefineToolbar (item){
                         tb.options.iconState.mode = 'addProject';
                     }
                 }, [
+                m('i.fa.fa-cube'),
                 m('span','Add Existing Project')
             ]);
         }}
