@@ -734,7 +734,7 @@ var onOpen = function(hostPage, hostName) {
 
 var init = function(selector, hostPage, hostName, mode, userName, canComment, hasChildren, thread_id) {
 
-    new CommentPane(selector, mode, {onOpen: onOpen(hostPage, hostName)});
+    new CommentPane(selector, mode, {onOpen: function(){return onOpen(hostPage, hostName)}});
     var viewModel = new CommentListModel(userName, hostPage, hostName, mode, canComment, hasChildren, thread_id);
     var $elm = $(selector);
     if (!$elm.length) {

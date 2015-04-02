@@ -59,7 +59,7 @@
             } else {
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
-                var open = options.onOpen;
+                options.onOpen.call(self);
             }
             $handle.tooltip('hide');
             $toggleElm.animate(
