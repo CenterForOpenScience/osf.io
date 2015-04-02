@@ -132,7 +132,7 @@ describe('CitationsNodeConfig', () => {
             after(() => {
                 $osf.putJSON.restore();
             });        
-            it('makes a POST request to the the "importAuth" url passed in settings sending the passed account_id as data', (done) => {
+            it('makes a PUT request to the the "importAuth" url passed in settings sending the passed account_id as data', (done) => {
                 vm.updateFromData(data)
                     .always(function() {
                         var account_id = faker.finance.account();
