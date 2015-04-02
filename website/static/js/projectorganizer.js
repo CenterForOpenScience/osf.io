@@ -1360,7 +1360,7 @@ function applyTypeahead () {
             $.getJSON(getChildrenURL, function (data) {
                 children = data;
                 if (children.indexOf(datum.node_id) === -1) {
-                    $('#add-link-warning').removeClass('tb-disabled');
+                    $('#add-link-button').removeClass('tb-disabled');
                     linkName = datum.name;
                     linkID = datum.node_id;
                 } else {
@@ -1478,7 +1478,7 @@ function _poToolbar (){
                 m('', [
                         m('.col-xs-9', [
                                 m('input#addprojectInput.tb-header-input', { config : function(){ applyTypeahead.call(tb);}, type : 'text', placeholder : 'Name of the project to find'}),
-                                m('span#add-link-warning')
+                                m('#add-link-warning.text-warning.p-sm')
                             ]
                         ),
                         m('.col-xs-3.tb-buttons-col', 
