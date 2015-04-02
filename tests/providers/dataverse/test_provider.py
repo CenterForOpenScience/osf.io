@@ -12,7 +12,7 @@ from waterbutler.core import exceptions
 from waterbutler.core.provider import build_url
 
 from waterbutler.providers.dataverse import DataverseProvider
-from waterbutler.providers.dataverse.metadata import DataverseFileMetadata
+from waterbutler.providers.dataverse.metadata import DataverseSwordFileMetadata
 
 
 @pytest.fixture
@@ -30,7 +30,11 @@ def credentials():
 
 @pytest.fixture
 def settings():
-    return {'doi': 'doi:10.5072/FK2/ABCDEF'}
+    return {
+        'doi': 'doi:10.5072/FK2/ABCDEF',
+        'id': '18',
+        'name': 'A look at wizards'
+    }
 
 
 @pytest.fixture
@@ -123,6 +127,151 @@ def empty_dataset_metadata():
         <category term="latestVersionState" scheme="http://purl.org/net/sword/terms/state" label="State">DRAFT</category>
     </feed>'''
 
+
+@pytest.fixture
+def native_dataset_metadata():
+    return {'data': {u'createTime': u'2015-04-02T13:21:59Z',
+ u'distributionDate': u'Distribution Date',
+ u'files': [{u'datafile': {u'contentType': u'text/plain; charset=US-ASCII',
+    u'description': u'',
+    u'filename': u'%2Fusr%2Flocal%2Fglassfish4%2Fglassfish%2Fdomains%2Fdomain1%2Ffiles%2F10.5072%2FFK2%2F232XYH%2F14c7a73c684-4b22a1757aed',
+    u'id': 19,
+    u'md5': u'2243b9249ca96f7cca9f58f7584b5ddb',
+    u'name': u'UnZip.java',
+    u'originalFormatLabel': u'UNKNOWN'},
+   u'datasetVersionId': 5,
+   u'description': u'',
+   u'label': u'UnZip.java',
+   u'version': 1},
+  {u'datafile': {u'contentType': u'text/plain; charset=US-ASCII',
+    u'description': u'',
+    u'filename': u'%2Fusr%2Flocal%2Fglassfish4%2Fglassfish%2Fdomains%2Fdomain1%2Ffiles%2F10.5072%2FFK2%2F232XYH%2F14c7a73d734-8383551cc713',
+    u'id': 20,
+    u'md5': u'acbd18db4cc2f85cedef654fccc4a4d8',
+    u'name': u'thefile.txt',
+    u'originalFormatLabel': u'UNKNOWN'},
+   u'datasetVersionId': 5,
+   u'description': u'',
+   u'label': u'thefile.txt',
+   u'version': 1},
+  {u'datafile': {u'contentType': u'application/octet-stream',
+    u'description': u'',
+    u'filename': u'%2Fusr%2Flocal%2Fglassfish4%2Fglassfish%2Fdomains%2Fdomain1%2Ffiles%2F10.5072%2FFK2%2F232XYH%2F14c7a73e419-b578b719b05c',
+    u'id': 21,
+    u'md5': u'ee5a34fe861617916acde862d4206280',
+    u'name': u'UnZip.class',
+    u'originalFormatLabel': u'UNKNOWN'},
+   u'datasetVersionId': 5,
+   u'description': u'',
+   u'label': u'UnZip.class',
+   u'version': 1}],
+ u'id': 5,
+ u'lastUpdateTime': u'2015-04-02T15:26:21Z',
+ u'metadataBlocks': {u'citation': {u'displayName': u'Citation Metadata',
+   u'fields': [{u'multiple': False,
+     u'typeClass': u'primitive',
+     u'typeName': u'title',
+     u'value': u'A look at wizards'},
+    {u'multiple': True,
+     u'typeClass': u'compound',
+     u'typeName': u'author',
+     u'value': [{u'authorName': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'authorName',
+        u'value': u'Baggins, Bilbo'}}]},
+    {u'multiple': True,
+     u'typeClass': u'compound',
+     u'typeName': u'datasetContact',
+     u'value': [{u'datasetContactEmail': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'datasetContactEmail',
+        u'value': u'email@email.com'},
+       u'datasetContactName': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'datasetContactName',
+        u'value': u'Baggins, Bilbo'}}]},
+    {u'multiple': True,
+     u'typeClass': u'compound',
+     u'typeName': u'dsDescription',
+     u'value': [{u'dsDescriptionValue': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'dsDescriptionValue',
+        u'value': u'desc'}}]},
+    {u'multiple': True,
+     u'typeClass': u'controlledVocabulary',
+     u'typeName': u'subject',
+     u'value': [u'Other']},
+    {u'multiple': False,
+     u'typeClass': u'primitive',
+     u'typeName': u'depositor',
+     u'value': u'Baggins, Bilbo'},
+    {u'multiple': False,
+     u'typeClass': u'primitive',
+     u'typeName': u'dateOfDeposit',
+     u'value': u'2015-04-02'}]}},
+ u'productionDate': u'Production Date',
+ u'releaseTime': u'2015-04-02T15:26:21Z',
+ u'versionMinorNumber': 0,
+ u'versionNumber': 1,
+ u'versionState': u'RELEASED'}}
+
+
+@pytest.fixture
+def empty_native_dataset_metadata():
+    return {'data': {u'createTime': u'2015-04-02T13:21:59Z',
+ u'distributionDate': u'Distribution Date',
+ u'files': [],
+ u'id': 5,
+ u'lastUpdateTime': u'2015-04-02T15:26:21Z',
+ u'metadataBlocks': {u'citation': {u'displayName': u'Citation Metadata',
+   u'fields': [{u'multiple': False,
+     u'typeClass': u'primitive',
+     u'typeName': u'title',
+     u'value': u'A look at wizards'},
+    {u'multiple': True,
+     u'typeClass': u'compound',
+     u'typeName': u'author',
+     u'value': [{u'authorName': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'authorName',
+        u'value': u'Baggins, Bilbo'}}]},
+    {u'multiple': True,
+     u'typeClass': u'compound',
+     u'typeName': u'datasetContact',
+     u'value': [{u'datasetContactEmail': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'datasetContactEmail',
+        u'value': u'email@email.com'},
+       u'datasetContactName': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'datasetContactName',
+        u'value': u'Baggins, Bilbo'}}]},
+    {u'multiple': True,
+     u'typeClass': u'compound',
+     u'typeName': u'dsDescription',
+     u'value': [{u'dsDescriptionValue': {u'multiple': False,
+        u'typeClass': u'primitive',
+        u'typeName': u'dsDescriptionValue',
+        u'value': u'desc'}}]},
+    {u'multiple': True,
+     u'typeClass': u'controlledVocabulary',
+     u'typeName': u'subject',
+     u'value': [u'Other']},
+    {u'multiple': False,
+     u'typeClass': u'primitive',
+     u'typeName': u'depositor',
+     u'value': u'Baggins, Bilbo'},
+    {u'multiple': False,
+     u'typeClass': u'primitive',
+     u'typeName': u'dateOfDeposit',
+     u'value': u'2015-04-02'}]}},
+ u'productionDate': u'Production Date',
+ u'releaseTime': u'2015-04-02T15:26:21Z',
+ u'versionMinorNumber': 0,
+ u'versionNumber': 1,
+ u'versionState': u'RELEASED'}}
+
+
 class TestCRUD:
 
     @async
@@ -159,7 +308,7 @@ class TestCRUD:
         metadata, created = yield from provider.upload(file_stream, path)
 
         entry = xmltodict.parse(file_metadata)['entry']
-        expected = DataverseFileMetadata(entry).serialized()
+        expected = DataverseSwordFileMetadata(entry).serialized()
 
         assert metadata == expected
         assert created is True
@@ -186,7 +335,7 @@ class TestMetadata:
         url = build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('GET', url, status=200, body=dataset_metadata)
 
-        result = yield from provider.metadata('draft')
+        result = yield from provider.metadata(state='draft')
 
         assert isinstance(result, list)
         assert len(result) == 4
@@ -204,7 +353,7 @@ class TestMetadata:
         url = build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('GET', url, status=200, body=empty_dataset_metadata)
 
-        result = yield from provider.metadata('draft')
+        result = yield from provider.metadata(state='draft')
 
         assert isinstance(result, dict)
         assert result['provider'] == 'dataverse'
@@ -214,11 +363,29 @@ class TestMetadata:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_metadata_published(self, provider, dataset_metadata):
-        url = build_url(provider.METADATA_BASE_URL, provider.doi)
-        aiohttpretty.register_uri('GET', url, status=200, body=dataset_metadata)
+    def test_metadata_published(self, provider, native_dataset_metadata):
+        url = provider.JSON_BASE_URL.format(provider.id)
+        aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
 
-        result = yield from provider.metadata('published')
+        result = yield from provider.metadata(state='published')
+
+        assert isinstance(result, list)
+        assert len(result) == 3
+        assert result[0]['provider'] == 'dataverse'
+        assert result[0]['kind'] == 'file'
+        assert result[0]['name'] == 'UnZip.java'
+        assert result[0]['path'] == '/19'
+        assert result[0]['extra']['original'] == 'UnZip.java'
+        assert result[0]['extra']['version'] == 0
+        assert result[0]['extra']['fileId'] == '19'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_published_no_files(self, provider, empty_native_dataset_metadata):
+        url = provider.JSON_BASE_URL.format(provider.id)
+        aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
+
+        result = yield from provider.metadata(state='published')
 
         assert isinstance(result, dict)
         assert result['provider'] == 'dataverse'
@@ -229,9 +396,22 @@ class TestMetadata:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_metadata_missing(self, provider):
+    def test_draft_metadata_missing(self, provider):
         url = build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.MetadataError):
-            yield from provider.metadata()
+            yield from provider.metadata(state='draft')
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_draft_metadata_no_state_catches_all(self, provider, dataset_metadata, native_dataset_metadata):
+        sword_url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', sword_url, status=200, body=dataset_metadata)
+        json_url = provider.JSON_BASE_URL.format(provider.id)
+        aiohttpretty.register_json_uri('GET', json_url, status=200, body=native_dataset_metadata)
+
+        result = yield from provider.metadata()
+
+        assert isinstance(result, list)
+        assert len(result) == 7

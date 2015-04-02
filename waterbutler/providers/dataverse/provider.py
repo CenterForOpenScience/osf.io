@@ -17,11 +17,14 @@ class DataverseProvider(provider.BaseProvider):
     EDIT_MEDIA_BASE_URL = settings.EDIT_MEDIA_BASE_URL
     DOWN_BASE_URL = settings.DOWN_BASE_URL
     METADATA_BASE_URL = settings.METADATA_BASE_URL
+    JSON_BASE_URL = settings.JSON_BASE_URL
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
         self.doi = self.settings['doi']
+        self.id = self.settings['id']
+        self.name = self.settings['name']
 
     @asyncio.coroutine
     def download(self, path, **kwargs):
@@ -70,7 +73,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
         # Find appropriate version of file from metadata url
-        data = yield from self.metadata()
+        data = yield from self.metadata(state='draft')
         filename, version = dataverse_utils.unpack_filename(filename)
         highest_compatible = None
 
@@ -103,7 +106,36 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path='/', state='draft', **kwargs):
+    def metadata(self, path='/', state=None, **kwargs):
+
+        # Get appropriate metadata
+        if state == 'draft':
+            dataset_metadata = yield from self.get_draft_data()
+        elif state == 'published':
+            dataset_metadata = yield from self.get_published_data()
+        else:
+            # Unspecified (file view page), check both sets for metadata
+            published_data = yield from self.get_published_data()
+            published_files = published_data if isinstance(published_data, list) else []
+            draft_data = yield from self.get_draft_data()
+            draft_files = draft_data if isinstance(draft_data, list) else []
+            dataset_metadata = published_files + draft_files
+
+        if path == '/':
+            return dataset_metadata
+
+        try:
+            return next(
+                item for item in dataset_metadata if item['path'] == path
+            )
+        except StopIteration:
+            raise exceptions.MetadataError(
+                "Could not retrieve file '{}'".format(path),
+                code=http.client.NOT_FOUND,
+            )
+
+    @asyncio.coroutine
+    def get_draft_data(self):
         url = provider.build_url(self.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
@@ -115,20 +147,24 @@ class DataverseProvider(provider.BaseProvider):
         data = yield from resp.text()
         data = xmltodict.parse(data)
 
-        dataset_metadata = DataverseDatasetMetadata(data, state).serialized()
+        return DataverseDatasetMetadata(
+            data, self.name, self.doi, native=False
+        ).serialized()
 
-        # Dataset metadata
-        if path == '/':
-            return dataset_metadata
+    @asyncio.coroutine
+    def get_published_data(self):
+        url = self.JSON_BASE_URL.format(self.id)
+        resp = yield from self.make_request(
+            'GET',
+            url,
+            params={'key': self.token},
+            expects=(200, ),
+            throws=exceptions.MetadataError
+        )
 
-        # File metadata
-        else:
-            try:
-                return next(
-                    item for item in dataset_metadata if item['path'] == path
-                )
-            except StopIteration:
-                raise exceptions.MetadataError(
-                    "Could not retrieve file '{}'".format(path),
-                    code=http.client.NOT_FOUND,
-                )
+        data = yield from resp.json()
+        data = data['data']
+
+        return DataverseDatasetMetadata(
+            data, self.name, self.doi, native=True
+        ).serialized()
