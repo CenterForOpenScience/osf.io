@@ -158,6 +158,7 @@ class Comment(GuidStoredObject):
 
     is_deleted = fields.BooleanField(default=False)
     # Whether the original file/wiki is deleted
+    # NOTE Currently, is_hidden will set to True only when a wiki is deleted.
     is_hidden = fields.BooleanField(default=False)
     # The type root_target: node/files/wiki
     page = fields.StringField()
