@@ -1460,7 +1460,7 @@ function _poToolbar (){
                 m('', [
                         m('.col-xs-9', [
                                 m('input#addprojectInput.tb-header-input', { config : function(){ applyTypeahead.call(tb);}, type : 'text', placeholder : 'Name of the project to find'}),
-                                m('span.add-link-warning')
+                                m('span#add-link-warning')
                             ]
                         ),
                         m('.col-xs-3.tb-buttons-col', 
