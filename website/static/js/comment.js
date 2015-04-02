@@ -22,6 +22,8 @@ var nodeId = window.contextVars.node.id;
 var nodeUrl = '/' + nodeId + '/';
 
 // Maximum length for comments, in characters
+var FIGSHARE = 'figshare'
+
 var MAXLENGTH = 500;
 var MAXLEVEL = {
     'page': 10,
@@ -220,7 +222,6 @@ BaseComment.prototype.configureCommentVisibility = function() {
         (function (cmt) {
             var request = cmt.checkCommentFileExists();
             request.done(function (resp) {
-                var FIGSHARE = 'figshare';
                 if (cmt.provider() == FIGSHARE) {
                     cmt.title(resp.data.name);
                 }
@@ -396,7 +397,7 @@ var CommentModel = function(data, $parent, $root) {
         return self.hasChildren() || self.canEdit();
     });
 
-    self.shouldShowChildren = ko.pureComputed(function() {
+    self.shouldShowChildren = ko.computed(function() {
         if (self.isHidden()) {
             self.showChildren(false);
             return false;

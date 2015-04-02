@@ -140,6 +140,10 @@ def validate_comment_reports(value, *args, **kwargs):
 
 class Comment(GuidStoredObject):
 
+    OVERVIEW = "overview"
+    FILES = "files"
+    WIKI = "wiki"
+
     _id = fields.StringField(primary=True)
 
     user = fields.ForeignField('user', required=True, backref='commented')
@@ -184,7 +188,7 @@ class Comment(GuidStoredObject):
             comment.root_target = comment.target
         comment.save()
 
-        if comment.page == 'files':
+        if comment.page == cls.FILES:
             file_key = comment.root_target._id
             comment.node.commented_files[file_key] = \
                 comment.node.commented_files.get(file_key, 0) + 1
@@ -223,9 +227,8 @@ class Comment(GuidStoredObject):
             self.save()
 
     def delete(self, auth, save=False):
-        FILES = 'files'
         self.is_deleted = True
-        if self.page == FILES:
+        if self.page == Comment.FILES:
             self.node.commented_files[self.root_target._id] -= 1
             if self.node.commented_files[self.root_target._id] == 0:
                 del self.node.commented_files[self.root_target._id]
@@ -244,9 +247,8 @@ class Comment(GuidStoredObject):
             self.save()
 
     def undelete(self, auth, save=False):
-        FILES = 'files'
         self.is_deleted = False
-        if self.page == FILES:
+        if self.page == Comment.FILES:
             file_key = self.root_target._id
             self.node.commented_files[file_key] = \
                 self.node.commented_files.get(file_key, 0) + 1
