@@ -32,7 +32,7 @@
 
 
     <!-- Settings Pane -->
-    <div class="dropbox-settings" data-bind='if: showSettings'>
+    <div class="dropbox-settings" data-bind='visible: showSettings'>
         <div class="row">
             <div class="col-md-12">
                 <p>

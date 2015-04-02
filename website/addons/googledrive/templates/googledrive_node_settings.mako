@@ -29,7 +29,7 @@
     </small>
     </h4>
 
-    <div id="currentFolder" data-bind="if:showFolders()">
+    <div id="currentFolder" data-bind="visible: showFolders()">
        <p>
         <strong> Current folder:</strong>
         <a href="{{ urls().files }}" data-bind="if: currentFolder">{{ currentFolder }}</a>

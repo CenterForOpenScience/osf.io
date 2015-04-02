@@ -33,7 +33,7 @@
     </h4>
 
     <!-- Settings Pane -->
-    <div class="figshare-settings" data-bind='if: showSettings'>
+    <div class="figshare-settings" data-bind='visible: showSettings'>
         <div class="row">
             <div class="col-md-12">
                 <p>
