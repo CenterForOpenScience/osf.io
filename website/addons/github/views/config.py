@@ -13,6 +13,7 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.addons.github.utils import serialize_urls
+from website.addons.github.utils import get_repo_dropdown
 
 from ..api import GitHub
 
@@ -130,28 +131,12 @@ def github_remove_user_settings(user_addon, **kwargs):
 # WIP, need to get repo_list stuff from model.py into here
 @must_be_logged_in
 @must_have_addon('github', 'node')
-@must_have_addon('github', 'user')
 @must_have_permission('write')
 @must_not_be_registration
-def github_repo_list(auth, node_addon, user_addon, **kwargs):
+def github_repo_list(auth, node_addon, **kwargs):
     node = node_addon.owner
     user = auth.user
-    user_settings = node_addon.user_settings
-
-    # If authorized, only owner can change settings
-    if user_settings and user_settings.owner != user:
-        raise HTTPError(http.BAD_REQUEST)
-
-    connection = GitHub.from_settings(user_settings)
-    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-    repo_names = [
-        '{0} / {1}'.format(repo.owner.login, repo.name)
-        for repo in repos
-    ]
-
-    return {
-        'repo_names': repo_names
-    }
+    return get_repo_dropdown(user, node_addon)
 
 
 @must_have_permission('write')

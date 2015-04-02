@@ -2,7 +2,6 @@
 
 var ko = require('knockout');
 require('knockout.punches');
-require('knockout-mapping');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -201,12 +200,9 @@ ViewModel.prototype.createRepo = function(repoName) {
         }
     ).done(function(response) {
         self.creating(false);
-        self.updateFromData(response);
-        if (!self.loadedRepoList()) {
-            self.updateRepoList().done(function() {
-                self.selectedRepo(response.github_user + " / "+ repoName)
-            });
-        }
+        self.repoList(response.repos);
+        self.loadedRepoList(true);
+        self.selectedRepo((self.ownerName() + " / "+ repoName));
         self.showSelect(true);
         var msg = 'Successfully created repo "' + repoName + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
@@ -296,8 +292,8 @@ ViewModel.prototype.updateFromData = function(data) {
         self.nodeHasAuth(settings.node_has_auth);
         self.userHasAuth(settings.user_has_auth);
         self.userIsOwner(settings.user_is_owner);
-        self.ownerName(settings.owner);
-        self.currentRepo( settings.has_repo ? settings.github_repo_full_name : 'None');
+        self.ownerName(settings.github_user);
+        self.currentRepo(settings.has_repo ? settings.github_repo_full_name : 'None');
         if (settings.urls) {
             self.urls(settings.urls);
         }

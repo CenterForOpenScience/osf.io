@@ -25,8 +25,22 @@ from website.addons.github.api import GitHub
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
+from website.oauth.models import ExternalProvider
+
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
+# class GitHub(ExternalProvider):
+#     name = "GitHub"
+#     short_name = "github"
+#
+#     client_id = github_settings.GITHUB_CLIENT_ID
+#     client_SECRET = github_settings.GITHUB_CLIENT_SECRET
+#
+#     auth_url_base =
+#     callback_url =
+#     default_scopes =
+
 
 
 class GithubGuidFile(GuidFile):

@@ -25,6 +25,7 @@ def create_new_bucket(node_addon, **kwargs):
         }, http.NOT_ACCEPTABLE
     try:
         create_bucket(user_settings, request.json.get('bucket_name'))
+
         return node_addon.to_json(user)
     except S3ResponseError as e:
         return {

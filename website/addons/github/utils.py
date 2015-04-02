@@ -2,6 +2,7 @@ import hmac
 import uuid
 import urllib
 import hashlib
+import itertools
 import httplib as http
 from github3.repos.branch import Branch
 
@@ -152,3 +153,21 @@ def serialize_urls(node_addon, user):
         result['owner'] = web_url_for('profile_view_id',
                                       uid=user_settings.owner._primary_key)
     return result
+
+
+def get_repo_dropdown(user, node_addon):
+    user_settings = node_addon.user_settings
+    # If authorized, only owner can change settings
+    if user_settings and user_settings.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    connection = GitHub.from_settings(user_settings)
+    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+    repo_names = [
+        '{0} / {1}'.format(repo.owner.login, repo.name)
+        for repo in repos
+    ]
+
+    return {
+        'repo_names': repo_names
+    }

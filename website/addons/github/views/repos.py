@@ -9,6 +9,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
 from website.project.decorators import must_have_addon
+from website.addons.github.utils import get_repo_dropdown
 
 from ..api import GitHub
 
@@ -16,16 +17,15 @@ from ..api import GitHub
 @must_be_logged_in
 @must_have_addon('github', 'user')
 @must_have_addon('github', 'node')
-def github_create_repo(node_addon, **kwargs):
+def github_create_repo(auth, node_addon, user_addon, **kwargs):
 
-    user = kwargs['auth'].user
+    user = auth.user
     repo_name = request.json.get('repo_name')
 
     if not repo_name:
         raise HTTPError(http.BAD_REQUEST)
 
-    user_settings = kwargs['user_addon']
-    connection = GitHub.from_settings(user_settings)
+    connection = GitHub.from_settings(user_addon)
 
     try:
         repo = connection.create_repo(repo_name)
@@ -33,4 +33,7 @@ def github_create_repo(node_addon, **kwargs):
         # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)
 
-    return node_addon.to_json(user)
+    return {
+        'repos': get_repo_dropdown(user, node_addon)['repo_names'],
+        'user': user.username
+    }
