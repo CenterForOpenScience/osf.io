@@ -28,10 +28,11 @@ This documentation is also available in `PDF and Epub formats
     :maxdepth: 2
 
     gettingstarted
-    faq
+    api
     releases
-    modules
     providers
+    faq
+    streams
 
 * :ref:`genindex`
 * :ref:`modindex`

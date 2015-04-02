@@ -1,9 +1,6 @@
 waterbutler.core package
 ========================
 
-Submodules
-----------
-
 waterbutler.core.exceptions module
 ----------------------------------
 
@@ -28,14 +25,6 @@ waterbutler.core.metadata module
     :undoc-members:
     :show-inheritance:
 
-waterbutler.core.provider module
---------------------------------
-
-.. automodule:: waterbutler.core.provider
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 waterbutler.core.signing module
 -------------------------------
 
@@ -44,13 +33,6 @@ waterbutler.core.signing module
     :undoc-members:
     :show-inheritance:
 
-waterbutler.core.streams module
--------------------------------
-
-.. automodule:: waterbutler.core.streams
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 waterbutler.core.utils module
 -----------------------------
