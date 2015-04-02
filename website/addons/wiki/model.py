@@ -56,25 +56,30 @@ def subscribe_on_write_permissions_revoked(node):
 
 # subscribes to project model wiki update
 @wiki_updated.connect
-def subscribe_wiki_updates(page):
-    node = page['node']
-    user = page['user']
-    version = page['version']
-    f = furl(node.absolute_url)
-    f.path = build_wiki_url(node, page['page_name'])  # will pass this if version is 1
-    if version != 1:
+def subscribe_wiki_updates(sender, node, user, version, page_name, rename=None, deleted=None):
+    w_url = furl(node.absolute_url)
+    # will pass this url when version is 1
+    w_url.path = build_wiki_url(node, page_name)
+    if version == 1:
+        message = 'added <strong>"{}"</strong>'.format(page_name)
+    elif version != 1:
         # Sends link with compare
-        old_version = version - 1
-        f.add({'view': '', 'compare': str(old_version)})
-    context = dict (
+        w_url.add({'view': str(version), 'compare': str(version - 1)})
+        message = 'changed <strong>"{}"</strong>'.format(page_name)
+    # replace message when rename is something other than None
+    if rename:
+        message = 'renamed <strong>"{}"</strong> to <strong>"{}"</strong>'\
+            .format(page_name, rename)
+    context = dict(
         node_type=node.project_or_component,
         timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
         commenter=user,
         gravatar_url=user.gravatar_url,
-        content=f.url,
-        target_user=None,
+        content=w_url.url,
         parent_comment="",
         title=node.title,
+        message=message,
+        version=version,
         node_id=node._id,
         url=node.absolute_url
     )

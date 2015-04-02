@@ -2292,14 +2292,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         new_page.save()
 
-        updated_page = dict(
+        wiki_updated.send(
+            "wiki " + name,
             page_name=name,
             version=version,
             user=auth.user,
             node=self
         )
-
-        wiki_updated.send(updated_page)
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
@@ -2369,6 +2368,15 @@ class Node(GuidStoredObject, AddonModelMixin):
             if key in self.wiki_private_uuids:
                 self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
                 del self.wiki_private_uuids[key]
+
+        wiki_updated.send(
+            "wiki " + name,
+            page_name=name,
+            version=len(self.wiki_pages_versions[new_key]),
+            user=auth.user,
+            node=self,
+            rename=new_name
+        )
 
         self.add_log(
             action=NodeLog.WIKI_RENAMED,

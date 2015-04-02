@@ -13,3 +13,9 @@ NOTIFICATION_TYPES = {
     'email_digest': 'Daily email digest of all changes to this project',
     'none': 'None'
 }
+
+EMAIL_SUBJECT_MAP = {
+    'comments': '${commenter.fullname} commented on "${title}".',
+    'comment_replies': '${commenter.fullname} replied to your comment on "${title}".',
+    'wiki_updated': '${commenter.fullname} updated the wiki on "${title}".'
+}
