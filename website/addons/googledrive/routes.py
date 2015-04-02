@@ -60,7 +60,7 @@ api_routes = {
                 '/settings/googledrive/accounts/',
             ],
             'get',
-            views.config.list_googledrive_user_acccounts,
+            views.config.list_googledrive_user_accounts,
             json_renderer,
         ),
 

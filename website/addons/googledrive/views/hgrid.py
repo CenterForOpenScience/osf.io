@@ -13,10 +13,10 @@ from website.addons.googledrive.utils import to_hgrid
 from website.addons.googledrive.client import GoogleDriveClient
 
 
-@must_have_addon('googledrive', 'user')
+# @must_have_addon('googledrive', 'user')
 @must_have_addon('googledrive', 'node')
-@must_be_addon_authorizer('googledrive')
-def googledrive_folders(node_addon, user_addon, **kwargs):
+# @must_be_addon_authorizer('googledrive')
+def googledrive_folders(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed """
     node = kwargs.get('node') or kwargs['project']
 
@@ -47,6 +47,7 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
         to_hgrid(item, node, path=path)
         for item in client.folders(folder_id)
     ]
+    import pdb;pdb.set_trace()
 
     return contents
 

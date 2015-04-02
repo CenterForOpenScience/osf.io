@@ -14,11 +14,6 @@ from website.project.decorators import (
     must_be_addon_authorizer,
 )
 from framework.exceptions import HTTPError
-
-
-from website.addons.googledrive.utils import serialize_urls
-from website.addons.googledrive.utils import serialize_settings
-from website.addons.googledrive.utils import user_accounts
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 
 
@@ -58,12 +53,12 @@ def googledrive_config_put(node_addon, auth, **kwargs):
     }
 
 @must_be_logged_in
-def list_googledrive_user_acccounts(auth):
+def list_googledrive_user_accounts(auth):
     """View for getting a JSON representation of the logged-in user's
     Google Drive user settings.
     """
-
-    return GoogleDriveSerializer(user_settings=auth.user.get_addon('googledrive')).serialized_user_settings
+    user_settings = auth.user.get_addon('googledrive')
+    return GoogleDriveSerializer(user_settings=user_settings).serialized_user_settings
 
 
 @must_have_permission(permissions.WRITE)
@@ -74,7 +69,7 @@ def googledrive_import_user_auth(auth, node_addon, **kwargs):
     user = auth.user
     external_account_id = request.get_json().get('external_account_id')
     external_account = ExternalAccount.load(external_account_id)
-
+    import pdb; pdb.set_trace()
     if external_account not in user.external_accounts:
             raise HTTPError(http.FORBIDDEN)
 

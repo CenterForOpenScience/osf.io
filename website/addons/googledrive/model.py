@@ -136,6 +136,8 @@ class GoogleDriveProvider(ExternalProvider):
 class GoogleDriveUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = GoogleDriveProvider
     oauth_grants = fields.DictionaryField()
+    serializer = GoogleDriveSerializer
+
 
 class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = GoogleDriveProvider
