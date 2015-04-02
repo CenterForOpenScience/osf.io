@@ -146,7 +146,7 @@ class GoogleDriveClient(BaseClient):
             "'{0}' in parents".format(folder_id),
             'trashed = false',
             "mimeType = 'application/vnd.google-apps.folder'",
-            ])
+        ])
         res = self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ),

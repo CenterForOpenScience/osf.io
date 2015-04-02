@@ -90,7 +90,6 @@ class OAuthAddonSerializer(AddonSerializer):
             ],
         }
 
-
     @collect_auth
     def serialize_granted_node(self, node, auth):
 

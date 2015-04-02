@@ -5,9 +5,7 @@ import os
 import logging
 from urllib import quote
 
-from website.util import web_url_for
 from website.addons.citations import utils
-from website.addons.googledrive.exceptions import ExpiredAuthError
 
 
 logger = logging.getLogger(__name__)

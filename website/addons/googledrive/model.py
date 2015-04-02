@@ -5,7 +5,6 @@ from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 import pymongo
 from website import settings
-from website.addons.citations.utils import serialize_account, serialize_folder
 from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile
 from website.addons.googledrive import exceptions
 from website.addons.googledrive.serializer import GoogleDriveSerializer
@@ -123,7 +122,6 @@ class GoogleDriveProvider(ExternalProvider):
         client = self._drive_client
         return client.folders()
 
-
     def _refresh_token(self, access_token, refresh_token):
         client = self._auth_client
         if refresh_token:
@@ -166,9 +164,8 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         ))
 
     def set_folder(self, folder, auth, add_log=True):
-        self.drive_folder_id= folder['id']
+        self.drive_folder_id = folder['id']
         self.folder_path = folder['path']
-
 
     @property
     def provider_name(self):
@@ -193,7 +190,6 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         self.drive_folder_id = folder['id']
         self.folder_path = folder['path']
         self.drive_folder_name = folder['name']
-
 
         # Tell the user's addon settings that this node is connecting
         self.user_settings.grant_oauth_access(
@@ -233,7 +229,7 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         :param folder_id: Id of the selected folder
         :return: subfolders,if any.
         """
-        client =GoogleDriveClient(self.external_account.oauth_key)
+        client = GoogleDriveClient(self.external_account.oauth_key)
         folder = client.file_or_folder_metadata(fileId=folder_id)
         return folder
 

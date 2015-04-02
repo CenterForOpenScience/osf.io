@@ -32,4 +32,4 @@ class GoogleDriveSerializer(GenericAddonSerializer):
             if path is not None:
                 result['currentPath'] = '/' + path.lstrip('/')
                 result['currentFolder'] = '/ (Full Google Drive)' if path == '/' else '/' + path
-        return { 'result': result}
+        return {'result': result}

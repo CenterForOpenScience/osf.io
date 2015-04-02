@@ -5,7 +5,6 @@ from flask import request
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
 from website.oauth.models import ExternalAccount
-from website.util import api_url_for
 from website.util import permissions
 from website.project.decorators import (
     must_have_permission,
@@ -13,7 +12,6 @@ from website.project.decorators import (
     must_not_be_registration,
     must_be_addon_authorizer,
 )
-from framework.exceptions import HTTPError
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 
 
