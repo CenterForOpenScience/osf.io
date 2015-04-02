@@ -143,9 +143,9 @@ class GoogleDriveProvider(provider.BaseProvider):
         return ' and '.join(queries)
 
     @asyncio.coroutine
-    def metadata(self, path, raw=False, **kwargs):
+    def metadata(self, path, raw=False, parent_id=None, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
-        item_id = yield from self._materialized_path_to_id(path)
+        item_id = yield from self._materialized_path_to_id(path, parent_id=parent_id)
 
         if path.is_dir:
             return (yield from self._folder_metadata(path, item_id, raw=raw))
@@ -224,9 +224,9 @@ class GoogleDriveProvider(provider.BaseProvider):
         return (yield from resp.json())
 
     @asyncio.coroutine
-    def _materialized_path_to_id(self, path):
+    def _materialized_path_to_id(self, path, parent_id=None):
         parts = path.parts
-        item_id = self.folder['id']
+        item_id = parent_id or self.folder['id']
 
         while parts:
             resp = yield from self.make_request(
