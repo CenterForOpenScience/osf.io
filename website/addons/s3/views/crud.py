@@ -5,14 +5,15 @@ import httplib as http
 from flask import request
 from boto.exception import S3ResponseError, BotoClientError, S3CreateError
 
-from website.addons.s3.api import create_bucket
-from website.project.decorators import must_have_addon
-from website.addons.s3.utils import validate_bucket_name
 from website.project.decorators import must_be_contributor_or_public
-
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_permission
+from website.addons.s3.api import create_bucket
+from website.addons.s3.utils import validate_bucket_name, get_bucket_drop_down
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
+@must_have_permission('write')
 def create_new_bucket(node_addon, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
@@ -25,7 +26,9 @@ def create_new_bucket(node_addon, **kwargs):
         }, http.NOT_ACCEPTABLE
     try:
         create_bucket(user_settings, request.json.get('bucket_name'))
-        return node_addon.to_json(user)
+        return {
+            'buckets': get_bucket_drop_down(user_settings)
+        }
     except S3ResponseError as e:
         return {
             'message': e.message,
