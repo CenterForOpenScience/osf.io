@@ -1338,35 +1338,35 @@ function applyTypeahead () {
                 }
             }
         });
-        // $('#addprojectInput').bind('keyup', function (event) {
-        //     var key = event.keyCode || event.which,
-        //         buttonEnabled = (typeof $('#add-link-button').prop('disabled') !== 'undefined');
+        $('#addprojectInput').bind('keyup', function (event) {
+            var key = event.keyCode || event.which,
+                buttonEnabled = $('#add-link-button').hasClass('tb-disabled');
 
-        //     if (key === 13) {
-        //         if (buttonEnabled) {
-        //             $('#add-link-button').click(); //submits if the control is active
-        //         }
-        //     } else {
-        //         $('#add-link-warn-' + theItem.node_id).text('');
-        //         $('#add-link-button').attr('disabled', 'disabled');
-        //         linkName = '';
-        //         linkID = '';
-        //     }
-        // });
-        // $('#addprojectInput').bind('typeahead:selected', function (obj, datum, name) {
-        //     var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
-        //         children;
-        //     $.getJSON(getChildrenURL, function (data) {
-        //         children = data;
-        //         if (children.indexOf(datum.node_id) === -1) {
-        //             $('#add-link-' + theItem.node_id).removeAttr('disabled');
-        //             linkName = datum.name;
-        //             linkID = datum.node_id;
-        //         } else {
-        //             $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
-        //         }
-        //     }).fail($osf.handleJSONError);
-        // });
+            if (key === 13) {
+                if (buttonEnabled) {
+                    $('#add-link-button').click(); //submits if the control is active
+                }
+            } else {
+                $('#add-link-warning').text('');
+                $('#add-link-button').addClass('tb-disabled');
+                linkName = '';
+                linkID = '';
+            }
+        });
+        $('#addprojectInput').bind('typeahead:selected', function (obj, datum, name) {
+            var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
+                children;
+            $.getJSON(getChildrenURL, function (data) {
+                children = data;
+                if (children.indexOf(datum.node_id) === -1) {
+                    $('#add-link-warning').removeClass('tb-disabled');
+                    linkName = datum.name;
+                    linkID = datum.node_id;
+                } else {
+                    $('#add-link-warning').text('This project is already in the folder');
+                }
+            }).fail($osf.handleJSONError);
+        });
     }
 
 }
