@@ -54,6 +54,16 @@ text-align: center;
 .fangorn-selected a {
 	color : white;
 }
+.tb-disabled {
+	background: #eee;
+	color: #ccc;
+	cursor: default;
+	border-color: #ccc;
+}
+.tb-disabled:hover {
+	background: #eee !important;
+	cursor: default;
+}
 .tb-th {
 	line-height: 14px;
 	background: url('/static/img/hgrid/header-columns-bg.gif');
