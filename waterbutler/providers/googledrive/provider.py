@@ -139,60 +139,14 @@ class GoogleDriveProvider(provider.BaseProvider):
         return ' and '.join(queries)
 
     @asyncio.coroutine
-    def metadata(self, path, original_path=None, folder_id=None, raw=False, **kwargs):
+    def metadata(self, path, raw=False, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
-        original_path = original_path or path
-        folder_id = folder_id or self.folder['id']
-        child = path.child
-
-        title = None if (path.is_leaf and path.is_dir) else path.parts[1]
-        query = self._build_query(folder_id, title=title)
-
-        resp = yield from self.make_request(
-            'GET',
-            self.build_url('files', q=query, alt='json'),
-            expects=(200, ),
-            throws=exceptions.MetadataError,
-        )
-        data = yield from resp.json()
-
-        # Raise 404 on empty results if file or partial lookup
-        if not data['items']:
-            if path.is_file or not path.is_leaf:
-                raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
-
-        if not path.is_leaf:
-            child_id = data['items'][0]['id']
-            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, raw=raw, **kwargs))
+        item_id = yield from self._materialized_path_to_id(path)
 
         if path.is_dir:
-            return [
-                self._serialize_item(original_path, item, raw=raw)
-                for item in data['items']
-            ]
+            return (yield from self._folder_metadata(path, item_id, raw=raw))
 
-        # The "version" key does not correspond to revision IDs for Google Docs
-        # files; make an extra request to the revisions endpoint to fetch the
-        # true ID of the latest revision
-        if drive_utils.is_docs_file(data['items'][0]):
-            revisions_response = yield from self.make_request(
-                'GET',
-                self.build_url('files', data['items'][0]['id'], 'revisions'),
-                expects=(200, ),
-                throws=exceptions.RevisionsError,
-            )
-            revisions_data = yield from revisions_response.json()
-
-            # Revisions are not available for some sharing configurations. If
-            # revisions list is empty, use the etag of the file plus a sentinel
-            # string as a dummy revision ID.
-            if not revisions_data['items']:
-                # If there are no revisions use etag as vid
-                data['items'][0]['version'] = revisions_data['etag'] + settings.DRIVE_IGNORE_VERSION
-            else:
-                data['items'][0]['version'] = revisions_data['items'][-1]['id']
-
-        return self._serialize_item(original_path.parent, data['items'][0], raw=raw)
+        return (yield from self._file_metadata(path, item_id, raw=raw))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
@@ -264,3 +218,76 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.UploadError,
         )
         return (yield from resp.json())
+
+    @asyncio.coroutine
+    def _materialized_path_to_id(self, path):
+        parts = path.parts
+        item_id = self.folder['id']
+
+        while parts:
+            resp = yield from self.make_request(
+                'GET',
+                self.build_url('files', item_id, 'children', q='title = "{}"'.format(parts.pop(0))),
+                expects=(200, ),
+                throws=exceptions.MetadataError,
+            )
+            try:
+                item_id = (yield from resp.json())['items'][0]['id']
+            except (KeyError, IndexError):
+                raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
+
+        return item_id
+
+    @asyncio.coroutine
+    def _handle_docs_versioning(self, path, item, raw=True):
+        revisions_response = yield from self.make_request(
+            'GET',
+            self.build_url('files', data['id'], 'revisions'),
+            expects=(200, ),
+            throws=exceptions.RevisionsError,
+        )
+        revisions_data = yield from revisions_response.json()
+
+        # Revisions are not available for some sharing configurations. If
+        # revisions list is empty, use the etag of the file plus a sentinel
+        # string as a dummy revision ID.
+        if not revisions_data['items']:
+            # If there are no revisions use etag as vid
+            item['version'] = revisions_data['etag'] + settings.DRIVE_IGNORE_VERSION
+        else:
+            item['version'] = revisions_data['items'][-1]['id']
+
+        return self._serialize_item(path, item, raw=raw)
+
+    @asyncio.coroutine
+    def _folder_metadata(self, path, item_id, raw=False):
+        query = self._build_query(item_id)
+        resp = yield from self.make_request(
+            'GET',
+            self.build_url('files', q=query, alt='json'),
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+
+        data = yield from resp.json()
+
+        return [
+            self._serialize_item(path, item, raw=raw)
+            for item in data['items']
+        ]
+
+    @asyncio.coroutine
+    def _file_metadata(self, path, item_id, raw=False):
+        resp = yield from self.make_request(
+            'GET',
+            self.build_url('files', item_id),
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+
+        data = yield from resp.json()
+
+        if drive_utils.is_docs_file(data):
+            return (yield from self._handle_docs_versioning(data))
+
+        return self._serialize_item(path, data, raw=raw)
