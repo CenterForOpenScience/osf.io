@@ -107,7 +107,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
             self.updateAccounts()
                 .done(function() {
-                    $osf.postJSON(
+                    $osf.putJSON(
                         self.urls().importAuth, {
                             external_account_id: self.accounts()[0].id
                         }
