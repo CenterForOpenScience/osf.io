@@ -57,7 +57,7 @@ function _fangornActionColumn (item, col) {
                 var message;
                 switch (statusCode) {
                     case 405:
-                        message = 'Error: This dataset cannot be published until ' + item.data.name + ' is published.';
+                        message = 'Error: This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published.';
                         break;
                     case 409:
                         message = 'This dataset version has already been published.';

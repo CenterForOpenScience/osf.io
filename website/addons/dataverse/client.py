@@ -80,7 +80,7 @@ def get_dataset(dataverse, doi):
         return
     dataset = dataverse.get_dataset_by_doi(doi)
     try:
-        if dataset.get_state() == 'DEACCESSIONED':
+        if dataset and dataset.get_state() == 'DEACCESSIONED':
             raise HTTPError(http.GONE)
         return dataset
     except UnicodeDecodeError:
