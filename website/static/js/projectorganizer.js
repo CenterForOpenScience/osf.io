@@ -1399,7 +1399,8 @@ function applyTypeahead () {
                 });
             });
             triggerClickOnItem.call(tb, item);
-            tb.options.iconState.mode = 'bar'; 
+            tb.options.iconState.mode = 'bar';
+            $('#addprojectInput').typeahead('destroy'); 
             }
         }, [
         m('i.fa.fa-plus'),
