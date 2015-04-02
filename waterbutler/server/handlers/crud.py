@@ -17,7 +17,7 @@ TRUTH_MAP = {
 }
 
 @web.stream_request_body
-class CRUDHandler(core.BaseHandler):
+class CRUDHandler(core.BaseProviderHandler):
 
     ACTION_MAP = {
         'GET': 'download',
