@@ -232,20 +232,20 @@ function moveItem(to, from) {
     var ogParent = from.parentID;
     if (to.id === ogParent) return;
 
-    var data = waterbutler.toJsonBlob(to);
-
     from.move(to.id);
     from.data.status = 'move';
-    data.path += from.data.name;
     tb.redraw();
 
     $.ajax({
         type: 'POST',
-        url: waterbutler.buildTreeBeardMove(from),
+        url: waterbutler.moveUrl(),
         headers: {
             'Content-Type': 'Application/json'
         },
-        data: JSON.stringify(data)
+        data: JSON.stringify({
+            'source': waterbutler.toJsonBlob(from),
+            'destination': waterbutler.toJsonBlob(to, {conflict: conflict})
+        })
     }).done(function(resp, _, xhr) {
         if (xhr.status !== 202) {
             from.data = resp;
