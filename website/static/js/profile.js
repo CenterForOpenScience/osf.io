@@ -480,6 +480,19 @@ var SocialViewModel = function(urls, modes) {
         }),
         self, 'personal'
     );
+
+    self.professional = extendLink(
+        // Note: Apply extenders in reverse order so that `ensureHttp` is
+        // applied before `url`.
+        ko.observable().extend({
+            trimmed: true,
+            url: true,
+            ensureHttp: true
+        }),
+        self, 'professional'
+    );
+
+
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -511,6 +524,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.trackedProperties = [
         self.personal,
+        self.professional,
         self.orcid,
         self.researcherId,
         self.twitter,
@@ -529,6 +543,8 @@ var SocialViewModel = function(urls, modes) {
     self.values = ko.computed(function() {
         return [
             {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
+            //BH Testing adding another site
+            {label: 'Professional Site', text: self.professional(), value: self.professional.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
@@ -744,6 +760,15 @@ var SchoolsViewModel = function(urls, modes) {
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
+var PersonalWebSitesViewModel = function(urls, modes) {
+    var self = this;
+    ListViewModel.call(self, PersonalWebSitesViewModel, urls, modes);
+
+    self.fetch();
+};
+PersonalWebSitesViewModel.prototype = Object.create(ListViewModel.prototype);
+
+
 var Names = function(selector, urls, modes) {
     this.viewModel = new NameViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
@@ -766,6 +791,12 @@ var Schools = function(selector, urls, modes) {
     this.viewModel = new SchoolsViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
 };
+
+var PersonalWebsites = function(selector, urls, modes) {
+    this.viewModel = new PersonalWebSitesViewModel(urls, modes);
+    $osf.applyBindings(this.viewModel, selector);
+};
+
 
 module.exports = {
     Names: Names,

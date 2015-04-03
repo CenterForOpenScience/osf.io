@@ -2,13 +2,22 @@
 
     <div data-bind="if: mode() === 'edit'">
 
-        <form role="form" data-bind="submit: submit">
+        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
+
 
             <div class="form-group">
-                <label>Personal Site</label>
+                <label>Your Website</label>
                 <div class="input-group">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                <input class="form-control" data-bind="value: personal" placeholder="http://personalsite.com"/>
+                <input class="form-control" data-bind="value: professional" placeholder="http://yourwebsite.com"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Another Website</label>
+                <div class="input-group">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
+                <input class="form-control" data-bind="value: professional" placeholder="http://anotherwebsite.com"/>
                 </div>
             </div>
 
