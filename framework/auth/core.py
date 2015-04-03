@@ -385,6 +385,15 @@ class User(GuidStoredObject, AddonModelMixin):
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
+    # For compatibility with Django auth
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def email(self):
+        return self.username
+
     @classmethod
     def create_unregistered(cls, fullname, email=None):
         """Create a new unregistered user.
