@@ -59,6 +59,7 @@ website/static/robots.local.txt
 ##############
 
 api/db.sqlite3
+api/static/
 
 # Local settings files
 local.py

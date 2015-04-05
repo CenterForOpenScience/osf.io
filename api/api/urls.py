@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.conf.urls.static import static
 
 urlpatterns = [
     # Examples:
@@ -9,4 +11,4 @@ urlpatterns = [
     url(r'^nodes/$', include('api.nodes.urls')),
     url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
-]
+] + static('/static/', document_root=settings.STATIC_ROOT)
