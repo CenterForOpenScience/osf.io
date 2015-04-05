@@ -18,10 +18,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.append(os.path.abspath(os.path.join(HERE, '..', '..')))
 
-from website.app import init_app
+# from website.app import init_app
 
-init_app(set_backends=True)
+# init_app(set_backends=True)
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.api.settings")
 
 application = get_wsgi_application()

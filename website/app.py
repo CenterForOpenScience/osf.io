@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.wsgi import DispatcherMiddleware
 
 import framework
 from framework.render.core import init_mfr
@@ -150,4 +151,10 @@ def apply_middlewares(flask_app, settings):
     # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
     if settings.LOAD_BALANCER:
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+
+    from api.api.wsgi import application as django_app
+
+    flask_app.wsgi_app = DispatcherMiddleware(flask_app.wsgi_app, {
+        '/api/v2': django_app,
+    })
     return flask_app

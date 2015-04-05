@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '7-@)*j6)opk!sy^-1nok7f-ssscewp((b)c-m5c4dnq0%ax1rh'
 
 AUTHENTICATION_BACKENDS = (
-    'api.authentication.ODMBackend',
+    'api.api.authentication.backends.ODMBackend',
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -60,6 +60,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+
+        # Custom auth classes
+        'api.api.authentication.drf.OSFSessionAuthentication',
     ),
 }
 
@@ -74,7 +77,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-ROOT_URLCONF = 'api.urls'
+ROOT_URLCONF = 'api.api.urls'
 
 # TEMPLATES = [
 #     {
@@ -92,7 +95,7 @@ ROOT_URLCONF = 'api.urls'
 #     },
 # ]
 
-WSGI_APPLICATION = 'api.wsgi.application'
+WSGI_APPLICATION = 'api.api.wsgi.application'
 
 
 # Database
@@ -123,4 +126,4 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/api2/static/'
