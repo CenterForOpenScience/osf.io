@@ -58,6 +58,8 @@ website/static/robots.local.txt
 # OSF-specific
 ##############
 
+api/db.sqlite3
+
 # Local settings files
 local.py
 
