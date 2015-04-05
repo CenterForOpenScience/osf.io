@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '7-@)*j6)opk!sy^-1nok7f-ssscewp((b)c-m5c4dnq0%ax1rh'
 
 AUTHENTICATION_BACKENDS = (
-    'api.api.authentication.backends.ODMBackend',
+    'api.base.authentication.backends.ODMBackend',
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -62,7 +62,7 @@ REST_FRAMEWORK = {
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
 
         # Custom auth classes
-        'api.api.authentication.drf.OSFSessionAuthentication',
+        'api.base.authentication.drf.OSFSessionAuthentication',
     ),
 }
 
@@ -77,7 +77,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-ROOT_URLCONF = 'api.api.urls'
+ROOT_URLCONF = 'api.base.urls'
 
 # TEMPLATES = [
 #     {
@@ -95,7 +95,7 @@ ROOT_URLCONF = 'api.api.urls'
 #     },
 # ]
 
-WSGI_APPLICATION = 'api.api.wsgi.application'
+WSGI_APPLICATION = 'api.base.wsgi.application'
 
 
 # Database
