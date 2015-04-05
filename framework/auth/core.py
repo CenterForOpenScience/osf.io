@@ -385,6 +385,11 @@ class User(GuidStoredObject, AddonModelMixin):
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
+    def __str__(self):
+        return self.fullname
+
+    __unicode__ = __str__
+
     # For compatibility with Django auth
     @property
     def pk(self):
