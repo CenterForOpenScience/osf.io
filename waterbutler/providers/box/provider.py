@@ -33,6 +33,46 @@ class BoxProvider(provider.BaseProvider):
         self.token = self.credentials['token']
         self.folder = self.settings['folder']
 
+    def can_intra_move(self, other):
+        return self == other
+
+    def can_intra_copy(self, other):
+        return self == other
+
+    def intra_copy(self, destination_provider, source_options, destination_options):
+        source_path = BoxPath(source_options['path'], _id=self.folder)
+        destination_path = BoxPath(destination_options['path'], _id=destination_provider.folder)
+
+        #TODO Refactor this into handle_name_conflict
+        conflicting_id = yield from destination_provider._check_conflict(destination_path)
+
+        if conflicting_id:
+            if destination_options.get('conflict') != 'keep':
+                yield from destination_provider.delete(**destination_options)
+            else:
+                while conflicting_id:
+                    destination_path.increment_name()
+                    conflicting_id = yield from destination_provider._check_conflict(destination_path)
+
+        resp = yield from self.make_request(
+            'POST',
+            self.build_url('files', source_path._id, 'copy'),
+            data=json.dumps({
+                'name': destination_path.name,
+                'parent': {
+                    'id': destination_path._id
+                }
+            }),
+            headers={'Content-Type': 'application/json'},
+            expects=(200, 201),
+            throws=exceptions.IntraCopyError
+        )
+
+        data = yield from resp.json()
+
+        data['fullPath'] = self._build_full_path(data['path_collection']['entries'][1:], destination_path.name)
+        return BoxFileMetadata(data, destination_provider.folder).serialized(), conflicting_id is None
+
     @property
     def default_headers(self):
         return {
