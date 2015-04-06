@@ -99,7 +99,7 @@ class BoxProvider(provider.BaseProvider):
 
         preflight_resp = yield from self.make_request(
             'OPTIONS',
-            self.build_url(*[x for x in ['files', file_id, 'content'] if x is not None]),
+            self.build_url(*filter(lambda x: x is not None, ('files', file_id, 'content'))),
             data=json.dumps({
                 'name': path.name,
                 'parent': {
@@ -142,7 +142,7 @@ class BoxProvider(provider.BaseProvider):
 
         resp = yield from self.make_request(
             'POST',
-            self._build_upload_url(*[x for x in ['files', file_id, 'content'] if x is not None]),
+            self._build_upload_url(*filter(lambda x: x is not None, ('files', file_id, 'content'))),
             data=data_stream,
             headers=data_stream.headers,
             expects=(201, 409),
