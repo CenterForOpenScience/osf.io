@@ -39,9 +39,7 @@ function FileViewTreebeard(data) {
             tb.options.folderArray = [''];
         }
         m.render($('#filesSearch').get(0), tb.options.filterTemplate.call(tb));
-        $('#filesSearch input[placeholder=Search]').css('width', '95%');
         $('#filesSearch input[placeholder=Search]').removeClass('pull-right').addClass('pull-left');
-        $('#toggleIcon').css('margin-top', '5px');
     },
     columnTitles: function () {
         return [{

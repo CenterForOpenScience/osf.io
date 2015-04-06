@@ -2291,11 +2291,6 @@ span#profileFullname{
     overflow-x: hidden;
 }
 
-#file-navigation #tb-tbody {
-    max-height: 500px;
-    height: inherit;
-}
-
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
@@ -2442,9 +2437,19 @@ span#profileFullname{
     height: auto;
 }
 
-/* Remove border for files page treebeard*/
+/* File view page css */
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}
 .file-page #tb-tbody {
     border: none;
+}
+#filesSearch {
+    width: 95%;
+}
+#toggleIcon {
+    margin-top: 5px;
 }
 
 /* scroll fix for wherever treebeard is used */
