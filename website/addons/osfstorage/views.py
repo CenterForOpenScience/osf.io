@@ -337,6 +337,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
     }
 
 def file_tag(tag, auth, **kwargs):
+    
     tag_obj = Tag.load(tag)
     nodes = tag_obj.node__tagged if tag_obj else []
     visible_nodes = [obj for obj in nodes if obj.can_view(auth)]
