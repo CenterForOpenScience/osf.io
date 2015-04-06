@@ -30,19 +30,18 @@ $.ajax({
 });
 
 // Reusable function to fix affix widths to columns.  
-function fixAffixWidth(parent) {
-    var parent = parent || 'body';
-    $(parent + ' .affix').each(function (){
+function fixAffixWidth() {
+    $('.affix, .affix-top, .affix-bottom').each(function (){
         var el = $(this);
-        var colsize = el.parent('div[class^="col-"]').width();
-        el.width(colsize);
+        var colsize = el.parent('.affix-parent').width();
+        el.outerWidth(colsize);
     });
 }
 
 $(document).ready(function() {
 
     $(window).resize(function (){ fixAffixWidth(); });
-    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
+    // $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
