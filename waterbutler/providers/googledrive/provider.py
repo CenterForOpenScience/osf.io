@@ -52,6 +52,15 @@ class GoogleDrivePath(utils.WaterButlerPath):
     def name(self):
         return parse.unquote(self._parts[-1])
 
+    def increment_name(self):
+        self._count += 1
+        name, ext = os.path.splitext(self._orig_name)
+        new_name = parse.quote('{} ({}){}'.format(name, self._count, ext), safe='')
+        self._orig_path = self._orig_path.replace(parse.quote(self.name, safe=''), new_name)
+        self._parts[-1] = new_name
+        self._path = self._format_path(self._orig_path)
+        return self
+
 
 class GoogleDriveProvider(provider.BaseProvider):
     NAME = 'googledrive'
