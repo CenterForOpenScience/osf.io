@@ -6,12 +6,11 @@ $(document).ready(function() {
     $.ajax({
         url: nodeApiUrl + 'files/grid/'
     })
-        .done(function (data) {
-            new fileBrowser(data);
+    .done(function (data) {
+        new fileBrowser(data);
     });
-});
 
-var panelToggle = $('.panel-toggle');
+    var panelToggle = $('.panel-toggle');
     var panelExpand = $('.panel-expand');
     $('.panel-collapse').on('click', function () {
         var panelHeight = $('.osf-panel.hidden-xs').height();
@@ -30,3 +29,5 @@ var panelToggle = $('.panel-toggle');
         panelToggle.removeClass('col-md-1').addClass('col-md-3');
         panelExpand.removeClass('col-md-8').addClass('col-md-6');
     });
+
+});

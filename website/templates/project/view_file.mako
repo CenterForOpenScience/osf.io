@@ -172,4 +172,5 @@
       });
     </script>
     <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>

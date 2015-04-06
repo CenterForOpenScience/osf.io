@@ -93,6 +93,6 @@
                 }
         });
         </script>
-        <script src=${"/static/public/js/view-file-page-dataverse.js" | webpack_asset}></script>
+        <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
     % endif
 </%def>
