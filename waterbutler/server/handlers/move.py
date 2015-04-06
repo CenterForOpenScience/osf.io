@@ -54,8 +54,4 @@ class MoveHandler(core.BaseCrossProviderHandler):
 
         self.write(metadata)
 
-        # TODO copy/created?
-        self._send_hook(
-            'create' if created else 'update',
-            metadata,
-        )
+        self._send_hook('move', metadata['path'])
