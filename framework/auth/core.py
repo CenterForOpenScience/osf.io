@@ -651,6 +651,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
         :raises: KeyError if there no token for the email.
         """
+        # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
                 if info['expiration'] < dt.datetime.utcnow():
@@ -717,6 +718,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         if unregistered_user:
             self.merge_user(unregistered_user)
+            self.save()
             unregistered_user.username = None
 
         self.emails.append(email)
@@ -1086,7 +1088,6 @@ class User(GuidStoredObject, AddonModelMixin):
         user.merged_by = self
 
         user.save()
-        self.save()
 
     def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
