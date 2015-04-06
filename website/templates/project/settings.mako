@@ -26,11 +26,8 @@
                     <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                 % endif
 
-                % if 'write' in user['permissions'] and not node['is_registration']:
-                    <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
-
                 % if addon_enabled_settings:
-                    <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
+                    <li><a href="#configureAddonsAnchor">Configure External Accounts</a></li>
                 % endif
 
                     <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
