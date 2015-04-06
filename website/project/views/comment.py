@@ -158,15 +158,13 @@ def add_comment(**kwargs):
     comment.save()
 
     context = dict(
-        node_type=node.project_or_component,
         timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
-        commenter=auth.user,
+        user=auth.user,
         gravatar_url=auth.user.gravatar_url,
         content=content,
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
-        title=node.title,
-        node_id=node._id,
+        node=node,
         url=node.absolute_url
     )
     sent_subscribers = notify(uid=node._id, event="comments", **context)

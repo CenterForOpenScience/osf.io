@@ -11,8 +11,8 @@ from website.util import web_url_for
 
 LOCALTIME_FORMAT = '%H:%M on %A, %B %d %Z'
 EMAIL_SUBJECT_MAP = {
-    'comments': '${commenter.fullname} commented on "${title}".',
-    'comment_replies': '${commenter.fullname} replied to your comment on "${title}".'
+    'comments': '${user.fullname} commented on "${title}".',
+    'comment_replies': '${user.fullname} replied to your comment on "${title}".'
 }
 
 
@@ -22,28 +22,31 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     :param uid: id of the event owner (Node or User)
     :param event: name of notification event (e.g. 'comments')
     :param context: context variables for email template
+        See notify for specifics
     :return:
     """
     template = event + '.html.mako'
+    node = context.get('node')
+    context['title'] = node.title
     subject = Template(EMAIL_SUBJECT_MAP[event]).render(**context)
 
     for user_id in subscribed_user_ids:
-        user = website_models.User.load(user_id)
-        email = user.username
-        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
+        recipient = website_models.User.load(user_id)
+        email = recipient.username
+        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), recipient)
         message = mails.render_message(template, **context)
 
-        if context.get('commenter')._id != user._id:
+        if context.get('user')._id != recipient._id:
             mails.send_mail(
                 to_addr=email,
                 mail=mails.TRANSACTIONAL,
                 mimetype='html',
-                name=user.fullname,
-                node_id=context.get('node_id'),
-                node_title=context.get('title'),
+                name=recipient.fullname,
+                node_id=node._id,
+                node_title=node.title,
                 subject=subject,
                 message=message,
-                url=get_settings_url(uid, user)
+                url=get_settings_url(uid, recipient)
             )
 
 
@@ -57,15 +60,15 @@ def email_digest(subscribed_user_ids, uid, event, **context):
     node_lineage_ids = get_node_lineage(node) if node else []
 
     for user_id in subscribed_user_ids:
-        user = website_models.User.load(user_id)
-        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), user)
+        recipient = website_models.User.load(user_id)
+        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), recipient)
         message = mails.render_message(template, **context)
 
-        if context.get('commenter')._id != user._id:
+        if context.get('user')._id != recipient._id:
             digest = NotificationDigest(
                 timestamp=context.get('timestamp'),
                 event=event,
-                user_id=user._id,
+                user_id=recipient._id,
                 message=message,
                 node_lineage=node_lineage_ids
             )
@@ -79,6 +82,19 @@ EMAIL_FUNCTION_MAP = {
 
 
 def notify(uid, event, **context):
+    """
+    :param uid:
+    :param event:
+    :param context: kwarg
+        optional:
+            target_user: used for comment_replies (python)
+            others specific to templates.
+        needed:
+            user: the user who changes or comments (python)
+            timestamp: time from action (python)
+            node: node where the change is made (python)
+    :return:
+    """
     node_subscribers = []
     subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
 
@@ -89,9 +105,9 @@ def notify(uid, event, **context):
             node_subscribers.extend(subscribed_users)
 
             if subscribed_users and notification_type != 'none':
-                for user in subscribed_users:
-                    event = 'comment_replies' if context.get('target_user') == user else event
-                    send([user._id], notification_type, uid, event, **context)
+                for recipient in subscribed_users:
+                    event = 'comment_replies' if context.get('target_user') == recipient else event
+                    send([recipient._id], notification_type, uid, event, **context)
 
     return check_parent(uid, event, node_subscribers, **context)
 

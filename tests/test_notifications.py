@@ -828,8 +828,8 @@ class TestSendEmails(OsfTestCase):
     @mock.patch('website.notifications.emails.send')
     def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_send, mock_send_mail):
         user = factories.UserFactory()
-        sent_subscribers = emails.notify(self.project._id, 'comments', commenter=self.project.creator, target_user=self.project.creator)
-        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', commenter=self.project.creator, target_user=self.project.creator)
+        sent_subscribers = emails.notify(self.project._id, 'comments', user=self.project.creator, target_user=self.project.creator)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', user=self.project.creator, target_user=self.project.creator)
         assert_false(mock_send_mail.called)
 
     @mock.patch('website.notifications.emails.send')
@@ -957,7 +957,7 @@ class TestSendEmails(OsfTestCase):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
     #                 nodeType='project',
     #                 timestamp=datetime.datetime.utcnow(),
-    #                 commenter=self.project.creator,
+    #                 user=self.project.creator,
     #                 gravatar_url=self.user.gravatar_url,
     #                 content='',
     #                 parent_comment='',
@@ -976,18 +976,18 @@ class TestSendEmails(OsfTestCase):
             subscribed_users, self.project._id, 'comments',
             nodeType='project',
             timestamp=timestamp,
-            commenter=self.project.creator,
+            user=self.project.creator,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
             title=self.project.title,
-            node_id=self.project._id,
+            node=self.project,
             url=self.project.absolute_url,
         )
         subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
             nodeType='project',
             timestamp=timestamp,
-            commenter=self.project.creator,
+            user=self.project.creator,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -998,7 +998,7 @@ class TestSendEmails(OsfTestCase):
             'comments.html.mako',
             nodeType='project',
             timestamp=timestamp,
-            commenter=self.project.creator,
+            user=self.project.creator,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -1026,7 +1026,7 @@ class TestSendEmails(OsfTestCase):
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            commenter=self.project.creator,
+                            user=self.project.creator,
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
@@ -1042,7 +1042,7 @@ class TestSendEmails(OsfTestCase):
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             nodeType='project',
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            commenter=self.user,
+                            user=self.user,
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
