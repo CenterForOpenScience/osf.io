@@ -253,10 +253,16 @@ function moveItem(to, from, conflict) {
             from.data.status = undefined;
             from.notify.update('Successfully moved.', 'success', 1, 1000);
         }
+        if (xhr.status === 200) {
+            to.children.forEach(function(child) {
+                if (child.data.name === from.data.name && child.id !== from.id) {
+                    child.removeSelf();
+                }
+            });
+        }
+
         inheritFromParent(from, from.parent());
         tb.redraw();
-
-        //TODO potentially remove duplicates
     }).fail(function() {
         from.move(ogParent);
         from.data.status = undefined;
