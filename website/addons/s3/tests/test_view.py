@@ -408,7 +408,7 @@ class TestCreateBucket(OsfTestCase):
         mock_make.return_value = True
         mock_dropdown.return_value = ['mybucket']
         url = self.project.api_url_for('create_new_bucket')
-        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth)
 
         assert_equals(ret.status_int, http.OK)
 
