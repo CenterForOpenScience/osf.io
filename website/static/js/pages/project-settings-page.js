@@ -41,7 +41,7 @@ function fixAffixWidth() {
 $(document).ready(function() {
 
     $(window).resize(function (){ fixAffixWidth(); });
-    // $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
+    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
