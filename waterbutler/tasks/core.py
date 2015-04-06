@@ -5,6 +5,12 @@ from waterbutler.tasks import app
 
 
 def ensure_event_loop():
+    """Ensure the existance of an eventloop
+    Useful for contexts where get_event_loop() may
+    raise an exception.
+    :returns: The new event loop
+    :rtype: BaseEventLoop
+    """
     try:
         return asyncio.get_event_loop()
     except AssertionError:
@@ -20,6 +26,9 @@ def __coroutine_unwrapper(func, *args, **kwargs):
 
 
 def backgrounded(func, *args, **kwargs):
+    """Runs the given function with the given arguments in
+    a background thread
+    """
     loop = asyncio.get_event_loop()
     if asyncio.iscoroutinefunction(func):
         args = (func, ) + args
@@ -32,6 +41,10 @@ def backgrounded(func, *args, **kwargs):
 
 
 def celery_task(*args, **kwargs):
+    """A wrapper around Celery.task.
+    When the wrapped method is called it will be called using
+    Celery's Task.delay function and run in a background thread
+    """
     func = app.task(*args, **kwargs)
 
     @asyncio.coroutine
