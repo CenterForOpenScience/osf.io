@@ -95,7 +95,7 @@ def serialize_settings(node_settings, current_user):
         path = node_settings.folder_path
         if path is not None:
             ret['currentPath'] = '/' + path.lstrip('/')
-            ret['currentFolder'] = '/ (Full Google Drive)' if path == '/' else '/' + path
+            ret['currentFolder'] = '/ Full Google Drive' if path == '/' else '/' + path
 
         ret['ownerName'] = user_settings.owner.fullname
         ret['urls']['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)

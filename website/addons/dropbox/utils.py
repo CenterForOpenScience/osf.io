@@ -44,7 +44,7 @@ class DropboxNodeLogger(object):
             new NodeLog.
         """
         if self.node.get_addon('dropbox', deleted=True).folder == '/':
-            folder = '/(Full DropBox)'
+            folder = '/ Full DropBox'
         else:
             folder = self.node.get_addon('dropbox', deleted=True).folder
         params = {
