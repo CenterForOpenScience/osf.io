@@ -29,6 +29,7 @@ class S3Path(utils.WaterButlerPath):
 class S3Provider(provider.BaseProvider):
     """Provider for the Amazon's S3
     """
+    NAME = 's3'
 
     def __init__(self, auth, credentials, settings):
         """
@@ -57,9 +58,10 @@ class S3Provider(provider.BaseProvider):
         """Copy key from one S3 bucket to another. The credentials specified in
         `dest_provider` must have read access to `source.bucket`.
         """
-        source_path = S3Path(source_options['path'])
         dest_path = S3Path(dest_options['path'])
+        source_path = S3Path(source_options['path'])
         dest_key = dest_provider.bucket.new_key(dest_path.path)
+        exists = yield from dest_provider.exists(**dest_options)
         # ensure no left slash when joining paths
         source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'].lstrip('/'))
         headers = {'x-amz-copy-source': source_path}
@@ -75,7 +77,7 @@ class S3Provider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.IntraCopyError,
         )
-        return (yield from dest_provider.metadata(dest_options['path']))
+        return (yield from dest_provider.metadata(dest_options['path'])), not exists
 
     @asyncio.coroutine
     def download(self, path, accept_url=False, version=None, **kwargs):
