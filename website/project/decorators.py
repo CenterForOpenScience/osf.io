@@ -168,7 +168,7 @@ def must_have_addon(addon_name, model):
             else:
                 raise HTTPError(http.BAD_REQUEST)
 
-            addon = owner.get_addon(addon_name)
+            addon = owner.get_or_add_addon(addon_name)
             if addon is None:
                 raise HTTPError(http.BAD_REQUEST)
 
