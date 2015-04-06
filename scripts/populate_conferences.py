@@ -209,6 +209,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'SEP2015': {
+        'name': 'Society of Experimental Psychologists Meeting 2015',
+        'info_url': 'http://faculty.virginia.edu/Society_of_Experimental_Psychologists/',
+        'logo_url': 'http://www.sepsych.org/nav/images/SEP-header.gif',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 
 }
 

@@ -95,6 +95,7 @@ def serialize_urls(node_settings):
         'getStudies': node.api_url_for('dataverse_get_studies'),
         'studyPrefix': 'http://dx.doi.org/',
         'dataversePrefix': 'http://{0}/dvn/dv/'.format(HOST),
+        'settings': web_url_for('user_addons'),
     }
     return urls
 
