@@ -109,7 +109,7 @@ class ZoteroViewsTestCase(OsfTestCase):
 
     def test_set_auth(self):
 
-        res = self.app.post_json(
+        res = self.app.put_json(
             self.project.api_url_for('zotero_add_user_auth'),
             {
                 'external_account_id': self.account._id,

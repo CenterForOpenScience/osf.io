@@ -54,7 +54,7 @@ describe('CitationsNodeConfig', () => {
                     .always(function() {
                         vm.fetchAccounts()
                             .done(function(fetched) {
-                                assert.deepEqual(fetched, endpoints[0].response);
+                                assert.deepEqual(fetched, endpoints[0].response.accounts);
                                 done();
                             });
                     });
@@ -121,7 +121,7 @@ describe('CitationsNodeConfig', () => {
                 importAuthUrl = faker.internet.ip();
                 data = testUtils.makeFakeData();
                 data.urls.importAuth = importAuthUrl;
-                stub = sinon.stub($osf, 'postJSON', function() {
+                stub = sinon.stub($osf, 'putJSON', function() {
                     var ret = $.Deferred();
                     ret.resolve({
                         result: data
@@ -130,9 +130,9 @@ describe('CitationsNodeConfig', () => {
                 });
             });
             after(() => {
-                $osf.postJSON.restore();
+                $osf.putJSON.restore();
             });        
-            it('makes a POST request to the the "importAuth" url passed in settings sending the passed account_id as data', (done) => {
+            it('makes a PUT request to the the "importAuth" url passed in settings sending the passed account_id as data', (done) => {
                 vm.updateFromData(data)
                     .always(function() {
                         var account_id = faker.finance.account();
