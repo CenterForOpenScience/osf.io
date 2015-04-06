@@ -402,6 +402,9 @@ class User(GuidStoredObject, AddonModelMixin):
     def is_authenticated(self):  # Needed for django compat
         return True
 
+    def is_anonymous(self):
+        return False
+
     @classmethod
     def create_unregistered(cls, fullname, email=None):
         """Create a new unregistered user.
