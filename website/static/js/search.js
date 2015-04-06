@@ -17,19 +17,29 @@ $.ajaxSetup({
 
 //https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
 
-var Category = function(name, count, display) {
+var SubCategory = function(cat, url, aliases) {
+    var self = this;
+    self.name = Object.keys(cat)[0];
+    self.count = cat[self.name];
+    self.display = aliases[self.name];
+    self.url = url + '?category=' + self.name;
+};
+
+var Category = function(name, count, display, children, aliases) {
     var self = this;
 
     self.name = name;
     self.count = count;
     self.display = display;
-
-    self.url = ko.computed(function() {
-        if (self.name === 'total') {
-            return '';
-        }
-        return self.name + '/';
+    self.url = '';
+    if (self.name !== 'total') {
+        self.url = self.name + '/';
+    }
+    
+    self.children = $.map((children || []), function(c) { 
+        return new SubCategory(c, self.url, aliases);
     });
+
 };
 
 var Tag = function(tagInfo) {
@@ -230,11 +240,11 @@ ViewModel.prototype.updateFromSearch = function(noPush, validate, data) {
 
     //Load our categories
     var categories = data.counts;
-    $.each(categories, function(key, value) {
-        if (value === null) {
-            value = 0;
+    $.each(categories, function(key, cat) {
+        if (cat.value === null) {
+            cat.value = 0;
         }
-        self.categories.push(new Category(key, value, data.typeAliases[key]));
+        self.categories.push(new Category(key, cat.value, data.typeAliases[key], cat.subcategories, data.typeAliases));
     });
 
     self.categories(self.categories().sort(self.sortCategories));
@@ -274,7 +284,7 @@ ViewModel.prototype.search = function(noPush, validate) {
     var self = this;
 
     var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
-    var url = self.queryUrl + self.category().url();
+    var url = self.queryUrl + self.category().url;
 
     $osf.postJSON(url, jsonData)
         .done([
@@ -355,7 +365,7 @@ ViewModel.prototype.pushState = function() {
 
     var url = '?q=' + self.query();
 
-    if (self.category().name !== undefined && self.category().url() !== '') {
+    if (self.category().name !== undefined && self.category().url !== '') {
         state.filter = self.category().name;
         url += ('&filter=' + self.category().name);
     }
@@ -371,9 +381,9 @@ ViewModel.prototype.pushState = function() {
 ViewModel.prototype.setCategory = function(cat) {
     var self = this;
     if (cat !== undefined && cat !== null && cat !== '') {
-        self.category(new Category(cat, 0, cat.charAt(0).toUpperCase() + cat.slice(1) + 's'));
+        self.category(new Category(cat, 0, cat.charAt(0).toUpperCase() + cat.slice(1) + 's', []));
     } else {
-        self.category(new Category('total', 0, 'Total'));
+        self.category(new Category('total', 0, 'Total', []));
     }
 };
 

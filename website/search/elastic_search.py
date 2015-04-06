@@ -30,12 +30,21 @@ logger = logging.getLogger(__name__)
 
 # These are the doc_types that exist in the search database
 ALIASES = {
-    'node': 'Nodes',
     'project': 'Projects',
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total'
+    'total': 'Total',
+    '': 'Uncategorized',
+    'project': 'Project',
+    'hypothesis': 'Hypothesis',
+    'methods and measures': 'Methods and Measures',
+    'procedure': 'Procedure',
+    'instrumentation': 'Instrumentation',
+    'data': 'Data',
+    'analysis': 'Analysis',
+    'communication': 'Communication',
+    'other': 'Other',
 }
 
 INDEX = settings.ELASTIC_INDEX
@@ -76,22 +85,63 @@ def requires_search(func):
         raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
     return wrapped
 
+def get_subcategory_counts(subcats):
+    if not subcats:
+        return []
+    return [{cat['key']: cat['doc_count']} for cat in subcats['buckets']]
+
 
 @requires_search
 def get_counts(count_query, clean=True):
-    count_query['aggregations'] = {
-        'counts': {
+    category_agg = {
+        'categories': {
             'terms': {
-                'field': '_type',
+                'field': 'category'
+            }
+        }
+    }
+    aggs = {
+        'project': {
+            'filter': {
+                'not': {
+                    'term': {
+                        'is_registration': True
+                    }
+                }
+            },
+            'aggs': category_agg
+        },
+        'registration': {
+            'filter': {
+                'term': {
+                    'is_registration': True
+                }
+            },
+            'aggs': category_agg
+        },
+        'user': {
+            'filter': {
+                'term': {
+                    '_type': 'user'
+                }
             }
         }
     }
 
+    count_query['aggs'] = aggs
+
     res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+    counts = {
+        key: {
+            'value': value['doc_count'],
+            'subcategories': get_subcategory_counts(value.get('categories')) or [],
+        }
+        for key, value in res['aggregations'].iteritems()
+    }
 
-    counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
-
-    counts['total'] = sum([val for val in counts.values()])
+    counts['total'] = {
+        'value': sum([val['value'] for val in counts.values()])
+    }
     return counts
 
 
@@ -135,6 +185,9 @@ def search(query, index=INDEX, doc_type='_all'):
 
     tags = get_tags(tag_query, index)
     counts = get_counts(count_query, index)
+
+    if doc_type in ('project', 'component'):
+        doc_type = 'node'
 
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)

@@ -11,18 +11,14 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-
-                                    <!-- ko if: $parent.category().name === name -->
-                                            <li class="active">
-                                                <a data-bind="click: $parent.filter">{{ display }}<span class="badge pull-right">{{count}}</span></a>
-                                            </li>
-                                        <!-- /ko -->
-                                        <!-- ko if: $parent.category().name !== name -->
-                                            <li>
-                                                <a data-bind="click: $parent.filter">{{ display }}<span class="badge pull-right">{{count}}</span></a>
-                                            </li>
-                                        <!-- /ko -->
-
+                                  <li data-bind="css: {active: $parent.category().name === name}">
+                                    <a data-bind="click: $parent.filter">{{ display }}<span class="badge pull-right">{{count}}</span></a>
+                                    <ul class="nav nav-pill" data-bind="foreach: children">
+                                      <li data-bind="">
+                                        <a data-bind="click: $root.filter"> {{ display }}<span class="badge pull-right">{{count}}</span></a>
+                                      </li>
+                                    </ul>
+                                  </li>
                                 </ul>
                             </div>
                         </div>
