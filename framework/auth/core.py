@@ -628,14 +628,18 @@ class User(GuidStoredObject, AddonModelMixin):
         """Remove a confirmed email"""
         if email in self.emails:
             self.emails.remove(email)
-            mails.send_mail(self.username,
-                            mails.REMOVED_EMAIL,
-                            user=self,
-                            removed_email=email)
-            mails.send_mail(email,
-                            mails.REMOVED_EMAIL,
-                            user=self,
-                            removed_email=email)
+            signals.user_email_removed.send(self, email=email)
+
+    @signals.user_email_removed.connect
+    def _send_email_removal_confirmations(self, email):
+        mails.send_mail(to_addr=self.username,
+                        mail=mails.REMOVED_EMAIL,
+                        user=self,
+                        removed_email=email)
+        mails.send_mail(to_addr=email,
+                        mail=mails.REMOVED_EMAIL,
+                        user=self,
+                        removed_email=email)
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
