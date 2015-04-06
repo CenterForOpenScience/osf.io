@@ -7,6 +7,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytz
 import datetime
 import urlparse
+import itsdangerous
 from dateutil import parser
 
 from modularodm import Q
