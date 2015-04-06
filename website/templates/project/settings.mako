@@ -16,7 +16,7 @@
 </div>
 
 <div class="row project-page">
-    <div class="col-sm-3">
+    <div class="col-sm-3 affix-parent">
         <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 % if 'admin' in user['permissions'] and not node['is_registration']:
