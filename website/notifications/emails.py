@@ -16,9 +16,9 @@ EMAIL_SUBJECT_MAP = {
 }
 
 
-def email_transactional(subscribed_user_ids, uid, event, **context):
+def email_transactional(recipient_ids, uid, event, user, node, timestamp, **context):
     """
-    :param subscribed_user_ids: mod-odm User object ids
+    :param recipient_ids: mod-odm User object ids
     :param uid: id of the event owner (Node or User)
     :param event: name of notification event (e.g. 'comments')
     :param context: context variables for email template
@@ -26,17 +26,16 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
     :return:
     """
     template = event + '.html.mako'
-    node = context.get('node')
     context['title'] = node.title
     subject = Template(EMAIL_SUBJECT_MAP[event]).render(**context)
 
-    for user_id in subscribed_user_ids:
+    for user_id in recipient_ids:
         recipient = website_models.User.load(user_id)
         email = recipient.username
-        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), recipient)
+        context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
-        if context.get('user')._id != recipient._id:
+        if user._id != recipient._id:
             mails.send_mail(
                 to_addr=email,
                 mail=mails.TRANSACTIONAL,
@@ -50,21 +49,20 @@ def email_transactional(subscribed_user_ids, uid, event, **context):
             )
 
 
-def email_digest(subscribed_user_ids, uid, event, **context):
+def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
     """ Render the email message from context vars and store in the
         NotificationDigest objects created for each subscribed user.
     """
     template = event + '.html.mako'
 
-    node = website_models.Node.load(uid)
     node_lineage_ids = get_node_lineage(node) if node else []
 
-    for user_id in subscribed_user_ids:
+    for user_id in recipient_ids:
         recipient = website_models.User.load(user_id)
-        context['localized_timestamp'] = localize_timestamp(context.get('timestamp'), recipient)
+        context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
-        if context.get('user')._id != recipient._id:
+        if user._id != recipient._id:
             digest = NotificationDigest(
                 timestamp=context.get('timestamp'),
                 event=event,
@@ -81,7 +79,7 @@ EMAIL_FUNCTION_MAP = {
 }
 
 
-def notify(uid, event, **context):
+def notify(uid, event, user, node, timestamp, **context):
     """
     :param uid:
     :param event:
@@ -107,7 +105,7 @@ def notify(uid, event, **context):
             if subscribed_users and notification_type != 'none':
                 for recipient in subscribed_users:
                     event = 'comment_replies' if context.get('target_user') == recipient else event
-                    send([recipient._id], notification_type, uid, event, **context)
+                    send([recipient._id], notification_type, uid, event, user, node, timestamp, **context)
 
     return check_parent(uid, event, node_subscribers, **context)
 
@@ -141,7 +139,7 @@ def check_parent(uid, event, node_subscribers, **context):
     return node_subscribers
 
 
-def send(subscribed_user_ids, notification_type, uid, event, **context):
+def send(subscribed_user_ids, notification_type, uid, event, user, node, timestamp, **context):
     """Dispatch to the handler for the provided notification_type"""
 
     if notification_type == 'none':
@@ -152,6 +150,9 @@ def send(subscribed_user_ids, notification_type, uid, event, **context):
             subscribed_user_ids=subscribed_user_ids,
             uid=uid,
             event=event,
+            user=user,
+            node=node,
+            timestamp=timestamp,
             **context
         )
     except KeyError:
