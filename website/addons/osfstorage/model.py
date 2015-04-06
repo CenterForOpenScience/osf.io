@@ -236,8 +236,6 @@ class OsfStorageFileNode(StoredObject):
 
     @utils.must_be('file')
     def update_version_metadata(self, location, metadata):
-        assert self.is_file, 'Must be a file to perform this action'
-
         for version in reversed(self.versions):
             if version.location == location:
                 version.update_metadata(metadata)
