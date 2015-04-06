@@ -210,7 +210,6 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
             return 'All Documents'
         else:
             folder = self.api._folder_metadata(self.mendeley_list_id)
-            print folder.name
             return folder.name
 
     @property

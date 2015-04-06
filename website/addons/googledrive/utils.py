@@ -5,9 +5,6 @@ import os
 import logging
 from urllib import quote
 
-from website.addons.citations import utils
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -59,17 +56,6 @@ class GoogleDriveNodeLogger(object):
         )
         if save:
             self.node.save()
-
-
-def user_accounts(user):
-    """ Gets a list of the accounts authorized by 'user' """
-    return {
-        'accounts': [
-            utils.serialize_account(each)
-            for each in user.external_accounts
-            if each.provider == 'googledrive'
-        ]
-    }
 
 
 def build_googledrive_urls(item, node, path):

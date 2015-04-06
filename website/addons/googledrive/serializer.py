@@ -1,8 +1,8 @@
-from website.addons.base.serializer import GenericAddonSerializer
+from website.addons.base.serializer import OAuthAddonSerializer
 from website.addons.googledrive.exceptions import ExpiredAuthError
 
 
-class GoogleDriveSerializer(GenericAddonSerializer):
+class GoogleDriveSerializer(OAuthAddonSerializer):
 
     @property
     def addon_serialized_urls(self):
