@@ -2596,3 +2596,9 @@ span#profileFullname{
 .m-xl {
     margin: 50px;
 }
+
+@media (max-width: 768px) {
+    .affix {
+        position: relative;
+    }
+}
