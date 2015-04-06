@@ -730,10 +730,10 @@ class TestUser(OsfTestCase):
         assert_equal(self.user.n_projects_in_common(user2), 1)
         assert_equal(self.user.n_projects_in_common(user3), 0)
 
-    @mock.patch('framework.auth.core.itsdangerous')
-    def test_user_get_cookie(self, mock_signer):
-        mock_signer.Signer().sign.side_effect = lambda x: x
+    def test_user_get_cookie(self):
         user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
         session = Session(data={
             'auth_user_id': user._id,
             'auth_user_username': user.username,
@@ -741,29 +741,25 @@ class TestUser(OsfTestCase):
         })
         session.save()
 
-        assert_equal(user.get_cookie('foo'), session._id)
-        mock_signer.Signer.assert_called_with('foo')
-        assert_is(mock_signer.Signer().sign.called, True)
+        assert_equal(signer.unsign(user.get_cookie(super_secret_key)), session._id)
 
-    @mock.patch('framework.auth.core.itsdangerous')
-    def test_user_get_cookie_no_session(self, mock_signer):
+    def test_user_get_cookie_no_session(self):
         user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
         assert_equal(
             0,
             Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
         )
-        mock_signer.Signer().sign.side_effect = lambda x: x
 
-        cookie = user.get_cookie('foo')
+        cookie = user.get_cookie(super_secret_key)
 
         session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
 
-        assert_equal(session._id, cookie)
+        assert_equal(session._id, signer.unsign(cookie))
         assert_equal(session.data['auth_user_id'], user._id)
         assert_equal(session.data['auth_user_username'], user.username)
         assert_equal(session.data['auth_user_fullname'], user.fullname)
-        mock_signer.Signer.assert_called_with('foo')
-        assert_is(mock_signer.Signer().sign.called, True)
 
 
 class TestUserParse(unittest.TestCase):
