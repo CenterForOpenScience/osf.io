@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import mock
+import unittest
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
