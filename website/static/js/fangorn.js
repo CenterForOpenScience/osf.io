@@ -202,9 +202,9 @@ function checkMoveConflicts(tb, item, folder, cb) {
                 m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
                 m('p', 'Do you want to replace it?')
             ]), m('', [
-                m('button.btn.btn-md.btn-primary.m-r-sm', {onclick: cb.bind('keep')}, 'Keep Both'),
-                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: tb.modal.dismiss.bind()}, 'Cancel'),
-                m('button.btn.btn-md.btn-warn', {onclick: cb.bind('replace')},'Replace'),
+                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: tb.modal.dismiss.bind(tb)}, 'Cancel'),
+                m('button.btn.btn-md.btn-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
