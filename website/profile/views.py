@@ -29,7 +29,7 @@ from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
-
+from website.addons.base.utils import serialize_addon_config
 
 logger = logging.getLogger(__name__)
 
@@ -214,37 +214,22 @@ def user_addons(auth, **kwargs):
 
     ret = {}
 
-    addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
-    addons_enabled = []
-    addon_enabled_settings = []
-    user_addons_enabled = {}
+    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
+    addon_settings = []
+    for addon_config in sorted(accounts_addons, key=lambda cfg: cfg.full_name.lower()):
+        short_name = addon_config.short_name
+        config = serialize_addon_config(addon_config)
+        config.update({
+            'user_settings': user.get_addon(short_name)
+        })
+        addon_settings.append(config)
 
-    # sort addon_enabled_settings alphabetically by category
-    for category in settings.ADDON_CATEGORIES:
-        for addon_config in addons:
-            if addon_config.categories[0] == category:
-                addons_enabled.append(addon_config.short_name)
-                if 'user' in addon_config.configs:
-                    short_name = addon_config.short_name
-                    addon_enabled_settings.append(short_name)
-                    user_addons_enabled[addon_config.short_name] = user.get_addon(short_name).to_json(user)
-                    # inject the MakoTemplateLookup into the template context
-                    # TODO inject only short_name and render fully client side
-                    user_addons_enabled[short_name]['template_lookup'] = addon_config.template_lookup
-                    user_addons_enabled[short_name]['user_settings_template'] = os.path.basename(addon_config.user_settings_template)
+    ret.update({
+        'addon_settings': addon_settings,
+    })
 
-    ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = [
-        addon
-        for addon in sorted(settings.ADDONS_AVAILABLE)
-        if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
-    ]
-    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
-    ret['user_addons_enabled'] = user_addons_enabled
-    ret['addon_js'] = collect_user_config_js(user.get_addons())
+    ret['addon_enabled_settings'] = [addon.short_name for addon in accounts_addons]
+    ret['addon_js'] = collect_user_config_js(accounts_addons)
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return ret
 
@@ -264,7 +249,7 @@ def collect_user_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'user-cfg.js')
+        js_path = paths.resolve_addon_path(addon, 'user-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
