@@ -223,12 +223,13 @@ function onItemDrop(e) {
     }
 
     $.each(items, function(index, item) {
-        moveItem.call(tb, folder, item);
+        checkMoveConflicts(tb, item, folder, moveItem.bind(tb, folder, item));
     });
 }
 
-function moveItem(to, from) {
+function moveItem(to, from, conflict) {
     var tb = this;
+    tb.modal.dismiss();
     var ogParent = from.parentID;
     if (to.id === ogParent) return;
 
@@ -256,9 +257,7 @@ function moveItem(to, from) {
         tb.redraw();
 
         //TODO potentially remove duplicates
-        from.notify.update('Successfully moved.', 'success', 1, 1000);
     }).fail(function() {
-        console.log(arguments);
         from.move(ogParent);
         from.data.status = undefined;
         $osf.growl('Error', 'Move failed.');
