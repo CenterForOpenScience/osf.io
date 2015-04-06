@@ -140,7 +140,7 @@ class TestGoogleDriveProvider(OsfTestCase):
     def test_handle_callback(self, mock_client):
         fake_response = {'access_token': 'abc123'}
         fake_info = mock.Mock()
-        fake_info = {'sub': '12345', 'display_name': 'fakename', 'profile': 'fakeUrl'}
+        fake_info = {'sub': '12345', 'name': 'fakename', 'profile': 'fakeUrl'}
         mock_client.return_value = fake_info
         res = self.provider.handle_callback(fake_response)
         assert_equal(res['provider_id'], '12345')
