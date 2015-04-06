@@ -46,7 +46,7 @@ class GoogleDrivePath(utils.WaterButlerPath):
 
     @property
     def parts(self):
-        return [parse.unquote(x) for x in self._parts]
+        return [parse.unquote(x) for x in self._parts][1:]
 
     @property
     def name(self):
