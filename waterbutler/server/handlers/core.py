@@ -164,6 +164,7 @@ class BaseCrossProviderHandler(BaseHandler):
             provider=provider,
             **kwargs
         )
+        self.auth = payload
         self.callback_url = payload.pop('callback_url')
         return utils.make_provider(provider, **payload)
 
@@ -181,3 +182,30 @@ class BaseCrossProviderHandler(BaseHandler):
             self._json = None
 
         return self._json
+
+    @utils.async_retry(retries=0, backoff=5)
+    def _send_hook(self, action, path):
+        payload = {
+            'action': action,
+            'source': {
+                'path': self.json['source']['path'],
+                'provider': self.source_provider.NAME,
+            },
+            'destination': {
+                'path': path,
+                'provider': self.destination_provider.NAME,
+            },
+            'auth': self.auth['auth'],
+            'time': time.time() + 60
+        }
+        message, signature = signer.sign_payload(payload)
+        resp = aiohttp.request(
+            'PUT',
+            self.callback_url,
+            data=json.dumps({
+                'payload': message.decode(),
+                'signature': signature,
+            }),
+            headers={'Content-Type': 'application/json'},
+        )
+        return resp
