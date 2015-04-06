@@ -112,7 +112,7 @@ class GoogleDriveProvider(ExternalProvider):
         info = client.userinfo(response['access_token'])
         return {
             'provider_id': info['sub'],
-            'display_name': info['display_name'],
+            'display_name': info['name'],
             'profile_url': info['profile']
         }
 
@@ -129,6 +129,23 @@ class GoogleDriveProvider(ExternalProvider):
             return token
         else:
             exceptions.AddonError("Refresh Token is not Obtained")
+
+    def fetch_access_token(self):
+        self.refresh_access_token()
+        return self.account.oauth_key
+
+    def refresh_access_token(self, force=False):
+        if self._needs_refresh() or force:
+            token = self._refresh_token(self.account.oauth_key, self.account.refresh_token)
+            self.account.oauth_key = token['access_token']
+            self.account.refresh_token = token['refresh_token']
+            self.account.expires_at = datetime.utcfromtimestamp(token['expires_at'])
+            self.account.save()
+
+    def _needs_refresh(self):
+        if self.account.expires_at is None:
+            return False
+        return (self.account.expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
 
 
 class GoogleDriveUserSettings(AddonOAuthUserSettingsBase):
@@ -271,21 +288,7 @@ class GoogleDriveNodeSettings(AddonOAuthNodeSettingsBase):
         )
 
     def fetch_access_token(self):
-        self.refresh_access_token()
-        return self.external_account.oauth_key
-
-    def refresh_access_token(self, force=False):
-        if self._needs_refresh() or force:
-            token = self.api._refresh_token(self.external_account.oauth_key, self.external_account.refresh_token)
-            self.external_account.oauth_key = token['access_token']
-            self.external_account.refresh_token = token['refresh_token']
-            self.external_account.expires_at = datetime.utcfromtimestamp(token['expires_at'])
-            self.save()
-
-    def _needs_refresh(self):
-        if self.external_account.expires_at is None:
-            return False
-        return (self.external_account.expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
+        return self.api.fetch_access_token()
 
     def find_or_create_file_guid(self, path):
         path = os.path.join(self.folder_path, path.lstrip('/'))
