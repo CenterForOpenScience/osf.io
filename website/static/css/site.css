@@ -80,7 +80,7 @@ body {
     position: fixed;
     top: 70px;
 }
-.gs-sidebar.affix-bottom {
+.affix-bottom {
     position: relative;
 }
 
