@@ -34,12 +34,15 @@ def project_tag(tag, auth, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def project_addtag(auth, **kwargs):
-    print("hello megan")
     tag = clean_tag(kwargs['tag'])
     node = kwargs['node'] or kwargs['project']
     if tag:
         try:
             node.add_tag(tag=tag, auth=auth)
+
+            if kwargs is not None:
+                for key, value in kwargs.iteritems():
+                    print("%s == %s" %(key,value))
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
@@ -64,10 +67,15 @@ def project_removetag(auth, **kwargs):
 def file_addtag(auth, **kwargs):
 
     tag = clean_tag(kwargs['tag'])
-    node = kwargs['node'] or kwargs['project']
+    if kwargs is not None:
+                for key, value in kwargs.iteritems():
+                    print("%s == %s" %(key,value))
+    file = kwargs['file']
+    #node = kwargs['node'] or kwargs['project']
     if tag:
         try:
-            node.add_tag(tag=tag, auth=auth)
+
+            file.add_tag(tag=tag, auth=auth)
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
@@ -79,9 +87,12 @@ def file_addtag(auth, **kwargs):
 def file_removetag(auth, **kwargs):
 
     tag = clean_tag(kwargs['tag'])
-    node = kwargs['node'] or kwargs['project']
+    file = kwargs['BaseFileObject']
+
+   # node = kwargs['node'] or kwargs['project']
 
     if tag:
-        node.remove_tag(tag=tag, auth=auth)
+        file.remove_tag(tag=tag, auth=auth)
         return {'status': 'success'}
+        print("REMOVING TAG**********")
 

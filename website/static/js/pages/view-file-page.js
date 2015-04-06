@@ -9,8 +9,9 @@ require('jquery-tagsinput');
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = 'file/addfiletag/' + tag + '/';
+            var url = nodeApiUrl + 'file/addfiletag/' + tag + '/';
             console.log(url)
+            console.log("Himica")
             var request = $.ajax({
                 url: url,
                 type: 'POST',
@@ -23,7 +24,7 @@ require('jquery-tagsinput');
             });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
+            var url = nodeApiUrl + 'file/removefiletag/' + tag + '/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',
