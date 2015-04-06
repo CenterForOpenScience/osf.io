@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib as http
-import os
 
 from dateutil.parser import parse as parse_date
 
@@ -29,7 +27,7 @@ from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
-from website.addons.base.utils import serialize_addon_config
+from website.addons.base import utils
 
 logger = logging.getLogger(__name__)
 
@@ -184,8 +182,11 @@ def user_profile(auth, **kwargs):
 @must_be_logged_in
 def user_account(auth, **kwargs):
     user = auth.user
+    user_addons = utils.get_addons_by_config_type('user', user)
+
     return {
         'user_id': user._id,
+        'addons': user_addons,
     }
 
 
@@ -214,20 +215,12 @@ def user_addons(auth, **kwargs):
 
     ret = {}
 
-    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
-    addon_settings = []
-    for addon_config in sorted(accounts_addons, key=lambda cfg: cfg.full_name.lower()):
-        short_name = addon_config.short_name
-        config = serialize_addon_config(addon_config)
-        config.update({
-            'user_settings': user.get_addon(short_name)
-        })
-        addon_settings.append(config)
-
+    addon_settings = utils.get_addons_by_config_type('accounts', user)
     ret.update({
         'addon_settings': addon_settings,
     })
 
+    accounts_addons = addon_settings.keys()
     ret['addon_enabled_settings'] = [addon.short_name for addon in accounts_addons]
     ret['addon_js'] = collect_user_config_js(accounts_addons)
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES

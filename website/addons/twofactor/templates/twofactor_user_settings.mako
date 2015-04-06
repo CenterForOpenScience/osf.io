@@ -1,5 +1,3 @@
-
-
 ## TODO: Load this as a dependency of twoFactoryUserConfig module w/ script.js
 <script type="text/javascript" src="/static/addons/twofactor/jquery.qrcode.min.js"></script>
 

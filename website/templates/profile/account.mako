@@ -38,6 +38,23 @@
                     </form>
                 </div>
             </div>
+            <div class="panel panel-default">
+              % for addon in addons:
+              ${render_user_settings(addon) }
+              % if not loop.last:
+              <hr />
+              % endif              
+              % endfor              
+            </div>
         </div>
     </div>
 </%def>
+
+<%def name="render_user_settings(config)">
+    <%
+       template = config['user_settings_template']
+       tpl = template.render(**config.user_settings)
+    %>
+    ${tpl}
+</%def>
+

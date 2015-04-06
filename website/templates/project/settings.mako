@@ -24,7 +24,6 @@
                 % endif
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
-                % endif
 
                 % if addon_enabled_settings:
                     <li><a href="#configureAddonsAnchor">Configure External Accounts</a></li>
