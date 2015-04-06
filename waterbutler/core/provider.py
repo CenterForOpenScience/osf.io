@@ -137,8 +137,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def exists(self, path, **kwargs):
         try:
             return (yield from self.metadata(path, **kwargs))
-        except exceptions.MetadataError:
-            return False
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
+        return False
 
     @asyncio.coroutine
     def handle_name_conflict(self, path, conflict='replace', **kwargs):
