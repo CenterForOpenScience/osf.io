@@ -223,7 +223,7 @@
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
-                    Delete after save
+                    Will be removed after Save
                 <!-- /ko -->
             <!-- /ko -->
 
