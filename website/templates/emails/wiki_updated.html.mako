@@ -9,10 +9,9 @@
                 <span class="person" style="font-weight: bold;">${commenter.fullname} </span>
                 ${message}
             </span>
-            <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">Version: ${version}</span>
         </td>
         <td width="25" style="text-align:center;border-collapse: collapse;font-size: 24px;border-left: 1px solid #ddd;">
-            <a href="${content}" style="margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">
+            <a href="${url}" style="margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">
                 &#10095;
             </a>
         </td>

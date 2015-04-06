@@ -56,34 +56,46 @@ def subscribe_on_write_permissions_revoked(node):
 
 # subscribes to project model wiki update
 @wiki_updated.connect
-def subscribe_wiki_updates(sender, node, user, version, page_name, rename=None, deleted=None):
+def subscribe_wiki_updates(name, node, user, action='changed', **kwargs):
+    """
+    :param name: name of the wiki (technically req by not anonymous)
+    :param node: project
+    :param user: user changing wikis
+    :param action: changed, renamed, deleted
+    :param kwargs:
+        new_name - if renamed
+        version - if changed
+    :return:
+    """
     w_url = furl(node.absolute_url)
-    # will pass this url when version is 1
-    w_url.path = build_wiki_url(node, page_name)
-    if version == 1:
-        message = 'added <strong>"{}"</strong>'.format(page_name)
-    elif version != 1:
-        # Sends link with compare
-        w_url.add({'view': str(version), 'compare': str(version - 1)})
-        message = 'changed <strong>"{}"</strong>'.format(page_name)
-    # replace message when rename is something other than None
-    if rename:
+    if action == "changed":
+        w_url.path = build_wiki_url(node, name)
+        version = kwargs.get('version')
+        if version == 1:
+            message = 'added <strong>"{}"</strong>'.format(name)
+        elif version != 1:
+            # Sends link with compare
+            w_url.add({'view': str(version), 'compare': str(version - 1)})
+            message = 'changed <strong>"{}"</strong> to version {}'\
+                .format(name, version)
+    elif action == "renamed":
         message = 'renamed <strong>"{}"</strong> to <strong>"{}"</strong>'\
-            .format(page_name, rename)
+            .format(name, kwargs.get('new_name'))
+        w_url.path = build_wiki_url(node, kwargs.get('new_name'))  # new wiki link
+    elif action == "deleted":
+        message = 'deleted <strong>"{}"</strong>'.format(name)
+        w_url.path = build_wiki_url(node, 'home')  # the wiki home
     context = dict(
         node_type=node.project_or_component,
         timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
         commenter=user,
         gravatar_url=user.gravatar_url,
-        content=w_url.url,
-        parent_comment="",
         title=node.title,
         message=message,
-        version=version,
         node_id=node._id,
-        url=node.absolute_url
+        url=w_url.url
     )
-    sent_subscribers = notify(uid=node._id, event="wiki_updated", **context)
+    notify(uid=node._id, event="wiki_updated", **context)
 
 
 def build_wiki_url(node, label, base=None, end=None):

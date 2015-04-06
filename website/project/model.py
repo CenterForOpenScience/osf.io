@@ -2293,8 +2293,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         new_page.save()
 
         wiki_updated.send(
-            "wiki " + name,
-            page_name=name,
+            name,
+            action="changed",
             version=version,
             user=auth.user,
             node=self
@@ -2370,12 +2370,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 del self.wiki_private_uuids[key]
 
         wiki_updated.send(
-            "wiki " + name,
-            page_name=name,
-            version=len(self.wiki_pages_versions[new_key]),
+            name,
             user=auth.user,
             node=self,
-            rename=new_name
+            action="renamed",
+            new_name=new_name
         )
 
         self.add_log(
@@ -2399,6 +2398,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+
+        wiki_updated.send(
+            name,
+            user=auth.user,
+            node=self,
+            action="deleted"
+        )
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
