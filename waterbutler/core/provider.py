@@ -108,9 +108,9 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, source_options, dest_options):
-        resp = yield from self.intra_copy(dest_provider, source_options, dest_options)
+        data, created = yield from self.intra_copy(dest_provider, source_options, dest_options)
         yield from self.delete(**source_options)
-        return resp
+        return data, created
 
     @asyncio.coroutine
     def copy(self, dest_provider, source_options, dest_options):
