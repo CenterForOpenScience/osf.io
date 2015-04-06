@@ -69,7 +69,7 @@ def _build_rendered_html(download_url, cache_path, temp_path, public_download_ur
         # Write out unavoidable errors
         rendered = e.renderable_error
     else:
-        with codecs.open(temp_path) as temp_file:
+        with codecs.open(temp_path, encoding='utf-8') as temp_file:
             # Try to render file
             try:
                 render_result = mfr.render(temp_file, src=public_download_url)
