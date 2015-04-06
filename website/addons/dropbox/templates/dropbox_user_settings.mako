@@ -8,13 +8,13 @@
             <span data-bind="if: userHasAuth() && loaded()">
                     authorized
                     <span data-bind="if: dropboxName()">by {{ dropboxName }}</span>
-                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
+                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             </span>
 
             <!-- Create Access Token Button -->
             <span data-bind="if: !userHasAuth() && loaded()">
                 <a data-bind="attr: {href: urls().create}"
-                   class="text-primary pull-right addon-auth">Create Access Token</a>
+                   class="text-primary pull-right addon-auth">Connect Account</a>
             </span>
         </small>
     </h4>

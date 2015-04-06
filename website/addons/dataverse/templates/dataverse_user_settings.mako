@@ -7,7 +7,7 @@
         <span data-bind="if: showDeleteAuth">
             <small class="authorized-by">
                 authorized by {{ dataverseUsername }}
-                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete Credentials</a>
+                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
 
             </small>
         </span>
