@@ -10,6 +10,7 @@ $(document).ready(function() {
         new fileBrowser(data);
     });
 
+    //TODO: Refactor to remove duplication with the wiki menu panel
     var panelToggle = $('.panel-toggle');
     var panelExpand = $('.panel-expand');
     $('.panel-collapse').on('click', function () {
