@@ -981,6 +981,8 @@ h1.unavailable {
     margin-top: -100px;
     padding-top: 100px;
     display: block;
+  z-index: -1;
+  position: relative;    
 }
 
 .anchor {
