@@ -173,21 +173,27 @@ class TestOsfstorageFileNode(StorageTestCase):
             self.node_settings.root_node.get_download_count()
         )
 
+    @unittest.skip
     def test_create_version(self):
         pass
 
+    @unittest.skip
     def test_update_version_metadata(self):
         pass
 
+    @unittest.skip
     def test_delete_folder(self):
         pass
 
+    @unittest.skip
     def test_delete_file(self):
         pass
 
+    @unittest.skip
     def test_undelete_folder(self):
         pass
 
+    @unittest.skip
     def test_undelete_file(self):
         pass
 
