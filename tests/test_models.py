@@ -742,7 +742,7 @@ class TestUser(OsfTestCase):
         })
         session.save()
 
-        assert_equal(signer.unsign(user.get_cookie(super_secret_key)), session._id)
+        assert_equal(signer.unsign(user.get_or_create_cookie(super_secret_key)), session._id)
 
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
@@ -753,7 +753,7 @@ class TestUser(OsfTestCase):
             Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
         )
 
-        cookie = user.get_cookie(super_secret_key)
+        cookie = user.get_or_create_cookie(super_secret_key)
 
         session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
 

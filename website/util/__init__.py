@@ -100,7 +100,7 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
     })
 
     if user:
-        url.args['cookie'] = user.get_cookie(settings.SECRET_KEY)
+        url.args['cookie'] = user.get_or_create_cookie()
     elif settings.COOKIE_NAME in request.cookies:
         url.args['cookie'] = request.cookies[settings.COOKIE_NAME]
 

@@ -375,13 +375,14 @@ class User(GuidStoredObject, AddonModelMixin):
         user.date_confirmed = user.date_registered
         return user
 
-    def get_cookie(self, secret):
+    def get_or_create_cookie(self, secret=None):
         """Find the cookie for the given user
         Create a new session if no cookie is found
 
         :param str secret: The key to sign the cookie with
         :returns: The signed cookie
         """
+        secret = secret or settings.SECRET_KEY
         sessions = Session.find(
             Q('data.auth_user_id', 'eq', self._id)
         ).sort(
