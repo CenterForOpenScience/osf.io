@@ -11,6 +11,7 @@ from collections import OrderedDict
 import pytz
 import blinker
 from flask import request
+from django.core.urlresolvers import reverse
 from HTMLParser import HTMLParser
 
 from modularodm import Q
@@ -1715,6 +1716,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         url = self.absolute_url
         if url is not None:
             return re.sub(r'https?:', '', url).strip('/')
+
+    @property
+    def api_v2_url(self):
+        return reverse('nodes:node-detail', kwargs={'pk': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        base_url = reverse('nodes:node-detail', kwargs={'pk': self._id})
+        return urlparse.urljoin(settings.DOMAIN, base_url)
 
     @property
     def api_url(self):

@@ -14,5 +14,5 @@ urlpatterns = [
     url(r'^token/', 'rest_framework_jwt.views.obtain_jwt_token'),
 
     ### API ###
-    url(r'^nodes/', include('api.nodes.urls')),
+    url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
 ] + static('/static/', document_root=settings.STATIC_ROOT)
