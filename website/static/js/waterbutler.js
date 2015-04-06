@@ -10,7 +10,7 @@ function getCookie() {
 }
 
 function getViewOnly() {
-  return $osf.urlParams().view_only;
+    return $osf.urlParams().view_only;
 }
 
 function getDefaultOptions(path, provider) {
@@ -64,5 +64,7 @@ module.exports = {
     buildTreeBeardMove: buildFromTreebeard.bind(this, 'move?'),
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),
-    buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?')
+    buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
+    copyUrl: function(){return window.contextVars.waterbutlerURL + 'ops/copy';},
+    moveUrl: function(){return window.contextVars.waterbutlerURL + 'ops/move';}
 };
