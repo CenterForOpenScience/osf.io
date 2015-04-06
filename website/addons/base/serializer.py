@@ -149,8 +149,8 @@ class OAuthAddonSerializer(AddonSerializer):
         result['folder'] = {'name': self.node_settings.selected_folder_name}
         return result
 
-class CitationsAddonSerializer(OAuthAddonSerializer):
 
+class CitationsAddonSerializer(OAuthAddonSerializer):
 
     @abc.abstractmethod
     def serialize_folder(self, folder):
@@ -162,6 +162,3 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
             'kind': 'file',
             'id': citation['id'],
         }
-
-
-
