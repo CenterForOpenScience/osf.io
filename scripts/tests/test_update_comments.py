@@ -12,7 +12,7 @@ class TestUpdateCommentFields(OsfTestCase):
         timestamp = datetime.utcnow().replace(microsecond=0)
         user.comments_viewed_timestamp = {'abc123': timestamp}
         user.save()
-        update_comments_viewed_timestamp()
+        update_comments_viewed_timestamp(dry=False)
         user.reload()
         assert_equal(user.comments_viewed_timestamp, {'abc123': {'node': timestamp}})
 
@@ -20,6 +20,6 @@ class TestUpdateCommentFields(OsfTestCase):
         user = UserFactory()
         user.comments_viewed_timestamp = {}
         user.save()
-        update_comments_viewed_timestamp()
+        update_comments_viewed_timestamp(dry=False)
         user.reload()
         assert_equal(user.comments_viewed_timestamp, {})
