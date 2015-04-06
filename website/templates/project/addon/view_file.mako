@@ -19,8 +19,8 @@
     <div id="file-navigation" class="panel-toggle col-md-3">
         <div class="osf-panel osf-panel-flex hidden-xs">
             <div class="osf-panel-header osf-panel-header-flex" style="display:none">
-                <div id="files-search"></div>
-                <div id="toggle-icon" class="pull-right">
+                <div id="filesSearch"></div>
+                <div id="toggleIcon" class="pull-right">
                     <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div>
                 </div>
             </div>
