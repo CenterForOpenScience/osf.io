@@ -93,10 +93,9 @@ def serialize_settings(node_settings, current_user):
         # Add owner's profile URL
 
         path = node_settings.folder_path
-        folder_name = node_settings.folder_name
         if path is not None:
             ret['currentPath'] = '/' + path.lstrip('/')
-            ret['currentFolder'] = '/ (Full Google Drive)' if path == '/' else '/' + folder_name
+            ret['currentFolder'] = node_settings.folder_name
 
         ret['ownerName'] = user_settings.owner.fullname
         ret['urls']['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)
