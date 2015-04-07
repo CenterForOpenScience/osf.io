@@ -9,6 +9,7 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 
 var $osf = require('./osfHelpers');
+var onboarder = require('./onboarder.js');
 
 var CREATE_URL = '/api/v1/project/new/';
 
@@ -28,6 +29,7 @@ function ProjectCreatorViewModel(params) {
     self.description = ko.observable();
     self.errorMessage = ko.observable('');
 
+    self.fromUpload = params.fromUpload;
     self.hasFocus = params.hasFocus;
 
     self.submitForm = function () {
@@ -49,8 +51,29 @@ function ProjectCreatorViewModel(params) {
         );
     };
 
-    self.createSuccess = function(data) {
-        window.location = data.projectUrl;
+    self.createSuccess = function(data){
+        if(self.fromUpload)
+        {
+//            console.log(data.projectUrl);
+//            var url = '/api/v1/dashboard' + data.projectUrl.substr(0, data.projectUrl.length -1);
+//            console.log(url);
+//            $.getJSON(url, function(response){
+//                    onboarder.startUpload(response, None, None, None)
+//                });
+            // Getting id of the newly created project
+            data.id = data.projectUrl.substr(1, data.projectUrl.length -2);
+            data.urls = {
+                'files' : data.projectUrl + 'files'
+            }
+            console.log(onboarder);
+            onboarder.startUpload(data, None, None, None);
+            window.location = data.projectUrl;
+
+        }
+        else
+        {
+            window.location = data.projectUrl;
+        }
     };
 
     self.createFailure = function() {

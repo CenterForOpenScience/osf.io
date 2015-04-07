@@ -610,3 +610,7 @@ ko.components.register('osf-ob-goto', {
     viewModel: OBGoToViewModel,
     template: {element: 'osf-ob-goto'}
 });
+
+module.exports = {
+    startUpload : OBUploaderViewModel.s
+}
