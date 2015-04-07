@@ -39,23 +39,32 @@ def dataverse_user_config_get(auth, **kwargs):
     """
     user_addon = auth.user.get_addon('dataverse')
 
-    try:
-        connection = connect_from_settings_or_403(user_addon)
-    except HTTPError as error:
-        if error.code == 403:
-            connection = None
-        else:
-            raise
+    connection = None
+    if user_addon:
+        try:
+            connection = connect_from_settings_or_403(user_addon)
+        except HTTPError as error:
+            if error.code == 403:
+                connection = None
+            else:
+                raise
 
     urls = {
         'create': api_url_for('dataverse_set_user_config'),
         'delete': api_url_for('dataverse_delete_user'),
     }
+
+    user_has_auth = False
+    username = ''
+    if user_addon:
+        user_has_auth = user_addon.has_auth
+        username = user_addon.dataverse_username
+
     return {
         'result': {
             'connected': connection is not None,
-            'userHasAuth': user_addon.has_auth,
-            'dataverseUsername': user_addon.dataverse_username,
-            'urls': urls
+            'userHasAuth': user_has_auth,
+            'dataverseUsername': username,
+            'urls': urls,
         },
     }, http.OK
