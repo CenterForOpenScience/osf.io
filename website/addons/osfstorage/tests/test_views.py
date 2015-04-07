@@ -377,3 +377,58 @@ class TestCreateFolder(HookTestCase):
         assert_equal(len(self.root_node.children), 1)
         assert_equal(len(self.root_node.children[0].children), 1)
         assert_equal(self.root_node.children[0].children[0].serialized(), resp.json)
+
+
+class TestDeleteHook(HookTestCase):
+
+    def setUp(self):
+        super(TestDeleteHook, self).setUp()
+        self.root_node = self.node_settings.root_node
+
+    def send_hook(self, view_name, payload, method='get', **kwargs):
+        method = getattr(self.app, method)
+        return method(
+            '{url}?payload={payload}&signature={signature}'.format(
+                url=self.project.api_url_for(view_name),
+                **signing.sign_data(signing.default_signer, payload)
+            ),
+            **kwargs
+        )
+
+    def delete(self, path, **kwargs):
+        return self.send_hook(
+            'osf_storage_crud_hook_delete',
+            payload={
+                'path': path,
+                'auth': {
+                    'id': self.user._id
+                }
+            },
+            method='delete',
+            **kwargs
+        )
+
+    def test_delete(self):
+        file = self.root_node.append_file('Newfile')
+
+        resp = self.delete(file.path)
+
+        file.reload()
+        assert_true(file.is_deleted)
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {'status': 'success'})
+
+    def test_delete_deleted(self):
+        file = self.root_node.append_file('Newfile')
+        file.delete(None, log=False)
+        assert_true(file.is_deleted)
+
+        resp = self.delete(file.path, expect_errors=True)
+
+        file.reload()
+        assert_equal(resp.status_code, 410)
+
+    def test_cannot_delete_root(self):
+        resp = self.delete(self.root_node.path, expect_errors=True)
+
+        assert_equal(resp.status_code, 400)
