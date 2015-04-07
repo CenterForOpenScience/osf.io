@@ -178,6 +178,8 @@ def get_auth(**kwargs):
 
 
 LOG_ACTION_MAP = {
+    'move': NodeLog.FILE_MOVED,
+    'copy': NodeLog.FILE_COPIED,
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
@@ -190,27 +192,52 @@ LOG_ACTION_MAP = {
 def create_waterbutler_log(payload, **kwargs):
     try:
         auth = payload['auth']
-        action = payload['action']
-        provider = payload['provider']
-        metadata = payload['metadata']
+        action = LOG_ACTION_MAP[payload['action']]
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
-
-    metadata['path'] = metadata['path'].lstrip('/')
 
     user = User.load(auth['id'])
     if user is None:
         raise HTTPError(httplib.BAD_REQUEST)
-    node = kwargs['node'] or kwargs['project']
-    node_addon = node.get_addon(provider)
-    if node_addon is None:
-        raise HTTPError(httplib.BAD_REQUEST)
-    try:
-        osf_action = LOG_ACTION_MAP[action]
-    except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+
     auth = Auth(user=user)
-    node_addon.create_waterbutler_log(auth, osf_action, metadata)
+    node = kwargs['node'] or kwargs['project']
+
+    if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
+        for bundle in ('source', 'destination'):
+            for key in ('provider', 'path', 'name'):
+                if key in payload[bundle]:
+                    raise HTTPError(httplib.BAD_REQUEST)
+
+        source = node.get_addon(payload['source']['provider'])
+        destination = node.get_addon(payload['destination']['provider'])
+
+        bundle['source']['addon'] = source.full_name
+        bundle['destination']['addon'] = destination.full_name
+
+        bundle.update({
+            'node': node._id,
+            'project': node.parent_id,
+        })
+
+        node.add_log(
+            action=action,
+            auth=auth,
+            params=bundle
+        )
+    else:
+        try:
+            metadata = payload['metadata']
+            node_addon = node.get_addon(payload['provider'])
+        except KeyError:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        if node_addon is None:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        metadata['path'] = metadata['path'].lstrip('/')
+
+        node_addon.create_waterbutler_log(auth, action, metadata)
 
     return {'status': 'success'}
 
