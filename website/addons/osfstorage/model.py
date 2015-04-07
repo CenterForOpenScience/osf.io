@@ -270,9 +270,9 @@ class OsfStorageFileNode(StoredObject):
         node_logger = logs.OsfStorageNodeLogger(
             auth=auth,
             node=self.node,
-            path=self.path,
+            path=self.materialized_path(),
         )
-        extra = {'version': len(self.versions)} if version else None
+        extra = {'version': len(self.versions), 'id': self._id} if version else None
         node_logger.log(action, extra=extra, save=True)
 
     def delete(self, auth, recurse=True, log=True):
