@@ -182,6 +182,7 @@ LOG_ACTION_MAP = {
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
+    'create_folder': NodeLog.FOLDER_CREATED,
 }
 
 
