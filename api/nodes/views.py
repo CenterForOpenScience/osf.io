@@ -1,8 +1,9 @@
 from rest_framework import generics, permissions as drf_permissions
+from modularodm import Q
 
 from website.models import Node
 from .serializers import NodeSerializer
-from .permissions import ContributorOrPublic
+from .permissions import ContributorOrPublic, MustNotBeRegistration
 
 class NodeList(generics.ListCreateAPIView):
     """Return a list of nodes. By default, a GET
@@ -19,7 +20,7 @@ class NodeList(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         # Return list of nodes that current user contributes to
-        return user.node__contributed
+        return Node.find(Q('contributors', 'eq', user._id))
 
     # override
     def perform_create(self, serializer):
@@ -32,6 +33,7 @@ class NodeDetail(generics.RetrieveUpdateAPIView):
 
     permission_classes = (
         ContributorOrPublic,
+        MustNotBeRegistration,
     )
     serializer_class = NodeSerializer
 
