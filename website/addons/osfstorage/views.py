@@ -243,4 +243,4 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     else:
         parent = node_addon.root_node
 
-    return utils.serialize_metadata(parent.append_folder(child)), httplib.CREATED
+    return parent.append_folder(child).serialized(), httplib.CREATED
