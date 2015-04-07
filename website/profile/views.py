@@ -187,6 +187,7 @@ def user_account(auth, **kwargs):
     return {
         'user_id': user._id,
         'addons': user_addons,
+        'addon_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
     }
 
 

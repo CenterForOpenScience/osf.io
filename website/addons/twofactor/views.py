@@ -11,7 +11,7 @@ from website.project.decorators import must_have_addon
 
 @must_be_logged_in
 @must_have_addon('twofactor', 'user')
-def user_settings(user_addon, *args, **kwargs):
+def user_settings_put(user_addon, *args, **kwargs):
 
     code = request.json.get('code')
     if code is None:
@@ -25,3 +25,33 @@ def user_settings(user_addon, *args, **kwargs):
         message_short='Forbidden',
         message_long='The two-factor verification code you provided is invalid.'
     ))
+
+@must_be_logged_in
+def user_settings_get(auth, *args, **kwargs):
+
+    user_addon = auth.user.get_addon('twofactor')
+    result = {}
+    if user_addon:
+        result = user_addon.to_json(auth.user)
+    else:
+        result = {
+            'is_enabled': False,
+            'is_confirmed': False,
+            'secret': None,
+            'drift': None,
+        }
+    return {
+        'result': result
+    }
+
+
+@must_be_logged_in
+def enable_twofactor(auth, *args, **kwargs):
+
+    user_addon = auth.user.get_addon('twofactor')
+    if user_addon:
+        return HTTPError(http.BAD_REQUEST, message='This user already has twofactor enabled')
+
+    user_addon = auth.user.get_or_add_addon('twofactor', auth=auth)
+    auth.user.save()
+    return user_addon.to_json(auth.user)

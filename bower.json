@@ -18,6 +18,7 @@
     "styles": "https://github.com/lyndsysimon/styles.git#4db9c8e2f5932cad9f23ad3579d1a82c691faf12",
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "raven-js": "~1.1.17",
-    "zeroclipboard": "~2.1.6"
+    "zeroclipboard": "~2.1.6",
+    "jquery-qrcode": "*"
   }
 }

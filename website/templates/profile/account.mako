@@ -39,12 +39,15 @@
                 </div>
             </div>
             <div class="panel panel-default">
-              % for addon in addons:
-              ${render_user_settings(addon) }
-              % if not loop.last:
-              <hr />
-              % endif              
-              % endfor              
+              <div class="panel-heading"><h3 class="panel-title">Other Settings</h3></div>
+              <div class="panel-body">                
+                % for addon in addons:
+                ${render_user_settings(addon) }
+                % if not loop.last:
+                <hr />
+                % endif              
+                % endfor              
+              </div>
             </div>
         </div>
     </div>
@@ -53,8 +56,14 @@
 <%def name="render_user_settings(config)">
     <%
        template = config['user_settings_template']
-       tpl = template.render(**config.user_settings)
+       tpl = template.render(**config)
     %>
     ${tpl}
 </%def>
 
+<%def name="javascript_bottom()">
+    ## Webpack bundles
+    % for js_asset in addon_js:
+      <script src="${js_asset | webpack_asset}"></script>
+    % endfor
+</%def>

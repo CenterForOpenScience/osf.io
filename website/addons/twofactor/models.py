@@ -26,6 +26,7 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         rv = super(TwoFactorUserSettings, self).to_json(user)
         rv.update({
+            'is_enabled': True,
             'is_confirmed': self.is_confirmed,
             'secret': self.totp_secret_b32,
             'drift': self.totp_drift,
