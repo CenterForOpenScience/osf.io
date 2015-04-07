@@ -37,7 +37,11 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         if self.root_node:
             return
 
+        # A save is required here to both create and attach the root_node
+        # When on_add is called the model that self refers to does not yet exist
+        # in the database and thus odm cannot attach foreign fields to it
         self.save()
+        # Note: The "root" node will always be "named" empty string
         root = OsfStorageFileNode(name='', kind='folder', node_settings=self)
         root.save()
         self.root_node = root
