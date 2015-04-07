@@ -44,7 +44,7 @@ def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     except KeyError:
         raise make_error(httplib.BAD_REQUEST, 'Path is required')
     except ValueError:
-        raise make_error(httplib.BAD_REQUEST, 'Version must be an int or null')
+        raise make_error(httplib.BAD_REQUEST, 'Version must be an int or not specified')
 
     storage_node = model.OsfStorageFileNode.get_file(path, node_addon)
     if storage_node.is_deleted:
