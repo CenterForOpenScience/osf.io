@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # encoding: utf-8
+from __future__ import unicode_literals
 
 import os
 import mock
@@ -11,8 +11,6 @@ from website.addons.osfstorage.tests.utils import (
     recursively_create_file, recursively_create_folder
 )
 from website.addons.osfstorage.tests import factories
-
-import furl
 
 from framework.auth import signing
 from website.util import rubeus
@@ -190,7 +188,7 @@ class TestUploadFileHook(HookTestCase):
         assert_in(version, self.record.versions)
 
     def test_upload_create_child(self):
-        name = 'pizza.png'
+        name = 'ლ(ಠ益ಠლ).unicode'
         parent = self.node_settings.root_node.append_folder('cheesey')
         path = os.path.join(parent.path, name)
         res = self.send_upload_hook(self.make_payload(path=path))
