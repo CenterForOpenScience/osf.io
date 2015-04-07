@@ -434,6 +434,7 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
+    $('.twitter-typeahead').remove();
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
@@ -876,7 +877,10 @@ function _cleanupMithril() {
 function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
-            onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
+            onclick : function () { 
+                $('.twitter-typeahead').remove();
+                tb.options.iconState.mode = 'bar'; tb.resetFilter(); 
+            }
         },
         m('i.fa.fa-times')
     );
@@ -1085,7 +1089,6 @@ function applyTypeahead () {
             });
             triggerClickOnItem.call(tb, item);
             tb.options.iconState.mode = 'bar';
-            $('#addprojectInput').typeahead('destroy'); 
             }
         }, [
         m('i.fa.fa-plus'),
