@@ -17,13 +17,7 @@ BROKER_URL = config.get(
         os.environ.get('RABBITMQ_PORT_5672_TCP_PORT', ''),
     )
 )
-CELERY_RESULT_BACKEND = config.get(
-    'CELERY_RESULT_BACKEND',
-    'redis://{}:{}'.format(
-        os.environ.get('REDIS_PORT_6379_TCP_ADDR', ''),
-        os.environ.get('REDIS_PORT_6379_TCP_PORT', ''),
-    )
-)
+CELERY_RESULT_BACKEND = config.get('CELERY_RESULT_BACKEND', None)
 CELERY_DISABLE_RATE_LIMITS = config.get('CELERY_DISABLE_RATE_LIMITS', True)
 CELERY_TASK_RESULT_EXPIRES = config.get('CELERY_TASK_RESULT_EXPIRES', 60)
 # CELERY_ALWAYS_EAGER = config.get('CELERY_ALWAYS_EAGER', True)

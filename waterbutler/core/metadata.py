@@ -2,11 +2,19 @@ import abc
 
 
 class BaseMetadata(metaclass=abc.ABCMeta):
+    """The BaseMetadata object provides structure
+    for all metadata returned via WaterButler
+    """
 
     def __init__(self, raw):
         self.raw = raw
 
     def serialized(self):
+        """The JSON serialization of metadata from WaterButler.
+        .. warning::
+
+            This method determines the output of the REST API
+        """
         return {
             'provider': self.provider,
             'kind': self.kind,
@@ -24,18 +32,33 @@ class BaseMetadata(metaclass=abc.ABCMeta):
 
     @abc.abstractproperty
     def provider(self):
+        """The provider from which this resource
+        originated.
+        """
         pass
 
     @abc.abstractproperty
     def kind(self):
+        """`file` or `folder`"""
         pass
 
     @abc.abstractproperty
     def name(self):
+        """The name to show a users
+        ::
+            /bar/foo.txt -> foo.txt
+            /<someid> -> whatever.png
+        """
         pass
 
     @abc.abstractproperty
     def path(self):
+        """The canonical string representation
+        of a waterbutler file or folder.
+
+        All paths MUST start with a `/`
+        All Folders MUST end with a `/`
+        """
         pass
 
     @property
@@ -54,6 +77,7 @@ class BaseFileMetadata(BaseMetadata):
 
     @property
     def kind(self):
+        """File"""
         return 'file'
 
     @abc.abstractproperty
@@ -99,6 +123,9 @@ class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
 
 
 class BaseFolderMetadata(BaseMetadata):
+    """Defines that metadata structure for
+    folders, auto defines :func:`kind`
+    """
 
     @property
     def kind(self):

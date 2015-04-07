@@ -7,6 +7,10 @@ DEFAULT_ERROR_MSG = 'An error occurred while making a {response.method} request 
 
 
 class ProviderError(Exception):
+    """The WaterButler related errors raised
+    from a :class:`waterbutler.core.provider` should
+    inherit from ProviderError
+    """
 
     def __init__(self, message, code=400, log_message=None):
         super().__init__(code)
@@ -68,10 +72,13 @@ class NotFoundError(ProviderError):
 
 @asyncio.coroutine
 def exception_from_response(resp, error=ProviderError, **kwargs):
-    """Build and return, not raise, an exception from a response
-    :param Response resp: An AioResponse stream with a non 200 range status
-    :param dict **kwargs: Additional context to extract information from
-    :rtype WaterButlerError:
+    """Build and return, not raise, an exception from a response object
+
+    :param Response resp: An aiohttp.Response stream with a non 200 range status
+    :param Exception error: The type of exception to be raised
+    :param dict \*\*kwargs: Additional context to extract information from
+
+    :rtype :class:`WaterButlerError`:
     """
     try:
         # Try to make an exception from our received json
