@@ -28,7 +28,7 @@
         </small>
     </h4>
     <!-- Settings Pane -->
-    <div class="${addon_short_name}-settings" data-bind='visible: showSettings'>
+    <div class="${addon_short_name}-settings" data-bind="visible: showSettings">
         <div class="row">
             <div class="col-md-12">
                 <p>
@@ -46,7 +46,7 @@
                                        css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
                 </div>
                 <!-- Folder picker -->
-                <div class="${addon_short_name}-widget">
+                <div class="addon-folderpicker-widget ${addon_short_name}-widget">
                     <p class="text-muted text-center ${addon_short_name}-loading-text" data-bind="visible: loading">
                         Loading folders...</p>
                     <div data-bind="visible: currentDisplay() === PICKER">

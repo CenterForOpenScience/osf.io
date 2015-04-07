@@ -37,15 +37,17 @@ def figshare_config_put(node_addon, auth, **kwargs):
     """View for changing a node's linked figshare folder."""
     fields = request.json.get('selected', {})
     node = node_addon.owner
-    node_addon.update_fields(fields, node, auth)
+
+    folder = {
+        'name': fields.get('name') or '',
+        'id': fields.get('id') or None,
+        'type': fields.get('type') or None,
+    }
+    node_addon.update_fields(folder, node, auth)
 
     return {
         'result': {
-            'linked': {
-                'title': fields.get('title') or '',
-                'id': fields.get('id') or None,
-                'type': fields.get('type') or None,
-            },
+            'folder': folder,
             'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
