@@ -9,8 +9,6 @@ var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
-var noop = function() {};
-
 var ViewModel = function(url, selector) {
     var self = this;
 
@@ -212,14 +210,9 @@ ViewModel.prototype.createBucket = function(bucketName) {
         }
     ).done(function(response) {
         self.creating(false);
-        self.updateFromData(response);
-        self.bucketList().push(bucketName);
-        if (!self.loadedBucketList()) {
-            self.updateBucketList();
-        }
+        self.bucketList(response.buckets);
+        self.loadedBucketList(true);
         self.selectedBucket(bucketName);
-        self.selectedBucket();
-        self.bucketList();
         self.showSelect(true);
         var msg = 'Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
