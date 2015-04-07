@@ -14,10 +14,19 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.addons.github.utils import serialize_urls
 from website.addons.github.utils import get_repo_dropdown
+from website.addons.github.serializer import GitHubSerializer
 
 from ..api import GitHub
 
 
+
+@must_be_logged_in
+def list_github_user_accounts(auth):
+    """View for getting a JSON representation of the logged-in user's
+    GitHub user settings.
+    """
+    user_settings = auth.user.get_addon('github')
+    return GitHubSerializer(user_settings=user_settings).serialized_user_settings
 
 @must_be_logged_in
 def github_set_user_config(**kwargs):

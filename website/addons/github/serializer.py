@@ -24,3 +24,16 @@ class GitHubSerializer(OAuthAddonSerializer):
             result['owner'] = web_url_for('profile_view_id',
                                           uid=user_settings.owner._primary_key)
         return result
+    @property
+    def serialized_node_settings(self):
+        result = super(GitHubSerializer, self).serialized_node_settings
+        valid_credentials = True
+        if self.node_settings.external_account is not None:
+            self.node_settings.fetch_access_token()
+        result['validCredentials'] = valid_credentials
+        if self.node_settings.has_auth:
+            path = self.node_settings.folder_path
+            if path is not None:
+                result['currentPath'] = '/' + path.lstrip('/')
+                result['currentFolder'] = '/ (Full Google Drive)' if path == '/' else '/' + path
+        return {'result': result}

@@ -10,6 +10,7 @@ from website.project.decorators import (
     must_not_be_registration,
     must_have_addon,
 )
+from website.addons.github.serializer import GitHubSerializer
 
 @must_be_logged_in
 def github_list_accounts_user(auth):
@@ -25,13 +26,11 @@ def github_get_config(auth, node_addon, **kwargs):
     """Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
-    provider = GithubProvider()
-    return {
-        'result': provider.serializer(
-            node_settings=node_addon,
-            user_settings=auth.user.get_addon('github'),
-        ).serialized_node_settings
-    }
+    result = GitHubSerializer(
+        node_settings=node_addon,
+        user_settings=auth.user.get_addon('github')
+    ).serialized_node_settings
+    return result
 
 @must_have_permission('write')
 @must_have_addon('github', 'node')

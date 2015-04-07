@@ -7,6 +7,16 @@ from website.addons.github import views
 settings_routes = {
     'rules': [
 
+         Rule(
+            [
+                '/settings/github/accounts/',
+            ],
+            'get',
+            views.config.list_github_user_accounts,
+            json_renderer,
+
+        ),
+
         # Configuration
         Rule(
             [
