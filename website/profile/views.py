@@ -220,7 +220,7 @@ def user_addons(auth, **kwargs):
         'addon_settings': addon_settings,
     })
 
-    accounts_addons = addon_settings.keys()
+    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
     ret['addon_enabled_settings'] = [addon.short_name for addon in accounts_addons]
     ret['addon_js'] = collect_user_config_js(accounts_addons)
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
