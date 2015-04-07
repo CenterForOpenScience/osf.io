@@ -23,7 +23,7 @@
         <div class="panel-heading"><h3 class="panel-title">Configure External Accounts</h3></div>
         <div class="panel-body">
           % for addon in addon_settings:
-          ${render_user_settings(addon) }
+            ${render_user_settings(addon) }
           % if not loop.last:
           <hr />
           % endif
