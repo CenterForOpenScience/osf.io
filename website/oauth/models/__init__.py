@@ -242,6 +242,7 @@ class ExternalProvider(object):
             # make sure this is the same user that started the flow
             if cached_credentials.get('state') != state:
                 raise PermissionsError("Request token does not match")
+            import ipdb; ipdb.set_trace()
 
             try:
                 response = OAuth2Session(
@@ -339,7 +340,7 @@ class ExternalProvider(object):
                 values['expires_at'] = datetime.datetime.fromtimestamp(
                     float(expires_at)
                 )
-
+            import ipdb; ipdb.set_trace()
             return values
 
     @abc.abstractmethod

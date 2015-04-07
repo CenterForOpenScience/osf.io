@@ -134,6 +134,8 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
+    github_list_id = fields.StringField()
+    user = fields.StringField()
     repo = fields.StringField()
     hook_id = fields.StringField()
     hook_secret = fields.StringField()
@@ -159,52 +161,52 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     def find_or_create_file_guid(self, path):
         return GithubGuidFile.get_or_create(node=self.owner, path=path)
 
-    def set_folder(self, folder, auth, add_log=True):
-        self.repo_folder_id = folder['id']
-        self.folder_path = folder['path']
+    # def set_folder(self, folder, auth, add_log=True):
+    #     self.repo_folder_id = folder['id']
+    #     self.folder_path = folder['path']
 
     @property
     def provider_name(self):
         return 'github'
 
     def set_auth(self, *args, **kwargs):
-        self.zotero_list_id = None
+        self.github_list_id = None
         return super(GitHubNodeSettings, self).set_auth(*args, **kwargs)
 
     def clear_auth(self):
-        self.zotero_list_id = None
+        self.github_list_id = None
         return super(GitHubNodeSettings, self).clear_auth()
 
-    def set_target_folder(self, folder, auth):
-        """Configure this addon to point to a GitHub Drive folder
-        :param dict folder:
-        :param User user:
-        """
-        self.repo_folder_id = folder['id']
-        self.folder_path = folder['path']
-        self.repo_folder_name = folder['name']
-
-        # Tell the user's addon settings that this node is connecting
-        self.user_settings.grant_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'folder': self.repo_folder_id}
-        )
-        self.user_settings.save()
-
-        # update this instance
-        self.save()
-
-        self.owner.add_log(
-            'googlerepo_folder_selected',
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'folder_id': self.repo_folder_id,
-                'folder_name': self.repo_folder_name,
-            },
-            auth=auth,
-      )
+    # def set_target_folder(self, folder, auth):
+    #     """Configure this addon to point to a GitHub Drive folder
+    #     :param dict folder:
+    #     :param User user:
+    #     """
+    #     self.repo_folder_id = folder['id']
+    #     self.folder_path = folder['path']
+    #     self.repo_folder_name = folder['name']
+    #
+    #     # Tell the user's addon settings that this node is connecting
+    #     self.user_settings.grant_oauth_access(
+    #         node=self.owner,
+    #         external_account=self.external_account,
+    #         metadata={'folder': self.repo_folder_id}
+    #     )
+    #     self.user_settings.save()
+    #
+    #     # update this instance
+    #     self.save()
+    #
+    #     self.owner.add_log(
+    #         'googlerepo_folder_selected',
+    #         params={
+    #             'project': self.owner.parent_id,
+    #             'node': self.owner._id,
+    #             'folder_id': self.repo_folder_id,
+    #             'folder_name': self.repo_folder_name,
+    #         },
+    #         auth=auth,
+    #   )
 
     # # TODO: Delete me and replace with serialize_settings / Knockout
     # def to_json(self, user):
@@ -488,7 +490,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         :return tuple: Tuple of cloned settings and alert message
 
         """
-        clone, _ = super(AddonGitHubNodeSettings, self).after_fork(
+        clone, _ = super(GitHubNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
