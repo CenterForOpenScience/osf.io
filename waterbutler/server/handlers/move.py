@@ -34,7 +34,10 @@ class MoveHandler(core.BaseCrossProviderHandler):
             }, {
                 'args': self.json['destination'],
                 'provider': self.destination_provider.serialized()
-            })
+            },
+                self.callback_url,
+                self.auth
+            )
             self.set_status(202)
             return
 
@@ -54,4 +57,4 @@ class MoveHandler(core.BaseCrossProviderHandler):
 
         self.write(metadata)
 
-        self._send_hook('move', metadata['path'])
+        self._send_hook('move', metadata)

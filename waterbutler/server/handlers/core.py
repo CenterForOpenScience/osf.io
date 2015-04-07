@@ -184,28 +184,19 @@ class BaseCrossProviderHandler(BaseHandler):
         return self._json
 
     @utils.async_retry(retries=0, backoff=5)
-    def _send_hook(self, action, path):
-        payload = {
+    def _send_hook(self, action, data):
+        return (yield from utils.send_signed_request('PUT', self.callback_url, {
             'action': action,
             'source': {
                 'path': self.json['source']['path'],
+                'name': os.path.split(self.json['source']['path'])[1],
                 'provider': self.source_provider.NAME,
             },
             'destination': {
-                'path': path,
+                'path': data['path'],
+                'name': data['name'],
                 'provider': self.destination_provider.NAME,
             },
             'auth': self.auth['auth'],
             'time': time.time() + 60
-        }
-        message, signature = signer.sign_payload(payload)
-        resp = aiohttp.request(
-            'PUT',
-            self.callback_url,
-            data=json.dumps({
-                'payload': message.decode(),
-                'signature': signature,
-            }),
-            headers={'Content-Type': 'application/json'},
-        )
-        return resp
+        }))
