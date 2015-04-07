@@ -23,7 +23,7 @@ from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.base import GuidFile
 
 from website.addons.github import utils
-from website.addons.github.api import GitHub as GitHubWrap
+from website.addons.github.api import GitHub
 from website.addons.github import settings as github_settings
 from website.addons.github import serializer
 from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
@@ -34,7 +34,7 @@ from website.oauth.models import ExternalProvider
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
-class GitHub(ExternalProvider):
+class GitHubProvider(ExternalProvider):
     name = "GitHub"
     short_name = "github"
 
@@ -48,6 +48,7 @@ class GitHub(ExternalProvider):
     _client = None
 
     def handle_callback(self, response):
+        import ipdb; ipdb.set_trace()
         client = self.client
         
 
@@ -57,7 +58,7 @@ class GitHub(ExternalProvider):
     def client(self):
         """An API session with Mendeley"""
         if not self._client:
-            self._client = GitHubWrap(self.account.oauth_key, 'bearer') #Token Type bearer correct?
+            self._client = GitHub(self.account.oauth_key, 'bearer') #Token Type bearer correct?
         return self._client
 
 
@@ -120,206 +121,97 @@ class GithubGuidFile(GuidFile):
         super(GithubGuidFile, self)._exception_from_response(response)
 
 
-class AddonGitHubOauthSettings(StoredObject):
-    """
-    this model address the problem if we have two osf user link
-    to the same github user and their access token conflicts issue
-    """
-
-    #github user id, for example, "4974056"
-    # Note that this is a numeric ID, not the user's login.
-    github_user_id = fields.StringField(primary=True, required=True)
-
-    #github user name this is the user's login
-    github_user_name = fields.StringField()
-    oauth_access_token = fields.StringField()
-    oauth_token_type = fields.StringField()
-
 
 class GitHubUserSettings(AddonOAuthUserSettingsBase):
-    oauth_provider = GitHub
+    oauth_provider = GitHubProvider
     #need to implement serializer
-    serializer = serializer.GitHubSerializer
+    serializer = serializer.GitHubSerializer:
+    #
+    # def to_json(self, user):
+    #     ret = super(AddonGitHubUserSettings, self).to_json(user)
+    #     ret.update({
+    #         'authorized': self.has_auth,
+    #         'authorized_github_user': self.github_user_name if self.github_user_name else '',
+    #         'show_submit': False,
+    #     })
+    #     return ret
 
-class AddonGitHubUserSettings(AddonUserSettingsBase):
 
-    oauth_state = fields.StringField()
-    oauth_settings = fields.ForeignField(
-        'addongithuboauthsettings', backref='accessed'
-    )
+class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
 
-    @property
-    def has_auth(self):
-        if self.oauth_settings:
-            return self.oauth_settings.oauth_access_token is not None
-        return False
+    oauth_provider = GitHubProvider
 
-    @property
-    def github_user_name(self):
-        if self.oauth_settings:
-            return self.oauth_settings.github_user_name
-        return None
+    drive_folder_id = fields.StringField()
+    drive_folder_name = fields.StringField()
+    folder_path = fields.StringField()
+    serializer = GitHubSerializer
 
-    @github_user_name.setter
-    def github_user_name(self, user_name):
-        self.oauth_settings.github_user_name = user_name
+    _api = None
 
     @property
-    def oauth_access_token(self):
-        if self.oauth_settings:
-            return self.oauth_settings.oauth_access_token
-        return None
-
-    @oauth_access_token.setter
-    def oauth_access_token(self, oauth_access_token):
-        self.oauth_settings.oauth_access_token = oauth_access_token
-
-    @property
-    def oauth_token_type(self):
-        if self.oauth_settings:
-            return self.oauth_settings.oauth_token_type
-        return None
-
-    @oauth_token_type.setter
-    def oauth_token_type(self, oauth_token_type):
-        self.oauth_settings.oauth_token_type = oauth_token_type
-
-    # Required for importing username from social profile configuration page
-    @property
-    def public_id(self):
-        if self.oauth_settings:
-            return self.oauth_settings.github_user_name
-        return None
-
-    def save(self, *args, **kwargs):
-        if self.oauth_settings:
-            self.oauth_settings.save()
-        return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
-
-    def to_json(self, user):
-        ret = super(AddonGitHubUserSettings, self).to_json(user)
-        ret.update({
-            'authorized': self.has_auth,
-            'authorized_github_user': self.github_user_name if self.github_user_name else '',
-            'show_submit': False,
-        })
-        return ret
-
-    def revoke_token(self):
-        connection = GitHubWrap.from_settings(self)
-        try:
-            connection.revoke_token()
-        except GitHubError as error:
-            if error.code == http.UNAUTHORIZED:
-                return (
-                    'Your GitHub credentials were removed from the OSF, but we '
-                    'were unable to revoke your access token from GitHub. Your '
-                    'GitHub credentials may no longer be valid.'
-                )
-            raise
-
-    def clear_auth(self, auth=None, save=False):
-        for node_settings in self.addongithubnodesettings__authorized:
-            node_settings.deauthorize(auth=auth, save=True)
-
-        # if there is only one osf user linked to this github user oauth, revoke the token,
-        # otherwise, disconnect the osf user from the addongithuboauthsettings
-        if self.oauth_settings:
-            if len(self.oauth_settings.addongithubusersettings__accessed) <= 1:
-                self.revoke_token()
-
-        # Clear tokens on oauth_settings
-            self.oauth_settings = None
-        if save:
-            self.save()
-
-    def delete(self, save=False):
-        self.clear_auth(save=False)
-        super(AddonGitHubUserSettings, self).delete(save=save)
-
-
-class AddonGitHubNodeSettings(AddonNodeSettingsBase):
-
-    user = fields.StringField()
-    repo = fields.StringField()
-    hook_id = fields.StringField()
-    hook_secret = fields.StringField()
-
-    user_settings = fields.ForeignField(
-        'addongithubusersettings', backref='authorized'
-    )
-
-    registration_data = fields.DictionaryField()
-
-    @property
-    def has_auth(self):
-        return bool(self.user_settings and self.user_settings.has_auth)
+    def api(self):
+        """Authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = GitHubProvider()
+            self._api.account = self.external_account
+        return self._api
 
     @property
     def complete(self):
-        return self.has_auth and self.repo is not None and self.user is not None
+        return bool(self.has_auth and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': self.drive_folder_id}
+        ))
 
-    def find_or_create_file_guid(self, path):
-        return GithubGuidFile.get_or_create(node=self.owner, path=path)
+    def set_folder(self, folder, auth, add_log=True):
+        self.drive_folder_id = folder['id']
+        self.folder_path = folder['path']
 
-    def authorize(self, user_settings, save=False):
-        self.user_settings = user_settings
+    @property
+    def provider_name(self):
+        return 'googledrive'
+
+    def clear_auth(self):
+        self.drive_folder_id = None
+        self.folder_path = None
+        self.drive_folder_name = None
+        return super(GitHubNodeSettings, self).clear_auth()
+
+    def set_auth(self, *args, **kwargs):
+        self.drive_folder_id = None
+        return super(GitHubNodeSettings, self).set_auth(*args, **kwargs)
+
+    def set_target_folder(self, folder, auth):
+        """Configure this addon to point to a GitHub Drive folder
+        :param dict folder:
+        :param User user:
+        """
+        self.drive_folder_id = folder['id']
+        self.folder_path = folder['path']
+        self.drive_folder_name = folder['name']
+
+        # Tell the user's addon settings that this node is connecting
+        self.user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': self.drive_folder_id}
+        )
+        self.user_settings.save()
+
+        # update this instance
+        self.save()
+
         self.owner.add_log(
-            action='github_node_authorized',
+            'googledrive_folder_selected',
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
+                'folder_id': self.drive_folder_id,
+                'folder_name': self.drive_folder_name,
             },
-            auth=Auth(user_settings.owner),
+            auth=auth,
         )
-        if save:
-            self.save()
-
-    def deauthorize(self, auth=None, log=True, save=False):
-        self.delete_hook(save=False)
-        self.user, self.repo, self.user_settings = None, None, None
-        if log:
-            self.owner.add_log(
-                action='github_node_deauthorized',
-                params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                },
-                auth=auth,
-            )
-        if save:
-            self.save()
-
-    def delete(self, save=False):
-        super(AddonGitHubNodeSettings, self).delete(save=False)
-        self.deauthorize(save=False, log=False)
-        if save:
-            self.save()
-
-    @property
-    def repo_url(self):
-        if self.user and self.repo:
-            return 'https://github.com/{0}/{1}/'.format(
-                self.user, self.repo
-            )
-
-    @property
-    def short_url(self):
-        if self.user and self.repo:
-            return '/'.join([self.user, self.repo])
-
-    @property
-    def complete(self):
-        return (
-            self.user and self.repo and
-            self.user_settings and self.user_settings.has_auth
-        )
-
-    @property
-    def is_private(self):
-        connection = GitHubWrap.from_settings(self.user_settings)
-        return connection.repo(user=self.user, repo=self.repo).private
-
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         ret = super(AddonGitHubNodeSettings, self).to_json(user)
@@ -342,7 +234,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             owner = self.user_settings.owner
             if user_settings and user_settings.owner == owner:
-                connection = GitHubWrap.from_settings(user_settings)
+                connection = GitHub.from_settings(user_settings)
                 # TODO: Fetch repo list client-side
                 # Since /user/repos excludes organization repos to which the
                 # current user has push access, we have to make extra requests to
@@ -441,7 +333,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if self.user_settings is None:
             return messages
 
-        connect = GitHubWrap.from_settings(self.user_settings)
+        connect = GitHub.from_settings(self.user_settings)
 
         try:
             repo = connect.repo(self.user, self.repo)
@@ -540,7 +432,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         if not github_settings.SET_PRIVACY:
             return
 
-        connect = GitHubWrap.from_settings(self.user_settings)
+        connect = GitHub.from_settings(self.user_settings)
 
         data = connect.set_privacy(
             self.user, self.repo, permissions == 'private'
@@ -670,7 +562,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def add_hook(self, save=True):
 
         if self.user_settings:
-            connect = GitHubWrap.from_settings(self.user_settings)
+            connect = GitHub.from_settings(self.user_settings)
             secret = utils.make_hook_secret()
             hook = connect.add_hook(
                 self.user, self.repo,
@@ -700,7 +592,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         """
         if self.user_settings and self.hook_id:
-            connection = GitHubWrap.from_settings(self.user_settings)
+            connection = GitHub.from_settings(self.user_settings)
             try:
                 response = connection.delete_hook(self.user, self.repo, self.hook_id)
             except (GitHubError, NotFoundError):
