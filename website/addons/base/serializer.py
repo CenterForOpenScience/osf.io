@@ -149,6 +149,7 @@ class OAuthAddonSerializer(AddonSerializer):
         result['folder'] = {'name': self.node_settings.selected_folder_name}
         return result
 
+
 class CitationsAddonSerializer(OAuthAddonSerializer):
 
 

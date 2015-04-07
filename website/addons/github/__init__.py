@@ -38,4 +38,4 @@ MAX_FILE_SIZE = 1
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'github_node_settings.mako')
-USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'github_user_settings.mako')
+USER_SETTINGS_TEMPLATE = None

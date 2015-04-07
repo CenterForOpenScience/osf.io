@@ -24,17 +24,3 @@ class GitHubSerializer(OAuthAddonSerializer):
             result['owner'] = web_url_for('profile_view_id',
                                           uid=user_settings.owner._primary_key)
         return result
-
-    @property
-
-    def serialized_urls(self):
-        pass
-
-    @property
-    def user_is_owner(self):
-        pass
-
-    @property
-    def credentials_owner(self):
-        pass
-
