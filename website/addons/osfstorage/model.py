@@ -168,6 +168,26 @@ class OsfStorageFileNode(StoredObject):
     def node(self):
         return self.node_settings.owner
 
+    def materialized_path(self):
+        """creates the full path to a the given filenode
+        Note: Possibly high complexity/ many database calls
+        USE SPARINGLY
+        """
+        # Note: ODM cache can be abused here
+        # for highly nested folders calling
+        # list(self.__class__.find(Q(nodesetting),Q(folder))
+        # may result in a massive increase in performance
+        def lineage():
+            current = self
+            while current:
+                yield current
+                current = current.parent
+
+        path = os.path.join(*reversed([x.name for x in lineage()]))
+        if self.is_folder:
+            return '/{}/'.format(path)
+        return '/{}'.format(path)
+
     @utils.must_be('folder')
     def find_child_by_name(self, name, kind='file'):
         return self.__class__.find_one(
