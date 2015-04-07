@@ -26,7 +26,7 @@
                     <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
 
                 % if addon_enabled_settings:
-                    <li><a href="#configureAddonsAnchor">Configure External Accounts</a></li>
+                    <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                 % endif
 
                     <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
