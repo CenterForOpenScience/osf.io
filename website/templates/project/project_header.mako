@@ -54,7 +54,7 @@
                             % if user['is_contributor']:
                                 <li><a href="${node['url']}contributors/">Sharing</a></li>
                             % endif
-                            % if 'write' in user['permissions'] and not node['is_registration']:
+                            % if 'write' in user['permissions']:
                                 <li><a href="${node['url']}settings/">Settings</a></li>
                             % endif
                         % endif

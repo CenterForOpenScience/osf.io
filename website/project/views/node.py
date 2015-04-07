@@ -290,7 +290,6 @@ def node_forks(**kwargs):
 
 
 @must_be_valid_project
-@must_not_be_registration
 @must_be_logged_in
 @must_be_contributor
 def node_setting(auth, **kwargs):
