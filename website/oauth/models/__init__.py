@@ -178,7 +178,6 @@ class ExternalProvider(object):
             }
 
             url = oauth.authorization_url(self.auth_url_base)
-
         return url
 
     @abc.abstractproperty

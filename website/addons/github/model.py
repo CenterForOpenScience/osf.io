@@ -100,7 +100,7 @@ class GitHubProvider(ExternalProvider):
     short_name = "github"
 
     client_id = github_settings.GITHUB_CLIENT_ID
-    client_SECRET = github_settings.GITHUB_CLIENT_SECRET
+    client_secret = github_settings.GITHUB_CLIENT_SECRET
 
     auth_url_base = 'https://github.com/login/oauth/authorize'
     callback_url = 'https://github.com/login/oauth/access_token'
@@ -109,15 +109,18 @@ class GitHubProvider(ExternalProvider):
     _client = None
 
     def handle_callback(self, response):
+        client = self.get_client(response)
         import ipdb; ipdb.set_trace()
-        client = self.client
-        pass
+        return {
+            'display_name': client.user().name,
+            'provider_id': client.user().id,
+            'profile_url': client.user().html_url,
+        }
 
-    @property
-    def client(self):
+    def get_client(self, credentials):
         """An API session with Mendeley"""
         if not self._client:
-            self._client = GitHub(self.account.oauth_key, 'bearer') #Token Type bearer correct?
+            self._client = GitHub(credentials['access_token'], 'bearer') #Token Type bearer correct?
         return self._client
 
 
