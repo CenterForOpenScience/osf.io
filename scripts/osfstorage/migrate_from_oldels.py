@@ -72,7 +72,7 @@ def migrate_children(node_settings, dry=True):
 
 
 def main(dry=True):
-    if dry:
+    if not dry:
         scripts_utils.add_file_logger(logger, __file__)
 
     for node_settings in model.OsfStorageNodeSettings.find():
