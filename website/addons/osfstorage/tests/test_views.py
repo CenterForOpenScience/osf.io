@@ -329,3 +329,51 @@ class TestGetRevisions(StorageTestCase):
     def test_get_revisions_path_not_found(self):
         res = self.get_revisions(path='missing', expect_errors=True)
         assert_equal(res.status_code, 404)
+
+
+class TestCreateFolder(HookTestCase):
+
+    def setUp(self):
+        super(TestCreateFolder, self).setUp()
+        self.root_node = self.node_settings.root_node
+
+    def create_folder(self, name, parent=None, **kwargs):
+        parent = parent + '/' if parent else ''
+        return self.send_hook(
+            'osf_storage_create_folder',
+            payload={
+                'path': '/{}{}'.format(parent, name)
+            },
+            method='post_json',
+            **kwargs
+        )
+
+    def test_create_folder(self):
+        resp = self.create_folder('name')
+
+        assert_equal(resp.status_code, 201)
+        assert_equal(len(self.root_node.children), 1)
+        assert_equal(self.root_node.children[0].serialized(), resp.json)
+
+    def test_no_data(self):
+        resp = self.send_hook(
+            'osf_storage_create_folder',
+            payload={},
+            method='post_json',
+            expect_errors=True
+        )
+        assert_equal(resp.status, 400)
+
+    def test_create_with_parent(self):
+        resp = self.create_folder('name')
+
+        assert_equal(resp.status_code, 201)
+        assert_equal(len(self.root_node.children), 1)
+        assert_equal(self.root_node.children[0].serialized(), resp.json)
+
+        resp = self.create_folder('name', parent=resp.json['path'].strip('/'))
+
+        assert_equal(resp.status_code, 201)
+        assert_equal(len(self.root_node.children), 1)
+        assert_equal(len(self.root_node.children[0].children), 1)
+        assert_equal(self.root_node.children[0].children[0].serialized(), resp.json)
