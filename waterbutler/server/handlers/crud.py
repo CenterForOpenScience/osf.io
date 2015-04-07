@@ -23,6 +23,7 @@ class CRUDHandler(core.BaseHandler):
         'GET': 'download',
         'PUT': 'upload',
         'DELETE': 'delete',
+        'POST': 'create_folder',
     }
     STREAM_METHODS = ('PUT', )
 
@@ -85,6 +86,12 @@ class CRUDHandler(core.BaseHandler):
                 break
             self.write(chunk)
             yield from utils.future_wrapper(self.flush())
+
+    @utils.coroutine
+    def post(self):
+        """Create a folder"""
+        self.set_status(201)
+        self.write((yield from self.provider.create_folder(**self.arguments)))
 
     @utils.coroutine
     def put(self):
