@@ -7,20 +7,69 @@
                 <small>&nbsp;${file_revision | h}</small>
             % endif
         </h2>
-        <hr />
+        <hr/>
     </div>
 
     <div id="file-container" class="row">
 
-      <div class="col-md-8">
-        <div id="fileRendered" class="mfr mfr-file">
-          % if rendered is not None:
-            ${rendered}
-          % else:
-            <img src="/static/img/loading.gif">
-          % endif
-        </div>
-      </div>
+        % if not user['can_edit']:
+            <div class="col-md-8">
+                <div id="fileRendered" class="mfr mfr-file">
+                    % if rendered is not None:
+                        ${rendered}
+                    % else:
+                        <img src="/static/img/loading.gif">
+                    % endif
+                </div>
+            </div>
+
+        % else:
+
+            <div data-bind="with: $root.editVM.wikiEditor.viewModel"
+                 data-osf-panel="Edit"
+                 class="col-md-8">
+                <div class="wiki-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
+                  <div class="wiki-panel-header" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
+                    <div class="row">
+                      <div class="col-md-6">
+                           <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"></i>   Edit </span>
+                      </div>
+                    </div>
+                  </div>
+##                  <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
+                  <div class="wiki-panel-body" style="padding: 10px">
+                        <div class="row">
+                        <div class="col-xs-12">
+                            <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">${rendered}</div>
+                        </div>
+                      </div>
+                  </div>
+                  <div class="wiki-panel-footer">
+                      <div class="row">
+                        <div class="col-xs-12">
+                           <div class="pull-right">
+                              <button id="revert-button"
+                                      class="btn btn-danger"
+                                      data-bind="click: revertChanges"
+                                      >Revert</button>
+                              <input type="submit"
+                                     class="btn btn-success"
+                                     value="Save"
+                                     onclick=$(window).off('beforeunload')>
+                          </div>
+                        </div>
+                      </div>
+                        <!-- Invisible textarea for form submission -->
+                        <textarea name="content" style="display: none;"
+                                  data-bind="value: currentText"></textarea>
+                  </div>
+##                </form>
+                </div>
+            </div>
+
+        % endif
+
+
 
       <div class="col-md-4">
         <div id="fileRevisions" class="scripted">
@@ -101,7 +150,7 @@
       </div>
     </div>
 
-  </div>
+
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
@@ -135,5 +184,18 @@
         }
       });
     </script>
+
+    <script>
+        $(function() {
+            var $edit = $('#editFile');
+            $edit.on('click', function() {
+                $('#fileRendered').attr('contenteditable', 'true');
+
+
+            });
+
+        });
+    </script>
+    <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
 </%def>
