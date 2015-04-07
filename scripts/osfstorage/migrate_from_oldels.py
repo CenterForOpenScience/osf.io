@@ -7,6 +7,8 @@ from modularodm.exceptions import NoResultsFound
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
 
+from scripts import utils as scripts_utils
+
 from website.app import init_app
 from website.addons.osfstorage import model, oldels
 
@@ -61,16 +63,22 @@ def migrate_guid(node, old, new, dry=True):
         guid.save()
 
 def migrate_children(node_settings, dry=True):
+    if not node_settings.file_tree:
+        logger.info('Skipping node {}; file_tree is None', node_settings.owner._id)
+
     logger.info('Migrating children of node {}', node_settings.owner._id)
     for child in node_settings.file_tree.children:
         migrate_file(node_settings.owner, child, node_settings.root_node, dry=dry)
 
 
 def main(dry=True):
+    if dry:
+        scripts_utils.add_file_logger(logger, __file__)
+
     for node_settings in model.OsfStorageNodeSettings.find():
         try:
             with TokuTransaction():
-                migrate_node_settings(node_settings.owner, node_settings, dry=dry)
+                migrate_node_settings(node_settings, dry=dry)
                 migrate_children(node_settings, dry=dry)
         except Exception as error:
             logger.error('Could no migrate file tree from {}'.format(node_settings.owner._id))
