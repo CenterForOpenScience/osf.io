@@ -81,6 +81,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     def can_intra_copy(self, other):
         return self == other
 
+    @asyncio.coroutine
     def intra_move(self, destination_provider, source_options, destination_options):
         source_path = GoogleDrivePath(self.folder['name'], source_options['path'])
         destination_path = GoogleDrivePath(destination_provider.folder['name'], destination_options['path'])
@@ -117,6 +118,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         data = yield from resp.json()
         return GoogleDriveFileMetadata(data, destination_path).serialized(), not exists
 
+    @asyncio.coroutine
     def intra_copy(self, destination, source_options, destination_options):
         source_path = GoogleDrivePath(self.folder['name'], source_options['path'])
         destination_path = GoogleDrivePath(destination_provider.folder['name'], destination_options['path'])
