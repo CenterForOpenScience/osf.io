@@ -5,7 +5,7 @@
 
 <%def name="content()">
     <% from website import settings %>
-    <div id="accountSettings">
+    <div id="accountSettings" class="scripted">
         <h2 class="page-header">Account Settings</h2>
         <div class="row">
             <div class="col-md-3">
