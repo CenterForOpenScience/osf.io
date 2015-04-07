@@ -3,6 +3,7 @@
 """
 
 import logging
+import sys
 
 from modularodm import Q
 from nose.tools import *
