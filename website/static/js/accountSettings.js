@@ -173,7 +173,7 @@ var UserProfileViewModel = oop.defclass({
             for (var i=0; i<emails.length; i++) {
                 if (emails[i].address() === email.address()) {
                     this.emailInput('');
-                    $osf.growl('Email Added', '<em>' + email.address()  + '<em>', 'success');
+                    $osf.growl('<em>' + email.address()  + '<em> added to your account.','You will receive a confirmation email in <em>' + email.address()  + '<em>. Please check your email and confirm.', 'success');
                     return;
                 }
             }
