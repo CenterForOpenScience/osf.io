@@ -232,6 +232,10 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_create_folder(payload, node_addon, **kwargs):
     path = payload.get('path')
+
+    if not path:
+        raise HTTPError(httplib.BAD_REQUEST)
+
     split = path.strip('/').split('/')
     child = split.pop(-1)
 
