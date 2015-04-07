@@ -18,7 +18,7 @@
                 <div class="input-group">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
                 <input class="form-control" data-bind="value: professional" placeholder="http://anotherwebsite.com"/>
-                </div>
+                </div> 
             </div>
 
             <div class="form-group">
