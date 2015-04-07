@@ -118,7 +118,7 @@ def update_user(auth):
         for address in added_emails:
             try:
                 user.add_unconfirmed_email(address)
-            except (ValidationError, ValueError) as e:
+            except (ValidationError, ValueError):
                 continue
 
             # TODO: This setting is now named incorrectly.

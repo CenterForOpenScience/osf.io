@@ -608,7 +608,7 @@ class User(GuidStoredObject, AddonModelMixin):
         email = email.lower().strip()
 
         if email in self.emails:
-            raise ValueError("Email already confirmed to this user");
+            raise ValueError("Email already confirmed to this user.")
 
         validate_email(email)
 
