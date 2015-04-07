@@ -158,20 +158,32 @@ def add_comment(**kwargs):
     comment.save()
 
     context = dict(
-        timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
-        user=auth.user,
         gravatar_url=auth.user.gravatar_url,
         content=content,
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
-        node=node,
         url=node.absolute_url
     )
-    sent_subscribers = notify(uid=node._id, event="comments", **context)
+    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    sent_subscribers = notify(
+        uid=node._id,
+        event="comments",
+        user=auth.user,
+        node=node,
+        timestamp=time_now,
+        **context
+    )
 
     if is_reply(target):
         if target.user and target.user not in sent_subscribers:
-            notify(uid=target.user._id, event='comment_replies', **context)
+            notify(
+                uid=target.user._id,
+                event='comment_replies',
+                user=auth.user,
+                node=node,
+                time_stamp=time_now,
+                **context
+            )
 
     return {
         'comment': serialize_comment(comment, auth)

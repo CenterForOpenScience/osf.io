@@ -27,6 +27,7 @@ def email_transactional(recipient_ids, uid, event, user, node, timestamp, **cont
     """
     template = event + '.html.mako'
     context['title'] = node.title
+    context['user'] = user
     subject = Template(EMAIL_SUBJECT_MAP[event]).render(**context)
 
     for user_id in recipient_ids:
@@ -54,7 +55,7 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
         NotificationDigest objects created for each subscribed user.
     """
     template = event + '.html.mako'
-
+    context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
 
     for user_id in recipient_ids:
@@ -64,7 +65,7 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
 
         if user._id != recipient._id:
             digest = NotificationDigest(
-                timestamp=context.get('timestamp'),
+                timestamp=timestamp,
                 event=event,
                 user_id=recipient._id,
                 message=message,
@@ -81,16 +82,13 @@ EMAIL_FUNCTION_MAP = {
 
 def notify(uid, event, user, node, timestamp, **context):
     """
-    :param uid:
-    :param event:
-    :param context: kwarg
-        optional:
-            target_user: used for comment_replies (python)
-            others specific to templates.
-        needed:
-            user: the user who changes or comments (python)
-            timestamp: time from action (python)
-            node: node where the change is made (python)
+    :param uid: node's id
+    :param event: type of notification
+    :param user: user triggering notification
+    :param node: the node
+    :param timestamp: time
+    :param context: optional variables specific to templates
+        target_user: used with comment_replies
     :return:
     """
     node_subscribers = []
@@ -139,7 +137,7 @@ def check_parent(uid, event, node_subscribers, **context):
     return node_subscribers
 
 
-def send(subscribed_user_ids, notification_type, uid, event, user, node, timestamp, **context):
+def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **context):
     """Dispatch to the handler for the provided notification_type"""
 
     if notification_type == 'none':
@@ -147,7 +145,7 @@ def send(subscribed_user_ids, notification_type, uid, event, user, node, timesta
 
     try:
         EMAIL_FUNCTION_MAP[notification_type](
-            subscribed_user_ids=subscribed_user_ids,
+            recipient_ids=recipient_ids,
             uid=uid,
             event=event,
             user=user,
