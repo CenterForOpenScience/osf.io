@@ -32,6 +32,9 @@ var projectOrganizer = {};
     var linkName;
     var linkID;
 
+// Cross browser key codes for the Command key
+var commandKeys = [224, 17, 91, 93]; 
+
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
@@ -88,10 +91,18 @@ projectOrganizer.myProjects = new Bloodhound({
  * @private
  */
 function _poTitleColumn(item) {
+    var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     return m('span', { 'class' : css , ondblclick : function(event){ 
-            window.open(item.data.urls.fetch);
-        }}, item.data.name);
+            console.log(tb.pressedKey);
+
+            if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+                window.open(item.data.urls.fetch, '_blank');
+            } else {
+                window.open(item.data.urls.fetch, '_self');
+            }
+        }
+    }, item.data.name);
 }
 
 /**
@@ -103,7 +114,7 @@ function _poTitleColumn(item) {
  * @private
  */
 function _gotoEvent(event, item, col) {
-    window.open(item.data.urls.fetch, '_blank');
+    window.open(item.data.urls.fetch, '_self');
 }
 
 /**
