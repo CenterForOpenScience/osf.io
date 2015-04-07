@@ -152,7 +152,7 @@ var UserProfileViewModel = oop.defclass({
     },
     addEmail: function () {
         var email = new UserEmail({
-            address: this.emailInput()
+            address: this.emailInput().toLowerCase().trim()
         });
 
         // ensure email isn't already in the list
