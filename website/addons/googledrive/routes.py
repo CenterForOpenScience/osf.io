@@ -6,52 +6,9 @@ from framework.routing import Rule, json_renderer
 
 from . import views
 
-# Routes that use the web renderer
-auth_routes = {
-    'rules': [
-
-        ##### OAuth #####
-
-        # Rule(
-        #     ['/oauth/connect/googledrive/'],
-        #     'post',
-        #     views.auth.googledrive_oauth_start,
-        #     json_renderer,
-        #     endpoint_suffix='_user'
-        # ),
-
-        # Rule(
-        #     ['/oauth/callback/googledrive/'],
-        #     'get',
-        #     views.auth.googledrive_oauth_finish,
-        #     json_renderer,
-        # ),
-
-        # Rule(
-        #     ['/oauth/accounts/googledrive/'],
-        #     'delete',
-        #     views.auth.googledrive_oauth_delete_user,
-        #     json_renderer,
-        # ),
-    ],
-}
-
 # JSON endpoints
 api_routes = {
     'rules': [
-
-        ##### OAuth #####
-
-        # avoid nginx rewrite (lack of 307 support)
-        # Rule(
-        #     [
-        #         '/project/<pid>/oauth/connect/googledrive/',
-        #         '/project/<pid>/node/<nid>/oauth/connect/googledrive/'
-        #     ],
-        #     'post',
-        #     views.auth.googledrive_oauth_start,
-        #     json_renderer,
-        # ),
 
         #### Profile settings ###
 
