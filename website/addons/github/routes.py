@@ -84,65 +84,25 @@ settings_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+            '/project/<pid>/zotero/user_auth/',
+            '/project/<pid>/node/<nid>/zotero/user_auth/',
+            ],
+        'put',
+            views.github_add_user_auth,
+            json_renderer,
+        ),
 
-        # # OAuth: User
-        # Rule(
-        #     '/settings/github/oauth/',
-        #     'get',
-        #     views.auth.github_oauth_start,
-        #     json_renderer,
-        #     endpoint_suffix='__user',
-        # ),
-        # Rule(
-        #     '/settings/github/oauth/',
-        #     'delete',
-        #     views.auth.github_oauth_delete_user,
-        #     json_renderer,
-        # ),
-
-        # # OAuth: Node
-        # Rule(
-        #     [
-        #         '/project/<pid>/github/oauth/',
-        #         '/project/<pid>/node/<nid>/github/oauth/',
-        #     ],
-        #     'get',
-        #     views.auth.github_oauth_start,
-        #     json_renderer,
-        # ),
-        # Rule(
-        #     [
-        #         '/project/<pid>/github/user_auth/',
-        #         '/project/<pid>/node/<nid>/github/user_auth/',
-        #     ],
-        #     'post',
-        #     views.auth.github_add_user_auth,
-        #     json_renderer,
-        # ),
-
-        # Rule(
-        #     [
-        #         '/project/<pid>/github/oauth/',
-        #         '/project/<pid>/node/<nid>/github/oauth/',
-        #         '/project/<pid>/github/settings/',
-        #         '/project/<pid>/node/<nid>/github/settings/'
-        #
-        #     ],
-        #     'delete',
-        #     views.auth.github_oauth_deauthorize_node,
-        #     json_renderer,
-        # ),
-
-        # # OAuth: General
-        # Rule(
-        #     [
-        #         '/addons/github/callback/<uid>/',
-        #         '/addons/github/callback/<uid>/<nid>/',
-        #     ],
-        #     'get',
-        #     views.auth.github_oauth_callback,
-        #     json_renderer,
-        # ),
+        Rule(
+            [
+            '/project/<pid>/zotero/user_auth/',
+            '/project/<pid>/node/<nid>/zotero/user_auth/',
+            ],
+            'delete',
+            views.github_remove_user_auth,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1',
 }

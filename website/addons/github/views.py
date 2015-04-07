@@ -14,7 +14,7 @@ from website.project.decorators import (
 from .provider import GithubProvider
 
 @must_be_logged_in
-def zotero_list_accounts_user(auth):
+def github_list_accounts_user(auth):
     """Return the list of all of the current user's authorized Github accounts."""
 
     provider = GithubProvider()
@@ -22,8 +22,8 @@ def zotero_list_accounts_user(auth):
 
 
 @must_have_permission('write')
-@must_have_addon('zotero', 'node')
-def zotero_get_config(auth, node_addon, **kwargs):
+@must_have_addon('github', 'node')
+def github_get_config(auth, node_addon, **kwargs):
     """Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
@@ -31,14 +31,14 @@ def zotero_get_config(auth, node_addon, **kwargs):
     return {
         'result': provider.serializer(
             node_settings=node_addon,
-            user_settings=auth.user.get_addon('zotero'),
+            user_settings=auth.user.get_addon('github'),
         ).serialized_node_settings
     }
 
 @must_have_permission('write')
-@must_have_addon('zotero', 'node')
+@must_have_addon('github', 'node')
 @must_not_be_registration
-def zotero_set_config(auth, node_addon, **kwargs):
+def github_set_config(auth, node_addon, **kwargs):
     """Update GithubNodeSettings based on submitted account and folder information."""
 
     provider = GithubProvider()
@@ -55,14 +55,14 @@ def zotero_set_config(auth, node_addon, **kwargs):
     return {
         'result': provider.serializer(
             node_settings=node_addon,
-            user_settings=auth.user.get_addon('zotero'),
+            user_settings=auth.user.get_addon('github'),
         ).serialized_node_settings
     }
 
 @must_have_permission('write')
-@must_have_addon('zotero', 'node')
+@must_have_addon('github', 'node')
 @must_not_be_registration
-def zotero_add_user_auth(auth, node_addon, **kwargs):
+def github_add_user_auth(auth, node_addon, **kwargs):
     """Allows for importing existing auth to GithubNodeSettings """
 
     provider = GithubProvider()
@@ -72,9 +72,9 @@ def zotero_add_user_auth(auth, node_addon, **kwargs):
 
 
 @must_have_permission('write')
-@must_have_addon('zotero', 'node')
+@must_have_addon('github', 'node')
 @must_not_be_registration
-def zotero_remove_user_auth(auth, node_addon, **kwargs):
+def github_remove_user_auth(auth, node_addon, **kwargs):
     """Removes auth from GithubNodeSettings """
 
     provider = GithubProvider()
@@ -82,8 +82,8 @@ def zotero_remove_user_auth(auth, node_addon, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('zotero', 'node')
-def zotero_widget(node_addon, **kwargs):
+@must_have_addon('github', 'node')
+def github_widget(node_addon, **kwargs):
     """Collects and serializes settting needed to build the widget."""
 
     provider = GithubProvider()
@@ -91,13 +91,13 @@ def zotero_widget(node_addon, **kwargs):
 
 
 @must_be_contributor_or_public
-@must_have_addon('zotero', 'node')
-def zotero_citation_list(auth, node_addon, zotero_list_id=None, **kwargs):
+@must_have_addon('github', 'node')
+def github_citation_list(auth, node_addon, github_list_id=None, **kwargs):
     """Collects a listing of folders and citations based on the
-    passed zotero_list_id. If zotero_list_id is `None`, then all of the
+    passed github_list_id. If github_list_id is `None`, then all of the
     authorizer's folders and citations are listed.
     """
 
     provider = GithubProvider()
     show = request.args.get('view', 'all')
-    return provider.citation_list(node_addon, auth.user, zotero_list_id, show)
+    return provider.citation_list(node_addon, auth.user, github_list_id, show)

@@ -30,36 +30,10 @@ from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRe
 
 from website.oauth.models import ExternalProvider
 
+from .serializer import GitHubSerializer
+
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
-
-
-class GitHubProvider(ExternalProvider):
-    name = "GitHub"
-    short_name = "github"
-
-    client_id = github_settings.GITHUB_CLIENT_ID
-    client_SECRET = github_settings.GITHUB_CLIENT_SECRET
-
-    auth_url_base = 'https://github.com/login/oauth/authorize'
-    callback_url = 'https://github.com/login/oauth/access_token'
-    default_scopes = github_settings.SCOPE
-
-    _client = None
-
-    def handle_callback(self, response):
-        import ipdb; ipdb.set_trace()
-        client = self.client
-        
-
-        pass
-
-    @property
-    def client(self):
-        """An API session with Mendeley"""
-        if not self._client:
-            self._client = GitHub(self.account.oauth_key, 'bearer') #Token Type bearer correct?
-        return self._client
 
 
 class GithubGuidFile(GuidFile):
@@ -121,30 +95,45 @@ class GithubGuidFile(GuidFile):
         super(GithubGuidFile, self)._exception_from_response(response)
 
 
+class GitHubProvider(ExternalProvider):
+    name = "GitHub"
+    short_name = "github"
+
+    client_id = github_settings.GITHUB_CLIENT_ID
+    client_SECRET = github_settings.GITHUB_CLIENT_SECRET
+
+    auth_url_base = 'https://github.com/login/oauth/authorize'
+    callback_url = 'https://github.com/login/oauth/access_token'
+    default_scopes = github_settings.SCOPE
+
+    _client = None
+
+    def handle_callback(self, response):
+        import ipdb; ipdb.set_trace()
+        client = self.client
+        pass
+
+    @property
+    def client(self):
+        """An API session with Mendeley"""
+        if not self._client:
+            self._client = GitHub(self.account.oauth_key, 'bearer') #Token Type bearer correct?
+        return self._client
+
 
 class GitHubUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = GitHubProvider
-    #need to implement serializer
-    serializer = serializer.GitHubSerializer:
-    #
-    # def to_json(self, user):
-    #     ret = super(AddonGitHubUserSettings, self).to_json(user)
-    #     ret.update({
-    #         'authorized': self.has_auth,
-    #         'authorized_github_user': self.github_user_name if self.github_user_name else '',
-    #         'show_submit': False,
-    #     })
-    #     return ret
+    serializer = serializer.GitHubSerializer
 
 
 class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
 
     oauth_provider = GitHubProvider
-
-    drive_folder_id = fields.StringField()
-    drive_folder_name = fields.StringField()
-    folder_path = fields.StringField()
     serializer = GitHubSerializer
+
+    repo = fields.StringField()
+    hook_id = fields.StringField()
+    hook_secret = fields.StringField()
 
     _api = None
 
@@ -161,41 +150,42 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
             external_account=self.external_account,
-            metadata={'folder': self.drive_folder_id}
+            metadata={'folder': self.repo_folder_id}
         ))
 
+    def find_or_create_file_guid(self, path):
+        return GithubGuidFile.get_or_create(node=self.owner, path=path)
+
     def set_folder(self, folder, auth, add_log=True):
-        self.drive_folder_id = folder['id']
+        self.repo_folder_id = folder['id']
         self.folder_path = folder['path']
 
     @property
     def provider_name(self):
-        return 'googledrive'
-
-    def clear_auth(self):
-        self.drive_folder_id = None
-        self.folder_path = None
-        self.drive_folder_name = None
-        return super(GitHubNodeSettings, self).clear_auth()
+        return 'github'
 
     def set_auth(self, *args, **kwargs):
-        self.drive_folder_id = None
+        self.zotero_list_id = None
         return super(GitHubNodeSettings, self).set_auth(*args, **kwargs)
+
+    def clear_auth(self):
+        self.zotero_list_id = None
+        return super(GitHubNodeSettings, self).clear_auth()
 
     def set_target_folder(self, folder, auth):
         """Configure this addon to point to a GitHub Drive folder
         :param dict folder:
         :param User user:
         """
-        self.drive_folder_id = folder['id']
+        self.repo_folder_id = folder['id']
         self.folder_path = folder['path']
-        self.drive_folder_name = folder['name']
+        self.repo_folder_name = folder['name']
 
         # Tell the user's addon settings that this node is connecting
         self.user_settings.grant_oauth_access(
             node=self.owner,
             external_account=self.external_account,
-            metadata={'folder': self.drive_folder_id}
+            metadata={'folder': self.repo_folder_id}
         )
         self.user_settings.save()
 
@@ -203,65 +193,66 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         self.save()
 
         self.owner.add_log(
-            'googledrive_folder_selected',
+            'googlerepo_folder_selected',
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'folder_id': self.drive_folder_id,
-                'folder_name': self.drive_folder_name,
+                'folder_id': self.repo_folder_id,
+                'folder_name': self.repo_folder_name,
             },
             auth=auth,
-        )
-    # TODO: Delete me and replace with serialize_settings / Knockout
-    def to_json(self, user):
-        ret = super(AddonGitHubNodeSettings, self).to_json(user)
+      )
 
-        user_settings = user.get_addon('github')
-
-        ret.update({
-            'repo': self.repo or '',
-            'has_repo': self.repo is not None,
-            'user_has_auth': user_settings and user_settings.has_auth,
-            'node_has_auth': False,
-            'user_is_owner': (
-                (self.user_settings and self.user_settings.owner == user) or False
-            ),
-            'owner': None,
-            'repo_names': None,
-            'is_registration': self.owner.is_registration,
-        })
-
-        if self.user_settings and self.user_settings.has_auth:
-            owner = self.user_settings.owner
-            if user_settings and user_settings.owner == owner:
-                connection = GitHub.from_settings(user_settings)
-                # TODO: Fetch repo list client-side
-                # Since /user/repos excludes organization repos to which the
-                # current user has push access, we have to make extra requests to
-                # find them
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-                repo_names = [
-                    '{0} / {1}'.format(repo.owner.login, repo.name)
-                    for repo in repos
-                ]
-                ret.update({
-                    'repo_names': repo_names,
-                })
-
-            ret.update({
-                'node_has_auth': True,
-                'github_user': self.user or '',
-                'github_repo': self.repo or '',
-                'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo),
-                'auth_osf_name': owner.fullname,
-                'auth_osf_url': owner.url,
-                'auth_osf_id': owner._id,
-                'github_user_name': self.user_settings.github_user_name,
-                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
-                'is_owner': owner == user,
-                'owner': self.user_settings.owner.fullname
-            })
-        return ret
+    # # TODO: Delete me and replace with serialize_settings / Knockout
+    # def to_json(self, user):
+    #     ret = super(GitHubNodeSettings, self).to_json(user)
+    #
+    #     user_settings = user.get_addon('github')
+    #
+    #     ret.update({
+    #         'repo': self.repo or '',
+    #         'has_repo': self.repo is not None,
+    #         'user_has_auth': user_settings and user_settings.has_auth,
+    #         'node_has_auth': False,
+    #         'user_is_owner': (
+    #             (self.user_settings and self.user_settings.owner == user) or False
+    #         ),
+    #         'owner': None,
+    #         'repo_names': None,
+    #         'is_registration': self.owner.is_registration,
+    #     })
+    #
+    #     if self.user_settings and self.user_settings.has_auth:
+    #         owner = self.user_settings.owner
+    #         if user_settings and user_settings.owner == owner:
+    #             connection = GitHub.from_settings(user_settings)
+    #             # TODO: Fetch repo list client-side
+    #             # Since /user/repos excludes organization repos to which the
+    #             # current user has push access, we have to make extra requests to
+    #             # find them
+    #             repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+    #             repo_names = [
+    #                 '{0} / {1}'.format(repo.owner.login, repo.name)
+    #                 for repo in repos
+    #             ]
+    #             ret.update({
+    #                 'repo_names': repo_names,
+    #             })
+    #
+    #         ret.update({
+    #             'node_has_auth': True,
+    #             'github_user': self.user or '',
+    #             'github_repo': self.repo or '',
+    #             'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo),
+    #             'auth_osf_name': owner.fullname,
+    #             'auth_osf_url': owner.url,
+    #             'auth_osf_id': owner._id,
+    #             'github_user_name': self.user_settings.github_user_name,
+    #             'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
+    #             'is_owner': owner == user,
+    #             'owner': self.user_settings.owner.fullname
+    #         })
+    #     return ret
 
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
