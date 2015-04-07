@@ -36,7 +36,7 @@ linked GitHub repo
 </script>
 
 <script type="text/html" id="github_repo_unlinked">
-un-linked GitHub repo
+unlinked GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> from
 <span data-bind="text: nodeType"></span>
