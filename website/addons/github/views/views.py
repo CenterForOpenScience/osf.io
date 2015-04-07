@@ -11,8 +11,6 @@ from website.project.decorators import (
     must_have_addon,
 )
 
-from .provider import GithubProvider
-
 @must_be_logged_in
 def github_list_accounts_user(auth):
     """Return the list of all of the current user's authorized Github accounts."""

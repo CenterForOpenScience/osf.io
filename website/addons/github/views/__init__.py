@@ -1,1 +1,1 @@
-from . import auth, config, crud, hgrid, hooks, repos  # noqa
+from . import config, crud, hgrid, hooks, repos, views  # noqa

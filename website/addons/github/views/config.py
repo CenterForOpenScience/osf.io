@@ -121,8 +121,8 @@ def github_remove_user_settings(user_addon, **kwargs):
     success = user_addon.revoke_auth(save=True)
     if not success:
         push_status_message(
-            'Your Amazon credentials were removed from the OSF, but we were '
-            'unable to revoke your OSF information from Amazon. Your Amazon '
+            'Your GitHub credentials were removed from the OSF, but we were '
+            'unable to revoke your OSF information from GitHub. Your GitHub '
             'credentials may no longer be valid.'
         )
         return {'message': 'reload'}, http.BAD_REQUEST

@@ -14,7 +14,7 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/github/settings/',
             ],
             'post',
-            views.config.github_set_config,
+            views.views.github_set_config,
             json_renderer,
         ),
 
@@ -24,7 +24,7 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/github/settings/',
             ],
             'get',
-            views.config.github_get_config,
+            views.views.github_get_config,
             json_renderer,
         ),
 
@@ -86,21 +86,21 @@ settings_routes = {
 
         Rule(
             [
-            '/project/<pid>/zotero/user_auth/',
-            '/project/<pid>/node/<nid>/zotero/user_auth/',
+            '/project/<pid>/github/user_auth/',
+            '/project/<pid>/node/<nid>/github/user_auth/',
             ],
         'put',
-            views.github_add_user_auth,
+            views.views.github_add_user_auth,
             json_renderer,
         ),
 
         Rule(
             [
-            '/project/<pid>/zotero/user_auth/',
-            '/project/<pid>/node/<nid>/zotero/user_auth/',
+            '/project/<pid>/github/user_auth/',
+            '/project/<pid>/node/<nid>/github/user_auth/',
             ],
             'delete',
-            views.github_remove_user_auth,
+            views.views.github_remove_user_auth,
             json_renderer,
         ),
     ],

@@ -3,13 +3,12 @@ import os
 from . import routes, views, model
 
 MODELS = [
-    model.AddonGitHubUserSettings,
-    model.AddonGitHubNodeSettings,
+    model.GitHubUserSettings,
+    model.GitHubNodeSettings,
     model.GithubGuidFile,
-    model.AddonGitHubOauthSettings,
 ]
-USER_SETTINGS_MODEL = model.AddonGitHubUserSettings
-NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings
+USER_SETTINGS_MODEL = model.GitHubUserSettings
+NODE_SETTINGS_MODEL = model.GitHubNodeSettings
 
 ROUTES = [routes.api_routes, routes.settings_routes]
 

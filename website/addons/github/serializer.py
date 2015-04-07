@@ -14,7 +14,7 @@ class GitHubSerializer(OAuthAddonSerializer):
             'create_repo': node.api_url_for('github_create_repo'),
             'import_auth': node.api_url_for('github_add_user_auth'),
             'create_auth': node.api_url_for('github_oauth_start'),
-            'deauthorize': node.api_url_for('github_oauth_deauthorize_node'),
+            'deauthorize': node.api_url_for('github_remove_user_auth'),
             'repo_list': node.api_url_for('github_repo_list'),
             'set_repo': node.api_url_for('github_set_config'),
             'settings': web_url_for('user_addons'),
@@ -25,4 +25,16 @@ class GitHubSerializer(OAuthAddonSerializer):
                                           uid=user_settings.owner._primary_key)
         return result
 
+    @property
+
+    def serialized_urls(self):
+        pass
+
+    @property
+    def user_is_owner(self):
+        pass
+
+    @property
+    def credentials_owner(self):
+        pass
 
