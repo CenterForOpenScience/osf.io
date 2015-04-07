@@ -53,6 +53,13 @@ class GitHubProvider(provider.BaseProvider):
         segments = ('repos', self.owner, self.repo) + segments
         return self.build_url(*segments, **query)
 
+    # def can_intra_move(self, other):
+    #     return (
+    #         type(self) == type(other) and
+    #         self.repo == other.repo and
+    #         self.owner == other.owner
+    #     )
+
     @asyncio.coroutine
     def download(self, path, ref=None, **kwargs):
         '''Get the stream to the specified file on github
