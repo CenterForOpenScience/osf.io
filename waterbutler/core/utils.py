@@ -216,3 +216,16 @@ def async_retry(retries=5, backoff=1, exceptions=(Exception, ), raven=client):
         return wrapped
 
     return _async_retry
+
+
+@asyncio.coroutine
+def send_signed_request(method, url, payload):
+    message, signature = signer.sign_payload(payload)
+    return (yield from aiohttp.request(
+        method, url,
+        data=json.dumps({
+            'payload': message.decode(),
+            'signature': signature,
+        }),
+        headers={'Content-Type': 'application/json'},
+    ))
