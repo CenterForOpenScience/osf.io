@@ -97,6 +97,9 @@ def validate_location(value):
 
 
 def must_be(_type):
+    """A small decorator factory for OsfStorageFileNode. Acts as a poor mans
+    polymorphic inheritance, ensures that the given instance is of "kind" folder or file
+    """
     def _must_be(func):
         @functools.wraps(func)
         def wrapped(self, *args, **kwargs):
