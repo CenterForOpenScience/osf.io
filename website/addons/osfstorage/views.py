@@ -147,21 +147,28 @@ def osf_storage_update_metadata_hook(node_addon, payload, **kwargs):
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
-    file_record = model.OsfStorageFileRecord.find_by_path(payload.get('path'), node_addon)
+    try:
+        path = payload['path'].strip('/')
+    except KeyError:
+        raise make_error(httplib.BAD_REQUEST, 'Path is required')
 
-    if file_record is None:
-        raise HTTPError(httplib.NOT_FOUND)
+    storage_node = model.OsfStorageFileNode.get(path, node_addon)
+
+    if storage_node == node_addon.root_node:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    if storage_node.is_deleted:
+        raise HTTPError(httplib.GONE)
 
     try:
         auth = Auth(User.load(payload['auth'].get('id')))
         if not auth:
             raise HTTPError(httplib.BAD_REQUEST)
-
-        file_record.delete(auth)
+        storage_node.delete(auth)
     except errors.DeleteError:
         raise HTTPError(httplib.NOT_FOUND)
 
-    file_record.save()
+    storage_node.save()
     return {'status': 'success'}
 
 
