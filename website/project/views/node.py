@@ -304,7 +304,11 @@ def node_setting(auth, **kwargs):
     for addon in node.get_addons():
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
-            addon_enabled_settings.append(addon.to_json(auth.user))
+            config = addon.to_json(auth.user)
+            # inject the MakoTemplateLookup into the template context
+            # TODO inject only short_name and render fully client side
+            config['template_lookup'] = addon.config.template_lookup
+            addon_enabled_settings.append(config)
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
@@ -765,7 +769,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url': parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
+            'can_view': parent.can_view(auth) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),

@@ -25,8 +25,8 @@ bucket
 </script>
 
 <script type="text/html" id="s3_bucket_linked">
-selected bucket
-<span data-bind="text: params.bucket"></span> in
+linked Amazon Simple Storage Service bucket /
+<span data-bind="text: params.bucket"></span> to
 <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>

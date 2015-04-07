@@ -146,6 +146,26 @@ class TestProjectViews(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def test_can_view_nested_project_as_admin(self):
+        self.parent_project = NodeFactory(
+            title='parent project',
+            category='project',
+            project=self.project,
+            is_public=False
+        )
+        self.parent_project.save()
+        self.child_project = NodeFactory(
+            title='child project',
+            category='project',
+            project=self.parent_project,
+            is_public=False
+        )
+        self.child_project.save()
+        url = self.child_project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+        assert_not_in('Private Project', res.body)
+        assert_in('parent project', res.body)
+
     def test_edit_description(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         self.app.post_json(url,
@@ -495,16 +515,30 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         for mock_command in mock_commands:
             assert_false(mock_command.called)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
-        assert_false(data['has_more_logs'])
+        assert_equal(data['total'], len(self.project.logs))
+        assert_equal(data['page'], 0)
+        assert_equal(data['pages'], 1)
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
+
+    def test_get_logs_invalid_page_input(self):
+        url = self.project.api_url_for('get_logs')
+        invalid_input = 'invalid page'
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
 
     def test_get_logs_with_count_param(self):
         # Add some logs
@@ -517,10 +551,13 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['total'], 5 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 3)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
@@ -533,10 +570,13 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
 
     def test_get_more_logs(self):
         # Add some logs
@@ -549,10 +589,13 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        url = self.project.api_url_for('get_logs')
+        res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
-        assert_false(res.json['has_more_logs'])
+        #1 project create log, 1 add contributor log, then 12 generated logs
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 1)
+        assert_equal(res.json['pages'], 2)
 
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
@@ -577,10 +620,13 @@ class TestProjectViews(OsfTestCase):
                 params={'project': child._id}
             )
 
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 15 generated logs
+        assert_equal(res.json['total'], 15 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
         assert_equal(
             [self.project._id] * 10,
             [
@@ -1940,6 +1986,24 @@ class TestWatchViews(OsfTestCase):
         assert_equal(len(res.json['logs']), 10)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
+        # 1 project create log then 12 generated logs
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
     def test_get_more_watched_logs(self):
         project = ProjectFactory()
         # Add some logs
@@ -1949,11 +2013,47 @@ class TestWatchViews(OsfTestCase):
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
         self.user.save()
-        url = "/api/v1/watched/logs/"
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        url = api_url_for("watched_logs_get")
+        page = 1
+        res = self.app.get(url, {'page': page}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        # 1 project create log then 12 generated logs
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], page)
+        assert_equal(res.json['pages'], 2)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_more_watched_logs_invalid_page(self):
+        project = ProjectFactory()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        invalid_page = 'invalid page'
+        res = self.app.get(
+            url, {'page': invalid_page}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_more_watched_logs_invalid_size(self):
+        project = ProjectFactory()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        invalid_size = 'invalid size'
+        res = self.app.get(
+            url, {'size': invalid_size}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "size".'
+        )
 
 class TestPointerViews(OsfTestCase):
 
@@ -3792,7 +3892,7 @@ class TestProjectCreation(OsfTestCase):
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
         assert_equal(res2.status_code, 401)
-        assert_in("Sign up or Log in", res2.body)
+        assert_in("Sign In", res2.body)
 
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()

@@ -1,0 +1,14 @@
+/* Override some treebeard styles */
+.filebrowser .title-text {
+    cursor: initial;
+}
+.filebrowser .tb-expand-icon-holder {
+    cursor: initial;
+}
+.filebrowser .tb-multiselect {
+    background-color: white;
+}
+/* ---------------- */
+.hasChildren {
+    cursor: pointer;
+}

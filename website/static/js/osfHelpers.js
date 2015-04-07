@@ -9,7 +9,7 @@ var moment = require('moment');
 // Why?!
 require('./koHelpers');
 
-var GrowlBox = require('./growlBox');
+var GrowlBox = require('js/growlBox');
 
 /**
  * Convenience function to create a GrowlBox
@@ -307,19 +307,21 @@ ko.bindingHandlers.anchorScroll = {
     init: function(elem, valueAccessor) {
         var buffer = valueAccessor().buffer || 100;
         var element = valueAccessor().elem || elem;
+        var offset;
         $(element).on('click', 'a[href^="#"]', function (event) {
             var $item = $(this);
             var $element = $(element);
             if(!$item.attr('data-model') && $item.attr('href') !== "#") {
                 event.preventDefault();
                 // get location of the target
-                var target = $item.attr('href'),
-                    offset = $(target).offset();
+                var target = $item.attr('href');
                 // if target has a scrollbar scroll it, otherwise scroll the page
                 if ( $element.get(0).scrollHeight > $element.height() ) {
+                    offset = $(target).position();
                     $element.scrollTop(offset.top - buffer);
                 } else {
-                    $(window).scrollTop(offset.top - 100);
+                    offset = $(target).offset();
+                    $(window).scrollTop(offset.top - 100); // This is fixed to 100 because of the fixed navigation menus on the page
                 }
             }
         });

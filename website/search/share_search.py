@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 from elasticsearch import Elasticsearch
 
 from website import settings
+from website.search.elastic_search import requires_search
 
 from util import generate_color, html_and_illegal_unicode_replace
 
@@ -21,6 +22,7 @@ share_es = Elasticsearch(
 )
 
 
+@requires_search
 def search(query, raw=False):
     # Run the real query and get the results
     results = share_es.search(index='share', doc_type=None, body=query)
@@ -31,6 +33,7 @@ def search(query, raw=False):
     }
 
 
+@requires_search
 def count(query):
     if query.get('from') is not None:
         del query['from']
@@ -45,6 +48,7 @@ def count(query):
     }
 
 
+@requires_search
 def providers():
 
     provider_map = share_es.search(index='share_providers', doc_type=None, body={
@@ -61,6 +65,7 @@ def providers():
     }
 
 
+@requires_search
 def stats(query=None):
     query = query or {"query": {"match_all": {}}}
     three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
@@ -227,6 +232,10 @@ def data_for_charts(elastic_results):
         'date_numbers': numbers,
         'group_names': names
     }
+
+    if date_totals.get('date_numbers') == [[u'x']]:
+        for name in date_totals.get('group_names'):
+            date_totals.get('date_numbers').append([name, 0])
 
     for_charts['date_totals'] = date_totals
 
