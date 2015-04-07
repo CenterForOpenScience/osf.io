@@ -193,7 +193,7 @@ def box_user_config_get(auth, **kwargs):
             valid_credentials = False
 
     username = ''
-    n_nodes_authorized = []
+    n_nodes_authorized = 0
     user_has_auth = False
     if user_addon:
         username = user_addon.username
