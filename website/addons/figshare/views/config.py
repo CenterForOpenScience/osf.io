@@ -38,22 +38,30 @@ def figshare_config_put(node_addon, auth, **kwargs):
     fields = request.json.get('selected', {})
     node = node_addon.owner
 
-    name = fields.get('name') or ''
-    fs_id = fields.get('id') or None
-    fs_type = fields.get('type') or None
+    name = fields.get('name')
+    figshare_id = fields.get('id')
+    figshare_type = fields.get('type')
+
+    if not name or not figshare_id or not figshare_type:
+        return HTTPError(http.BAD_REQUEST, message="""
+        You must supply:\n
+        - name {String}: name of figshare article
+        - id {String}: id of figshare article
+        - type {String}: type of figshare article
+        """)
 
     node_addon.update_fields({
         'title': name,
-        'id': fs_id,
-        'type': fs_type,
+        'id': figshare_id,
+        'type': figshare_type,
     }, node, auth)
 
     return {
         'result': {
             'folder': {
                 'name': name,
-                'id': fs_id,
-                'type': fs_type,
+                'id': figshare_id,
+                'type': figshare_type,
             },
             'urls': serialize_urls(node_addon),
         },
