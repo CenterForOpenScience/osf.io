@@ -22,7 +22,7 @@ def get_addons_by_config_type(config_type, user):
         if user_settings:
             user_settings = user_settings.to_json(user)
         config.update({
-            'user_settings': user_settings,
+            'user_settiongs': user_settings or addon_config.DEFAULT_SETTINGS,
         })
         addon_settings.append(config)
     return addon_settings
