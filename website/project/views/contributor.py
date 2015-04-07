@@ -299,7 +299,7 @@ def deserialize_contributors(node, user_dicts, auth):
                     email=email)
                 contributor.save()
             except ValidationValueError:
-                contributor = get_user(username=email)
+                contributor = get_user(email=email)
 
         # Add unclaimed record if necessary
         if (not contributor.is_registered
@@ -663,7 +663,7 @@ def invite_contributor_post(**kwargs):
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname'}, 400
     # Check if email is in the database
-    user = get_user(username=email)
+    user = get_user(email=email)
     if user:
         if user.is_registered:
             msg = 'User is already in database. Please go back and try your search again.'
@@ -694,7 +694,7 @@ def claim_user_post(**kwargs):
     # Submitted through X-editable
     if 'value' in reqdata:  # Submitted email address
         email = reqdata['value'].lower().strip()
-        claimer = get_user(username=email)
+        claimer = get_user(email=email)
         if claimer:
             send_claim_registered_email(claimer=claimer, unreg_user=user,
                 node=node)
