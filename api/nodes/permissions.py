@@ -15,3 +15,10 @@ class ContributorOrPublic(permissions.BasePermission):
             return obj.is_public or obj.can_view(auth)
         else:
             return obj.can_edit(auth)
+
+class MustNotBeRegistration(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if obj.is_registration:
+            return request.method in permissions.SAFE_METHODS
+        return True
