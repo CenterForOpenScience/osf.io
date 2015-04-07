@@ -213,12 +213,15 @@ class GoogleDriveProvider(provider.BaseProvider):
         return GoogleDriveFileMetadata(data, path.parent).serialized(), not exists
 
     @asyncio.coroutine
-    def delete(self, path, **kwargs):
-        path = GoogleDrivePath(self.folder['name'], path)
-        metadata = yield from self.metadata(str(path), raw=True)
+    def delete(self, path, item_id=None, **kwargs):
+        if not item_id:
+            path = GoogleDrivePath(self.folder['name'], path)
+            metadata = yield from self.metadata(str(path), raw=True)
+            item_id = metadata['id']
+
         yield from self.make_request(
             'DELETE',
-            self.build_url('files', metadata['id']),
+            self.build_url('files', item_id),
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
