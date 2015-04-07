@@ -132,7 +132,7 @@ class TestViewsConfig(OsfTestCase):
             {
                 'selected': {
                     'id': 'project_9001',
-                    'title': 'IchangedbecauseIcan',
+                    'name': 'IchangedbecauseIcan',
                 },
             },
             auth=self.user.auth,

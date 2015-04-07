@@ -38,16 +38,23 @@ def figshare_config_put(node_addon, auth, **kwargs):
     fields = request.json.get('selected', {})
     node = node_addon.owner
 
-    folder = {
-        'name': fields.get('name') or '',
-        'id': fields.get('id') or None,
-        'type': fields.get('type') or None,
-    }
-    node_addon.update_fields(folder, node, auth)
+    name = fields.get('name') or ''
+    fs_id = fields.get('id') or None
+    fs_type = fields.get('type') or None
+
+    node_addon.update_fields({
+        'title': name,
+        'id': fs_id,
+        'type': fs_type,
+    }, node, auth)
 
     return {
         'result': {
-            'folder': folder,
+            'folder': {
+                'name': name,
+                'id': fs_id,
+                'type': fs_type,
+            },
             'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
