@@ -1,3 +1,4 @@
+
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
 import httplib as http
@@ -59,12 +60,6 @@ def get_folders(client):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
-    if node_settings.folder and node_settings.folder != '/':
-        # The link to share a the folder with other Dropbox users
-        share_url = utils.get_share_folder_uri(node_settings.folder)
-    else:
-        share_url = None
-
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
@@ -73,8 +68,6 @@ def serialize_urls(node_settings):
         'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('dropbox_hgrid_data_contents', root=1),
-        'share': share_url,
-        'emails': node.api_url_for('dropbox_get_share_emails'),
         'settings': web_url_for('user_addons')
     }
     return urls
@@ -101,7 +94,6 @@ def serialize_settings(node_settings, current_user, client=None):
                 valid_credentials = False
             else:
                 raise HTTPError(http.BAD_REQUEST)
-
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userIsOwner': user_is_owner,

@@ -49,15 +49,15 @@ utils.updateVM = function(vm, data) {
     data.results.forEach(function(result) {
         result.title = utils.scrubHTML(result.title);
         result.description = utils.scrubHTML(result.description);
-    });    
-    vm.results.push.apply(vm.results, data.results);   
+    });
+    vm.results.push.apply(vm.results, data.results);
     m.redraw();
     $.map(callbacks, function(cb) {
         cb();
     });
 };
 
-utils.loadMore = function(vm) {    
+utils.loadMore = function(vm) {
     var ret = m.deferred();
     if (utils.buildQuery(vm).length === 0) {
         ret.resolve(null);
@@ -70,7 +70,7 @@ utils.loadMore = function(vm) {
         m.request({
             method: 'get',
             background: true,
-            url: '/api/v1/share/?' + $.param({
+            url: '/api/v1/share/search/?' + $.param({
                 from: page,
                 q: utils.buildQuery(vm),
                 sort: sort

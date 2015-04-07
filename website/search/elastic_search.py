@@ -171,12 +171,13 @@ def format_result(result, parent_id=None):
         'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
-        'contributors_url': result['contributors_url'],
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'is_retracted': result['is_retracted'],
         'description': result['description'] if parent_info is None else None,
-        'category': result.get('category')
+        'category': result.get('category'),
+        'date_created': result.get('date_created'),
+        'date_registered': result.get('registration_date')
     }
 
     return formatted_result
@@ -231,13 +232,12 @@ def update_node(node, index=INDEX):
         elastic_document = {
             'id': elastic_document_id,
             'contributors': [
-                x.fullname for x in node.visible_contributors
+                {
+                    'fullname': x.fullname,
+                    'url': x.profile_url if x.is_active else None
+                }
+                for x in node.visible_contributors
                 if x is not None
-            ],
-            'contributors_url': [
-                x.profile_url for x in node.visible_contributors
-                if x is not None
-                and x.is_active
             ],
             'title': node.title,
             'normalized_title': normalized_title,
@@ -248,10 +248,10 @@ def update_node(node, index=INDEX):
             'url': node.url,
             'is_registration': node.is_registration,
             'is_retracted': node.is_retracted,
-            'registered_date': str(node.registered_date)[:10],
+            'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,
-            'iso_timestamp': node.date_created,
+            'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
 

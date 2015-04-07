@@ -10,9 +10,10 @@ var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
+// Knockout components for the onboarder
 require('../onboarder.js');
 var $osf = require('../osfHelpers');
-var LogFeed = require('../logFeed.js');
+var LogFeed = require('js/logFeed');
 var projectOrganizer = require('..//projectorganizer');
 var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
 
@@ -98,8 +99,7 @@ $(document).ready(function() {
         });
     });
 
-
-
 });
+
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

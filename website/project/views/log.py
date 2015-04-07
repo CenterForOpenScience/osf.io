@@ -9,7 +9,7 @@ from framework.auth.decorators import collect_auth
 from framework.transactions.handlers import no_auto_transaction
 
 
-from website.views import serialize_log
+from website.views import serialize_log, paginate
 from website.project.model import NodeLog
 from website.project.model import has_anonymous_link
 from website.project.decorators import must_be_valid_project
@@ -30,7 +30,7 @@ def get_log(auth, log_id):
     return {'log': serialize_log(log)}
 
 
-def _get_logs(node, count, auth, link=None, offset=0):
+def _get_logs(node, count, auth, link=None, page=0):
     """
 
     :param Node node:
@@ -41,21 +41,23 @@ def _get_logs(node, count, auth, link=None, offset=0):
 
     """
     logs = []
-    has_more_logs = False
-    for log in (x for idx, x in enumerate(reversed(node.logs)) if idx >= offset):
+    total = 0
+    for log in reversed(node.logs):
         # A number of errors due to database inconsistency can arise here. The
         # log can be None; its `node__logged` back-ref can be empty, and the
-        # 0th logged node can be None. Catch and log these errors and ignore
-        # the offending logs.
-        log_node = log.resolve_node(node)
-        if log.can_view(node, auth):
-            anonymous = has_anonymous_link(log_node, auth)
-            if len(logs) < count:
+        # 0th logged node can be None. Need to make sure that log is not None
+        if log:
+            log_node = log.resolve_node(node)
+            if log.can_view(node, auth):
+                total += 1
+                anonymous = has_anonymous_link(log_node, auth)
                 logs.append(serialize_log(log, anonymous))
-            else:
-                has_more_logs = True
-                break
-    return logs, has_more_logs
+        else:
+            logger.warn('Log on node {} is None'.format(node._id))
+
+    paginated_logs, pages = paginate(logs, total, page, count)
+
+    return list(paginated_logs), total, pages
 
 
 @no_auto_transaction
@@ -66,7 +68,12 @@ def get_logs(auth, **kwargs):
 
     """
     node = kwargs['node'] or kwargs['project']
-    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
+    try:
+        page = int(request.args.get('page', 0))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page".'
+        ))
     link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     if not node.can_view(auth):
@@ -80,9 +87,8 @@ def get_logs(auth, **kwargs):
         count = request.json['count']
     else:
         count = 10
-    offset = page_num * count
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, has_more_logs = _get_logs(node, count, auth, link, offset)
-    return {'logs': logs, 'has_more_logs': has_more_logs}
+    logs, total, pages = _get_logs(node, count, auth, link, page)
+    return {'logs': logs, 'total': total, 'pages': pages, 'page': page}

@@ -182,11 +182,11 @@
         <!-- ko if: contributors.length > 0 -->
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: $parent.contributors_url[$index()] -->
-                    <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
-                <!-- /ko -->
-                <!-- ko ifnot: ($parent.contributors_url[$index()]) -->
-                    {{ $data }}
+                <!-- ko if: url -->
+                    <a data-bind="attr.href: url">{{ fullname }}</a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    {{ fullname }}
                 <!-- /ko -->
 
 
@@ -214,11 +214,11 @@
         <!-- ko if: contributors.length > 0 -->
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: $parent.contributors_url[$index()] -->
-                    <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
-                <!-- /ko -->
-                <!-- ko ifnot: ($parent.contributors_url[$index()]) -->
-                    {{ $data }}
+                <!-- ko if: url -->
+                    <a data-bind="attr.href: url">{{ fullname }}</a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    {{ fullname }}
                 <!-- /ko -->
 
 
@@ -248,11 +248,11 @@
         <!-- ko if: contributors.length > 0 -->
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: $parent.contributors_url[$index()] -->
-                    <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
-                <!-- /ko -->
-                <!-- ko ifnot: ($parent.contributors_url[$index()]) -->
-                    {{ $data }}
+                <!-- ko if: url -->
+                    <a data-bind="attr.href: url">{{ fullname }}</a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    {{ fullname }}
                 <!-- /ko -->
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </span>
@@ -278,11 +278,11 @@
         <!-- ko if: contributors.length > 0 -->
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: $parent.contributors_url[$index()] -->
-                    <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
+                <!-- ko if: url -->
+                    <a data-bind="attr.href: url">{{ fullname }}</a>
                 <!-- /ko-->
-                <!-- ko ifnot: ($parent.contributors_url[$index()]) -->
-                    {{ $data }}
+                <!-- ko ifnot: url -->
+                    {{ fullname }}
                 <!-- /ko -->
 
 

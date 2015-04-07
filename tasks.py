@@ -44,10 +44,10 @@ except Failure:
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
-    from livereload import Server
     app = init_app(set_backends=True, routes=True, mfr=True)
 
     if live:
+        from livereload import Server
         server = Server(app.wsgi_app)
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
