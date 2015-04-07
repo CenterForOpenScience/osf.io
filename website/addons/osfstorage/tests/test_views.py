@@ -362,7 +362,7 @@ class TestCreateFolder(HookTestCase):
             method='post_json',
             expect_errors=True
         )
-        assert_equal(resp.status, 400)
+        assert_equal(resp.status_code, 400)
 
     def test_create_with_parent(self):
         resp = self.create_folder('name')
