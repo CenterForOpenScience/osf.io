@@ -154,6 +154,16 @@ var UserProfileViewModel = oop.defclass({
         var email = new UserEmail({
             address: this.emailInput()
         });
+
+        // ensure email isn't already in the list
+        for (var i=0; i<this.profile().emails().length; i++) {
+            if (this.profile().emails()[i].address() == email.address()) {
+                $osf.growl('Error', 'Duplicate Email', 'warning');
+                this.emailInput('');
+                return;
+            }
+        }
+
         this.profile().emails.push(email);
 
         this.client.update(this.profile()).done(function (profile) {

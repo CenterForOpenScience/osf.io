@@ -607,6 +607,9 @@ class User(GuidStoredObject, AddonModelMixin):
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
+        if email in self.emails:
+            raise ValueError("Email already confirmed to this user");
+
         validate_email(email)
 
         token = generate_confirm_token()
