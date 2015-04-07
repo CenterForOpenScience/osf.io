@@ -59,6 +59,12 @@ def _is_image(filename):
 
 class AddonConfig(object):
 
+    DEFAULT_SETTINGS = {
+        'user_has_auth': False,
+        'node_has_auth': False,
+        'nodes': []
+    }
+
     def __init__(self, short_name, full_name, owners, categories,
                  added_default=None, added_mandatory=None,
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
