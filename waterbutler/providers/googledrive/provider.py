@@ -185,7 +185,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def upload(self, stream, path, conflict='replace', **kwargs):
         path = path.split('/')
-        name = '/' + parse.quote(path.pop(-1))
+        name = '/' + parse.quote(path.pop(-1), safe='')
 
         parent_id = yield from self._materialized_path_to_id(
             GoogleDrivePath(
