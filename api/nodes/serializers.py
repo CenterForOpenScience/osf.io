@@ -1,16 +1,15 @@
-from django.core.urlresolvers import reverse
 from rest_framework import serializers as ser
 
+from api.base.serializers import LinkedSerializer
 from website.models import Node
 from framework.auth.core import Auth
 
-class NodeSerializer(ser.Serializer):
+class NodeSerializer(LinkedSerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
     is_public = ser.BooleanField()
-    url = ser.CharField(read_only=True, source='absolute_api_v2_url')
 
     def create(self, validated_data):
         node = Node(**validated_data)

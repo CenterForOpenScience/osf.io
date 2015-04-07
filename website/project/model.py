@@ -1726,6 +1726,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         base_url = reverse('nodes:node-detail', kwargs={'pk': self._id})
         return urlparse.urljoin(settings.DOMAIN, base_url)
 
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     @property
     def api_url(self):
         if not self.url:
