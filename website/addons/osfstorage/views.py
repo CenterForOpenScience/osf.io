@@ -144,6 +144,7 @@ def osf_storage_update_metadata_hook(node_addon, payload, **kwargs):
 
 
 @must_be_signed
+@utils.handle_odm_errors
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
