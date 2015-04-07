@@ -214,7 +214,7 @@ class S3Provider(provider.BaseProvider):
         :param str path: The path to create a folder at
         """
         path = S3Path(path)
-        super()._validate_folder(path)
+        path.validate_folder()
 
         try:
             yield from self.metadata(str(path))

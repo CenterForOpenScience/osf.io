@@ -9,6 +9,7 @@ from raven.contrib.tornado import AsyncSentryClient
 from stevedore import driver
 
 from waterbutler import settings
+from waterbutler.core import exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -148,6 +149,18 @@ class WaterButlerPath:
             absolute_path += '/'
         if not path == absolute_path:
             raise ValueError('Invalid path \'{}\' specified'.format(absolute_path))
+
+    def validate_folder(self):
+        """Raise CreateFolderErrors if the folder path is invalid
+        :returns: None
+        :raises: waterbutler.CreateFolderError
+        """
+        if not self.is_dir:
+            raise exceptions.CreateFolderError('Path must be a directory', code=400)
+
+        if self.path == '/':
+            raise exceptions.CreateFolderError('Path can not be root', code=400)
+
 
 def as_task(func):
     if not asyncio.iscoroutinefunction(func):

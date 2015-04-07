@@ -130,7 +130,7 @@ class BoxProvider(provider.BaseProvider):
             path = '/{}{}'.format(self.folder, path)
 
         path = BoxPath(path)
-        super()._validate_folder(path)
+        path.validate_folder()
 
         resp = yield from self.make_request(
             'POST',

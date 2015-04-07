@@ -229,7 +229,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
-        super()._validate_folder(path)
+        path.validate_folder()
 
         try:
             yield from self.metadata(str(path), raw=True)

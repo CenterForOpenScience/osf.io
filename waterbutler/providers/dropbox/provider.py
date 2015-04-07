@@ -214,7 +214,7 @@ class DropboxProvider(provider.BaseProvider):
         :param str path: The path to create a folder at
         """
         path = DropboxPath(self.folder, path)
-        super()._validate_folder(path)
+        path.validate_folder()
 
         response = yield from self.make_request(
             'POST',

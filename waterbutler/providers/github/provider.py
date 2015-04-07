@@ -178,7 +178,7 @@ class GitHubProvider(provider.BaseProvider):
     @asyncio.coroutine
     def create_folder(self, path, branch=None, message=None, **kwargs):
         path = GitHubPath(path)
-        super()._validate_folder(path)
+        path.validate_folder()
 
         assert self.name is not None
         assert self.email is not None
