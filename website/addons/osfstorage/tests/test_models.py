@@ -182,21 +182,70 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_update_version_metadata(self):
         pass
 
-    @unittest.skip
     def test_delete_folder(self):
-        pass
+        parent = self.node_settings.root_node.append_folder('Test')
+        kids = []
+        for x in range(10):
+            kid = parent.append_file(str(x))
+            kid.save()
+            kids.append(kid)
+        parent.delete(None, log=False)
+        assert_true(parent.is_deleted)
+        for kid in kids:
+            kid.reload()
+            assert_true(kid.is_deleted)
 
-    @unittest.skip
+    def test_delete_folder_no_recurse(self):
+        parent = self.node_settings.root_node.append_folder('Test')
+        kids = []
+        for x in range(10):
+            kid = parent.append_file(str(x))
+            kid.save()
+            kids.append(kid)
+        parent.delete(None, recurse=False, log=False)
+        assert_true(parent.is_deleted)
+        for kid in kids:
+            kid.reload()
+            assert_false(kid.is_deleted)
+
     def test_delete_file(self):
-        pass
+        child = self.node_settings.root_node.append_file('Test')
+        child.delete(None, log=False)
 
-    @unittest.skip
+        assert_true(child.is_deleted)
+
     def test_undelete_folder(self):
-        pass
+        parent = self.node_settings.root_node.append_folder('Test')
 
-    @unittest.skip
+        kids = []
+        for x in range(10):
+            kid = parent.append_file(str(x))
+            kid.save()
+            kids.append(kid)
+
+        parent.delete(None, log=False)
+        assert_true(parent.is_deleted)
+
+        for kid in kids:
+            kid.reload()
+            assert_true(kid.is_deleted)
+
+        parent.undelete(None, log=False)
+
+        assert_false(parent.is_deleted)
+        for kid in kids:
+            kid.reload()
+            assert_false(kid.is_deleted)
+
     def test_undelete_file(self):
-        pass
+        child = self.node_settings.root_node.append_file('Test')
+        child.delete(None, log=False)
+
+        assert_true(child.is_deleted)
+
+        child.undelete(None, log=False)
+
+        assert_false(child.is_deleted)
 
 
 class TestNodeSettingsModel(StorageTestCase):
