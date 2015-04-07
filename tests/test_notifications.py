@@ -959,7 +959,6 @@ class TestSendEmails(OsfTestCase):
     # @mock.patch('website.notifications.emails.email_transactional')
     # def test_send_calls_correct_mail_function(self, email_transactional):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
-    #                 nodeType='project',
     #                 timestamp=datetime.datetime.utcnow(),
     #                 user=self.project.creator,
     #                 gravatar_url=self.user.gravatar_url,
@@ -981,7 +980,6 @@ class TestSendEmails(OsfTestCase):
             user=self.project.creator,
             node=self.project,
             timestamp=timestamp,
-            nodeType='project',
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -989,7 +987,6 @@ class TestSendEmails(OsfTestCase):
             url=self.project.absolute_url,
         )
         subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
-            nodeType='project',
             timestamp=timestamp,
             user=self.project.creator,
             gravatar_url=self.user.gravatar_url,
@@ -1000,7 +997,6 @@ class TestSendEmails(OsfTestCase):
         )
         message = mails.render_message(
             'comments.html.mako',
-            nodeType='project',
             timestamp=timestamp,
             user=self.project.creator,
             gravatar_url=self.user.gravatar_url,
@@ -1031,7 +1027,6 @@ class TestSendEmails(OsfTestCase):
                             user=self.user,
                             node=self.project,
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            nodeType='project',
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
@@ -1048,7 +1043,6 @@ class TestSendEmails(OsfTestCase):
                             user=self.user,
                             node=self.project,
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            nodeType='project',
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',

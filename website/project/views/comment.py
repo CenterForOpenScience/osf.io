@@ -181,7 +181,7 @@ def add_comment(**kwargs):
                 event='comment_replies',
                 user=auth.user,
                 node=node,
-                time_stamp=time_now,
+                timestamp=time_now,
                 **context
             )
 

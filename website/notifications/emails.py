@@ -84,7 +84,7 @@ def notify(uid, event, user, node, timestamp, **context):
     """
     :param uid: node's id
     :param event: type of notification
-    :param user: user triggering notification
+    :param user: user "sending" notification
     :param node: the node
     :param timestamp: time
     :param context: optional variables specific to templates
