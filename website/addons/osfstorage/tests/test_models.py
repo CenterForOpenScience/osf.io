@@ -247,6 +247,18 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert_false(child.is_deleted)
 
+    def test_materialized_path(self):
+        child = self.node_settings.root_node.append_file('Test')
+        assert_equals('/Test', child.materialized_path())
+
+    def test_materialized_path_folder(self):
+        child = self.node_settings.root_node.append_folder('Test')
+        assert_equals('/Test/', child.materialized_path())
+
+    def test_materialized_path_nested(self):
+        child = self.node_settings.root_node.append_folder('Cloud').append_file('Carp')
+        assert_equals('/Cloud/Carp', child.materialized_path())
+
 
 class TestNodeSettingsModel(StorageTestCase):
 
