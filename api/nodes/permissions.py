@@ -1,3 +1,4 @@
+from website.models import Node
 from rest_framework import permissions
 
 from framework.auth import Auth
@@ -6,6 +7,7 @@ from framework.auth import Auth
 class ContributorOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, Node), 'obj must be a Node'
         user = request.user
         if user.is_anonymous():
             auth = Auth(None)
@@ -17,10 +19,10 @@ class ContributorOrPublic(permissions.BasePermission):
             return obj.can_edit(auth)
 
 class MustNotBeRegistration(permissions.BasePermission):
-    """Makes PUT and POST forbidden for registrations"""
+    """Makes PUT and POST forbidden for registrations."""
 
-    # obj must be a Node
     def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, Node), 'obj must be a Node'
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
