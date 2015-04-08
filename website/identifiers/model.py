@@ -12,13 +12,20 @@ from framework.mongo.utils import unique_on
 
 @unique_on(['referent.0', 'referent.1', 'category'])
 class Identifier(StoredObject):
+    """A persistent identifier model for DOIs, ARKs, and the like."""
     _id = fields.StringField(default=lambda: str(ObjectId()))
+    # object to which the identifier points
     referent = fields.AbstractForeignField(required=True)
+    # category: e.g. 'ark', 'doi'
     category = fields.StringField(required=True)
+    # value: e.g. 'FK424601'
     value = fields.StringField(required=True)
 
 
 class IdentifierMixin(object):
+    """Model mixin that adds methods for getting and setting Identifier objects
+    for model objects.
+    """
 
     def get_identifier(self, category):
         identifiers = Identifier.find(

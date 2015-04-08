@@ -60,4 +60,4 @@ module.exports = {
     browserDisconnectTimeout : 100000, // default 2000
     browserDisconnectTolerance : 1, // default 0
     browserNoActivityTimeout : 600000 //default 10000
-}
+};

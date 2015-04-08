@@ -19,7 +19,7 @@ var nodeData = {
 
 describe('nodeControl', () => {
     describe('ViewModels', () => {
-        describe('ProjectViewModel', () => {
+        describe.only('ProjectViewModel', () => {
             var server;
             var vm = new nodeControl._ProjectViewModel(nodeData);
             var endpoints = [
@@ -71,7 +71,7 @@ describe('nodeControl', () => {
                 assert.equal(vm.arkUrl(), 'http://ezid.cdlib.org/id/ark:/24601');
             });
             it('creates new identifiers', (done) => {
-                vm.createIdentifiers().done(() => {
+                vm.createIdentifiers().always(() => {
                     assert.equal(vm.doi(), '24601');
                     assert.equal(vm.ark(), '24601');
                     done();
