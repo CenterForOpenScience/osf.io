@@ -17,7 +17,9 @@ class ContributorOrPublic(permissions.BasePermission):
             return obj.can_edit(auth)
 
 class MustNotBeRegistration(permissions.BasePermission):
+    """Makes PUT and POST forbidden for registrations"""
 
+    # obj must be a Node
     def has_object_permission(self, request, view, obj):
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
