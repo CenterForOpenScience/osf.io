@@ -6,12 +6,36 @@ from flask import request
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
+from website.util import api_url_for
 from website.project.decorators import must_have_addon
 
+def serialize_urls(user_addon):
+    return {
+        'enable': api_url_for('enable_twofactor'),
+        'disable': api_url_for('disable_twofactor'),
+        'settings': api_url_for('twofactor_settings_put'),
+        'otpauth': user_addon.otpauth_url if user_addon else '',
+    }
+
+def serialize_settings(auth):
+    user_addon = auth.user.get_addon('twofactor')
+    result = {}
+    if user_addon:
+        result = user_addon.to_json(auth.user)
+    else:
+        result = {
+            'is_enabled': False,
+            'is_confirmed': False,
+            'secret': None,
+            'drift': None,
+        }
+    urls = serialize_urls(user_addon)
+    result.update({'urls': urls})
+    return result
 
 @must_be_logged_in
 @must_have_addon('twofactor', 'user')
-def user_settings_put(user_addon, *args, **kwargs):
+def twofactor_settings_put(user_addon, *args, **kwargs):
 
     code = request.json.get('code')
     if code is None:
@@ -27,21 +51,9 @@ def user_settings_put(user_addon, *args, **kwargs):
     ))
 
 @must_be_logged_in
-def user_settings_get(auth, *args, **kwargs):
-
-    user_addon = auth.user.get_addon('twofactor')
-    result = {}
-    if user_addon:
-        result = user_addon.to_json(auth.user)
-    else:
-        result = {
-            'is_enabled': False,
-            'is_confirmed': False,
-            'secret': None,
-            'drift': None,
-        }
+def twofactor_settings_get(auth, *args, **kwargs):
     return {
-        'result': result
+        'result': serialize_settings(auth),
     }
 
 
@@ -54,4 +66,18 @@ def enable_twofactor(auth, *args, **kwargs):
 
     user_addon = auth.user.get_or_add_addon('twofactor', auth=auth)
     auth.user.save()
-    return user_addon.to_json(auth.user)
+    return {
+        'result': serialize_settings(auth),
+    }
+
+@must_be_logged_in
+@must_have_addon('twofactor', 'user')
+def disable_twofactor(auth, *args, **kwargs):
+
+    if auth.user.delete_addon('twofactor', auth=auth):
+        auth.user.save()
+        return {}
+    else:
+        raise HTTPError(http.INTERNAL_SERVER_ERROR, data=dict(
+            message='Could not disable twofactor at this time'
+        ))

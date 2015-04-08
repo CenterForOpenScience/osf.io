@@ -7,15 +7,20 @@ settings_routes = {
         # Settings
         Rule([
             '/settings/twofactor/',
-        ], 'put', views.user_settings_put, json_renderer),
+        ], 'put', views.twofactor_settings_put, json_renderer),
         Rule([
             '/settings/twofactor/',
-        ], 'get', views.user_settings_get, json_renderer),
+        ], 'get', views.twofactor_settings_get, json_renderer),
 
         # Enable Two-factor
         Rule([
-            '/settings/twofactor/enable/',
+            '/settings/twofactor/',
         ], 'post', views.enable_twofactor, json_renderer),
+        # Disable Two-factor
+        Rule([
+            '/settings/twofactor/',
+        ], 'delete', views.disable_twofactor, json_renderer),
+
     ],
     'prefix': '/api/v1'
 }
