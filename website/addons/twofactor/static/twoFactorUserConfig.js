@@ -12,15 +12,6 @@ var osfHelpers = require('js/osfHelpers');
 
 var SETTINGS_URL = '/api/v1/settings/twofactor/';
 
-// From http://stackoverflow.com/questions/10114472/is-it-possible-to-data-bind-visible-to-the-negation-of-a-boolean-viewmodel
-ko.bindingHandlers.hidden = {
-    update: function(element, valueAccessor) {
-        ko.bindingHandlers.visible.update(element, function() {
-            return !ko.utils.unwrapObservable(valueAccessor());
-        });
-    }
-};
-
 function ViewModel(qrCodeSelector) {
     var self = this;
     self.qrCodeSelector = qrCodeSelector;
