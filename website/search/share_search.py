@@ -162,8 +162,8 @@ def stats(query=None):
         }
     }
 
-    results = share_es.search(index='share', body=query)
-    date_results = share_es.search(index='share', body=date_histogram_query)
+    results = share_es.search(index='share_v1', body=query)
+    date_results = share_es.search(index='share_v1', body=date_histogram_query)
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)
