@@ -135,10 +135,9 @@ text-align: center;
 .tb-header-row {
 	margin: 0 0 10px 0;
 	background: #efefef;
+	padding: 8px 0;
 }
-.tb-buttons-col{
-	padding: 5px 0px;
-}
+
 .tb-header-input {
   border: none;
   background: #FFF;
