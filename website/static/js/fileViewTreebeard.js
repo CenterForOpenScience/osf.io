@@ -19,6 +19,14 @@ function FileViewTreebeard(data) {
     showFilter: false,
     title: undefined,
     hideColumnTitles: true,
+    filterTemplate: function () {
+        var tb = this;
+        return m("input.pull-left.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
+            style: "width:100%;display:inline;",
+            onkeyup: tb.filter,
+            value: tb.filterText()
+        });
+    },
     onload: function(tree) {
         var tb = this;
         Fangorn.DefaultOptions.onload.call(tb, tree);
@@ -39,7 +47,6 @@ function FileViewTreebeard(data) {
             tb.options.folderArray = [''];
         }
         m.render($('#filesSearch').get(0), tb.options.filterTemplate.call(tb));
-        $('#filesSearch input[placeholder=Search]').removeClass('pull-right').addClass('pull-left');
     },
     columnTitles: function () {
         return [{
