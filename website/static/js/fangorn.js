@@ -1122,22 +1122,6 @@ tbOptions = {
     hoverClassMultiselect : 'fangorn-selected',
     multiselect : true,
     title : function() {
-        if(window.contextVars.uploadInstruction) {
-            // If File and FileRead are not defined dropzone is not supported and neither is uploads
-            if (window.File && window.FileReader) {
-                return m('p.p-xs.no-margin', [
-                    m('span', 'Select rows for further actions (i.e. upload, delete) ')
-                ]);
-            }
-            return m('p', {
-                class: 'text-danger'
-            }, [
-                m('span', 'Your browser does not support file uploads, ', [
-                    m('a', { href: 'http://browsehappy.com' }, 'learn more'),
-                    '.'
-                ])
-            ]);
-        }
         return undefined;
     },
     showFilter : true,     // Gives the option to filter by showing the filter box.
