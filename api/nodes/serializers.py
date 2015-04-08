@@ -10,6 +10,7 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
     is_public = ser.BooleanField()
+    is_registration = ser.BooleanField()
 
     def get_links(self, obj):
         return {

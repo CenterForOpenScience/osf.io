@@ -18,7 +18,7 @@ class ContributorOrPublic(permissions.BasePermission):
         else:
             return obj.can_edit(auth)
 
-class MustNotBeRegistration(permissions.BasePermission):
+class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
 
     def has_object_permission(self, request, view, obj):
