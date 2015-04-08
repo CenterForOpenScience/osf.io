@@ -60,7 +60,7 @@
     <script src="${"/static/public/js/profile-settings-addons-page.js" | webpack_asset}"></script>
 
     ## Webpack bundles
-    % for js_asset in addons_js:
+    % for js_asset in addon_js:
       <script src="${js_asset | webpack_asset}"></script>
     % endfor
 </%def>

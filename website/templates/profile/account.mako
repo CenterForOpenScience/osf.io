@@ -63,7 +63,7 @@
 
 <%def name="javascript_bottom()">
     ## Webpack bundles
-    % for js_asset in addon_js:
+    % for js_asset in addons_js:
       <script src="${js_asset | webpack_asset}"></script>
     % endfor
 </%def>
