@@ -12,10 +12,14 @@ class JSONAPIPagination(pagination.PageNumberPagination):
     page_size_query_param = 'page[size]'
 
     def get_first_link(self):
+        if not self.page.has_previous():
+            return None
         url = self.request.build_absolute_uri()
         return remove_query_param(url, self.page_query_param)
 
     def get_last_link(self):
+        if not self.page.has_next():
+            return None
         url = self.request.build_absolute_uri()
         page_number = self.page.paginator.num_pages
         return replace_query_param(url, self.page_query_param, page_number)
