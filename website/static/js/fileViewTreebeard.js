@@ -5,10 +5,13 @@ function FileViewTreebeard(data) {
 
     // Set item.branch to show the branch of the rendered GitHub file instead of the default branch
     var addonRootFolders = data['data'][0].children;
-    for (var i=0; i < addonRootFolders.length; i++) {
-        var item = addonRootFolders[i];
-        if (item.provider === 'github' && item.isAddonRoot && window.contextVars.file.extra.branch) {
-            item.branch = window.contextVars.file.extra.branch;
+
+    if (window.contextVars.file.provider === 'github') {
+        for (var i = 0; i < addonRootFolders.length; i++) {
+            var item = addonRootFolders[i];
+            if (item.provider === 'github' && item.isAddonRoot && window.contextVars.file.extra.branch) {
+                item.branch = window.contextVars.file.extra.branch;
+            }
         }
     }
 
