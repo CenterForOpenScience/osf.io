@@ -225,6 +225,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'VaACS2015': {
+        'name': 'VA Section ACS Student Poster Session 2015',
+        'info_url': 'http://virginia.sites.acs.org/',
+        'logo_url': 'http://virginia.sites.acs.org/Bulletin/15/UVA.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
