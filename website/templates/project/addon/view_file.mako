@@ -31,13 +31,13 @@
             </div>
         </div>
 
-    <!-- Menu toggle closed -->
-            <div class="osf-panel panel-collapsed hidden-xs text-center"  style="display: none">
-              <div class="osf-panel-header">
+        <!-- Menu toggle closed -->
+        <div class="osf-panel panel-collapsed hidden-xs text-center"  style="display: none">
+            <div class="osf-panel-header">
                 <i class="fa fa-file"> </i>
                 <i class="fa fa-angle-right"> </i>
-              </div>
             </div>
+        </div>
 
     </div>
 
