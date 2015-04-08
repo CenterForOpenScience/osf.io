@@ -21,6 +21,9 @@ class NodeSerializer(JSONAPISerializer):
     def get_links(self, obj):
         return {
             'html': obj.absolute_url,
+            'children': {
+                'related': absolute_reverse('nodes:node-children', kwargs=dict(pk=obj.pk))
+            },
             'contributors': {
                 'related': absolute_reverse('nodes:node-contributors', kwargs=dict(pk=obj.pk))
             },

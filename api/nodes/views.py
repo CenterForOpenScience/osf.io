@@ -13,6 +13,7 @@ class NodeMixin(object):
     current URL. By default, fetches the current node based on the pk kwarg.
     """
 
+    serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'pk'
 
     def get_node(self):
@@ -82,3 +83,10 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     def get_queryset(self):
         return self.get_node().node__registrations
+
+
+class NodeChildrenList(generics.ListAPIView, NodeMixin):
+    serializer_class = NodeSerializer
+
+    def get_queryset(self):
+        return self.get_node().nodes
