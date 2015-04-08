@@ -245,7 +245,7 @@ def search_share_atom(**kwargs):
     query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
 
     try:
-        search_results = search.search_share(query)
+        search_results = search.search_share(query, index='share_v1')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
