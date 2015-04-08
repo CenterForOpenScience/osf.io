@@ -888,6 +888,9 @@ function toolbarDismissIcon (){
  function searchButton (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', { 
+            'data-toggle' : 'tooltip',
+            'title':  'Switch to search panel to filter rows below.',
+            'data-placement' : 'bottom',
             onclick : function () { tb.options.iconState.mode = 'search'; }
         }, [
         m('i.fa.fa-search'),
@@ -1198,6 +1201,9 @@ function _poDefineToolbar (item){
             buttons.push(
             { name : 'gotoEvent', template : function(){
                 return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Opens the project in same window. Use Command + Click to open in new window.',
+                    'data-placement' : 'bottom',
                         onclick : function(event) { _gotoEvent.call(tb, event, item); }
                     }, [
                     m('i.fa.fa-external-link'),
@@ -1212,6 +1218,9 @@ function _poDefineToolbar (item){
         buttons.push(
         { name : 'addFolder', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Adds a Collection to visually organize your projects or components.',
+                    'data-placement' : 'bottom',
                     onclick : function(event) {  
                         tb.options.iconState.mode = 'addFolder';
                     }
@@ -1222,11 +1231,10 @@ function _poDefineToolbar (item){
         }},
         { name : 'addExistingProject', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Adds an existing project or component to the Collection.',
+                    'data-placement' : 'bottom',
                     onclick : function(event) {
-
-
-
-
                         tb.options.iconState.mode = 'addProject';
                     }
                 }, [
@@ -1240,6 +1248,9 @@ function _poDefineToolbar (item){
         buttons.push(
         { name : 'removeFromFolder', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Removes the selected row from the Collection. This action does NOT delete the project.',
+                    'data-placement' : 'bottom',
                     onclick : function(event) {  
                         var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id,
                             deleteAction = $.ajax({
@@ -1264,6 +1275,9 @@ function _poDefineToolbar (item){
         buttons.push(
         { name : 'renameItem', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Change the name of the Collection or project',
+                    'data-placement' : 'bottom',
                     onclick : function(event) {  
                         tb.options.iconState.mode = 'rename';
                     }
@@ -1278,11 +1292,14 @@ function _poDefineToolbar (item){
         buttons.push(
         { name : 'deleteFolder', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Deletes a collection.',
+                    'data-placement' : 'bottom',
                     onclick : function(event) {  
                         bootbox.confirm({
                             title: 'Delete this folder?',
-                            message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
-                                'inside this one. You will not delete any projects in this folder.',
+                            message: 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
+                                'inside this one. You will not delete any projects in this Collection.',
                             callback: function (result) {
                                 if (result !== null && result) {
                                     var url = '/api/v1/folder/' + theItem.node_id,
@@ -1301,7 +1318,7 @@ function _poDefineToolbar (item){
                     }
                 }, [
                 m('i.fa.fa-trash'),
-                m('span','Delete Folder')
+                m('span','Delete Collection')
             ]);
         }}
         );
