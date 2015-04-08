@@ -11,6 +11,11 @@ class NodeSerializer(LinkedSerializer):
     description = ser.CharField(required=False, allow_blank=True)
     is_public = ser.BooleanField()
 
+    def get_links(self, obj):
+        return {
+            'html': obj.absolute_url,
+        }
+
     def create(self, validated_data):
         node = Node(**validated_data)
         node.save()
