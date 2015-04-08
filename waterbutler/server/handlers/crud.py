@@ -91,7 +91,13 @@ class CRUDHandler(core.BaseHandler):
     def post(self):
         """Create a folder"""
         self.set_status(201)
-        self.write((yield from self.provider.create_folder(**self.arguments)))
+        metadata = yield from self.provider.create_folder(**self.arguments)
+        self.write(metadata)
+
+        self._send_hook(
+            'create_folder',
+            metadata,
+        )
 
     @utils.coroutine
     def put(self):
