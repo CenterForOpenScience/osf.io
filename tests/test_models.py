@@ -326,7 +326,7 @@ class TestUser(OsfTestCase):
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
-        u.add_unconfirmed_email(self.user.username)
+        u.add_unconfirmed_email("test@osf.io")
         assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
@@ -399,17 +399,13 @@ class TestUser(OsfTestCase):
         assert_equal(url, expected)
 
     def test_confirm_primary_email(self):
-        u = UserFactory.build(username='foo@bar.com')
-        u.is_registered = False
-        u.is_claimed = False
-        u.save()
-        u.add_unconfirmed_email('foo@bar.com')
-        token = u.get_confirmation_token('foo@bar.com')
+        u = UnconfirmedUserFactory()
+        token = u.get_confirmation_token(u.username)
         confirmed = u.confirm_email(token)
         u.save()
         assert_true(confirmed)
         assert_equal(len(u.email_verifications.keys()), 0)
-        assert_in('foo@bar.com', u.emails)
+        assert_in(u.username, u.emails)
         assert_true(u.is_registered)
         assert_true(u.is_claimed)
 
