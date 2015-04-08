@@ -10,7 +10,7 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
     is_public = ser.BooleanField()
-    is_registration = ser.BooleanField()
+    is_registration = ser.BooleanField(read_only=True)
     # TODO: finish me
 
     class Meta:
