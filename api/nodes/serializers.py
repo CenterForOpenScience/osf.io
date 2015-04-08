@@ -11,6 +11,10 @@ class NodeSerializer(JSONAPISerializer):
     description = ser.CharField(required=False, allow_blank=True)
     is_public = ser.BooleanField()
     is_registration = ser.BooleanField()
+    # TODO: finish me
+
+    class Meta:
+        type_ = 'nodes'
 
     def get_links(self, obj):
         return {
