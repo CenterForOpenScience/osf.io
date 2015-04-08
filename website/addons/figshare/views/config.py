@@ -42,13 +42,10 @@ def figshare_config_put(node_addon, auth, **kwargs):
     figshare_id = fields.get('id')
     figshare_type = fields.get('type')
 
-    if not name or not figshare_id or not figshare_type:
-        return HTTPError(http.BAD_REQUEST, message="""
-        You must supply:\n
-        - name {String}: name of figshare article
-        - id {String}: id of figshare article
-        - type {String}: type of figshare article
-        """)
+    if not all([name, figshare_id, figshare_type]):
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message='You must supply a name, id, and type'
+        ))
 
     node_addon.update_fields({
         'title': name,
