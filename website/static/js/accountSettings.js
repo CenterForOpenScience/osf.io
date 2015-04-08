@@ -126,10 +126,11 @@ var UserProfileClient = oop.defclass({
         profile.id(data.profile.id);
         profile.emails(
             ko.utils.arrayMap(data.profile.emails, function (emailData){
-                var email = new UserEmail();
-                email.address(emailData.address);
-                email.isPrimary(emailData.primary || false);
-                email.isConfirmed(emailData.confirmed || false);
+                var email = new UserEmail({
+                    address: emailData.address,
+                    isPrimary: emailData.primary,
+                    isConfirmed: emailData.isConfirmed,
+                });
                 return email;
             })
         );
@@ -157,7 +158,7 @@ var UserProfileViewModel = oop.defclass({
 
         // ensure email isn't already in the list
         for (var i=0; i<this.profile().emails().length; i++) {
-            if (this.profile().emails()[i].address() == email.address()) {
+            if (this.profile().emails()[i].address() === email.address()) {
                 $osf.growl('Error', 'Duplicate Email', 'warning');
                 this.emailInput('');
                 return;
@@ -173,7 +174,7 @@ var UserProfileViewModel = oop.defclass({
             for (var i=0; i<emails.length; i++) {
                 if (emails[i].address() === email.address()) {
                     this.emailInput('');
-                    $osf.growl('<em>' + email.address()  + '<em> added to your account.','You will receive a confirmation email in <em>' + email.address()  + '<em>. Please check your email and confirm.', 'success');
+                    $osf.growl('<em>' + email.address()  + '<em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.', 'success');
                     return;
                 }
             }
