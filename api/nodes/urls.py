@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^(?P<pk>\w+)/contributors/$', views.NodeContributorsList.as_view(), name='node-contributors'),
     url(r'^(?P<pk>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name='node-registrations'),
     url(r'^(?P<pk>\w+)/children/$', views.NodeChildrenList.as_view(), name='node-children'),
+    url(r'^(?P<pk>\w+)/pointers/$', views.NodePointersList.as_view(), name='node-pointers'),
 ]

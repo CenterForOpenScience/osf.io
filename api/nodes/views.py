@@ -4,7 +4,7 @@ from modularodm import Q
 from website.models import Node
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
-from .serializers import NodeSerializer
+from .serializers import NodeSerializer, NodePointersSerializer
 from api.users.serializers import UserSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
 
@@ -71,6 +71,7 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
+
 class NodeContributorsList(generics.ListAPIView, NodeMixin):
     """Return the contributors (users) fora node."""
 
@@ -83,6 +84,7 @@ class NodeContributorsList(generics.ListAPIView, NodeMixin):
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_node().visible_contributors
+
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     permissions_classes = (
@@ -101,3 +103,11 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_node().nodes
+
+
+class NodePointersList(generics.ListAPIView, NodeMixin):
+    serializer_class = NodePointersSerializer
+
+    def get_queryset(self):
+        return self.get_node().nodes_pointer
+

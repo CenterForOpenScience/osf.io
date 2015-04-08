@@ -4,13 +4,12 @@ from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import Node
 from framework.auth.core import Auth
 
+
 class NodeSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
-    is_public = ser.BooleanField()
-    is_registration = ser.BooleanField(read_only=True)
     category = ser.ChoiceField(choices=Node.CATEGORY_MAP.keys())
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
@@ -27,10 +26,20 @@ class NodeSerializer(JSONAPISerializer):
             'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'})
         },
     })
+    properties = ser.SerializerMethodField()
+    public = ser.BooleanField(source='is_public')
     # TODO: finish me
 
     class Meta:
         type_ = 'nodes'
+
+    def get_properties(self, obj):
+        ret = {
+            'registration': obj.is_registration,
+            'collection': obj.is_folder,
+            'dashboard': obj.is_dashboard,
+        }
+        return ret
 
     def create(self, validated_data):
         node = Node(**validated_data)
@@ -54,3 +63,22 @@ class NodeSerializer(JSONAPISerializer):
             instance.set_privacy(privacy, auth)
         instance.save()
         return instance
+
+
+class NodePointersSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    node_id = ser.CharField(source='node._id')
+    title = ser.CharField(source='node.title')
+
+    class Meta:
+        type_ = 'pointers'
+
+    def get_links(self, obj):
+        return {
+            'html': obj.absolute_url,
+        }
+
+    def update(self, instance, validated_data):
+        # TODO
+        pass
