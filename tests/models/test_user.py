@@ -125,10 +125,8 @@ class UserTestCase(base.OsfTestCase):
             self.user.confirm_email(token)
 
     def test_confirm_email_comparison_is_case_insensitive(self):
-        u = factories.UserFactory.build(
-            username='letsgettacos@lgt.com',
-            is_registered=False,
-            date_confirmed=None
+        u = factories.UnconfirmedUserFactory.build(
+            username='letsgettacos@lgt.com'
         )
         u.add_unconfirmed_email('LetsGetTacos@LGT.com')
         u.save()
