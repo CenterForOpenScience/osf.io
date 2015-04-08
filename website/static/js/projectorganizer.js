@@ -1135,7 +1135,7 @@ function _poToolbar (){
     if(tb.options.iconState.mode === 'addFolder'){
         return m('.row.tb-header-row', [
                 m('', [
-                        m('.col-xs-9', m('input#addNewFolder.tb-header-input')),
+                        m('.col-xs-9', m('input#addNewFolder.tb-header-input', { 'placeholder' : 'Collection name'})),
                         m('.col-xs-3.tb-buttons-col', 
                             m('.fangorn-toolbar.pull-right', 
                                 [
