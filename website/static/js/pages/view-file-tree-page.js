@@ -1,4 +1,6 @@
-var fileBrowser = require('../fileViewTreebeard.js');
+'use strict';
+
+var fileBrowser = require('../fileViewTreebeard');
 var nodeApiUrl = window.contextVars.node.urls.api;
 
 $(document).ready(function() {
