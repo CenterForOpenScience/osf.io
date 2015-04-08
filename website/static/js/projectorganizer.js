@@ -434,7 +434,7 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
-    $('.twitter-typeahead').remove();
+    $('.tb-header-row .twitter-typeahead').remove();
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
@@ -878,7 +878,7 @@ function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
             onclick : function () { 
-                $('.twitter-typeahead').remove();
+                $('.tb-header-row .twitter-typeahead').remove();
                 tb.options.iconState.mode = 'bar'; tb.resetFilter(); 
             }
         },
