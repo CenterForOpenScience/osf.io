@@ -10,10 +10,9 @@ require('jquery-qrcode');
 
 var osfHelpers = require('js/osfHelpers');
 
-var SETTINGS_URL = '/api/v1/settings/twofactor/';
-
-function ViewModel(qrCodeSelector) {
+function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;
+    self.settingsUrl = settingsUrl;
     self.qrCodeSelector = qrCodeSelector;
     self.tfaCode = ko.observable('');
 
@@ -29,7 +28,7 @@ function ViewModel(qrCodeSelector) {
 
 ViewModel.prototype.initialize = function() {
     var self = this;
-    return self.fetchFromServer().then(self.updateFromData);
+    return self.fetchFromServer().then(self.updateFromData.bind(self));
 };
 
 ViewModel.prototype.updateFromData = function(data) {
@@ -46,7 +45,7 @@ ViewModel.prototype.updateFromData = function(data) {
 
 ViewModel.prototype.fetchFromServer = function() {
     var self = this;
-    return $.getJSON(SETTINGS_URL)
+    return $.getJSON(self.settingsUrl)
         .then(function(response) {
             return response.result;
         })
@@ -186,9 +185,9 @@ ViewModel.prototype.enableTwofactor = function() {
 };
 
 // Public API
-function TwoFactorUserConfig(scopeSelector, qrCodeSelector) {
+function TwoFactorUserConfig(settingsUrl, scopeSelector, qrCodeSelector) {
     var self = this;
-    self.viewModel = new ViewModel(qrCodeSelector);
+    self.viewModel = new ViewModel(settingsUrl, qrCodeSelector);
     self.viewModel.initialize();
     osfHelpers.applyBindings(self.viewModel, scopeSelector);
 }
