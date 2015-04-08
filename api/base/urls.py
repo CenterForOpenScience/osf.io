@@ -3,6 +3,10 @@ from django.conf.urls import include, url
 # from django.contrib import admin
 from django.conf.urls.static import static
 
+
+from . import views
+
+
 urlpatterns = [
     # Examples:
     # url(r'^$', 'api.views.home', name='home'),
@@ -14,5 +18,6 @@ urlpatterns = [
     url(r'^token/', 'rest_framework_jwt.views.obtain_jwt_token'),
 
     ### API ###
+    url(r'^$', views.root),
     url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
 ] + static('/static/', document_root=settings.STATIC_ROOT)
