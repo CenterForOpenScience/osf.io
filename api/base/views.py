@@ -1,15 +1,7 @@
-import urlparse
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
 
-from website import settings
-
-
-def absolute_reverse(*args, **kwargs):
-    relative_url = reverse(*args, **kwargs)
-    return urlparse.urljoin(settings.DOMAIN, relative_url)
+from .utils import absolute_reverse
 
 @api_view(('GET',))
 def root(request, format=None):
