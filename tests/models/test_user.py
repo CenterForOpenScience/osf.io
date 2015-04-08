@@ -128,10 +128,11 @@ class UserTestCase(base.OsfTestCase):
         u = factories.UserFactory.build(
             username='letsgettacos@lgt.com',
             is_registered=False,
+            is_claimed = False,
             date_confirmed=None
         )
-        u.add_unconfirmed_email('LetsGetTacos@LGT.com')
         u.save()
+        u.add_unconfirmed_email('LetsGetTacos@LGT.com')
         assert_false(u.is_confirmed)  # sanity check
 
         token = u.get_confirmation_token('LetsGetTacos@LGT.com')
