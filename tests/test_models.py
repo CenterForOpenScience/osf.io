@@ -762,6 +762,27 @@ class TestUser(OsfTestCase):
         assert_equal(session.data['auth_user_username'], user.username)
         assert_equal(session.data['auth_user_fullname'], user.fullname)
 
+    def test_get_user_by_cookie(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        assert_equal(user, User.from_cookie(cookie))
+
+    def test_get_user_by_cookie_returns_none(self):
+        assert_equal(None, User.from_cookie(''))
+
+    def test_get_user_by_cookie_bad_cookie(self):
+        assert_equal(None, User.from_cookie('foobar'))
+
+    def test_get_user_by_cookie_no_session(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        Session.remove()
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+        assert_equal(None, User.from_cookie(cookie))
+
 
 class TestUserParse(unittest.TestCase):
 
