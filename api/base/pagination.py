@@ -13,6 +13,8 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                 ('next', self.get_next_link()),
                 ('previous', self.get_previous_link()),
             ])),
-            ('count', self.page.paginator.count),
+            ('meta', OrderedDict([
+                ('count', self.page.paginator.count),
+            ]))
         ])
         return Response(response_dict)

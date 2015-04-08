@@ -2,6 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 
 from website.models import Node
+from api.base.utils import get_object_or_404
 from .serializers import NodeSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
 
@@ -41,8 +42,7 @@ class NodeDetail(generics.RetrieveUpdateAPIView):
     # TODO: Generalize this.
     def get_object(self):
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        # TODO: Raise a 404 if node not found. Implement get_or_404
-        obj = Node.load(self.kwargs[lookup_url_kwarg])
+        obj = get_object_or_404(Node, self.kwargs[lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         return obj
