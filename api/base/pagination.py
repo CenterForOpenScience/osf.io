@@ -9,6 +9,8 @@ from rest_framework.utils.urls import (
 class JSONAPIPagination(pagination.PageNumberPagination):
     """Custom paginator that formats responses in a JSON-API compatible format."""
 
+    page_size_query_param = 'page[size]'
+
     def get_first_link(self):
         url = self.request.build_absolute_uri()
         return remove_query_param(url, self.page_query_param)
@@ -28,6 +30,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                 ('next', self.get_next_link()),
                 ('meta', OrderedDict([
                     ('total', self.page.paginator.count),
+                    ('per_page', self.page.paginator.per_page),
                 ]))
             ])),
         ])
