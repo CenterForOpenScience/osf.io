@@ -7,7 +7,7 @@ import datetime as dt
 
 import bson
 import pytz
-
+from rest_framework.reverse import reverse
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
@@ -404,6 +404,15 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def is_anonymous(self):
         return False
+
+    @property
+    def absolute_api_v2_url(self):
+        base_url = reverse('users:user-detail', kwargs={'pk': self.pk})
+        return urlparse.urljoin(settings.DOMAIN, base_url)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):

@@ -11,4 +11,5 @@ urlpatterns = [
     ### API ###
     url(r'^$', views.root),
     url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
+    url(r'^users/', include('api.users.urls', namespace='users')),
 ] + static('/static/', document_root=settings.STATIC_ROOT)
