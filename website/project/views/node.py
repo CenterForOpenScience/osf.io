@@ -78,8 +78,8 @@ def project_new_post(auth, **kwargs):
     user = auth.user
 
     title = strip_html(request.json.get('title'))
-    template = request.json.get('template')
-    description = strip_html(request.json.get('description'))
+    template = request.json.get('template','')
+    description = strip_html(request.json.get('description',''))
     title = title.strip()
 
     if not title or len(title) > 200:
@@ -102,9 +102,11 @@ def project_new_post(auth, **kwargs):
 
     else:
         project = new_node('project', title, user, description)
+        new_project = _view_project(project, auth)
 
     return {
-        'projectUrl': project.url
+        'projectUrl': project.url,
+        'new_node': new_project['node']
     }, http.CREATED
 
 

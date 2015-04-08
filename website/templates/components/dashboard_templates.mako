@@ -1,5 +1,6 @@
 ## A reuseable OSF project typeahead search widget. Uses the custom projectSearch binding handler.
-<template id="osf-project-search">
+
+<template id="osf-project-search" xmlns="http://www.w3.org/1999/html">
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         <!-- Project search typeahead -->
@@ -118,16 +119,28 @@
                 </osf-project-search>
             </div>
         </div><!-- end row -->
-        <div class="row">
-            <div class="col-md-12">
-                <h4>3. Create a new project</h4>
-                <osf-project-create-form
-                    params="data: data,
-                            fromUpload: true">
-                </osf-project-create-form>
+        <form data-bind="submit: submitCreateNewUpload">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4> "OR" Upload in a New Project</h4>
+                    <input class="form-control"
+                        type="text" name="title"
+                        maxlength="200"
+                        data-bind="value: createNewUpload"
+                        placeholder="Enter a Project Name"
+                    >
+                </div>
             </div>
-        </div>
-        <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+            <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+            <div class="row">
+                    <div class="col-md-12">
+                        <br>
+##                            <span data-bind="visible: showSubmit()">
+                                <button  class="btn btn-primary pull-right" type="submit">Create</button>
+##                            </span>
+                    </div>
+            </div>
+        </form>
     </div>
 </li> <!-- end .ob-list -->
 </template>
@@ -147,29 +160,12 @@
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
             <br />
-            <div data-bind="visible: !fromUpload">
             <label>Description (Optional)</label>
             <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
                 ></textarea>
-            </div>
-##            <label>Upload file(s) (Optional)</label>
-##             <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box pull-left"></div>
-##             <!-- File queue display -->
-##                <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
-##                    <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
-##                    <div data-bind="text: filename" class="ob-dropzone-filename"></div>
-##                    <progress
-##                        data-bind="attr: {value: progress()}, visible: showProgress()"
-##                            class="ob-upload-progress" max="100"></progress>
-##                    <img data-bind="click: clearDropzone"
-##                        class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
-##                </div>
-##            <br />
-            <div data-bind="visible: !fromUpload">
             <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
             <input type="hidden" id="templates" class="select2-container" style="width: 100%">
-            </div>
         </div>
     </div>
     <br />
