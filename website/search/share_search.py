@@ -23,9 +23,9 @@ share_es = Elasticsearch(
 
 
 @requires_search
-def search(query, raw=False):
+def search(query, raw=False, index='share'):
     # Run the real query and get the results
-    results = share_es.search(index='share', doc_type=None, body=query)
+    results = share_es.search(index=index, doc_type=None, body=query)
 
     return results if raw else {
         'results': [hit['_source'] for hit in results['hits']['hits']],
@@ -34,13 +34,13 @@ def search(query, raw=False):
 
 
 @requires_search
-def count(query):
+def count(query, index='share'):
     if query.get('from') is not None:
         del query['from']
     if query.get('size') is not None:
         del query['size']
 
-    count = share_es.count(index='share', body=query)
+    count = share_es.count(index=index, body=query)
 
     return {
         'results': [],

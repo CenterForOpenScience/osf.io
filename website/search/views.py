@@ -204,6 +204,8 @@ def search_share():
 
     count = request.args.get('count') is not None
     raw = request.args.get('raw') is not None
+    version = request.args.get('v')
+    index = 'share_v{}'.format(version) if version else 'share'
 
     if request.method == 'POST':
         query = request.get_json()
@@ -216,9 +218,9 @@ def search_share():
         )
 
     if count:
-        results = search.count_share(query)
+        results = search.count_share(query, index=index)
     else:
-        results = search.search_share(query, raw)
+        results = search.search_share(query, raw, index=index)
 
     results['time'] = round(time.time() - tick, 2)
     return results
