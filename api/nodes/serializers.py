@@ -1,10 +1,10 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import LinkedSerializer
+from api.base.serializers import JSONAPISerializer
 from website.models import Node
 from framework.auth.core import Auth
 
-class NodeSerializer(LinkedSerializer):
+class NodeSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
@@ -25,8 +25,7 @@ class NodeSerializer(LinkedSerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        if not isinstance(instance, Node):
-            raise ValueError('instance must be a Node.')
+        assert isinstance(instance, Node), 'instance must be a Node'
         is_public = validated_data.pop('is_public')
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
