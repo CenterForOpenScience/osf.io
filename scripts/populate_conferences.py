@@ -225,6 +225,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+       'NEEPS2015': {
+        'name': 'Northeastern Evolutionary Psychology Conference 2015',
+        'info_url': 'http://neeps2015.weebly.com/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
