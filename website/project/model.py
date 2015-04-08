@@ -648,6 +648,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
                 'with _id {self._id!r}>').format(self=self)
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""

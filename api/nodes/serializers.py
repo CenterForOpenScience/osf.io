@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer
+from api.base.utils import absolute_reverse
 from website.models import Node
 from framework.auth.core import Auth
 
@@ -20,6 +21,9 @@ class NodeSerializer(JSONAPISerializer):
     def get_links(self, obj):
         return {
             'html': obj.absolute_url,
+            'contributors': {
+                'related': absolute_reverse('nodes:node-contributors', kwargs=dict(pk=obj.pk))
+            }
         }
 
     def create(self, validated_data):
