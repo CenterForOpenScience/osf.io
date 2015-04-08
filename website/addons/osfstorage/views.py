@@ -4,6 +4,7 @@ import httplib
 import logging
 
 from modularodm.exceptions import NoResultsFound
+from modularodm.storage.base import KeyExistsException
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -197,6 +198,7 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     return [
         child.serialized()
         for child in fileobj.children
+        if not child.is_deleted
     ]
 
 
@@ -257,7 +259,13 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     else:
         parent = node_addon.root_node
 
-    folder = parent.append_folder(child)
+    try:
+        folder = parent.append_folder(child)
+    except KeyExistsException:
+        folder = parent.find_child_by_name(child, kind='folder')
+        if not folder.is_deleted:
+            raise HTTPError(httplib.CONFLICT)
+        folder.undelete(Auth(user), recurse=False)
     folder.log(Auth(user), NodeLog.FOLDER_CREATED)
 
     return folder.serialized(), httplib.CREATED
