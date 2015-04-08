@@ -25,11 +25,11 @@ function ViewModel(qrCodeSelector) {
     self.secret = ko.observable('');
 
     self.urls = {};
-};
+}
 
 ViewModel.prototype.initialize = function() {
     var self = this;
-    self.fetchFromServer().then(self.updateFromData);
+    return self.fetchFromServer().then(self.updateFromData);
 };
 
 ViewModel.prototype.updateFromData = function(data) {
@@ -80,7 +80,7 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 
 ViewModel.prototype.submitSettings = function() {
     var self = this;
-    osfHelpers.putJSON(
+    return osfHelpers.putJSON(
         SETTINGS_URL, {
             code: self.tfaCode()
         }
@@ -93,7 +93,6 @@ ViewModel.prototype.submitSettings = function() {
             status: status,
             error: error
         });
-
         if (xhr.status === 403) {
             self.changeMessage('Verification failed. Please enter your verification code again.',
                 'text-danger', 5000);
@@ -108,11 +107,11 @@ ViewModel.prototype.submitSettings = function() {
 
 ViewModel.prototype.disableTwofactorConfirm = function() {
     var self = this;
-    $.ajax({
-            method: 'DELETE',
-            url: self.urls.disable,
-            dataType: 'json'
-        })
+    return $.ajax({
+        method: 'DELETE',
+        url: self.urls.disable,
+        dataType: 'json'
+    })
         .done(function(response) {
             self.isEnabled(false);
             self.isConfirmed(false);
@@ -130,8 +129,8 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not disable Two-factor Authentication at this time. Please refresh ' +
-                'the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                    'the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 5000);
         });
 };
@@ -151,7 +150,7 @@ ViewModel.prototype.disableTwofactor = function() {
 
 ViewModel.prototype.enableTwofactorConfirm = function() {
     var self = this;
-    osfHelpers.postJSON(self.urls.enable, {})
+    return osfHelpers.postJSON(self.urls.enable, {})
         .done(function(response) {
             self.changeMessage(
                 'Successfully enabled Two-factor Authentication.',
@@ -167,8 +166,8 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not enable Two-factor Authentication at this time. Please refresh ' +
-                'the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                    'the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 5000);
         });
 };
