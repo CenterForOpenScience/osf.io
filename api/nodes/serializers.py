@@ -23,7 +23,10 @@ class NodeSerializer(JSONAPISerializer):
             'html': obj.absolute_url,
             'contributors': {
                 'related': absolute_reverse('nodes:node-contributors', kwargs=dict(pk=obj.pk))
-            }
+            },
+            'registrations': {
+                'related': absolute_reverse('nodes:node-registrations', kwargs=dict(pk=obj.pk))
+            },
         }
 
     def create(self, validated_data):

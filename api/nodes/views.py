@@ -68,3 +68,16 @@ class NodeContributorsList(generics.ListAPIView):
         # May raise a permission denied
         self.check_object_permissions(self.request, node)
         return node.visible_contributors
+
+class NodeRegistrationsList(generics.ListAPIView):
+    permissions_classes = (
+        ContributorOrPublic,
+    )
+    serializer_class = NodeSerializer
+
+    def get_queryset(self):
+        # TODO: Duplication here. Rethink.
+        node = get_object_or_404(Node, self.kwargs['pk'])
+        # May raise a permission denied
+        self.check_object_permissions(self.request, node)
+        return node.node__registrations
