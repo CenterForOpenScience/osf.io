@@ -192,4 +192,7 @@ function TwoFactorUserConfig(scopeSelector, qrCodeSelector) {
     self.viewModel.initialize();
     osfHelpers.applyBindings(self.viewModel, scopeSelector);
 }
-module.exports = TwoFactorUserConfig;
+module.exports = {
+    TwoFactorUserConfig: TwoFactorUserConfig,
+    _ViewModel: ViewModel
+};
