@@ -340,7 +340,8 @@ class TestCreateFolder(HookTestCase):
         return self.send_hook(
             'osf_storage_create_folder',
             payload={
-                'path': '/{}{}'.format(parent, name)
+                'path': '/{}{}'.format(parent, name),
+                'cookie': self.user.get_or_create_cookie()
             },
             method='post_json',
             **kwargs
