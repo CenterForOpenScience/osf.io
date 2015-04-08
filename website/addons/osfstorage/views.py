@@ -16,6 +16,7 @@ from website.project.decorators import (
 )
 from website.util import rubeus
 
+from website.models import NodeLog
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
@@ -240,8 +241,9 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_create_folder(payload, node_addon, **kwargs):
     path = payload.get('path')
+    user = User.from_cookie(payload.get('cookie', ''))
 
-    if not path:
+    if not path or not user:
         raise HTTPError(httplib.BAD_REQUEST)
 
     split = path.strip('/').split('/')
@@ -255,4 +257,7 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     else:
         parent = node_addon.root_node
 
-    return parent.append_folder(child).serialized(), httplib.CREATED
+    folder = parent.append_folder(child)
+    folder.log(Auth(user), NodeLog.FOLDER_CREATED)
+
+    return folder.serialized(), httplib.CREATED
