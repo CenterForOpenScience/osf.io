@@ -20,5 +20,6 @@ def root(request, format=None):
         'current_user': current_user,
         'links': {
             'nodes': absolute_reverse('nodes:node-list'),
+            'users': absolute_reverse('users:user-list'),
         }
     })

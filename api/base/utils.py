@@ -10,7 +10,7 @@ from website import settings
 def absolute_reverse(*args, **kwargs):
     """Like django's `reverse`, except returns an absolute URL."""
     relative_url = reverse(*args, **kwargs)
-    return urlparse.urljoin(settings.DOMAIN, relative_url)
+    return urlparse.urljoin(settings.API_DOMAIN, relative_url)
 
 
 def get_object_or_404(model_cls, query_or_pk):

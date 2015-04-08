@@ -20,6 +20,7 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
+from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -1728,8 +1729,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def absolute_api_v2_url(self):
-        base_url = reverse('nodes:node-detail', kwargs={'pk': self._id})
-        return urlparse.urljoin(settings.DOMAIN, base_url)
+        return absolute_reverse('nodes:node-detail', kwargs={'pk': self._id})
 
     # used by django and DRF
     def get_absolute_url(self):
