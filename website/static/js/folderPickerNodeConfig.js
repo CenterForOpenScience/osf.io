@@ -3,7 +3,7 @@
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 'use strict';
-
+require('css/addon_folderpicker.css');
 var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
@@ -412,6 +412,8 @@ var FolderPickerViewModel = oop.defclass({
                 odd: 'addon-folderpicker-odd',
                 even: 'addon-folderpicker-even'
             },
+            multiselect: false,
+            allowMove: false,
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);

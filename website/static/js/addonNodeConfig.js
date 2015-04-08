@@ -31,9 +31,6 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker, opts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
-        // whether the auth token is valid
-        self.validCredentials = ko.observable(true);
-        self.loading = ko.observable(false);
         // externalAccounts
         self.accounts = ko.observable([]);
         self.selectedFolderType = ko.pureComputed(function() {
