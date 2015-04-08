@@ -145,6 +145,8 @@ var UserProfileViewModel = oop.defclass({
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
         this.emailInput = ko.observable();
+        this.messageClass = ko.observable('text-info');
+        this.message = ko.observable('');
     },
     init: function () {
         this.client.fetch().done(
@@ -152,42 +154,54 @@ var UserProfileViewModel = oop.defclass({
         );
     },
     addEmail: function () {
-        var email = new UserEmail({
-            address: this.emailInput().toLowerCase().trim()
-        });
+        this.message('');
+        this.messageClass('text-info');
+        var newEmail = this.emailInput().toLowerCase().trim();
+        if(newEmail){
+            var email = new UserEmail({
+                address: newEmail
+            });
 
-        // ensure email isn't already in the list
-        for (var i=0; i<this.profile().emails().length; i++) {
-            if (this.profile().emails()[i].address() === email.address()) {
-                $osf.growl('Error', 'Duplicate Email', 'warning');
-                this.emailInput('');
-                return;
-            }
-        }
-
-        this.profile().emails.push(email);
-
-        this.client.update(this.profile()).done(function (profile) {
-            this.profile(profile);
-
-            var emails = profile.emails();
-            for (var i=0; i<emails.length; i++) {
-                if (emails[i].address() === email.address()) {
+            // ensure email isn't already in the list
+            for (var i=0; i<this.profile().emails().length; i++) {
+                if (this.profile().emails()[i].address() === email.address()) {
+                    $osf.growl('Error', 'Duplicate Email', 'warning');
                     this.emailInput('');
-                    $osf.growl('<em>' + email.address()  + '<em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.', 'success');
                     return;
                 }
             }
-            $osf.growl('Error', 'Email validation failed', 'danger');
-        }.bind(this));
+
+            this.profile().emails.push(email);
+
+            this.client.update(this.profile()).done(function (profile) {
+                this.profile(profile);
+
+                var emails = profile.emails();
+                for (var i=0; i<emails.length; i++) {
+                    if (emails[i].address() === email.address()) {
+                        this.emailInput('');
+                        $osf.growl('<em>' + email.address()  + '<em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.', 'success');
+                        return;
+                    }
+                }
+                $osf.growl('Error', 'Email validation failed', 'danger');
+            }.bind(this));
+        } else {
+            this.message('Email cannot be empty.');
+            this.messageClass('text-danger');
+        }
     },
     removeEmail: function (email) {
+        this.message('');
+        this.messageClass('text-info');
         this.profile().emails.remove(email);
         this.client.update(this.profile()).done(function() {
             $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
         });
     },
     makeEmailPrimary: function (email) {
+        this.message('');
+        this.messageClass('text-info');
         this.profile().primaryEmail().isPrimary(false);
         email.isPrimary(true);
         this.client.update(this.profile()).done(function () {
