@@ -7,13 +7,11 @@ import httplib
 import functools
 
 import furl
-import itsdangerous
 from flask import request
 from flask import redirect
 from flask import make_response
 
 from framework.auth import Auth
-from framework.sessions import Session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
@@ -68,20 +66,6 @@ def check_file_guid(guid):
             pass
         return guid_url
     return None
-
-
-def get_user_from_cookie(cookie):
-    if not cookie:
-        return None
-    try:
-        token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
-    except itsdangerous.BadSignature:
-        raise HTTPError(httplib.UNAUTHORIZED)
-    session = Session.load(token)
-    if session is None:
-        raise HTTPError(httplib.UNAUTHORIZED)
-    return User.load(session.data['auth_user_id'])
-
 
 permission_map = {
     'create_folder': 'write',
@@ -148,7 +132,10 @@ def get_auth(**kwargs):
 
     view_only = request.args.get('view_only')
 
-    user = get_user_from_cookie(cookie)
+    user = User.from_cookie(cookie)
+
+    if not user:
+        raise HTTPError(httplib.UNAUTHORIZED)
 
     node = Node.load(node_id)
     if not node:
