@@ -55,7 +55,9 @@ OAUTH2_PROVIDER = {
 REST_FRAMEWORK = {
     # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
     'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
+    'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # 'rest_framework.authentication.BasicAuthentication',
 

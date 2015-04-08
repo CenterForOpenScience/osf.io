@@ -13,6 +13,8 @@ class NodeSerializer(JSONAPISerializer):
     is_public = ser.BooleanField()
     is_registration = ser.BooleanField(read_only=True)
     category = ser.ChoiceField(choices=Node.CATEGORY_MAP.keys())
+    date_created = ser.DateTimeField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
     # TODO: finish me
 
     class Meta:

@@ -3,6 +3,7 @@ from modularodm import Q
 
 from website.models import Node
 from api.base.utils import get_object_or_404
+from api.base.filters import ODMOrderingFilter as OrderingFilter
 from .serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
@@ -32,6 +33,7 @@ class NodeList(generics.ListCreateAPIView):
         drf_permissions.IsAuthenticated,
     )
     serializer_class = NodeSerializer
+    ordering = ('-date_modified', )  # default ordering
 
     # override
     def get_queryset(self):
