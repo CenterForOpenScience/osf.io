@@ -375,6 +375,28 @@ class User(GuidStoredObject, AddonModelMixin):
         user.date_confirmed = user.date_registered
         return user
 
+    @classmethod
+    def from_cookie(cls, cookie, secret=None):
+        """Attempt to load a user from their signed cookie
+        :returns: None if a user cannot be loaded else User
+        """
+        if not cookie:
+            return None
+
+        secret = secret or settings.SECRET_KEY
+
+        try:
+            token = itsdangerous.Signer(secret).unsign(cookie)
+        except itsdangerous.BadSignature:
+            return None
+
+        session = Session.load(token)
+
+        if session is None:
+            return None
+
+        return cls.load(session.data['auth_user_id'])
+
     def get_or_create_cookie(self, secret=None):
         """Find the cookie for the given user
         Create a new session if no cookie is found
