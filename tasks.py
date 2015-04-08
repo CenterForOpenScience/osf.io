@@ -55,6 +55,12 @@ def server(host=None, port=5000, debug=True, live=False):
         app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
+@task
+def apiserver(port=8000):
+    """Run the API server."""
+    run('python manage.py runserver {}'.format(port), echo=True)
+
+
 SHELL_BANNER = """
 {version}
 
