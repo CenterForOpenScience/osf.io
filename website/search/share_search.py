@@ -28,10 +28,13 @@ def search(query, raw=False, index='share'):
     results = share_es.search(index=index, doc_type=None, body=query)
 
     return results if raw else {
-        'results': [hit['_source'] for hit in results['hits']['hits']],
+        'results': [remove_key(hit['_source'], 'raw') for hit in results['hits']['hits']],
         'count': results['hits']['total'],
     }
 
+def remove_key(d, k):
+    d.pop(k, None)
+    return d
 
 @requires_search
 def count(query, index='share'):
