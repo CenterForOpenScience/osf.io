@@ -2,24 +2,52 @@
 
     <div data-bind="if: mode() === 'edit'">
 
-        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
+        <form role="form" data-bind="submit: submit">
+
+           <div data-bind="sortable: {
+                    data: personalWebsites,
+                    options: {
+                        handle: '.sort-handle',
+                        containment: '#containDrag'
+                    }
+                }">
+
+                <div>
+
+                    <div class="well well-sm sort-handle">
+                        <span>Position {{ $index() + 1 }}</span>
+                        <span data-bind="visible: $parent.hasMultiple()">
+                            [ drag to reorder ]
+                        </span>
+                        <a
+                                class="text-danger pull-right"
+                                data-bind="click: $parent.removeContent,
+                                           visible: $parent.canRemove"
+                            >Remove</a>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Your Website</label>
+                        <div class="input-group">
+                        <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
+                        <input class="form-control" data-bind="value: personalWebsites[0]" placeholder="http://yourwebsite.com"/>
+                        </div>
+                    </div>
 
 
-            <div class="form-group">
-                <label>Your Website</label>
-                <div class="input-group">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                <input class="form-control" data-bind="value: professional" placeholder="http://yourwebsite.com"/>
+                    <hr data-bind="visible: $index() != ($parent.personalWebsites().length - 1)" />
+
                 </div>
+
             </div>
 
-            <div class="form-group">
-                <label>Another Website</label>
-                <div class="input-group">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                <input class="form-control" data-bind="value: professional" placeholder="http://anotherwebsite.com"/>
-                </div> 
+            <div>
+                <a class="btn btn-default" data-bind="click: addContent">
+                    Add another
+                </a>
             </div>
+
+
 
             <div class="form-group">
                 <label>ORCID</label>

@@ -467,31 +467,23 @@ var SocialViewModel = function(urls, modes) {
     var self = this;
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
+    var i;
 
     self.addons = ko.observableArray();
+    self.personalWebsites = ko.observableArray();
 
-    self.personal = extendLink(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-        ko.observable().extend({
-            trimmed: true,
-            url: true,
-            ensureHttp: true
-        }),
-        self, 'personal'
-    );
-
-    self.professional = extendLink(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-        ko.observable().extend({
-            trimmed: true,
-            url: true,
-            ensureHttp: true
-        }),
-        self, 'professional'
-    );
-
+    for (i = 0; i < self.personalWebsites.length; i++) {
+        self.personalWebsites[i] = extendLink(
+            // Note: Apply extenders in reverse order so that `ensureHttp` is
+            // applied before `url`.
+            ko.observable().extend({
+                trimmed: true,
+                url: true,
+                ensureHttp: true
+            }),
+            self, 'personalWebsites[i]'
+        );
+    }
 
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
@@ -523,8 +515,7 @@ var SocialViewModel = function(urls, modes) {
     );
 
     self.trackedProperties = [
-        self.personal,
-        self.professional,
+        self.personalWebsites,
         self.orcid,
         self.researcherId,
         self.twitter,
@@ -542,9 +533,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.values = ko.computed(function() {
         return [
-            {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
-            //BH Testing adding another site
-            {label: 'Professional Site', text: self.professional(), value: self.professional.url()},
+            {label: 'Personal Site', text: self.personalWebsites(), value: self.personalWebsites()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
@@ -571,7 +560,6 @@ SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
 var ListViewModel = function(ContentModel, urls, modes) {
-
     var self = this;
     BaseViewModel.call(self, urls, modes);
 
@@ -803,6 +791,7 @@ module.exports = {
     Social: Social,
     Jobs: Jobs,
     Schools: Schools,
+ //   PersonalWebsites: PersonalWebsites,
     // Expose private viewmodels
     _NameViewModel: NameViewModel
 };
