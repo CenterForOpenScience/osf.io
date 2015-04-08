@@ -19,16 +19,8 @@ class NodeSerializer(JSONAPISerializer):
         type_ = 'nodes'
 
     def get_links(self, obj):
-        parent = obj.parent_node
-        if parent:
-            parent_url = absolute_reverse('nodes:node-detail', kwargs=dict(pk=parent.pk))
-        else:
-            parent_url = None
-        return {
+        ret = {
             'html': obj.absolute_url,
-            'parent': {
-                'related': parent_url
-            },
             'children': {
                 'related': absolute_reverse('nodes:node-children', kwargs=dict(pk=obj.pk))
             },
@@ -39,6 +31,13 @@ class NodeSerializer(JSONAPISerializer):
                 'related': absolute_reverse('nodes:node-registrations', kwargs=dict(pk=obj.pk))
             },
         }
+        parent = obj.parent_node
+        if parent:
+            parent_url = absolute_reverse('nodes:node-detail', kwargs=dict(pk=parent.pk))
+            ret['parent'] = {
+                'related': parent_url
+            }
+        return ret
 
     def create(self, validated_data):
         node = Node(**validated_data)
