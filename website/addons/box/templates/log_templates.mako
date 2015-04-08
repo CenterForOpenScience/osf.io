@@ -24,7 +24,7 @@ Box in {{ nodeType }}
 <script type="text/html" id="box_folder_selected">
 linked Box folder
 <span class="overflow">
-    {{ params.folder_path === 'All Files' ? '/(Full Box)' : params.folder_path.replace('All Files','')}}
+    {{ params.folder_path === 'All Files' ? '/ (Full Box)' : params.folder_path.replace('All Files','')}}
 </span> to {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
