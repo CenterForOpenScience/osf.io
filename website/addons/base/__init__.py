@@ -1,6 +1,4 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import glob
@@ -13,6 +11,8 @@ from mako.lookup import TemplateLookup
 
 import furl
 import requests
+from modularodm import Q
+from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
@@ -23,6 +23,22 @@ from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
+
+from website.oauth.signals import oauth_complete
+
+NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
+    settings.TEMPLATES_PATH,
+    'project',
+    'addon',
+    'node_settings_default.mako',
+)
+
+USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
+    settings.TEMPLATES_PATH,
+    'project',
+    'addon',
+    'user_settings_default.mako',
+)
 
 lookup = TemplateLookup(
     directories=[
@@ -88,46 +104,34 @@ class AddonConfig(object):
         self.high_max_file_size = high_max_file_size
         self.accept_extensions = accept_extensions
 
+        # Provide the path the the user_settings template
+        self.user_settings_template = user_settings_template
+        if not user_settings_template or not os.path.exists(os.path.dirname(user_settings_template)):
+            # Use the default template (ATM for OAuth addons)
+            self.user_settings_template = USER_SETTINGS_TEMPLATE_DEFAULT
+
+        # Provide the path the the node_settings template
+        self.node_settings_template = node_settings_template
+        if not node_settings_template or not os.path.exists(os.path.dirname(node_settings_template)):
+            # Use the default template
+            self.node_settings_template = NODE_SETTINGS_TEMPLATE_DEFAULT
+
         # Build template lookup
-        template_path = os.path.join('website', 'addons', short_name, 'templates')
-        if os.path.exists(template_path):
-            self.template_lookup = TemplateLookup(
-                directories=[
-                    template_path,
-                    settings.TEMPLATES_PATH,
+        template_dirs = list(
+            set(
+                [
+                    path
+                    for path in [os.path.dirname(self.user_settings_template), os.path.dirname(self.node_settings_template), settings.TEMPLATES_PATH]
+                    if os.path.exists(path)
                 ]
+            )
+        )
+        if template_dirs:
+            self.template_lookup = TemplateLookup(
+                directories=template_dirs
             )
         else:
             self.template_lookup = None
-
-        # Provide the path the the user_settings template
-        self.user_settings_template = user_settings_template
-        addon_user_settings_path = os.path.join(
-            template_path,
-            '{}_user_settings.mako'.format(self.short_name)
-        )
-
-        if user_settings_template:
-            # If USER_SETTINGS_TEMPLATE is defined, use that path.
-            self.user_settings_template = user_settings_template
-        elif os.path.exists(addon_user_settings_path):
-            # An implicit template exists
-            self.user_settings_template = os.path.join(
-                os.path.pardir,
-                'addons',
-                self.short_name,
-                'templates',
-                '{}_user_settings.mako'.format(self.short_name),
-            )
-        else:
-            # Use the default template (for OAuth addons)
-            self.user_settings_template = os.path.join(
-                'project',
-                'addon',
-                'user_settings_default.mako',
-            )
-
-        self.node_settings_template = node_settings_template
 
     def _static_url(self, filename):
         """Build static URL for file; use the current addon if relative path,
@@ -200,8 +204,6 @@ class AddonConfig(object):
 
 class GuidFile(GuidStoredObject):
 
-    redirect_mode = 'proxy'
-
     _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
@@ -209,6 +211,21 @@ class GuidFile(GuidStoredObject):
     _meta = {
         'abstract': True,
     }
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
+        try:
+            obj = cls(**kwargs)
+            obj.save()
+            return obj, True
+        except KeyExistsException:
+            obj = cls.find_one(
+                reduce(
+                    lambda acc, query: acc & query,
+                    (Q(key, 'eq', value) for key, value in kwargs.iteritems())
+                )
+            )
+            return obj, False
 
     @property
     def provider(self):
@@ -476,6 +493,14 @@ class AddonUserSettingsBase(AddonSettingsBase):
         return ret
 
 
+@oauth_complete.connect
+def oauth_complete(provider, account, user):
+    if not user or not account:
+        return
+    user.add_addon(account.provider)
+    user.save()
+
+
 class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     _meta = {
         'abstract': True,
@@ -586,6 +611,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     def get_attached_nodes(self, external_account):
         for node in self.get_nodes_with_oauth_grants(external_account):
+            if node is None:
+                continue
             node_settings = node.get_addon(self.oauth_provider.short_name)
 
             if node_settings is None:
@@ -627,6 +654,13 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     }
 
     @property
+    def complete(self):
+        """Whether or not this addon is properly configured
+        :rtype bool:
+        """
+        raise NotImplementedError()
+
+    @property
     def has_auth(self):
         """Whether the node has added credentials for this addon."""
         return False
@@ -642,7 +676,8 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 'api_url': self.owner.api_url,
                 'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
-            }
+            },
+            'node_settings_template': os.path.basename(self.config.node_settings_template),
         })
         return ret
 
@@ -942,7 +977,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         if self.has_auth:
             return (
                 u'The contents of {addon} add-ons cannot be registered at this time; '
-                u'the {addon} add-on linked to this {category} will not be included '
+                u'the {addon} add-on linked to this {cat} will not be included '
                 u'as part of this registration.'
             ).format(
                 addon=self.config.full_name,

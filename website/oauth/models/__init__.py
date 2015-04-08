@@ -61,6 +61,9 @@ class ExternalAccount(StoredObject):
     # The `name` of the service
     # This lets us query for only accounts on a particular provider
     provider = fields.StringField(required=True)
+    # The proper 'name' of the service
+    # Needed for account serialization
+    provider_name = fields.StringField(required=True)
 
     # The unique, persistent ID on the remote service.
     provider_id = fields.StringField()
@@ -259,6 +262,7 @@ class ExternalProvider(object):
             self.account = ExternalAccount(
                 provider=self.short_name,
                 provider_id=info['provider_id'],
+                provider_name=self.name,
             )
             self.account.save()
         except KeyExistsException:
@@ -269,6 +273,8 @@ class ExternalProvider(object):
             )
             assert self.account is not None
 
+        # ensure that provider_name is correct
+        self.account.provider_name = self.name
         # required
         self.account.oauth_key = info['key']
 

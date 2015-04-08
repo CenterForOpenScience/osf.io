@@ -42,7 +42,7 @@ def get_auth_flow():
 
 AuthResult = namedtuple('AuthResult', ['access_token', 'dropbox_id', 'url_state'])
 
-def finish_auth():
+def finish_auth(node):
     """View helper for finishing the Dropbox Oauth2 flow. Returns the
     access_token, dropbox_id, and url_state.
 
@@ -59,6 +59,8 @@ def finish_auth():
         raise HTTPError(http.FORBIDDEN)
     except DropboxOAuth2Flow.NotApprovedException:  # User canceled flow
         flash('Did not approve token.', 'info')
+        if node:
+            return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))
     except DropboxOAuth2Flow.ProviderException:
         raise HTTPError(http.FORBIDDEN)
@@ -95,7 +97,7 @@ def dropbox_oauth_finish(auth, **kwargs):
     user = auth.user
 
     node = Node.load(session.data.get('dropbox_auth_nid'))
-    result = finish_auth()
+    result = finish_auth(node)
     # If result is a redirect response, follow the redirect
     if isinstance(result, BaseResponse):
         return result

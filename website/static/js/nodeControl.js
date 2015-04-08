@@ -8,10 +8,12 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-require('knockout-punches');
+require('bootstrap-editable');
+require('knockout.punches');
 ko.punches.enableAll();
 
-var osfHelpers = require('osfHelpers');
+$.ajaxSetup({cache: false});
+var osfHelpers = require('./osfHelpers');
 var NodeActions = require('./project.js');
 
 // Modal language

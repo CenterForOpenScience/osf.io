@@ -91,6 +91,12 @@ class UserFactory(ModularOdmFactory):
         if create:
             self.save()
 
+    @post_generation
+    def set_emails(self, create, extracted):
+        if self.username not in self.emails:
+            self.emails.append(self.username)
+            self.save()
+
 
 class AuthUserFactory(UserFactory):
     """A user that automatically has an api key, for quick authentication.
@@ -382,6 +388,7 @@ class ExternalAccountFactory(ModularOdmFactory):
 
     provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
+    provider_name = 'Fake Provider'
 
 
 class MockOAuth2Provider(ExternalProvider):

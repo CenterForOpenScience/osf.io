@@ -22,17 +22,16 @@ class CitationsProvider(object):
         return {
             'accounts': [
                 self.serializer(
-                    user_settings=user.get_addon(self.provider_name)
+                    user_settings=user.get_addon(self.provider_name) if user else None
                 ).serialize_account(each)
                 for each in user.external_accounts
                 if each.provider == self.provider_name
             ]
         }
 
-    def set_config(self, node_addon, user, external_list_id):
+    def set_config(self, node_addon, user, external_list_id, external_list_name, auth):
         # Ensure request has all required information
-
-        node_addon.set_target_folder(external_list_id)
+        node_addon.set_target_folder(external_list_id, external_list_name, auth)
 
     def add_user_auth(self, node_addon, user, external_account_id):
 
@@ -127,11 +126,12 @@ class CitationsProvider(object):
         if list_id is None:
             contents = [node_addon.root_folder]
         else:
+            user_settings = user.get_addon(self.provider_name) if user else None
             if show in ('all', 'folders'):
                 contents += [
                     self.serializer(
                         node_settings=node_addon,
-                        user_settings=user.get_addon(self.provider_name),
+                        user_settings=user_settings,
                     ).serialize_folder(each)
                     for each in account_folders
                     if each.get('parent_list_id') == list_id
@@ -141,7 +141,7 @@ class CitationsProvider(object):
                 contents += [
                     self.serializer(
                         node_settings=node_addon,
-                        user_settings=user.get_addon(self.provider_name),
+                        user_settings=user_settings,
                     ).serialize_citation(each)
                     for each in node_addon.api.get_list(list_id)
                 ]

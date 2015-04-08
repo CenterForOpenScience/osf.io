@@ -7,22 +7,19 @@ require('jquery-tagsinput');
 require('bootstrap-editable');
 
 var m = require('mithril');
-var Fangorn = require('fangorn');
-
-var LogFeed = require('../logFeed.js');
-var pointers = require('../pointers.es6.js');
-
-var Comment = require('../comment.js');
+var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
-
-var nodeControl = require('../nodeControl.js');
-
-var CitationList = require('../citationList.js');
-var CitationWidget = require('../citationWidget.js');
-
-var mathrender = require('mathrender');
-var md = require('markdown').full;
 require('truncate');
+
+var LogFeed = require('js/logFeed');
+var pointers = require('js/pointers');
+var Comment = require('js/comment');
+var NodeControl = require('js/nodeControl');
+var CitationList = require('js/citationList');
+var CitationWidget = require('js/citationWidget');
+var mathrender = require('js/mathrender');
+var md = require('js/markdown').full;
+
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -34,7 +31,7 @@ new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
-    new nodeControl.NodeControl('#projectScope', data);
+    new NodeControl.NodeControl('#projectScope', data);
 });
 
 // Initialize comment pane w/ it's viewmodel
@@ -180,5 +177,4 @@ $(document).ready(function() {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
-
 });

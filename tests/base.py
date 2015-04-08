@@ -50,6 +50,7 @@ SILENT_LOGGERS = [
     'website.search.elastic_search',
     'framework.auth.core',
     'website.mails',
+    'website.search_migration.migrate',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
