@@ -2,18 +2,32 @@ from collections import OrderedDict
 
 from rest_framework import pagination
 from rest_framework.response import Response
+from rest_framework.utils.urls import (
+    replace_query_param, remove_query_param
+)
 
 class JSONAPIPagination(pagination.PageNumberPagination):
     """Custom paginator that formats responses in a JSON-API compatible format."""
+
+    def get_first_link(self):
+        url = self.request.build_absolute_uri()
+        return remove_query_param(url, self.page_query_param)
+
+    def get_last_link(self):
+        url = self.request.build_absolute_uri()
+        page_number = self.page.paginator.num_pages
+        return replace_query_param(url, self.page_query_param, page_number)
 
     def get_paginated_response(self, data):
         response_dict = OrderedDict([
             ('data', data),
             ('links', OrderedDict([
+                ('first', self.get_first_link()),
+                ('last', self.get_last_link()),
+                ('prev', self.get_previous_link()),
                 ('next', self.get_next_link()),
-                ('previous', self.get_previous_link()),
                 ('meta', OrderedDict([
-                    ('count', self.page.paginator.count),
+                    ('total', self.page.paginator.count),
                 ]))
             ])),
         ])
