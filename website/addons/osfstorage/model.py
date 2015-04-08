@@ -284,7 +284,10 @@ class OsfStorageFileNode(StoredObject):
 
         if recurse and self.is_folder:
             for child in self.children:
-                child.delete(auth, recurse=recurse, log=log)
+                try:
+                    child.delete(auth, recurse=recurse, log=log)
+                except errors.DeleteError:
+                    pass  # If a child is already deleted ignore the error
 
         if log:
             self.log(auth, NodeLog.FILE_REMOVED, version=False)
@@ -301,7 +304,7 @@ class OsfStorageFileNode(StoredObject):
                 child.undelete(auth, recurse=recurse, log=log)
 
         if log:
-            self.log(auth, NodeLog.FILE_ADDED)
+            self.log(auth, NodeLog.FILE_ADDED if self.is_file else NodeLog.FOLDER_CREATED)
 
     def serialized(self):
         """Build Treebeard JSON for folder or file.
