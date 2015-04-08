@@ -1,7 +1,7 @@
 /**
 * A simple folder picker plugin built on HGrid.
 * Takes the same options as HGrid and additionally requires an
-* `onChooseFolder` option (the callback executed when a folder is selected).
+* `onPickFolder` option (the callback executed when a folder is selected).
 *
 * Usage:
 *
@@ -18,12 +18,12 @@ var m = require('mithril');
 var Treebeard = require('treebeard');
 
 
-function _treebeardToggleCheck (item) {
-    return item.data.addon !== 'figshare';
+function treebeardToggleCheck(item) {
+    return ((typeof item.data.hasChildren === 'undefined') || item.data.hasChildren);
 }
 
-function _treebeardResolveToggle(item) {
-    if(item.data.addon === 'figshare') {
+function treebeardResolveToggle(item) {
+    if ((typeof item.data.hasChildren !== 'undefined') && item.data.hasChildren === false) {
         return '';
     }
 
@@ -33,39 +33,53 @@ function _treebeardResolveToggle(item) {
 }
 
 // Returns custom icons for OSF
-function _treebeardResolveIcon(item) {
+function treebeardResolveIcon(item) {
     return item.open ?
         m('i.fa.fa-folder-open-o', ' '):
         m('i.fa.fa-folder-o', ' ');
 }
 
 var INPUT_NAME = '-folder-select';
-//THIS NEEDS TO BE FIXED SO THAT ON CLICK IT OPENS THE FOLDER.
-function _treebeardTitleColumn (item, col) {
-    return m('span', item.data.name);
+
+function treebeardTitleColumn(item, col) {
+    var tb = this; // jshint ignore: line
+
+    var cls = '';
+    var onclick = function() {};
+    if (typeof item.data.hasChildren === 'undefined' || item.data.hasChildren) {
+        cls = 'hasChildren';
+        onclick = function() {
+            tb.updateFolder(null, item);
+        };
+    }
+
+    return m('span', {
+        className: cls,
+        onclick: onclick
+    }, item.data.name);
 }
 
 /**
-    * Returns the folder select button for a single row.
-    */
-function _treebeardSelectView(item) {
-    var tb = this;  // jshint ignore: line
-    var setTempPicked = function () {
+ * Returns the folder select button for a single row.
+ */
+function treebeardSelectView(item) {
+    var tb = this; // jshint ignore: line
+    var setTempPicked = function() {
         this._tempPicked = item.id;
     };
     var templateChecked = m('input', {
-        type:'radio',
-        checked : 'checked',
-        name: '#' + tb.options.divID + INPUT_NAME,
-        value:item.id
-    }, ' ');
-    var templateUnchecked = m('input',{
         type: 'radio',
-        onclick : setTempPicked.bind(tb),
-        onchange: function(evt){
+        checked: 'checked',
+        name: '#' + tb.options.divID + INPUT_NAME,
+        value: item.id
+    }, ' ');
+    var templateUnchecked = m('input', {
+        type: 'radio',
+        onclick: setTempPicked.bind(tb),
+        onchange: function(evt) {
             tb.options.onPickFolder(evt, item);
         },
-        name: '#' + tb.options.divID + INPUT_NAME,
+        name: '#' + tb.options.divID + INPUT_NAME
     }, ' ');
 
     if (tb._tempPicked) {
@@ -82,41 +96,35 @@ function _treebeardSelectView(item) {
     return templateUnchecked;
 }
 
-function _treebeardColumnTitle() {
-    return [
-        {
-            title: 'Folders',
-            width : '75%',
-            sort : false
-        },
-        {
-            title : 'Select',
-            width : '25%',
-            sort : false
-        }
-    ];
+function treebeardColumnTitle() {
+    return [{
+        title: 'Folders',
+        width: '75%',
+        sort: false
+    }, {
+        title: 'Select',
+        width: '25%',
+        sort: false
+    }];
 }
 
-function _treebeardResolveRows(item) {
+function treebeardResolveRows(item) {
     // this = treebeard;
     item.css = '';
-    return [
-        {
-            data : 'name',  // Data field name
-            folderIcons : true,
-            filter : false,
-            custom : _treebeardTitleColumn
-        },
-        {
-            sortInclude : false,
-            css : 'p-l-xs',
-            custom : _treebeardSelectView
-        }
-    ];
+    return [{
+        data: 'name', // Data field name
+        folderIcons: true,
+        filter: false,
+        custom: treebeardTitleColumn
+    }, {
+        sortInclude: false,
+        css: 'p-l-xs',
+        custom: treebeardSelectView
+    }];
 }
 
-function _treebeardOnload () {
-    var tb = this;  // jshint ignore: line
+function treebeardOnload() {
+    var tb = this; // jshint ignore: line
 
     tb.options.folderIndex = 0;
     if (tb.options.folderPath) {
@@ -128,17 +136,18 @@ function _treebeardOnload () {
         tb.options.folderArray = [''];
     }
 
-    if (tb.treeData.children[0].data.addon !== 'figshare') {
+    var node = tb.treeData.children[0];
+    if ((typeof node.data.hasChildren === 'undefined') || node.data.hasChildren) {
         tb.updateFolder(null, tb.treeData.children[0]);
     }
     tb.options.folderPickerOnload();
 }
 
-function _treebeardLazyLoadOnLoad(item) {
-    var tb = this;  // jshint ignore: line
+function treebeardLazyLoadOnLoad(item) {
+    var tb = this; // jshint ignore: line
 
     for (var i = 0; i < item.children.length; i++) {
-        if (item.children[i].data.addon === 'figshare') {
+        if ((typeof item.data.hasChildren !== 'undefined') && item.data.hasChildren === false) {
             return;
         }
         if (item.children[i].data.name === tb.options.folderArray[tb.options.folderIndex]) {
@@ -151,13 +160,13 @@ function _treebeardLazyLoadOnLoad(item) {
 
 // Default Treebeard options
 var defaults = {
-    columnTitles : _treebeardColumnTitle,
-    resolveRows : _treebeardResolveRows,
-    resolveIcon : _treebeardResolveIcon,
-    togglecheck : _treebeardToggleCheck,
-    resolveToggle : _treebeardResolveToggle,
-    ondataload : _treebeardOnload,
-    lazyLoadOnLoad : _treebeardLazyLoadOnLoad,
+    columnTitles: treebeardColumnTitle,
+    resolveRows: treebeardResolveRows,
+    resolveIcon: treebeardResolveIcon,
+    togglecheck: treebeardToggleCheck,
+    resolveToggle: treebeardResolveToggle,
+    ondataload: treebeardOnload,
+    lazyLoadOnLoad: treebeardLazyLoadOnLoad,
     // Disable uploads
     uploads: false,
     showFilter : false,
@@ -165,7 +174,7 @@ var defaults = {
     rowHeight : 35,
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
-    },
+    }
 };
 
 function FolderPicker(selector, opts) {
@@ -175,7 +184,7 @@ function FolderPicker(selector, opts) {
     // Custom Treebeard action to select a folder that uses the passed in
     // "onChooseFolder" callback
     if (!opts.onPickFolder) {
-        throw 'FolderPicker must have the "onPickFolder" option defined';
+        throw new Error('FolderPicker must have the "onPickFolder" option defined');
     }
     self.options = $.extend({}, defaults, opts);
     self.options.divID = selector.substring(1);
@@ -192,13 +201,15 @@ function FolderPicker(selector, opts) {
 $.fn.folderpicker = function(options) {
     this.each(function() {
         // Treebeard must take an ID as a selector if using as a jQuery plugin
-        if (!this.id) { throw 'FolderPicker must have an ID if initializing with jQuery.'; }
+        if (!this.id) {
+            throw new Error('FolderPicker must have an ID if initializing with jQuery.');
+        }
         var selector = '#' + this.id;
         return new FolderPicker(selector, options);
     });
 };
 
 
-FolderPicker.selectView = _treebeardSelectView;
+FolderPicker.selectView = treebeardSelectView;
 
 module.exports = FolderPicker;

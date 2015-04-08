@@ -121,32 +121,32 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_empty_bucket(self, mock_drop):
         mock_drop.return_value = ''
         s3 = AddonS3NodeSettings(owner=self.project)
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 0)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_full_bucket(self, mock_drop):
         mock_drop.return_value = ''
         s3 = AddonS3NodeSettings(owner=self.project)
         s3.bucket = 'bucket'
         assert_equals(s3.to_json(self.project.creator)['has_bucket'], 1)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_user_auth(self, mock_drop):
         mock_drop.return_value = ''
         s3 = AddonS3NodeSettings(owner=self.project)
         assert_equals(s3.to_json(self.project.creator)['user_has_auth'], 1)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_moar_use(self, mock_drop):
         mock_drop.return_value = ''
         assert_equals(self.node_settings.to_json(
             self.project.creator)['user_has_auth'], 1)
 
-    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_node_settings_no_contributor_user_settings(self, mock_drop):
         mock_drop.return_value = ''
         user2 = UserFactory()
@@ -173,14 +173,6 @@ class TestCallbacks(OsfTestCase):
             self.project, fork, self.non_authenticator,
         )
         assert_equal(clone.user_settings, None)
-
-    @mock.patch('website.addons.s3.utils.get_bucket_list')
-    def test_drop_down_disabled(self, mock_drop):
-        bucket = mock.create_autospec(Bucket)
-        bucket.name = 'Atticus'
-        mock_drop.return_value = [bucket]
-        drop_list = self.node_settings.to_json(self.project.creator)['bucket_list']
-        assert_true('Atticus' in drop_list)
 
     def test_after_remove_contributor_self(self):
         message = self.node_settings.after_remove_contributor(

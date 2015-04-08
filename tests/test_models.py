@@ -326,7 +326,7 @@ class TestUser(OsfTestCase):
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
-        u.add_unconfirmed_email(u.username)
+        u.add_unconfirmed_email("test@osf.io")
         assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
     @mock.patch('website.security.random_string')
@@ -399,17 +399,13 @@ class TestUser(OsfTestCase):
         assert_equal(url, expected)
 
     def test_confirm_primary_email(self):
-        u = UserFactory.build(username='foo@bar.com')
-        u.is_registered = False
-        u.is_claimed = False
-        u.add_unconfirmed_email('foo@bar.com')
-        u.save()
-        token = u.get_confirmation_token('foo@bar.com')
+        u = UnconfirmedUserFactory()
+        token = u.get_confirmation_token(u.username)
         confirmed = u.confirm_email(token)
         u.save()
         assert_true(confirmed)
         assert_equal(len(u.email_verifications.keys()), 0)
-        assert_in('foo@bar.com', u.emails)
+        assert_in(u.username, u.emails)
         assert_true(u.is_registered)
         assert_true(u.is_claimed)
 
@@ -2043,6 +2039,17 @@ class TestProject(OsfTestCase):
         node = NodeFactory(project=self.project, creator=user)
         assert_true(node.is_admin_parent(self.project.creator))
 
+    def test_is_admin_parent_grandparent_admin(self):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            project=self.project,
+            category='project',
+            creator=user
+        )
+        child_node = NodeFactory(project=parent_node, creator=user)
+        assert_true(child_node.is_admin_parent(self.project.creator))
+        assert_true(parent_node.is_admin_parent(self.project.creator))
+
     def test_is_admin_parent_parent_write(self):
         user = UserFactory()
         node = NodeFactory(project=self.project, creator=user)
@@ -2055,11 +2062,43 @@ class TestProject(OsfTestCase):
         assert_true(node.has_permission(self.project.creator, 'read'))
         assert_false(node.has_permission(self.project.creator, 'admin'))
 
+    def test_has_permission_read_grandparent_admin(self):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            project=self.project,
+            category='project',
+            creator=user
+        )
+        child_node = NodeFactory(
+            project=parent_node,
+            creator=user
+        )
+        assert_true(child_node.has_permission(self.project.creator, 'read'))
+        assert_false(child_node.has_permission(self.project.creator, 'admin'))
+        assert_true(parent_node.has_permission(self.project.creator, 'read'))
+        assert_false(parent_node.has_permission(self.project.creator, 'admin'))
+
     def test_can_view_parent_admin(self):
         user = UserFactory()
         node = NodeFactory(project=self.project, creator=user)
         assert_true(node.can_view(Auth(user=self.project.creator)))
         assert_false(node.can_edit(Auth(user=self.project.creator)))
+
+    def test_can_view_grandparent_admin(self):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            project=self.project,
+            creator=user,
+            category='project'
+        )
+        child_node = NodeFactory(
+            project=parent_node,
+            creator=user
+        )
+        assert_true(parent_node.can_view(Auth(user=self.project.creator)))
+        assert_false(parent_node.can_edit(Auth(user=self.project.creator)))
+        assert_true(child_node.can_view(Auth(user=self.project.creator)))
+        assert_false(child_node.can_edit(Auth(user=self.project.creator)))
 
     def test_can_view_parent_write(self):
         user = UserFactory()

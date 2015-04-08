@@ -4,7 +4,7 @@ var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var utils = require('./utils.js');
+var utils = require('./utils');
 
 var Stats = {};
 
@@ -21,7 +21,7 @@ function get_source_length(elastic_data) {
 
 function donutGraph (data, vm) {
     data.charts.shareDonutGraph.onclick = function (d, element) {
-        utils.appendSearch(vm, 'source:' + d.name);
+        utils.updateFilter(vm, 'source:' + d.name, true);
     };
     return c3.generate({
         bindto: '#shareDonutGraph',
@@ -62,26 +62,29 @@ function timeGraph (data) {
         },
         legend: {
             show: false
+        },
+        tooltip: {
+          grouped: false
         }
     });
 }
 
 Stats.view = function(ctrl) {
     return [
-        m('.row', {style: {color: 'darkgrey'}}, [
-            m('.col-md-4', m('p.text-center', ctrl.vm.latestDate ? utils.formatNumber(ctrl.vm.totalCount) + ' events as of ' + new Date().toDateString() : '')),
-            m('.col-md-4', m('p.text-center', ctrl.vm.query().length > 0 ? 'Found ' + utils.formatNumber(ctrl.vm.count) + ' events in ' + ctrl.vm.time + ' seconds' : '')),
-            m('.col-md-4', m('p.text-center', ctrl.vm.providers + ' content providers'))
-        ]),
+        m('.row.search-helper', {style: {color: 'darkgrey'}},
+            m('.col-xs-12.col-lg-8.col-lg-offset-2', [
+                m('.col-md-4', m('p.text-center', ctrl.vm.latestDate ? utils.formatNumber(ctrl.vm.totalCount) + ' events as of ' + new Date().toDateString() : '')),
+                m('.col-md-4', m('p.text-center.font-thick', (ctrl.vm.query() && ctrl.vm.query().length > 0) ? 'Found ' + utils.formatNumber(ctrl.vm.count) + ' events in ' + ctrl.vm.time + ' seconds' : '')),
+                m('.col-md-4', m('p.text-center', ctrl.vm.providers + ' content providers'))
+            ])
+        ),
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    !ctrl.vm.statsLoaded() ? m('img[src=/static/img/loading.gif]') : [
-                        m('.row', [
-                            m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
-                            m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
-                        ])
-                    ]
+                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
+                        m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
+                        m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
+                    ] : [])
                 ]))
             ]),
         ] : []),
@@ -100,7 +103,7 @@ Stats.controller = function(vm) {
 
     self.vm = vm;
 
-    self.graphs = {};
+    self.vm.graphs = {};
 
     self.vm.totalCount = 0;
     self.vm.showStats = true;
@@ -112,29 +115,12 @@ Stats.controller = function(vm) {
             if (i) {
                 return;
             }
-            self.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
+            self.vm.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
         }});
     };
 
-    self.loadStats = function() {
-        self.vm.statsLoaded(false);
-
-        m.request({
-            method: 'GET',
-            url: '/api/v1/share/stats/?' + $.param({q: self.vm.query()}),
-            background: true
-        }).then(function(data) {
-            self.vm.statsData = data;
-            Object.keys(self.graphs).map(function(type) {
-                self.vm.statsData.charts[type].unload = true;
-                if(type === 'shareDonutGraph') {
-                    var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
-                    $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
-                }
-                self.graphs[type].load(self.vm.statsData.charts[type]);
-            });
-            self.vm.statsLoaded(true);
-        }).then(m.redraw);
+    self.loadStats = function(){
+        return utils.loadStats(self.vm);
     };
 
     utils.onSearch(self.loadStats);
@@ -142,7 +128,7 @@ Stats.controller = function(vm) {
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/?size=1',
+        url: '/api/v1/share/search/?size=1',
     }).then(function(data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;

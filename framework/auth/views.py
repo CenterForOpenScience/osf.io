@@ -82,9 +82,12 @@ def forgot_password():
                 mail=mails.FORGOT_PASSWORD,
                 reset_link=reset_link
             )
-            status.push_status_message('Reset email sent to {0}'.format(email))
-        else:
-            status.push_status_message('Email {email} not found'.format(email=email))
+        status.push_status_message(
+            'An email with instructions on how to reset the password for the '
+            'account associated with {0} has been sent. If you do not receive '
+            'an email and believe you should have please '
+            'contact OSF Support.'.format(email)
+        )
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)

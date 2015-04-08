@@ -40,52 +40,14 @@ class TestDisabledUser(OsfTestCase):
         self.user.is_disabled = True
         self.user.save()
 
-    def test_profile_disabled(self):
-        """Disabled user profiles return 401 (GONE)"""
+    def test_profile_disabled_returns_401(self):
         res = self.app.get(self.user.url, expect_errors=True)
         assert_equal(res.status_code, 410)
 
 
 class TestAnUnregisteredUser(OsfTestCase):
 
-    @mock.patch('framework.auth.views.send_confirm_email')
-    def test_can_register(self, mock_send_confirm_email):
-        # Goes to log in page
-        # @FIXME(hrybacki): No tests written to test landing page sign in
-        res = self.app.get(web_url_for('auth_login')).maybe_follow()
-        # Fills out registration form
-        form = res.forms['registerForm']
-        form['register-fullname'] = 'Nicholas Cage'
-        form['register-username'] = 'nickcage@example.com'
-        form['register-username2'] = 'nickcage@example.com'
-        form['register-password'] = 'example'
-        form['register-password2'] = 'example'
-        # Submits
-        res = form.submit().maybe_follow()
-        # There's a flash messageset
-        assert_in('Registration successful. Please check nickcage@example.com '
-            'to confirm your email address.', res)
-
-    def test_sees_error_if_email_is_already_registered(self):
-        # A user is already registered
-        UserFactory(username='foo@bar.com')
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login')).maybe_follow()
-        # Fills out registration form
-        form = res.forms['registerForm']
-        form['register-fullname'] = 'Foo Bar'
-        form['register-username'] = 'foo@bar.com'
-        form['register-username2'] = 'foo@bar.com'
-        form['register-password'] = 'example'
-        form['register-password2'] = 'example'
-        # submits
-        res = form.submit().maybe_follow()
-        # sees error message because email is already registered
-        assert_in('has already been registered.', res)
-
-    def test_cant_see_profile(self):
-        """Can't see profile if not logged in.
-        """
+    def test_cant_see_profile_if_not_logged_in(self):
         res = self.app.get(web_url_for('profile_view'))
         assert_equal(res.status_code, 302)
         res = res.follow(expect_errors=True)
@@ -114,7 +76,7 @@ class TestTwoFactor(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills in log in form with correct username/password
-        form  = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -128,7 +90,7 @@ class TestTwoFactor(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills in log in form with correct username/password
-        form  = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -147,7 +109,7 @@ class TestTwoFactor(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills in log in form with correct username/password
-        form  = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -168,7 +130,6 @@ class TestAUser(OsfTestCase):
     def setUp(self):
         super(TestAUser, self).setUp()
         self.user = UserFactory()
-        # TODO: remove and re-write tests with 'password' as password /hrybacki
         self.user.set_password('science')
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -178,9 +139,9 @@ class TestAUser(OsfTestCase):
 
     def _login(self, username, password):
         '''Log in a user via at the login page.'''
-        res = self.app.get('/account/').maybe_follow()
+        res = self.app.get(web_url_for('auth_login')).maybe_follow()
         # Fills out login info
-        form = res.forms['signinForm']  # Get the form from its ID
+        form = res.forms['logInForm']  # Get the form from its ID
         form['username'] = username
         form['password'] = password
         # submits
@@ -216,7 +177,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get('/account/').maybe_follow()
         # Fills the form with incorrect password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'thisiswrong'
         # Submits
@@ -226,7 +187,6 @@ class TestAUser(OsfTestCase):
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
-        # User with two factor enabled is sent to two factor page
         self.user.add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
         self.user_settings.is_confirmed = True
@@ -235,7 +195,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills the form with correct password
-        form  = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -246,7 +206,6 @@ class TestAUser(OsfTestCase):
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_user_with_two_factor_redirected_to_two_factor_page_from_navbar_login(self, mock_push_message):
-        # User with two factor enabled is sent to two factor page
         self.user.add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
         self.user_settings.is_confirmed = True
@@ -275,7 +234,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills the form with correct password
-        form = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -298,7 +257,7 @@ class TestAUser(OsfTestCase):
         # Goes to log in page
         res = self.app.get(web_url_for('auth_login'))
         # Fills the form with correct password
-        form  = res.forms['signinForm']
+        form  = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # Submits
@@ -498,10 +457,10 @@ class TestAUser(OsfTestCase):
         # A registered user
         user = UserFactory()
         # goes to the login page
-        url = web_url_for('auth_login')
+        url = web_url_for('_forgot_password')
         res = self.app.get(url)
         # and fills out forgot password form
-        form = res.forms['forgotPassword']
+        form = res.forms['forgotPasswordForm']
         form['forgot_password-email'] = user.username
         # submits
         res = form.submit()
@@ -747,9 +706,9 @@ class TestMergingAccounts(OsfTestCase):
 
     def _login(self, username, password):
         '''Log in a user via at the login page.'''
-        res = self.app.get('/account/').maybe_follow()
+        res = self.app.get(web_url_for('auth_login')).maybe_follow()
         # Fills out login info
-        form = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'science'
         # submits
@@ -1101,28 +1060,6 @@ class TestClaiming(OsfTestCase):
         res2 = self.app.get(project2.url)
         assert_in(name2, res2)
 
-    @mock.patch('framework.auth.views.send_confirm_email')
-    def test_unregistered_user_can_create_an_account(self, mock_send_email):
-        # User is added as an unregistered contributor to a project
-        email, name = fake.email(), fake.name()
-        self.project.add_unregistered_contributor(
-            email=email,
-            fullname=name,
-            auth=Auth(self.referrer)
-        )
-        self.project.save()
-        # Goes to registration page (instead of claiming their email)
-        res = self.app.get('/account/').maybe_follow()
-        form = res.forms['registerForm']
-        form['register-fullname'] = name
-        form['register-username'] = email
-        form['register-username2'] = email
-        form['register-password'] = 'example'
-        form['register-password2'] = 'example'
-        res = form.submit()
-        # registered successfully
-        assert_in(language.REGISTRATION_SUCCESS.format(email=email), res)
-
     def test_cannot_go_to_claim_url_after_setting_password(self):
         name, email = fake.name(), fake.email()
         new_user = self.project.add_unregistered_contributor(
@@ -1228,9 +1165,9 @@ class TestConfirmingEmail(OsfTestCase):
         self.user.set_password('bicycle')
         self.user.save()
         # Goes to log in page
-        res = self.app.get('/account/').maybe_follow()
+        res = self.app.get(web_url_for('auth_login')).maybe_follow()
         # Fills the form with correct password
-        form = res.forms['signinForm']
+        form = res.forms['logInForm']
         form['username'] = self.user.username
         form['password'] = 'bicycle'
         res = form.submit().maybe_follow()
@@ -1280,46 +1217,6 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         )
         self.project.save()
 
-    @mock.patch('framework.auth.views.send_confirm_email')
-    @mock.patch('website.project.views.contributor.session')
-    def test_user_with_claim_url_registers_new_account(self, mock_session, mock_send_email):
-        # Assume that the unregistered user data is already stored in the session
-        mock_session.data = {
-            'unreg_user': {
-                'uid': self.user._primary_key,
-                'pid': self.project._primary_key,
-                'token': self.user.get_unclaimed_record(
-                    self.project._primary_key)['token']
-            }
-        }
-        res2 = self.app.get('/account/')
-        # Fills in Register form
-        form = res2.forms['registerForm']
-        form['register-fullname'] = 'tester'
-        form['register-username'] = 'test@test.com'
-        form['register-username2'] = 'test@test.com'
-        form['register-password'] = 'testing'
-        form['register-password2'] = 'testing'
-        res3 = form.submit()
-
-        assert_in('Registration successful.', res3.body)
-        assert_in('Successfully claimed contributor', res3.body)
-
-        u = User.find(Q('username', 'eq', 'test@test.com'))[0]
-        key = ApiKeyFactory()
-        u.api_keys.append(key)
-        u.save()
-        u.auth = ('test', key._primary_key)
-        self.app.get(u.get_confirmation_url('test@test.com')).follow(auth=u.auth)
-        # Confirms their email address
-        self.project.reload()
-        self.user.reload()
-        u.reload()
-        assert_not_in(self.user._primary_key, self.project.contributors)
-        assert_equal(2, len(self.project.contributors))
-        # user is now a contributor to self.project
-        assert_in(u._primary_key, self.project.contributors)
-
     @mock.patch('website.project.views.contributor.session')
     def test_user_can_log_in_with_a_different_account(self, mock_session):
         # Assume that the unregistered user data is already stored in the session
@@ -1347,7 +1244,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         # Taken to login/register page
         res2 = res.click(linkid='signOutLink', auth=lab_user.auth)
         # Fills in log in form
-        form = res2.forms['signinForm']
+        form = res2.forms['logInForm']
         form['username'] = right_user.username
         form['password'] = 'science'
         # submits

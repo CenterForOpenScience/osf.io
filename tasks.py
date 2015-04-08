@@ -44,10 +44,10 @@ except Failure:
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
-    from livereload import Server
     app = init_app(set_backends=True, routes=True, mfr=True)
 
     if live:
+        from livereload import Server
         server = Server(app.wsgi_app)
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
@@ -322,19 +322,17 @@ def flake():
     run('flake8 .', echo=True)
 
 
-def pip_install(req_file, download_cache=None):
+def pip_install(req_file):
     """Return the proper 'pip install' command for installing the dependencies
     defined in ``req_file``.
     """
     cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
-        cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
-    if download_cache:
-        cmd += ' --download-cache {0}'.format(download_cache)
+        cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     return cmd
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False, download_cache=None):
+def requirements(addons=False, release=False, dev=False):
     """Install python dependencies.
 
     Examples:
@@ -353,7 +351,7 @@ def requirements(addons=False, release=False, dev=False, download_cache=None):
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
     if addons:
-        addon_requirements(download_cache=download_cache)
+        addon_requirements()
 
 
 @task
@@ -421,20 +419,29 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(repo, path):
-    version = '.'.join([str(i) for i in sys.version_info[0:2]])
-    run('pip install wheel --upgrade', pty=False)
-    name = 'wheelhouse-{}.tar.gz'.format(version)
-    url = '{}/archive/{}.tar.gz'.format(repo, version)
-    # download and extract the wheelhouse github repository archive
-    run('mkdir {}'.format(path), pty=False)
-    run('curl -o {} -L {}'.format(name, url), pty=False)
-    run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
-    run('rm -f {}'.format(name), pty=False)
+def wheelhouse(addons=False, release=False, dev=False):
+    if release:
+        req_file = os.path.join(HERE, 'requirements', 'release.txt')
+    elif dev:
+        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    else:
+        req_file = os.path.join(HERE, 'requirements.txt')
+    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    run(cmd, pty=True)
+
+    if not addons:
+        return
+    for directory in os.listdir(settings.ADDON_PATH):
+        path = os.path.join(settings.ADDON_PATH, directory)
+        if os.path.isdir(path):
+            req_file = os.path.join(path, 'requirements.txt')
+            if os.path.exists(req_file):
+                cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                run(cmd, pty=True)
 
 
 @task
-def addon_requirements(download_cache=None):
+def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
@@ -445,9 +452,7 @@ def addon_requirements(download_cache=None):
                 print('Installing requirements for {0}'.format(directory))
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
                 if WHEELHOUSE_PATH:
-                    cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
-                if download_cache:
-                    cmd += ' --download-cache {0}'.format(download_cache)
+                    cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
                 run(bin_prefix(cmd))
             except IOError:
                 pass

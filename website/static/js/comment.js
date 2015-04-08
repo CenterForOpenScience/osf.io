@@ -7,7 +7,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
-require('knockout-mapping');
+var koHelpers = require('./koHelpers');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
@@ -202,8 +202,9 @@ var CommentModel = function(data, $parent, $root) {
     self.$parent = $parent;
     self.$root = $root;
 
-    // Note: assigns self.content()
-    $.extend(self, ko.mapping.fromJS(data));
+    // Note: assigns observables: canEdit, content, dateCreated, dateModified
+    //       hasChildren, id, isAbuse, isDeleted. Leaves out author.
+    $.extend(self, koHelpers.mapJStoKO(data, {exclude: ['author']}));
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
@@ -211,9 +212,6 @@ var CommentModel = function(data, $parent, $root) {
     self.content.subscribe(function(newContent) {
         self.contentDisplay(markdown.full.render(newContent));
     });
-
-    self.dateCreated(data.dateCreated);
-    self.dateModified(data.dateModified);
 
     self.prettyDateCreated = ko.computed(function() {
         return relativeDate(self.dateCreated());
@@ -235,7 +233,6 @@ var CommentModel = function(data, $parent, $root) {
     self.abuseText = ko.observable();
 
     self.editing = ko.observable(false);
-    self.editVerb = self.modified ? 'edited' : 'posted';
 
     exclusifyGroup(
         self.editing, self.replying, self.reporting, self.deleting,
