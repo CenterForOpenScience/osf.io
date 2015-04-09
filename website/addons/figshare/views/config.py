@@ -47,19 +47,15 @@ def figshare_config_put(node_addon, auth, **kwargs):
             message='You must supply a name, id, and type'
         ))
 
-    node_addon.update_fields({
-        'title': name,
+    folder = {
+        'name': name,
         'id': figshare_id,
         'type': figshare_type,
-    }, node, auth)
-
+    }
+    node_addon.update_fields(folder, node, auth)
     return {
         'result': {
-            'folder': {
-                'name': name,
-                'id': figshare_id,
-                'type': figshare_type,
-            },
+            'folder': folder,
             'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
@@ -124,8 +120,8 @@ def serialize_settings(node_settings, current_user, client=None):
             uid=user_settings.owner._primary_key)
         result['ownerName'] = user_settings.owner.fullname
         # Show available projects
-        linked = node_settings.linked_content or {'id': None, 'type': None, 'title': None}
-        result['linked'] = linked
+        linked = node_settings.linked_content or {'id': None, 'type': None, 'name': None}
+        result['folder'] = linked
     return result
 
 
