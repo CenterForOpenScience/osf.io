@@ -129,6 +129,10 @@ class DataverseProvider(provider.BaseProvider):
             )
 
     @asyncio.coroutine
+    def revisions(self, path, **kwargs):
+        raise exceptions.ProviderError({'message': 'Dataverse does not support file revisions.'}, code=405)
+
+    @asyncio.coroutine
     def get_draft_data(self):
         url = self.build_url(self.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
