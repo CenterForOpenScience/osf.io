@@ -3,7 +3,7 @@ from modularodm import Q
 
 from website.models import Node
 from api.base.utils import get_object_or_404
-from api.base.filters import ODMOrderingFilter as OrderingFilter
+from api.base.filters import ODMFilterMixin
 from .serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
@@ -23,7 +23,7 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
         return obj
 
-class NodeList(generics.ListCreateAPIView):
+class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Return a list of nodes. By default, a GET
     will return a list of nodes the current user contributes
     to.
@@ -35,13 +35,18 @@ class NodeList(generics.ListCreateAPIView):
     serializer_class = NodeSerializer
     ordering = ('-date_modified', )  # default ordering
 
-    # override
-    def get_queryset(self):
-        user = self.request.user
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
         # Return list of nodes that current user contributes to
-        return Node.find(Q('contributors', 'eq', user._id))
+        user = self.request.user
+        return Q('contributors', 'eq', user._id)
 
-    # override
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        query = self.get_query_from_request()
+        return Node.find(query)
+
+    # overrides ListCreateAPIView
     def perform_create(self, serializer):
         # On creation, make sure that current user is the creator
         user = self.request.user
