@@ -174,11 +174,15 @@ class MockRequestTestCase(unittest.TestCase):
                 priority=-1,
             )
 
+    def tearDown(self):
+        super(MockRequestTestCase, self).tearDown()
+        httpretty.reset()
+
     @classmethod
     def tearDownClass(cls):
         super(MockRequestTestCase, cls).tearDownClass()
-        httpretty.disable()
         httpretty.reset()
+        httpretty.disable()
 
 
 class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
