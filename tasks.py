@@ -11,7 +11,6 @@ import subprocess
 import logging
 
 from invoke import task, run
-from invoke.exceptions import Failure
 
 from website import settings
 
@@ -34,10 +33,11 @@ def bin_prefix(cmd):
 
 
 try:
-    run('pip freeze | grep rednose', hide='both')
-    TEST_CMD = 'nosetests --rednose'
-except Failure:
+    __import__('rednose')
+except ImportError:
     TEST_CMD = 'nosetests'
+else:
+    TEST_CMD = 'nosetests --rednose'
 
 
 @task
