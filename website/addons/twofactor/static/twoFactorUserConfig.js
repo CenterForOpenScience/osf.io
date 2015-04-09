@@ -80,7 +80,7 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 ViewModel.prototype.submitSettings = function() {
     var self = this;
     return osfHelpers.putJSON(
-        SETTINGS_URL, {
+        self.settingsUrl, {
             code: self.tfaCode()
         }
     ).done(function() {
