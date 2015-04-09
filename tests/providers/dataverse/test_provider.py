@@ -276,10 +276,15 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download(self, provider):
-        path = '/triangles.txt'
+    def test_download(self, provider, dataset_metadata, native_dataset_metadata):
+        path = '/21'
         url = provider.build_url(provider.DOWN_BASE_URL, path, key=provider.token)
         aiohttpretty.register_uri('GET', url, body=b'better')
+        draft_url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', draft_url, status=200, body=dataset_metadata)
+        published_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
+
         result = yield from provider.download(str(path))
         content = yield from result.response.read()
 
@@ -287,14 +292,29 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download_not_found(self, provider):
-        path = '/triangles.txt'
+    def test_download_not_found(self, provider, dataset_metadata, native_dataset_metadata):
+        path = '/21'
         url = provider.build_url(provider.DOWN_BASE_URL, path, key=provider.token)
         aiohttpretty.register_uri('GET', url, status=404)
+        draft_url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', draft_url, status=200, body=dataset_metadata)
+        published_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
 
         with pytest.raises(exceptions.DownloadError):
             yield from provider.download(str(path))
 
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_invalid_path(self, provider, dataset_metadata, native_dataset_metadata):
+        path = '/50'
+        draft_url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', draft_url, status=200, body=dataset_metadata)
+        published_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
+
+        with pytest.raises(exceptions.MetadataError):
+            yield from provider.download(str(path))
 
     @async
     @pytest.mark.aiohttpretty
@@ -317,14 +337,30 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_delete_file(self, provider):
-        path = '/The past'
+    def test_delete_file(self, provider, dataset_metadata, native_dataset_metadata):
+        path = '162'
         url = provider.build_url(provider.EDIT_MEDIA_BASE_URL, 'file', path)
         aiohttpretty.register_json_uri('DELETE', url, status=204)
+        draft_url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', draft_url, status=200, body=dataset_metadata)
+        published_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
 
         yield from provider.delete(str(path))
 
         assert aiohttpretty.has_call(method='DELETE', uri=url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_delete_file_invalid_path(self, provider, dataset_metadata, native_dataset_metadata):
+        path = '21'  # Path in native metadata doesn't count
+        draft_url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
+        aiohttpretty.register_uri('GET', draft_url, status=200, body=dataset_metadata)
+        published_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
+
+        with pytest.raises(exceptions.MetadataError):
+            yield from provider.delete(str(path))
 
 
 class TestMetadata:
