@@ -1,5 +1,16 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${file_name | h}</%def>
+
+% if (user['can_comment'] or node['has_comments']):
+    % if allow_comment:
+        <%include file="include/comment_pane_template.mako"/>
+    % else:
+        <div class="alert alert-warning" role="alert">
+            Comments for this addon is not yet supported.
+        </div>
+    % endif
+% endif
+
     <div>
         <h2 class="break-word">
             ${file_name | h}
@@ -112,6 +123,7 @@
     </script>
     %endif
     <script type="text/javascript">
+      <% import json %>
       window.contextVars = $.extend(true, {}, window.contextVars, {
     %if rendered is None:
         renderURL: '${render_url | js_str}',
@@ -123,12 +135,14 @@
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}'
+            safeName: '${file_name | h,js_str}',
+            id: '${file_id | js_str}'
         },
         node: {
           urls: {
             files: '${files_url | js_str}'
-          }
+          },
+          hasComments: ${json.dumps(node['has_comments'])}
         },
         currentUser: {
           canEdit: ${int(user['can_edit'])}

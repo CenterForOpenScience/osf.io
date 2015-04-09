@@ -146,7 +146,7 @@
 % endif
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako"/>
+    <%include file="include/comment_pane_template.mako"/>
 % endif
 
 <div class="row">
@@ -160,6 +160,7 @@
         }'></div>
         %endif
 
+        <!-- Files -->
         <div class="addon-widget-container">
             <div class="addon-widget-header clearfix">
                 <h4>Files</h4>
@@ -172,6 +173,25 @@
                     <div class="fangorn-loading">
                         <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discussions -->
+        <div id="comments-widget-container" class="addon-widget-container">
+            <div class="addon-widget-header clearfix">
+                <h4>Recent discussions</h4>
+                <div class="pull-right">
+                    <a href="${node['url']}discussions/" class="btn"> <i class="fa fa-external-link"></i> </a>
+                </div>
+            </div>
+            <div class="addon-widget-body">
+                <div data-bind="if: commented">
+                    <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
+                </div>
+                <div data-bind="ifnot: commented">There are no comments in this ${node['node_type']} yet.</div>
+                <div>
+                    <span>Open the <a class="open-comment-pane">comment pane</a> on the right to make a comment.</span>
                 </div>
             </div>
         </div>

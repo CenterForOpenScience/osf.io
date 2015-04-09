@@ -193,6 +193,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     )
     ret = {
         'file_name': filename,
+        'file_id': file_id,
         'rendered': rendered,
         'render_url': render_url,
         'urls': {
@@ -201,7 +202,9 @@ def dataverse_view_file(node_addon, auth, **kwargs):
                                          path=file_id),
             'info': node.api_url_for('dataverse_get_file_info',
                                      path=file_id),
-        }
+        },
+        # Note: Comments are not allowed for addons that do not support waterbutler
+        'allow_comment': False,
 
     }
     ret.update(_view_project(node, auth))

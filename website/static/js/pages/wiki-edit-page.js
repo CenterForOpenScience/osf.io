@@ -11,6 +11,7 @@ require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 
+var Comment = require('js/comment');
 var $osf = require('js/osfHelpers');
 
 
@@ -141,3 +142,12 @@ $(document).ready(function () {
     // Tooltip
     $('[data-toggle="tooltip"]').tooltip()
 });
+
+var $comments = $('.comments');
+if ($comments.length) {
+    var userName = window.contextVars.currentUser.name;
+    var canComment = window.contextVars.currentUser.canComment;
+    var hasChildren = window.contextVars.node.hasChildren;
+    var title = window.contextVars.wiki.name;
+    Comment.init('.comment-pane', 'wiki', title, 'pane', userName, canComment, hasChildren);
+}

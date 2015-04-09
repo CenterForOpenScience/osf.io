@@ -453,6 +453,7 @@ class TestAddonFileViews(OsfTestCase):
             'file_path': '',
             'files_url': '',
             'file_name': '',
+            'file_id': '',
             'render_url': '',
         })
         return ret

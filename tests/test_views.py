@@ -37,6 +37,7 @@ from website.project.views.node import _view_project, abbrev_authors, _should_sh
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.wiki.model import NodeWikiPage
 
 from tests.base import (
     OsfTestCase,
@@ -2835,6 +2836,48 @@ class TestComments(OsfTestCase):
             {
                 'content': content,
                 'isPublic': 'public',
+                'page': 'node',
+                'target': project._id
+            },
+            **kwargs
+        )
+
+    def _add_comment_wiki(self, project, content=None, name='home', **kwargs):
+
+        content = content if content is not None else 'the quick brown fox jumps over the lazy dog'
+        url = project.api_url + 'comment/'
+        project.update_node_wiki(name=name, content='a wiki page', auth=Auth(project.creator))
+        self.app.post_json(
+            url,
+            {
+                'content': content,
+                'isPublic': 'public',
+                'page': 'wiki',
+                'target': name
+            },
+            **kwargs
+        )
+        wiki_keys = NodeWikiPage.find(Q('node', 'eq', self.project)).get_keys()
+        for root_target in wiki_keys:
+            wiki_page = NodeWikiPage.load(root_target)
+            wiki_page.reload()
+
+    def _add_comment_files(self, project, content=None, path=None, provider='osfstorage', **kwargs):
+        project.add_addon(provider, auth=Auth(self.user))
+        path = path if path is not None else 'mudhouse_coffee.txt'
+        addon = project.get_addon(provider)
+        if provider == 'dropbox':
+            addon.folder = '/'
+        guid, _ = addon.find_or_create_file_guid('/' + path)
+        content = content if content is not None else 'large hot mocha'
+        url = project.api_url + 'comment/'
+        return self.app.post_json(
+            url,
+            {
+                'content': content,
+                'isPublic': 'public',
+                'page': 'files',
+                'target': guid._id
             },
             **kwargs
         )
@@ -2968,7 +3011,7 @@ class TestComments(OsfTestCase):
     def test_edit_comment(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
@@ -2988,7 +3031,7 @@ class TestComments(OsfTestCase):
 
     def test_edit_comment_short(self):
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short')
+        comment = CommentFactory(node=self.project, content='short', page='node')
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
             url,
@@ -3005,7 +3048,7 @@ class TestComments(OsfTestCase):
 
     def test_edit_comment_toolong(self):
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short')
+        comment = CommentFactory(node=self.project, content='short', page='node')
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
             url,
@@ -3023,7 +3066,7 @@ class TestComments(OsfTestCase):
     def test_edit_comment_non_author(self):
         "Contributors who are not the comment author cannot edit."
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
         non_author = AuthUserFactory()
         self.project.add_contributor(non_author, auth=self.consolidated_auth)
 
@@ -3043,7 +3086,7 @@ class TestComments(OsfTestCase):
     def test_edit_comment_non_contributor(self):
         "Non-contributors who are not the comment author cannot edit."
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.put_json(
@@ -3061,7 +3104,7 @@ class TestComments(OsfTestCase):
     def test_delete_comment_author(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         self.app.delete_json(
@@ -3076,7 +3119,7 @@ class TestComments(OsfTestCase):
     def test_delete_comment_non_author(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url + 'comment/{0}/'.format(comment._id)
         res = self.app.delete_json(
@@ -3094,7 +3137,7 @@ class TestComments(OsfTestCase):
     def test_report_abuse(self):
 
         self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
+        comment = CommentFactory(node=self.project, page='node')
         reporter = AuthUserFactory()
 
         url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
@@ -3118,10 +3161,13 @@ class TestComments(OsfTestCase):
     def test_can_view_private_comments_if_contributor(self):
 
         self._configure_project(self.project, 'public')
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
+        CommentFactory(node=self.project, user=self.project.creator, is_public=False, page='node')
 
         url = self.project.api_url + 'comments/'
-        res = self.app.get(url, auth=self.project.creator.auth)
+        res = self.app.get(url, {
+            "page": 'node',
+            "target": self.project._primary_key
+        }, auth=self.project.creator.auth)
 
         assert_equal(len(res.json['comments']), 1)
 
@@ -3134,13 +3180,17 @@ class TestComments(OsfTestCase):
         link.nodes.append(self.project)
         link.save()
 
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
+        CommentFactory(node=self.project, user=self.project.creator, is_public=False, page='node')
 
         url = self.project.api_url + 'comments/'
-        res = self.app.get(url, {"view_only": link.key}, auth=user.auth)
+        res = self.app.get(url, {
+            "view_only": link.key,
+            "page": 'node',
+            "target": self.project._primary_key
+        }, auth=user.auth)
         comment = res.json['comments'][0]
         author = comment['author']
-        assert_in('A user', author['name'])
+        assert_in('A user', author['fullname'])
         assert_false(author['gravatarUrl'])
         assert_false(author['url'])
         assert_false(author['id'])
@@ -3148,93 +3198,238 @@ class TestComments(OsfTestCase):
     def test_discussion_recursive(self):
 
         self._configure_project(self.project, 'public')
-        comment_l0 = CommentFactory(node=self.project)
+        comment_l0 = CommentFactory(node=self.project, page='node')
 
         user_l1 = UserFactory()
         user_l2 = UserFactory()
-        comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1)
-        CommentFactory(node=self.project, target=comment_l1, user=user_l2)
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1, page='node')
+        CommentFactory(node=self.project, target=comment_l1, user=user_l2, page='node')
 
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key,
+            'isCommentList': True
+        })
 
-        assert_equal(len(res.json['discussion']), 3)
+        assert_equal(len(res.json['discussionByFrequency']), 3)
 
     def test_discussion_no_repeats(self):
 
         self._configure_project(self.project, 'public')
-        comment_l0 = CommentFactory(node=self.project)
+        comment_l0 = CommentFactory(node=self.project, page='node')
 
-        comment_l1 = CommentFactory(node=self.project, target=comment_l0)
-        CommentFactory(node=self.project, target=comment_l1)
+        comment_l1 = CommentFactory(node=self.project, target=comment_l0, page='node')
+        CommentFactory(node=self.project, target=comment_l1, page='node')
 
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key,
+            'rootId': 'None',
+            'isCommentList': True
+        })
 
-        assert_equal(len(res.json['discussion']), 1)
+        assert_equal(len(res.json['discussionByFrequency']), 1)
 
-    def test_discussion_sort(self):
+    def test_discussion_sort_frequency(self):
 
         self._configure_project(self.project, 'public')
 
         user1 = UserFactory()
         user2 = UserFactory()
 
-        CommentFactory(node=self.project)
+        CommentFactory(node=self.project, page='node')
         for _ in range(3):
-            CommentFactory(node=self.project, user=user1)
+            CommentFactory(node=self.project, user=user1, page='node')
         for _ in range(2):
-            CommentFactory(node=self.project, user=user2)
+            CommentFactory(node=self.project, user=user2, page='node')
 
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key,
+            'rootId': 'None',
+            'isCommentList': True
+        })
 
-        assert_equal(len(res.json['discussion']), 3)
-        observed = [user['id'] for user in res.json['discussion']]
+        assert_equal(len(res.json['discussionByFrequency']), 3)
+        observed = [user['id'] for user in res.json['discussionByFrequency']]
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
+    def test_discussion_sort_recency(self):
+
+        self._configure_project(self.project, 'public')
+
+        user1 = UserFactory()
+        user2 = UserFactory()
+
+        for _ in range(3):
+            CommentFactory(node=self.project, user=user1, page='node')
+        for _ in range(2):
+            CommentFactory(node=self.project, user=user2, page='node')
+        CommentFactory(node=self.project, page='node')
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, {
+            'page': 'node',
+            'target': self.project._primary_key,
+            'rootId': 'None',
+            'isCommentList': True
+        })
+
+        assert_equal(len(res.json['discussionByRecency']), 3)
+        observed = [user['id'] for user in res.json['discussionByRecency']]
+        expected = [self.project.creator._id, user2._id, user1._id]
+        assert_equal(observed, expected)
+
     def test_view_comments_updates_user_comments_view_timestamp(self):
-        CommentFactory(node=self.project)
+        CommentFactory(node=self.project, page='node')
 
         url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, {
+            'page':'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         self.user.reload()
 
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['node']
         view_timestamp = dt.datetime.utcnow()
         assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
         url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, {
+            'page':'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
 
         self.non_contributor.reload()
         assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
+
+    def test_view_comments_updates_user_comments_view_timestamp_wiki(self):
+        self.project.update_node_wiki(name='home', content='a wiki page', auth=Auth(self.project.creator))
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['wiki']['home']
+        view_timestamp = dt.datetime.utcnow()
+        assert_datetime_equal(user_timestamp, view_timestamp)
+
+    def test_view_comments_updates_user_comments_view_timestamp_files(self):
+        path = 'skittles.txt'
+        self._add_comment_files(self.project, 'Red orange yellow skittles', path, 'osfstorage', auth=self.project.creator.auth)
+        addon = self.project.get_addon('osfstorage')
+        guid, _ = addon.find_or_create_file_guid('/' + path)
+
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'files',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['files'][guid._id]
+        view_timestamp = dt.datetime.utcnow()
+        assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_n_unread_comments_updates_when_comment_is_added(self):
         self._add_comment(self.project, auth=self.project.creator.auth)
         self.project.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 1)
 
         url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         self.user.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 0)
+
+    def test_n_unread_comments_updates_when_comment_is_added_files(self):
+        path = 'gingertea.txt'
+        self._add_comment_files(
+            self.project,
+            content='Ginger tea rocks',
+            path=path,
+            provider='osfstorage',
+            auth=self.project.creator.auth
+        )
+        self.project.reload()
+
+        addon = self.project.get_addon('osfstorage')
+        guid, _ = addon.find_or_create_file_guid('/' + path)
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'files',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+        url_timestamp = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url_timestamp, {
+            'page': 'files',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': guid._id
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 0)
+
+    def test_n_unread_comments_updates_when_comment_is_added_wiki(self):
+        self._add_comment_wiki(self.project, 'hello world', 'home', auth=self.project.creator.auth)
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+        url_timestamp = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url_timestamp, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        res = self.app.get(url, {
+            'page': 'wiki',
+            'rootId': 'home'
+        }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
     def test_n_unread_comments_updates_when_comment_reply(self):
-        comment = CommentFactory(node=self.project, user=self.project.creator)
-        reply = CommentFactory(node=self.project, user=self.user, target=comment)
+        comment = CommentFactory(node=self.project, user=self.project.creator, page='node')
+        reply = CommentFactory(node=self.project, user=self.user, target=comment, page='node')
         self.project.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.project.creator.auth)
         assert_equal(res.json.get('nUnread'), 1)
 
 
@@ -3243,13 +3438,90 @@ class TestComments(OsfTestCase):
         self.project.reload()
 
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 1)
 
     def test_n_unread_comments_is_zero_when_no_comments(self):
         url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
+        res = self.app.get(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.project.creator.auth)
         assert_equal(res.json.get('nUnread'), 0)
+
+    def test_n_unread_comments_overview(self):
+        self._add_comment(self.project, auth=self.project.creator.auth)
+        self.project.reload()
+        res = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res['user']['unread_comments']['node'], 1)
+
+    def test_n_unread_comments_files(self):
+        self._add_comment_files(self.project, auth=self.project.creator.auth)
+        self.project.reload()
+        self._add_comment_files(
+            self.project,
+            content=None,
+            path=None,
+            provider='github',
+            auth=self.project.creator.auth
+        )
+        self.project.reload()
+        self._add_comment_files(
+            self.project,
+            content='I failed my test',
+            path='transcript.pdf',
+            provider='dropbox',
+            auth=self.project.creator.auth
+        )
+        self.project.reload()
+        res = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res['user']['unread_comments']['files'], 3)
+
+    def test_n_unread_comments_wiki(self):
+        self._add_comment_wiki(self.project, auth=self.project.creator.auth)
+        self._add_comment_wiki(self.project, content='yellow', name='Cold play', auth=self.project.creator.auth)
+        self.project.reload()
+        res = _view_project(self.project, auth=Auth(user=self.user))
+        assert_equal(res['user']['unread_comments']['wiki'], 2)
+
+    def test_n_unread_comments_total(self):
+
+        self._add_comment_files(self.project, auth=self.project.creator.auth)
+        self.project.reload()
+
+        self._add_comment(self.project, auth=self.project.creator.auth)
+        self._add_comment_wiki(
+            self.project,
+            content='yellow',
+            name='Cold play',
+            auth=self.project.creator.auth
+        )
+        self._add_comment_files(
+            self.project,
+            content=None,
+            path=None,
+            provider='github',
+            auth=self.project.creator.auth
+        )
+        self.project.reload()
+
+        self._add_comment_wiki(self.project, auth=self.project.creator.auth)
+        self._add_comment_files(
+            self.project,
+            content='I failed my test',
+            path='transcript.pdf',
+            provider='dropbox',
+            auth=self.project.creator.auth
+        )
+        self.project.reload()
+
+        res = _view_project(self.project, auth=Auth(user=self.user))['user']['unread_comments']
+        assert_equal(res['node'], 1)
+        assert_equal(res['wiki'], 2)
+        assert_equal(res['files'], 3)
 
 
 class TestTagViews(OsfTestCase):

@@ -372,7 +372,15 @@ class User(GuidStoredObject, AddonModelMixin):
     # when comments for a node were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
-    #   'node_id': 'timestamp'
+    #   'node_id': {
+    #     'node': 'timestamp',
+    #     'wiki': {
+    #        'wiki_name': 'timestamp'
+    #     },
+    #     'files': {
+    #        'file_id': 'timestamp'
+    #     }
+    #   }
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')

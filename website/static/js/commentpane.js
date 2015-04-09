@@ -11,7 +11,10 @@
         onOpen: function() {}
     };
 
-    var CommentPane = CommentPane || function(selector, options) {
+    /*
+       mode: 'widget', 'pane' or 'page'
+     */
+    var CommentPane = CommentPane || function(selector, mode, options) {
         var self = this;
 
         var $pane = $(selector);
@@ -19,6 +22,10 @@
         var $sidebar = $pane.find('.cp-sidebar');
         var $bar = $pane.find('.cp-bar');
         var $toggleElm = $.merge($pane, $sidebar);
+
+        self.mode = mode;
+
+        $handle.tooltip();
 
         options = $.extend({}, defaults, options);
         if (options.maxWidthProp < options.toggleWidth) {
@@ -54,6 +61,7 @@
                 width = options.toggleWidth * bodyWidth;
                 options.onOpen.call(self);
             }
+            $handle.tooltip('hide');
             $toggleElm.animate(
                 {width: width},
                 options.animateTime
@@ -62,35 +70,40 @@
 
         var init = function(){
             // Bind drag & drop handlers
-            $bar.on('mousedown', function() {
+            $bar.on('mousedown', function () {
                 makeAllElementsUnselectable();
-                $(document).on('mousemove', function(event) {
-                    var bodyWidth = $(document.body).width();
-                    var dragWidth = document.body.clientWidth - event.pageX;
-                    var width = Math.min(dragWidth, getMaxWidth()) + 'px';
-                    $pane.css('width', width);
-                    $('.cp-sidebar').css('width', width);
-                });
-                $(document).on('mouseup', function(){
-                    $(document).off('mousemove');
-                    $(document).off('mouseup');
-                    makeAllElementsSelectable();
-                    if ($pane.width() < options.minViewWidth) {
-                        $pane.animate(
-                            {width: '0'}, options.animateTime
-                        );
-                    }
-                });
+                if (self.mode === 'pane') {
+                    $(document).on('mousemove', function (event) {
+                        var bodyWidth = $(document.body).width();
+                        var dragWidth = document.body.clientWidth - event.pageX;
+                        var width = Math.min(dragWidth, getMaxWidth()) + 'px';
+                        $pane.css('width', width);
+                        $('.cp-sidebar').css('width', width);
+                    });
+                    $(document).on('mouseup', function () {
+                        $(document).off('mousemove');
+                        $(document).off('mouseup');
+                        makeAllElementsSelectable();
+                        if ($pane.width() < options.minViewWidth) {
+                            $pane.animate(
+                                {width: '0'}, options.animateTime
+                            );
+                        }
+                    });
+                }
             });
 
             // Bind toggle handler
             $handle.on('click', toggle);
 
             // Prevent comment pane from getting too big on resize
+            // todo only resize on mode
             $(window).on('resize', function() {
-                var maxWidth = getMaxWidth();
-                if ($pane.width() > maxWidth) {
-                    $toggleElm.width(maxWidth.toString() + 'px');
+                if (self.mode === 'pane') {
+                    var maxWidth = getMaxWidth();
+                    if ($pane.width() > maxWidth) {
+                        $toggleElm.width(maxWidth.toString() + 'px');
+                    }
                 }
             });
 

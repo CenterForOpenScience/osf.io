@@ -1,5 +1,8 @@
 <%inherit file="../project_base.mako"/>
 <%def name="title()">${file_name}</%def>
+<div class="alert alert-warning" role="alert">
+    Comments for this addon is not yet supported.
+</div>
 
     <div>
         <h2 class="break-word">

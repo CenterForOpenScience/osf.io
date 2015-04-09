@@ -328,6 +328,10 @@ li.pointer {
     overflow-x: hidden;
 }
 
+#comments-widget-container .comment-container {
+    border: none !important;
+}
+
 .comment-actions i {
     cursor: pointer;
 }
@@ -335,11 +339,17 @@ li.pointer {
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
+    border-left-style: dashed;
+    border-left-color: lightgrey;
+    border-left-width: 1px;
+}
+
+.comment-container ul {
+    padding-left: 25px;
 }
 
 .comment-body {
     padding: 5px;
-    background-color: white;
 }
 
 .comment-author {
@@ -349,6 +359,11 @@ li.pointer {
 .comment-date {
     color: #999999;
 }
+
+.comment-actions a:hover {
+    text-decoration: none !important;
+}
+
 .edit-comment {
     background-color: #F3F3F3;
 }
@@ -365,11 +380,30 @@ li.pointer {
     position: relative;
 }
 
+.comment-link-icon a {
+    color: #999999;
+}
+
+.comment-link-icon a:hover {
+    color: #000000;
+    text-decoration: none;
+}
+
+.comment-content img{
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .unread-comments-count {
-    font-size: medium;
+    font-size: small;
+    background-color: #428bca;
     color: white;
     position: absolute;
-    margin-left: 40px;
+    right: 20px;
+    margin-top: -5px;
+    z-index: 1000;
 }
 
 .addon-auth {
@@ -2065,7 +2099,7 @@ span#profileFullname{
         width: 190px;
     }
     .osf-project-navbar a.project-title {
-        max-width: 190px;
+        max-width: 90px;
     }
     .navbar-brand {
         margin-left: 0 !important;
@@ -2085,7 +2119,7 @@ span#profileFullname{
         width: 360px;
     }
     .osf-project-navbar a.project-title {
-        max-width: 300px;
+        max-width: 200px;
     }
 }
 @media (min-width: 1200px) {
@@ -2097,7 +2131,7 @@ span#profileFullname{
         width: 270px;
     }
     .osf-project-navbar a.project-title {
-        max-width: 400px;
+        max-width: 300px;
     }
 }
 @media (min-width: 768px) and (max-width: 991px)  {

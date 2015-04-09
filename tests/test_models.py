@@ -3359,6 +3359,7 @@ class TestComments(OsfTestCase):
             user=self.comment.user,
             node=self.comment.node,
             target=self.comment.target,
+            page='node',
             is_public=True,
         )
         assert_equal(comment.user, self.comment.user)
@@ -3389,6 +3390,15 @@ class TestComments(OsfTestCase):
         assert_equal(self.comment.is_deleted, False)
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_hide(self):
+        self.comment.hide()
+        assert_equal(self.comment.is_hidden, True)
+
+    def test_show(self):
+        self.comment.hide()
+        self.comment.show()
+        assert_equal(self.comment.is_hidden, False)
 
     def test_report_abuse(self):
         user = UserFactory()
