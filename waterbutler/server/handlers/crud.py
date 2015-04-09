@@ -4,7 +4,7 @@ import asyncio
 
 from tornado import web
 
-from waterbutler.core.streams import RequestStreamReader, ZipStreamReader
+from waterbutler.core.streams import RequestStreamReader
 
 from waterbutler.server import utils
 from waterbutler.server import settings
