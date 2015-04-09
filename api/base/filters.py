@@ -25,38 +25,9 @@ def query_params_to_fields(query_params):
     }
 
 
-# Used so that that queries by _id will work
-def convert_key(key):
-    if key.strip() == 'id':
-        return '_id'
-    return key
-
-TRUTHY = set(['true', 'True'])
-FALSY = set(['false', 'False'])
-# Used to convert string values from query params to Python booleans when necessary
-def convert_value(val):
-    val = val.strip()
-    if val in TRUTHY:
-        return True
-    elif val in FALSY:
-        return False
-    else:
-        return val
-
 # Used to make intersection "reduce-able"
 def intersect(x, y):
     return x & y
-
-def query_params_to_odm_query(query_params):
-    """Convert query params to a modularodm Query object."""
-    fields_dict = query_params_to_fields(query_params)
-    if fields_dict:
-        query_parts = [Q(convert_key(key), 'eq', convert_value(value)) for key, value in fields_dict.items()]
-        query = functools.reduce(intersect, query_parts)
-    else:
-        query = None
-    return query
-
 
 class ODMFilterMixin(object):
     """View mixin that adds a get_query_from_request method which converts query params
@@ -64,12 +35,42 @@ class ODMFilterMixin(object):
 
     Subclasses must define `get_default_odm_query()`.
     """
+    TRUTHY = set(['true', 'True'])
+    FALSY = set(['false', 'False'])
 
     def get_default_odm_query(self):
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
-        query = query_params_to_odm_query(self.request.QUERY_PARAMS)
+        query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
         if not query:
             query = self.get_default_odm_query()
         return query
+
+    def query_params_to_odm_query(self, query_params):
+        """Convert query params to a modularodm Query object."""
+        fields_dict = query_params_to_fields(query_params)
+        if fields_dict:
+            query_parts = [
+                Q(self.convert_key(key, value), 'eq', self.convert_value(key, value)) for key, value in fields_dict.items()
+            ]
+            query = functools.reduce(intersect, query_parts)
+        else:
+            query = None
+        return query
+
+    # Used so that that queries by _id will work
+    def convert_key(self, key, value):
+        if key.strip() == 'id':
+            return '_id'
+        return key
+
+    # Used to convert string values from query params to Python booleans when necessary
+    def convert_value(self, key, val):
+        val = val.strip()
+        if val in self.TRUTHY:
+            return True
+        elif val in self.FALSY:
+            return False
+        else:
+            return val
