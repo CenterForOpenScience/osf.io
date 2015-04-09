@@ -356,7 +356,39 @@ class GitHubProvider(provider.BaseProvider):
             headers={'Content-Type': 'application/json'},
             data=json.dumps(tree),
             expects=(201, ),
-            throws=exceptions.DeleteError,
+            throws=exceptions.ProviderError,
+        )
+        return (yield from resp.json())
+
+    @asyncio.coroutine
+    def _create_commit(self, commit):
+        resp = yield from self.make_request(
+            'POST',
+            self.build_repo_url('git', 'commits'),
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps(commit),
+            expects=(201, ),
+            throws=exceptions.ProviderError,
+        )
+        return (yield from resp.json())
+
+    @asyncio.coroutine
+    def _create_blob(self, stream):
+        blob_stream = streams.JSONStream({
+            'encoding': 'base64',
+            'content': streams.Base64EncodeStream(stream),
+        })
+
+        resp = yield from self.make_request(
+            'POST',
+            self.build_repo_url('git', 'blobs'),
+            data=blob_stream,
+            headers={
+                'Content-Length': blob_stream.size,
+                'Content-Type': 'application/json',
+            },
+            expects=(201, ),
+            throws=exceptions.UploadError,
         )
         return (yield from resp.json())
 
@@ -427,3 +459,27 @@ class GitHubProvider(provider.BaseProvider):
             )
 
         return GitHubFileContentMetadata(data).serialized()
+
+    @asyncio.coroutine
+    def _get_latest_sha(self, ref='master'):
+        resp = yield from self.make_request(
+            'GET',
+            self.build_repo_url('git', 'refs', 'heads', ref),
+            expects=(200, ),
+            throws=exceptions.ProviderError
+        )
+        data = yield from resp.json()
+        return data['object']['sha']
+
+    @asyncio.coroutine
+    def _update_ref(self, sha, ref='master'):
+        resp = yield from self.make_request(
+            'POST',
+            self.build_repo_url('git', 'refs', 'heads', ref),
+            data=json.dumps({
+                'sha': sha
+            }),
+            expects=(200, ),
+            throws=exceptions.ProviderError
+        )
+        return (yield from resp.json())
