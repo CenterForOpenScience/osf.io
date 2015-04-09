@@ -1,6 +1,7 @@
 import os
 import abc
 import uuid
+import base64
 import asyncio
 
 
@@ -170,7 +171,7 @@ class StringStream(asyncio.StreamReader):
             raise TypeError('Data must be either str or bytes, found {!r}'.format(type(data)))
 
         self.feed_data(data)
-        self.size = len(data)
+        self.size = str(len(data))
 
         self.feed_eof()
 
@@ -185,6 +186,10 @@ class MultiStream(asyncio.StreamReader):
         self.stream = []
         self._streams = []
         self.add_streams(*streams)
+
+    @property
+    def size(self):
+        return str(sum([int(x.size) for x in self._streams]) + int(self.stream.size))
 
     @property
     def streams(self):
