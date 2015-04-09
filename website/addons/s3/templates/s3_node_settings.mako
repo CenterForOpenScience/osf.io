@@ -30,9 +30,9 @@
         </p>
         <div class="btn-group"
              data-bind="attr.disabled: creating">
-          <button data-bind="if: canChange, click: toggleSelect,
+          <button data-bind="visible: canChange, click: toggleSelect,
                              css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
-          <button data-bind="if: showNewBucket, click: openCreateBucket,
+          <button data-bind="visible: showNewBucket, click: openCreateBucket,
                              attr.disabled: creating" class="btn btn-sm btn-addon" id="newBucket">Create Bucket</button>
         </div>
         <br />
