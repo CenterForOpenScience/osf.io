@@ -470,21 +470,49 @@ var SocialViewModel = function(urls, modes) {
     var i;
 
     self.addons = ko.observableArray();
-    self.personalWebsites = ko.observableArray();
+ 
+ 
+ 
+    self.profileWebsites = ko.observableArray(); // Initially an empty array
+    self.profileWebsites.push('http://www.billyhunt.com');    
+    self.profileWebsites.push('http://www.osf.io');    
+    self.profileWebsites.push('http://www.cos.io');    
 
-    for (i = 0; i < self.personalWebsites.length; i++) {
-        self.personalWebsites[i] = extendLink(
-            // Note: Apply extenders in reverse order so that `ensureHttp` is
-            // applied before `url`.
-            ko.observable().extend({
-                trimmed: true,
-                url: true,
-                ensureHttp: true
-            }),
-            self, 'personalWebsites[i]'
-        );
-    }
+    console.log('The length of the array is ' + self.profileWebsites().length);
+    console.log("personalWebsites is " + self.profileWebsites()[0]);
 
+    
+    
+//    for (i = 0; i < self.profileWebsites().length; i++) {
+//        self.profileWebsites()[i] = extendLink(
+//            // Note: Apply extenders in reverse order so that `ensureHttp` is
+//            // applied before `url`.
+//            ko.observable().extend({
+//                trimmed: true,
+//                url: true,
+//                ensureHttp: true
+//            }),
+//            self, 'self.profileWebsites()[i]'
+//            
+//        );
+//         console.log("self.profileWebsites()[i] is " + self.profileWebsites()[i]);
+//    }
+
+
+    
+//    //BH hard code true
+//    self.hasMultiple = function () {
+//        return true;
+//    };
+
+    self.hasMultiple = ko.computed(function() {
+        return self.profileWebsites().length > 1;
+    });
+    
+    self.canRemove = ko.computed(function () {
+        return self.profileWebsites().length > 1;
+    });
+    
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -533,7 +561,8 @@ var SocialViewModel = function(urls, modes) {
 
     self.values = ko.computed(function() {
         return [
-            {label: 'Personal Site', text: self.personalWebsites(), value: self.personalWebsites()},
+//            {label: 'Profile Websites', text: self.profileWebsites(), value: self.profileWebsites()},
+//            {label: 'Personal Website', text: self.personalWebsite(), value: self.profileWebsites.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
@@ -558,6 +587,22 @@ var SocialViewModel = function(urls, modes) {
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
+
+SocialViewModel.prototype.addContent = function() {
+    this.profileWebsites.push(new this.ContentModel(this));
+};
+
+SocialViewModel.prototype.removeContent = function(personalWebsite) {
+    //BH console message
+    console.log("personalWebsite is " + personalWebsite);
+    console.log("this.this().length is " + self.length);
+    
+    var idx = this.personalWebsites().indexOf(personalWebsite);
+    this.personalWebsites.splice(idx, 1);
+
+};
+
+
 
 var ListViewModel = function(ContentModel, urls, modes) {
     var self = this;
@@ -748,13 +793,13 @@ var SchoolsViewModel = function(urls, modes) {
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-var PersonalWebSitesViewModel = function(urls, modes) {
-    var self = this;
-    ListViewModel.call(self, PersonalWebSitesViewModel, urls, modes);
-
-    self.fetch();
-};
-PersonalWebSitesViewModel.prototype = Object.create(ListViewModel.prototype);
+//var PersonalWebSitesViewModel = function(urls, modes) {
+//    var self = this;
+//    ListViewModel.call(self, PersonalWebSitesViewModel, urls, modes);
+//
+//    self.fetch();
+//};
+//PersonalWebSitesViewModel.prototype = Object.create(ListViewModel.prototype);
 
 
 var Names = function(selector, urls, modes) {
@@ -780,10 +825,10 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
-var PersonalWebsites = function(selector, urls, modes) {
-    this.viewModel = new PersonalWebSitesViewModel(urls, modes);
-    $osf.applyBindings(this.viewModel, selector);
-};
+//var PersonalWebsites = function(selector, urls, modes) {
+//    this.viewModel = new PersonalWebSitesViewModel(urls, modes);
+//    $osf.applyBindings(this.viewModel, selector);
+//};
 
 
 module.exports = {

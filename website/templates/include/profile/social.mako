@@ -1,11 +1,15 @@
 <script id="profileSocial" type="text/html">
 
+<pre>{{ko.toJSON($data)}}</pre>
+
     <div data-bind="if: mode() === 'edit'">
 
         <form role="form" data-bind="submit: submit">
 
-           <div data-bind="sortable: {
-                    data: personalWebsites,
+
+
+          <div data-bind="sortable: {
+                    data: profileWebsites(),
                     options: {
                         handle: '.sort-handle',
                         containment: '#containDrag'
@@ -15,7 +19,7 @@
                 <div>
 
                     <div class="well well-sm sort-handle">
-                        <span>Position {{ $index() + 1 }}</span>
+                        <span>Position {{ $index() + 1 }} </span>
                         <span data-bind="visible: $parent.hasMultiple()">
                             [ drag to reorder ]
                         </span>
@@ -30,12 +34,12 @@
                         <label>Your Website</label>
                         <div class="input-group">
                         <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                        <input class="form-control" data-bind="value: personalWebsites[0]" placeholder="http://yourwebsite.com"/>
+                        <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
                         </div>
                     </div>
 
 
-                    <hr data-bind="visible: $index() != ($parent.personalWebsites().length - 1)" />
+                    <hr data-bind="visible: $index() != ($parent.profileWebsites().length - 1)" />
 
                 </div>
 
@@ -130,6 +134,7 @@
                     >Submit</button>
 
             </div>
+
 
             <!-- Flashed Messages -->
             <div class="help-block">
