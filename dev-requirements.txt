@@ -6,5 +6,6 @@ jinja2==2.7.3
 pytest==2.6.4
 pytest-cov==1.8.1
 pyzmq==14.4.1
+colorlog==2.5.0
 -e git+https://github.com/centerforopenscience/aiohttpretty.git#egg=aiohttpretty
 -r requirements.txt
