@@ -265,7 +265,8 @@ def populate_conferences():
             for key, value in attrs.items():
                 setattr(conf, key, value)
             conf.admins = admin_objs
-            conf.save()
+            changed_fields = conf.save()
+            print('Changed: {}'.format(changed_fields))
 
 
 if __name__ == '__main__':
