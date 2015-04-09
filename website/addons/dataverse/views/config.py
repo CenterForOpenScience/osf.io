@@ -132,7 +132,7 @@ def dataverse_set_user_config(auth, **kwargs):
 
     # Log in with Dataverse
     token = request.json.get('api_token')
-    client.connect_or_401(token)
+    connection = client.connect_or_401(token)
 
     user_addon = user.get_addon('dataverse')
     if user_addon is None:
@@ -141,6 +141,24 @@ def dataverse_set_user_config(auth, **kwargs):
 
     user_addon.api_token = token
     user_addon.save()
+
+    # Special case: Remove old form of authentication and migrate
+    if user_addon.dataverse_password is not None:
+        user_addon.dataverse_username = None
+        user_addon.dataverse_password = None
+        for node_addon in user_addon.addondataversenodesettings__authorized:
+            dataverse = client.get_dataverse(connection, node_addon.dataverse_alias)
+            dataset = client.get_dataset(dataverse, node_addon.study_hdl)
+
+            if dataset is not None:
+                node_addon.dataset_doi = node_addon.study_hdl
+                node_addon.dataset_id = dataset.id
+                node_addon.dataset = dataset.title
+
+                node_addon.study_hdl = None
+                node_addon.study = None
+
+                node_addon.save()
 
     return {'token': token}, http.OK
 

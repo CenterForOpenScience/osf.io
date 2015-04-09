@@ -7,7 +7,7 @@ import pymongo
 from modularodm import fields
 
 from framework.auth.decorators import Auth
-from website import settings
+from website.security import encrypt, decrypt
 from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
@@ -51,9 +51,28 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
     api_token = fields.StringField()
 
+    # Legacy Fields
+    dataverse_username = fields.StringField()
+    encrypted_password = fields.StringField()
+
     @property
     def has_auth(self):
         return bool(self.api_token)
+
+    @property
+    def dataverse_password(self):
+        if self.encrypted_password is None:
+            return None
+
+        return decrypt(self.encrypted_password)
+
+    @dataverse_password.setter
+    def dataverse_password(self, value):
+        if value is None:
+            self.encrypted_password = None
+            return
+
+        self.encrypted_password = encrypt(value)
 
     def delete(self, save=True):
         self.clear()
@@ -78,6 +97,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     dataset_doi = fields.StringField()
     dataset_id = fields.StringField()
     dataset = fields.StringField()
+
+    # Legacy fields
+    study_hdl = fields.StringField()    # Now dataset_doi
+    study = fields.StringField()        # Now dataset
 
     user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
