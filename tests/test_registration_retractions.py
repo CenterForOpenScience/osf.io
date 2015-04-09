@@ -31,35 +31,31 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
 
         self.registration.reload()
-        assert_true(self.registration.is_retracted)
-        assert_equal(self.registration.retracted_justification, self.valid_justification)
-        assert_equal(self.registration.retracted_by, self.user)
+        assert_true(self.registration.retraction.is_retracted)
+        assert_equal(self.registration.retraction.justification, self.valid_justification)
+        assert_equal(self.registration.retraction.by, self.user)
         assert_equal(
-            self.registration.retraction_date.date(),
+            self.registration.retraction.date.date(),
             datetime.datetime.utcnow().date()
         )
 
     def test_long_justification_raises_validation_value_error(self):
         self.registration.is_public = True
 
-        self.registration.retract_registration(self.user, self.invalid_justification)
+
         with assert_raises(ValidationValueError):
+            self.registration.retract_registration(self.user, self.invalid_justification)
             self.registration.save()
         self.registration.reload()
-        assert_false(self.registration.is_retracted)
-        assert_is_none(self.registration.retracted_justification)
-        assert_is_none(self.registration.retracted_by)
-        assert_is_none(self.registration.retraction_date)
+        assert_is_none(self.registration.retraction)
 
     def test_retract_private_registration_throws_type_error(self):
         with assert_raises(ValidationTypeError):
             self.registration.retract_registration(self.user, self.valid_justification)
+            self.registration.save()
 
         self.registration.reload()
-        assert_false(self.registration.is_retracted)
-        assert_is_none(self.registration.retracted_justification)
-        assert_is_none(self.registration.retracted_by)
-        assert_is_none(self.registration.retraction_date)
+        assert_is_none(self.registration.retraction)
 
     def test_retract_public_non_registration_throws_type_error(self):
         self.project.is_public = True
@@ -67,10 +63,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
             self.project.retract_registration(self.user, self.valid_justification)
 
         self.registration.reload()
-        assert_false(self.registration.is_retracted)
-        assert_is_none(self.registration.retracted_justification)
-        assert_is_none(self.registration.retracted_by)
-        assert_is_none(self.registration.retraction_date)
+        assert_is_none(self.registration.retraction)
 
 
 class RegistrationRetractionViewsTestCase(OsfTestCase):
@@ -99,16 +92,14 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 400)
         self.registration.reload()
-        assert_false(self.registration.is_retracted)
-        assert_is_none(self.registration.retracted_justification)
+        assert_is_none(self.registration.retraction)
 
     def test_non_admin_retract_raises_401(self):
         res = self.app.post_json(self.retraction_post_url, expect_errors=True)
 
         assert_equals(res.status_code, 401)
         self.registration.reload()
-        assert_false(self.registration.is_retracted)
-        assert_is_none(self.registration.retracted_justification)
+        assert_is_none(self.registration.retraction)
 
     def test_retract_without_justification_raises_200(self):
         res = self.app.post_json(
@@ -119,8 +110,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 200)
         self.registration.reload()
-        assert_true(self.registration.is_retracted)
-        assert_equal(self.registration.retracted_justification, u'')
+        assert_true(self.registration.retraction.is_retracted)
+        assert_is_none(self.registration.retraction.justification)
 
     def test_redirect_if_retracted(self):
         expected_redirect_url = self.registration.web_url_for('view_project')
@@ -134,8 +125,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['redirectUrl'], expected_redirect_url)
         self.registration.reload()
-        assert_true(self.registration.is_retracted)
-        assert_equal(self.registration.retracted_justification, self.justification)
+        assert_true(self.registration.retraction.is_retracted)
+        assert_equal(self.registration.retraction.justification, self.justification)
 
     def test_cant_access_non_approved_resource(self):
         # Retract public registration
@@ -150,7 +141,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['redirectUrl'], expected_redirect_url)
         self.registration.reload()
-        assert_true(self.registration.is_retracted)
+        assert_true(self.registration.retraction.is_retracted)
         # Ensure access to resources not explicitly granting permission to retractions returns 400
         res = self.app.get(
             self.registration.web_url_for('project_wiki_home'),

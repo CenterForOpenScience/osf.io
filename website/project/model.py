@@ -521,7 +521,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         'tags',
         'is_fork',
         'is_registration',
-        'is_retracted',
+        'retraction',
+        'retracted',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
@@ -573,10 +574,11 @@ class Node(GuidStoredObject, AddonModelMixin):
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
-    is_retracted = fields.BooleanField(default=False)
-    retracted_justification = fields.StringField(validate=MaxLengthValidator(2048))
-    retraction_date = fields.DateTimeField()
-    retracted_by = fields.ForeignField('user', backref='retracted_registration')
+    # is_retracted = fields.BooleanField(default=False)
+    retraction = fields.ForeignField('retraction')
+    # retracted_justification = fields.StringField(validate=MaxLengthValidator(2048))
+    # retraction_date = fields.DateTimeField()
+    # retracted_by = fields.ForeignField('user', backref='retracted_registration')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -2428,17 +2430,22 @@ class Node(GuidStoredObject, AddonModelMixin):
         }
 
     def retract_registration(self, user, justification=None):
-        """Retracts public registration and notes when and by whom
+        """Retract public registration. Instantiate new Retraction object
+        and associate it with the respective registration.
         """
 
         if not self.is_public or not self.is_registration:
             raise ValidationTypeError('Cannot retract private node or non-registration')
 
+        retraction = Retraction()
+        retraction.by = user
+        retraction.date = datetime.datetime.utcnow()
         if justification:
-            self.retracted_justification = justification
-        self.is_retracted = True
-        self.retraction_date = datetime.datetime.utcnow()
-        self.retracted_by = user
+            retraction.justification = justification
+
+        retraction.save()
+
+        self.retraction = retraction
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -2538,3 +2545,15 @@ class PrivateLink(StoredObject):
                       for x in self.nodes if not x.is_deleted],
             "anonymous": self.anonymous
         }
+
+class Retraction(StoredObject):
+    """Retraction object for public registrations."""
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    justification = fields.StringField(validate=MaxLengthValidator(2048))
+    date = fields.DateTimeField()
+    by = fields.ForeignField('user', backref='retracted_by')
+
+    @property
+    def is_retracted(self):
+        return self.date is not None

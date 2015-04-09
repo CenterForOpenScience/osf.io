@@ -247,7 +247,7 @@ def update_node(node, index=INDEX):
             'description': node.description,
             'url': node.url,
             'is_registration': node.is_registration,
-            'is_retracted': node.is_retracted,
+            'is_retracted': getattr(node.retraction, 'is_retracted', False),
             'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,
@@ -255,7 +255,7 @@ def update_node(node, index=INDEX):
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
 
-        if not node.is_retracted:
+        if not getattr(node.retraction, 'is_retracted', False):
             for wiki in [
                 NodeWikiPage.load(x)
                 for x in node.wiki_pages_current.values()

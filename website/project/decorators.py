@@ -51,9 +51,9 @@ def must_be_valid_project(func=None, are_retractions_valid=False):
         def wrapped(*args, **kwargs):
 
             kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-            if not are_retractions_valid and kwargs['project'].is_retracted:
+            if not are_retractions_valid and getattr(kwargs['project'].retraction, 'is_retracted', False):
                 raise HTTPError(http.BAD_REQUEST)
-            elif kwargs['node'] and not are_retractions_valid and kwargs['node'].is_retracted:
+            elif kwargs['node'] and not are_retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
                 raise HTTPError(http.BAD_REQUEST)
             else:
                 return func(*args, **kwargs)
