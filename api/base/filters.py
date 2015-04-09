@@ -72,5 +72,8 @@ class ODMFilterMixin(object):
             return True
         elif val in self.FALSY:
             return False
+        # Convert me to current user's pk
+        elif val == 'me' and not self.request.user.is_anonymous():
+            return self.request.user.pk
         else:
             return val
