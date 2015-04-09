@@ -3840,6 +3840,16 @@ class TestProjectCreation(OsfTestCase):
         assert_true(node)
         assert_true(node.title, 'Im a real title')
 
+    def test_new_project_returns_serialized_node_data(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = res.json['new_node']
+        assert_true(node)
+        assert_true(node['title'], 'Im a real title')
+
     def test_description_works(self):
         payload = {
             'title': 'Im a real title',
