@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from flask import request
-
+import httplib as http
 from framework.auth.decorators import must_be_logged_in
+from framework.exceptions import HTTPError, PermissionsError
+from website.oauth.models import ExternalAccount
 
 from website.project.decorators import (
     must_be_contributor_or_public,
@@ -26,6 +28,7 @@ def github_get_config(auth, node_addon, **kwargs):
     """Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
+    import ipdb; ipdb.set_trace()
     result = GitHubSerializer(
         node_settings=node_addon,
         user_settings=auth.user.get_addon('github')
@@ -38,7 +41,6 @@ def github_get_config(auth, node_addon, **kwargs):
 def github_set_config(auth, node_addon, **kwargs):
     """Update GithubNodeSettings based on submitted account and folder information."""
 
-    provider = GithubProvider()
     args = request.get_json()
     external_list_id = args.get('external_list_id')
     external_list_name = args.get('external_list_name')
@@ -49,23 +51,33 @@ def github_set_config(auth, node_addon, **kwargs):
         external_list_name,
         auth,
     )
-    return {
-        'result': provider.serializer(
-            node_settings=node_addon,
-            user_settings=auth.user.get_addon('github'),
-        ).serialized_node_settings
-    }
+    result = GitHubSerializer(
+        node_settings=node_addon,
+        user_settings=auth.user.get_addon('github')
+    ).serialized_node_settings
+    return result
 
 @must_have_permission('write')
 @must_have_addon('github', 'node')
 @must_not_be_registration
 def github_add_user_auth(auth, node_addon, **kwargs):
     """Allows for importing existing auth to GithubNodeSettings """
-
-    provider = GithubProvider()
-    import ipdb; ipdb.set_trace()
+    user = auth.user
     external_account_id = request.get_json().get('external_account_id')
-    return provider.add_user_auth(node_addon, auth.user, external_account_id)
+    external_account = ExternalAccount.load(external_account_id)
+    if external_account not in user.external_accounts:
+            raise HTTPError(http.FORBIDDEN)
+
+    try:
+        node_addon.set_auth(external_account, user)
+    except PermissionsError:
+        raise HTTPError(http.FORBIDDEN)
+
+    result = GitHubSerializer(
+        node_settings=node_addon,
+        user_settings=user.get_addon('github'),
+    ).serialized_node_settings
+    return result
 
 
 @must_have_permission('write')

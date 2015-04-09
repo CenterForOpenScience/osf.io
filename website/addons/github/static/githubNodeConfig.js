@@ -103,7 +103,7 @@ ViewModel.prototype.selectRepo = function() {
 
 ViewModel.prototype.createNodeAuth = function() {
     var self = this;
-    window.location.href = self.urls().create_auth;
+    window.location.href = self.urls().import_auth;
 };
 
 
@@ -323,7 +323,6 @@ ViewModel.prototype.fetchFromServer = function() {
         var settings = response.result;
         self.loadedSettings(true);
         ret.resolve(settings);
-
     })
     .fail(function(xhr, status, error) {
         var message = 'Could not retrieve Github settings at ' +

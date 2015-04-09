@@ -56,7 +56,6 @@ class AddonSerializer(object):
 
 class OAuthAddonSerializer(AddonSerializer):
 
-    REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'accounts']
 
     @property
     def serialized_accounts(self):
@@ -108,23 +107,6 @@ class OAuthAddonSerializer(AddonSerializer):
             'urls': urls,
         }
 
-    @property
-    def serialized_urls(self):
-        external_account = self.node_settings.external_account
-        ret = {
-            'auth': api_url_for('oauth_connect',
-                                service_name=self.node_settings.provider_name),
-            'settings': web_url_for('user_addons'),
-        }
-        if external_account and external_account.profile_url:
-            ret['owner'] = external_account.profile_url
-
-        addon_urls = self.addon_serialized_urls
-        # Make sure developer returns set of needed urls
-        for url in self.REQUIRED_URLS:
-            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
-        ret.update(addon_urls)
-        return ret
 
     @property
     def user_is_owner(self):
@@ -145,13 +127,14 @@ class OAuthAddonSerializer(AddonSerializer):
 
     @property
     def serialized_node_settings(self):
-        result = super(OAuthAddonSerializer, self).serialized_node_settings
-        result['folder'] = {'name': self.node_settings.selected_folder_name}
-        return result
+        return super(OAuthAddonSerializer, self).serialized_node_settings
+
+
 
 
 class CitationsAddonSerializer(OAuthAddonSerializer):
 
+    REQUIRED_URLS = ['importAuth', 'config', 'folders', 'deauthorize', 'accounts']
 
     @abc.abstractmethod
     def serialize_folder(self, folder):
@@ -163,3 +146,53 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
             'kind': 'file',
             'id': citation['id'],
         }
+
+    @property
+    def serialized_urls(self):
+        external_account = self.node_settings.external_account
+        ret = {
+            'auth': api_url_for('oauth_connect',
+                                service_name=self.node_settings.provider_name),
+            'settings': web_url_for('user_addons'),
+        }
+        if external_account and external_account.profile_url:
+            ret['owner'] = external_account.profile_url
+
+        addon_urls = self.addon_serialized_urls
+        # Make sure developer returns set of needed urls
+        for url in self.REQUIRED_URLS:
+            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
+        ret.update(addon_urls)
+        return ret
+
+    @property
+    def serialized_node_settings(self):
+        result = super(OAuthAddonSerializer, self).serialized_node_settings
+        result['folder'] = {'name': self.node_settings.selected_folder_name}
+        return result
+
+class GenericAddonSerializer(OAuthAddonSerializer):
+
+    REQUIRED_URLS = ['importAuth', 'config', 'deauthorize', 'accounts']
+
+    @property
+    def serialized_urls(self):
+        external_account = self.node_settings.external_account
+        ret = {
+            'auth': api_url_for('oauth_connect',
+                                service_name=self.node_settings.provider_name),
+            'settings': web_url_for('user_addons'),
+        }
+        if external_account and external_account.profile_url:
+            ret['owner'] = external_account.profile_url
+
+        addon_urls = self.addon_serialized_urls
+        # Make sure developer returns set of needed urls
+        for url in self.REQUIRED_URLS:
+            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
+        ret.update(addon_urls)
+        return ret
+
+    @property
+    def serialized_node_settings(self):
+        return super(GenericAddonSerializer, self).serialized_node_settings

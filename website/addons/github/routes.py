@@ -12,7 +12,7 @@ settings_routes = {
                 '/settings/github/accounts/',
             ],
             'get',
-            views.config.list_github_user_accounts,
+            views.config.github_get_user_accounts,
             json_renderer,
 
         ),
@@ -34,7 +34,7 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/github/settings/',
             ],
             'get',
-            views.views.github_get_config,
+            views.config.github_get_config,
             json_renderer,
         ),
 
