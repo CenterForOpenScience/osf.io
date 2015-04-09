@@ -46,6 +46,8 @@ class BoxNodeLogger(object):
             'project': self.node.parent_id,
             'node': self.node._primary_key,
             'folder_id': self.node.get_addon('box', deleted=True).folder_id,
+            'folder': self.node.get_addon('box', deleted=True).folder_name,
+            'folder_path': self.node.get_addon('box', deleted=True).folder_path
         }
         # If logging a file-related action, add the file's view and download URLs
         if self.file_obj or self.path:
