@@ -348,3 +348,47 @@ class FormDataStream(MultiStream):
 
     def _make_boundary_stream(self):
         return StringStream('--{}\r\n'.format(self.boundary))
+
+
+class Base64EncodeStream(asyncio.StreamReader):
+
+    def __init__(self, stream, **kwargs):
+        self.extra = b''
+        self.stream = stream
+        self.size = int(stream.size)
+        self.size = (4 * self.size / 3)
+        if self.size % 4:
+            self.size += (4 - self.size % 4)
+        self.size = str(int(self.size))
+        super().__init__(**kwargs)
+
+    @asyncio.coroutine
+    def read(self, n=-1):
+        if n < 0:
+            return (yield from super().read(n))
+
+        nog = n
+        padding = n % 3
+        if padding:
+            n += (3 - padding)
+
+        chunk = self.extra + base64.b64encode((yield from self.stream.read(n)))
+
+        if len(chunk) <= nog:
+            self.extra = b''
+            return chunk
+
+        chunk, self.extra = chunk[:nog], chunk[nog:]
+
+        return chunk
+
+
+class JSONStream(MultiStream):
+
+    def __init__(self, data):
+        streams = [StringStream('{')]
+        for key, value in data.items():
+            if not isinstance(value, asyncio.StreamReader):
+                value = StringStream(value)
+            streams.extend([StringStream('"{}":"'.format(key)), value, StringStream('",')])
+        super().__init__(*(streams[:-1] + [StringStream('"}')]))
