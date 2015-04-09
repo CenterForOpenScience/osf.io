@@ -30,8 +30,4 @@ class GitHubSerializer(GenericAddonSerializer):
     def serialized_node_settings(self):
         result = super(GitHubSerializer, self).serialized_node_settings
         result['repo'] = {'name': self.node_settings.repo}
-        # valid_credentials = True
-        # if self.node_settings.external_account is not None:
-        #     self.node_settings.fetch_access_token()
-        # result['validCredentials'] = valid_credentials
         return {'result': result}

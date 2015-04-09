@@ -78,7 +78,6 @@ ViewModel.prototype.toggleSelect = function() {
 ViewModel.prototype.selectRepo = function() {
     var self = this;
     self.loading(true);
-    debugger;
     return $osf.postJSON(
             self.urls().config, {
                 'github_repo': self.selectedRepo()
@@ -292,15 +291,14 @@ ViewModel.prototype.fetchRepoList = function() {
 ViewModel.prototype.updateFromData = function(data) {
     var self = this;
     var ret = $.Deferred();
+    debugger;
     var applySettings = function(settings){
-
         self.nodeHasAuth(settings.nodeHasAuth);
         self.userHasAuth(settings.userHasAuth);
         self.userIsOwner(settings.userIsOwner);
         self.ownerName(settings.ownerName);
-        self.currentRepo(settings.repo);
+        self.currentRepo(settings.repo.name);
         self.urls(settings.urls);
-        debugger;
         ret.resolve(settings);
     };
     if (typeof data === 'undefined'){
@@ -308,7 +306,7 @@ ViewModel.prototype.updateFromData = function(data) {
             .done(applySettings);
     }
     else {
-        applySettings(data);
+        applySettings(data.result);
     }
     return ret.promise();
 };

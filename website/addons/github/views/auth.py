@@ -28,11 +28,11 @@ def github_add_user_auth(auth, node_addon, **kwargs):
     except PermissionsError:
         raise HTTPError(http.FORBIDDEN)
 
-    result = GitHubSerializer(
+    return GitHubSerializer(
         node_settings=node_addon,
         user_settings=user.get_addon('github'),
     ).serialized_node_settings
-    return result
+
 
 
 @must_have_permission('write')
@@ -43,8 +43,8 @@ def github_remove_user_auth(auth, node_addon, **kwargs):
 
     node_addon.clear_auth()
     node_addon.reload()
-    result = GitHubSerializer(
+    return GitHubSerializer(
         node_settings=node_addon,
         user_settings=auth.user.get_addon('github'),
     ).serialized_node_settings
-    return result
+

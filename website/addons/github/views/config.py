@@ -33,7 +33,7 @@ def github_get_user_accounts(auth):
 @must_have_addon('github', 'node')
 @must_not_be_registration
 def github_set_config(node_addon, **kwargs):
-    import ipdb; ipdb.set_trace()
+
 
     auth = kwargs['auth']
     user = auth.user
@@ -50,7 +50,7 @@ def github_set_config(node_addon, **kwargs):
     github_repo_name = request.json.get('github_repo', '').split('/')[1].strip()
 
     # Verify that repo exists and that user can access
-    connection = GitHub.from_settings(user_settings)
+    connection = GitHub.from_settings(node_addon.api.account)
     repo = connection.repo(github_user_name, github_repo_name)
     if repo is None:
         if user_settings:
@@ -102,20 +102,18 @@ def github_set_config(node_addon, **kwargs):
 
         node_addon.save()
 
-    result = GitHubSerializer(
+    return GitHubSerializer(
             node_settings=node_addon,
             user_settings=auth.user.get_addon('github'),
         ).serialized_node_settings
-    return result
 
 @must_have_addon('github', 'node')
 @must_have_permission('read')
 def github_get_config(auth, node_addon, **kwargs):
-    result = GitHubSerializer(
+    return GitHubSerializer(
         node_settings=node_addon,
         user_settings=auth.user.get_addon('github')
     ).serialized_node_settings
-    return result
 
 
 @must_be_logged_in

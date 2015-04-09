@@ -227,7 +227,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.oauth_access_token}
+        return {'token': self.api.account.oauth_key}
 
     def serialize_waterbutler_settings(self):
         if not self.complete:
@@ -293,8 +293,8 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         # Quit if no user authorization
         if self.user_settings is None:
             return messages
-
-        connect = GitHub.from_settings(self.user_settings)
+        
+        connect = GitHub.from_settings(self.api.account)
 
         try:
             repo = connect.repo(self.user, self.repo)
@@ -393,7 +393,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         if not github_settings.SET_PRIVACY:
             return
 
-        connect = GitHub.from_settings(self.user_settings)
+        connect = GitHub.from_settings(self.api.account)
 
         data = connect.set_privacy(
             self.user, self.repo, permissions == 'private'
@@ -523,7 +523,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     def add_hook(self, save=True):
 
         if self.user_settings:
-            connect = GitHub.from_settings(self.user_settings)
+            connect = GitHub.from_settings(self.api.account)
             secret = utils.make_hook_secret()
             hook = connect.add_hook(
                 self.user, self.repo,
@@ -553,7 +553,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
 
         """
         if self.user_settings and self.hook_id:
-            connection = GitHub.from_settings(self.user_settings)
+            connection = GitHub.from_settings(self.api.account)
             try:
                 response = connection.delete_hook(self.user, self.repo, self.hook_id)
             except (GitHubError, NotFoundError):
