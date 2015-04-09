@@ -1,5 +1,5 @@
+import os
 import json
-import base64
 import asyncio
 
 import furl
@@ -72,72 +72,56 @@ class GitHubProvider(provider.BaseProvider):
         # Its left in kwargs because it is  A) options and B) ugly to have camelCase variables in python
         file_sha = kwargs.get('fileSha')
 
-        if file_sha:
-            resp = yield from self.make_request(
-                'GET',
-                self.build_repo_url('git', 'blobs', file_sha),
-                headers={'Accept': 'application/vnd.github.VERSION.raw'},
-                expects=(200, ),
-                throws=exceptions.DownloadError,
-            )
-        else:
-            path = GitHubPath(path)
-            url = furl.furl(self.build_repo_url('contents', path.path))
-            if ref:
-                url.args.update({'ref': ref})
-            resp = yield from self.make_request(
-                'GET',
-                url.url,
-                headers={'Accept': 'application/vnd.github.VERSION.raw'},
-                expects=(200, ),
-                throws=exceptions.DownloadError,
-            )
+        if not file_sha:
+            data = yield from self.metadata(path)
+            file_sha = data['extra']['sha']
+
+        resp = yield from self.make_request(
+            'GET',
+            self.build_repo_url('git', 'blobs', file_sha),
+            headers={'Accept': 'application/vnd.github.VERSION.raw'},
+            expects=(200, ),
+            throws=exceptions.DownloadError,
+        )
 
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
     def upload(self, stream, path, message=None, branch=None, **kwargs):
-        path = GitHubPath(path)
-
         assert self.name is not None
         assert self.email is not None
 
-        content = yield from stream.read()
-        content = base64.b64encode(content)
-        content = content.decode('utf-8')
-        message = message or settings.UPLOAD_FILE_MESSAGE
+        path = GitHubPath(path)
+        exists = yield from self.exists(str(path), ref=branch)
+        latest_sha = yield from self._get_latest_sha(ref=branch)
 
-        data = {
-            'path': path.path,
-            'message': message,
-            'content': content,
+        blob = yield from self._create_blob(stream)
+
+        tree = yield from self._create_tree({
+            'base_tree': latest_sha,
+            'tree': [{
+                'path': path.path,
+                'mode': '100644',
+                'type': 'blob',
+                'sha': blob['sha']
+            }]
+        })
+
+        commit = yield from self._create_commit({
+            'tree': tree['sha'],
+            'parents': [latest_sha],
             'committer': self.committer,
-        }
-        if branch is not None:
-            data['branch'] = branch
-        # Check whether file already exists in tree; if it does, add the SHA
-        # to the payload. This changes the call from a create to an update.
-        tree = yield from self.metadata(str(path.parent), ref=branch)
-        existing = next(
-            (each for each in tree if each['path'] == str(path)),
-            None
-        )
-        if existing:
-            data['sha'] = existing['extra']['fileSha']
+            'message': message or settings.UPLOAD_FILE_MESSAGE,
+        })
 
-        # JSON encode the data before making the request and release the content variable to avoid
-        # unnecessary memory consumption.
-        data = json.dumps(data)
-        del content
-        resp = yield from self.make_request(
-            'PUT',
-            self.build_repo_url('contents', path.path),
-            data=data,
-            expects=(200, 201),
-            throws=exceptions.UploadError,
-        )
-        data = yield from resp.json()
-        return GitHubFileContentMetadata(data['content'], commit=data['commit']).serialized(), (not existing)
+        # Doesn't return anything useful
+        yield from self._update_ref(commit['sha'])
+
+        # You're hacky
+        return GitHubFileTreeMetadata({
+            'path': path.path,
+            'sha': blob['sha']
+        }, folder=path.path, commit=commit).serialized(), not exists
 
     @asyncio.coroutine
     def delete(self, path, sha=None, message=None, branch=None, **kwargs):
