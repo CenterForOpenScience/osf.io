@@ -140,7 +140,7 @@ def get_repo_dropdown(user, node_addon):
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
-    connection = GitHub.from_settings(user_settings)
+    connection = GitHub.from_settings(node_addon.api.account)
     repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
     repo_names = [
         '{0} / {1}'.format(repo.owner.login, repo.name)

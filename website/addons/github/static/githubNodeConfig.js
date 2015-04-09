@@ -291,7 +291,7 @@ ViewModel.prototype.fetchRepoList = function() {
 ViewModel.prototype.updateFromData = function(data) {
     var self = this;
     var ret = $.Deferred();
-    debugger;
+
     var applySettings = function(settings){
         self.nodeHasAuth(settings.nodeHasAuth);
         self.userHasAuth(settings.userHasAuth);

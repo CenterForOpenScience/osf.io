@@ -136,21 +136,7 @@ def github_remove_user_settings(user_addon, **kwargs):
 @must_not_be_registration
 def github_repo_list(auth, node_addon, **kwargs):
     user = auth.user
-    user_settings = node_addon.user_settings
-    # If authorized, only owner can change settings
-    if user_settings and user_settings.owner != user:
-        raise HTTPError(http.BAD_REQUEST)
-
-    connection = GitHub.from_settings(node_addon.api.account)
-    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-    repo_names = [
-        '{0} / {1}'.format(repo.owner.login, repo.name)
-        for repo in repos
-    ]
-
-    return {
-        'repo_names': repo_names
-    }
+    return get_repo_dropdown(user, node_addon)
 
 
 @must_have_permission('write')
