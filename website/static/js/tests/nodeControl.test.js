@@ -19,7 +19,7 @@ var nodeData = {
 
 describe('nodeControl', () => {
     describe('ViewModels', () => {
-        describe.only('ProjectViewModel', () => {
+        describe('ProjectViewModel', () => {
             var server;
             var vm = new nodeControl._ProjectViewModel(nodeData);
             var endpoints = [

@@ -12,7 +12,6 @@ require('bootstrap-editable');
 require('knockout.punches');
 ko.punches.enableAll();
 
-$.ajaxSetup({cache: false});
 var osfHelpers = require('./osfHelpers');
 var NodeActions = require('./project.js');
 
