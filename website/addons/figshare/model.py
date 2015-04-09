@@ -138,7 +138,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         return {
             'id': self.figshare_id,
             'type': self.figshare_type,
-            'title': self.figshare_title,
+            'name': self.figshare_title,
         }
 
     def authorize(self, user_settings, save=False):
@@ -229,9 +229,9 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         if fields.get('id'):
             updated = updated or (fields['id'] != self.figshare_id)
             self.figshare_id = fields['id']
-        if fields.get('title'):
-            updated = updated or (fields['title'] != self.figshare_title)
-            self.figshare_title = fields['title']
+        if fields.get('name'):
+            updated = updated or (fields['name'] != self.figshare_title)
+            self.figshare_title = fields['name']
         if fields.get('type'):
             updated = updated or (fields['type'] != self.figshare_type)
             self.figshare_type = fields['type']

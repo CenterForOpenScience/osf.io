@@ -212,7 +212,7 @@ class TestCallbacks(OsfTestCase):
         newfields = {
             'type': 'project',
             'id': '313131',
-            'title': 'A PROJECT'
+            'name': 'A PROJECT'
         }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
@@ -228,7 +228,7 @@ class TestCallbacks(OsfTestCase):
         newfields = {
             'type': 'fileset',
             'id': '313131',
-            'title': 'A FILESET'
+            'name': 'A FILESET'
         }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
@@ -244,7 +244,7 @@ class TestCallbacks(OsfTestCase):
         newfields = {
             'type': 'project',
             'id': '313131',
-            'title': 'A PROJECT'
+            'name': 'A PROJECT'
         }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
