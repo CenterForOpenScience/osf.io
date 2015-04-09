@@ -317,7 +317,7 @@ class FormDataStream(MultiStream):
         if self.can_add_more:
             self.can_add_more = False
             self.add_streams(self.end_boundary)
-            self.size = sum([int(x.size) for x in self.streams]) + self.stream.size
+            # self.size = sum([int(x.size) for x in self.streams]) + self.stream.size
 
     def add_fields(self, **fields):
         for key, value in fields.items():
