@@ -14,7 +14,7 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 var $osf = require('js/osfHelpers');
 
 
-//var ctx = window.contextVars.wiki;  // mako context variables
+var ctx = window.contextVars.files;  // mako context variables
 
 //var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
 //var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
@@ -24,19 +24,19 @@ var $osf = require('js/osfHelpers');
 //var viewVersion = ctx.versionSettings.view || (editable ? 'preview' : 'current');
 //var compareVersion = ctx.versionSettings.compare || 'previous';
 
-//var wikiPageOptions = {
+var filePageOptions = {
 //    editVisible: editable,
 //    viewVisible: viewable,
 //    compareVisible: comparable,
 //    menuVisible: menuVisible,
-//    canEdit: ctx.canEdit,
+    canEdit: ctx.canEdit,
 //    viewVersion: viewVersion,
 //    compareVersion: compareVersion,
-//    urls: ctx.urls,
+    urls: ctx.urls
 //    metadata: ctx.metadata
-//};
+};
 
-var filePage = new FilePage('#wikiPageContext');
+var filePage = new FilePage('#filePageContext', filePageOptions);
 
 
 // Edit wiki page name

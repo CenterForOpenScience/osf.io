@@ -24,15 +24,31 @@
             </div>
 
         % else:
-            <div data-bind="with: $root.editVM.wikiEditor.viewModel"
+            <div class="wiki" id="filePageContext">
+            <div
+                    data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="col-md-8">
-                <div class="wiki-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="wiki-panel-header" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
+                <div class="wiki-panel">
+                  <div class="wiki-panel-header">
                     <div class="row">
                       <div class="col-md-6">
                            <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"></i>   Edit </span>
                       </div>
+                        <div class="col-md-6">
+                          <div class="pull-right">
+                            <div class="progress progress-no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
+                                <div role="progressbar"data-bind="attr: progressBar">
+                                    <span class="progress-bar-content">
+                                        <span data-bind="text: statusDisplay"></span>
+                                        <span class="sharejs-info-btn">
+                                            <i class="fa fa-question-circle fa-large"></i>
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                          </div>
+                        </div>
                     </div>
                   </div>
 
@@ -40,7 +56,8 @@
                   <div class="wiki-panel-body" style="padding: 10px">
                         <div class="row">
                         <div class="col-xs-12">
-                            <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">${rendered}</div>
+                            <div id="wmd-button-bar"></div>
+                            <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
                         </div>
                       </div>
                   </div>
@@ -67,9 +84,77 @@
 ##                </form>
                 </div>
             </div>
+            </div>
         % endif
 
+    <div class="modal fade" id="connectedModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h3 class="modal-title">Connected to the collaborative wiki</h3>
+          </div>
+          <div class="modal-body">
+            <p>
+                This page is currently connected to the collaborative wiki. All edits made will be visible to
+                contributors with write permission in real time. Changes will be stored
+                but not published until you click the "Save" button.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <div class="modal fade" id="connectingModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h3 class="modal-title">Connecting to the collaborative wiki</h3>
+          </div>
+          <div class="modal-body">
+            <p>
+                This page is currently attempting to connect to the collaborative wiki. You may continue to make edits.
+                <strong>Changes will not be saved until you press the "Save" button.</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="disconnectedModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h3 class="modal-title">Collaborative wiki is unavailable</h3>
+          </div>
+          <div class="modal-body">
+            <p>
+                The collaborative wiki is currently unavailable. You may continue to make edits.
+                <strong>Changes will not be saved until you press the "Save" button.</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="unsupportedModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h3 class="modal-title">Browser unsupported</h3>
+          </div>
+          <div class="modal-body">
+            <p>
+                Your browser does not support collaborative editing. You may continue to make edits.
+                <strong>Changes will not be saved until you press the "Save" button.</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
 
       <div class="col-md-4">
         <div id="fileRevisions" class="scripted">
@@ -151,6 +236,7 @@
     </div>
 
 <%def name="javascript_bottom()">
+<% import json %>
     ${parent.javascript_bottom()}
     % if 'osf.io' in domain:
     <script>
@@ -160,40 +246,42 @@
     %endif
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
-    %if rendered is None:
-        renderURL: '${render_url | js_str}',
-    %else:
-        renderURL: undefined,
-    %endif
-        file: {
-            extra: ${extra},
-            name: '${file_name | js_str}',
-            path: '${file_path | js_str}',
-            provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}'
-        },
-        node: {
-          urls: {
-            files: '${files_url | js_str}'
-          }
-        },
-        currentUser: {
-          canEdit: ${int(user['can_edit'])}
-        }
+        %if rendered is None:
+            renderURL: '${render_url | js_str}',
+        %else:
+            renderURL: undefined,
+        %endif
+            file: {
+                extra: ${extra},
+                name: '${file_name | js_str}',
+                path: '${file_path | js_str}',
+                provider: '${provider | js_str}',
+                safeName: '${file_name | h,js_str}'
+            },
+            node: {
+              urls: {
+                files: '${files_url | js_str}'
+              }
+            },
+            currentUser: {
+              canEdit: ${int(user['can_edit'])}
+            },
+            files: {
+                canEdit: ${json.dumps(user['can_edit'])},
+                urls: {
+                    draft: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
+                    content: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
+                    rename: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
+                    page: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
+                    base: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
+                    sharejs: 'localhost:7007'
+                }
+            }
       });
+        console.log(window.contextVars.files.urls.draft);
+        console.log(window.contextVars.file.safeName);
     </script>
 
-    <script>
-        $(function() {
-            var $edit = $('#editFile');
-            $edit.on('click', function() {
-                $('#fileRendered').attr('contenteditable', 'true');
-
-
-            });
-
-        });
-    </script>
     <script src="//localhost:7007/text.js"></script>
     <script src="//localhost:7007/share.js"></script>
     <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>

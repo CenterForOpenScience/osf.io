@@ -336,6 +336,8 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 @must_be_valid_project
 @must_be_contributor_or_public
 def addon_render_file(auth, path, provider, **kwargs):
+
+    print 'INSIDE VIEWS.PY HELLLLOOOOOOOOOO'
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -368,4 +370,11 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**request.args.to_dict())
 
-    return get_or_start_render(file_guid)
+    ret = serialize_node(node, auth, primary=True)
+    ret.update({
+        'rendered': get_or_start_render(file_guid)
+    })
+
+    return ret
+
+    # return get_or_start_render(file_guid)
