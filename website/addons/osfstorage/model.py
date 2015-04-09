@@ -6,7 +6,6 @@ import logging
 
 import furl
 
-import pymongo
 from modularodm import fields, Q
 from dateutil.parser import parse as parse_date
 from modularodm.exceptions import NoResultsFound
@@ -103,18 +102,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         pass
 
 
+@unique_on(['name', 'kind', 'parent', 'node_settings'])
 class OsfStorageFileNode(StoredObject):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('name', pymongo.ASCENDING),
-                ('kind', pymongo.ASCENDING),
-                ('parent', pymongo.ASCENDING),
-                ('node_settings', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
 
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
@@ -378,18 +367,10 @@ class OsfStorageFileVersion(StoredObject):
         self.save()
 
 
+@unique_on(['node', 'path'])
 class OsfStorageGuidFile(GuidFile):
     provider = 'osfstorage'
     version_identifier = 'version'
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
 
     path = fields.StringField(required=True, index=True)
 
