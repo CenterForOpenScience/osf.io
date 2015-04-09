@@ -43,8 +43,8 @@ var fangornInstance = function() {
 
 describe('fangornToolbars', () => {
 // Tests related to the toolbar
-	describe('toolbarOptions', () => {
 	  var fangorn; 
+
 	  before(function() {
 	    // runs before all tests in this block
 	    $('body').append('<div id="fangorn"></div>');
@@ -56,15 +56,22 @@ describe('fangornToolbars', () => {
 	    fangorn.grid.tbController.destroy();
 	  });
 
+	describe('toolbarOptions', () => {
 	  it('Should have fangorn toolbar template', function() {
 	  	assert.ok(fangorn.grid.tbController.options.headerTemplate);
 	  });
-	  it('fangorn toolbar template should return an object', function() {
+	  it('Should return an object for fangorn toolbar template', function() {
 	  	var template = fangorn.tests.fangornToolbar.call(fangorn.grid.tbController);
 	  	assert.equal(typeof template, 'object');
 	  });
+	});
 
-
+	describe('toolbarStateChanges', () => {
+		it('Should build item buttons', function() {
+			var fileItem = fangorn.grid.tbController.find(2);
+			fangorn.tests.defineToolbar.call(fangorn.grid.tbController, fileItem);
+			assert.equal(fileItem.icons.length, 2);
+		 });
 
 	});
 

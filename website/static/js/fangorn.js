@@ -1261,7 +1261,8 @@ Fangorn.prototype = {
         return this.grid;
     },
     tests : {
-        fangornToolbar : _fangornToolbar
+        fangornToolbar : _fangornToolbar,
+        defineToolbar : _fangornDefineToolbar
     }
 };
 
