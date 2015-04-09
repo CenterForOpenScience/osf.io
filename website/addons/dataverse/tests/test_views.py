@@ -291,11 +291,9 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
 class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
-    @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
-    def test_dataverse_root_published(self, mock_files, mock_request, mock_connection):
+    def test_dataverse_root_published(self, mock_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
-        mock_request.referrer = 'some_url/files/'
         mock_files.return_value = ['mock_file']
 
         self.project.set_privacy('public')
@@ -318,11 +316,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_equal(res.json[0]['state'], 'published')
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
-    @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
-    def test_dataverse_root_not_published(self, mock_files, mock_request, mock_connection):
+    def test_dataverse_root_not_published(self, mock_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
-        mock_request.referrer = 'some_url/files/'
         mock_files.return_value = []
 
         self.project.set_privacy('public')
@@ -344,12 +340,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
-    @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
-    def test_dataverse_root_no_connection(self, mock_files, mock_request, mock_connection):
+    def test_dataverse_root_no_connection(self, mock_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
-        mock_request.referrer = 'some_url/files/'
-        mock_request.args = {'state': 'published'}
         mock_files.return_value = ['mock_file']
 
         url = api_url_for('dataverse_root_folder_public',

@@ -112,7 +112,7 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.dataset_doi)
-        assert_false(self.node_settings.dataset_id)
+        assert_false(self.node_settings._dataset_id)  # Getter makes request
         assert_false(self.node_settings.dataset)
         assert_false(self.node_settings.user_settings)
 
