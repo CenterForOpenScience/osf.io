@@ -14,6 +14,7 @@ from waterbutler.providers.dataverse import utils as dataverse_utils
 
 class DataverseProvider(provider.BaseProvider):
 
+    BASE_URL = 'https://{0}'.format(settings.HOSTNAME)
     EDIT_MEDIA_BASE_URL = settings.EDIT_MEDIA_BASE_URL
     DOWN_BASE_URL = settings.DOWN_BASE_URL
     METADATA_BASE_URL = settings.METADATA_BASE_URL
@@ -30,10 +31,9 @@ class DataverseProvider(provider.BaseProvider):
     def download(self, path, **kwargs):
         resp = yield from self.make_request(
             'GET',
-            provider.build_url(self.DOWN_BASE_URL, path),
+            self.build_url(self.DOWN_BASE_URL, path, key=self.token),
             expects=(200, ),
             throws=exceptions.DownloadError,
-            params={'key': self.token},
         )
         return streams.ResponseStreamReader(resp)
 
@@ -64,7 +64,7 @@ class DataverseProvider(provider.BaseProvider):
 
         yield from self.make_request(
             'POST',
-            provider.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
+            self.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
             headers=dv_headers,
             auth=(self.token, ),
             data=stream,
@@ -98,7 +98,7 @@ class DataverseProvider(provider.BaseProvider):
     def delete(self, path, **kwargs):
         yield from self.make_request(
             'DELETE',
-            provider.build_url(self.EDIT_MEDIA_BASE_URL, 'file', path),
+            self.build_url(self.EDIT_MEDIA_BASE_URL, 'file', path),
             auth=(self.token, ),
             expects=(204, ),
             throws=exceptions.DeleteError,
@@ -135,7 +135,7 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def get_draft_data(self):
-        url = provider.build_url(self.METADATA_BASE_URL, self.doi)
+        url = self.build_url(self.METADATA_BASE_URL, self.doi)
         resp = yield from self.make_request(
             'GET',
             url,
@@ -152,11 +152,10 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def get_published_data(self):
-        url = self.JSON_BASE_URL.format(self.id)
+        url = self.build_url(self.JSON_BASE_URL.format(self.id), key=self.token)
         resp = yield from self.make_request(
             'GET',
             url,
-            params={'key': self.token},
             expects=(200, ),
             throws=exceptions.MetadataError
         )

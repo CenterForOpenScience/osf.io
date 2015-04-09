@@ -9,7 +9,6 @@ import xmltodict
 
 from waterbutler.core import streams
 from waterbutler.core import exceptions
-from waterbutler.core.provider import build_url
 
 from waterbutler.providers.dataverse import DataverseProvider
 from waterbutler.providers.dataverse.metadata import DataverseSwordFileMetadata
@@ -279,7 +278,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_download(self, provider):
         path = '/triangles.txt'
-        url = build_url(provider.DOWN_BASE_URL, path)
+        url = provider.build_url(provider.DOWN_BASE_URL, path, key=provider.token)
         aiohttpretty.register_uri('GET', url, body=b'better')
         result = yield from provider.download(str(path))
         content = yield from result.response.read()
@@ -290,7 +289,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_download_not_found(self, provider):
         path = '/triangles.txt'
-        url = build_url(provider.DOWN_BASE_URL, path)
+        url = provider.build_url(provider.DOWN_BASE_URL, path, key=provider.token)
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.DownloadError):
@@ -301,8 +300,8 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_upload(self, provider, file_stream, file_metadata, dataset_metadata):
         path = '/thefile.txt'
-        url = build_url(provider.EDIT_MEDIA_BASE_URL, 'study', provider.doi)
-        metadata_url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        url = provider.build_url(provider.EDIT_MEDIA_BASE_URL, 'study', provider.doi)
+        metadata_url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('POST', url, status=201)
         aiohttpretty.register_uri('GET', metadata_url, status=200, body=dataset_metadata)
 
@@ -320,7 +319,7 @@ class TestCRUD:
     @pytest.mark.aiohttpretty
     def test_delete_file(self, provider):
         path = '/The past'
-        url = build_url(provider.EDIT_MEDIA_BASE_URL, 'file', path)
+        url = provider.build_url(provider.EDIT_MEDIA_BASE_URL, 'file', path)
         aiohttpretty.register_json_uri('DELETE', url, status=204)
 
         yield from provider.delete(str(path))
@@ -333,7 +332,7 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata(self, provider, dataset_metadata):
-        url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('GET', url, status=200, body=dataset_metadata)
 
         result = yield from provider.metadata(state='draft')
@@ -351,7 +350,7 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_no_files(self, provider, empty_dataset_metadata):
-        url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('GET', url, status=200, body=empty_dataset_metadata)
 
         result = yield from provider.metadata(state='draft')
@@ -365,7 +364,7 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_published(self, provider, native_dataset_metadata):
-        url = provider.JSON_BASE_URL.format(provider.id)
+        url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
 
         result = yield from provider.metadata(state='published')
@@ -383,7 +382,7 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_published_no_files(self, provider, empty_native_dataset_metadata):
-        url = provider.JSON_BASE_URL.format(provider.id)
+        url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
 
         result = yield from provider.metadata(state='published')
@@ -398,7 +397,7 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_draft_metadata_missing(self, provider):
-        url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.MetadataError):
@@ -407,9 +406,9 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_draft_metadata_no_state_catches_all(self, provider, dataset_metadata, native_dataset_metadata):
-        sword_url = build_url(provider.METADATA_BASE_URL, provider.doi)
+        sword_url = provider.build_url(provider.METADATA_BASE_URL, provider.doi)
         aiohttpretty.register_uri('GET', sword_url, status=200, body=dataset_metadata)
-        json_url = provider.JSON_BASE_URL.format(provider.id)
+        json_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id), key=provider.token)
         aiohttpretty.register_json_uri('GET', json_url, status=200, body=native_dataset_metadata)
 
         result = yield from provider.metadata()
