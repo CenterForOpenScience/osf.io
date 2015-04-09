@@ -2098,6 +2098,11 @@ span#profileFullname{
         max-width: 400px;
     }
 }
+@media (max-width: 992px) {
+    #signInForm input {
+        width: 110px;
+    }    
+}
 
 /* Search bar */
 .osf-search {
