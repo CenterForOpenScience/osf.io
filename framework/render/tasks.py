@@ -5,7 +5,9 @@ import codecs
 import logging
 
 import mfr
+from mfr.core import get_file_extension
 from mfr.ext import ALL_HANDLERS
+from mfr.ext.code_pygments import EXTENSIONS as CODE_EXTENSIONS
 from mfr.exceptions import MFRError
 
 from website import settings
@@ -69,8 +71,14 @@ def _build_rendered_html(download_url, cache_path, temp_path, public_download_ur
         # Write out unavoidable errors
         rendered = e.renderable_error
     else:
-        with codecs.open(temp_path) as temp_file:
-            # Try to render file
+        encoding = None
+        # Workaround for https://github.com/CenterForOpenScience/osf.io/issues/2389
+        # Open text files as utf-8
+        # Don't specify an encoding for other filetypes. Otherwise filetypes
+        # such as docx will break
+        if get_file_extension(temp_path) in CODE_EXTENSIONS:
+            encoding = 'utf-8'
+        with codecs.open(temp_path, encoding=encoding) as temp_file:
             try:
                 render_result = mfr.render(temp_file, src=public_download_url)
                 # Rendered result

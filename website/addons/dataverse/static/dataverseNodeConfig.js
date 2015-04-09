@@ -1,13 +1,14 @@
 /**
-* Module that controls the {{cookiecutter.full_name}} node settings. Includes Knockout view-model
-* for syncing data.
-*/
+ * Module that controls the Dataverse node settings. Includes Knockout view-model
+ * for syncing data.
+ */
 
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.punches');
+var Raven = require('raven-js');
+
 var osfHelpers = require('js/osfHelpers');
-var language = require('js/osfLanguage').Addons.dataverse;
 
 ko.punches.enableAll();
 
@@ -36,17 +37,83 @@ function ViewModel(url) {
     self.savedDataverseTitle = ko.observable();
     self.datasetWasFound = ko.observable(false);
 
-    self.savedDatasetUrl = ko.computed(function() {
+    self.messages = {
+        userSettingsError: ko.pureComputed(function() {
+            return 'Could not retrieve settings. Please refresh the page or ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'problem persists.';
+        }),
+        confirmNodeDeauth: ko.pureComputed(function() {
+            return 'Are you sure you want to unlink this Dataverse account? This will ' +
+                'revoke the ability to view, download, modify, and upload files ' +
+                'to datasets on the Dataverse from the OSF. This will not remove your ' +
+                'Dataverse authorization from your <a href="' + self.urls().settings + '">user settings</a> ' +
+                'page.';
+        }),
+        confirmImportAuth: ko.pureComputed(function() {
+            return 'Are you sure you want to authorize this project with your Dataverse credentials?';
+        }),
+        deauthError: ko.pureComputed(function() {
+            return 'Could not unlink Dataverse at this time. Please refresh the page or ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'problem persists.';
+        }),
+        deauthSuccess: ko.pureComputed(function() {
+            return 'Successfully unlinked your Dataverse account.';
+        }),
+        authInvalid: ko.pureComputed(function() {
+            return 'Your Dataverse api token is invalid.';
+        }),
+        authError: ko.pureComputed(function() {
+            return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'problem persists.';
+        }),
+        importAuthSuccess: ko.pureComputed(function() {
+            return 'Successfully linked your Dataverse account';
+        }),
+        importAuthError: ko.pureComputed(function() {
+            return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'problem persists.';
+        }),
+        datasetDeaccessioned: ko.pureComputed(function() {
+            return 'This dataset has already been deaccessioned on the Dataverse ' +
+                'and cannot be connected to the OSF.';
+        }),
+        forbiddenCharacters: ko.pureComputed(function() {
+            return 'This dataset cannot be connected due to forbidden characters ' +
+                'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
+                'development team.';
+        }),
+        setInfoSuccess: ko.pureComputed(function() {
+            var filesUrl = window.contextVars.node.urls.web + 'files/';
+            return 'Successfully linked dataset \'' + self.savedDatasetTitle() + '\'. Go to the <a href="' +
+                filesUrl + '">Files page</a> to view your content.';
+        }),
+        setDatasetError: ko.pureComputed(function() {
+            return 'Could not connect to this dataset. Please refresh the page or ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'problem persists.';
+        }),
+        getDatasetsError: ko.pureComputed(function() {
+            return 'Could not load datasets. Please refresh the page or ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'problem persists.';
+        })
+    };
+    
+    self.savedDatasetUrl = ko.pureComputed(function() {
         return (self.urls()) ? self.urls().datasetPrefix + self.savedDatasetDoi() : null;
     });
-    self.savedDataverseUrl = ko.computed(function() {
+    self.savedDataverseUrl = ko.pureComputed(function() {
         return (self.urls()) ? self.urls().dataversePrefix + self.savedDataverseAlias() : null;
     });
 
     self.selectedDataverseAlias = ko.observable();
     self.selectedDatasetDoi = ko.observable();
-    self.selectedDataverseTitle = ko.computed(function() {
-        for (var i=0; i < self.dataverses().length; i++) {
+    self.selectedDataverseTitle = ko.pureComputed(function() {
+        for (var i = 0; i < self.dataverses().length; i++) {
             var data = self.dataverses()[i];
             if (data.alias === self.selectedDataverseAlias()) {
                 return data.title;
@@ -54,8 +121,8 @@ function ViewModel(url) {
         }
         return null;
     });
-    self.selectedDatasetTitle = ko.computed(function() {
-        for (var i=0; i < self.datasets().length; i++) {
+    self.selectedDatasetTitle = ko.pureComputed(function() {
+        for (var i = 0; i < self.datasets().length; i++) {
             var data = self.datasets()[i];
             if (data.doi === self.selectedDatasetDoi()) {
                 return data.title;
@@ -63,71 +130,49 @@ function ViewModel(url) {
         }
         return null;
     });
-    self.dataverseHasDatasets = ko.computed(function() {
+    self.dataverseHasDatasets = ko.pureComputed(function() {
         return self.datasets().length > 0;
     });
 
-    self.showDatasetSelect = ko.computed(function() {
+    self.showDatasetSelect = ko.pureComputed(function() {
         return self.loadedDatasets() && self.dataverseHasDatasets();
     });
-    self.showNoDatasets = ko.computed(function() {
+    self.showNoDatasets = ko.pureComputed(function() {
         return self.loadedDatasets() && !self.dataverseHasDatasets();
     });
-    self.showLinkedDataset = ko.computed(function() {
+    self.showLinkedDataset = ko.pureComputed(function() {
         return self.savedDatasetDoi();
     });
-    self.showLinkDataverse = ko.computed(function() {
+    self.showLinkDataverse = ko.pureComputed(function() {
         return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
     });
-    self.credentialsChanged = ko.computed(function() {
+    self.credentialsChanged = ko.pureComputed(function() {
         return self.nodeHasAuth() && !self.connected();
     });
-    self.showInputCredentials = ko.computed(function() {
-        return  (self.credentialsChanged() && self.userIsOwner()) ||
+    self.showInputCredentials = ko.pureComputed(function() {
+        return (self.credentialsChanged() && self.userIsOwner()) ||
             (!self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings());
     });
-    self.hasDataverses = ko.computed(function() {
+    self.hasDataverses = ko.pureComputed(function() {
         return self.dataverses().length > 0;
     });
-    self.hasBadDatasets = ko.computed(function() {
+    self.hasBadDatasets = ko.pureComputed(function() {
         return self.badDatasets().length > 0;
     });
-    self.showNotFound = ko.computed(function() {
+    self.showNotFound = ko.pureComputed(function() {
         return self.savedDatasetDoi() && self.loadedDatasets() && !self.datasetWasFound();
     });
-    self.showSubmitDataset = ko.computed(function() {
+    self.showSubmitDataset = ko.pureComputed(function() {
         return self.nodeHasAuth() && self.connected() && self.userIsOwner();
     });
-    self.enableSubmitDataset = ko.computed(function() {
+    self.enableSubmitDataset = ko.pureComputed(function() {
         return !self.submitting() && self.dataverseHasDatasets() &&
             self.savedDatasetDoi() !== self.selectedDatasetDoi();
     });
 
-    /**
-        * Update the view model from data returned from the server.
-        */
-
-    self.updateFromData = function(data) {
-        self.urls(data.urls);
-        self.apiToken(data.apiToken);
-        self.ownerName(data.ownerName);
-        self.nodeHasAuth(data.nodeHasAuth);
-        self.userHasAuth(data.userHasAuth);
-        self.userIsOwner(data.userIsOwner);
-
-        if (self.nodeHasAuth()){
-            self.dataverses(data.dataverses);
-            self.savedDataverseAlias(data.savedDataverse.alias);
-            self.savedDataverseTitle(data.savedDataverse.title);
-            self.selectedDataverseAlias(data.savedDataverse.alias);
-            self.savedDatasetDoi(data.savedDataset.doi);
-            self.savedDatasetTitle(data.savedDataset.title);
-            self.connected(data.connected);
-            if (self.userIsOwner()) {
-                self.getDatasets(); // Sets datasets, selectedDatasetDoi
-            }
-        }
-    };
+    // Flashed messages
+    self.message = ko.observable('');
+    self.messageClass = ko.observable('text-info');
 
     // Update above observables with data from the server
     $.ajax({
@@ -139,130 +184,154 @@ function ViewModel(url) {
         self.updateFromData(response.result);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(language.userSettingsError, 'text-warning');
+        self.changeMessage(self.messages.userSettingsError, 'text-warning');
         Raven.captureMessage('Could not GET dataverse settings', {
             url: url,
             textStatus: textStatus,
             error: error
         });
     });
+}
+/**
+ * Update the view model from data returned from the server.
+ */
 
-    // Flashed messages
-    self.message = ko.observable('');
-    self.messageClass = ko.observable('text-info');
+ViewModel.prototype.updateFromData = function(data) {
+    var self = this;
+    self.urls(data.urls);
+    self.ownerName(data.ownerName);
+    self.nodeHasAuth(data.nodeHasAuth);
+    self.userHasAuth(data.userHasAuth);
+    self.userIsOwner(data.userIsOwner);
 
-    self.setInfo = function() {
-        self.submitting(true);
-        osfHelpers.postJSON(
-            self.urls().set,
-            ko.toJS({
-                dataverse: {alias: self.selectedDataverseAlias},
-                dataset: {doi: self.selectedDatasetDoi}
-            })
-        ).done(function() {
-            self.submitting(false);
-            self.savedDataverseAlias(self.selectedDataverseAlias());
-            self.savedDataverseTitle(self.selectedDataverseTitle());
-            self.savedDatasetDoi(self.selectedDatasetDoi());
-            self.savedDatasetTitle(self.selectedDatasetTitle());
-            self.datasetWasFound(true);
-            self.changeMessage('Settings updated.', 'text-success', 5000);
-        }).fail(function(xhr, textStatus, error) {
-            self.submitting(false);
-            var errorMessage = (xhr.status === 410) ? language.datasetDeaccessioned :
-                (xhr.status = 406) ? language.forbiddenCharacters : language.setDatasetError;
-            self.changeMessage(errorMessage, 'text-danger');
-            Raven.captureMessage('Could not authenticate with Dataverse', {
-                url: self.urls().set,
-                textStatus: textStatus,
-                error: error
-            });
+    if (self.nodeHasAuth()) {
+        self.dataverses(data.dataverses);
+        self.savedDataverseAlias(data.savedDataverse.alias);
+        self.savedDataverseTitle(data.savedDataverse.title);
+        self.selectedDataverseAlias(data.savedDataverse.alias);
+        self.savedDatasetDoi(data.savedDataset.doi);
+        self.savedDatasetTitle(data.savedDataset.title);
+        self.connected(data.connected);
+        if (self.userIsOwner()) {
+            self.getDatasets(); // Sets datasets, selectedDatasetDoi
+        }
+    }
+};
+
+ViewModel.prototype.setInfo = function() {
+    var self = this;
+    self.submitting(true);
+    return osfHelpers.postJSON(
+        self.urls().set,
+        ko.toJS({
+            dataverse: {
+                alias: self.selectedDataverseAlias
+            },
+            dataset: {
+                doi: self.selectedDatasetDoi
+            }
+        })
+    ).done(function() {
+        self.submitting(false);
+        self.savedDataverseAlias(self.selectedDataverseAlias());
+        self.savedDataverseTitle(self.selectedDataverseTitle());
+        self.savedDatasetDoi(self.selectedDatasetDoi());
+        self.savedDatasetTitle(self.selectedDatasetTitle());
+        self.datasetWasFound(true);
+        self.changeMessage(self.messages.setInfoSuccess, 'text-success');
+    }).fail(function(xhr, textStatus, error) {
+        self.submitting(false);
+        var errorMessage = (xhr.status === 410) ? self.messages.datasetDeaccessioned :
+            (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
+ self.changeMessage(errorMessage, 'text-danger');
+        Raven.captureMessage('Could not authenticate with Dataverse', {
+            url: self.urls().set,
+            textStatus: textStatus,
+            error: error
         });
-    };
+    });
+};
 
-    /**
-        * Looks for dataset in list of datasets when first loaded.
-        * This prevents an additional request to the server, but requires additional logic.
-        */
-    self.findDataset = function() {
-        for (var i in self.datasets()) {
-            if (self.datasets()[i].doi === self.savedDatasetDoi()) {
-                self.datasetWasFound(true);
-                return;
+/**
+ * Looks for dataset in list of datasets when first loaded.
+ * This prevents an additional request to the server, but requires additional logic.
+ */
+ViewModel.prototype.findDataset = function() {
+    var self = this;
+    for (var i in self.datasets()) {
+        if (self.datasets()[i].doi === self.savedDatasetDoi()) {
+            self.datasetWasFound(true);
+            return;
+        }
+    }
+};
+
+ViewModel.prototype.getDatasets = function() {
+    var self = this;
+    self.datasets([]);
+    self.badDatasets([]);
+    self.loadedDatasets(false);
+    return osfHelpers.postJSON(
+        self.urls().getDatasets,
+        ko.toJS({
+            alias: self.selectedDataverseAlias
+        })
+    ).done(function(response) {
+        self.datasets(response.datasets);
+        self.badDatasets(response.badDatasets);
+        self.loadedDatasets(true);
+        self.selectedDatasetDoi(self.savedDatasetDoi());
+        self.findDataset();
+    }).fail(function() {
+        self.changeMessage(self.messages.getDatasetsError, 'text-danger');
+    });
+};
+
+ViewModel.prototype.authorizeNode = function() {
+    var self = this;
+    return osfHelpers.putJSON(
+        self.urls().importAuth, {}
+    ).done(function(response) {
+        self.updateFromData(response.result);
+        self.changeMessage(self.messages.importAuthSuccess, 'text-success', 3000);
+    }).fail(function() {
+        self.changeMessage(self.messages.importAuthError, 'text-danger');
+    });
+};
+
+/** Send POST request to authorize Dataverse */
+ViewModel.prototype.sendAuth = function() {
+    var self = this;
+    return osfHelpers.postJSON(
+        self.urls().create,
+        ko.toJS({api_token: self.apiToken})
+    ).done(function() {
+        // User now has auth
+        self.authorizeNode();
+    }).fail(function(xhr) {
+        var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
+        self.changeMessage(errorMessage, 'text-danger');
+    });
+};
+
+/**
+ *  Send PUT request to import access token from user profile.
+ */
+ViewModel.prototype.importAuth = function() {
+    var self = this;
+    bootbox.confirm({
+        title: 'Link to Dataverse Account?',
+        message: self.messages.confirmImportAuth(),
+        callback: function(confirmed) {
+            if (confirmed) {
+                self.authorizeNode();
             }
         }
-    };
+    });
+};
 
-    self.getDatasets = function() {
-        self.datasets([]);
-        self.badDatasets([]);
-        self.loadedDatasets(false);
-        return osfHelpers.postJSON(
-            self.urls().getDatasets,
-            ko.toJS({alias: self.selectedDataverseAlias})
-        ).done(function(response) {
-            self.datasets(response.datasets);
-            self.badDatasets(response.badDatasets);
-            self.loadedDatasets(true);
-            self.selectedDatasetDoi(self.savedDatasetDoi());
-            self.findDataset();
-        }).fail(function() {
-            self.changeMessage('Could not load datasets', 'text-danger');
-        });
-    };
-
-    /** Send POST request to authorize Dataverse */
-    self.sendAuth = function() {
-        return osfHelpers.postJSON(
-            self.urls().create,
-            ko.toJS({api_token: self.apiToken})
-        ).done(function() {
-            // User now has auth
-            authorizeNode();
-        }).fail(function(xhr) {
-            var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
-            self.changeMessage(errorMessage, 'text-danger');
-        });
-    };
-
-    /**
-    *  Send PUT request to import access token from user profile.
-    */
-    self.importAuth = function() {
-        bootbox.confirm({
-            title: 'Link to Dataverse Account?',
-            message: 'Are you sure you want to authorize this project with your Dataverse credentials?',
-            callback: function(confirmed) {
-                if (confirmed) {
-                    authorizeNode();
-                }
-            }
-        });
-    };
-
-    self.clickDeauth = function() {
-        bootbox.confirm({
-            title: 'Deauthorize?',
-            message: language.confirmNodeDeauth,
-            callback: function(confirmed) {
-                if (confirmed) {
-                    sendDeauth();
-                }
-            }
-        });
-    };
-
-    function authorizeNode() {
-        return osfHelpers.putJSON(
-            self.urls().importAuth,
-            {}
-        ).done(function(response) {
-            self.updateFromData(response.result);
-            self.changeMessage(language.authSuccess, 'text-success', 3000);
-        }).fail(function() {
-            self.changeMessage(language.authError, 'text-danger');
-        });
-    }
+ViewModel.prototype.clickDeauth = function() {
+    var self = this;
 
     function sendDeauth() {
         return $.ajax({
@@ -272,27 +341,40 @@ function ViewModel(url) {
             self.nodeHasAuth(false);
             self.userIsOwner(false);
             self.connected(false);
-            self.changeMessage(language.deauthSuccess, 'text-success', 5000);
+            self.changeMessage(self.messages.deauthSuccess, 'text-success', 3000);
         }).fail(function() {
-            self.changeMessage(language.deauthError, 'text-danger');
+            self.changeMessage(self.messages.deauthError, 'text-danger');
         });
     }
 
-    /** Change the flashed status message */
-    self.changeMessage = function(text, css, timeout) {
-        self.message(text);
-        var cssClass = css || 'text-info';
-        self.messageClass(cssClass);
-        if (timeout) {
-            // Reset message after timeout period
-            setTimeout(function() {
-                self.message('');
-                self.messageClass('text-info');
-            }, timeout);
+    bootbox.confirm({
+        title: 'Deauthorize?',
+        message: self.messages.confirmNodeDeauth(),
+        callback: function(confirmed) {
+            if (confirmed) {
+                sendDeauth();
+            }
         }
-    };
+    });
+};
 
-}
+/** Change the flashed status message */
+ViewModel.prototype.changeMessage = function(text, css, timeout) {
+    var self = this;
+    if (typeof text === 'function') {
+        text = text();
+    }
+    self.message(text);
+    var cssClass = css || 'text-info';
+    self.messageClass(cssClass);
+    if (timeout) {
+        // Reset message after timeout period
+        setTimeout(function() {
+            self.message('');
+            self.messageClass('text-info');
+        }, timeout);
+    }
+};
 
 function DataverseNodeConfig(selector, url) {
     // Initialization code

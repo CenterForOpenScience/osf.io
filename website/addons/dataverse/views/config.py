@@ -97,6 +97,7 @@ def serialize_urls(node_settings):
         'getDatasets': node.api_url_for('dataverse_get_datasets'),
         'datasetPrefix': 'http://dx.doi.org/',
         'dataversePrefix': 'http://{0}/dataverse/'.format(HOST),
+        'settings': web_url_for('user_addons'),
     }
     return urls
 

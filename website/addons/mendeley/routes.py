@@ -37,7 +37,7 @@ api_routes = {
                 '/project/<pid>/mendeley/user_auth/',
                 '/project/<pid>/node/<nid>/mendeley/user_auth/',
             ],
-            'post',
+            'put',
             views.mendeley_add_user_auth,
             json_renderer,
         ),

@@ -1,4 +1,6 @@
 from framework.exceptions import FrameworkError
+from website import language
+
 
 class AuthError(FrameworkError):
     """Base class for auth-related errors."""
@@ -43,11 +45,18 @@ class TwoFactorValidationError(AuthError):
     pass
 
 
-class InvalidTokenError(FrameworkError):
-    """Raised if an email confirmation token is invalid."""
+class EmailConfirmTokenError(FrameworkError):
+    """Base class for errors arising from the use of an email confirm token."""
     pass
 
 
-class ExpiredTokenError(InvalidTokenError):
-    """Raised if trying to retrieve an expired token."""
-    pass
+class InvalidTokenError(EmailConfirmTokenError):
+    """Raised if an email confirmation token is not found."""
+    message_short = "Invalid Token"
+    message_long = language.INVALID_EMAIL_CONFIRM_TOKEN
+
+
+class ExpiredTokenError(EmailConfirmTokenError):
+    """Raised if an email confirmation token is expired."""
+    message_short = "Expired Token"
+    message_long = language.EXPIRED_EMAIL_CONFIRM_TOKEN
