@@ -62,11 +62,11 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
     )
     serializer_class = NodeSerializer
 
-    # override
+    # overrides RetrieveUpdateAPIView
     def get_object(self):
         return self.get_node()
 
-    # override
+    # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
@@ -80,6 +80,7 @@ class NodeContributorsList(generics.ListAPIView, NodeMixin):
 
     serializer_class = UserSerializer
 
+    # overrides ListAPIView
     def get_queryset(self):
         return self.get_node().visible_contributors
 
@@ -89,6 +90,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     )
     serializer_class = NodeSerializer
 
+    # overrides ListAPIView
     def get_queryset(self):
         return self.get_node().node__registrations
 
@@ -96,5 +98,6 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
     serializer_class = NodeSerializer
 
+    # overrides ListAPIView
     def get_queryset(self):
         return self.get_node().nodes

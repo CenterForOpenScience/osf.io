@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from api.base.utils import absolute_reverse
 
 from api.base.serializers import JSONAPISerializer
 
@@ -15,6 +16,9 @@ class UserSerializer(JSONAPISerializer):
     def get_links(self, obj):
         return {
             'html': obj.absolute_url,
+            'nodes': {
+                'relation': absolute_reverse('users:user-nodes', kwargs={'pk': obj.pk})
+            }
         }
 
     def update(self, instance, validated_data):
