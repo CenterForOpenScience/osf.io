@@ -105,14 +105,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         window.oauthComplete = function(res) {
             // Update view model based on response
             self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
-            self.updateAccounts()
-                .done(function() {
-                    $osf.putJSON(
-                        self.urls().importAuth, {
-                            external_account_id: self.accounts()[0].id
-                        }
-                    ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
-                });
+            self.importAuth.call(self);
         };
         window.open(self.urls().auth);
     },

@@ -5,14 +5,15 @@ import bson
 import logging
 
 import furl
-import pymongo
 
+import pymongo
 from modularodm import fields, Q
 from dateutil.parser import parse as parse_date
 from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
+from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
 from website.models import NodeLog
