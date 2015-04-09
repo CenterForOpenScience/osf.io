@@ -29,6 +29,10 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, **kwargs):
+        # Can download draft or published files
+        metadata = yield from self.get_all_data()
+        self.validate_path(path, metadata)
+
         resp = yield from self.make_request(
             'GET',
             self.build_url(self.DOWN_BASE_URL, path, key=self.token),
@@ -96,6 +100,10 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
+        # Can only delete files in draft
+        metadata = yield from self.get_draft_data()
+        self.validate_path(path, metadata)
+
         yield from self.make_request(
             'DELETE',
             self.build_url(self.EDIT_MEDIA_BASE_URL, 'file', path),
@@ -174,3 +182,10 @@ class DataverseProvider(provider.BaseProvider):
         draft_data = yield from self.get_draft_data()
         draft_files = draft_data if isinstance(draft_data, list) else []
         return published_files + draft_files
+
+    def validate_path(self, path, metadata):
+        if path.lstrip('/') not in [item['path'].lstrip('/') for item in metadata]:
+            raise exceptions.MetadataError(
+                "Could not retrieve file '{}'".format(path),
+                code=http.client.NOT_FOUND,
+            )
