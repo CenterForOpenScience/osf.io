@@ -2,7 +2,6 @@
 # encoding: utf-8
 
 import os
-import sys
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -220,6 +219,14 @@ MEETING_DATA = {
     'Reid2015': {
         'name': 'L. Starling Reid Undergraduate Psychology Conference 2015',
         'info_url': 'http://avillage.web.virginia.edu/Psych/Conference',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'NEEPS2015': {
+        'name': 'Northeastern Evolutionary Psychology Conference 2015',
+        'info_url': 'http://neeps2015.weebly.com/',
         'logo_url': None,
         'active': True,
         'admins': [],
