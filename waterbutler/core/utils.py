@@ -1,4 +1,5 @@
 import os
+import json
 import asyncio
 import logging
 import functools
@@ -10,11 +11,14 @@ from raven.contrib.tornado import AsyncSentryClient
 from stevedore import driver
 
 from waterbutler import settings
+from waterbutler.server import settings as server_settings
+from waterbutler.core.signing import Signer
 
 
 logger = logging.getLogger(__name__)
 
 sentry_dns = settings.get('SENTRY_DSN', None)
+signer = Signer(server_settings.HMAC_SECRET, server_settings.HMAC_ALGORITHM)
 
 
 class AioSentryClient(AsyncSentryClient):
