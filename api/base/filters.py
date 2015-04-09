@@ -24,14 +24,35 @@ def query_params_to_fields(query_params):
         if query_pattern.match(key)
     }
 
-def union(x, y):
-    return x | y
+
+# Used so that that queries by _id will work
+def convert_key(key):
+    if key.strip() == 'id':
+        return '_id'
+    return key
+
+TRUTHY = set(['true', 'True'])
+FALSY = set(['false', 'False'])
+# Used to convert string values from query params to Python booleans when necessary
+def convert_value(val):
+    val = val.strip()
+    if val in TRUTHY:
+        return True
+    elif val in FALSY:
+        return False
+    else:
+        return val
+
+# Used to make intersection "reduce-able"
+def intersect(x, y):
+    return x & y
 
 def query_params_to_odm_query(query_params):
     """Convert query params to a modularodm Query object."""
     fields_dict = query_params_to_fields(query_params)
     if fields_dict:
-        query = functools.reduce(union, [Q(key, 'eq', value) for key, value in fields_dict.items()])
+        query_parts = [Q(convert_key(key), 'eq', convert_value(value)) for key, value in fields_dict.items()]
+        query = functools.reduce(intersect, query_parts)
     else:
         query = None
     return query
