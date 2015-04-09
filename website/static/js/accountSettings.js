@@ -5,6 +5,7 @@ var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var oop = require('js/oop');
 var Raven = require('raven-js');
+var ChangeMessage = require('js/changeMessage');
 
 require('knockout.punches');
 ko.punches.enableAll();
@@ -140,13 +141,12 @@ var UserProfileClient = oop.defclass({
 });
 
 
-var UserProfileViewModel = oop.defclass({
+var UserProfileViewModel = oop.extend(ChangeMessage, {
     constructor: function() {
+        this.super.constructor.call(this);
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
         this.emailInput = ko.observable();
-        this.messageClass = ko.observable('text-info');
-        this.message = ko.observable('');
     },
     init: function () {
         this.client.fetch().done(
@@ -154,8 +154,7 @@ var UserProfileViewModel = oop.defclass({
         );
     },
     addEmail: function () {
-        this.message('');
-        this.messageClass('text-info');
+        this.changeMessage('', 'text-info');
         var newEmail = this.emailInput().toLowerCase().trim();
         if(newEmail){
             var email = new UserEmail({
@@ -165,7 +164,7 @@ var UserProfileViewModel = oop.defclass({
             // ensure email isn't already in the list
             for (var i=0; i<this.profile().emails().length; i++) {
                 if (this.profile().emails()[i].address() === email.address()) {
-                    $osf.growl('Error', 'Duplicate Email', 'warning');
+                    this.changeMessage('Duplicate Email', 'text-warning');
                     this.emailInput('');
                     return;
                 }
@@ -184,24 +183,21 @@ var UserProfileViewModel = oop.defclass({
                         return;
                     }
                 }
-                $osf.growl('Error', 'Email validation failed', 'danger');
+                this.changeMessage('Invalid Email.', 'text-danger');
             }.bind(this));
         } else {
-            this.message('Email cannot be empty.');
-            this.messageClass('text-danger');
+            this.changeMessage('Email cannot be empty.', 'text-danger');
         }
     },
     removeEmail: function (email) {
-        this.message('');
-        this.messageClass('text-info');
+        this.changeMessage('', 'text-info');
         this.profile().emails.remove(email);
         this.client.update(this.profile()).done(function() {
             $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
         });
     },
     makeEmailPrimary: function (email) {
-        this.message('');
-        this.messageClass('text-info');
+        this.changeMessage('', 'text-info');
         this.profile().primaryEmail().isPrimary(false);
         email.isPrimary(true);
         this.client.update(this.profile()).done(function () {
