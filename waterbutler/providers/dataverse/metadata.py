@@ -100,7 +100,7 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
             self._entries = [DataverseNativeFileMetadata(f['datafile']) for f in files]
 
         else:
-            entry_feed = raw['feed'].get('entry') or []
+            entry_feed = raw['feed'].get('entry', [])
             if isinstance(entry_feed, dict):
                 self._entries = [DataverseSwordFileMetadata(entry_feed)]
             else:
