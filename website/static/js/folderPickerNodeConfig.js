@@ -350,6 +350,8 @@ var FolderPickerViewModel = oop.defclass({
             self.nodeHasAuth(false);
             self.cancelSelection();
             self.currentDisplay(null);
+            $(self.folderPicker).html('');
+            self.loadedFolders(false);
             self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
         });
         request.fail(function(xhr, textStatus, error) {
