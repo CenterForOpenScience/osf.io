@@ -6,6 +6,7 @@ class UserSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     fullname = ser.CharField()
+    date_registered = ser.DateTimeField(read_only=True)
     # TODO: finish me
 
     class Meta:
