@@ -57,37 +57,6 @@ def github_set_config(auth, node_addon, **kwargs):
     ).serialized_node_settings
     return result
 
-@must_have_permission('write')
-@must_have_addon('github', 'node')
-@must_not_be_registration
-def github_add_user_auth(auth, node_addon, **kwargs):
-    """Allows for importing existing auth to GithubNodeSettings """
-    user = auth.user
-    external_account_id = request.get_json().get('external_account_id')
-    external_account = ExternalAccount.load(external_account_id)
-    if external_account not in user.external_accounts:
-            raise HTTPError(http.FORBIDDEN)
-
-    try:
-        node_addon.set_auth(external_account, user)
-    except PermissionsError:
-        raise HTTPError(http.FORBIDDEN)
-
-    result = GitHubSerializer(
-        node_settings=node_addon,
-        user_settings=user.get_addon('github'),
-    ).serialized_node_settings
-    return result
-
-
-@must_have_permission('write')
-@must_have_addon('github', 'node')
-@must_not_be_registration
-def github_remove_user_auth(auth, node_addon, **kwargs):
-    """Removes auth from GithubNodeSettings """
-
-    provider = GithubProvider()
-    return provider.remove_user_auth(node_addon, auth.user)
 
 
 @must_be_contributor_or_public

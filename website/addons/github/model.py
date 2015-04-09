@@ -118,9 +118,9 @@ class GitHubProvider(ExternalProvider):
         }
 
     def client(self, credentials):
-        """An API session with Mendeley"""
+        """An API session with GitHub"""
         if not self._client:
-            self._client = GitHub(credentials['access_token'], 'bearer') #Token Type bearer correct?
+            self._client = GitHub(credentials['access_token'])
         return self._client
 
 

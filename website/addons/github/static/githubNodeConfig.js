@@ -15,6 +15,8 @@ var noop = function() {};
 var ViewModel = function(url, selector) {
     var self = this;
 
+    self.accounts = ko.observable([]);
+
     self.url = url;
     self.selector = selector;
 
@@ -63,6 +65,7 @@ var ViewModel = function(url, selector) {
         return (self.repoList().length > 0 || self.loadedRepoList()) && (!self.loading());
     });
 
+
 };
 
 
@@ -72,12 +75,12 @@ ViewModel.prototype.toggleSelect = function() {
     return self.updateRepoList();
 };
 
-
 ViewModel.prototype.selectRepo = function() {
     var self = this;
     self.loading(true);
+    debugger;
     return $osf.postJSON(
-            self.urls().set_repo, {
+            self.urls().config, {
                 'github_repo': self.selectedRepo()
             }
         )
@@ -101,12 +104,47 @@ ViewModel.prototype.selectRepo = function() {
         });
 };
 
-ViewModel.prototype.createNodeAuth = function() {
+ViewModel.prototype.connectAccount = function() {
     var self = this;
-    window.location.href = self.urls().import_auth;
+
+    window.oauthComplete = function(res) {
+        // Update view model based on response
+        self.changeMessage('Successfully imported Github credentials.', 'text-success', 3000);
+        self.updateAccounts()
+            .done(function() {
+                $osf.putJSON(
+                    self.urls().importAuth, {
+                        external_account_id: self.accounts()[0].id
+                    }
+                ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
+            });
+    };
+    window.open(self.urls().auth);
 };
 
+ViewModel.prototype.connectExistingAccount = function(account_id) {
+        var self = this;
 
+        return $osf.putJSON(
+            self.urls().importAuth, {
+                external_account_id: account_id
+            }
+        ).done(function(response) {
+            self.changeMessage('Successfully imported Github credentials.', 'text-success');
+            self.updateFromData(response);
+
+        }).fail(function(xhr, status, error) {
+            var message = 'Could not import Github credentials at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.changeMessage(message, 'text-warning');
+            Raven.captureMessage('Could not import Github credentials', {
+                url: self.urls().importAuth,
+                textStatus: status,
+                error: error
+            });
+        });
+};
 
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {
@@ -144,41 +182,8 @@ ViewModel.prototype.deauthorizeNode = function() {
     });
 };
 
-ViewModel.prototype._importAuthConfirm = function() {
-    var self = this;
 
-    return $osf.postJSON(
-        self.urls().import_auth, {}
-    ).done(function(response) {
-        self.changeMessage('Successfully imported Github credentials.', 'text-success');
-        self.updateFromData(response);
 
-    }).fail(function(xhr, status, error) {
-        var message = 'Could not import Github credentials at ' +
-            'this time. Please refresh the page. If the problem persists, email ' +
-            '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
-        Raven.captureMessage('Could not import Github credentials', {
-            url: self.urls().import_auth,
-            textStatus: status,
-            error: error
-        });
-    });
-
-};
-
-ViewModel.prototype.importAuth = function() {
-    var self = this;
-    bootbox.confirm({
-        title: 'Import Github credentials?',
-        message: 'Are you sure you want to authorize this project with your Github credentials?',
-        callback: function(confirmed) {
-            if (confirmed) {
-                return self._importAuthConfirm();
-            }
-        }
-    });
-};
 
 ViewModel.prototype.updateRepoList = function(){
     var self = this;
@@ -289,14 +294,13 @@ ViewModel.prototype.updateFromData = function(data) {
     var ret = $.Deferred();
     var applySettings = function(settings){
 
-        self.nodeHasAuth(settings.node_has_auth);
-        self.userHasAuth(settings.user_has_auth);
-        self.userIsOwner(settings.user_is_owner);
-        self.ownerName(settings.github_user);
-        self.currentRepo(settings.has_repo ? settings.github_repo_full_name : 'None');
-        if (settings.urls) {
-            self.urls(settings.urls);
-        }
+        self.nodeHasAuth(settings.nodeHasAuth);
+        self.userHasAuth(settings.userHasAuth);
+        self.userIsOwner(settings.userIsOwner);
+        self.ownerName(settings.ownerName);
+        self.currentRepo(settings.repo);
+        self.urls(settings.urls);
+        debugger;
         ret.resolve(settings);
     };
     if (typeof data === 'undefined'){
@@ -354,6 +358,78 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
         }, timeout);
     }
 };
+
+
+ViewModel.prototype.fetchAccounts = function() {
+    var self = this;
+    var ret = $.Deferred();
+    var request = $.get(self.urls().accounts);
+    request.then(function(data) {
+        ret.resolve(data.accounts);
+    });
+    request.fail(function(xhr, textStatus, error) {
+        self.changeMessage('Could not retrieve GitHub  account list at ' +
+                    'this time. Please refresh the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-warning');
+        Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
+            url: self.url,
+            textStatus: textStatus,
+            error: error
+        });
+        ret.reject(xhr, textStatus, error);
+    });
+    return ret.promise();
+};
+
+ViewModel.prototype.updateAccounts = function() {
+    var self = this;
+    return self.fetchAccounts()
+        .done(function(accounts) {
+            self.accounts(
+                $.map(accounts, function(account) {
+                    return {
+                        name: account.display_name,
+                        id: account.id
+                    };
+                })
+            );
+        });
+};
+
+ViewModel.prototype.importAuth = function() {
+    var self = this;
+    self.updateAccounts()
+        .then(function(){
+            if (self.accounts().length > 1) {
+                bootbox.prompt({
+                    title: 'Choose GitHub Access Token to Import',
+                    inputType: 'select',
+                    inputOptions: ko.utils.arrayMap(
+                        self.accounts(),
+                        function(item) {
+                            return {
+                                text: item.name,
+                                value: item.id
+                            };
+                        }
+                    ),
+                    value: self.accounts()[0].id,
+                    callback: (self.connectExistingAccount.bind(self))
+                });
+            } else {
+                bootbox.confirm({
+                    title: 'Import GitHub Access Token?',
+                    message: 'Are you sure you want to authorize this project with your github access token?',
+                    callback: function(confirmed) {
+                        if (confirmed) {
+                            self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                        }
+                    }
+                });
+            }
+        });
+}
+
 
 
 

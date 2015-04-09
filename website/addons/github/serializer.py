@@ -15,7 +15,7 @@ class GitHubSerializer(GenericAddonSerializer):
             'importAuth': node.api_url_for('github_add_user_auth'),
             # 'create_auth': node.api_url_for('github_oauth_start'),
             'deauthorize': node.api_url_for('github_remove_user_auth'),
-            'repos': node.api_url_for('github_repo_list'),
+            'repo_list': node.api_url_for('github_repo_list'),
             'config': node.api_url_for('github_set_config'),
             'settings': web_url_for('user_addons'),
             'accounts': node.api_url_for('github_get_user_accounts'),
@@ -30,8 +30,8 @@ class GitHubSerializer(GenericAddonSerializer):
     def serialized_node_settings(self):
         result = super(GitHubSerializer, self).serialized_node_settings
         result['repo'] = {'name': self.node_settings.repo}
-        valid_credentials = True
-        if self.node_settings.external_account is not None:
-            self.node_settings.fetch_access_token()
-        result['validCredentials'] = valid_credentials
+        # valid_credentials = True
+        # if self.node_settings.external_account is not None:
+        #     self.node_settings.fetch_access_token()
+        # result['validCredentials'] = valid_credentials
         return {'result': result}
