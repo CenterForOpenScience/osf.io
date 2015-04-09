@@ -25,21 +25,22 @@ class NodeMixin(object):
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Return a list of nodes. By default, a GET
-    will return a list of nodes the current user contributes
-    to.
+    will return a list of public nodes, sorted by date_modified.
     """
     # TODO: Allow unauthenticated requests (list public projects, e.g.)
     permission_classes = (
-        drf_permissions.IsAuthenticated,
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = NodeSerializer
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        # Return list of nodes that current user contributes to
-        user = self.request.user
-        return Q('contributors', 'eq', user._id)
+        return (
+            Q('is_public', 'eq', True) &
+            Q('is_deleted', 'ne', True) &
+            Q('is_dashboard', 'ne', True)
+        )
 
     # overrides ListCreateAPIView
     def get_queryset(self):
