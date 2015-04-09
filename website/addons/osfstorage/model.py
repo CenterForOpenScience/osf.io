@@ -104,6 +104,17 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
 @unique_on(['name', 'kind', 'parent', 'node_settings'])
 class OsfStorageFileNode(StoredObject):
+    """A node in the file tree of a given project
+    Contains  references to a fileversion and stores information about
+    deletion status and position in the tree
+
+               root
+              / | \
+        child1  |  child3
+                child2
+                /
+            grandchild1
+    """
 
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
@@ -316,6 +327,9 @@ class OsfStorageFileNode(StoredObject):
 
 
 class OsfStorageFileVersion(StoredObject):
+    """A version of an OsfStorageFileNode. contains information
+    about where the file is located, hashes and datetimes
+    """
 
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
     creator = fields.ForeignField('user', required=True)
@@ -369,6 +383,13 @@ class OsfStorageFileVersion(StoredObject):
 
 @unique_on(['node', 'path'])
 class OsfStorageGuidFile(GuidFile):
+    """A reference back to a OsfStorageFileNode
+
+    path is the "waterbutler path" as well as the path
+    used to look up a filenode
+
+    GuidFile.path == FileNode.path == '/' + FileNode._id
+    """
     provider = 'osfstorage'
     version_identifier = 'version'
 
