@@ -56,9 +56,12 @@ def server(host=None, port=5000, debug=True, live=False):
 
 
 @task
-def apiserver(port=8000):
+def apiserver(port=8000, live=False):
     """Run the API server."""
-    run('python manage.py runserver {}'.format(port), echo=True)
+    cmd = 'python manage.py runserver {}'.format(port)
+    if live:
+        cmd += ' livereload'
+    run(cmd, echo=True)
 
 
 SHELL_BANNER = """
