@@ -1864,9 +1864,11 @@ span#profileFullname{
     padding:13px 15px;
 }
 
-.navbar-form {
+.osf-navbar .navbar-form {
     margin-top: 5px;
     margin-bottom: 2px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .navbar-toggle {
@@ -2063,7 +2065,7 @@ span#profileFullname{
     }
     .osf-xs-search {
         text-decoration: none !important;
-        padding: 8px;
+        padding: 14px;
     }
 }
 
@@ -2110,6 +2112,16 @@ span#profileFullname{
     .osf-project-navbar a.project-title {
         max-width: 400px;
     }
+}
+@media (min-width: 768px) and (max-width: 991px)  {
+    #signInForm input {
+        width: 110px;
+    }    
+}
+@media (min-width: 1600px) {
+    #signInForm input {
+        width: 220px;
+    }    
 }
 
 /* Search bar */

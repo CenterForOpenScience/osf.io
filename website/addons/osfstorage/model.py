@@ -5,8 +5,8 @@ import bson
 import logging
 
 import furl
-import pymongo
 
+import pymongo
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
 from modularodm.storage.base import KeyExistsException
@@ -14,7 +14,9 @@ from dateutil.parser import parse as parse_date
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
+from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
+
 from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
@@ -136,16 +138,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         pass
 
 
+@unique_on(['path', 'node_settings'])
 class BaseFileObject(StoredObject):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('path', pymongo.ASCENDING),
-                ('node_settings', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
 
     path = fields.StringField(required=True, index=True)
     node_settings = fields.ForeignField(
