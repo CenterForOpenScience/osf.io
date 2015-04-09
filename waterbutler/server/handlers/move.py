@@ -28,7 +28,7 @@ class MoveHandler(core.BaseCrossProviderHandler):
     @utils.coroutine
     def post(self):
         if not self.source_provider.can_intra_move(self.destination_provider):
-            resp = yield from tasks.move({
+            resp = yield from tasks.move.adelay({
                 'args': self.json['source'],
                 'provider': self.source_provider.serialized()
             }, {
@@ -38,6 +38,7 @@ class MoveHandler(core.BaseCrossProviderHandler):
                 self.callback_url,
                 self.auth
             )
+            print(resp)
             self.set_status(202)
             return
 
