@@ -113,12 +113,7 @@ class DataverseProvider(provider.BaseProvider):
         elif state == 'published':
             dataset_metadata = yield from self.get_published_data()
         else:
-            # Unspecified (file view page), check both sets for metadata
-            published_data = yield from self.get_published_data()
-            published_files = published_data if isinstance(published_data, list) else []
-            draft_data = yield from self.get_draft_data()
-            draft_files = draft_data if isinstance(draft_data, list) else []
-            dataset_metadata = published_files + draft_files
+            dataset_metadata = yield from self.get_all_data()
 
         if path == '/':
             return dataset_metadata
@@ -166,3 +161,12 @@ class DataverseProvider(provider.BaseProvider):
         return DataverseDatasetMetadata(
             data, self.name, self.doi, native=True
         ).serialized()
+
+    @asyncio.coroutine
+    def get_all_data(self):
+        # Unspecified (file view page), check both sets for metadata
+        published_data = yield from self.get_published_data()
+        published_files = published_data if isinstance(published_data, list) else []
+        draft_data = yield from self.get_draft_data()
+        draft_files = draft_data if isinstance(draft_data, list) else []
+        return published_files + draft_files
