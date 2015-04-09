@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from flask import request
-
 from website.addons.dataverse.client import get_dataset, get_files, \
     get_dataverse, connect_from_settings
 
@@ -10,7 +8,7 @@ from website.project.decorators import must_have_addon
 from website.util import rubeus
 
 
-def dataverse_hgrid_root(node_addon, auth,  **kwargs):
+def dataverse_hgrid_root(node_addon, auth, **kwargs):
     node = node_addon.owner
     user_settings = node_addon.user_settings
 

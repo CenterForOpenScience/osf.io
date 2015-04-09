@@ -3,8 +3,6 @@
 import httplib as http
 from flask import request
 
-from dataverse.exceptions import UnauthorizedError
-
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
@@ -133,7 +131,7 @@ def dataverse_set_user_config(auth, **kwargs):
 
     # Log in with Dataverse
     token = request.json.get('api_token')
-    connection = client.connect_or_401(token)
+    client.connect_or_401(token)
 
     user_addon = user.get_addon('dataverse')
     if user_addon is None:

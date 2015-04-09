@@ -205,7 +205,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             },
         )
 
-
     ##### Callback overrides #####
 
     # Note: Registering Dataverse content is disabled for now
