@@ -51,7 +51,7 @@ class DataverseSwordFileMetadata(BaseDataverseFileMetadata):
 
         # Call last to ensure name has been defined by _edit_media_uri
         super().__init__(raw)
-        
+
     @property
     def content_type(self):
         return self._content['@type']
@@ -89,7 +89,7 @@ class DataverseNativeFileMetadata(BaseDataverseFileMetadata):
 
 
 class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadata):
-    
+
     def __init__(self, raw, name, doi, native=True):
         super().__init__(raw)
         self._name = name

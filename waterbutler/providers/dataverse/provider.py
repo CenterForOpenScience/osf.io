@@ -79,10 +79,10 @@ class DataverseProvider(provider.BaseProvider):
 
         # Reduce to files of the same base name of the same/higher version
         filtered_data = sorted([
-            f for f in data
-            if f['extra']['original'] == filename
-            and f['extra']['version'] >= version
-        ], key=lambda f: f['extra']['version'])
+            data_file for data_file in data
+            if data_file['extra']['original'] == filename and
+            data_file['extra']['version'] >= version
+        ], key=lambda x: x['extra']['version'])
 
         # Find highest version from original without a gap in between
         for item in filtered_data:
@@ -93,7 +93,6 @@ class DataverseProvider(provider.BaseProvider):
                 break
 
         return highest_compatible, True
-
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
