@@ -24,7 +24,6 @@
             </div>
 
         % else:
-
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="col-md-8">
@@ -36,6 +35,7 @@
                       </div>
                     </div>
                   </div>
+
 ##                  <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                   <div class="wiki-panel-body" style="padding: 10px">
                         <div class="row">
@@ -44,6 +44,7 @@
                         </div>
                       </div>
                   </div>
+
                   <div class="wiki-panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
@@ -66,7 +67,6 @@
 ##                </form>
                 </div>
             </div>
-
         % endif
 
 
@@ -150,8 +150,6 @@
       </div>
     </div>
 
-
-
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     % if 'osf.io' in domain:
@@ -196,6 +194,8 @@
 
         });
     </script>
+    <script src="//localhost:7007/text.js"></script>
+    <script src="//localhost:7007/share.js"></script>
     <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
 </%def>

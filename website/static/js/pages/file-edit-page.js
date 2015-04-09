@@ -4,7 +4,7 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 require('bootstrap-editable');
 require('osf-panel');
-var WikiPage = require('wikiPage');
+var FilePage = require('filePage');
 
 require('ace-noconflict');
 require('ace-mode-markdown');
@@ -14,7 +14,7 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 var $osf = require('js/osfHelpers');
 
 
-var ctx = window.contextVars.wiki;  // mako context variables
+//var ctx = window.contextVars.wiki;  // mako context variables
 
 //var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
 //var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
@@ -24,7 +24,7 @@ var ctx = window.contextVars.wiki;  // mako context variables
 //var viewVersion = ctx.versionSettings.view || (editable ? 'preview' : 'current');
 //var compareVersion = ctx.versionSettings.compare || 'previous';
 
-var wikiPageOptions = {
+//var wikiPageOptions = {
 //    editVisible: editable,
 //    viewVisible: viewable,
 //    compareVisible: comparable,
@@ -34,9 +34,9 @@ var wikiPageOptions = {
 //    compareVersion: compareVersion,
 //    urls: ctx.urls,
 //    metadata: ctx.metadata
-};
+//};
 
-var wikiPage = new WikiPage('#wikiPageContext', wikiPageOptions);
+var filePage = new FilePage('#wikiPageContext');
 
 
 // Edit wiki page name
@@ -84,13 +84,12 @@ var wikiPage = new WikiPage('#wikiPageContext', wikiPageOptions);
 //}
 
 // Apply panels
-$(document).ready(function () {
-    var bodyElement = $('body');
+//$(document).ready(function () {
+//    var bodyElement = $('body');
 
-    $('*[data-osf-panel]').osfPanel({
-        buttonElement : '.switch',
-        onSize : 'xs',
-        'onclick' : function (event, title, buttonState, thisbtn, col) {
+//    $('*[data-osf-panel]').osfPanel({
+
+//        'onclick' : function (event, title, buttonState, thisbtn, col) {
             // this = all the column elements; an array
             // title = Text of the button
             // buttonState = the visibility of column after click, taen from data-osf-toggle attribute, 
@@ -98,46 +97,24 @@ $(document).ready(function () {
             // col = the $() for the column this button links to
             
             // Determine if any columns are visible
-            var visibleColumns = this.filter(function (i, element) {
-                return $(element).is(':visible');
-            });
+//            var visibleColumns = this.filter(function (i, element) {
+//                return $(element).is(':visible');
+//            });
  
-            if (visibleColumns.length === 0) {
-                thisbtn.click();
-                return;
-            }
+//            if (visibleColumns.length === 0) {
+//                thisbtn.click();
+//                return;
+//            }
             
-            bodyElement.trigger('togglePanel', [
-                title.toLowerCase(),
-                buttonState
-            ]);
-            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
-        }
-    });
+//            bodyElement.trigger('togglePanel', [
+//                title.toLowerCase(),
+//                buttonState
+//            ]);
+//            ace.edit(editor).resize();  // jshint ignore: line
+//        }
+//    });
 
-    var panelToggle = $('.panel-toggle');
-    var panelExpand = $('.panel-expand');
-    $('.panel-collapse').on('click', function () {
-        var el = $(this).closest('.panel-toggle');
-        el.children('.wiki-panel.hidden-xs').addClass('hidden');
-        panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
-        panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
-        el.children('.panel-collapsed').removeClass('hidden');
-        $('.wiki-nav').removeClass('hidden');
-
-        bodyElement.trigger('toggleMenu', [false]);
-    });
-    $('.panel-collapsed .wiki-panel-header').on('click', function () {
-        var el = $(this).parent();
-        var toggle = el.closest('.panel-toggle');
-        toggle.children('.wiki-panel').removeClass('hidden');
-        el.addClass('hidden');
-        panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
-        panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
-        $('.wiki-nav').addClass('hidden');
-        bodyElement.trigger('toggleMenu', [true]);
-    });
 
     // Tooltip
-    $('[data-toggle="tooltip"]').tooltip()
-});
+//    $('[data-toggle="tooltip"]').tooltip()
+//});
