@@ -974,7 +974,7 @@ function _fangornToolbar () {
         generalButtons.push(generalIcons.search.template.call(tb));
     }
     if (tb.options.iconState.mode === 'bar'){                   
-        return m('.row.tb-header-row', [
+        return m('.row.tb-header-row', { 'data-mode' : 'bar'}, [
                 m('.col-xs-12', [   
                         m('i.m-r-sm','Select rows for further actions.'),
                         m('.fangorn-toolbar.pull-right', 
@@ -991,7 +991,7 @@ function _fangornToolbar () {
             ]);  
     }
     if(tb.options.iconState.mode === 'search'){
-        return m('.row.tb-header-row', [
+        return m('.row.tb-header-row', { 'data-mode' : 'search'},  [
                 m('', [
                         m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
                         m('.col-xs-1', 
