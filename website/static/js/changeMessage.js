@@ -1,3 +1,8 @@
+/**
+ * ViewModel mixin for displaying form input help messages.
+ * Adds message and messageClass observables that can be changed with the
+ * changeMessage method.
+ */
 'use strict';
 var ko = require('knockout');
 var oop = require('js/oop');
