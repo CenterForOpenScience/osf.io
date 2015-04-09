@@ -102,7 +102,7 @@ function ViewModel(url) {
                 'problem persists.';
         })
     };
-    
+
     self.savedDatasetUrl = ko.pureComputed(function() {
         return (self.urls()) ? self.urls().datasetPrefix + self.savedDatasetDoi() : null;
     });
