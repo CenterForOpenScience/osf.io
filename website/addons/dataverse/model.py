@@ -11,7 +11,7 @@ from website.security import encrypt, decrypt
 from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
-
+from website.addons.dataverse.client import connect_from_settings_or_401
 
 logging.getLogger('sword2').setLevel(logging.WARNING)
 
@@ -95,7 +95,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
     dataset_doi = fields.StringField()
-    dataset_id = fields.StringField()
+    _dataset_id = fields.StringField()
     dataset = fields.StringField()
 
     # Legacy fields
@@ -105,6 +105,20 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
     )
+
+    @property
+    def dataset_id(self):
+        if self._dataset_id is None:
+            connection = connect_from_settings_or_401(self.user_settings)
+            dataverse = connection.get_dataverse(self.dataverse_alias)
+            dataset = dataverse.get_dataset_by_doi(self.dataset_doi)
+            self._dataset_id = dataset.id
+            self.save()
+        return self._dataset_id
+
+    @dataset_id.setter
+    def dataset_id(self, value):
+        self._dataset_id = value
 
     @property
     def complete(self):
