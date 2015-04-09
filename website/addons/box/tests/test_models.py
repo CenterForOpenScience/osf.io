@@ -280,7 +280,8 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_in('project', params)
         assert_in('folder_id', params)
 
-    def test_set_folder(self):
+    @mock.patch("website.addons.box.model.BoxNodeSettings._update_folder_data")
+    def test_set_folder(self, mock_update_folder):
         folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
