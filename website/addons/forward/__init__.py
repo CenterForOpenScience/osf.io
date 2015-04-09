@@ -32,5 +32,5 @@ INCLUDE_CSS = {
 }
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'template', 'forward_node_settings.mako')
+NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'forward_node_settings.mako')
 USER_SETTINGS_TEMPLATE = None  # has no user-facing settings
