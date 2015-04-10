@@ -94,8 +94,6 @@ function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     return m('span', { 'class' : css , ondblclick : function(event){ 
-            console.log(tb.pressedKey);
-
             if(commandKeys.indexOf(tb.pressedKey) !== -1) {
                 window.open(item.data.urls.fetch, '_blank');
             } else {
@@ -113,8 +111,14 @@ function _poTitleColumn(item) {
  * @this Treebeard.controller Check Treebeard API for methods available
  * @private
  */
-function _gotoEvent(event, item, col) {
-    window.open(item.data.urls.fetch, '_self');
+function _gotoEvent(event, item) {
+    var tb = this; 
+    if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+        window.open(item.data.urls.fetch, '_blank');
+    } else {
+        window.open(item.data.urls.fetch, '_self');
+    }
+
 }
 
 /**
