@@ -36,7 +36,7 @@
                     <a data-bind="attr.href: urls().files">
                         {{folderName}}
                     </a>
-                    <span data-bind="if: folder().path === null" class="text-muted">
+                    <span data-bind="if: folder().path == null" class="text-muted">
                         None
                     </span>
                 </p>
