@@ -329,10 +329,10 @@ class NodeLog(StoredObject):
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
 
-    FILE_ADDED = 'addon_file_added'
     FILE_MOVED = 'addon_file_moved'
+    FILE_COPIED = 'addon_file_copied'
 
-    FILE_COPIED = 'file_copied'
+    FILE_ADDED = 'file_added'
     FILE_UPDATED = 'file_updated'
     FILE_REMOVED = 'file_removed'
     FILE_RESTORED = 'file_restored'
