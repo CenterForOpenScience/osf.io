@@ -161,7 +161,7 @@ var FolderPickerViewModel = oop.defclass({
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder) ? folder.name : 'None';
+            return (nodeHasAuth && folder) ? folder.name : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
