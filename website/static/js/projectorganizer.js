@@ -121,6 +121,7 @@ function _gotoEvent(event, item) {
 
 }
 
+
 /**
  * Watching for escape key press
  * @param {String} nodeID Unique ID of the node
@@ -875,15 +876,21 @@ function _cleanupMithril() {
 }
 
 /** 
- * Toolbar icon templates 
+ * Toolbar icon templates and click functions 
  *
  */
+
+ function _toolbarDismissEvent ( ){
+    var tb = this;
+    $('.tb-header-row .twitter-typeahead').remove();
+    tb.options.iconState.mode = 'bar'; tb.resetFilter(); 
+ }
+
 function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
             onclick : function () { 
-                $('.tb-header-row .twitter-typeahead').remove();
-                tb.options.iconState.mode = 'bar'; tb.resetFilter(); 
+                _toolbarDismissEvent.call(tb);
             }
         },
         m('i.fa.fa-times')
@@ -901,62 +908,73 @@ function toolbarDismissIcon (){
         m('span.hidden-xs', 'Search')
     ]);
  }
+ 
+ function _addFolderEvent () {
+    var tb = this;
+    var val = $.trim($('#addNewFolder').val());
+    if(tb.multiselected.length !== 1 || val.length < 1){
+        tb.options.iconState.mode = 'bar'; 
+        return; 
+    }
+    var item = tb.multiselected[0];
+    var theItem = item.data;
+    var url = '/api/v1/folder/',
+    postData = {
+        node_id: theItem.node_id,
+        title: val
+    };
+    theItem.expand = false;
+    saveExpandState(theItem, function () {
+        var putAction = $osf.putJSON(url, postData);
+        putAction.done(function () {
+            tb.updateFolder(null, item);
+            triggerClickOnItem.call(tb, item);
+        }).fail($osf.handleJSONError);
+
+    });
+    tb.options.iconState.mode = 'bar'; 
+ }
+
  function addFolderButton (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', { 
             onclick : function () { 
-                var val = $.trim($('#addNewFolder').val());
-                if(tb.multiselected.length !== 1 || val.length < 1){
-                    tb.options.iconState.mode = 'bar'; 
-                    return; 
-                }
-                var item = tb.multiselected[0];
-                var theItem = item.data;
-                var url = '/api/v1/folder/',
-                postData = {
-                    node_id: theItem.node_id,
-                    title: val
-                };
-                theItem.expand = false;
-                saveExpandState(theItem, function () {
-                    var putAction = $osf.putJSON(url, postData);
-                    putAction.done(function () {
-                        tb.updateFolder(null, item);
-                        triggerClickOnItem.call(tb, item);
-                    }).fail($osf.handleJSONError);
-
-                });
-                tb.options.iconState.mode = 'bar'; 
+                _addFolderEvent.call(tb);
             }
         }, [
         m('i.fa.fa-plus'),
         m('span.hidden-xs', 'Add')
     ]);
  }
+
+function _renameEvent () {
+    var tb = this;
+    var val = $.trim($('#renameInput').val());
+    if(tb.multiselected.length !== 1 || val.length < 1){
+        tb.options.iconState.mode = 'bar'; 
+        return; 
+    }
+    var item = tb.multiselected[0];
+    var theItem = item.data;
+    var url = theItem.apiURL + 'edit/',
+        postAction,
+        postData = {
+            name: 'title',
+            value: val
+        };
+    postAction = $osf.postJSON(url, postData);
+    postAction.done(function () {
+        tb.updateFolder(null, tb.find(1));
+        // Also update every
+    }).fail($osf.handleJSONError);
+    tb.options.iconState.mode = 'bar'; 
+}
+
  function renameButton (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', { 
             onclick : function () { 
-                var val = $.trim($('#renameInput').val());
-                if(tb.multiselected.length !== 1 || val.length < 1){
-                    tb.options.iconState.mode = 'bar'; 
-                    return; 
-                }
-                var item = tb.multiselected[0];
-                var theItem = item.data;
-                var url = theItem.apiURL + 'edit/',
-                    postAction,
-                    postData = {
-                        name: 'title',
-                        value: val
-                    };
-                postAction = $osf.postJSON(url, postData);
-                postAction.done(function () {
-                    tb.updateFolder(null, tb.find(1));
-                    // Also update every
-                }).fail($osf.handleJSONError);
-                tb.options.iconState.mode = 'bar'; 
-
+                _renameEvent.call(tb);
             }
         }, [
         m('i.fa.fa-pencil'),
