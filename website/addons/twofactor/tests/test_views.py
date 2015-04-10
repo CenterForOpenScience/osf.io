@@ -1,6 +1,8 @@
 import mock
 from nose.tools import *  # noqa
 
+import httplib as http
+
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
 from website.app import init_app
@@ -101,15 +103,29 @@ class TestViews(OsfTestCase):
     def test_twofactor_settings_get_disabled(self):
         user = AuthUserFactory()
         url = api_url_for('twofactor_settings_get')
-        res = self.app.get(url, auth=user.auth)        
+        res = self.app.get(url, auth=user.auth)
         assert_equal(res.json['result'], serialize_settings(Auth(user)))
 
     def test_twofactor_enable_disabled(self):
         user = AuthUserFactory()
         url = api_url_for('twofactor_enable')
-        res = self.app.post(url, {}, auth=user.auth)
-
-        import ipdb; ipdb.set_trace()
+        self.app.post(url, {}, auth=user.auth)
+        user.reload()
+        assert_true(user.has_addon('twofactor'))
 
     def test_twofactor_enable_enabled(self):
-        pass
+        url = api_url_for('twofactor_enable')
+        res = self.app.post(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_twofactor_disable_enabled(self):
+        url = api_url_for('twofactor_disable')
+        res = self.app.delete(url, auth=self.user.auth)
+        assert_equal(res.json, {})
+        assert_equal(res.status_code, http.OK)
+
+    def test_twofactor_disable_disabled(self):
+        user = AuthUserFactory()
+        url = api_url_for('twofactor_disable')
+        res = self.app.delete(url, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)

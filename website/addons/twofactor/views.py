@@ -59,13 +59,15 @@ def twofactor_settings_get(auth, *args, **kwargs):
 
 @must_be_logged_in
 def twofactor_enable(auth, *args, **kwargs):
-    import ipdb; ipdb.set_trace()
-    user_addon = auth.user.get_addon('twofactor')
-    if user_addon:
+    user = auth.user
+
+    if user.has_addon('twofactor'):
         return HTTPError(http.BAD_REQUEST, message='This user already has twofactor enabled')
 
-    user_addon = auth.user.get_or_add_addon('twofactor', auth=auth)
-    auth.user.save()
+    user.add_addon('twofactor', auth=auth)
+    user_addon = user.get_addon('twofactor')
+    user_addon.save()
+    user.save()
     return {
         'result': serialize_settings(auth),
     }
