@@ -61,6 +61,7 @@ def osf_storage_download_file_hook(node_addon, payload, **kwargs):
 
     return {
         'data': {
+            'name': storage_node.name,
             'path': version.location_hash,
         },
         'settings': {
@@ -193,7 +194,9 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
         raise HTTPError(httplib.GONE)
 
     if fileobj.kind == 'file':
-        return fileobj.serialized()
+        data = fileobj.serialized()
+        data['fullPath'] = fileobj.materialized_path()
+        return data
 
     return [
         child.serialized()
