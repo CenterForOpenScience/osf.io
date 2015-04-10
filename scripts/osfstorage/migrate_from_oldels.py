@@ -3,6 +3,7 @@ import logging
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+from modularodm.storage.base import KeyExistsException
 
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
@@ -19,13 +20,20 @@ logger = logging.getLogger(__name__)
 def migrate_download_counts(node, old, new, dry=True):
     collection = database['pagecounters']
 
-    new_id = ':'.join(['download', node._id, new._id])
+    if dry:
+        new_id = ':'.join(['download', node._id, 'new id'])
+    else:
+        new_id = ':'.join(['download', node._id, new._id])
+
     old_id = ':'.join(['download', node._id, old.path])
 
     for doc in collection.find({'_id': {'$regex': '^{}(:\d)?'.format(old_id)}}):
         new_doc = copy.deep(doc)
-        doc['_id'] = doc['_id'].replace(old_id, new_id)
-        collection.update(doc, new_doc)
+        new_doc['_id'] = doc['_id'].replace(old_id, new_id)
+
+        logger.info('{} -> {}'.format(doc, new_doc))
+        if not dry:
+            collection.update(doc, new_doc)
 
 
 def migrate_node_settings(node_settings, dry=True):
@@ -38,9 +46,13 @@ def migrate_file(node, old, parent, dry=True):
     assert isinstance(old, oldels.OsfStorageFileRecord)
     logger.info('Creating new child {}'.format(old.name))
     if not dry:
-        new = parent.append_file(old.name)
+        try:
+            new = parent.append_file(old.name)
+        except KeyExistsException:
+            logger.info('{!r} has already been migrated'.format(old))
         new.versions = old.versions
         new.is_deleted = old.is_deleted
+        new.save()
     else:
         new = None
 
@@ -61,8 +73,10 @@ def migrate_log(node, old, new, dry=True):
     logger.info('Migrating {} logs for {!r} in {!r}'.format(res.count(), old, node))
 
     for log in res:
-        logger.info('{!r} {} -> {}'.format(log, log.params['path'], new.materialized_path()))
-        if not dry:
+        if dry:
+            logger.info('{!r} {} -> {}'.format(log, log.params['path'], 'New path'))
+        else:
+            logger.info('{!r} {} -> {}'.format(log, log.params['path'], new.materialized_path()))
             log.params['path'] = new.materialized_path()
             url = node.web_url_for(
                 'addon_view_or_download_file',
@@ -84,7 +98,7 @@ def migrate_guid(node, old, new, dry=True):
         )
         logger.info('Migrating file guid {}'.format(guid._id))
     except NoResultsFound:
-        logger.info('No guids found for {}'.format(new.path))
+        logger.info('No guids found for {}'.format(old.path))
         return
 
     if not dry:
@@ -103,6 +117,9 @@ def migrate_children(node_settings, dry=True):
 def main(dry=True):
     if not dry:
         scripts_utils.add_file_logger(logger, __file__)
+        logger.info('Not running in dry mode, changes WILL be made')
+    else:
+        logger.info('Running in dry mode, changes NOT will be made')
 
     for node_settings in model.OsfStorageNodeSettings.find():
         try:
@@ -117,5 +134,5 @@ def main(dry=True):
 if __name__ == '__main__':
     import sys
     dry = 'dry' in sys.argv
-    init_app(set_backends=True, routes=False)
-    main(dry=dry)
+    with init_app(set_backends=True, routes=True).test_request_context():
+        main(dry=dry)
