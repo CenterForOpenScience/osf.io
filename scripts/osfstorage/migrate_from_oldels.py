@@ -18,22 +18,22 @@ logger = logging.getLogger(__name__)
 
 
 def migrate_download_counts(node, old, new, dry=True):
-    collection = database['pagecounters']
-
     if dry:
         new_id = ':'.join(['download', node._id, 'new id'])
     else:
         new_id = ':'.join(['download', node._id, new._id])
 
-    old_id = ':'.join(['download', node._id, old.path])
+    old_id = ':'.join(['download', node._id, old.path.replace('.', '_').replace('$', '_')])
 
-    for doc in collection.find({'_id': {'$regex': '^{}(:\d)?'.format(old_id)}}):
-        new_doc = copy.deep(doc)
+    for doc in database.pagecounters.find({'_id': {'$regex': '^{}(:\d)?'.format(old_id)}}):
+        new_doc = copy.deepcopy(doc)
+        assert old_id in doc['_id']
         new_doc['_id'] = doc['_id'].replace(old_id, new_id)
 
         logger.info('{} -> {}'.format(doc, new_doc))
         if not dry:
-            collection.update(doc, new_doc)
+            database.pagecounters.insert(new_doc)
+            database.pagecounters.remove(doc)
 
 
 def migrate_node_settings(node_settings, dry=True):
