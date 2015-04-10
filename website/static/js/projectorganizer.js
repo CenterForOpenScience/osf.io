@@ -1313,30 +1313,12 @@ function _poDefineToolbar (item){
     if(item.data.isFolder && !item.data.isDashboard && !item.data.isSmartFolder){
         buttons.push(
         { name : 'deleteFolder', template : function(){
-            return m('.fangorn-toolbar-icon.text-primary', {
+            return m('#deleteFolder.fangorn-toolbar-icon.text-primary', {
                     'data-toggle' : 'tooltip',
                     'title':  'Deletes a collection.',
                     'data-placement' : 'bottom',
                     onclick : function(event) {  
-                        bootbox.confirm({
-                            title: 'Delete this folder?',
-                            message: 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
-                                'inside this one. You will not delete any projects in this Collection.',
-                            callback: function (result) {
-                                if (result !== null && result) {
-                                    var url = '/api/v1/folder/' + theItem.node_id,
-                                        deleteAction = $.ajax({
-                                            type: 'DELETE',
-                                            url: url,
-                                            contentType: 'application/json',
-                                            dataType: 'json'
-                                        });
-                                    deleteAction.done(function () {
-                                        tb.updateFolder(null, item.parent());
-                                    });
-                                }
-                            }
-                        });
+                        _deleteFolder.call(tb, item, theItem);
                     }
                 }, [
                 m('i.fa.fa-trash'),
@@ -1348,6 +1330,30 @@ function _poDefineToolbar (item){
 
 
    item.icons = buttons;
+}
+
+function _deleteFolder (item) {
+    var tb = this;
+    var theItem = item.data;
+    bootbox.confirm({
+        title: 'Delete this folder?',
+        message: 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
+            'inside this one. You will not delete any projects in this Collection.',
+        callback: function (result) {
+            if (result !== null && result) {
+                var url = '/api/v1/folder/' + theItem.node_id,
+                    deleteAction = $.ajax({
+                        type: 'DELETE',
+                        url: url,
+                        contentType: 'application/json',
+                        dataType: 'json'
+                    });
+                deleteAction.done(function () {
+                    tb.updateFolder(null, item.parent());
+                });
+            }
+        }
+    });
 }
 
 //
