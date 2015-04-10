@@ -41,6 +41,7 @@ module.exports = {
         // Mimics loading jquery and jquery-ui with script tags
         'website/static/vendor/bower_components/jquery/dist/jquery.js',
         'website/static/vendor/bower_components/jquery-ui/ui/jquery-ui.js',
+        'website/static/vendor/bower_components/bootstrap/dist/js/bootstrap.js',
         // Only need to target one file, which will load all files in tests/ that
         // match *.test.js, including addons tests
         'website/static/js/tests/tests.webpack.js',
@@ -60,4 +61,4 @@ module.exports = {
     browserDisconnectTimeout : 100000, // default 2000
     browserDisconnectTolerance : 1, // default 0
     browserNoActivityTimeout : 600000 //default 10000
-}
+};

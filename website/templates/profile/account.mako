@@ -70,9 +70,13 @@
                                             <div class="form-group">
                                                 <input data-bind="value: emailInput" class="form-control">
                                             </div>
-                                        <input type="submit" value="Add Email" class="btn btn-default">
+                                            <input type="submit" value="Add Email" class="btn btn-default">
                                         </form>
+                                        <div class="help-block">
+                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                                        </div>
                                     </td>
+
                                 </tr>
                             </tbody>
                         </table>

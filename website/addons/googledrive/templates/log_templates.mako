@@ -22,7 +22,7 @@ Google Drive in {{ nodeType }}
 
 
 <script type="text/html" id="googledrive_folder_selected">
-linked Google Drive folder <span class="overflow">{{ params.folder }}</span> to {{ nodeType }}
+linked Google Drive folder /<span class="overflow">{{ params.folder === '/ (Full Google Drive)' ? ' (Full Google Drive)' : params.folder}}</span> to {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
