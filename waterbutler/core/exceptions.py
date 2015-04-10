@@ -69,6 +69,10 @@ class NotFoundError(ProviderError):
             code=http.client.NOT_FOUND,
         )
 
+class InvalidPathError(ProviderError):
+    def __init__(self, message):
+        super().__init__(message, code=http.client.BAD_REQUEST)
+
 
 @asyncio.coroutine
 def exception_from_response(resp, error=ProviderError, **kwargs):
