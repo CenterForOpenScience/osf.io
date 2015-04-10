@@ -25,9 +25,10 @@ def migrate_download_counts(node, old, new, dry=True):
     else:
         new_id = ':'.join(['download', node._id, new._id])
 
-    old_id = ':'.join(['download', node._id, re.escape(old.path.replace('.', '_').replace('$', '_'))])
+    old_id = ':'.join(['download', node._id, old.path.replace('.', '_').replace('$', '_')])
+    escaped_id = ':'.join(['download', node._id, re.escape(old.path.replace('.', '_').replace('$', '_'))])
 
-    for doc in database.pagecounters.find({'_id': {'$regex': '^{}(:\d)?'.format(old_id)}}):
+    for doc in database.pagecounters.find({'_id': {'$regex': '^{}(:\d)?'.format(escaped_id)}}):
         new_doc = copy.deepcopy(doc)
         assert old_id in doc['_id']
         new_doc['_id'] = doc['_id'].replace(old_id, new_id)
