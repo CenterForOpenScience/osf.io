@@ -35,8 +35,8 @@ class ODMFilterMixin(object):
 
     Subclasses must define `get_default_odm_query()`.
     """
-    TRUTHY = set(['true', 'True'])
-    FALSY = set(['false', 'False'])
+    TRUTHY = set(['true', 'True', 1, '1'])
+    FALSY = set(['false', 'False', 0, '0'])
 
     def get_default_odm_query(self):
         raise NotImplementedError('Must define get_default_odm_query')
