@@ -98,17 +98,17 @@
                         </form>
                     </div>
                 </div>
-            </div>
-            <div class="panel panel-default">
-              <div class="panel-heading"><h3 class="panel-title">Other Settings</h3></div>
-              <div class="panel-body">                
-                % for addon in addons:
-                ${render_user_settings(addon) }
-                % if not loop.last:
-                <hr />
-                % endif              
-                % endfor              
-              </div>
+                <div class="panel panel-default">
+                  <div class="panel-heading"><h3 class="panel-title">Other Settings</h3></div>
+                  <div class="panel-body">                
+                    % for addon in addons:
+                    ${render_user_settings(addon) }
+                    % if not loop.last:
+                    <hr />
+                    % endif              
+                    % endfor              
+                  </div>
+                </div>
             </div>
         </div>
     </div>
