@@ -33,10 +33,10 @@
             <div class="col-md-12">
                 <p>
                     <strong>Current Folder:</strong>
-                    <a data-bind="attr.href: urls().files">
+                    <a data-bind="ifnot: folderName() === '', attr.href: urls().files">
                         {{folderName}}
                     </a>
-                    <span data-bind="if: folder().path == null" class="text-muted">
+                    <span data-bind="if: folderName() === ''" class="text-muted">
                         None
                     </span>
                 </p>

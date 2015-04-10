@@ -157,12 +157,12 @@ var FolderPickerViewModel = oop.defclass({
             var loaded = self.loadedSettings();
             return loaded && !userHasAuth && !nodeHasAuth;
         });
-
+        
         /** Computed functions for the linked and selected folders' display text.*/
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder) ? folder.name : '';
+            return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
