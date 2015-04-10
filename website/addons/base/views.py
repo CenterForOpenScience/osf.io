@@ -206,16 +206,16 @@ def create_waterbutler_log(payload, **kwargs):
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
         for bundle in ('source', 'destination'):
             for key in ('provider', 'path', 'name'):
-                if key in payload[bundle]:
+                if key not in payload[bundle]:
                     raise HTTPError(httplib.BAD_REQUEST)
 
         source = node.get_addon(payload['source']['provider'])
         destination = node.get_addon(payload['destination']['provider'])
 
-        bundle['source']['addon'] = source.full_name
-        bundle['destination']['addon'] = destination.full_name
+        payload['source']['addon'] = source.config.full_name
+        payload['destination']['addon'] = destination.config.full_name
 
-        bundle.update({
+        payload.update({
             'node': node._id,
             'project': node.parent_id,
         })
@@ -223,7 +223,7 @@ def create_waterbutler_log(payload, **kwargs):
         node.add_log(
             action=action,
             auth=auth,
-            params=bundle
+            params=payload
         )
     else:
         try:
