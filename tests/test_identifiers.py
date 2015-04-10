@@ -105,13 +105,14 @@ class TestIdentifierViews(OsfTestCase):
             self.node.api_url_for('node_identifiers_post'),
             auth=self.user.auth,
         )
+        self.node.reload()
         assert_equal(
             res.json['doi'],
-            '{0}{1}'.format(settings.DOI_NAMESPACE.replace('doi:', ''), identifier)
+            self.node.get_identifier_value('doi')
         )
         assert_equal(
             res.json['ark'],
-            '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), identifier),
+            self.node.get_identifier_value('ark')
         )
         assert_equal(res.status_code, 201)
 
@@ -137,13 +138,14 @@ class TestIdentifierViews(OsfTestCase):
             self.node.api_url_for('node_identifiers_post'),
             auth=self.user.auth,
         )
+        self.node.reload()
         assert_equal(
             res.json['doi'],
-            '{0}{1}'.format(settings.DOI_NAMESPACE.replace('doi:', ''), identifier)
+            self.node.get_identifier_value('doi')
         )
         assert_equal(
             res.json['ark'],
-            '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), identifier),
+            self.node.get_identifier_value('ark')
         )
         assert_equal(res.status_code, 201)
 

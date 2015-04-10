@@ -129,7 +129,7 @@ var UserProfileClient = oop.defclass({
                 var email = new UserEmail({
                     address: emailData.address,
                     isPrimary: emailData.primary,
-                    isConfirmed: emailData.isConfirmed,
+                    isConfirmed: emailData.confirmed
                 });
                 return email;
             })
