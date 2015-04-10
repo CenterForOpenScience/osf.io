@@ -391,7 +391,7 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         log_params = last_log.params
 
         assert_equal(last_log.user, user_settings.owner)
-        assert_equal(log_params['folder'], node_settings.folder_path)
+        assert_equal(log_params['folder'], node_settings.folder_name)
         assert_equal(last_log.action, 'googledrive_node_authorized')
         assert_equal(log_params['node'], node_settings.owner._primary_key)
 

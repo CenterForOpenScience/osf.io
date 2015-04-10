@@ -16,10 +16,12 @@ from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
+from framework.auth.views import send_confirm_email
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.models import User
@@ -86,20 +88,89 @@ def update_user(auth):
     data = request.get_json()
 
     # TODO: Expand this to support other user attributes
-    if 'timezone' in data:
-        if data['timezone']:
-            user.timezone = data['timezone']
+
+    ##########
+    # Emails #
+    ##########
+
+    if 'emails' in data:
+        # removals
+        removed_emails = [
+            each
+            for each in user.emails + user.unconfirmed_emails
+            if each not in [x['address'].strip().lower()
+                            for x in data['emails']]
+        ]
+
+        for address in removed_emails:
+            if address in user.emails:
+                user.remove_email(address)
+            user.remove_unconfirmed_email(address)
+
+        # additions
+        added_emails = [
+            each['address'].strip().lower()
+            for each in data['emails']
+            if each['address'].strip().lower() not in user.emails
+            and each['address'].strip().lower() not in user.unconfirmed_emails
+        ]
+
+        for address in added_emails:
+            try:
+                user.add_unconfirmed_email(address)
+            except (ValidationError, ValueError):
+                continue
+
+            # TODO: This setting is now named incorrectly.
+            if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                send_confirm_email(user, email=address)
+
+        ############
+        # Username #
+        ############
+
+        # get the first email that is set to primary and has an address
+        primary_email = next(
+            (
+                each for each in data['emails']
+                # email is primary
+                if each.get('primary')
+                # an address is specified (can't trust those sneaky users!)
+                and each.get('address')
+            )
+        )
+
+        if primary_email:
+            username = primary_email['address'].strip().lower()
+
+        # make sure the new username has already been confirmed
+        if username and username in user.emails and username != user.username:
+            mails.send_mail(user.username,
+                            mails.PRIMARY_EMAIL_CHANGED,
+                            user=user,
+                            new_address=username)
+            user.username = username
+
+    ###################
+    # Timezone/Locale #
+    ###################
+
     if 'locale' in data:
         if data['locale']:
             locale = data['locale'].replace('-', '_')
             user.locale = locale
+    # TODO: Refactor to something like:
+    #   user.timezone = data.get('timezone', user.timezone)
+    if 'timezone' in data:
+        if data['timezone']:
+            user.timezone = data['timezone']
 
     user.save()
 
-    return {}
+    return _profile_view(user)
 
 
-def _profile_view(profile, is_profile):
+def _profile_view(profile, is_profile=False):
     # TODO: Fix circular import
     from website.addons.badges.util import get_sorted_user_badges
 
