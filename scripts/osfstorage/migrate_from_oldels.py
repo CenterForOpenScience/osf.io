@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import re
 import copy
 import logging
 
@@ -24,7 +25,7 @@ def migrate_download_counts(node, old, new, dry=True):
     else:
         new_id = ':'.join(['download', node._id, new._id])
 
-    old_id = ':'.join(['download', node._id, old.path.replace('.', '_').replace('$', '_')])
+    old_id = ':'.join(['download', node._id, re.escape(old.path.replace('.', '_').replace('$', '_'))])
 
     for doc in database.pagecounters.find({'_id': {'$regex': '^{}(:\d)?'.format(old_id)}}):
         new_doc = copy.deepcopy(doc)
@@ -51,6 +52,7 @@ def migrate_file(node, old, parent, dry=True):
             new = parent.append_file(old.name)
         except KeyExistsException:
             logger.info('{!r} has already been migrated'.format(old))
+            return
         new.versions = old.versions
         new.is_deleted = old.is_deleted
         new.save()
