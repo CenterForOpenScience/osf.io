@@ -1,7 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer
-from api.base.utils import absolute_reverse
+from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import Node
 from framework.auth.core import Auth
 
@@ -15,31 +14,23 @@ class NodeSerializer(JSONAPISerializer):
     category = ser.ChoiceField(choices=Node.CATEGORY_MAP.keys())
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
+
+    links = LinksField({
+        'html': 'absolute_url',
+        'children': {
+            'related': Link('nodes:node-children', pk='<pk>')
+        },
+        'contributors': {
+            'related': Link('nodes:node-contributors', pk='<pk>')
+        },
+        'registrations': {
+            'related': Link('nodes:node-registrations', pk='<pk>')
+        },
+    })
     # TODO: finish me
 
     class Meta:
         type_ = 'nodes'
-
-    def get_links(self, obj):
-        ret = {
-            'html': obj.absolute_url,
-            'children': {
-                'related': absolute_reverse('nodes:node-children', kwargs=dict(pk=obj.pk))
-            },
-            'contributors': {
-                'related': absolute_reverse('nodes:node-contributors', kwargs=dict(pk=obj.pk))
-            },
-            'registrations': {
-                'related': absolute_reverse('nodes:node-registrations', kwargs=dict(pk=obj.pk))
-            },
-        }
-        parent = obj.parent_node
-        if parent:
-            parent_url = absolute_reverse('nodes:node-detail', kwargs=dict(pk=parent.pk))
-            ret['parent'] = {
-                'related': parent_url
-            }
-        return ret
 
     def create(self, validated_data):
         node = Node(**validated_data)
