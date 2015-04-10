@@ -264,7 +264,9 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     except KeyExistsException:
         folder = parent.find_child_by_name(child, kind='folder')
         if not folder.is_deleted:
-            raise HTTPError(httplib.CONFLICT)
+            raise HTTPError(httplib.CONFLICT, data={
+                'message': 'Folder "{}" already exists.'.format(path)
+            })
         folder.undelete(Auth(user), recurse=False)
     folder.log(Auth(user), NodeLog.FOLDER_CREATED)
 
