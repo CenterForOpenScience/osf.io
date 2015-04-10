@@ -4,7 +4,7 @@
     <tr>
         <td width="40" class="icon" valign="middle" style="border-collapse: collapse;font-size: 24px;color: #999;"> <img class="avatar" src="${gravatar_url}" width="48" alt="avatar" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;border-radius: 25px;"> </td>
         <td style="line-height: 17px;border-collapse: collapse;">
-            <span class="person" style="font-weight: bold;">${commenter.fullname} </span>
+            <span class="person" style="font-weight: bold;">${user.fullname} </span>
             <span class="timestamp" style="color: grey;"> at ${localized_timestamp}: </span>
             <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">"${content}"</span>
         </td>

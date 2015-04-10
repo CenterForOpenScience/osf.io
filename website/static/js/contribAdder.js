@@ -134,6 +134,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
     },
     importFromParent: function() {
+        var self = this;
         self.notification(false);
         $.getJSON(
             nodeApiUrl + 'get_contributors_from_parent/', {},
