@@ -197,7 +197,7 @@ class User(GuidStoredObject, AddonModelMixin):
         'github': u'http://github.com/{}',
         'scholar': u'http://scholar.google.com/citation?user={}',
         'twitter': u'http://twitter.com/{}',
-        'personal': u'{}',
+        'profileWebsites': u'[{}]',
         'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
@@ -304,7 +304,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Social links
     # Format: {
-    #     'personal': <personal site>,
+    #     'profileWebsites': <profile websites>,
     #     'twitter': <twitter id>,
     # }
     social = fields.DictionaryField(validate=validate_social)
