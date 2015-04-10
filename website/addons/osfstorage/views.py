@@ -109,11 +109,12 @@ def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     except ValueError:
         parent, (child, ) = node_addon.root_node, path
 
+    if not isinstance(parent, model.OsfStorageFileNode):
+        parent = model.OsfStorageFileNode.get_folder(parent, node_addon)
+
     try:
-        created, record = False, node_addon.root_node.find_child_by_name(child)
+        created, record = False, parent.find_child_by_name(child)
     except NoResultsFound:
-        if not isinstance(parent, model.OsfStorageFileNode):
-            parent = model.OsfStorageFileNode.get_folder(parent, node_addon)
         created, record = True, parent.append_file(child)
 
     code = httplib.CREATED if created else httplib.OK
