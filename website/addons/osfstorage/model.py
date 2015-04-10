@@ -428,3 +428,12 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
+
+    @property
+    def extra(self):
+        if not self._metadata_cache:
+            return {}
+
+        return {
+            'fullPath': self._metadata_cache['extra']['fullPath'],
+        }
