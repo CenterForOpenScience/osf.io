@@ -882,9 +882,12 @@ class TestSendEmails(OsfTestCase):
 
     @mock.patch('website.notifications.emails.send')
     def test_check_parent(self, send):
-        emails.check_parent(self.node._id, 'comments', [])
+        time_now = datetime.datetime.utcnow()
+        project = factories.ProjectFactory()
+        emails.check_parent(self.node._id, 'comments', [], self.user, project, time_now)
         assert_true(send.called)
-        send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments')
+        send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments',
+                                self.user, project, time_now)
 
     @mock.patch('website.notifications.emails.send')
     def test_check_parent_does_not_send_if_notification_type_is_none(self, mock_send):
