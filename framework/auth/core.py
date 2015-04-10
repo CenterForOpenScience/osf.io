@@ -82,13 +82,13 @@ def validate_year(item):
 
 validate_url = URLValidator()
 def validate_personal_site(value):
+    print(value)
     if value:
         try:
             validate_url(value)
         except ValidationError:
             # Reraise with a better message
             raise ValidationError('Invalid personal URL.')
-
 
 def validate_social(value):
     validate_personal_site(value.get('personal'))
@@ -304,7 +304,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Social links
     # Format: {
-    #     'profileWebsites': <profile websites>,
+    #     'profileWebsites': <profile website>,
     #     'twitter': <twitter id>,
     # }
     social = fields.DictionaryField(validate=validate_social)

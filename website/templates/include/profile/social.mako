@@ -23,7 +23,7 @@
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeSite,
+                                data-bind="click: $parent.removeWebsite,
                                            visible: $parent.canRemove"
                             >Remove</a>
                     </div>
@@ -44,7 +44,7 @@
             </div>
 
             <div>
-                <a class="btn btn-default" data-bind="click: addContent">
+                <a class="btn btn-default" data-bind="click: addWebsite">
                     Add another
                 </a>
             </div>
