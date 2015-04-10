@@ -148,17 +148,17 @@ class WaterButlerPath:
         :param str path: WaterButler path
         """
         if not path:
-            raise ValueError('Must specify path')
+            raise exceptions.InvalidPathError('Must specify path')
         if not path.startswith('/'):
-            raise ValueError('Invalid path \'{}\' specified'.format(path))
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(path))
         if '//' in path:
-            raise ValueError('Invalid path \'{}\' specified'.format(path))
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(path))
         # Do not allow path manipulation via shortcuts, e.g. '..'
         absolute_path = os.path.abspath(path)
         if not path == '/' and path.endswith('/'):
             absolute_path += '/'
         if not path == absolute_path:
-            raise ValueError('Invalid path \'{}\' specified'.format(absolute_path))
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(absolute_path))
 
     def validate_folder(self):
         """Raise CreateFolderErrors if the folder path is invalid
