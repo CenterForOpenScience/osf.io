@@ -77,7 +77,9 @@ signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
 write_permissions_revoked = signals.signal('write-permissions-revoked')
-wiki_updated = signals.signal('wiki-updated')
+wiki_changed = signals.signal('wiki-changed')
+wiki_renamed = signals.signal('wiki-renamed')
+wiki_deleted = signals.signal('wiki-deleted')
 
 
 class MetaSchema(StoredObject):
@@ -2301,12 +2303,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
         new_page.save()
 
-        wiki_updated.send(
+        wiki_changed.send(
             name,
-            action="changed",
-            version=version,
             user=auth.user,
-            node=self
+            node=self,
+            version=version
         )
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
@@ -2378,11 +2379,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
                 del self.wiki_private_uuids[key]
 
-        wiki_updated.send(
+        wiki_renamed.send(
             name,
             user=auth.user,
             node=self,
-            action="renamed",
             new_name=new_name
         )
 
@@ -2408,11 +2408,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         del self.wiki_pages_current[key]
 
-        wiki_updated.send(
+        wiki_deleted.send(
             name,
             user=auth.user,
-            node=self,
-            action="deleted"
+            node=self
         )
 
         self.add_log(

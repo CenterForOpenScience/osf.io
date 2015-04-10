@@ -11,4 +11,7 @@ ALL_SIGNALS = [
     auth.user_confirmed,
     auth.user_email_removed,
     auth.user_registered,
+    project.wiki_deleted,
+    project.wiki_changed,
+    project.wiki_renamed,
 ]
