@@ -6,32 +6,9 @@ from flask import request
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
-from website.util import api_url_for
 from website.project.decorators import must_have_addon
 
-def serialize_urls(user_addon):
-    return {
-        'enable': api_url_for('twofactor_enable'),
-        'disable': api_url_for('twofactor_disable'),
-        'settings': api_url_for('twofactor_settings_put'),
-        'otpauth': user_addon.otpauth_url if user_addon else '',
-    }
-
-def serialize_settings(auth):
-    user_addon = auth.user.get_addon('twofactor')
-    result = {}
-    if user_addon:
-        result = user_addon.to_json(auth.user)
-    else:
-        result = {
-            'is_enabled': False,
-            'is_confirmed': False,
-            'secret': None,
-            'drift': None,
-        }
-    urls = serialize_urls(user_addon)
-    result.update({'urls': urls})
-    return result
+from website.addons.twofactor.utils import serialize_settings
 
 @must_be_logged_in
 @must_have_addon('twofactor', 'user')
