@@ -83,6 +83,7 @@ def osf_response():
     return {
         'data': {
             'path': 'test/path',
+            'name': 'unrelatedpath',
         },
         'settings': {
             'justa': 'settings'
