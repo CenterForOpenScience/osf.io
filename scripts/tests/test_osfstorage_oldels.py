@@ -79,3 +79,30 @@ class TestMigrateOldels(OsfTestCase):
         for guid in guids:
             paths.remove(guid.path)
         assert len(paths) == 0
+
+    def test_migrate_logs(self):
+        names = []
+        for num in range(10):
+            names.append('DEAR GOD! {} CARPNADOS'.format(num))
+            x, _ = oldels.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
+            x.delete(None)
+            self.project.logs[-1].params['path'] = x.path
+            self.project.logs[-1].save()
+
+            if num % 2 == 0:
+                x.undelete(None)
+                self.project.logs[-1].params['path'] = x.path
+                self.project.logs[-1].save()
+
+        migration.migrate_node_settings(self.node_settings, dry=False)
+        migration.migrate_children(self.node_settings, dry=False)
+
+        for log in self.project.logs:
+            if log.action.startswith('osf_storage_file'):
+                path = log.params['path']
+                node = self.node_settings.root_node.find_child_by_name(path.strip('/'))
+                print(log)
+                assert node._id in log.params['urls']['view']
+                assert node._id in log.params['urls']['download']
+
+
