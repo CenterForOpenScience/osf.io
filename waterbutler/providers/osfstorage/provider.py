@@ -90,7 +90,7 @@ class OSFStorageProvider(provider.BaseProvider):
         download_kwargs = {}
         download_kwargs.update(kwargs)
         download_kwargs.update(data['data'])
-        download_kwargs['displayName'] = kwargs.get('displayName') or kwargs['path']
+        download_kwargs['displayName'] = kwargs.get('displayName') or data['data']['name']
         return (yield from provider.download(**download_kwargs))
 
     @asyncio.coroutine
