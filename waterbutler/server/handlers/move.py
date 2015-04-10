@@ -38,7 +38,6 @@ class MoveHandler(core.BaseCrossProviderHandler):
                 self.callback_url,
                 self.auth
             )
-            print(resp)
             self.set_status(202)
             return
 
