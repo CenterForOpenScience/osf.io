@@ -841,7 +841,7 @@ function expandStateLoad(item) {
  * @param nodeID Current node._id
  * @param file window.contextVars.file object
  */
-function findCurrentFileID(tree, nodeID, file) {
+function setCurrentFileID(tree, nodeID, file) {
     var tb = this;
     if (tb.options.folderIndex !== undefined && tb.options.folderArray !== undefined && tb.options.folderIndex < tb.options.folderArray.length) {
         for (var i = 0; i < tree.children.length; i++) {
@@ -1047,7 +1047,7 @@ Fangorn.Utils = {
     inheritFromParent: inheritFromParent,
     resolveconfigOption: resolveconfigOption,
     reapplyTooltips : reapplyTooltips,
-    findCurrentFileID: findCurrentFileID,
+    setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile
 };
 
