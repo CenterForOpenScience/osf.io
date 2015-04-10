@@ -4,6 +4,7 @@
 var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
+require('bootstrap-editable');
 
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -30,7 +31,7 @@ new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
-    new NodeControl('#projectScope', data);
+    new NodeControl.NodeControl('#projectScope', data);
 });
 
 // Initialize comment pane w/ it's viewmodel
