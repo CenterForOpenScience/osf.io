@@ -14,7 +14,8 @@ def root(request, format=None):
         current_user = None
     return Response({
         'meta': {
-            'message': 'Welcome to the OSF API v2',
+            'message': 'Welcome to the OSF API.',
+            'version': request.version,
             'current_user': current_user,
         },
         'links': {
