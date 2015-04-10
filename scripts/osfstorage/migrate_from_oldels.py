@@ -44,7 +44,35 @@ def migrate_file(node, old, parent, dry=True):
         new = None
 
     migrate_guid(node, old, new, dry=dry)
+    migrate_log(node, old, new, dry=dry)
     migrate_download_counts(node, old, new, dry=dry)
+
+
+def migrate_log(node, old, new, dry=True):
+    res = NodeLog.find(
+        (
+            Q('params.node', 'eq', node._id) |
+            Q('params.project', 'eq', node._id)
+        ) &
+        Q('params.path', 'eq', old.path) &
+        Q('action', 'istartswith', 'osf_storage_file')
+    )
+    logger.info('Migrating {} logs for {!r} in {!r}'.format(res.count(), old, node))
+
+    for log in res:
+        logger.info('{!r} {} -> {}'.format(log, log.params['path'], new.materialized_path()))
+        if not dry:
+            log.params['path'] = new.materialized_path()
+            url = node.web_url_for(
+                'addon_view_or_download_file',
+                path=new.path.strip('/'),
+                provider='osfstorage'
+            )
+            log.params['urls'] = {
+                'view': url,
+                'download': url + '?action=download'
+            }
+            log.save()
 
 
 def migrate_guid(node, old, new, dry=True):
