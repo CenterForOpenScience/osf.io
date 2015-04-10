@@ -2432,6 +2432,57 @@ class Node(GuidStoredObject, AddonModelMixin):
             'is_registration': self.is_registration
         }
 
+    def _initiate_retraction(self, user, justification):
+        """Initiates the retraction process for a registration
+        :param user: User who initiated the retraction
+        :param justification: Justification, if given, for retraction
+        """
+
+        retraction = Retraction()
+        retraction.initiated_by = user
+        if justification:
+            retraction.justification = justification
+        retraction.initiation_date = datetime.datetime.utcnow()
+
+        # Create Cron job on second midnight (EDT) past current date to retract registration
+        self._start_retraction_cron_job()
+
+        # @todo(hrybacki) investigate why Node#admin_contributors isn't working
+        # Collect list of admins for registration
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
+
+        # Send approve/disapprove emails to each admin
+        for admin in admins:
+            self._send_retraction_email(admin, justification)
+
+        return retraction
+
+    # @TODO(hrybacki)implement
+    def _start_retraction_cron_job(self):
+        """ Starts cron job to retract public registration 48 hours after midnight (EDT) from the
+        current day.
+        """
+        
+        pass
+        #raise NotImplementedError
+
+    # @TODO(hrybacki)implement
+    def _send_retraction_email(self, user, justification):
+        """ Sends Approve/Disapprove email for retraction of a public registration to user
+        :param user: Admin user to be emailed
+        :param justification: Justification, if given, for retraction
+        """
+
+        # Get approve link
+
+        # Get disapprove link
+
+        # send email
+
+        pass
+        #raise NotImplementedError
+
+
     def retract_registration(self, user, justification=None):
         """Retract public registration. Instantiate new Retraction object
         and associate it with the respective registration.
@@ -2440,15 +2491,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not self.is_public or not self.is_registration:
             raise NodeStateError('Cannot retract private node or non-registration')
 
-        retraction = Retraction()
-        retraction.by = user
-        retraction.date = datetime.datetime.utcnow()
-        if justification:
-            retraction.justification = justification
-
+        retraction = self._initiate_retraction(user, justification)
         # Retraction record needs to be in the database for backrefs to work correctly
         retraction.save()
-
         self.retraction = retraction
 
 @Node.subscribe('before_save')
@@ -2555,9 +2600,9 @@ class Retraction(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     justification = fields.StringField(validate=MaxLengthValidator(2048))
-    date = fields.DateTimeField()
-    by = fields.ForeignField('user', backref='retracted_by')
+    initiation_date = fields.DateTimeField()
+    initiated_by = fields.ForeignField('user', backref='retracted_by')
 
     @property
     def is_retracted(self):
-        return self.date is not None
+        return self.initiation_date is not None

@@ -34,9 +34,9 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.reload()
         assert_true(self.registration.retraction.is_retracted)
         assert_equal(self.registration.retraction.justification, self.valid_justification)
-        assert_equal(self.registration.retraction.by, self.user)
+        assert_equal(self.registration.retraction.initiated_by, self.user)
         assert_equal(
-            self.registration.retraction.date.date(),
+            self.registration.retraction.initiation_date.date(),
             datetime.datetime.utcnow().date()
         )
 
