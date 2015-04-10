@@ -1397,6 +1397,11 @@ var tbOptions = {
                 _renameEvent.call(tb);
             }
         });
+        $(document).on('keypress', '#addNewFolder', function(){
+            if(tb.pressedKey === 13) {
+                _addFolderEvent.call(tb);
+            }
+        });
     },
     createcheck : function (item, parent) {
         return true;
