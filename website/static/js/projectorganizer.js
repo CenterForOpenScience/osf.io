@@ -1392,6 +1392,11 @@ var tbOptions = {
         $('.gridWrapper').on('mouseout', function(){
             rowDiv.removeClass('po-hover');
         });
+        $(document).on('keypress', '#renameInput', function(){
+            if(tb.pressedKey === 13) {
+                _renameEvent.call(tb);
+            }
+        });
     },
     createcheck : function (item, parent) {
         return true;
