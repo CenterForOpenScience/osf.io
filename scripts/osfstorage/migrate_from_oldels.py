@@ -10,6 +10,7 @@ from framework.transactions.context import TokuTransaction
 from scripts import utils as scripts_utils
 
 from website.app import init_app
+from website.project.model import NodeLog
 from website.addons.osfstorage import model, oldels
 
 logger = logging.getLogger(__name__)
@@ -92,9 +93,9 @@ def migrate_guid(node, old, new, dry=True):
 
 def migrate_children(node_settings, dry=True):
     if not node_settings.file_tree:
-        logger.info('Skipping node {}; file_tree is None', node_settings.owner._id)
+        logger.info('Skipping node {}; file_tree is None'.format(node_settings.owner._id))
 
-    logger.info('Migrating children of node {}', node_settings.owner._id)
+    logger.info('Migrating children of node {}'.format(node_settings.owner._id))
     for child in node_settings.file_tree.children:
         migrate_file(node_settings.owner, child, node_settings.root_node, dry=dry)
 
