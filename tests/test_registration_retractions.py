@@ -50,7 +50,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_is_none(self.registration.retraction)
 
     def test_retract_private_registration_throws_type_error(self):
-        with assert_raises(ValidationTypeError):
+        with assert_raises(NodeStateError):
             self.registration.retract_registration(self.user, self.valid_justification)
             self.registration.save()
 
@@ -60,7 +60,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
     def test_retract_public_non_registration_throws_type_error(self):
         self.project.is_public = True
         self.project.save()
-        with assert_raises(ValidationTypeError):
+        with assert_raises(NodeStateError):
             self.project.retract_registration(self.user, self.valid_justification)
 
         self.registration.reload()

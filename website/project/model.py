@@ -2438,7 +2438,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
 
         if not self.is_public or not self.is_registration:
-            raise ValidationTypeError('Cannot retract private node or non-registration')
+            raise NodeStateError('Cannot retract private node or non-registration')
 
         retraction = Retraction()
         retraction.by = user
