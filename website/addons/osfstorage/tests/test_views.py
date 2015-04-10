@@ -207,6 +207,27 @@ class TestUploadFileHook(HookTestCase):
         assert_equals(record.name, name)
         assert_equals(record.parent, parent)
 
+    def test_upload_create_child_with_same_name(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        self.node_settings.root_node.append_file(name)
+        parent = self.node_settings.root_node.append_folder('cheesey')
+        path = os.path.join(parent.path, name)
+        res = self.send_upload_hook(self.make_payload(path=path))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['downloads'], self.record.get_download_count())
+
+        version = model.OsfStorageFileVersion.load(res.json['version'])
+
+        assert_is_not(version, None)
+        assert_not_in(version, self.record.versions)
+
+        record = parent.find_child_by_name(name)
+        assert_in(version, record.versions)
+        assert_equals(record.name, name)
+        assert_equals(record.parent, parent)
+
     def test_upload_weired_name(self):
         name = 'another/dir/carpe.png'
         parent = self.node_settings.root_node.append_folder('cheesey')
