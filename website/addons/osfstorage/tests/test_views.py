@@ -295,7 +295,7 @@ class TestGetRevisions(StorageTestCase):
 
     def test_get_revisions(self):
         res = self.get_revisions()
-        expected = [
+        expected = reversed([
             utils.serialize_revision(
                 self.project,
                 self.record,
@@ -303,12 +303,12 @@ class TestGetRevisions(StorageTestCase):
                 idx
             )
             for idx, version in enumerate(reversed(self.record.versions))
-        ]
+        ])
 
         assert_equal(len(res.json['revisions']), 15)
-        assert_equal(res.json['revisions'], expected)
-        assert_equal(res.json['revisions'][0]['index'], 1)
-        assert_equal(res.json['revisions'][-1]['index'], 15)
+        assert_equal(res.json['revisions'], [x for x in expected])
+        assert_equal(res.json['revisions'][0]['index'], 15)
+        assert_equal(res.json['revisions'][-1]['index'], 1)
 
     def test_get_revisions_no_path(self):
         res = self.app.get(
