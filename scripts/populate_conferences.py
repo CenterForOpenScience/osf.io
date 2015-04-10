@@ -240,6 +240,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'MADSSCi2015': {
+        'name': 'Mid-Atlantic Directors and Staff of Scientific Cores 2015',
+        'info_url': 'http://madssci.abrf.org',
+        'logo_url': 'http://madssci.abrf.org/sites/default/files/madssci-logo-bk.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
