@@ -41,8 +41,7 @@ ViewModel.prototype.updateFromData = function(data) {
         // Initialize QR Code
         if (!self.urls.otpauth) {
             throw new Error('Tried to initailize jQuery.fn.qrcode without a otpauth URL');
-        }
-        else {
+        } else {
             $(self.qrCodeSelector).qrcode(self.urls.otpauth);
         }
     }
@@ -112,10 +111,10 @@ ViewModel.prototype.submitSettings = function() {
 ViewModel.prototype.disableTwofactorConfirm = function() {
     var self = this;
     return $.ajax({
-        method: 'DELETE',
-        url: self.urls.disable,
-        dataType: 'json'
-    })
+            method: 'DELETE',
+            url: self.urls.disable,
+            dataType: 'json'
+        })
         .done(function(response) {
             self.isEnabled(false);
             self.isConfirmed(false);
@@ -133,8 +132,8 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not disable Two-factor Authentication at this time. Please refresh ' +
-                    'the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                'the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 5000);
         });
 };
@@ -170,8 +169,8 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not enable Two-factor Authentication at this time. Please refresh ' +
-                    'the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                'the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 5000);
         });
 };
