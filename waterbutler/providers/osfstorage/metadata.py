@@ -31,8 +31,10 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
     @property
     def extra(self):
         return {
-            'version': self.raw['version'],
-            'downloads': self.raw['downloads'],
+            key: self.raw[key]
+            for key in
+            ('version', 'downloads', 'fullPath')
+            if key in self.raw
         }
 
 
