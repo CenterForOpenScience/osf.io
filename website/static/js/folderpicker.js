@@ -197,7 +197,7 @@ function FolderPicker(selector, opts) {
 }
 
 FolderPicker.prototype.destroy = function() {
-    self.grid.destroy();
+    this.grid.destroy();
 };
 
 // Augment jQuery
