@@ -9,7 +9,6 @@ def root(request, format=None):
 
     if request.user and not request.user.is_anonymous():
         user = request.user
-        # TODO: Use user serializer
         current_user = UserSerializer(user).data
     else:
         current_user = None
