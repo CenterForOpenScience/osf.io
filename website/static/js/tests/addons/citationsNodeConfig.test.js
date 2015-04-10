@@ -10,6 +10,7 @@ var $osf = require('js/osfHelpers');
 var ZeroClipboard = require('zeroclipboard');
 var CitationsNodeConfigVM = require('js/citationsNodeConfig')._CitationsNodeConfigViewModel;
 var testUtils = require('./folderPickerTestUtils.js');
+var FolderPicker = require('js/folderpicker');
 
 var makeAccountList = function() {
     var accounts = [];
@@ -128,9 +129,11 @@ describe('CitationsNodeConfig', () => {
                     });
                     return ret.promise();
                 });
+                FolderPicker = sinon.stub();
             });
             after(() => {
                 $osf.putJSON.restore();
+                FolderPicker.restore();
             });        
             it('makes a PUT request to the the "importAuth" url passed in settings sending the passed account_id as data', (done) => {
                 vm.updateFromData(data)

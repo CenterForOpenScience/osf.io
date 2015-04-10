@@ -11,6 +11,7 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
 var FolderPickerNodeConfigVM = require('js/folderPickerNodeConfig');
+var FolderPicker = require('js/folderpicker');
 var testUtils = require('./folderPickerTestUtils.js');
 
 var onPickFolderSpy = new sinon.spy();
@@ -33,6 +34,7 @@ var TestSubclassVM = oop.extend(FolderPickerNodeConfigVM, {
 });
 
 describe('FolderPickerNodeConfigViewModel', () => {
+
     var settingsUrl = '/api/v1/12345/addon/config/';
     var endpoints = [{
         method: 'GET',
@@ -56,7 +58,6 @@ describe('FolderPickerNodeConfigViewModel', () => {
     before(() => {
         server = utils.createServer(sinon, endpoints);
     });
-
     after(() => {
         server.restore();
     });
@@ -149,13 +150,13 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 });
                 assert.equal(vm.folderName(), name);
             });
-            it('... and returns an empty string otherwise', () => {
+            it("... and returns '' otherwise", () => {
                 vm.nodeHasAuth(false);
                 assert.equal(vm.folderName(), '');
             });
         });
         describe('#selectedFolderName', () => {
-            it('returns the selected folder\'s name if set else \'None\' when the User is owner', () => {
+            it("returns the selected folder's name if set else 'None' when the User is owner", () => {
                 vm.userIsOwner(true);
                 vm.selected({
                     name: null,
@@ -364,6 +365,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
             after(() => {
                 server.restore();
                 $.ajax.restore();
+                FolderPicker.restore();
             });
             var data = testUtils.makeFakeData();
             data.urls.deauthorize = deleteUrl;
@@ -379,6 +381,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                                         type: 'DELETE'
                                     }
                                 );
+                                assert.calledOnce(folderPickerStub);
                                 done();
                             });
                     });

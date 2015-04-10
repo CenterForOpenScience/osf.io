@@ -401,6 +401,12 @@ var FolderPickerViewModel = oop.defclass({
             this.cancelSelection();
         }
     },
+    doActivatePicker: function(opts) {
+        var self = this;
+        // Show loading indicator
+        self.loading(true);
+        self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);        
+    },
     /**
      *  Activates the HGrid folder picker.
      */
@@ -438,9 +444,7 @@ var FolderPickerViewModel = oop.defclass({
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
         if (!self.loadedFolders()) {
-            // Show loading indicator
-            self.loading(true);
-            self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);
+            self.doActivatePicker(opts);
         }
     }    
 });
