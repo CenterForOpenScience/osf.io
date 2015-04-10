@@ -353,6 +353,7 @@ var FolderPickerViewModel = oop.defclass({
             $(self.folderPicker).html('');
             self.loadedFolders(false);
             self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
+            $(self.folderPicker).folderpicker.prototype.flush();
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
