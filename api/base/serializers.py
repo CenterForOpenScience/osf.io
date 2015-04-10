@@ -69,33 +69,42 @@ def _tpl(val):
         return match.groups()[0]
     return None
 
+def _get_attr_from_tpl(attr_tpl, obj):
+    attr_name = _tpl(str(attr_tpl))
+    if attr_name:
+        attribute_value = getattr(obj, attr_name, ser.empty)
+        if attribute_value is not ser.empty:
+            return attribute_value
+        else:
+            raise AttributeError(
+                '{attr_name!r} is not a valid '
+                'attribute of {obj!r}'.format(
+                    attr_name=attr_name, obj=obj,
+                ))
+    else:
+        return attr_tpl
 
+# TODO: Make this a Field that is usable on its own?
 class Link(object):
     """Link object to use in conjunction with Links field. Does reverse lookup of
     URLs given an endpoint name and attributed enclosed in `<>`.
     """
 
-    def __init__(self, endpoint, **kwargs):
+    def __init__(self, endpoint, args=None, kwargs=None, **kw):
         self.endpoint = endpoint
-        self.params = kwargs
+        self.kwargs = kwargs or {}
+        self.args = args or tuple()
+        self.reverse_kwargs = kw
 
     def resolve_url(self, obj):
-        param_values = {}
-        for name, attr_tpl in self.params.items():
-            attr_name = _tpl(str(attr_tpl))
-            if attr_name:
-                attribute_value = getattr(obj, attr_name, ser.empty)
-                if attribute_value is not ser.empty:
-                    param_values[name] = attribute_value
-                else:
-                    raise AttributeError(
-                        '{attr_name!r} is not a valid '
-                        'attribute of {obj!r}'.format(
-                            attr_name=attr_name, obj=obj,
-                        ))
-            else:
-                param_values[name] = attr_tpl
-        return absolute_reverse(self.endpoint, kwargs=param_values)
+        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
+        arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
+        return absolute_reverse(
+            self.endpoint,
+            args=arg_values,
+            kwargs=kwarg_values,
+            **self.reverse_kwargs
+        )
 
 
 class JSONAPIListSerializer(ser.ListSerializer):

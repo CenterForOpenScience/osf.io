@@ -18,13 +18,13 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'absolute_url',
         'children': {
-            'related': Link('nodes:node-children', pk='<pk>')
+            'related': Link('nodes:node-children', kwargs={'pk': '<pk>'})
         },
         'contributors': {
-            'related': Link('nodes:node-contributors', pk='<pk>')
+            'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'})
         },
         'registrations': {
-            'related': Link('nodes:node-registrations', pk='<pk>')
+            'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'})
         },
     })
     # TODO: finish me
