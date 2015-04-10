@@ -184,7 +184,7 @@ def box_user_config_get(auth, **kwargs):
     valid_credentials = True
 
     user_addon = auth.user.get_addon('box')
-    
+
     if user_addon and user_addon.has_auth:
         try:
             client = get_client_from_user_settings(user_addon)
