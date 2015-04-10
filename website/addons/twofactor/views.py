@@ -11,8 +11,8 @@ from website.project.decorators import must_have_addon
 
 def serialize_urls(user_addon):
     return {
-        'enable': api_url_for('enable_twofactor'),
-        'disable': api_url_for('disable_twofactor'),
+        'enable': api_url_for('twofactor_enable'),
+        'disable': api_url_for('twofactor_disable'),
         'settings': api_url_for('twofactor_settings_put'),
         'otpauth': user_addon.otpauth_url if user_addon else '',
     }
@@ -58,8 +58,8 @@ def twofactor_settings_get(auth, *args, **kwargs):
 
 
 @must_be_logged_in
-def enable_twofactor(auth, *args, **kwargs):
-
+def twofactor_enable(auth, *args, **kwargs):
+    import ipdb; ipdb.set_trace()
     user_addon = auth.user.get_addon('twofactor')
     if user_addon:
         return HTTPError(http.BAD_REQUEST, message='This user already has twofactor enabled')
@@ -72,7 +72,7 @@ def enable_twofactor(auth, *args, **kwargs):
 
 @must_be_logged_in
 @must_have_addon('twofactor', 'user')
-def disable_twofactor(auth, *args, **kwargs):
+def twofactor_disable(auth, *args, **kwargs):
 
     if auth.user.delete_addon('twofactor', auth=auth):
         auth.user.save()
