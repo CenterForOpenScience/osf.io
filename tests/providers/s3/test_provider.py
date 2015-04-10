@@ -264,7 +264,7 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download_no_name(self, provider):
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidPathError):
             yield from provider.download('')
         with pytest.raises(exceptions.DownloadError):
             yield from provider.download('/')
@@ -354,7 +354,7 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_must_have_slash(self, provider, just_a_folder_metadata):
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidPathError):
             yield from provider.metadata('')
 
     @async

@@ -18,7 +18,7 @@ from waterbutler.providers.figshare import utils as figshare_utils
 def padded_parts(path, count):
     parts = path.strip('/').split('/')
     if len(parts) > count:
-        raise ValueError
+        raise exceptions.InvalidPathError('{} > count', len(parts), count)
     padding = [None] * (count - len(parts))
     return parts + padding
 
@@ -32,15 +32,15 @@ class FigsharePath(utils.WaterButlerPath):
         if path == '':
             return
         if not path.startswith('/'):
-            raise ValueError('Invalid path \'{}\' specified'.format(path))
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(path))
         if '//' in path:
-            raise ValueError('Invalid path \'{}\' specified'.format(path))
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(path))
         # Do not allow path manipulation via shortcuts, e.g. '..'
         absolute_path = os.path.abspath(path)
         if not path == '/' and path.endswith('/'):
             absolute_path += '/'
         if not path == absolute_path:
-            raise ValueError('Invalid path \'{}\' specified'.format(absolute_path))
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(absolute_path))
 
 
 class FigshareProjectPath(FigsharePath):

@@ -406,7 +406,7 @@ class TestMetadata:
     @async
     def test_metadata_invalid_root_path(self, connected_provider):
         path = ''
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidPathError):
             yield from connected_provider.metadata(path)
 
     @async
