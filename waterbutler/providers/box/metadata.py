@@ -1,3 +1,5 @@
+import os
+
 from waterbutler.core import metadata
 
 
@@ -5,6 +7,7 @@ class BaseBoxMetadata(metadata.BaseMetadata):
 
     def __init__(self, raw, folder):
         super().__init__(raw)
+        self.folder = folder
 
     @property
     def provider(self):
@@ -41,10 +44,6 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
         return self.raw.get('modified_at')
 
     @property
-    def folder(self):
-        return self.settings['folder']
-
-    @property
     def content_type(self):
         return None
 
@@ -52,8 +51,21 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
     def extra(self):
         return {
             'etag': self.raw.get('etag'),
-            'fullPath': self.raw.get('fullPath')
+            'fullPath': self.materialized_path
         }
+
+    @property
+    def materialized_path(self):
+        if 'path_collection' not in self.raw:
+            return None
+
+        path = []
+        for entry in reversed(self.raw['path_collection']['entries']):
+            if self.folder == entry['id']:
+                break
+            path.append(entry['name'])
+
+        return '/' + os.path.join('/'.join(reversed(path)), self.name)
 
 
 class BoxRevision(metadata.BaseFileRevisionMetadata):
