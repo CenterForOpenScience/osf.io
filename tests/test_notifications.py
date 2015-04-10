@@ -776,7 +776,7 @@ class TestSendEmails(OsfTestCase):
     @mock.patch('website.notifications.emails.send')
     def test_notify_no_subscription(self, send):
         node = factories.NodeFactory()
-        emails.notify(node._id, 'comments')
+        emails.notify(node._id, 'comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(send.called)
 
     @mock.patch('website.notifications.emails.send')
@@ -788,15 +788,16 @@ class TestSendEmails(OsfTestCase):
             event_name='comments'
         )
         node_subscription.save()
-        emails.notify(node._id, 'comments')
+        emails.notify(node._id, 'comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(send.called)
 
     @mock.patch('website.notifications.emails.send')
     def test_notify_sends_with_correct_args(self, send):
         subscribed_users = getattr(self.project_subscription, 'email_transactional')
-        emails.notify(self.project._id, 'comments')
+        time_now = datetime.datetime.utcnow()
+        emails.notify(self.project._id, 'comments', user=self.user, node=self.node, timestamp=time_now)
         assert_true(send.called)
-        send.assert_called_with(subscribed_users, 'email_transactional', self.project._id, 'comments')
+        send.assert_called_with(subscribed_users, 'email_transactional', self.project._id, 'comments', self.user, self.node, time_now)
 
     @mock.patch('website.notifications.emails.send')
     def test_notify_does_not_send_to_users_subscribed_to_none(self, send):
@@ -810,26 +811,29 @@ class TestSendEmails(OsfTestCase):
         node_subscription.save()
         node_subscription.none.append(user)
         node_subscription.save()
-        emails.notify(node._id, 'comments')
+        emails.notify(node._id, 'comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(send.called)
 
     @mock.patch('website.notifications.emails.send')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_send):
-        sent_subscribers = emails.notify(self.project._id, 'comments', target_user=self.project.creator)
-        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', target_user=self.project.creator)
+        time_now = datetime.datetime.utcnow()
+        sent_subscribers = emails.notify(self.project._id, 'comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', self.user, self.node, time_now, target_user=self.project.creator)
 
     @mock.patch('website.notifications.emails.send')
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_send):
         user = factories.UserFactory()
-        sent_subscribers = emails.notify(self.project._id, 'comments', target_user=user)
-        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comments', target_user=user)
+        time_now = datetime.datetime.utcnow()
+        sent_subscribers = emails.notify(self.project._id, 'comments', user=user, node=self.node, timestamp=time_now, target_user=user)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comments', user, self.node, time_now, target_user=user)
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.notifications.emails.send')
     def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_send, mock_send_mail):
         user = factories.UserFactory()
-        sent_subscribers = emails.notify(self.project._id, 'comments', commenter=self.project.creator, target_user=self.project.creator)
-        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', commenter=self.project.creator, target_user=self.project.creator)
+        time_now = datetime.datetime.utcnow()
+        sent_subscribers = emails.notify(self.project._id, 'comments', user=self.project.creator, node=self.project, timestamp=time_now,  target_user=self.project.creator)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', self.project.creator, self.project, time_now, target_user=self.project.creator)
         assert_false(mock_send_mail.called)
 
     @mock.patch('website.notifications.emails.send')
@@ -838,7 +842,7 @@ class TestSendEmails(OsfTestCase):
             "comments" email template.
         """
         user = factories.UserFactory()
-        sent_subscribers = emails.notify(self.node._id, 'comments', target_user=user)
+        sent_subscribers = emails.notify(self.node._id, 'comments', user=user, node=self.node, timestamp=datetime.datetime.utcnow(), target_user=user)
         mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments', target_user=user)
 
     # @mock.patch('website.notifications.emails.notify')
@@ -955,9 +959,8 @@ class TestSendEmails(OsfTestCase):
     # @mock.patch('website.notifications.emails.email_transactional')
     # def test_send_calls_correct_mail_function(self, email_transactional):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
-    #                 nodeType='project',
     #                 timestamp=datetime.datetime.utcnow(),
-    #                 commenter=self.project.creator,
+    #                 user=self.project.creator,
     #                 gravatar_url=self.user.gravatar_url,
     #                 content='',
     #                 parent_comment='',
@@ -974,20 +977,18 @@ class TestSendEmails(OsfTestCase):
 
         emails.email_transactional(
             subscribed_users, self.project._id, 'comments',
-            nodeType='project',
+            user=self.project.creator,
+            node=self.project,
             timestamp=timestamp,
-            commenter=self.project.creator,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
             title=self.project.title,
-            node_id=self.project._id,
             url=self.project.absolute_url,
         )
         subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
-            nodeType='project',
             timestamp=timestamp,
-            commenter=self.project.creator,
+            user=self.project.creator,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -996,9 +997,8 @@ class TestSendEmails(OsfTestCase):
         )
         message = mails.render_message(
             'comments.html.mako',
-            nodeType='project',
             timestamp=timestamp,
-            commenter=self.project.creator,
+            user=self.project.creator,
             gravatar_url=self.user.gravatar_url,
             content='',
             parent_comment='',
@@ -1021,12 +1021,12 @@ class TestSendEmails(OsfTestCase):
         )
 
     def test_send_email_digest_creates_digest_notification(self):
-        subscribed_users = [self.user]
+        subscribed_users = [factories.UserFactory()]
         digest_count_before = NotificationDigest.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
-                            nodeType='project',
+                            user=self.user,
+                            node=self.project,
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            commenter=self.project.creator,
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
@@ -1040,9 +1040,9 @@ class TestSendEmails(OsfTestCase):
         subscribed_users = [self.user]
         digest_count_before = NotificationDigest.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
-                            nodeType='project',
+                            user=self.user,
+                            node=self.project,
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            commenter=self.user,
                             gravatar_url=self.user.gravatar_url,
                             content='',
                             parent_comment='',
