@@ -1,3 +1,4 @@
+<img src=/docs/waterbutler.png?raw=true" width="25%" style="float:left;">
 # WaterButler
 
 `Master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/waterbutler.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/waterbutler)
