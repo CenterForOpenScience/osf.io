@@ -351,10 +351,9 @@ var FolderPickerViewModel = oop.defclass({
             self.nodeHasAuth(false);
             self.cancelSelection();
             self.currentDisplay(null);
-            $(self.folderPicker).html('');
+            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);     
             self.loadedFolders(false);
-            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
-            self.folderpicker.grid.destroy();
+            self.destroyPicker();
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
@@ -400,6 +399,9 @@ var FolderPickerViewModel = oop.defclass({
             // Clear selection
             this.cancelSelection();
         }
+    },
+    destroyPicker: function() {        
+        this.folderpicker.grid.destroy();
     },
     doActivatePicker: function(opts) {
         var self = this;

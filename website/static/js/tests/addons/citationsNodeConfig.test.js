@@ -30,6 +30,8 @@ describe('CitationsNodeConfig', () => {
             onPickFolder: onPickFolderSpy
         };
         var vm = new CitationsNodeConfigVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker', opts);
+        // Never actually call doActivatePicker
+        sinon.stub(vm, 'doActivatePicker');
 
         describe('#fetchAccounts', () => {
             var accountsUrl = faker.internet.ip();
@@ -129,11 +131,9 @@ describe('CitationsNodeConfig', () => {
                     });
                     return ret.promise();
                 });
-                FolderPicker = sinon.stub();
             });
             after(() => {
                 $osf.putJSON.restore();
-                FolderPicker.restore();
             });        
             it('makes a PUT request to the the "importAuth" url passed in settings sending the passed account_id as data', (done) => {
                 vm.updateFromData(data)

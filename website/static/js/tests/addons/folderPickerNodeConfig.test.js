@@ -63,10 +63,20 @@ describe('FolderPickerNodeConfigViewModel', () => {
     });
 
     describe('ViewModel', () => {
-        var vm = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
+        var vm;
+        var doActivatePickerStub;
         var hardReset = () => {
             vm = new TestSubclassVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker');
+            doActivatePickerStub = sinon.stub(vm, 'doActivatePicker');
         };
+        before(hardReset);
+        after(() => {
+           vm.doActivatePicker.restore();
+        });
+        afterEach(() => {
+            doActivatePickerStub.reset();
+        });
+
         describe('#showImport', () => {
             var reset = () => {
                 vm.loadedSettings(true);
@@ -357,15 +367,17 @@ describe('FolderPickerNodeConfigViewModel', () => {
             }];
             var server;
             var spy;
+            var destroyPickerStub;
             before(() => {
                 hardReset();
                 server = utils.createServer(sinon, endpoints);
                 spy = sinon.spy($, 'ajax');
+                destroyPickerStub = sinon.stub(vm, 'destroyPicker');
             });
             after(() => {
                 server.restore();
                 $.ajax.restore();
-                FolderPicker.restore();
+                vm.destroyPicker.restore();
             });
             var data = testUtils.makeFakeData();
             data.urls.deauthorize = deleteUrl;
@@ -381,7 +393,6 @@ describe('FolderPickerNodeConfigViewModel', () => {
                                         type: 'DELETE'
                                     }
                                 );
-                                assert.calledOnce(folderPickerStub);
                                 done();
                             });
                     });
@@ -424,12 +435,10 @@ describe('FolderPickerNodeConfigViewModel', () => {
                     initialFolderPath: vm.folder().path || '',
                     filesData: vm.urls().folders
                 }, vm.treebeardOptions);
-                var spy = sinon.spy($.prototype, 'folderpicker');
+
                 vm.loadedFolders(false);
                 vm.activatePicker();
-                assert.equal(spy.args[0][0].filesData, opts.filesData);
-                assert.equal(spy.args[0][0].initialFolderPath, opts.initialFolderPath);
-                $.fn.folderpicker.restore();
+                assert.calledOnce(doActivatePickerStub);
             });
         });
     });
