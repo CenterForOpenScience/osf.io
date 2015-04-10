@@ -401,7 +401,7 @@ var FolderPickerViewModel = oop.defclass({
         }
     },
     destroyPicker: function() {        
-        this.folderpicker.grid.destroy();
+        this.folderpicker.destroy();
     },
     doActivatePicker: function(opts) {
         var self = this;

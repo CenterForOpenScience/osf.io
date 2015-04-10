@@ -194,8 +194,11 @@ function FolderPicker(selector, opts) {
 
     // Start up the grid
     self.grid = new Treebeard(self.options).tbController;
-
 }
+
+FolderPicker.prototype.destroy = function() {
+    self.grid.destroy();
+};
 
 // Augment jQuery
 $.fn.folderpicker = function(options) {
