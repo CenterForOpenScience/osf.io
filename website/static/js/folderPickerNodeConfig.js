@@ -35,12 +35,13 @@ ko.punches.enableAll();
  *   - implement an _updateCustomFields method to capture additional parameters in updateFromData
  */    
 var FolderPickerViewModel = oop.defclass({
-    constructor: function(addonName, url, selector, folderPicker) {
+    constructor: function(addonName, url, selector, folderpickerSelector) {
         var self = this;
         self.url = url;
         self.addonName = addonName;
         self.selector = selector;
-        self.folderPicker = folderPicker;
+        self.folderpickerSelector = folderpickerSelector;
+        self.folderpicker = null;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
         // whether current user has an auth token
@@ -353,7 +354,7 @@ var FolderPickerViewModel = oop.defclass({
             $(self.folderPicker).html('');
             self.loadedFolders(false);
             self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
-            $(self.folderPicker).folderpicker.prototype.flush();
+            self.folderpicker.grid.destroy();
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
@@ -439,7 +440,7 @@ var FolderPickerViewModel = oop.defclass({
         if (!self.loadedFolders()) {
             // Show loading indicator
             self.loading(true);
-            $(self.folderPicker).folderpicker(opts);
+            self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);
         }
     }    
 });

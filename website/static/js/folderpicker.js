@@ -208,13 +208,6 @@ $.fn.folderpicker = function(options) {
         var selector = '#' + this.id;
         this._tb = new FolderPicker(selector, options);
     });
-    $.fn.folderpicker.prototype.flush = function() {
-        $el.each(function() {
-            var grid = this._tb.grid;
-            grid.treeData = null;
-            grid.flatten([]);
-        });
-    };
 };
 
 
