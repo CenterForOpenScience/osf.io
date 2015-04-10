@@ -8,6 +8,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, RegistrationFactory, UserFactory, AuthUserFactory
 
 from modularodm.exceptions import ValidationTypeError, ValidationValueError
+from website.exceptions import NodeStateError
 
 from framework.auth.core import Auth
 
@@ -41,8 +42,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
     def test_long_justification_raises_validation_value_error(self):
         self.registration.is_public = True
-
-
+        self.registration.save()
         with assert_raises(ValidationValueError):
             self.registration.retract_registration(self.user, self.invalid_justification)
             self.registration.save()
@@ -59,11 +59,21 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
     def test_retract_public_non_registration_throws_type_error(self):
         self.project.is_public = True
+        self.project.save()
         with assert_raises(ValidationTypeError):
             self.project.retract_registration(self.user, self.valid_justification)
 
         self.registration.reload()
         assert_is_none(self.registration.retraction)
+
+    def test_set_public_registration_to_private_raises_node_exception(self):
+        self.registration.is_public = True
+        self.registration.save()
+        with assert_raises(NodeStateError):
+            self.registration.set_privacy('private')
+
+        self.registration.reload()
+        assert_true(self.registration.is_public)
 
 
 class RegistrationRetractionViewsTestCase(OsfTestCase):
