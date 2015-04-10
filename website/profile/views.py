@@ -29,7 +29,7 @@ from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
-from website.addons.base import utils
+from website.addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
 
@@ -253,7 +253,7 @@ def user_profile(auth, **kwargs):
 @must_be_logged_in
 def user_account(auth, **kwargs):
     user = auth.user
-    user_addons = utils.get_addons_by_config_type('user', user)
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
 
     return {
         'user_id': user._id,
@@ -287,7 +287,7 @@ def user_addons(auth, **kwargs):
 
     ret = {}
 
-    addon_settings = utils.get_addons_by_config_type('accounts', user)
+    addon_settings = addon_utils.get_addons_by_config_type('accounts', user)
     ret.update({
         'addon_settings': addon_settings,
     })
@@ -306,15 +306,15 @@ def user_notifications(auth, **kwargs):
     }
 
 
-def collect_user_config_js(addons):
+def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the user addons config page.
 
     :param list addons: List of user's addon config records.
     """
     js_modules = []
-    for addon in addons:
-        js_path = paths.resolve_addon_path(addon, 'user-cfg.js')
+    for addon_config in addon_configs:
+        js_path = paths.resolve_addon_path(addon_config, 'user-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
