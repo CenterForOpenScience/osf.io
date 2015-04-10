@@ -179,7 +179,10 @@ ViewModel.prototype.enableTwofactor = function() {
     var self = this;
     bootbox.confirm({
         title: 'Enable Two-factor Authentication',
-        message: 'Enabling Two-factor Authentication will not immediately activate this feature for your account. You will need to follow the steps that appear below to activate Two-factor Authentication for your account.',
+        message: 'Enabling Two-factor Authentication will not immediately activate ' +
+            'this feature for your account. You will need to follow the ' +
+            'steps that appear below to complete the activation of  Two-factor Authentication ' +
+            'for your account.',
         callback: function(confirmed) {
             if (confirmed) {
                 self.enableTwofactorConfirm.call(self);
