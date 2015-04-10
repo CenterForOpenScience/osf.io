@@ -332,6 +332,11 @@ class TestUser(OsfTestCase):
         u.add_unconfirmed_email("test@osf.io")
         assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
 
+    def test_add_blank_unconfirmed_email(self):
+        with assert_raises(ValidationError) as exc_info:
+            self.user.add_unconfirmed_email('')
+        assert_equal(exc_info.exception.message, "Invalid Email")
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
         random_string.return_value = '12345'
