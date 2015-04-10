@@ -5,7 +5,7 @@ var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var oop = require('js/oop');
 var Raven = require('raven-js');
-var ChangeMessage = require('js/changeMessage');
+var ChangeMessageMixin = require('js/changeMessage');
 
 require('knockout.punches');
 ko.punches.enableAll();
@@ -141,7 +141,7 @@ var UserProfileClient = oop.defclass({
 });
 
 
-var UserProfileViewModel = oop.extend(ChangeMessage, {
+var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     constructor: function() {
         this.super.constructor.call(this);
         this.client = new UserProfileClient();

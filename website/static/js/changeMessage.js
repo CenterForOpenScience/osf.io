@@ -8,7 +8,7 @@ var ko = require('knockout');
 var oop = require('js/oop');
 /** Change the flashed status message */
 
-var ChangeMessage = oop.defclass({
+var ChangeMessageMixin = oop.defclass({
     constructor: function() {
         this.message = ko.observable('');
         this.messageClass = ko.observable('text-info');
@@ -31,4 +31,4 @@ var ChangeMessage = oop.defclass({
     }
 });
 
-module.exports = ChangeMessage;
+module.exports = ChangeMessageMixin;
