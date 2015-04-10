@@ -2443,6 +2443,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if justification:
             retraction.justification = justification
 
+        # Retraction record needs to be in the database for backrefs to work correctly
         retraction.save()
 
         self.retraction = retraction
