@@ -194,18 +194,22 @@ function FolderPicker(selector, opts) {
 
     // Start up the grid
     self.grid = new Treebeard(self.options).tbController;
-
 }
+
+FolderPicker.prototype.destroy = function() {
+    this.grid.destroy();
+};
 
 // Augment jQuery
 $.fn.folderpicker = function(options) {
+    var $el = $(this);
     this.each(function() {
         // Treebeard must take an ID as a selector if using as a jQuery plugin
         if (!this.id) {
             throw new Error('FolderPicker must have an ID if initializing with jQuery.');
         }
         var selector = '#' + this.id;
-        return new FolderPicker(selector, options);
+        this._tb = new FolderPicker(selector, options);
     });
 };
 

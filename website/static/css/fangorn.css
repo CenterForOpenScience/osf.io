@@ -85,6 +85,10 @@ text-align: center;
   margin-right: 11px;
 }
 
+.fg-hover-hide {
+    cursor: pointer;
+}
+
 
 /* File icons */
 .file-extension {
