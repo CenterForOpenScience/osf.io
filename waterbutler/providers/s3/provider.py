@@ -1,6 +1,7 @@
 import os
 import asyncio
 import hashlib
+from urllib import parse
 
 import xmltodict
 
@@ -100,7 +101,7 @@ class S3Provider(provider.BaseProvider):
         key = self.bucket.new_key(path.path)
 
         if kwargs.get('displayName'):
-            response_headers = {'response-content-disposition': 'attachment; filename={}'.format(kwargs['displayName'])}
+            response_headers = {'response-content-disposition': 'attachment; filename*=UTF-8\'\'{}'.format(parse.quote(kwargs['displayName']))}
         else:
             response_headers = {'response-content-disposition': 'attachment'}
 
