@@ -205,9 +205,14 @@ $.fn.folderpicker = function(options) {
             throw new Error('FolderPicker must have an ID if initializing with jQuery.');
         }
         var selector = '#' + this.id;
-        return new FolderPicker(selector, options);
+        var tb = new FolderPicker(selector, options);
+        $.fn.folderpicker.prototype.destroy = function() {
+            tb.grid.destroy();
+        };
+        this._tb = tb;
     });
-};
+    return this;
+}; 
 
 
 FolderPicker.selectView = treebeardSelectView;
