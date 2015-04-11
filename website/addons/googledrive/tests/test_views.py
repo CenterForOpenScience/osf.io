@@ -203,7 +203,7 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'googledrive_folder_selected')
         params = last_log.params
-        assert_equal(params['folder'], self.node_settings.folder_name)
+        assert_equal(params['folder'], self.node_settings.folder_path)
 
 
 class TestGoogleDriveHgridViews(OsfTestCase):
