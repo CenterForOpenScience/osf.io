@@ -67,7 +67,7 @@ MEETING_DATA = {
         'active': False,
         'admins': [
             'lvonschi@nrao.edu',
-            'sara.d.bowman@gmail.com',
+            'presentations@osf.io',
             # 'Dkim@nrao.edu',
         ],
         'public_projects': True,
@@ -84,7 +84,7 @@ MEETING_DATA = {
         'active': False,
         'admins': [
             'gkroll@berkeley.edu',
-            'andrew@cos.io',
+            'presentations@osf.io',
             'awais@berkeley.edu',
         ],
         'public_projects': True,
@@ -96,7 +96,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'meetings@spsp.org',
-            'andrew@cos.io',
+            'presentations@osf.io',
         ],
     },
     'aps2015': {
@@ -105,7 +105,7 @@ MEETING_DATA = {
         'logo_url': 'http://www.psychologicalscience.org/images/APS_2015_Banner_990x157.jpg',
         'active': True,
         'admins': [
-            'KatyCain526@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -115,7 +115,7 @@ MEETING_DATA = {
         'logo_url': 'http://icps.psychologicalscience.org/wp-content/themes/deepblue/images/ICPS_Website-header_990px.jpg',
         'active': True,
         'admins': [
-            'KatyCain526@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -126,7 +126,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'mpa@kent.edu',
-            'KatyCain526@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -137,7 +137,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'aoverman@elon.edu',
-            'KatyCain526@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -148,7 +148,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'director@vprsf.org',
-            'KatyCain526@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -159,7 +159,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'mhurst@virginia.edu',
-            'KatyCain526@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -170,7 +170,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'amorris.mtsu@gmail.com',
-            'KatyCain526@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -180,7 +180,7 @@ MEETING_DATA = {
         'logo_url': None,
         'active': True,
         'admins': [
-            'sara.d.bowman@gmail.com',
+            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -236,6 +236,14 @@ MEETING_DATA = {
         'name': 'Virginia Section American Chemical Society Student Poster Session 2015',
         'info_url': 'http://virginia.sites.acs.org/',
         'logo_url': 'http://virginia.sites.acs.org/Bulletin/15/UVA.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'MADSSCi2015': {
+        'name': 'Mid-Atlantic Directors and Staff of Scientific Cores 2015',
+        'info_url': 'http://madssci.abrf.org',
+        'logo_url': 'http://madssci.abrf.org/sites/default/files/madssci-logo-bk.png',
         'active': True,
         'admins': [],
         'public_projects': True,
