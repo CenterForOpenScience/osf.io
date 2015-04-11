@@ -152,7 +152,7 @@ describe('FolderPickerNodeConfigViewModel', () => {
                     name: null,
                     id: null
                 });
-                assert.isNull(vm.folderName());
+                assert.equal(vm.folderName(), '');
                 var name = faker.hacker.noun();
                 vm.folder({
                     name: name,
