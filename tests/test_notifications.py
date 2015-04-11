@@ -842,8 +842,11 @@ class TestSendEmails(OsfTestCase):
             "comments" email template.
         """
         user = factories.UserFactory()
-        sent_subscribers = emails.notify(self.node._id, 'comments', user=user, node=self.node, timestamp=datetime.datetime.utcnow(), target_user=user)
-        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments', target_user=user)
+        time_now = datetime.datetime.utcnow()
+        sent_subscribers = emails.notify(self.node._id, 'comments', user, self.node,
+                                         time_now, target_user=user)
+        mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments',
+                                     user, self.node, time_now, target_user=user)
 
     # @mock.patch('website.notifications.emails.notify')
     @mock.patch('website.project.views.comment.notify')
@@ -882,9 +885,12 @@ class TestSendEmails(OsfTestCase):
 
     @mock.patch('website.notifications.emails.send')
     def test_check_parent(self, send):
-        emails.check_parent(self.node._id, 'comments', [])
+        time_now = datetime.datetime.utcnow()
+        project = factories.ProjectFactory()
+        emails.check_parent(self.node._id, 'comments', [], self.user, project, time_now)
         assert_true(send.called)
-        send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments')
+        send.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments',
+                                self.user, project, time_now)
 
     @mock.patch('website.notifications.emails.send')
     def test_check_parent_does_not_send_if_notification_type_is_none(self, mock_send):
@@ -898,7 +904,7 @@ class TestSendEmails(OsfTestCase):
         project_subscription.none.append(project.creator)
         project_subscription.save()
         node = factories.NodeFactory(project=project)
-        emails.check_parent(node._id, 'comments', [])
+        emails.check_parent(node._id, 'comments', [], self.user, project, datetime.datetime.utcnow())
         assert_false(mock_send.called)
 
     @mock.patch('website.notifications.emails.send')
@@ -925,7 +931,7 @@ class TestSendEmails(OsfTestCase):
         node_subscription.save()
 
         # Assert that user receives an email when someone comments on the component
-        emails.check_parent(node._id, 'comments', [])
+        emails.check_parent(node._id, 'comments', [], self.user, node, datetime.datetime.utcnow())
         assert_true(mock_send.called)
 
     @mock.patch('website.notifications.emails.send')
@@ -953,7 +959,7 @@ class TestSendEmails(OsfTestCase):
         node_subscription.save()
 
         # Assert that user does not receive an email when someone comments on the component
-        emails.check_parent(node._id, 'comments', [])
+        emails.check_parent(node._id, 'comments', [], user, node, datetime.datetime.utcnow())
         assert_false(mock_send.called)
 
     # @mock.patch('website.notifications.emails.email_transactional')
