@@ -70,10 +70,11 @@ utils.loadMore = function(vm) {
         m.request({
             method: 'get',
             background: true,
-            url: '/api/v1/share/?' + $.param({
+            url: '/api/v1/share/search/?' + $.param({
                 from: page,
                 q: utils.buildQuery(vm),
-                sort: sort
+                sort: sort,
+                v: 1
             })
         }).then(function(data) {
             vm.resultsLoading(false);
