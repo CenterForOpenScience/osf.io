@@ -58,7 +58,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon Simple Storage Service: {0}'.format(
+            'name': 'Amazon S3: {0}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
@@ -134,7 +134,7 @@ class TestRubeus(OsfTestCase):
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon Simple Storage Service: {0}'.format(
+            'name': 'Amazon S3: {0}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
@@ -171,7 +171,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon Simple Storage Service: {0}'.format(
+            'name': 'Amazon S3: {0}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
