@@ -23,24 +23,27 @@ share_es = Elasticsearch(
 
 
 @requires_search
-def search(query, raw=False):
+def search(query, raw=False, index='share'):
     # Run the real query and get the results
-    results = share_es.search(index='share', doc_type=None, body=query)
+    results = share_es.search(index=index, doc_type=None, body=query)
 
     return results if raw else {
-        'results': [hit['_source'] for hit in results['hits']['hits']],
+        'results': [remove_key(hit['_source'], 'raw') for hit in results['hits']['hits']],
         'count': results['hits']['total'],
     }
 
+def remove_key(d, k):
+    d.pop(k, None)
+    return d
 
 @requires_search
-def count(query):
+def count(query, index='share'):
     if query.get('from') is not None:
         del query['from']
     if query.get('size') is not None:
         del query['size']
 
-    count = share_es.count(index='share', body=query)
+    count = share_es.count(index=index, body=query)
 
     return {
         'results': [],
@@ -162,8 +165,8 @@ def stats(query=None):
         }
     }
 
-    results = share_es.search(index='share', body=query)
-    date_results = share_es.search(index='share', body=date_histogram_query)
+    results = share_es.search(index='share_v1', body=query)
+    date_results = share_es.search(index='share_v1', body=date_histogram_query)
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)
