@@ -120,7 +120,7 @@ def create_atom_feed(name, data, query, size, start, url, to_atom):
         try:
             feed.add(**to_atom(doc))
         except ValueError as e:
-            logger.error('Atom feed error for source {}: {}'.format(doc.get('source'), e))
+            logger.exception('Atom feed error for source {}: {}'.format(doc.get('source'), e))
 
     return feed
 
