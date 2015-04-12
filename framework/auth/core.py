@@ -743,10 +743,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def unconfirmed_emails(self):
+        # Handle when email_verifications field is None
+        email_verifications = self.email_verifications or {}
         return [
             each['email']
             for each
-            in self.email_verifications.values()
+            in email_verifications.values()
         ]
 
     def update_search_nodes(self):

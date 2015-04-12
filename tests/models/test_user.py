@@ -95,6 +95,11 @@ class UserTestCase(base.OsfTestCase):
             [self.unconfirmed.username]
         )
 
+        # email_verifications field may be None
+        self.user.email_verifications = None
+        self.user.save()
+        assert_equal(self.user.unconfirmed_emails, [])
+
     def test_remove_unconfirmed_email(self):
         self.user.add_unconfirmed_email('foo@bar.com')
         self.user.save()
@@ -105,7 +110,6 @@ class UserTestCase(base.OsfTestCase):
         self.user.save()
 
         assert_not_in('foo@bar.com', self.user.unconfirmed_emails)
-
 
     def test_confirm_email(self):
         token = self.user.add_unconfirmed_email('foo@bar.com')
