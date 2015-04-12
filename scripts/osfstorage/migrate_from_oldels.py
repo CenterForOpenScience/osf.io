@@ -112,6 +112,7 @@ def migrate_guid(node, old, new, dry=True):
 def migrate_children(node_settings, dry=True):
     if not node_settings.file_tree:
         logger.info('Skipping node {}; file_tree is None'.format(node_settings.owner._id))
+        return
 
     logger.info('Migrating children of node {}'.format(node_settings.owner._id))
     for child in node_settings.file_tree.children:
