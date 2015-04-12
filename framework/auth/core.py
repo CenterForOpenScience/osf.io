@@ -279,7 +279,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = fields.DictionaryField()
+    email_verifications = fields.DictionaryField(default=dict)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
@@ -612,6 +612,10 @@ class User(GuidStoredObject, AddonModelMixin):
         validate_email(email)
 
         token = generate_confirm_token()
+
+        # handle when email_verifications is None
+        if not self.email_verifications:
+            self.email_verifications = {}
 
         self.email_verifications[token] = {'email': email}
         self._set_email_token_expiration(token, expiration=expiration)

@@ -4,6 +4,7 @@ from framework import auth
 from framework.auth import exceptions
 from website import models
 from tests import base
+from tests.base import fake
 from tests import factories
 
 
@@ -73,6 +74,16 @@ class UserTestCase(base.OsfTestCase):
         assert_true(self.user.is_invited)
 
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
+    def test_add_unconfirmed_email_when_email_verifications_is_None(self):
+
+        self.user.email_verifications = None
+        self.user.save()
+        email = fake.email()
+        self.user.add_unconfirmed_email(email)
+        self.user.save()
+        assert_in(email, self.user.unconfirmed_emails)
 
     def test_unconfirmed_emails(self):
         assert_equal(
