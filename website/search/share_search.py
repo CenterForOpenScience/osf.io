@@ -273,7 +273,7 @@ def to_atom(result):
     return {
         'title': html_and_illegal_unicode_replace(result.get('title')) or 'No title provided.',
         'summary': html_and_illegal_unicode_replace(result.get('description')) or 'No summary provided.',
-        'id': result['id']['url'] or 'url_error',
+        'id': result['id']['url'],
         'updated': get_date_updated(result),
         'links': [
             {'href': result['id']['url'], 'rel': 'alternate'}
