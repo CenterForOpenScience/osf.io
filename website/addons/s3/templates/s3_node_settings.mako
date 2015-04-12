@@ -20,26 +20,25 @@
         </small>
     </h4>
     <div data-bind="if: showSettings">
+      <div class="row">
+      <div class="col-md-12">
         <p>
-            <strong>Current Bucket:</strong>
-            <a data-bind="attr.href: urls().files">
-                {{currentBucket}}
-            </a>
+          <strong>Current Bucket:</strong>
+          <a data-bind="attr.href: urls().files">
+            {{currentBucket}}
+          </a>
         </p>
-        <div class="row"
+        <div class="btn-group"
              data-bind="attr.disabled: creating">
-          <div class="col-md-1" data-bind="if: canChange">
-            <button data-bind="click: toggleSelect,
-                               css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
-          </div>
-          <div class="col-md-1" data-bind="if: showNewBucket">
-            <button data-bind="click: openCreateBucket,
-                               attr.disabled: creating" class="btn btn-sm btn-addon" id="newBucket">Create Bucket</button>
-          </div>
+          <button data-bind="visible: canChange, click: toggleSelect,
+                             css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+          <button data-bind="visible: showNewBucket, click: openCreateBucket,
+                             attr.disabled: creating" class="btn btn-sm btn-addon" id="newBucket">Create Bucket</button>
         </div>
         <br />
+        <br />
         <div class="row" data-bind="if: showSelect">
-          <div class="col-md-6">
+          <div class="col-md-8">
             <select class="form-control" id="s3_bucket" name="s3_bucket"
                     data-bind="value: selectedBucket,
                                attr.disabled: !loadedBucketList(),
@@ -52,7 +51,9 @@
               Submit
             </button>
           </div>
-        </div>
+        </div>        
+      </div>
+      </div>
     </div>
     <div data-bind="if: showCreateCredentials">
       <div class="form-group">

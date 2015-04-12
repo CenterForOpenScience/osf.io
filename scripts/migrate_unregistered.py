@@ -33,7 +33,7 @@ def make_user(user_dict):
                 email=email)
             user.save()
         except ValidationValueError:
-            user = auth.get_user(username=email)
+            user = auth.get_user(email=email)
             if user is None:
                 logger.error('Could not load user {0}'.format(user_dict))
     return user

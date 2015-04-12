@@ -212,8 +212,8 @@ def search_share():
     elif request.method == 'GET':
         query = build_query(
             request.args.get('q', '*'),
-            request.args.get('from'),
-            request.args.get('size'),
+            request.args.get('from', 0),
+            request.args.get('size', 10),
             sort=request.args.get('sort')
         )
 

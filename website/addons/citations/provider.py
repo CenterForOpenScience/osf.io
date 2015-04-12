@@ -22,7 +22,7 @@ class CitationsProvider(object):
         return {
             'accounts': [
                 self.serializer(
-                    user_settings=user.get_addon(self.provider_name)
+                    user_settings=user.get_addon(self.provider_name) if user else None
                 ).serialize_account(each)
                 for each in user.external_accounts
                 if each.provider == self.provider_name
