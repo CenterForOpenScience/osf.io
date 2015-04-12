@@ -47,12 +47,12 @@ def migrate_node_settings(node_settings, dry=True):
 
 def migrate_file(node, old, parent, dry=True):
     assert isinstance(old, oldels.OsfStorageFileRecord)
-    logger.info('Creating new child {}'.format(old.name))
+    logger.debug('Creating new child {}'.format(old.name))
     if not dry:
         try:
             new = parent.append_file(old.name)
         except KeyExistsException:
-            logger.info('{!r} has already been migrated'.format(old))
+            logger.warning('{!r} has already been migrated'.format(old))
             return
         new.versions = old.versions
         new.is_deleted = old.is_deleted
@@ -74,13 +74,17 @@ def migrate_log(node, old, new, dry=True):
         Q('params.path', 'eq', old.path) &
         Q('action', 'istartswith', 'osf_storage_file')
     )
-    logger.info('Migrating {} logs for {!r} in {!r}'.format(res.count(), old, node))
+
+    if res.count():
+        logger.info('Migrating {} logs for {!r} in {!r}'.format(res.count(), old, node))
+    else:
+        logger.debug('No logs to migrate for {!r} in {!r}'.format(res.count(), old, node))
 
     for log in res:
         if dry:
-            logger.info('{!r} {} -> {}'.format(log, log.params['path'], 'New path'))
+            logger.debug('{!r} {} -> {}'.format(log, log.params['path'], 'New path'))
         else:
-            logger.info('{!r} {} -> {}'.format(log, log.params['path'], new.materialized_path()))
+            logger.debug('{!r} {} -> {}'.format(log, log.params['path'], new.materialized_path()))
             log.params['path'] = new.materialized_path()
             url = node.web_url_for(
                 'addon_view_or_download_file',
@@ -102,7 +106,7 @@ def migrate_guid(node, old, new, dry=True):
         )
         logger.info('Migrating file guid {}'.format(guid._id))
     except NoResultsFound:
-        logger.info('No guids found for {}'.format(old.path))
+        logger.debug('No guids found for {}'.format(old.path))
         return
 
     if not dry:
@@ -111,7 +115,7 @@ def migrate_guid(node, old, new, dry=True):
 
 def migrate_children(node_settings, dry=True):
     if not node_settings.file_tree:
-        logger.info('Skipping node {}; file_tree is None'.format(node_settings.owner._id))
+        logger.warning('Skipping node {}; file_tree is None'.format(node_settings.owner._id))
         return
 
     logger.info('Migrating children of node {}'.format(node_settings.owner._id))
@@ -139,5 +143,13 @@ def main(dry=True):
 if __name__ == '__main__':
     import sys
     dry = 'dry' in sys.argv
+
+    if 'debug' in sys.argv:
+        logger.setLevel(logging.DEBUG)
+    elif 'info' in sys.argv:
+        logger.setLevel(logging.INFO)
+    elif 'error' in sys.argv:
+        logger.setLevel(logging.ERROR)
+
     with init_app(set_backends=True, routes=True).test_request_context():
         main(dry=dry)
