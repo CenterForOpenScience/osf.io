@@ -7,7 +7,9 @@ from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
-from website.addons.osfstorage import model, oldels
+from website.addons.osfstorage import model
+from website.addons.osfstorage import utils
+from website.addons.osfstorage import oldels
 
 from scripts.osfstorage import migrate_from_oldels as migration
 
@@ -32,6 +34,15 @@ class TestMigrateOldels(OsfTestCase):
 
     def test_creates_root_node(self):
         assert self.node_settings.root_node is None
+        migration.migrate_node_settings(self.node_settings, dry=False)
+        assert self.node_settings.root_node is not None
+        assert not self.node_settings._dirty
+
+    def test_creates_root_node_on_none_file_tree(self):
+        self.node_settings.file_tree = None
+        self.node_settings.save()
+        assert self.node_settings.root_node is None
+        assert self.node_settings.file_tree is None
         migration.migrate_node_settings(self.node_settings, dry=False)
         assert self.node_settings.root_node is not None
         assert not self.node_settings._dirty
@@ -101,8 +112,33 @@ class TestMigrateOldels(OsfTestCase):
             if log.action.startswith('osf_storage_file'):
                 path = log.params['path']
                 node = self.node_settings.root_node.find_child_by_name(path.strip('/'))
-                print(log)
                 assert node._id in log.params['urls']['view']
                 assert node._id in log.params['urls']['download']
 
+    @mock.patch('framework.analytics.session')
+    def test_migrate_download_counts(self, mock_session):
+        names = []
+        for index, num in enumerate(range(10)):
+            names.append('DEAR GOD$! ({})^ CARPNADOS'.format(num))
+            fobj, _ = oldels.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
+            for _id in range(index):
+                fobj.create_version(self.user, {
+                    'folder': '',
+                    'bucket': '',
+                    'service': 'buttfiles',
+                    'object': '{}{}'.format(index, _id),
+                })
+                utils.update_analytics(self.project, fobj.path, _id + 1)
+            assert len(fobj.versions) == index
+            assert fobj.get_download_count() == index
 
+        assert len(self.node_settings.file_tree.children) == 10
+
+        migration.migrate_node_settings(self.node_settings, dry=False)
+        migration.migrate_children(self.node_settings, dry=False)
+
+        for index, child in enumerate(self.node_settings.root_node.children):
+            assert len(child.versions) == index
+            assert child.get_download_count() == index
+            for _id in range(index):
+                assert child.get_download_count(_id) == 1
