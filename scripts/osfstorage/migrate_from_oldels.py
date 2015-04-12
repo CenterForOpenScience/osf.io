@@ -20,23 +20,31 @@ logger = logging.getLogger(__name__)
 
 
 def migrate_download_counts(node, old, new, dry=True):
+    escaped_old_path = old.path.replace('.', '_').replace('$', '_')
+
     if dry:
         new_id = ':'.join(['download', node._id, 'new id'])
     else:
         new_id = ':'.join(['download', node._id, new._id])
 
-    old_id = ':'.join(['download', node._id, old.path.replace('.', '_').replace('$', '_')])
-    escaped_id = ':'.join(['download', node._id, re.escape(old.path.replace('.', '_').replace('$', '_'))])
+    old_id = ':'.join(['download', node._id, escaped_old_path])
+    escaped_id = ':'.join(['download', node._id, re.escape(escaped_old_path)])
 
-    for doc in database.pagecounters.find({'_id': {'$regex': '^{}(:\d)?'.format(escaped_id)}}):
+    for doc in database.pagecounters.find({'_id': {'$regex': '^{}(:\d+)?'.format(escaped_id)}}):
         new_doc = copy.deepcopy(doc)
         assert old_id in doc['_id']
-        new_doc['_id'] = doc['_id'].replace(old_id, new_id)
+        if len(doc['_id'].split(':')) < 4:
+            new_doc['_id'] = doc['_id'].replace(old_id, new_id)
+        else:
+            version = int(doc['_id'].split(':')[-1])
+            assert version > 0
+            logger.debug('Decrementing version {} to {}'.format(version, version - 1))
+            new_doc['_id'] = doc['_id'].replace('{}:{}'.format(old_id, version), '{}:{}'.format(new_id, version - 1))
 
-        logger.info('{} -> {}'.format(doc, new_doc))
+        logger.debug('{} -> {}'.format(doc, new_doc))
         if not dry:
             database.pagecounters.insert(new_doc)
-            database.pagecounters.remove(doc)
+            database.pagecounters.remove(doc['_id'])
 
 
 def migrate_node_settings(node_settings, dry=True):
