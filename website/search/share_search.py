@@ -16,6 +16,10 @@ from website.search.elastic_search import requires_search
 
 from util import generate_color, html_and_illegal_unicode_replace
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
     request_timeout=settings.ELASTIC_TIMEOUT
@@ -264,10 +268,12 @@ def data_for_charts(elastic_results):
 
 
 def to_atom(result):
+    if not result['id']['url']:
+        logger.error('ATOM error for {}: Missing id'.format(result['source']))
     return {
         'title': html_and_illegal_unicode_replace(result.get('title')) or 'No title provided.',
         'summary': html_and_illegal_unicode_replace(result.get('description')) or 'No summary provided.',
-        'id': result['id']['url'],
+        'id': result['id']['url'] or 'url_error',
         'updated': get_date_updated(result),
         'links': [
             {'href': result['id']['url'], 'rel': 'alternate'}
