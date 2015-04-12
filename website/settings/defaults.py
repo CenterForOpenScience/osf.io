@@ -116,7 +116,7 @@ SESSION_HISTORY_LENGTH = 5
 SESSION_HISTORY_IGNORE_RULES = [
     lambda url: '/static/' in url,
     lambda url: 'favicon' in url,
-    lambda url: url.startswith('/api/')
+    lambda url: url.startswith('/api/'),
 ]
 
 # TODO: Configuration should not change between deploys - this should be dynamic.

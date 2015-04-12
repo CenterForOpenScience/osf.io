@@ -80,7 +80,8 @@ class TestShareSearch(OsfTestCase):
             'q': '*',
             'from': '1',
             'size:': '20',
-            'sort': 'date'
+            'sort': 'date',
+            'v': '1'
         })
         assert_is(mock_search.called, True)
 
@@ -92,7 +93,8 @@ class TestShareSearch(OsfTestCase):
             'from': '1',
             'size:': '20',
             'sort': 'date',
-            'count': True
+            'count': True,
+            'v': '1'
         })
         assert_is(mock_count.called, True)
 
