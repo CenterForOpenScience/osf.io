@@ -136,7 +136,7 @@ def make_url_map(app):
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
             website_views.resolve_guid,
-            OsfWebRenderer('', render_mako_string),
+            notemplate,
         ),
 
         Rule(
@@ -650,6 +650,8 @@ def make_url_map(app):
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
+        Rule('/share/registration/', 'get', {'register': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
+        Rule('/share/help/', 'get', {'help': settings.SHARE_API_DOCS_URL}, OsfWebRenderer('share_api_docs.mako')),
         Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
         Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
@@ -669,7 +671,7 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
+        Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
         Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
         Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
 
@@ -764,6 +766,13 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/registrations/',
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
+
+        Rule(
+            '/ids/<category>/<path:value>/',
+            'get',
+            project_views.register.get_referent_by_identifier,
+            notemplate,
+        ),
 
         # Statistics
         Rule([
@@ -1153,6 +1162,26 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'post', project_views.register.node_register_template_page_post, json_renderer),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'get',
+            project_views.register.node_identifiers_get,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'post',
+            project_views.register.node_identifiers_post,
+            json_renderer,
+        ),
 
         # Statistics
         Rule([

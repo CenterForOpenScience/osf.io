@@ -1,10 +1,12 @@
+'use strict';
+
 var ko = require('knockout');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 // Enable knockout punches
 ko.punches.enableAll();
 
@@ -77,13 +79,13 @@ var ViewModel = function(params) {
     self.showSearch = true;
     self.showClose = false;
     self.searchCSS = ko.observable('active');
-    self.onSearchPage = true; 
+    self.onSearchPage = true;
 
     // Maintain compatibility with hiding search bar elsewhere on the site
     self.toggleSearch = function() {
     };
 
-    self.totalCount = ko.computed(function() {
+    self.totalCount = ko.pureComputed(function() {
         if (self.categories().length === 0 || self.categories()[0] === undefined) {
             return 0;
         }
@@ -91,29 +93,29 @@ var ViewModel = function(params) {
         return self.categories()[0].count;
     });
 
-    self.totalPages = ko.computed(function() {
+    self.totalPages = ko.pureComputed(function() {
         var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
-        countOfPages = Math.ceil(self.totalResults() / resultsCount);
+        var countOfPages = Math.ceil(self.totalResults() / resultsCount);
         return countOfPages;
     });
 
-    self.nextPageExists = ko.computed(function() {
+    self.nextPageExists = ko.pureComputed(function() {
         return ((self.totalPages() > 1) && (self.currentPage() < self.totalPages()));
     });
 
-    self.prevPageExists = ko.computed(function() {
+    self.prevPageExists = ko.pureComputed(function() {
         return self.totalPages() > 1 && self.currentPage() > 1;
     });
 
-    self.currentIndex = ko.computed(function() {
+    self.currentIndex = ko.pureComputed(function() {
         return Math.max(self.resultsPerPage() * (self.currentPage()-1),0);
     });
 
-    self.navLocation = ko.computed(function() {
+    self.navLocation = ko.pureComputed(function() {
         return 'Page ' + self.currentPage() + ' of ' + self.totalPages();
     });
 
-    self.queryObject = ko.computed(function(){
+    self.queryObject = ko.pureComputed(function(){
         return {
             'query_string': {
                 'default_field': '_all',
@@ -125,7 +127,7 @@ var ViewModel = function(params) {
     });
 
 
-    self.fullQuery = ko.computed(function() {
+    self.fullQuery = ko.pureComputed(function() {
         return {
             'filtered': {
                 'query': self.queryObject()
@@ -255,7 +257,8 @@ var ViewModel = function(params) {
             if (!noPush) {
                 self.pushState();
             }
-            $osf.postJSON('/api/v1/share/?count', jsonData).success(function(data) {
+
+            $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
                 self.categories.push(new Category('SHARE', data.count, 'SHARE'));
             });
         }).fail(function(response){
@@ -293,6 +296,7 @@ var ViewModel = function(params) {
 
     //Ensure that the first url displays properly
     self.validateSearch = function() {
+        var possibleCategories;
         if (self.category().name !== undefined) {
             possibleCategories = $.map(self.categories().filter(function(category) {
                 return category.count > 0;

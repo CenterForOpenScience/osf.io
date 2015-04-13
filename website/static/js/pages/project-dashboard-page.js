@@ -4,9 +4,10 @@
 var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
+require('bootstrap-editable');
 
 var m = require('mithril');
-var Fangorn = require('fangorn');
+var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
@@ -19,6 +20,7 @@ var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 
+
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
@@ -29,7 +31,7 @@ new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
-    new NodeControl('#projectScope', data);
+    new NodeControl.NodeControl('#projectScope', data);
 });
 
 // Initialize comment pane w/ it's viewmodel
@@ -175,5 +177,4 @@ $(document).ready(function() {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
-
 });

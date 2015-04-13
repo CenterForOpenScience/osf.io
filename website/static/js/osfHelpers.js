@@ -7,9 +7,9 @@ var moment = require('moment');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
-require('koHelpers');
+require('./koHelpers');
 
-var GrowlBox = require('./growlBox');
+var GrowlBox = require('js/growlBox');
 
 /**
  * Convenience function to create a GrowlBox
@@ -93,8 +93,8 @@ var errorDefaultLong = 'OSF was unable to resolve your request. If this issue pe
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
 var handleJSONError = function(response) {
-    var title = response.responseJSON.message_short || errorDefaultShort;
-    var message = response.responseJSON.message_long || errorDefaultLong;
+    var title = response.message_short || errorDefaultShort;
+    var message = response.message_long || errorDefaultLong;
 
     $.osf.growl(title, message);
 
@@ -294,6 +294,37 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
         $(elem).tooltip(valueAccessor());
+    }
+};
+
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements
+ * Example:
+ * <span data-bind="anchorScroll"></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        var offset;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            var $element = $(element);
+            if(!$item.attr('data-model') && $item.attr('href') !== '#') {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href');
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.height() ) {
+                    offset = $(target).position();
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    offset = $(target).offset();
+                    $(window).scrollTop(offset.top - 100); // This is fixed to 100 because of the fixed navigation menus on the page
+                }
+            }
+        });
     }
 };
 

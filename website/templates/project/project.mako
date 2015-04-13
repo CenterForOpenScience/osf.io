@@ -5,14 +5,14 @@
     is_project = node['node_type'] == 'project'
 %>
 
-<div id="projectScope">
+<div id="projectScope" class="scripted">
     <header class="subhead" id="overview">
         <div class="row">
             <div class="col-sm-6 col-md-7 cite-container">
                 % if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
-                            <a href="${parent_node['url']}">${parent_node['title']}</a> <i class="fa fa-level-down fa fa-dark-lg"> </i>
+                            <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
                         </h2>
                     % else:
                         <h2 class="node-parent-title unavailable">
@@ -115,6 +115,16 @@
                 <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 | Last Updated:
                 <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                <!-- ko if: hasIdentifiers -->
+                    <br />
+                    Identifiers:
+                    DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
+                    ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                <!-- /ko -->
+                <!-- ko if: canCreateIdentifiers -->
+                    <br />
+                    <a data-bind="click: askCreateIdentifiers">Create DOI / ARK</a>
+                <!-- /ko -->
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:

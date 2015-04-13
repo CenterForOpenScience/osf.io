@@ -1,8 +1,10 @@
+'use strict';
+
 var ko = require('knockout');
 var $ = require('jquery');
 require('./jquery.qrcode.min.js');
 
-var osfHelpers = require('osfHelpers');
+var osfHelpers = require('js/osfHelpers');
 
 var SETTINGS_URL = '/api/v1/settings/twofactor/';
 
