@@ -47,13 +47,7 @@ INSTALLED_APPS = (
     'rest_framework',
 )
 
-OAUTH2_PROVIDER = {
-    # this is the list of available scopes
-    'SCOPES': {'read': 'Read scope', 'write': 'Write scope'}
-}
-
 REST_FRAMEWORK = {
-    # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
     'PAGE_SIZE': 10,
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
@@ -74,6 +68,12 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE_CLASSES = (
+    # TokuMX transaction support
+    # Needs to go before CommonMiddleware, so that transactions are always started,
+    # even in the event of a redirect. CommonMiddleware may cause other middlewares'
+    # process_request to be skipped, e.g. whne a trailing slash is omitted
+    'api.base.middleware.TokuTransactionsMiddleware',
+
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -83,8 +83,6 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 
-    # Custom middleware
-    'api.base.middleware.TokuTransactionsMiddleware',
 )
 
 ROOT_URLCONF = 'api.base.urls'
