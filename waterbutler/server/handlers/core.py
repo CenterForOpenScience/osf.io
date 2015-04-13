@@ -192,6 +192,7 @@ class BaseCrossProviderHandler(BaseHandler):
             'destination': {
                 'path': data['path'],
                 'name': data['name'],
+                'fullPath': data['fullPath'],
                 'provider': self.destination_provider.NAME,
             },
             'auth': self.auth['auth'],

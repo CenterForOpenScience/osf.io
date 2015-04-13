@@ -23,6 +23,7 @@ def move(src_bundle, dest_bundle, callback_url, auth):
             'path': metadata['path'],
             'name': metadata['name'],
             'provider': dest_provider.NAME,
+            'fullPath': metadata['fullPath'],
         },
         'auth': auth['auth'],
         'time': time.time() + 60
