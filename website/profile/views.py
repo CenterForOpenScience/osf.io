@@ -106,7 +106,10 @@ def update_user(auth):
         for address in removed_emails:
             if address in user.emails:
                 user.remove_email(address)
-            user.remove_unconfirmed_email(address)
+            elif address in user.unconfirmed_emails:
+                user.remove_unconfirmed_email(address)
+            else:
+                raise HTTPError(httplib.FORBIDDEN)
 
         # additions
         added_emails = [
@@ -142,9 +145,10 @@ def update_user(auth):
         )
 
         if primary_email:
-            if primary_email not in user.emails:
+            primary_email_address = primary_email['address'].strip().lower()
+            if primary_email_address not in user.emails:
                 raise HTTPError(httplib.FORBIDDEN)
-            username = primary_email['address'].strip().lower()
+            username = primary_email_address
 
         # make sure the new username has already been confirmed
         if username and username in user.emails and username != user.username:

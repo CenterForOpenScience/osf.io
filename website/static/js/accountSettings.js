@@ -147,6 +147,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
         this.emailInput = ko.observable();
+
     },
     init: function () {
         this.client.fetch().done(
@@ -191,14 +192,18 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     },
     removeEmail: function (email) {
         this.changeMessage('', 'text-info');
-        this.profile().emails.remove(email);
-        this.client.update(this.profile()).done(function() {
-            $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
-        });
+        if (this.profile().emails().indexOf(email) !== -1) {
+            this.profile().emails.remove(email);
+            this.client.update(this.profile()).done(function() {
+                $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
+            });
+        } else {
+            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+        }
     },
     makeEmailPrimary: function (email) {
         this.changeMessage('', 'text-info');
-        if (email in this.profile().emails()) {
+        if (this.profile().emails().indexOf(email) !== -1) {
             this.profile().primaryEmail().isPrimary(false);
             email.isPrimary(true);
             this.client.update(this.profile()).done(function () {
