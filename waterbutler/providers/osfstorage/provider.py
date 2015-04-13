@@ -61,6 +61,11 @@ class OSFStorageProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
+    def copy(self, dest_provider, source_options, dest_options):
+        source_options['is_upload'] = False
+        return (yield from super().copy(dest_provider, source_options, dest_options))
+
+    @asyncio.coroutine
     def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
         signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
         if method.upper() in QUERY_METHODS:
@@ -154,6 +159,7 @@ class OSFStorageProvider(provider.BaseProvider):
                     'version': self.__version__,
                 },
                 'path': path,
+                'is_upload': kwargs.get('is_upload', True)
             }),
             headers={'Content-Type': 'application/json'},
         )
