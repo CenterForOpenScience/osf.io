@@ -27,6 +27,8 @@ class ProviderError(Exception):
 class CopyError(ProviderError):
     pass
 
+class CreateFolderError(ProviderError):
+    pass
 
 class DeleteError(ProviderError):
     pass
@@ -66,6 +68,10 @@ class NotFoundError(ProviderError):
             'Could not retrieve file or directory {}'.format(path),
             code=http.client.NOT_FOUND,
         )
+
+class InvalidPathError(ProviderError):
+    def __init__(self, message):
+        super().__init__(message, code=http.client.BAD_REQUEST)
 
 
 @asyncio.coroutine

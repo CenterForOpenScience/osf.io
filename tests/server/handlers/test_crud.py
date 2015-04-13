@@ -188,3 +188,18 @@ class TestCrudHandler(utils.HandlerTestCase):
         args, kwargs = calls[0]
         assert kwargs.get('action') == 'delete'
         assert resp.code == 204
+
+    @mock.patch('waterbutler.core.utils.make_provider')
+    @testing.gen_test
+    def test_create_folder(self, mock_make_provider):
+        mock_provider = utils.mock_provider_method(mock_make_provider, 'create_folder', {})
+        resp = yield self.http_client.fetch(
+            self.get_url('/file?provider=queenhub&path=/folder/'),
+            method='POST',
+            body=''
+        )
+        calls = mock_provider.create_folder.call_args_list
+        assert len(calls) == 1
+        args, kwargs = calls[0]
+        assert kwargs.get('action') == 'create_folder'
+        assert resp.code == 201

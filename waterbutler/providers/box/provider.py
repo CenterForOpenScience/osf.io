@@ -23,7 +23,6 @@ class BoxPath(utils.WaterButlerPath):
         except:
             self._id = _id
 
-
 class BoxProvider(provider.BaseProvider):
     NAME = 'box'
     BASE_URL = settings.BASE_URL
@@ -78,6 +77,13 @@ class BoxProvider(provider.BaseProvider):
         return {
             'Authorization': 'Bearer {}'.format(self.token),
         }
+
+    @asyncio.coroutine
+    def make_request(self, *args, **kwargs):
+        if isinstance(kwargs.get('data'), dict):
+            kwargs['data'] = json.dumps(kwargs['data'])
+
+        return super().make_request(*args, **kwargs)
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
@@ -155,23 +161,33 @@ class BoxProvider(provider.BaseProvider):
         return BoxFileMetadata(data['entries'][0], self.folder).serialized(), file_id is None
 
     @asyncio.coroutine
-    def delete(self, path, file_id=None, **kwargs):
-        if not file_id:
-            file_id = (yield from self.metadata(path, raw=True))['id']
+    def delete(self, path, file_id=None, folder_id=None, **kwargs):
+        if not file_id or not folder_id:
+            path = BoxPath(path)
+            metadata = yield from self.metadata(str(path), raw=True, folder=path.is_dir)
+            if path.is_file:
+                file_id = metadata['id']
+            else:
+                folder_id = metadata['id']
+
+        if file_id:
+            url = self.build_url('files', file_id)
+        else:
+            url = self.build_url('folders', folder_id, recursive=True)
 
         yield from self.make_request(
             'DELETE',
-            self.build_url('files', file_id),
+            url,
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
 
     @asyncio.coroutine
-    def metadata(self, path, raw=False, **kwargs):
+    def metadata(self, path, raw=False, folder=False, **kwargs):
         path = BoxPath(path)
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
-        return (yield from self._get_folder_meta(path, raw=raw))
+        return (yield from self._get_folder_meta(path, raw=raw, folder=folder))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
@@ -194,6 +210,35 @@ class BoxProvider(provider.BaseProvider):
             BoxRevision(each).serialized()
             for each in [curr] + revisions
         ]
+
+    @asyncio.coroutine
+    def create_folder(self, path, **kwargs):
+        if len(path.split('/')) == 3:
+            path = '/{}{}'.format(self.folder, path)
+
+        path = BoxPath(path)
+        path.validate_folder()
+
+        resp = yield from self.make_request(
+            'POST',
+            self.build_url('folders'),
+            data={
+                'name': path.name,
+                'parent': {
+                    'id': path._id or self.folder
+                }
+            },
+            expects=(201, 409),
+            throws=exceptions.CreateFolderError,
+        )
+
+        if resp.status == 409:
+            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+
+        return BoxFolderMetadata(
+            (yield from resp.json()),
+            self.folder
+        ).serialized()
 
     def _assert_child(self, paths, target=None):
         if self.folder == 0:
@@ -235,17 +280,23 @@ class BoxProvider(provider.BaseProvider):
         return data if raw else BoxFileMetadata(data, self.folder).serialized()
 
     @asyncio.coroutine
-    def _get_folder_meta(self, path, raw=False):
+    def _get_folder_meta(self, path, raw=False, folder=False):
         if str(path) == '/':
             path = BoxPath('/{}/'.format(self.folder))
         yield from self._assert_child_folder(path)
 
+        if folder:
+            url = self.build_url('folders', path._id)
+        else:
+            url = self.build_url('folders', path._id, 'items')
+
         response = yield from self.make_request(
             'GET',
-            self.build_url('folders', path._id, 'items'),
+            url,
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
+
         data = yield from response.json()
 
         if raw:

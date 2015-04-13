@@ -4,6 +4,8 @@
 
 `Develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/waterbutler.svg?branch=develop)](https://travis-ci.org/CenterForOpenScience/waterbutler)
 
+Docs can be found [here](https://waterbutler.readthedocs.org/en/latest/)
+
 ### osf startup commands
 *(requires two instances of osf in order to render files)*
 

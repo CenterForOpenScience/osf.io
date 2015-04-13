@@ -112,101 +112,149 @@ def upload_response():
 
 
 @pytest.fixture
+def create_folder_response():
+    return {
+        "content": {
+            "name": ".gitkeep",
+            "path": "i/like/trains/.gitkeep",
+            "sha": "95b966ae1c166bd92f8ae7d1c313e738c731dfc3",
+            "size": 9,
+            "url": "https://api.github.com/repos/octocat/Hello-World/contents/notes/hello.txt",
+            "html_url": "https://github.com/octocat/Hello-World/blob/master/notes/hello.txt",
+            "git_url": "https://api.github.com/repos/octocat/Hello-World/git/blobs/95b966ae1c166bd92f8ae7d1c313e738c731dfc3",
+            "type": "file",
+            "_links": {
+                "self": "https://api.github.com/repos/octocat/Hello-World/contents/notes/hello.txt",
+                "git": "https://api.github.com/repos/octocat/Hello-World/git/blobs/95b966ae1c166bd92f8ae7d1c313e738c731dfc3",
+                "html": "https://github.com/octocat/Hello-World/blob/master/notes/hello.txt"
+            }
+        },
+        "commit": {
+            "sha": "7638417db6d59f3c431d3e1f261cc637155684cd",
+            "url": "https://api.github.com/repos/octocat/Hello-World/git/commits/7638417db6d59f3c431d3e1f261cc637155684cd",
+            "html_url": "https://github.com/octocat/Hello-World/git/commit/7638417db6d59f3c431d3e1f261cc637155684cd",
+            "author": {
+                "date": "2010-04-10T14:10:01-07:00",
+                "name": "Scott Chacon",
+                "email": "schacon@gmail.com"
+            },
+            "committer": {
+                "date": "2010-04-10T14:10:01-07:00",
+                "name": "Scott Chacon",
+                "email": "schacon@gmail.com"
+            },
+            "message": "my commit message",
+            "tree": {
+                "url": "https://api.github.com/repos/octocat/Hello-World/git/trees/691272480426f78a0138979dd3ce63b77f706feb",
+                "sha": "691272480426f78a0138979dd3ce63b77f706feb"
+            },
+            "parents": [
+                {
+                    "url": "https://api.github.com/repos/octocat/Hello-World/git/commits/1acc419d4d6a9ce985db7be48c6349a0475975b5",
+                    "html_url": "https://github.com/octocat/Hello-World/git/commit/1acc419d4d6a9ce985db7be48c6349a0475975b5",
+                    "sha": "1acc419d4d6a9ce985db7be48c6349a0475975b5"
+                }
+            ]
+        }
+    }
+
+
+@pytest.fixture
 def repo_metadata():
-      return {
-          'full_name': 'octocat/Hello-World',
-          'permissions': {
-              'push': False,
-              'admin': False,
-              'pull': True
-          },
-          'has_downloads': True,
-          'notifications_url': 'https://api.github.com/repos/octocat/Hello-World/notifications{?since,all,participating}',
-          'releases_url': 'https://api.github.com/repos/octocat/Hello-World/releases{/id}',
-          'downloads_url': 'https://api.github.com/repos/octocat/Hello-World/downloads',
-          'merges_url': 'https://api.github.com/repos/octocat/Hello-World/merges',
-          'owner': {
-              'avatar_url': 'https://avatars.githubusercontent.com/u/583231?v=3',
-              'organizations_url': 'https://api.github.com/users/octocat/orgs',
-              'type': 'User',
-              'starred_url': 'https://api.github.com/users/octocat/starred{/owner}{/repo}',
-              'url': 'https://api.github.com/users/octocat',
-              'html_url': 'https://github.com/octocat',
-              'received_events_url': 'https://api.github.com/users/octocat/received_events',
-              'subscriptions_url': 'https://api.github.com/users/octocat/subscriptions',
-              'site_admin': False,
-              'gravatar_id': '',
-              'repos_url': 'https://api.github.com/users/octocat/repos',
-              'gists_url': 'https://api.github.com/users/octocat/gists{/gist_id}',
-              'id': 583231,
-              'events_url': 'https://api.github.com/users/octocat/events{/privacy}',
-              'login': 'octocat',
-              'following_url': 'https://api.github.com/users/octocat/following{/other_user}',
-              'followers_url': 'https://api.github.com/users/octocat/followers'
-          },
-          'html_url': 'https://github.com/octocat/Hello-World',
-          'comments_url': 'https://api.github.com/repos/octocat/Hello-World/comments{/number}',
-          'git_url': 'git://github.com/octocat/Hello-World.git',
-          'ssh_url': 'git@github.com:octocat/Hello-World.git',
-          'language': None,
-          'pulls_url': 'https://api.github.com/repos/octocat/Hello-World/pulls{/number}',
-          'subscribers_count': 1850,
-          'forks_count': 1085,
-          'watchers_count': 1407,
-          'id': 1296269,
-          'keys_url': 'https://api.github.com/repos/octocat/Hello-World/keys{/key_id}',
-          'default_branch': 'master',
-          'stargazers_count': 1407,
-          'tags_url': 'https://api.github.com/repos/octocat/Hello-World/tags',
-          'clone_url': 'https://github.com/octocat/Hello-World.git',
-          'homepage': '',
-          'forks_url': 'https://api.github.com/repos/octocat/Hello-World/forks',
-          'branches_url': 'https://api.github.com/repos/octocat/Hello-World/branches{/branch}',
-          'url': 'https://api.github.com/repos/octocat/Hello-World',
-          'contents_url': 'https://api.github.com/repos/octocat/Hello-World/contents/{+path}',
-          'hooks_url': 'https://api.github.com/repos/octocat/Hello-World/hooks',
-          'git_tags_url': 'https://api.github.com/repos/octocat/Hello-World/git/tags{/sha}',
-          'statuses_url': 'https://api.github.com/repos/octocat/Hello-World/statuses/{sha}',
-          'trees_url': 'https://api.github.com/repos/octocat/Hello-World/git/trees{/sha}',
-          'contributors_url': 'https://api.github.com/repos/octocat/Hello-World/contributors',
-          'open_issues': 126,
-          'has_pages': False,
-          'pushed_at': '2014-06-11T21:51:23Z',
-          'network_count': 1085,
-          'commits_url': 'https://api.github.com/repos/octocat/Hello-World/commits{/sha}',
-          'git_commits_url': 'https://api.github.com/repos/octocat/Hello-World/git/commits{/sha}',
-          'svn_url': 'https://github.com/octocat/Hello-World',
-          'forks': 1085,
-          'fork': False,
-          'subscription_url': 'https://api.github.com/repos/octocat/Hello-World/subscription',
-          'archive_url': 'https://api.github.com/repos/octocat/Hello-World/{archive_format}{/ref}',
-          'subscribers_url': 'https://api.github.com/repos/octocat/Hello-World/subscribers',
-          'description': 'This your first repo!',
-          'blobs_url': 'https://api.github.com/repos/octocat/Hello-World/git/blobs{/sha}',
-          'teams_url': 'https://api.github.com/repos/octocat/Hello-World/teams',
-          'compare_url': 'https://api.github.com/repos/octocat/Hello-World/compare/{base}...{head}',
-          'issues_url': 'https://api.github.com/repos/octocat/Hello-World/issues{/number}',
-          'stargazers_url': 'https://api.github.com/repos/octocat/Hello-World/stargazers',
-          'private': False,
-          'created_at': '2011-01-26T19:01:12Z',
-          'issue_comment_url': 'https://api.github.com/repos/octocat/Hello-World/issues/comments/{number}',
-          'has_issues': True,
-          'milestones_url': 'https://api.github.com/repos/octocat/Hello-World/milestones{/number}',
-          'issue_events_url': 'https://api.github.com/repos/octocat/Hello-World/issues/events{/number}',
-          'languages_url': 'https://api.github.com/repos/octocat/Hello-World/languages',
-          'name': 'Hello-World',
-          'mirror_url': None,
-          'has_wiki': True,
-          'updated_at': '2014-12-12T16:45:49Z',
-          'watchers': 1407,
-          'open_issues_count': 126,
-          'labels_url': 'https://api.github.com/repos/octocat/Hello-World/labels{/name}',
-          'collaborators_url': 'https://api.github.com/repos/octocat/Hello-World/collaborators{/collaborator}',
-          'assignees_url': 'https://api.github.com/repos/octocat/Hello-World/assignees{/user}',
-          'size': 558,
-          'git_refs_url': 'https://api.github.com/repos/octocat/Hello-World/git/refs{/sha}',
-          'events_url': 'https://api.github.com/repos/octocat/Hello-World/events'
-      }
+    return {
+        'full_name': 'octocat/Hello-World',
+        'permissions': {
+            'push': False,
+            'admin': False,
+            'pull': True
+        },
+        'has_downloads': True,
+        'notifications_url': 'https://api.github.com/repos/octocat/Hello-World/notifications{?since,all,participating}',
+        'releases_url': 'https://api.github.com/repos/octocat/Hello-World/releases{/id}',
+        'downloads_url': 'https://api.github.com/repos/octocat/Hello-World/downloads',
+        'merges_url': 'https://api.github.com/repos/octocat/Hello-World/merges',
+        'owner': {
+            'avatar_url': 'https://avatars.githubusercontent.com/u/583231?v=3',
+            'organizations_url': 'https://api.github.com/users/octocat/orgs',
+            'type': 'User',
+            'starred_url': 'https://api.github.com/users/octocat/starred{/owner}{/repo}',
+            'url': 'https://api.github.com/users/octocat',
+            'html_url': 'https://github.com/octocat',
+            'received_events_url': 'https://api.github.com/users/octocat/received_events',
+            'subscriptions_url': 'https://api.github.com/users/octocat/subscriptions',
+            'site_admin': False,
+            'gravatar_id': '',
+            'repos_url': 'https://api.github.com/users/octocat/repos',
+            'gists_url': 'https://api.github.com/users/octocat/gists{/gist_id}',
+            'id': 583231,
+            'events_url': 'https://api.github.com/users/octocat/events{/privacy}',
+            'login': 'octocat',
+            'following_url': 'https://api.github.com/users/octocat/following{/other_user}',
+            'followers_url': 'https://api.github.com/users/octocat/followers'
+        },
+        'html_url': 'https://github.com/octocat/Hello-World',
+        'comments_url': 'https://api.github.com/repos/octocat/Hello-World/comments{/number}',
+        'git_url': 'git://github.com/octocat/Hello-World.git',
+        'ssh_url': 'git@github.com:octocat/Hello-World.git',
+        'language': None,
+        'pulls_url': 'https://api.github.com/repos/octocat/Hello-World/pulls{/number}',
+        'subscribers_count': 1850,
+        'forks_count': 1085,
+        'watchers_count': 1407,
+        'id': 1296269,
+        'keys_url': 'https://api.github.com/repos/octocat/Hello-World/keys{/key_id}',
+        'default_branch': 'master',
+        'stargazers_count': 1407,
+        'tags_url': 'https://api.github.com/repos/octocat/Hello-World/tags',
+        'clone_url': 'https://github.com/octocat/Hello-World.git',
+        'homepage': '',
+        'forks_url': 'https://api.github.com/repos/octocat/Hello-World/forks',
+        'branches_url': 'https://api.github.com/repos/octocat/Hello-World/branches{/branch}',
+        'url': 'https://api.github.com/repos/octocat/Hello-World',
+        'contents_url': 'https://api.github.com/repos/octocat/Hello-World/contents/{+path}',
+        'hooks_url': 'https://api.github.com/repos/octocat/Hello-World/hooks',
+        'git_tags_url': 'https://api.github.com/repos/octocat/Hello-World/git/tags{/sha}',
+        'statuses_url': 'https://api.github.com/repos/octocat/Hello-World/statuses/{sha}',
+        'trees_url': 'https://api.github.com/repos/octocat/Hello-World/git/trees{/sha}',
+        'contributors_url': 'https://api.github.com/repos/octocat/Hello-World/contributors',
+        'open_issues': 126,
+        'has_pages': False,
+        'pushed_at': '2014-06-11T21:51:23Z',
+        'network_count': 1085,
+        'commits_url': 'https://api.github.com/repos/octocat/Hello-World/commits{/sha}',
+        'git_commits_url': 'https://api.github.com/repos/octocat/Hello-World/git/commits{/sha}',
+        'svn_url': 'https://github.com/octocat/Hello-World',
+        'forks': 1085,
+        'fork': False,
+        'subscription_url': 'https://api.github.com/repos/octocat/Hello-World/subscription',
+        'archive_url': 'https://api.github.com/repos/octocat/Hello-World/{archive_format}{/ref}',
+        'subscribers_url': 'https://api.github.com/repos/octocat/Hello-World/subscribers',
+        'description': 'This your first repo!',
+        'blobs_url': 'https://api.github.com/repos/octocat/Hello-World/git/blobs{/sha}',
+        'teams_url': 'https://api.github.com/repos/octocat/Hello-World/teams',
+        'compare_url': 'https://api.github.com/repos/octocat/Hello-World/compare/{base}...{head}',
+        'issues_url': 'https://api.github.com/repos/octocat/Hello-World/issues{/number}',
+        'stargazers_url': 'https://api.github.com/repos/octocat/Hello-World/stargazers',
+        'private': False,
+        'created_at': '2011-01-26T19:01:12Z',
+        'issue_comment_url': 'https://api.github.com/repos/octocat/Hello-World/issues/comments/{number}',
+        'has_issues': True,
+        'milestones_url': 'https://api.github.com/repos/octocat/Hello-World/milestones{/number}',
+        'issue_events_url': 'https://api.github.com/repos/octocat/Hello-World/issues/events{/number}',
+        'languages_url': 'https://api.github.com/repos/octocat/Hello-World/languages',
+        'name': 'Hello-World',
+        'mirror_url': None,
+        'has_wiki': True,
+        'updated_at': '2014-12-12T16:45:49Z',
+        'watchers': 1407,
+        'open_issues_count': 126,
+        'labels_url': 'https://api.github.com/repos/octocat/Hello-World/labels{/name}',
+        'collaborators_url': 'https://api.github.com/repos/octocat/Hello-World/collaborators{/collaborator}',
+        'assignees_url': 'https://api.github.com/repos/octocat/Hello-World/assignees{/user}',
+        'size': 558,
+        'git_refs_url': 'https://api.github.com/repos/octocat/Hello-World/git/refs{/sha}',
+        'events_url': 'https://api.github.com/repos/octocat/Hello-World/events'
+    }
 
 
 @pytest.fixture
@@ -574,3 +622,73 @@ class TestMetadata:
     # def test_metadata_non_root_folder(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
     # def test_metadata_non_root_folder_branch(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
     # def test_metadata_non_root_folder_commit_sha(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
+
+
+class TestCreateFolder:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_errors_out(self, provider):
+        path = GitHubPath('/Imarealboy/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_uri('PUT', url, status=400)
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 400
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_must_be_folder(self, provider):
+        path = GitHubPath('/Imarealboy')
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_already_exists(self, provider):
+        path = GitHubPath('/Imarealboy/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_json_uri('PUT', url, status=422, body={
+            'message': 'Invalid request.\n\n"sha" wasn\'t supplied.'
+        })
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 409
+        assert e.value.message == 'Folder "/Imarealboy/" already exists.'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_raises_other_422(self, provider):
+        path = GitHubPath('/Imarealboy/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_json_uri('PUT', url, status=422, body={
+            'message': 'github no likey'
+        })
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 422
+        assert e.value.data == {'message': 'github no likey'}
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_returns_metadata(self, provider, create_folder_response):
+        path = GitHubPath('/i/like/trains/')
+        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+
+        aiohttpretty.register_json_uri('PUT', url, status=201, body=create_folder_response)
+
+        metadata = yield from provider.create_folder(str(path))
+
+        assert metadata['kind'] == 'folder'
+        assert metadata['name'] == 'trains'
+        assert metadata['path'] == '/i/like/trains/'

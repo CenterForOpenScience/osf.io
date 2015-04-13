@@ -23,6 +23,7 @@ class CRUDHandler(core.BaseProviderHandler):
         'GET': 'download',
         'PUT': 'upload',
         'DELETE': 'delete',
+        'POST': 'create_folder',
     }
     STREAM_METHODS = ('PUT', )
 
@@ -87,6 +88,18 @@ class CRUDHandler(core.BaseProviderHandler):
             yield from utils.future_wrapper(self.flush())
 
     @utils.coroutine
+    def post(self):
+        """Create a folder"""
+        self.set_status(201)
+        metadata = yield from self.provider.create_folder(**self.arguments)
+        self.write(metadata)
+
+        self._send_hook(
+            'create_folder',
+            metadata,
+        )
+
+    @utils.coroutine
     def put(self):
         """Upload a file."""
         self.stream.feed_eof()
@@ -104,8 +117,8 @@ class CRUDHandler(core.BaseProviderHandler):
     def delete(self):
         """Delete a file."""
         # TODO: Current release does not allow deletion of directories (needs authorization code)
-        if self.arguments.get('path', '').endswith('/'):
-            raise web.HTTPError('Deletion of directories is currently not supported', status_code=400)
+        # if self.arguments.get('path', '').endswith('/'):
+        #     raise web.HTTPError('Deletion of directories is currently not supported', status_code=400)
 
         yield from self.provider.delete(**self.arguments)
         self.set_status(http.client.NO_CONTENT)

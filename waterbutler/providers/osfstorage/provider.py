@@ -36,6 +36,7 @@ class OSFStorageProvider(provider.BaseProvider):
         self.callback_url = settings.get('callback')
         self.metadata_url = settings.get('metadata')
         self.revisions_url = settings.get('revisions')
+        self.create_folder_url = settings.get('createFolder')
         self.provider_name = settings['storage'].get('provider')
 
         self.parity_settings = settings.get('parity')
@@ -87,11 +88,12 @@ class OSFStorageProvider(provider.BaseProvider):
 
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
+        name = data['data'].pop('name')
         data['data']['path'] = '/' + data['data']['path']
         download_kwargs = {}
         download_kwargs.update(kwargs)
         download_kwargs.update(data['data'])
-        download_kwargs['displayName'] = kwargs.get('displayName') or kwargs['path']
+        download_kwargs['displayName'] = kwargs.get('displayName', name)
         return (yield from provider.download(**download_kwargs))
 
     @asyncio.coroutine
@@ -178,7 +180,7 @@ class OSFStorageProvider(provider.BaseProvider):
 
         metadata.update({
             'name': name,
-            'path': path,
+            'path': data['path'],
             'version': data['version'],
             'downloads': data['downloads']
         })
@@ -199,9 +201,6 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, **kwargs):
-        if kwargs['path'].startswith('/'):
-            kwargs['path'] = kwargs['path'][1:]
-
         resp = yield from self.make_signed_request(
             'GET',
             self.metadata_url,
@@ -224,9 +223,6 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, **kwargs):
-        if kwargs['path'].startswith('/'):
-            kwargs['path'] = kwargs['path'][1:]
-
         resp = yield from self.make_signed_request(
             'GET',
             self.revisions_url,
@@ -244,6 +240,20 @@ class OSFStorageProvider(provider.BaseProvider):
 
     def can_intra_copy(self, other):
         return self.provider == other.provider
+
+    @asyncio.coroutine
+    def create_folder(self, **kwargs):
+        resp = yield from self.make_signed_request(
+            'POST',
+            self.create_folder_url,
+            data=json.dumps(kwargs),
+            headers={'Content-Type': 'application/json'},
+            expects=(201, )
+        )
+
+        return OsfStorageFolderMetadata(
+            (yield from resp.json())
+        ).serialized()
 
     def _create_paths(self):
         try:

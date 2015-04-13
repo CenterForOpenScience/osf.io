@@ -166,6 +166,47 @@ class GitHubProvider(provider.BaseProvider):
         ]
 
     @asyncio.coroutine
+    def create_folder(self, path, branch=None, message=None, **kwargs):
+        path = GitHubPath(path)
+        path.validate_folder()
+
+        assert self.name is not None
+        assert self.email is not None
+        message = message or settings.UPLOAD_FILE_MESSAGE
+
+        keep_path = os.path.join(path.path, '.gitkeep')
+
+        data = {
+            'path': keep_path,
+            'message': message,
+            'content': '',
+            'committer': self.committer,
+        }
+
+        if branch is not None:
+            data['branch'] = branch
+
+        resp = yield from self.make_request(
+            'PUT',
+            self.build_repo_url('contents', keep_path),
+            data=json.dumps(data),
+            expects=(201, 422),
+            throws=exceptions.CreateFolderError
+        )
+
+        data = yield from resp.json()
+
+        if resp.status == 422:
+            if data.get('message') == 'Invalid request.\n\n"sha" wasn\'t supplied.':
+                raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+            raise exceptions.CreateFolderError(data, code=resp.status)
+
+        data['content']['name'] = path.name
+        data['content']['path'] = data['content']['path'].replace('.gitkeep', '')
+
+        return GitHubFolderContentMetadata(data['content'], commit=data['commit']).serialized()
+
+    @asyncio.coroutine
     def _delete_file(self, path, sha=None, message=None, branch=None, **kwargs):
         if not sha:
             raise exceptions.MetadataError('A sha is required for deleting')
