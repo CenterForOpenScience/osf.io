@@ -5,6 +5,12 @@ Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
+<script type="text/html" id="googledrive_folder_created">
+created folder
+<span class="overflow">{{ params.path }}</span> in
+Google Drive in {{ nodeType }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
 
 <script type="text/html" id="googledrive_file_updated">
 updated file
@@ -15,14 +21,14 @@ Google Drive in {{ nodeType }}
 
 
 <script type="text/html" id="googledrive_file_removed">
-removed file <a class="overflow ">{{ params.path }}</a> from
+removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <a class="overflow ">{{ params.path }}</a> from
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 
 <script type="text/html" id="googledrive_folder_selected">
-linked Google Drive folder <span class="overflow">{{ params.folder }}</span> to {{ nodeType }}
+linked Google Drive folder /<span class="overflow">{{ params.folder === '/ (Full Google Drive)' ? ' (Full Google Drive)' : params.folder}}</span> to {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 

@@ -204,21 +204,23 @@ def search_share():
 
     count = request.args.get('count') is not None
     raw = request.args.get('raw') is not None
+    version = request.args.get('v')
+    index = 'share_v{}'.format(version) if version else 'share'
 
     if request.method == 'POST':
         query = request.get_json()
     elif request.method == 'GET':
         query = build_query(
             request.args.get('q', '*'),
-            request.args.get('from'),
-            request.args.get('size'),
+            request.args.get('from', 0),
+            request.args.get('size', 10),
             sort=request.args.get('sort')
         )
 
     if count:
-        results = search.count_share(query)
+        results = search.count_share(query, index=index)
     else:
-        results = search.search_share(query, raw)
+        results = search.search_share(query, raw, index=index)
 
     results['time'] = round(time.time() - tick, 2)
     return results
@@ -243,7 +245,7 @@ def search_share_atom(**kwargs):
     query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
 
     try:
-        search_results = search.search_share(query)
+        search_results = search.search_share(query, index='share_v1')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:

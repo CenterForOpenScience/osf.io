@@ -57,6 +57,15 @@ class BoxFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
+    @property
+    def extra(self):
+        if not self._metadata_cache:
+            return {}
+
+        return {
+            'fullPath': self._metadata_cache['extra']['fullPath'],
+        }
+
 
 class BoxOAuthSettings(StoredObject):
     """
@@ -272,6 +281,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     def set_folder(self, folder_id, auth):
         self.folder_id = str(folder_id)
+        self._update_folder_data()
         self.save()
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
@@ -304,6 +314,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
         self.folder_id = None
+        self._update_folder_data()
         self.user_settings = None
 
         self.save()

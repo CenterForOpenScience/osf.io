@@ -33,6 +33,7 @@ var buildCopyUrl = buildUrl.bind(this, 'copy?');
 var buildMoveUrl = buildUrl.bind(this, 'move?');
 var buildMetadataUrl = buildUrl.bind(this, 'data?');
 var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
+var buildCreateFolderUrl = buildUrl.bind(this, 'folders?');
 
 
 function buildUploadUrl(path, provider, nid, file, options) {
@@ -58,6 +59,7 @@ module.exports = {
     buildUploadUrl: buildUploadUrl,
     buildDownloadUrl: buildCrudUrl,
     buildMetadataUrl: buildMetadataUrl,
+    buildCreateFolderUrl: buildCrudUrl,
     buildRevisionsUrl: buildRevisionsUrl,
     buildTreeBeardUpload: buildFromTreebeardFile,
     buildTreeBeardCopy: buildFromTreebeard.bind(this, 'copy?'),

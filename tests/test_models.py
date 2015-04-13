@@ -7,14 +7,18 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytz
 import datetime
 import urlparse
+import itsdangerous
 from dateutil import parser
 
+from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.sessions.model import Session
+from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
@@ -226,7 +230,7 @@ class TestUser(OsfTestCase):
         assert_false(u.is_registered)
         assert_false(u.is_claimed)
         assert_true(u.is_invited)
-        assert_true(email in u.emails)
+        assert_false(email in u.emails)
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
@@ -311,28 +315,33 @@ class TestUser(OsfTestCase):
             u.save()
 
     @mock.patch('website.security.random_string')
-    def test_add_email_verification(self, random_string):
+    def test_add_unconfirmed_email(self, random_string):
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
         assert_equal(len(u.email_verifications.keys()), 0)
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         assert_equal(len(u.email_verifications.keys()), 1)
         assert_equal(u.email_verifications[token]['email'], 'foo@bar.com')
 
     @mock.patch('website.security.random_string')
-    def test_add_email_verification_adds_expiration_date(self, random_string):
+    def test_add_unconfirmed_email_adds_expiration_date(self, random_string):
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
-        u.add_email_verification(u.username)
+        u.add_unconfirmed_email("test@osf.io")
         assert_is_instance(u.email_verifications[token]['expiration'], datetime.datetime)
+
+    def test_add_blank_unconfirmed_email(self):
+        with assert_raises(ValidationError) as exc_info:
+            self.user.add_unconfirmed_email('')
+        assert_equal(exc_info.exception.message, "Invalid Email")
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
         random_string.return_value = '12345'
         u = UserFactory()
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
         assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
@@ -340,7 +349,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with assert_raises(ExpiredTokenError):
             u.get_confirmation_token('foo@bar.com')
@@ -351,7 +360,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
         with assert_raises(ExpiredTokenError):
@@ -366,7 +375,7 @@ class TestUser(OsfTestCase):
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
         u = UserFactory()
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
 
@@ -374,7 +383,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with assert_raises(ExpiredTokenError):
             u.get_confirmation_url('foo@bar.com')
@@ -385,7 +394,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         # Make sure token is already expired
         expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
-        u.add_email_verification('foo@bar.com', expiration=expiration)
+        u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
         with assert_raises(ExpiredTokenError):
@@ -398,58 +407,43 @@ class TestUser(OsfTestCase):
         assert_equal(url, expected)
 
     def test_confirm_primary_email(self):
-        u = UserFactory.build(username='foo@bar.com')
-        u.is_registered = False
-        u.is_claimed = False
-        u.add_email_verification('foo@bar.com')
-        u.save()
-        token = u.get_confirmation_token('foo@bar.com')
+        u = UnconfirmedUserFactory()
+        token = u.get_confirmation_token(u.username)
         confirmed = u.confirm_email(token)
         u.save()
         assert_true(confirmed)
         assert_equal(len(u.email_verifications.keys()), 0)
-        assert_in('foo@bar.com', u.emails)
+        assert_in(u.username, u.emails)
         assert_true(u.is_registered)
         assert_true(u.is_claimed)
 
-    def test_confirm_email_comparison_is_case_insensitive(self):
-        u = UserFactory.build(
-            username='letsgettacos@lgt.com',
-            is_registered=False,
-            date_confirmed=None
-        )
-        u.add_email_verification('LetsGetTacos@LGT.com')
-        u.save()
-        assert_false(u.is_confirmed())  # sanity check
-
-        token = u.get_confirmation_token('LetsGetTacos@LGT.com')
-
-        confirmed = u.confirm_email(token)
-        assert_true(confirmed)
-        assert_true(u.is_confirmed())
-
     def test_verify_confirmation_token(self):
         u = UserFactory.build()
-        u.add_email_verification('foo@bar.com')
+        u.add_unconfirmed_email('foo@bar.com')
         u.save()
-        assert_false(u.verify_confirmation_token('badtoken'))
+
+        with assert_raises(auth_exc.InvalidTokenError):
+            u._get_unconfirmed_email_for_token('badtoken')
+
         valid_token = u.get_confirmation_token('foo@bar.com')
-        assert_true(u.verify_confirmation_token(valid_token))
+        assert_true(u._get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
-        assert_false(u.verify_confirmation_token(valid_token))
+
+        with assert_raises(auth_exc.ExpiredTokenError):
+            u._get_unconfirmed_email_for_token(valid_token)
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
         # A user verification token may not have an expiration
         email = fake.email()
         u = UserFactory.build()
-        u.add_email_verification(email)
+        u.add_unconfirmed_email(email)
         token = u.get_confirmation_token(email)
         # manually remove expiration to simulate legacy user
         del u.email_verifications[token]['expiration']
         u.save()
 
-        assert_true(u.verify_confirmation_token(token))
+        assert_true(u._get_unconfirmed_email_for_token(token))
 
     def test_factory(self):
         # Clear users
@@ -595,7 +589,7 @@ class TestUser(OsfTestCase):
     def test_serialize_user(self):
         master = UserFactory()
         user = UserFactory.build()
-        master.merge_user(user, save=True)
+        master.merge_user(user)
         d = serialize_user(user)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
@@ -609,7 +603,7 @@ class TestUser(OsfTestCase):
     def test_serialize_user_full(self):
         master = UserFactory()
         user = UserFactory.build()
-        master.merge_user(user, save=True)
+        master.merge_user(user)
         d = serialize_user(user, full=True)
         gravatar = filters.gravatar(
             user,
@@ -697,7 +691,7 @@ class TestUser(OsfTestCase):
     def test_display_full_name_unregistered(self):
         name = fake.name()
         u = UnregUserFactory()
-        project =ProjectFactory()
+        project = ProjectFactory()
         project.add_unregistered_contributor(fullname=name, email=u.username,
             auth=Auth(project.creator))
         project.save()
@@ -727,6 +721,58 @@ class TestUser(OsfTestCase):
 
         assert_equal(self.user.n_projects_in_common(user2), 1)
         assert_equal(self.user.n_projects_in_common(user3), 0)
+
+    def test_user_get_cookie(self):
+        user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
+        session = Session(data={
+            'auth_user_id': user._id,
+            'auth_user_username': user.username,
+            'auth_user_fullname': user.fullname,
+        })
+        session.save()
+
+        assert_equal(signer.unsign(user.get_or_create_cookie(super_secret_key)), session._id)
+
+    def test_user_get_cookie_no_session(self):
+        user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+
+        cookie = user.get_or_create_cookie(super_secret_key)
+
+        session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
+
+        assert_equal(session._id, signer.unsign(cookie))
+        assert_equal(session.data['auth_user_id'], user._id)
+        assert_equal(session.data['auth_user_username'], user.username)
+        assert_equal(session.data['auth_user_fullname'], user.fullname)
+
+    def test_get_user_by_cookie(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        assert_equal(user, User.from_cookie(cookie))
+
+    def test_get_user_by_cookie_returns_none(self):
+        assert_equal(None, User.from_cookie(''))
+
+    def test_get_user_by_cookie_bad_cookie(self):
+        assert_equal(None, User.from_cookie('foobar'))
+
+    def test_get_user_by_cookie_no_session(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        Session.remove()
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+        assert_equal(None, User.from_cookie(cookie))
 
 
 class TestUserParse(unittest.TestCase):
@@ -3447,37 +3493,6 @@ class TestComments(OsfTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
-
-class TestPrivateLink(OsfTestCase):
-
-    def test_node_scale(self):
-        link = PrivateLinkFactory()
-        project = ProjectFactory()
-        comp = NodeFactory(project=project)
-        link.nodes.append(project)
-        link.save()
-        assert_equal(link.node_scale(project), -40)
-        assert_equal(link.node_scale(comp), -20)
-
-    # Regression test for https://sentry.osf.io/osf/production/group/1119/
-    def test_to_json_nodes_with_deleted_parent(self):
-        link = PrivateLinkFactory()
-        project = ProjectFactory(is_deleted=True)
-        node = NodeFactory(project=project)
-        link.nodes.extend([project, node])
-        link.save()
-        result = link.to_json()
-        # result doesn't include deleted parent
-        assert_equal(len(result['nodes']), 1)
-
-    # Regression test for https://sentry.osf.io/osf/production/group/1119/
-    def test_node_scale_with_deleted_parent(self):
-        link = PrivateLinkFactory()
-        project = ProjectFactory(is_deleted=True)
-        node = NodeFactory(project=project)
-        link.nodes.extend([project, node])
-        link.save()
-        assert_equal(link.node_scale(node), -40)
 
 
 class TestPrivateLink(OsfTestCase):
