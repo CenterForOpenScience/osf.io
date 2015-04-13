@@ -2,6 +2,7 @@
 
 import logging
 import operator
+import httplib
 import httplib as http
 import os
 
@@ -141,6 +142,8 @@ def update_user(auth):
         )
 
         if primary_email:
+            if primary_email not in user.emails:
+                raise HTTPError(httplib.FORBIDDEN)
             username = primary_email['address'].strip().lower()
 
         # make sure the new username has already been confirmed

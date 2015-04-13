@@ -198,11 +198,15 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     },
     makeEmailPrimary: function (email) {
         this.changeMessage('', 'text-info');
-        this.profile().primaryEmail().isPrimary(false);
-        email.isPrimary(true);
-        this.client.update(this.profile()).done(function () {
-            $osf.growl('Made Primary', '<em>' + email.address()  + '<em>', 'success');
-        });
+        if (email in this.profile().emails()) {
+            this.profile().primaryEmail().isPrimary(false);
+            email.isPrimary(true);
+            this.client.update(this.profile()).done(function () {
+                $osf.growl('Made Primary', '<em>' + email.address() + '<em>', 'success');
+            });
+        } else {
+            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+        }
     }
 });
 
