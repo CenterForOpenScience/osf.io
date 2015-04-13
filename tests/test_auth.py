@@ -31,15 +31,6 @@ from website.project.decorators import (
 
 class TestAuthUtils(OsfTestCase):
 
-    def test_register(self):
-        auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
-        user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
-        # The password should be set
-        assert_true(user.check_password('gattaca'))
-        assert_equal(user.fullname, "Rosie Franklin")
-        assert_equal(user.username, 'rosie@franklin.com')
-        assert_in("rosie@franklin.com", user.emails)
-
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
 
@@ -55,18 +46,15 @@ class TestAuthUtils(OsfTestCase):
         user = UserFactory()
         assert_equal(User.load(user._id), user)
 
-    def test_get_user_by_username(self):
+    def test_get_user_by_email(self):
         user = UserFactory()
-        assert_equal(auth.get_user(username=user.username), user)
+        assert_equal(auth.get_user(email=user.username), user)
 
     def test_get_user_with_wrong_password_returns_false(self):
         user = UserFactory.build()
         user.set_password('killerqueen')
         assert_false(
-            auth.get_user(
-                username=user.username,
-                password='wrong'
-            )
+            auth.get_user(email=user.username, password='wrong')
         )
 
     def test_login_success_authenticates_user(self):

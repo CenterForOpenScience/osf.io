@@ -149,15 +149,6 @@ var ViewModel = function(params) {
             }
         };
     });
-};
-ViewModel.prototype.sortCategories = function(a, b) {
-    if (a.name === 'Total') {
-        return -1;
-    } else if (b.name === 'Total') {
-        return 1;
-    }
-    return a.count > b.count ? -1 : 1;
-};
 
 ViewModel.prototype.help = function() {
     bootbox.dialog({

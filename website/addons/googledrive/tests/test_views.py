@@ -198,12 +198,12 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         self.project.reload()
 
         # Folder was set
-        assert_equal(self.node_settings.folder_path, 'Google Drive/ My Folder')
+        assert_equal(self.node_settings.folder_name, ' My Folder')
         # A log event was created
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'googledrive_folder_selected')
         params = last_log.params
-        assert_equal(params['folder'], 'Google Drive/ My Folder')
+        assert_equal(params['folder'], self.node_settings.folder_path)
 
 
 class TestGoogleDriveHgridViews(OsfTestCase):

@@ -1,7 +1,14 @@
 """Consolidates all signals used by the OSF."""
 
-from framework.auth.signals import user_registered, user_confirmed, contributor_removed, node_deleted
-from website.project.model import unreg_contributor_added
+from framework.auth import signals as auth
+from website.project import model as project
 
 
-ALL_SIGNALS = [user_registered, unreg_contributor_added, user_confirmed, contributor_removed, node_deleted]
+ALL_SIGNALS = [
+    auth.contributor_removed,
+    auth.node_deleted,
+    project.unreg_contributor_added,
+    auth.user_confirmed,
+    auth.user_email_removed,
+    auth.user_registered,
+]
