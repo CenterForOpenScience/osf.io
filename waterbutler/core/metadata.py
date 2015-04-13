@@ -63,7 +63,6 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         """
         pass
 
-    @abc.abstractproperty
     def full_path(self):
         """The "pretty" variant of path
         this path can be displayed to the enduser
@@ -74,8 +73,10 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         ..note::
             All paths MUST start with a `/`
             All Folders MUST end with a `/`
+        ..note::
+            Defaults to self.path
         """
-        pass
+        return self.path
 
     @property
     def extra(self):
