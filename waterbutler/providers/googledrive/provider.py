@@ -79,7 +79,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     def copy(self, dest_provider, source_options, dest_options):
         path, name = os.path.split(dest_options['path'])
         dest_options['path'] = os.path.join(path, parse.unquote(name))
-        return (yield from super().move(dest_provider, source_options, dest_options))
+        return (yield from super().copy(dest_provider, source_options, dest_options))
 
     def can_intra_move(self, other):
         return self == other
