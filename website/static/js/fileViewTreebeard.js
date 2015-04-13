@@ -64,7 +64,6 @@ function FileViewTreebeard(data) {
             this.redraw();
         },
         lazyLoadOnLoad: function(tree, event) {
-            console.log(tree, event);
             var tb = this;
             Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree);
             Fangorn.Utils.findCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
