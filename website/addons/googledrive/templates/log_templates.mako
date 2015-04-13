@@ -7,7 +7,7 @@ Google Drive in {{ nodeType }}
 
 <script type="text/html" id="googledrive_folder_created">
 created folder
-<span class="overflow">{{ params.path }}</span> in
+<span class="overflow">{{ decodeURIComponent(params.path) }}</span> in
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -21,7 +21,7 @@ Google Drive in {{ nodeType }}
 
 
 <script type="text/html" id="googledrive_file_removed">
-removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <a class="overflow ">{{ params.path }}</a> from
+removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow ">{{ decodeURIComponent(params.path) }}</span> from
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
