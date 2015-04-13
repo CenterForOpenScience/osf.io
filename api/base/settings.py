@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '7-@)*j6)opk!sy^-1nok7f-ssscewp((b)c-m5c4dnq0%ax1rh'
+SECRET_KEY = osf_settings.SECRET_KEY
 
 AUTHENTICATION_BACKENDS = (
     'api.base.authentication.backends.ODMBackend',
@@ -30,7 +30,9 @@ AUTHENTICATION_BACKENDS = (
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '.osf.io'
+]
 
 
 # Application definition
