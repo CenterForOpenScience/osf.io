@@ -843,11 +843,11 @@ function expandStateLoad(item) {
  */
 function setCurrentFileID(tree, nodeID, file) {
     var tb = this;
-    if (tb.options.folderIndex !== undefined && tb.options.folderArray !== undefined && tb.options.folderIndex < tb.options.folderArray.length) {
+    if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
         for (var i = 0; i < tree.children.length; i++) {
             var child = tree.children[i];
-            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.name === tb.options.folderArray[tb.options.folderIndex]) {
-                tb.options.folderIndex++;
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.name === tb.fangornFolderArray[tb.fangornFolderIndex]) {
+                tb.fangornFolderIndex++;
                 if (child.data.kind === 'folder') {
                     tb.updateFolder(null, child);
                     tree = child;

@@ -37,17 +37,17 @@ function FileViewTreebeard(data) {
         },
         ondataload: function () {
             var tb = this;
-            tb.options.folderIndex = 0;
+            tb.fangornFolderIndex = 0;
             if (window.contextVars.file.provider === 'figshare') {
-                tb.options.folderArray = [window.contextVars.file.name]
+                tb.fangornFolderArray = [window.contextVars.file.name]
             } else if (window.contextVars.file.path) {
                 window.contextVars.file.path = decodeURIComponent(window.contextVars.file.path);
-                tb.options.folderArray = window.contextVars.file.path.split("/");
-                if (tb.options.folderArray.length > 1) {
-                    tb.options.folderArray.splice(0, 1);
+                tb.fangornFolderArray = window.contextVars.file.path.split("/");
+                if (tb.fangornFolderArray.length > 1) {
+                    tb.fangornFolderArray.splice(0, 1);
                 }
             } else {
-                tb.options.folderArray = [''];
+                tb.fangornFolderArray = [''];
             }
             m.render($('#filesSearch').get(0), tb.options.filterTemplate.call(tb));
         },
