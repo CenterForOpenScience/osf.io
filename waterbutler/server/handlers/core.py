@@ -153,9 +153,6 @@ class BaseCrossProviderHandler(BaseHandler):
         self.source_provider = yield from self.make_provider(**self.json['source'])
         self.destination_provider = yield from self.make_provider(**self.json['destination'])
 
-        if self.json['destination']['path'].endswith('/'):
-            self.json['destination']['path'] += os.path.split(self.json['source']['path'])[1]
-
     @asyncio.coroutine
     def make_provider(self, provider, **kwargs):
         payload = yield from get_identity(
