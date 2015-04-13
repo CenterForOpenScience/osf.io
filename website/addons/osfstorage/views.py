@@ -124,6 +124,7 @@ def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
         'status': 'success',
         'path': record.path,
         'version': version._id,
+        'fullPath': record.materialized_path(),
         'downloads': record.get_download_count(),
     }, code
 
