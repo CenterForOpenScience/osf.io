@@ -30,6 +30,12 @@ def get_log(auth, log_id):
 
     return {'log': serialize_log(log, auth=auth)}
 
+def include_log(log, node, auth):
+    if log.can_view(node, auth):
+        return True
+    else:
+        logger.warn('Log on node {} is None'.format(node._id))
+        return False
 
 def _get_logs(node, count, auth, link=None, page=0):
     """
@@ -41,13 +47,24 @@ def _get_logs(node, count, auth, link=None, page=0):
             boolean: if there are more logs
 
     """
-    logs_set = node.get_aggregate_logs(auth.user)
+    logs_set = node.get_aggregate_logs_set(auth)
     total = logs_set.count()
     start = page * count
+    stop = start + count
     logs = [
-        serialize_log(l, auth=auth, anonymous=has_anonymous_link(node, auth))
-        for l in logs_set[start:(start + count)]
+        serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
+        for log in logs_set[start:stop]
     ]
+    '''
+    while count < stop:
+        log = logs_set[index]
+        if include_log(log, node, auth):
+            logs.append(
+                serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
+            )
+            count = count + 1
+        index = index + 1
+    '''
     pages = math.ceil(total / float(count))
     return logs, total, pages
 

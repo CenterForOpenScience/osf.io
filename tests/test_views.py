@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Views tests for the OSF.'''
+
 from __future__ import absolute_import
 import unittest
 import json
@@ -640,7 +641,6 @@ class TestProjectViews(OsfTestCase):
         fork = project.fork_node(auth=self.consolidate_auth1)
         url = fork.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
-        import ipdb; ipdb.set_trace()
         assert_equal(
             [each['action'] for each in res.json['logs']],
             ['node_forked', 'project_created'],
@@ -667,7 +667,7 @@ class TestProjectViews(OsfTestCase):
         child.set_title("foo", auth=self.consolidate_auth1)
         child.set_title("bar", auth=self.consolidate_auth1)
         child.save()
-        url = api_url_for('get_logs', pid=self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 7)
         assert_not_in(
@@ -3570,7 +3570,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(len(nodes), 1)
         assert_equal(nodes[0]['id'], component._primary_key)
 
-        # friend requests dashboard nodes ,filtering against components
+        # friend requests dashboard nodes, filtering against components
         url = api_url_for('get_dashboard_nodes', no_components=True)
         res = self.app.get(url, auth=friend.auth)
         nodes = res.json['nodes']

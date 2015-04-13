@@ -1226,13 +1226,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return len(self.parents)
 
     def get_nodes_recursive(self, include):
-        children = list(self.nodes)
-        descendants = children + [item for node in self.nodes for item in node.get_nodes_recursive(include)]
-        return [self] + [desc for desc in descendants if include(desc)]
+        nodes = list(self.nodes) + [
+            item
+            for node in self.nodes
+            for item in node.get_nodes_recursive(include)
+        ]
+        return [self] + [node for node in nodes if include(node)]
 
-    def get_aggregate_logs(self, user):
-        ids = [n._id for n in self.get_nodes_recursive(lambda p: p.can_view(Auth(user)))]
-        query = Q('params.node', 'in', ids)
+    def get_aggregate_logs_set(self, auth):
+        ids = [n._id for n in self.get_nodes_recursive(
+            lambda node: node.can_view(auth)
+        )]
+        query = Q('__backrefs.logged.node.logs', 'in', ids)
         return NodeLog.find(query).sort('-_id')
 
     @property
@@ -1696,10 +1701,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
+        '''
         if self.node__parent:
             parent = self.node__parent[0]
             parent.logs.append(log)
             parent.save()
+        '''
         return log
 
     @property

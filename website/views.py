@@ -149,7 +149,7 @@ def get_all_projects_smart_folder(auth, **kwargs):
 
     contributed = user.node__contributed
     nodes = contributed.find(
-        #Q('category', 'eq', 'project') &
+        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False) &
@@ -157,14 +157,13 @@ def get_all_projects_smart_folder(auth, **kwargs):
         Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
-    '''
     parents_to_exclude = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
     )
-    
+
     comps = contributed.find(
         Q('is_folder', 'eq', False) &
         # parent is not in the nodes list
@@ -176,10 +175,10 @@ def get_all_projects_smart_folder(auth, **kwargs):
         # exclude registrations
         Q('is_registration', 'eq', False)
     )
-    '''
-    # return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
-    # return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes]
+    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
+    #return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes]
+    return return_value
 
 
 @must_be_logged_in
@@ -237,7 +236,7 @@ def get_dashboard_nodes(auth):
     contributed = user.node__contributed  # nodes user contributed to
 
     nodes = contributed.find(
-        #Q('category', 'eq', 'project') &
+        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
@@ -247,7 +246,7 @@ def get_dashboard_nodes(auth):
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
         comps = contributed.find(
             # components only
-            #Q('category', 'ne', 'project') &
+            Q('category', 'ne', 'project') &
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
             # exclude deleted nodes
@@ -258,7 +257,7 @@ def get_dashboard_nodes(auth):
     else:
         comps = []
 
-    nodes = list(nodes)  # + list(comps)
+    nodes = list(nodes) + list(comps)
     if request.args.get('permissions'):
         perm = request.args['permissions'].strip().lower()
         if perm not in permissions.PERMISSIONS:
