@@ -37,7 +37,7 @@ api_routes = {
                 '/project/<pid>/zotero/user_auth/',
                 '/project/<pid>/node/<nid>/zotero/user_auth/',
             ],
-            'post',
+            'put',
             views.zotero_add_user_auth,
             json_renderer,
         ),

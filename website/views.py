@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import itertools
+import math
 import httplib as http
 
-from flask import request
 from modularodm import Q
+from flask import request
 
 from framework import utils
 from framework import sentry
@@ -280,25 +281,40 @@ def dashboard(auth):
             }
 
 
+def paginate(items, total, page, size):
+    start = page * size
+    paginated_items = itertools.islice(items, start, start + size)
+    pages = math.ceil(total / float(size))
+
+    return paginated_items, pages
+
+
 @must_be_logged_in
 def watched_logs_get(**kwargs):
     user = kwargs['auth'].user
-    page_num = int(request.args.get('pageNum', '').strip('/') or 0)
-    page_size = 10
-    offset = page_num * page_size
-    recent_log_ids = itertools.islice(user.get_recent_log_ids(), offset, offset + page_size + 1)
-    logs = (model.NodeLog.load(id) for id in recent_log_ids)
-    watch_logs = []
-    has_more_logs = False
+    try:
+        page = int(request.args.get('page', 0))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page".'
+        ))
+    try:
+        size = int(request.args.get('size', 10))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "size".'
+        ))
 
-    for log in logs:
-        if len(watch_logs) < page_size:
-            watch_logs.append(serialize_log(log))
-        else:
-            has_more_logs = True
-            break
+    total = sum(1 for x in user.get_recent_log_ids())
+    paginated_logs, pages = paginate(user.get_recent_log_ids(), total, page, size)
+    logs = (model.NodeLog.load(id) for id in paginated_logs)
 
-    return {"logs": watch_logs, "has_more_logs": has_more_logs}
+    return {
+        "logs": [serialize_log(log) for log in logs],
+        "total": total,
+        "pages": pages,
+        "page": page
+    }
 
 
 def serialize_log(node_log, anonymous=False):
@@ -340,33 +356,23 @@ def reset_password_form():
 
 # GUID ###
 
-def _build_guid_url(url, prefix=None, suffix=None):
-    if not url.startswith('/'):
-        url = '/' + url
-    if not url.endswith('/'):
-        url += '/'
-    url = (
-        (prefix or '') +
-        url +
-        (suffix or '')
-    )
-    if not url.endswith('/'):
-        url += '/'
-    return url
+def _build_guid_url(base, suffix=None):
+    url = '/'.join([
+        each.strip('/') for each in [base, suffix]
+        if each
+    ])
+    return u'/{0}/'.format(url)
 
 
 def resolve_guid(guid, suffix=None):
-    """Resolve GUID to corresponding URL and return result of appropriate
-    view function. This effectively yields a redirect without changing the
-    displayed URL of the page.
+    """Load GUID by primary key, look up the corresponding view function in the
+    routing table, and return the return value of the view function without
+    changing the URL.
 
-    :param guid: GUID value (not the object)
-    :param suffix: String to append to GUID route
-    :return: Werkzeug response
-
+    :param str guid: GUID primary key
+    :param str suffix: Remainder of URL after the GUID
+    :return: Return value of proxied view function
     """
-    # Get prefix; handles API routes
-    prefix = request.path.split(guid)[0].rstrip('/')
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
@@ -380,31 +386,21 @@ def resolve_guid(guid, suffix=None):
             sentry.log_message(
                 'Guid `{}` resolved to non-guid object'.format(guid)
             )
-
             raise HTTPError(http.NOT_FOUND)
         referent = guid_object.referent
         if referent is None:
             logger.error('Referent of GUID {0} not found'.format(guid))
             raise HTTPError(http.NOT_FOUND)
-        mode = referent.redirect_mode
-        if mode is None:
+        if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
-        url = referent.deep_url if mode == 'proxy' else referent.url
-        url = _build_guid_url(url, prefix, suffix)
-        # Always redirect API URLs; URL should identify endpoint being called
-        if prefix or mode == 'redirect':
-            if request.query_string:
-                url += '?' + request.query_string
-            return redirect(url)
+        url = _build_guid_url(referent.deep_url, suffix)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists
     guid_object_lower = Guid.load(guid.lower())
     if guid_object_lower:
         return redirect(
-            _build_guid_url(
-                guid.lower(), prefix, suffix
-            )
+            _build_guid_url(guid.lower(), suffix)
         )
 
     # GUID not found

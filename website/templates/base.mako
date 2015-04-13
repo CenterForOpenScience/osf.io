@@ -233,10 +233,15 @@
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
-    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
-    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
-    <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
-    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+    % if settings.USE_CDN_FOR_CLIENT_LIBS:
+        <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
+        <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+        <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+    % else:
+        <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
+        <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
+    % endif
 
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees

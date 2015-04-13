@@ -3,13 +3,14 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('knockout-validation');
-require('knockout-punches');
+require('knockout.validation');
+require('knockout.punches');
 ko.punches.enableAll();
 require('knockout-sortable');
-var koHelpers = require('koHelpers');
 
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
+var koHelpers = require('./koHelpers');
+require('js/objectCreateShim');
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,

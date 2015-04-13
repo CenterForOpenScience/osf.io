@@ -197,33 +197,35 @@ def search_contributor(auth):
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
 
-
+@handle_search_errors
 def search_share():
     tick = time.time()
     results = {}
 
     count = request.args.get('count') is not None
     raw = request.args.get('raw') is not None
+    version = request.args.get('v')
+    index = 'share_v{}'.format(version) if version else 'share'
 
     if request.method == 'POST':
         query = request.get_json()
     elif request.method == 'GET':
         query = build_query(
             request.args.get('q', '*'),
-            request.args.get('from'),
-            request.args.get('size'),
+            request.args.get('from', 0),
+            request.args.get('size', 10),
             sort=request.args.get('sort')
         )
 
     if count:
-        results = search.count_share(query)
+        results = search.count_share(query, index=index)
     else:
-        results = search.search_share(query, raw)
+        results = search.search_share(query, raw, index=index)
 
     results['time'] = round(time.time() - tick, 2)
     return results
 
-
+@handle_search_errors
 def search_share_stats():
     q = request.args.get('q')
     query = build_query(q, 0, 0) if q else {}
@@ -231,25 +233,19 @@ def search_share_stats():
     return search.share_stats(query=query)
 
 
+@handle_search_errors
 def search_share_atom(**kwargs):
     q = request.args.get('q', '*')
     sort = request.args.get('sort', 'dateUpdated')
 
     # we want the results per page to be constant between pages
     # TODO -  move this functionality into build_query in util
+    start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
+
+    query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
 
     try:
-        page = (int(request.args.get('page', 1)) - 1) * RESULTS_PER_PAGE
-    except ValueError:
-        page = 1
-
-    if page < 1:
-        page = 1
-
-    query = build_query(q, size=RESULTS_PER_PAGE, start=page, sort=sort)
-
-    try:
-        search_results = search.search_share(query)
+        search_results = search.search_share(query, index='share_v1')
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -265,7 +261,7 @@ def search_share_atom(**kwargs):
         data=search_results['results'],
         query=q,
         size=RESULTS_PER_PAGE,
-        start=page,
+        start=start,
         url=atom_url,
         to_atom=share_search.to_atom
     )

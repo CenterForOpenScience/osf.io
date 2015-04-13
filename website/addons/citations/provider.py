@@ -22,7 +22,7 @@ class CitationsProvider(object):
         return {
             'accounts': [
                 self.serializer(
-                    user_settings=user.get_addon(self.provider_name)
+                    user_settings=user.get_addon(self.provider_name) if user else None
                 ).serialize_account(each)
                 for each in user.external_accounts
                 if each.provider == self.provider_name
@@ -125,11 +125,12 @@ class CitationsProvider(object):
         if list_id is None and self.is_first_page(page):
             contents = [node_addon.root_folder]
         else:
-            if show in ('all', 'folders') and self.is_first_page(page):
+            user_settings = user.get_addon(self.provider_name) if user else None
+            if show in ('all', 'folders'):
                 contents += [
                     self.serializer(
                         node_settings=node_addon,
-                        user_settings=user.get_addon(self.provider_name),
+                        user_settings=user_settings,
                     ).serialize_folder(each)
                     for each in account_folders
                     if each.get('parent_list_id') == list_id
@@ -140,7 +141,7 @@ class CitationsProvider(object):
                 contents += [
                     self.serializer(
                         node_settings=node_addon,
-                        user_settings=user.get_addon(self.provider_name),
+                        user_settings=user_settings,
                     ).serialize_citation(each)
                     for each in citations
                 ]

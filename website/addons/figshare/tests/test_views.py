@@ -3,6 +3,9 @@
 
 import mock
 import unittest
+import httpretty
+from os.path import join as join_path
+from json import dumps
 
 from nose.tools import *  # noqa
 
@@ -19,7 +22,6 @@ from website.addons.figshare.views.config import serialize_settings
 from website.util import api_url_for, web_url_for
 
 from framework.auth import Auth
-
 
 figshare_mock = create_mock_figshare(project=436)
 
@@ -56,7 +58,21 @@ class TestViewsConfig(OsfTestCase):
 
         self.figshare = create_mock_figshare('test')
 
+    def configure_responses(self):
+        httpretty.register_uri(
+            httpretty.GET,
+            join_path(self.node_settings.api_url, 'articles'),
+            body=dumps(self.figshare.articles.return_value)
+        )
+        httpretty.register_uri(
+            httpretty.GET,
+            join_path(self.node_settings.api_url, 'articles', '902210'),
+            body=dumps(self.figshare.article.return_value)
+        )
+
+    @httpretty.activate
     def test_import_auth(self):
+        self.configure_responses()
         """Testing figshare_import_user_auth to ensure that auth gets imported correctly"""
         settings = self.node_settings
         settings.user_settings = None
@@ -64,8 +80,7 @@ class TestViewsConfig(OsfTestCase):
         url = '/api/v1/project/{0}/figshare/config/import-auth/'.format(self.project._id)
         self.app.put(url, auth=self.user.auth)
         self.node_settings.reload()
-        is_not_none = settings.user_settings != None
-        assert_true(is_not_none)
+        assert_is_not_none(settings.user_settings)
 
     def test_cancelled_oauth_request_from_user_settings_page_redirects_correctly(self):
         res = self.app.get(api_url_for('figshare_oauth_callback', uid=self.user._id), auth=self.user.auth)
@@ -88,9 +103,7 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.reload()
         assert_true(settings.user_settings is None)
         is_none = (
-            settings.figshare_id is None
-            and settings.figshare_title is None
-            and settings.figshare_type is None
+            settings.figshare_id is None and settings.figshare_title is None and settings.figshare_type is None
         )
         assert_true(is_none)
 
@@ -101,8 +114,9 @@ class TestViewsConfig(OsfTestCase):
             url,
             {
                 'selected': {
-                    'value': 'project_123456',
-                    'title': 'FIGSHARE_TITLE',
+                    'id': '123456',
+                    'name': 'FIGSHARE_TITLE',
+                    'type': 'project',
                 },
             },
             auth=self.user.auth,
@@ -119,7 +133,8 @@ class TestViewsConfig(OsfTestCase):
             {
                 'selected': {
                     'id': 'project_9001',
-                    'title': 'IchangedbecauseIcan',
+                    'name': 'IchangedbecauseIcan',
+                    'type': 'project'
                 },
             },
             auth=self.user.auth,
@@ -136,6 +151,25 @@ class TestViewsConfig(OsfTestCase):
             'figshare_content_linked'
         )
 
+    def test_config_change_invalid(self):
+        nlogs = len(self.project.logs)
+        url = self.project.api_url_for('figshare_config_put')
+        rv = self.app.put_json(
+            url,
+            {
+                'selected': {
+                    'type': 'project'
+                },
+            },
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        self.project.reload()
+        self.node_settings.reload()
+
+        assert_equal(rv.status_int, http.BAD_REQUEST)
+        assert_equal(len(self.project.logs), nlogs)
+
     def test_config_change_not_owner(self):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2, save=True)
@@ -151,13 +185,19 @@ class TestViewsConfig(OsfTestCase):
         assert_equal(res.status_int, http.FORBIDDEN)
         assert_equal(nlogs, len(self.project.logs))
 
+    @httpretty.activate
     def test_serialize_settings_helper_returns_correct_auth_info(self):
+        self.configure_responses()
+
         result = serialize_settings(self.node_settings, self.user, client=figshare_mock)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
+    @httpretty.activate
     def test_serialize_settings_for_user_no_auth(self):
+        self.configure_responses()
+
         no_addon_user = AuthUserFactory()
         result = serialize_settings(self.node_settings, no_addon_user, client=figshare_mock)
         assert_false(result['userIsOwner'])

@@ -1,12 +1,12 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 
 import os
 import bson
 import logging
 
 import furl
-import pymongo
 
+import pymongo
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
 from modularodm.storage.base import KeyExistsException
@@ -14,7 +14,9 @@ from dateutil.parser import parse as parse_date
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
+from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
+
 from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
@@ -80,7 +82,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return True
 
     def find_or_create_file_guid(self, path):
-        return OsfStorageGuidFile.get_or_create(self.owner, path.lstrip('/'))
+        return OsfStorageGuidFile.get_or_create(node=self.owner, path=path.lstrip('/'))
 
     def copy_contents_to(self, dest):
         """Copy file tree and contents to destination. Note: destination must be
@@ -136,16 +138,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         pass
 
 
+@unique_on(['path', 'node_settings'])
 class BaseFileObject(StoredObject):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('path', pymongo.ASCENDING),
-                ('node_settings', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
 
     path = fields.StringField(required=True, index=True)
     node_settings = fields.ForeignField(
@@ -411,26 +405,21 @@ class OsfStorageFileVersion(StoredObject):
 
 
 class OsfStorageGuidFile(GuidFile):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(required=True, index=True)
 
     @property
     def waterbutler_path(self):
         return '/' + self.path
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        try:
-            obj = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-            created = False
-        except modm_errors.ModularOdmException:
-            obj = cls(node=node, path=path)
-            obj.save()
-            created = True
-        return obj, created
 
     @property
     def provider(self):

@@ -2,6 +2,32 @@
 Changelog
 *********
 
+0.31.0 (2015-04-12)
+===================
+
+- Updates to SHARE search API, UI, and documentation page.
+- Add SHARE provider registration page.
+- Users can associate multiple emails to their account.
+- DOIs and ARKs can be created for public registrations.
+- Updated login UI.
+- Fix consistency of addon logs display.
+- Dev: Refactor folderpicker for consistency of addon settings UI.
+- Dev: Update markdown-it to version 4.1 along with plugins
+markdown-it-sanitizer, markdown-it-toc, and markdown-toc-video.
+
+0.30.0 (2015-03-27)
+===================
+
+- Wiki: Single-column view: uses page scrolling rather than container
+scrolling when only one column is enabled.
+- SHARE: Updated UI: added filtering by provider.
+- Remove combined login/register/forgot-password page. Sign-in can be done in the navbar.
+Registration can be done on the landing page.
+- Dev: Add unique compound indices for addon file GUID collections.
+- Dev: Improved speed of Travis CI builds.
+- Dev: Cleanup of dead frontend code.
+- Dev: Automated auditing of Glacier backups and parity files.
+
 0.29.0 (2015-03-19)
 ===================
 
