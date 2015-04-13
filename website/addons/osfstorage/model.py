@@ -237,7 +237,7 @@ class OsfStorageFileNode(StoredObject):
             return None
 
     @utils.must_be('file')
-    def create_version(self, creator, location, metadata=None):
+    def create_version(self, creator, location, metadata=None, log=True):
         latest_version = self.get_version()
         version = OsfStorageFileVersion(creator=creator, location=location)
 
@@ -253,10 +253,13 @@ class OsfStorageFileNode(StoredObject):
         self.versions.append(version)
         self.is_deleted = False
         self.save()
-        self.log(
-            Auth(creator),
-            NodeLog.FILE_UPDATED if len(self.versions) > 1 else NodeLog.FILE_ADDED,
-        )
+
+        if log:
+            self.log(
+                Auth(creator),
+                NodeLog.FILE_UPDATED if len(self.versions) > 1 else NodeLog.FILE_ADDED,
+            )
+
         return version
 
     @utils.must_be('file')
