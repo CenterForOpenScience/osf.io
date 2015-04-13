@@ -200,7 +200,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
     @asyncio.coroutine
     def _copy_folder(self, dest_provider, source_options, dest_options):
         try:
-            folder = yield from dest_provider.create_folder()
+            folder = yield from dest_provider.create_folder(**dest_options)
         except exceptions.CreateFolderError as e:
             if e.code != 409:
                 raise
