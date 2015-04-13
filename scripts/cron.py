@@ -83,6 +83,9 @@ def main(dry_run=True):
     digests = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_digests.sh')))
     digests.hour.on(2)      # 2 a.m.
 
+    retractions = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/retract_registrations.sh')))
+    retractions.hour.on(0)  # 12 a.m.
+
     schedule_osf_storage(cron)
     schedule_glacier(cron)
 

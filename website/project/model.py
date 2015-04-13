@@ -2443,9 +2443,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         if justification:
             retraction.justification = justification
         retraction.initiation_date = datetime.datetime.utcnow()
-
-        # Create Cron job on second midnight (EDT) past current date to retract registration
-        self._start_retraction_cron_job()
+        retraction.state = 'pending'
 
         # @todo(hrybacki) investigate why Node#admin_contributors isn't working
         # Collect list of admins for registration
@@ -2456,15 +2454,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             self._send_retraction_email(admin, justification)
 
         return retraction
-
-    # @TODO(hrybacki)implement
-    def _start_retraction_cron_job(self):
-        """ Starts cron job to retract public registration 48 hours after midnight (EDT) from the
-        current day.
-        """
-        
-        pass
-        #raise NotImplementedError
 
     # @TODO(hrybacki)implement
     def _send_retraction_email(self, user, justification):
@@ -2602,7 +2591,8 @@ class Retraction(StoredObject):
     justification = fields.StringField(validate=MaxLengthValidator(2048))
     initiation_date = fields.DateTimeField()
     initiated_by = fields.ForeignField('user', backref='retracted_by')
+    state = fields.StringField()
 
     @property
     def is_retracted(self):
-        return self.initiation_date is not None
+        return self.state == 'retracted'

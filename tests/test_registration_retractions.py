@@ -26,13 +26,14 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.valid_justification = fake.sentence()
         self.invalid_justification = fake.text(max_nb_chars=3000)
 
-    def test_retract(self):
+    def test_pending_retract(self):
         self.registration.is_public = True
         self.registration.retract_registration(self.user, self.valid_justification)
         self.registration.save()
 
         self.registration.reload()
-        assert_true(self.registration.retraction.is_retracted)
+        assert_false(self.registration.retraction.is_retracted)
+        assert_equal(self.registration.retraction.state, 'pending')
         assert_equal(self.registration.retraction.justification, self.valid_justification)
         assert_equal(self.registration.retraction.initiated_by, self.user)
         assert_equal(
@@ -120,41 +121,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 200)
         self.registration.reload()
-        assert_true(self.registration.retraction.is_retracted)
+        assert_false(self.registration.retraction.is_retracted)
+        assert_equal(self.registration.retraction.state, 'pending')
         assert_is_none(self.registration.retraction.justification)
-
-    def test_redirect_if_retracted(self):
-        expected_redirect_url = self.registration.web_url_for('view_project')
-        res = self.app.post_json(
-            self.retraction_post_url,
-             {'justification': self.justification},
-             auth=self.auth,
-             expect_errors=True,
-        )
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['redirectUrl'], expected_redirect_url)
-        self.registration.reload()
-        assert_true(self.registration.retraction.is_retracted)
-        assert_equal(self.registration.retraction.justification, self.justification)
-
-    def test_cant_access_non_approved_resource(self):
-        # Retract public registration
-        expected_redirect_url = self.registration.web_url_for('view_project')
-        res = self.app.post_json(
-            self.retraction_post_url,
-             {'justification': self.justification},
-             auth=self.auth,
-             expect_errors=True,
-        )
-        # Verify it's accessible
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['redirectUrl'], expected_redirect_url)
-        self.registration.reload()
-        assert_true(self.registration.retraction.is_retracted)
-        # Ensure access to resources not explicitly granting permission to retractions returns 400
-        res = self.app.get(
-            self.registration.web_url_for('project_wiki_home'),
-            expect_errors=True
-        )
-        assert_equal(res.status_code, 400)
