@@ -45,7 +45,6 @@ def must_be_valid_project(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        
         kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
         return func(*args, **kwargs)
 
