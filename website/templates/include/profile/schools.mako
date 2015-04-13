@@ -16,14 +16,14 @@
 
                     <div class="well well-sm sort-handle">
                         <span>Position {{ $index() + 1 }}</span>
-                        <span data-bind="visible: $parent.hasMultiple()">
+                        <span  class="pull-right" data-bind="visible: $parent.hasMultiple()">
                             [ drag to reorder ]
                         </span>
                         <a
                                 class="text-danger pull-right"
                                 data-bind="click: $parent.removeContent,
                                            visible: $parent.canRemove"
-                            >Remove</a>
+                            >Remove&nbsp;&nbsp;&nbsp;</a>
                     </div>
 
                     <div class="form-group">

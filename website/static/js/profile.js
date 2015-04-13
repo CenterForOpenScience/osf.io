@@ -251,6 +251,9 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 BaseViewModel.prototype.handleSuccess = function() {
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
+        console.log("BaseViewModel.prototype.handleSuccess, this.modes is " + JSON.stringify(this.modes));
+
+        
     } else {
         this.changeMessage(
             'Settings updated',
@@ -262,8 +265,8 @@ BaseViewModel.prototype.handleSuccess = function() {
 
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
-//    var msg = response.responseJSON.message_long || defaultMsg;
-    var msg = defaultMsg;
+    var msg = response.responseJSON.message_long || defaultMsg;
+//    var msg = defaultMsg;
     this.changeMessage(
         msg,
         'text-danger',
@@ -849,7 +852,6 @@ var Social = function(selector, urls, modes) {
     this.viewModel = new SocialViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
     //BH Console Message
-    console.log("modes is " + JSON.stringify(modes));
     window.social = this.viewModel;
 };
 
@@ -862,6 +864,7 @@ var Jobs = function(selector, urls, modes) {
 var Schools = function(selector, urls, modes) {
     this.viewModel = new SchoolsViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
+
 };
 
 

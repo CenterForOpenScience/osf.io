@@ -91,7 +91,7 @@ def validate_personal_site(value):
             raise ValidationError('Invalid personal URL.')
 
 def validate_social(value):
-    validate_personal_site(value.get('personal'))
+    print "in validate social, profileWebsites is %s." % value.get('profileWebsites')
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():

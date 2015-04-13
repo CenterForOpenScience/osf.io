@@ -17,9 +17,9 @@
                 <div>
 
                     <div class="well well-sm sort-handle">
-                        <span>Position {{ $index() + 1 }} </span>
+                        <label>Website {{ $index() + 1 }} </label>
                         <span data-bind="visible: $parent.hasMultiple()">
-                            [ drag to reorder ]
+                            &nbsp;&nbsp;(drag to reorder)
                         </span>
                         <a
                                 class="text-danger pull-right"
@@ -29,7 +29,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Your Website</label>
+
                         <div class="input-group">
                             <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
                             <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
@@ -145,6 +145,22 @@
     </div>
 
     <div data-bind="if: mode() === 'view'">
+
+       <div data-bind="if: profileWebsites().length">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Profile&nbsp;Website</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: profileWebsites">
+                    <tr>
+                        <td>{{ profileWebsite }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
 
         <table class="table" data-bind="if: hasValues()">
             <tbody data-bind="foreach: values">
