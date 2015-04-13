@@ -63,11 +63,14 @@ function FileViewTreebeard(data) {
             this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
             this.redraw();
         },
-        lazyLoadOnLoad: function(tree) {
+        lazyLoadOnLoad: function(tree, event) {
+            console.log(tree, event);
             var tb = this;
             Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree);
             Fangorn.Utils.findCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-            Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
+            if(!event) { 
+                Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
+            }
         },
         resolveRows: function (item) {
             var selectClass = '';
