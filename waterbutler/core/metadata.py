@@ -63,6 +63,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         """
         pass
 
+    @property
     def full_path(self):
         """The "pretty" variant of path
         this path can be displayed to the enduser
