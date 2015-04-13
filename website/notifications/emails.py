@@ -99,10 +99,10 @@ def notify(uid, event, user, node, timestamp, **context):
                     event = 'comment_replies' if context.get('target_user') == recipient else event
                     send([recipient._id], notification_type, uid, event, user, node, timestamp, **context)
 
-    return check_parent(uid, event, node_subscribers, **context)
+    return check_parent(uid, event, node_subscribers, user, node, timestamp, **context)
 
 
-def check_parent(uid, event, node_subscribers, **context):
+def check_parent(uid, event, node_subscribers, user, orig_node, timestamp, **context):
     """ Check subscription object for the event on the parent project
         and send transactional email to indirect subscribers.
     """
@@ -114,7 +114,7 @@ def check_parent(uid, event, node_subscribers, **context):
         subscription = NotificationSubscription.load(key)
 
         if not subscription:
-            return check_parent(node.parent_id, event, node_subscribers, **context)
+            return check_parent(node.parent_id, event, node_subscribers, user, orig_node, timestamp, **context)
 
         for notification_type in constants.NOTIFICATION_TYPES:
             subscribed_users = getattr(subscription, notification_type, [])
@@ -123,10 +123,10 @@ def check_parent(uid, event, node_subscribers, **context):
                 if u not in node_subscribers and node.has_permission(u, 'read'):
                     if notification_type != 'none':
                         event = 'comment_replies' if target_user == u else event
-                        send([u._id], notification_type, uid, event, **context)
+                        send([u._id], notification_type, uid, event, user, orig_node, timestamp, **context)
                     node_subscribers.append(u)
 
-        return check_parent(node.parent_id, event, node_subscribers, **context)
+        return check_parent(node.parent_id, event, node_subscribers, user, orig_node, timestamp, **context)
 
     return node_subscribers
 
