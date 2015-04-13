@@ -119,8 +119,14 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 return (yield from self.intra_copy(dest_provider, source_options, dest_options))
             except NotImplementedError:
                 pass
-        stream = yield from self.download(**source_options)
-        return (yield from dest_provider.upload(stream, **dest_options))
+
+        if source_options['path'].endswith('/'):
+            return (yield from self._copy_folder(dest_provider, source_options, dest_options))
+
+        if dest_options['path'].endswith('/'):
+            dest_options['path'] += os.path.split(source_options['path'])[1]
+
+        return (yield from self._copy_file(dest_provider, source_options, dest_options))
 
     @asyncio.coroutine
     def move(self, dest_provider, source_options, dest_options):
@@ -129,9 +135,33 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 return (yield from self.intra_move(dest_provider, source_options, dest_options))
             except NotImplementedError:
                 pass
+
         metadata = yield from self.copy(dest_provider, source_options, dest_options)
         yield from self.delete(**source_options)
         return metadata
+
+    @asyncio.coroutine
+    def _copy_file(self, dest_provider, source_options, dest_options):
+        return (yield from dest_provider.upload(
+            (yield from self.download(**source_options)),
+            **dest_options
+        ))
+
+    @asyncio.coroutine
+    def _copy_folder(self, dest_provider, source_options, dest_options):
+        try:
+            folder = yield from dest_provider.create_folder()
+        except exceptions.CreateFolderError as e:
+            if e.code != 409:
+                raise
+            #TODO
+        for file in (yield from self.metadata(**source_options)):
+            yield from self._copy_file(dest_provider, {
+                'path': file['path']
+            }, dict(dest_options, **{
+                'path': os.path.join(dest)
+            }))
+        return folder
 
     @asyncio.coroutine
     def exists(self, path, **kwargs):
