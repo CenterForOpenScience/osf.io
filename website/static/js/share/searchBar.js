@@ -27,7 +27,7 @@ SearchBar.view = function(ctrl) {
                 }),
                 m('span.about-share-header', 'SHARE'),
                 m('div', {style: {color: 'darkgrey'}}, m('p.readable', [
-                    'Notice: this is a public alpha release'
+                    'Notice: this is a public beta release'
                 ])),
                 m('br'),
             ])
