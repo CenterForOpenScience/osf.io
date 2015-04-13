@@ -141,7 +141,6 @@ def get_dashboard(auth, nid=None, **kwargs):
     return_value['locale'] = user.locale
     return return_value
 
-
 @must_be_logged_in
 def get_all_projects_smart_folder(auth, **kwargs):
     # TODO: Unit tests
