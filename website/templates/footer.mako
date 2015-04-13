@@ -23,7 +23,6 @@
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="/getting-started">Getting Started</a></li>
-                    <li><a href="/qb0du/">Developer API</a></li>
                 </ul>
             </div>
             <div class="col-sm-3 col-md-2">
