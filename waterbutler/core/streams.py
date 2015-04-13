@@ -143,7 +143,7 @@ class HashStreamWriter:
         pass
 
 
-class StringStream(asyncio.StreamReader):
+class StringStream(BaseStream):
     def __init__(self, data):
         super().__init__()
         if isinstance(data, str):
@@ -151,10 +151,17 @@ class StringStream(asyncio.StreamReader):
         elif not isinstance(data, bytes):
             raise TypeError('Data must be either str or bytes, found {!r}'.format(type(data)))
 
+        self._size = len(data)
         self.feed_data(data)
-        self.size = len(data)
-
         self.feed_eof()
+
+    @property
+    def size(self):
+        return self._size
+
+    @asyncio.coroutine
+    def _read(self, n=-1):
+        return (yield from asyncio.StreamReader.read(self, n))
 
 
 class MultiStream(asyncio.StreamReader):
