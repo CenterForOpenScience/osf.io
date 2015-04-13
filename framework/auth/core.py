@@ -279,7 +279,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = fields.DictionaryField()
+    email_verifications = fields.DictionaryField(default=dict)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
@@ -613,6 +613,10 @@ class User(GuidStoredObject, AddonModelMixin):
 
         token = generate_confirm_token()
 
+        # handle when email_verifications is None
+        if not self.email_verifications:
+            self.email_verifications = {}
+
         self.email_verifications[token] = {'email': email}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
@@ -743,10 +747,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def unconfirmed_emails(self):
+        # Handle when email_verifications field is None
+        email_verifications = self.email_verifications or {}
         return [
             each['email']
             for each
-            in self.email_verifications.values()
+            in email_verifications.values()
         ]
 
     def update_search_nodes(self):
