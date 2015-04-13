@@ -122,7 +122,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
 
         data = yield from resp.json()
-        return GoogleDriveFileMetadata(data, destination_path).serialized(), not exists
+        return GoogleDriveFileMetadata(data, destination_path.parent).serialized(), not exists
 
     @asyncio.coroutine
     def intra_copy(self, destination, source_options, destination_options):
