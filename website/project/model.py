@@ -1625,7 +1625,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'project': original.parent_id,
+                'parent_node': original.parent_id,
                 'node': original._primary_key,
                 'registration': registered._primary_key,
             },

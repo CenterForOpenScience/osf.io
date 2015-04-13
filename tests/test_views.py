@@ -511,7 +511,7 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action='file_added',
-                    params={'project': self.project._id}
+                    params={'node': self.project._id}
                 )
             )
         self.project.save()
@@ -547,7 +547,7 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action='file_added',
-                    params={'project': self.project._id}
+                    params={'node': self.project._id}
                 )
             )
         self.project.save()
@@ -566,7 +566,7 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action='file_added',
-                    params={'project': self.project._id}
+                    params={'node': self.project._id}
                 )
             )
         self.project.save()
@@ -585,7 +585,7 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action="file_added",
-                    params={"project": self.project._id}
+                    params={"node": self.project._id}
                 )
             )
         self.project.save()
@@ -608,7 +608,7 @@ class TestProjectViews(OsfTestCase):
             self.project.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
-                params={'project': self.project._id}
+                params={'node': self.project._id}
             )
         self.project.is_public = True
         self.project.save()
@@ -617,7 +617,7 @@ class TestProjectViews(OsfTestCase):
             child.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
-                params={'project': child._id}
+                params={'node': child._id}
             )
 
         url = self.project.api_url_for('get_logs')
@@ -630,7 +630,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(
             [self.project._id] * 10,
             [
-                log['params']['project']
+                log['params']['node']
                 for log in res.json['logs']
             ]
         )
@@ -640,6 +640,7 @@ class TestProjectViews(OsfTestCase):
         fork = project.fork_node(auth=self.consolidate_auth1)
         url = fork.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
+        import ipdb; ipdb.set_trace()
         assert_equal(
             [each['action'] for each in res.json['logs']],
             ['node_forked', 'project_created'],
@@ -657,7 +658,7 @@ class TestProjectViews(OsfTestCase):
             self.project.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
-                params={'project': self.project._id}
+                params={'node': self.project._id}
             )
         self.project.is_public = True
         self.project.save()
@@ -666,13 +667,13 @@ class TestProjectViews(OsfTestCase):
         child.set_title("foo", auth=self.consolidate_auth1)
         child.set_title("bar", auth=self.consolidate_auth1)
         child.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = api_url_for('get_logs', pid=self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 7)
         assert_not_in(
             child._id,
             [
-                log['params']['project']
+                log['params']['node']
                 for log in res.json['logs']
             ]
         )
@@ -1898,8 +1899,10 @@ class TestWatchViews(OsfTestCase):
         self.project.logs[0].save()
         # A log added now
         self.last_log = self.project.add_log(
-            NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
+            NodeLog.TAG_ADDED,
+            params={'node': self.project._primary_key},
+            auth=self.consolidate_auth,
+            log_date=dt.datetime.utcnow(),
             save=True,
         )
         # Clear watched list
@@ -1919,7 +1922,7 @@ class TestWatchViews(OsfTestCase):
         assert_equal(n_watched_now, n_watched_then + 1)
         assert_true(self.user.watched[-1].digest)
 
-    def test_watching_project_twice_returns_400(self):
+    def test_watching_project_twice_returns_400(self):        
         url = "/api/v1/project/{0}/watch/".format(self.project._id)
         res = self.app.post_json(url,
                                  params={},
