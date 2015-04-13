@@ -20,6 +20,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'kind': self.kind,
             'name': self.name,
             'path': self.path,
+            'fullPath': self.full_path,
             'extra': self.extra,
         }
 
@@ -56,8 +57,23 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         """The canonical string representation
         of a waterbutler file or folder.
 
-        All paths MUST start with a `/`
-        All Folders MUST end with a `/`
+        ..note::
+            All paths MUST start with a `/`
+            All Folders MUST end with a `/`
+        """
+        pass
+
+    @abc.abstractproperty
+    def full_path(self):
+        """The "pretty" variant of path
+        this path can be displayed to the enduser
+
+        path -> /Folder%20Name/123abc
+        full_path -> /Folder Name/File Name
+
+        ..note::
+            All paths MUST start with a `/`
+            All Folders MUST end with a `/`
         """
         pass
 
