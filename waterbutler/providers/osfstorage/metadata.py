@@ -25,6 +25,10 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
         return self.raw.get('size')
 
     @property
+    def full_path(self):
+        return self.raw.get('fullPath')
+
+    @property
     def content_type(self):
         return None
 
