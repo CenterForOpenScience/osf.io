@@ -63,28 +63,30 @@ def wiki_updates(func):
         except KeyError:
             print "Please return path."
         w_url.add(context.pop('add', dict()))
-        add_to_context = dict(
-            timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
-            commenter=user,
-            gravatar_url=user.gravatar_url,
-            title=node.title,
-            node_id=node._id,
-            url=w_url.url
+        context['gravatar_url'] = user.gravatar_url
+        context['url'] = w_url
+        # timestamp set for testing purposes, can be passed in.
+        if 'timestamp' in kwargs:
+            timestamp = kwargs.get('timestamp')
+        else:
+            timestamp = datetime.utcnow().replace(tzinfo=pytz.utc)
+        notify(
+            uid=node._id,
+            event="wiki_updated",
+            user=user,
+            node=node,
+            timestamp=timestamp,
+            **context
         )
-        context.update(add_to_context)
-        notify(uid=node._id, event="wiki_updated", **context)
     return func_wrapper
 
 
 @wiki_deleted.connect
 @wiki_updates
 def subscribe_wiki_deleted(name, node, **kwargs):
-    message = 'deleted <strong>"{}"</strong>.'.format(name)
+    message = u'deleted <strong>"{}"</strong>.'.format(name)
     path = build_wiki_url(node, 'home')  # the wiki home
-    return dict(
-        path=path,
-        message=message
-    )
+    return dict(path=path, message=message)
 
 
 @wiki_changed.connect
@@ -94,29 +96,22 @@ def subscribe_wiki_changed(name, node, version=-1, **kwargs):
     add = dict()
     message = "None"
     if version == 1:
-        message = 'added <strong>"{}"</strong>.'.format(name)
+        message = u'added <strong>"{}"</strong>.'.format(name)
     elif version != 1:
         # Sends link with compare
         add = {'view': str(version), 'compare': str(version - 1)}
-        message = 'updated <strong>"{}"</strong>; it is now version {}.' \
+        message = u'updated <strong>"{}"</strong>; it is now version {}.' \
             .format(name, version)
-    return dict(
-        path=path,
-        add=add,
-        message=message
-    )
+    return dict(path=path, add=add, message=message)
 
 
 @wiki_renamed.connect
 @wiki_updates
 def subscribe_wiki_renamed(name, node, new_name="wiki-error", **kwargs):
-    message = 'renamed <strong>"{}"</strong> to <strong>"{}"</strong>' \
+    message = u'renamed <strong>"{}"</strong> to <strong>"{}"</strong>' \
         .format(name, new_name)
     path = build_wiki_url(node, new_name)  # new wiki link
-    return dict(
-        path=path,
-        message=message
-    )
+    return dict(path=path, message=message)
 
 
 def build_wiki_url(node, label, base=None, end=None):

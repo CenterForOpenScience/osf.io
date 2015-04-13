@@ -7,6 +7,8 @@ import httplib as http
 import mock
 import time
 
+from datetime import datetime
+
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
@@ -16,10 +18,15 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
+from website.notifications import emails
+
 from website.addons.wiki import settings
 from website.addons.wiki.exceptions import InvalidVersionError
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
-from website.addons.wiki.model import NodeWikiPage, render_content
+from website.addons.wiki.model import (
+    NodeWikiPage, render_content, subscribe_wiki_changed,
+    subscribe_wiki_deleted, subscribe_wiki_renamed, wiki_updates
+)
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
     migrate_uuid, format_wiki_version,
@@ -140,7 +147,6 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(content, res.json['wiki_content'])
         assert_equal('', res.json['wiki_rendered'])
-
 
     def test_wiki_url_for_component_returns_200(self):
         component = NodeFactory(project=self.project, is_public=True)
@@ -453,6 +459,15 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_in('data-osf-panel="Edit"', res.text)
 
+    @mock.patch('website.addons.wiki.model.notify')
+    def test_subscribed_wiki_changed_notify_called(self, mock_notify):
+        time_now = datetime.utcnow()
+        subscribe_wiki_changed('other', self.project, self.user, version=2, timestamp=time_now)
+        mock_notify.assert_called()
+        #mock_notify.assert_called_with(uid=self.project._id, event='wiki_updated', node=self.project,
+        #                          timestamp=time_now, gravatar_url=self.user.gravatar_url,
+        #                          url=?, message=?)
+
 
 class TestViewHelpers(OsfTestCase):
 
@@ -525,6 +540,12 @@ class TestWikiDelete(OsfTestCase):
         )
         self.project.reload()
         assert_not_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
+
+    @mock.patch('website.addons.wiki.model.notify')
+    def test_subscribed_wiki_deleted_notify_called(self, mock_notify):
+        time_now = datetime.utcnow()
+        subscribe_wiki_deleted('other', self.project, self.user, version=2, timestamp=time_now)
+        mock_notify.assert_called()
 
 
 class TestWikiRename(OsfTestCase):
@@ -677,6 +698,12 @@ class TestWikiRename(OsfTestCase):
 
     def test_rename_wiki_page_with_invalid_special_character_title(self):
         self.test_rename_wiki_page_invalid(new_name=SPECIAL_CHARACTERS_ALL)
+
+    @mock.patch('website.addons.wiki.model.notify')
+    def test_subscribed_wiki_removed_notify_called(self, mock_notify):
+        time_now = datetime.utcnow()
+        subscribe_wiki_renamed('other', self.project, self.user, version=2, timestamp=time_now)
+        mock_notify.assert_called()
 
 
 class TestWikiLinks(OsfTestCase):

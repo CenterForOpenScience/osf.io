@@ -15,7 +15,7 @@ NOTIFICATION_TYPES = {
 }
 
 EMAIL_SUBJECT_MAP = {
-    'comments': '${commenter.fullname} commented on "${title}".',
-    'comment_replies': '${commenter.fullname} replied to your comment on "${title}".',
-    'wiki_updated': '${commenter.fullname} updated the wiki on "${title}".'
+    'comments': '${user.fullname} commented on "${title}".',
+    'comment_replies': '${user.fullname} replied to your comment on "${title}".',
+    'wiki_updated': '${user.fullname} updated the wiki on "${title}".'
 }
