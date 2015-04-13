@@ -118,7 +118,7 @@ def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
         created, record = True, parent.append_file(child)
 
     code = httplib.CREATED if created else httplib.OK
-    version = record.create_version(user, location, metadata)
+    version = record.create_version(user, location, metadata, log=payload.get('is_upload'))
 
     return {
         'status': 'success',
