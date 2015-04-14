@@ -149,7 +149,7 @@ class HashStreamWriter:
         pass
 
 
-class StringStream(asyncio.StreamReader):
+class StringStream(BaseStream):
     def __init__(self, data):
         super().__init__()
         if isinstance(data, str):
@@ -157,10 +157,17 @@ class StringStream(asyncio.StreamReader):
         elif not isinstance(data, bytes):
             raise TypeError('Data must be either str or bytes, found {!r}'.format(type(data)))
 
+        self._size = len(data)
         self.feed_data(data)
-        self.size = len(data)
-
         self.feed_eof()
+
+    @property
+    def size(self):
+        return self._size
+
+    @asyncio.coroutine
+    def _read(self, n=-1):
+        return (yield from asyncio.StreamReader.read(self, n))
 
 
 class MultiStream(asyncio.StreamReader):
@@ -207,12 +214,17 @@ class MultiStream(asyncio.StreamReader):
 class FormDataStream(MultiStream):
     """A child of MultiSteam used to create stream friendly multipart form data requests.
     Usage:
-        >>> stream = FormDataStream(key1='value1', file=FileStream(...))
+
+    >>> stream = FormDataStream(key1='value1', file=FileStream(...))
+
     Or:
+
         >>> stream = FormDataStream()
         >>> stream.add_field('key1', 'value1')
         >>> stream.add_file('file', FileStream(...), mime='text/plain')
+
     Additional options for files can be passed as a tuple ordered as:
+
         >>> FormDataStream(fieldName=(FileStream(...), 'fileName', 'Mime', 'encoding'))
 
     Auto generates boundaries and properly concatenates them
@@ -222,7 +234,7 @@ class FormDataStream(MultiStream):
 
     @classmethod
     def make_boundary(cls):
-        """Creates a randomeque boundary for
+        """Creates a random-ish boundary for
         form data seperator
         """
         return uuid.uuid4().hex

@@ -24,10 +24,28 @@ def build_url(base, *segments, **query):
 
 
 class BaseProvider(metaclass=abc.ABCMeta):
+    """The base class for all providers.
+    Every provider must, at the least,
+    implement all abstract methods in this class
+
+    .. note::
+        When adding a new provider you must add it to setup.py's
+        `entry_points` under the `waterbutler.providers` key formatted
+        as: `<provider name> = waterbutler.providers.yourprovider:<FullProviderName>`
+
+        Keep in mind that `yourprovider` modules must export the provider class
+    """
 
     BASE_URL = None
 
     def __init__(self, auth, credentials, settings):
+        """
+        :param dict auth: Information about the user this provider will act on the behalf of
+        :param dict credentials: The credentials used to authenticate with the provider,
+            ofter an OAuth 2 token
+        :param dict settings: Configuration settings for this provider,
+            often folder or repo
+        """
         self.auth = auth
         self.credentials = credentials
         self.settings = settings
@@ -42,10 +60,19 @@ class BaseProvider(metaclass=abc.ABCMeta):
             return False
 
     def build_url(self, *segments, **query):
+        """A nice wrapped around furl, builds urls based on self.BASE_URL
+
+        :param (str, ...) segments: A tuple of string joined into /foo/bar/..
+        :param dict query: A dictionary that will be turned into query parameters ?foo=bar
+        :rtype: str
+        """
         return build_url(self.BASE_URL, *segments, **query)
 
     @property
     def default_headers(self):
+        """Headers to be included with every request
+        Commonly OAuth headers or Content-Type
+        """
         return {}
 
     def build_headers(self, **kwargs):
@@ -59,6 +86,19 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     @asyncio.coroutine
     def make_request(self, *args, **kwargs):
+        """A wrapper around :func:`aiohttp.request`. Inserts default headers.
+
+        :param str method: The HTTP method
+        :param str url: The url to send the request to
+        :keyword expects: An optional tuple of HTTP status codes as integers raises an exception
+            if the returned status code is not in it.
+        :type expects: tuple of ints
+        :param Exception throws: The exception to be raised from expects
+        :param tuple \*args: args passed to :func:`aiohttp.request`
+        :param dict \*kwargs: kwargs passed to :func:`aiohttp.request`
+        :rtype: :class:`aiohttp.Response`
+        :raises ProviderError: Raised if expects is defined
+        """
         kwargs['headers'] = self.build_headers(**kwargs.get('headers', {}))
         expects = kwargs.pop('expects', None)
         throws = kwargs.pop('throws', exceptions.ProviderError)
@@ -68,9 +108,27 @@ class BaseProvider(metaclass=abc.ABCMeta):
         return response
 
     def can_intra_copy(self, other):
+        """Indicates if a quick copy can be performed
+        between the current and `other`.
+
+        .. note::
+            Defaults to False
+
+        :param waterbutler.core.provider.BaseProvider other: The provider to check against
+        :rtype: bool
+        """
         return False
 
     def can_intra_move(self, other):
+        """Indicates if a quick move can be performed
+        between the current and `other`.
+
+        .. note::
+            Defaults to False
+
+        :param waterbutler.core.provider.BaseProvider other: The provider to check against
+        :rtype: bool
+        """
         return False
 
     def intra_copy(self, dest_provider, source_options, dest_options):
@@ -94,6 +152,16 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     @asyncio.coroutine
     def move(self, dest_provider, source_options, dest_options):
+        """Moves a file or folder from the current provider to the specified one
+        Performs a copy and then a delete.
+        Calls :func:`BaseProvider.intra_move` if possible.
+
+        :param BaseProvider dest_provider: The provider to move to
+        :param dict source_options: A dict to be sent to either :func:`BaseProvider.intra_move`
+            or :func:`BaseProvider.copy` and :func:`BaseProvider.delete`
+        :param dict dest_options: A dict to be sent to either :func:`BaseProvider.intra_move`
+            or :func:`BaseProvider.copy`
+        """
         if self.can_intra_move(dest_provider):
             try:
                 return (yield from self.intra_move(dest_provider, source_options, dest_options))
