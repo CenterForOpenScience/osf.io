@@ -88,8 +88,11 @@
 <h3>What is the cap on data per user?</h3>
 <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 128 mb. If you have larger files to upload, you might consider utilizing add-ons.</p>
 
-<h3>Does the OSF issue DOIs?</h3>
-<p>At the present time, the OSF does not mint DOIs. Every user, project, component, and file on the OSF is issued a <b>unique, persistent identifier</b> that enables content to be cited. For users who desire a DOI specifically, we recommend connecting your OSF account to an add-on that does mint DOIs, like Dataverse or figshare.</p>
+<h3>How do I get a DOI or ARK for my project?</h3>
+<p>DOIs and ARKs are available for <b>public registrations</b> of projects. To get a DOI or ARK for your project, first create a registration of your project, and make sure the registration is public. Then click "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. </p>
+
+<h3>I have a DOI for my project on the OSF, but I've decided I'd rather host the material elsewhere. How can I do this without losing/needing a new DOI?</h3>
+<p>Send us an email with your DOI and the new location of your materials and we'll update the URL associated with your DOI. </p>
 
 <h3>How do I rename a project?</h3>
 <p>You can rename a project or a component by clicking on the project title in the project or component overview page.</p>
@@ -101,7 +104,7 @@
 <p>Unfortunately, no - you will have to delete the file and re-upload a new file with the desired name.</p>
 
 <h3>My email address has changed. How do I change my login email?</h3>
-<p>Send an <a href="mailto:support@osf.io">email</a> with your request. We’ll get that taken care of for you.</p>
+<p>From your <a href="osf.io/settings/account">account settings</a> page, you can additional email addresses to your account, and select which of these is your primary email address. Any of these emails can be used to log in to the OSF. </p>
 
 <h3>How can I license my data/code/etc.?</h3>
 <p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>

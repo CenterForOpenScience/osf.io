@@ -30,7 +30,7 @@ class UniqueEmail(object):
         self.allow_unregistered = allow_unregistered
 
     def __call__(self, form, field):
-        user = auth.get_user(username=field.data)
+        user = auth.get_user(email=field.data)
         if user:
             if self.allow_unregistered and not user.is_registered:
                 return True
@@ -45,7 +45,7 @@ class EmailExists(object):
         self.message = message
 
     def __call__(self, form, field):
-        if not auth.get_user(username=field.data):
+        if not auth.get_user(email=field.data):
             msg = self.message or language.EMAIL_NOT_FOUND.format(email=field.data)
             raise ValidationError(msg)
 

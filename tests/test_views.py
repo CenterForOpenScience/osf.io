@@ -515,16 +515,30 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         for mock_command in mock_commands:
             assert_false(mock_command.called)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
-        assert_false(data['has_more_logs'])
+        assert_equal(data['total'], len(self.project.logs))
+        assert_equal(data['page'], 0)
+        assert_equal(data['pages'], 1)
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
+
+    def test_get_logs_invalid_page_input(self):
+        url = self.project.api_url_for('get_logs')
+        invalid_input = 'invalid page'
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
 
     def test_get_logs_with_count_param(self):
         # Add some logs
@@ -537,10 +551,13 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['total'], 5 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 3)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
@@ -553,10 +570,13 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
 
     def test_get_more_logs(self):
         # Add some logs
@@ -569,10 +589,13 @@ class TestProjectViews(OsfTestCase):
                 )
             )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        url = self.project.api_url_for('get_logs')
+        res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
-        assert_false(res.json['has_more_logs'])
+        #1 project create log, 1 add contributor log, then 12 generated logs
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 1)
+        assert_equal(res.json['pages'], 2)
 
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
@@ -597,10 +620,13 @@ class TestProjectViews(OsfTestCase):
                 params={'project': child._id}
             )
 
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 15 generated logs
+        assert_equal(res.json['total'], 15 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
         assert_equal(
             [self.project._id] * 10,
             [
@@ -1410,7 +1436,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(len(self.project.contributors),
                      n_contributors_pre + len(payload['users']))
 
-        new_unreg = auth.get_user(username=email)
+        new_unreg = auth.get_user(email=email)
         assert_false(new_unreg.is_registered)
         # unclaimed record was added
         new_unreg.reload()
@@ -1960,6 +1986,24 @@ class TestWatchViews(OsfTestCase):
         assert_equal(len(res.json['logs']), 10)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
+        # 1 project create log then 12 generated logs
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
     def test_get_more_watched_logs(self):
         project = ProjectFactory()
         # Add some logs
@@ -1969,11 +2013,47 @@ class TestWatchViews(OsfTestCase):
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
         self.user.save()
-        url = "/api/v1/watched/logs/"
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        url = api_url_for("watched_logs_get")
+        page = 1
+        res = self.app.get(url, {'page': page}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        # 1 project create log then 12 generated logs
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], page)
+        assert_equal(res.json['pages'], 2)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_more_watched_logs_invalid_page(self):
+        project = ProjectFactory()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        invalid_page = 'invalid page'
+        res = self.app.get(
+            url, {'page': invalid_page}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_more_watched_logs_invalid_size(self):
+        project = ProjectFactory()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        invalid_size = 'invalid size'
+        res = self.app.get(
+            url, {'size': invalid_size}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "size".'
+        )
 
 class TestPointerViews(OsfTestCase):
 
@@ -2408,7 +2488,7 @@ class TestAuthViews(OsfTestCase):
 
         new_user.reload()
         # Password and fullname should be updated
-        assert_true(new_user.is_confirmed())
+        assert_true(new_user.is_confirmed)
         assert_true(new_user.check_password(password))
         assert_equal(new_user.fullname, real_name)
 
@@ -2469,12 +2549,13 @@ class TestAuthViews(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
-        self.user.add_email_verification(self.user.username)
-        self.user.save()
-        self.app.post('/resend/', {'email': self.user.username})
+        u = UnconfirmedUserFactory()
+        u.add_unconfirmed_email(u.username)
+        u.save()
+        self.app.post('/resend/', {'email': u.username})
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr=self.user.username
+            to_addr=u.username
         ))
 
     # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
@@ -2483,14 +2564,15 @@ class TestAuthViews(OsfTestCase):
     def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
         expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
         random_string.return_value = '12345'
-        self.user.add_email_verification(self.user.username, expiration=expiration)
-        self.user.save()
+        u = UnconfirmedUserFactory()
+        u.add_unconfirmed_email(u.username, expiration=expiration)
+        u.save()
 
-        self.app.post('/resend/', {'email': self.user.username})
-        confirm_url = self.user.get_confirmation_url(self.user.username, force=True)
+        self.app.post('/resend/', {'email': u.username})
+        confirm_url = u.get_confirmation_url(u.username, force=True)
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr=self.user.username,
+            to_addr=u.username,
             confirmation_url=confirm_url
         ))
 
@@ -2509,20 +2591,6 @@ class TestAuthViews(OsfTestCase):
         res = res.follow()
         user.reload()
         assert_true(user.is_registered)
-
-    def test_expired_link_returns_400(self):
-        user = User.create_unconfirmed(
-            'brian1@queen.com',
-            'bicycle123',
-            'Brian May',
-        )
-        user.save()
-        token = user.get_confirmation_token('brian1@queen.com')
-        url = user.get_confirmation_url('brian1@queen.com', external=False)
-        user.confirm_email(token)
-        user.save()
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
 
 
 # TODO: Use mock add-on

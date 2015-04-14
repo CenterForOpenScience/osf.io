@@ -116,6 +116,7 @@ SESSION_HISTORY_LENGTH = 5
 SESSION_HISTORY_IGNORE_RULES = [
     lambda url: '/static/' in url,
     lambda url: 'favicon' in url,
+    lambda url: url.startswith('/api/'),
 ]
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
@@ -236,4 +237,15 @@ DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
+# Test identifier namespaces
+DOI_NAMESPACE = 'doi:10.5072/FK2'
+ARK_NAMESPACE = 'ark:99999/fk4'
+
+EZID_USERNAME = 'changeme'
+EZID_PASSWORD = 'changeme'
+# Format for DOIs and ARKs
+EZID_FORMAT = '{namespace}osf.io/{guid}'
+
+
 SHARE_REGISTRATION_URL = ''
+SHARE_API_DOCS_URL = ''
