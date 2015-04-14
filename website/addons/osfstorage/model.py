@@ -346,6 +346,30 @@ class OsfStorageFileNode(StoredObject):
             'downloads': self.get_download_count(),
         }
 
+    def copy_to_path(self, path, log=True):
+        try:
+            dest_path, new_name = path.strip('/').split('/')
+        except ValueError:
+            dest_path, new_name = path, self.name
+
+        if not dest_path.strip('/'):
+            dest_node = self.node_settings.root_node
+        else:
+            dest_node = self.__class__.get(dest_path, self.node_settings)
+
+        # try:
+        #     new_node = dest_node.find_child_by_name(new_name, kind=self.kind)
+        #     new_node.versions = self.versions
+        # except NoResultsFound:
+        new_node = self.clone()
+
+        new_node.name = new_name
+        new_node.parent = dest_node
+
+        new_node.save()
+
+        return True, new_node
+
     def __repr__(self):
         return '<{}(name={!r}, node_settings={!r})>'.format(
             self.__class__.__name__,
