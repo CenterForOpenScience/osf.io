@@ -678,6 +678,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
 
+    def ids_above(self, auth):
+        parents = self.parents
+        return {p._id for p in parents if p.can_view(auth)}
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -866,6 +870,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.parent_node:
             return [self.parent_node] + self.parent_node.parents
         return []
+
+    @property
+    def root(self):
+        if self.parent_node:
+            return self.parent_node.root
+        else:
+            return self
 
     @property
     def admin_contributor_ids(self, contributors=None):
@@ -1225,16 +1236,39 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def depth(self):
         return len(self.parents)
 
-    def get_nodes_recursive(self, include):
-        nodes = list(self.nodes) + [
+    def next_visible_descendants(self, auth, serialize_node=None):
+        """
+        Recursively find the first set of visible descedants under a given node
+        """
+        ret = []
+        for node in self.nodes:
+            if node.can_view(auth):
+                # base case
+                ret.append(
+                    serialize_node(node)
+                    if serialize_node
+                    else {}
+                )
+            else:
+                target = (
+                    serialize_node(node)
+                    if serialize_node
+                    else {}
+                )
+                target['children'] = node.next_visible_descendants(auth, serialize_node)
+                ret.append(target)
+        return ret
+
+    def get_descendants_recursive(self, include):
+        return list(self.nodes) + [
             item
             for node in self.nodes
-            for item in node.get_nodes_recursive(include)
+            for item in node.get_descendants_recursive(include)
+            if include(node)
         ]
-        return [self] + [node for node in nodes if include(node)]
 
     def get_aggregate_logs_set(self, auth):
-        ids = [n._id for n in self.get_nodes_recursive(
+        ids = [self._id] + [n._id for n in self.get_descendants_recursive(
             lambda node: node.can_view(auth)
         )]
         query = Q('__backrefs.logged.node.logs', 'in', ids)
