@@ -25,15 +25,15 @@ describe('osfHelpers', () => {
 
     describe('handleJSONError', () => {
         var response = {
-            responseJSON: {message_short: 'Oh no!', message_long: 'Something went wrong'}
+            {message_short: 'Oh no!', message_long: 'Something went wrong'}
         };
         it('uses the response body if available', () => {
             var stub = new sinon.stub($osf, 'growl');
             $osf.handleJSONError(response);
             assert.called(stub);
             assert.calledWith(stub,
-                              response.responseJSON.message_short,
-                              response.responseJSON.message_long);
+                              response.message_short,
+                              response.message_long);
             stub.restore();
         });
 

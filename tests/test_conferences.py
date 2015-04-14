@@ -391,6 +391,12 @@ class TestMessage(ContextTestCase):
 
 class TestConferenceEmailViews(OsfTestCase):
 
+    def test_conference_plain_returns_200(self):
+        conference = ConferenceFactory()
+        url = web_url_for('conference_results__plain', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
     def test_conference_data(self):
         conference = ConferenceFactory()
 
