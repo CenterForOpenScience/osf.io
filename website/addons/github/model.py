@@ -161,6 +161,12 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     def provider_name(self):
         return 'github'
 
+
+    @property
+    def is_private(self):
+        connection = GitHub.from_settings(self.api.account)
+        return connection.repo(user=self.user, repo=self.repo).private
+
     def set_auth(self, *args, **kwargs):
         self.repo = None
         return super(GitHubNodeSettings, self).set_auth(*args, **kwargs)
@@ -213,16 +219,6 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
             return 'https://github.com/{0}/{1}/'.format(
                 self.user, self.repo
             )
-
-    @property
-    def short_url(self):
-        if self.user and self.repo:
-            return '/'.join([self.user, self.repo])
-
-    @property
-    def is_private(self):
-        connection = GitHub.from_settings(self.user_settings)
-        return connection.repo(user=self.user, repo=self.repo).private
 
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
@@ -511,6 +507,21 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
             ).format(
                 cat=node.project_or_component,
             )
+
+    def deauthorize(self, auth=None, log=True, save=False):
+        self.delete_hook(save=False)
+        self.user, self.repo, self.user_settings = None, None, None
+        if log:
+            self.owner.add_log(
+                action='github_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True, save=True)
