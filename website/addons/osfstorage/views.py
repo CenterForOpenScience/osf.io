@@ -262,7 +262,40 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
             raise HTTPError(httplib.CONFLICT, data={
                 'message': 'Folder "{}" already exists.'.format(path)
             })
-        folder.undelete(Auth(user), recurse=False)
-    folder.log(Auth(user), NodeLog.FOLDER_CREATED)
 
+    folder.log(Auth(user), NodeLog.FOLDER_CREATED)
     return folder.serialized(), httplib.CREATED
+
+
+@must_be_signed
+@utils.handle_odm_errors
+@must_have_addon('osfstorage', 'node')
+def osf_storage_copy(payload, node_addon, **kwargs):
+    src_path = payload.get('src_path')
+    dest_path = payload.get('dest_path')
+
+    if not (src_path or dest_path):
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    created, copied = model.OsfStorageFileNode.get(src_path, node_addon).copy_to_path(dest_path)
+
+    return created.serialized(), httplib.CREATED if created else httplib.OK
+
+
+@must_be_signed
+@utils.handle_odm_errors
+@must_have_addon('osfstorage', 'node')
+def osf_storage_move(payload, node_addon, **kwargs):
+    src_path = payload.get('src_path')
+    dest_path = payload.get('dest_path')
+
+    if not (src_path or dest_path):
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    src_node = model.OsfStorageFileNode.get(src_path, node_addon)
+    if len(dest_path.strip('/').split('/')) == 1:
+        dest_node = model.OsfStorageFileNode.get(dest_path, node_addon)
+    else:
+        created, dest_node = model.OsfStorageFileNode.create_child_by_path(src_node, node_addon)
+
+    dest_node
