@@ -443,12 +443,12 @@ class User(GuidStoredObject, AddonModelMixin):
         except itsdangerous.BadSignature:
             return None
 
-        session = Session.load(token)
+        user_session = Session.load(token)
 
-        if session is None:
+        if user_session is None:
             return None
 
-        return cls.load(session.data['auth_user_id'])
+        return cls.load(user_session.data['auth_user_id'])
 
     def get_or_create_cookie(self, secret=None):
         """Find the cookie for the given user
@@ -463,17 +463,19 @@ class User(GuidStoredObject, AddonModelMixin):
         ).sort(
             '-date_modified'
         ).limit(1)
-        if sessions:
-            session = sessions[0]
+
+        if sessions.count() > 0:
+            user_session = sessions[0]
         else:
-            session = Session(data={
+            user_session = Session(data={
                 'auth_user_id': self._id,
                 'auth_user_username': self.username,
                 'auth_user_fullname': self.fullname,
             })
-            session.save()
+            user_session.save()
+
         signer = itsdangerous.Signer(secret)
-        return signer.sign(session._id)
+        return signer.sign(user_session._id)
 
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
