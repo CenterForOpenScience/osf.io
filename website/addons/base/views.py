@@ -19,6 +19,8 @@ from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
+from mfr.core import get_file_extension
+
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
@@ -317,7 +319,6 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         **extras
     )
 
-    # print file_guid
     ret = serialize_node(node, auth, primary=True)
     ret.update({
         'provider': file_guid.provider,
@@ -329,7 +330,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
-        'file_ext': os.path.splitext(file_guid.waterbutler_path)[1],
+        'file_ext': get_file_extension(file_guid.waterbutler_path),
     })
 
     return ret
@@ -339,7 +340,6 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 @must_be_contributor_or_public
 def addon_render_file(auth, path, provider, **kwargs):
 
-    print 'INSIDE VIEWS.PY HELLLLOOOOOOOOOO'
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
@@ -378,5 +378,3 @@ def addon_render_file(auth, path, provider, **kwargs):
     })
 
     return ret
-
-    # return get_or_start_render(file_guid)
