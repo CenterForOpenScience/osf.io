@@ -7,7 +7,7 @@ Google Drive in {{ nodeType }}
 
 <script type="text/html" id="googledrive_folder_created">
 created folder
-<span class="overflow">{{ decodeURIComponent(params.path) }}</span> in
+<span class="overflow log-folder">{{ decodeURIComponent(params.path) }}</span> in
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
