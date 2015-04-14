@@ -13,6 +13,25 @@ class BaseBoxMetadata(metadata.BaseMetadata):
     def provider(self):
         return 'box'
 
+    @property
+    def full_path(self):
+        if 'path_collection' not in self.raw:
+            return None
+
+        path = []
+        for entry in reversed(self.raw['path_collection']['entries']):
+            if self.folder == entry['id']:
+                break
+            path.append(entry['name'])
+
+        return '/' + os.path.join('/'.join(reversed(path)), self.name)
+
+    @property
+    def extra(self):
+        return {
+            'fullPath': self.full_path
+        }
+
 
 class BoxFolderMetadata(BaseBoxMetadata, metadata.BaseFolderMetadata):
 
@@ -23,6 +42,13 @@ class BoxFolderMetadata(BaseBoxMetadata, metadata.BaseFolderMetadata):
     @property
     def path(self):
         return '/{}/'.format(self.raw['id'])
+
+    @property
+    def full_path(self):
+        path = super().full_path
+        if path is None:
+            return None
+        return path + '/'
 
 
 class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
@@ -51,7 +77,7 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
     def extra(self):
         return {
             'etag': self.raw.get('etag'),
-            'fullPath': self.materialized_path
+            'fullPath': self.full_path
         }
 
     @property
