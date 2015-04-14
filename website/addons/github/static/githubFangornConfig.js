@@ -142,13 +142,15 @@ function _resolveLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item, {ref: item.data.branch});
 }
 
-function _fangornLazyLoadOnLoad (tree) {
+function _fangornLazyLoadOnLoad (tree, event) {
     var tb = this;
     tree.children.forEach(function(item) {
         Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
     });
     Fangorn.Utils.findCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-    Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
+    if(!event){
+        Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
+    }
 }
 
 function _fangornGithubTitle(item, col)  {
