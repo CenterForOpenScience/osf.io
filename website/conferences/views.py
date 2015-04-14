@@ -197,6 +197,8 @@ def conference_results(meeting):
         'data': json.dumps(data),
         'label': meeting,
         'meeting': conf.to_storage(),
+        # Needed in order to use base.mako namespace
+        'settings': settings,
     }
 
 
