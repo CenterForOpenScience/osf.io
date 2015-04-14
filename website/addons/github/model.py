@@ -149,7 +149,10 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
 
     @property
     def complete(self):
-        return self.has_auth and self.repo is not None and self.user is not None
+        return bool(self.has_auth and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+        ))
 
     def find_or_create_file_guid(self, path):
         return GithubGuidFile.get_or_create(node=self.owner, path=path)
@@ -159,12 +162,44 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         return 'github'
 
     def set_auth(self, *args, **kwargs):
-        self.github_list_id = None
+        self.repo = None
         return super(GitHubNodeSettings, self).set_auth(*args, **kwargs)
 
+
     def clear_auth(self):
-        self.github_list_id = None
+        self.repo = None
         return super(GitHubNodeSettings, self).clear_auth()
+
+    def set_target_repo(self, repo, mendeley_list_name, auth):
+        """Configure this addon to point to a github repo
+
+        :param str repo:
+        :param ExternalAccount external_account:
+        :param User user:
+        """
+
+        # Tell the user's addon settings that this node is connecting
+        self.user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'repo': repo}
+        )
+        self.user_settings.save()
+
+        # update this instance
+        self.repo = repo
+        self.save()
+
+        self.owner.add_log(
+            'repo_selected',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'repo': repo,
+                'folder_name': mendeley_list_name,
+            },
+            auth=auth,
+        )
 
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:

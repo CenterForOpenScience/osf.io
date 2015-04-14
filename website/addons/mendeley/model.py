@@ -33,7 +33,6 @@ class Mendeley(ExternalProvider):
 
         # make a second request for the Mendeley user's ID and name
         profile = client.profiles.me
-        import ipdb; ipdb.set_trace()
 
         return {
             'provider_id': profile.id,
