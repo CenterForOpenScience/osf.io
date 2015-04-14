@@ -13,18 +13,48 @@ E = lxml.builder.ElementMaker(nsmap={
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
 
-def datacite_metadata_for_node(node, doi, pretty_print=False):
-    """Return the datacite metadata XML document for a given node as a string."""
-    def format_contrib(contributor):
-        return u'{}, {}'.format(contributor.family_name, contributor.given_name)
-    creators = [CREATOR(CREATOR_NAME(format_contrib(each)))
-                        for each in node.visible_contributors]
+
+# This function is not OSF-specific
+def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_print=False):
+    """Return the formatted datacite metadata XML as a string.
+
+    :param str doi
+    :param str title
+    :param list creators: List of creator names, formatted like 'Shakespeare, William'
+    :param str publisher: Publisher name.
+    :param int publication_year
+    :param bool pretty_print
+    """
+    creators = [CREATOR(CREATOR_NAME(each)) for each in creators]
     root = E.resource(
         E.identifier(doi, identifierType='DOI'),
         E.creators(*creators),
-        E.titles(E.title(node.title)),
-        E.publisher('OSF'),
-        E.publicationYear(str(node.registered_date.year)),
+        E.titles(E.title(title)),
+        E.publisher(publisher),
+        E.publicationYear(str(publication_year)),
     )
-    root.attrib["{" + XSI + "}schemaLocation"] = SCHEMA_LOCATION
+    # set xsi:schemaLocation
+    root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)
+
+
+# This function is OSF specific.
+def datacite_metadata_for_node(node, doi, pretty_print=False):
+    """Return the datacite metadata XML document for a given node as a string.
+
+    :param Node node
+    :param str doi
+    """
+    def format_contrib(contributor):
+        return u'{}, {}'.format(contributor.family_name, contributor.given_name)
+    creators = [format_contrib(each)
+                for each in node.visible_contributors]
+
+    return datacite_metadata(
+        doi=doi,
+        title=node.title,
+        creators=creators,
+        publisher='OSF',
+        publication_year=node.registered_date.year,
+        pretty_print=pretty_print
+    )
