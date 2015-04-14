@@ -146,7 +146,7 @@ class BoxProvider(provider.BaseProvider):
         )
 
         if resp.status == 409:
-            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+            raise exceptions.FolderNamingConflict(str(path))
 
         return BoxFolderMetadata(
             (yield from resp.json()),

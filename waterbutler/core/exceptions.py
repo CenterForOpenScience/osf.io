@@ -1,3 +1,4 @@
+import os
 import http
 import json
 import asyncio
@@ -60,6 +61,15 @@ class MetadataError(ProviderError):
 
 class RevisionsError(ProviderError):
     pass
+
+class FolderNamingConflict(ProviderError):
+    def __init__(self, path, name=None):
+        super().__init__(
+            'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+                path=path,
+                name=name or os.path.split(path.strip('/'))[1]
+            ), code=409
+        )
 
 
 class NotFoundError(ProviderError):

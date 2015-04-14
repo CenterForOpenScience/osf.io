@@ -233,7 +233,7 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         try:
             yield from self.metadata(str(path), raw=True)
-            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+            raise exceptions.FolderNamingConflict(str(path))
         except exceptions.MetadataError as e:
             if e.code != 404:
                 raise
