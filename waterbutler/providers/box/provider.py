@@ -215,6 +215,9 @@ class BoxProvider(provider.BaseProvider):
         if raw:
             return data
 
+        if folder:
+            return self._serialize_item(data)
+
         return [
             self._serialize_item(each)
             for each in data['entries']
