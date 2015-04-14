@@ -109,13 +109,11 @@ def dataverse_get_datasets(node_addon, **kwargs):
 
     connection = client.connect_from_settings(user_settings)
     dataverse = client.get_dataverse(connection, alias)
-    datasets, bad_datasets = client.get_datasets(dataverse)
+    datasets = client.get_datasets(dataverse)
     ret = {
         'datasets': [{'title': dataset.title, 'doi': dataset.doi} for dataset in datasets],
-        'badDatasets': [{'doi': bad_dataset.doi, 'url': 'http://dx.doi.org/' + bad_dataset.doi} for bad_dataset in bad_datasets],
     }
-    code = http.PARTIAL_CONTENT if bad_datasets else http.OK
-    return ret, code
+    return ret, http.OK
 
 
 @must_be_logged_in

@@ -121,19 +121,34 @@ class TestClient(DataverseAddonTestCase):
                                                              b'File Content')
 
     def test_get_file(self):
-        published = True
+        published = False
         get_file(self.mock_dataset, 'filename.txt', published)
-        self.mock_dataset.get_file.assert_called_once_with('filename.txt', published)
+        self.mock_dataset.get_file.assert_called_once_with('filename.txt', 'latest')
 
     def test_get_file_by_id(self):
-        published = True
+        published = False
         get_file_by_id(self.mock_dataset, '12345', published)
-        self.mock_dataset.get_file_by_id.assert_called_once_with('12345', published)
+        self.mock_dataset.get_file_by_id.assert_called_once_with('12345', 'latest')
 
     def test_get_files(self):
+        published = False
+        get_files(self.mock_dataset, published)
+        self.mock_dataset.get_files.assert_called_once_with('latest')
+
+    def test_get_file_published(self):
+        published = True
+        get_file(self.mock_dataset, 'filename.txt', published)
+        self.mock_dataset.get_file.assert_called_once_with('filename.txt', 'latest-published')
+
+    def test_get_file_by_id_published(self):
+        published = True
+        get_file_by_id(self.mock_dataset, '12345', published)
+        self.mock_dataset.get_file_by_id.assert_called_once_with('12345', 'latest-published')
+
+    def test_get_files_published(self):
         published = True
         get_files(self.mock_dataset, published)
-        self.mock_dataset.get_files.assert_called_once_with(published)
+        self.mock_dataset.get_files.assert_called_once_with('latest-published')
 
     def test_publish_dataset(self):
         publish_dataset(self.mock_dataset)
@@ -158,35 +173,15 @@ class TestClient(DataverseAddonTestCase):
             mock_dataset1, mock_dataset2, mock_dataset3
         ]
 
-        datasets, bad_datasets = get_datasets(self.mock_dataverse)
+        datasets = get_datasets(self.mock_dataverse)
         self.mock_dataverse.get_datasets.assert_called_once_with()
         assert_in(mock_dataset1, datasets)
         assert_in(mock_dataset2, datasets)
         assert_in(mock_dataset3, datasets)
-        assert_equal(bad_datasets, [])
 
     def test_get_datasets_no_dataverse(self):
-        datasets, bad_datasets = get_datasets(None)
+        datasets = get_datasets(None)
         assert_equal(datasets, [])
-        assert_equal(bad_datasets, [])
-
-    @unittest.skip('Functionality was removed due to high number of requests.')
-    def test_get_datasets_some_bad(self):
-        mock_dataset1 = mock.create_autospec(Dataset)
-        mock_dataset2 = mock.create_autospec(Dataset)
-        mock_dataset3 = mock.create_autospec(Dataset)
-        error = UnicodeDecodeError('utf-8', b'', 1, 2, 'jeepers')
-        mock_dataset1.get_state.return_value = 'DRAFT'
-        mock_dataset2.get_state.side_effect = error
-        mock_dataset3.get_state.return_value = 'DEACCESSIONED'
-        self.mock_dataverse.get_datasets.return_value = [
-            mock_dataset1, mock_dataset2, mock_dataset3
-        ]
-
-        datasets, bad_datasets = get_datasets(self.mock_dataverse)
-        self.mock_dataverse.get_datasets.assert_called_once_with()
-        assert_equal([mock_dataset1], datasets)
-        assert_equal([mock_dataset2], bad_datasets)
 
     def test_get_dataset(self):
         self.mock_dataset.get_state.return_value = 'DRAFT'

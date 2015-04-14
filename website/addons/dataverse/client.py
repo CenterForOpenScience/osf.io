@@ -85,12 +85,8 @@ def publish_dataset(dataset):
 
 def get_datasets(dataverse):
     if dataverse is None:
-        return [], []
-    accessible_datasets = []
-    bad_datasets = []    # Currently none, but we may filter some out
-    for ds in dataverse.get_datasets():
-        accessible_datasets.append(ds)
-    return accessible_datasets, bad_datasets
+        return []
+    return dataverse.get_datasets()
 
 
 def get_dataset(dataverse, doi):

@@ -29,7 +29,6 @@ function ViewModel(url) {
 
     self.dataverses = ko.observableArray([]);
     self.datasets = ko.observableArray([]);
-    self.badDatasets = ko.observableArray([]);
 
     self.savedDatasetDoi = ko.observable();
     self.savedDatasetTitle = ko.observable();
@@ -156,9 +155,6 @@ function ViewModel(url) {
     self.hasDataverses = ko.pureComputed(function() {
         return self.dataverses().length > 0;
     });
-    self.hasBadDatasets = ko.pureComputed(function() {
-        return self.badDatasets().length > 0;
-    });
     self.showNotFound = ko.pureComputed(function() {
         return self.savedDatasetDoi() && self.loadedDatasets() && !self.datasetWasFound();
     });
@@ -269,7 +265,6 @@ ViewModel.prototype.findDataset = function() {
 ViewModel.prototype.getDatasets = function() {
     var self = this;
     self.datasets([]);
-    self.badDatasets([]);
     self.loadedDatasets(false);
     return osfHelpers.postJSON(
         self.urls().getDatasets,
@@ -278,7 +273,6 @@ ViewModel.prototype.getDatasets = function() {
         })
     ).done(function(response) {
         self.datasets(response.datasets);
-        self.badDatasets(response.badDatasets);
         self.loadedDatasets(true);
         self.selectedDatasetDoi(self.savedDatasetDoi());
         self.findDataset();
