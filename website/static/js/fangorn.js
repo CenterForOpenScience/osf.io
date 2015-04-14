@@ -522,7 +522,7 @@ function createFolder(event, parent, col) {
             m('form', {onsubmit: doCreate}, [
                 m('input.form-control[autofocus][type=text]', {
                     placeholder: 'Folder Name',
-                    onchange: m.withAttr('value', folderName),
+                    onkeyup: m.withAttr('value', folderName),
                     disabled: creatingFolder() ? 'disabled' : '',
                 })
             ])
