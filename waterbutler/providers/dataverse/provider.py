@@ -77,7 +77,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
         # Find appropriate version of file from metadata url
-        data = yield from self.metadata(state='draft')
+        data = yield from self.get_draft_data()
         filename, version = dataverse_utils.unpack_filename(filename)
         highest_compatible = None
 
@@ -113,7 +113,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path='/', state=None, **kwargs):
+    def metadata(self, path, state=None, **kwargs):
 
         # Get appropriate metadata
         if state == 'draft':
