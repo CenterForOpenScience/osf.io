@@ -253,22 +253,12 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     if not path or not user:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    split = path.strip('/').split('/')
-    child = split.pop(-1)
+    created, folder = model.OsfStorageFileNode.create_child_by_path(path, node_addon)
 
-    if not child:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if split:
-        parent = model.OsfStorageFileNode.get(split[0], node_addon)
-    else:
-        parent = node_addon.root_node
-
-    try:
-        folder = parent.append_folder(child)
-    except KeyExistsException:
-        folder = parent.find_child_by_name(child, kind='folder')
-        if not folder.is_deleted:
+    if not created:
+        if folder.is_deleted:
+            folder.undelete(Auth(user), recurse=False)
+        else:
             raise HTTPError(httplib.CONFLICT, data={
                 'message': 'Folder "{}" already exists.'.format(path)
             })
