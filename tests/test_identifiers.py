@@ -8,14 +8,17 @@ from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
 from tests.factories import ModularOdmFactory
 from tests.factories import RegistrationFactory
+from tests.factories import NodeFactory
 from tests.test_addons import assert_urls_equal
 
 import furl
+import lxml.etree
 from modularodm.storage.base import KeyExistsException
 
 from website import settings
 from website.identifiers.utils import to_anvl
 from website.identifiers.model import Identifier
+from website.identifiers.metadata import datacite_metadata_for_node
 
 
 class IdentifierFactory(ModularOdmFactory):
@@ -25,6 +28,25 @@ class IdentifierFactory(ModularOdmFactory):
     category = 'carpid'
     value = 'carp:/24601'
 
+
+class TestMetadataGeneration(OsfTestCase):
+
+    def test_metadata_for_node(self):
+        visible_contrib = AuthUserFactory()
+        invisible_contrib = AuthUserFactory()
+        node = RegistrationFactory(is_public=True)
+        identifier = Identifier(referent=node, category='catid', value='cat:7')
+        node.add_contributor(visible_contrib, visible=True)
+        node.add_contributor(invisible_contrib, visible=False)
+        node.save()
+        metadata_xml = datacite_metadata_for_node(node, doi=identifier.value)
+        # includes visible contrib name
+        assert_in('{}, {}'.format(visible_contrib.family_name, visible_contrib.given_name),
+                metadata_xml)
+        # doesn't include invisible contrib name
+        assert_not_in(invisible_contrib.family_name, metadata_xml)
+
+        assert_in(identifier.value, metadata_xml)
 
 class TestIdentifierModel(OsfTestCase):
 
