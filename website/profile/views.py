@@ -111,7 +111,6 @@ def update_user(auth):
                 user.remove_email(address)
             user.remove_unconfirmed_email(address)
 
-
         # additions
         added_emails = [
             each['address'].strip().lower()
