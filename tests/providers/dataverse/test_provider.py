@@ -3,7 +3,9 @@ import pytest
 from tests.utils import async
 
 import io
+import json
 
+import aiohttp
 import aiohttpretty
 
 from waterbutler.core import streams
@@ -261,12 +263,23 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_upload(self, provider, file_stream, native_file_metadata, native_dataset_metadata):
+    def test_upload_create(self, provider, file_stream, native_file_metadata, empty_native_dataset_metadata, native_dataset_metadata):
         path = '/thefile.txt'
         url = provider.build_url(provider.EDIT_MEDIA_BASE_URL, 'study', provider.doi)
         aiohttpretty.register_uri('POST', url, status=201)
         published_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id, 'latest'), key=provider.token)
-        aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
+        aiohttpretty.register_uri('GET', published_url, responses=[
+            {
+                'status': 200,
+                'body': json.dumps(empty_native_dataset_metadata).encode('utf-8'),
+                'headers': {'Content-Type': 'application/json'},
+            },
+            {
+                'status': 200,
+                'body': json.dumps(native_dataset_metadata).encode('utf-8'),
+                'headers': {'Content-Type': 'application/json'},
+            },
+        ])
 
         metadata, created = yield from provider.upload(file_stream, path)
 
@@ -275,6 +288,27 @@ class TestCRUD:
 
         assert metadata == expected
         assert created is True
+        assert aiohttpretty.has_call(method='POST', uri=url)
+        assert aiohttpretty.has_call(method='GET', uri=published_url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_updates(self, provider, file_stream, native_file_metadata, native_dataset_metadata):
+        path = '/thefile.txt'
+        url = provider.build_url(provider.EDIT_MEDIA_BASE_URL, 'study', provider.doi)
+        aiohttpretty.register_uri('POST', url, status=201)
+        published_url = provider.build_url(provider.JSON_BASE_URL.format(provider.id, 'latest'), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
+        delete_url = provider.build_url(provider.EDIT_MEDIA_BASE_URL, 'file', '/20')  # Old file id
+        aiohttpretty.register_json_uri('DELETE', delete_url, status=204)
+
+        metadata, created = yield from provider.upload(file_stream, path)
+
+        entry = native_file_metadata['datafile']
+        expected = DataverseFileMetadata(entry).serialized()
+
+        assert metadata == expected
+        assert created is False
         assert aiohttpretty.has_call(method='POST', uri=url)
         assert aiohttpretty.has_call(method='GET', uri=published_url)
 

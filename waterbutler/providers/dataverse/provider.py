@@ -8,7 +8,6 @@ from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import settings
 from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
-from waterbutler.providers.dataverse import utils as dataverse_utils
 
 
 class DataverseProvider(provider.BaseProvider):
@@ -65,6 +64,16 @@ class DataverseProvider(provider.BaseProvider):
             "Content-Length": str(stream.size),
         }
 
+        try:
+            # Delete old file if it exists
+            metadata = yield from self.get_data('latest')
+            files = metadata if isinstance(metadata, list) else []
+            old_file = next(file for file in files if file['name'] == filename)
+            yield from self.delete(old_file['path'])
+            created = False
+        except StopIteration:
+            created = True
+
         yield from self.make_request(
             'POST',
             self.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
@@ -76,26 +85,11 @@ class DataverseProvider(provider.BaseProvider):
         )
 
         # Find appropriate version of file
-        data = yield from self.get_data('latest')
-        filename, version = dataverse_utils.unpack_filename(filename)
-        highest_compatible = None
+        metadata = yield from self.get_data('latest')
+        files = metadata if isinstance(metadata, list) else []
+        file_metadata = next(file for file in files if file['name'] == filename)
 
-        # Reduce to files of the same base name of the same/higher version
-        filtered_data = sorted([
-            data_file for data_file in data
-            if data_file['extra']['original'] == filename and
-            data_file['extra']['version'] >= version
-        ], key=lambda x: x['extra']['version'])
-
-        # Find highest version from original without a gap in between
-        for item in filtered_data:
-            if item['extra']['version'] == version:
-                highest_compatible = item
-                version += 1
-            else:
-                break
-
-        return highest_compatible, True
+        return file_metadata, created
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
