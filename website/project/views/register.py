@@ -165,7 +165,7 @@ def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See
     http://ezid.cdlib.org/doc/apidoc.html for details.
     """
-    doi = '{0}osf.io/{1}'.format(settings.DOI_NAMESPACE, node._id)
+    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=node._id)
     metadata = {
         '_target': node.absolute_url,
         'datacite': datacite_metadata_for_node(node=node, doi=doi)
