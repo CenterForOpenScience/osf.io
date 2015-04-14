@@ -54,64 +54,56 @@ def subscribe_on_write_permissions_revoked(node):
         wiki_utils.migrate_uuid(node, wiki_name)
 
 
-def wiki_updates(func):
-    def func_wrapper(name, node, user, **kwargs):
-        context = func(name, node, **kwargs)
-        w_url = furl(node.absolute_url)
-        try:
-            w_url.path = context.pop('path')
-        except KeyError:
-            print "Please return path."
-        w_url.add(context.pop('add', dict()))
-        context['gravatar_url'] = user.gravatar_url
-        context['url'] = w_url
-        # timestamp set for testing purposes, can be passed in.
-        if 'timestamp' in kwargs:
-            timestamp = kwargs.get('timestamp')
-        else:
-            timestamp = datetime.utcnow().replace(tzinfo=pytz.utc)
-        notify(
-            uid=node._id,
-            event="wiki_updated",
-            user=user,
-            node=node,
-            timestamp=timestamp,
-            **context
-        )
-    return func_wrapper
+def wiki_updates(node, user, **context):
+    w_url = furl(node.absolute_url)
+    try:
+        w_url.path = context.pop('path')
+    except KeyError:
+        print "Please return path."
+    w_url.add(context.pop('add', dict()))
+    context['gravatar_url'] = user.gravatar_url
+    context['url'] = w_url.url
+    # timestamp set for testing purposes, can be passed in.
+    timestamp = context.pop('timestamp', datetime.utcnow().replace(tzinfo=pytz.utc))
+    notify(
+        uid=node._id,
+        event="wiki_updated",
+        user=user,
+        node=node,
+        timestamp=timestamp,
+        **context
+    )
 
 
 @wiki_deleted.connect
-@wiki_updates
-def subscribe_wiki_deleted(name, node, **kwargs):
-    message = u'deleted <strong>"{}"</strong>.'.format(name)
+def subscribe_wiki_deleted(name, node, user, **kwargs):
+    message = u'deleted <strong>"{}"</strong>.'.format(name.decode('utf8'))
     path = build_wiki_url(node, 'home')  # the wiki home
-    return dict(path=path, message=message)
+    print path
+    wiki_updates(node=node, user=user, path=path, message=message, **kwargs)
 
 
 @wiki_changed.connect
-@wiki_updates
-def subscribe_wiki_changed(name, node, version=-1, **kwargs):
+def subscribe_wiki_changed(name, node, user, version=-1, **kwargs):
     path = build_wiki_url(node, name)
     add = dict()
     message = "None"
     if version == 1:
-        message = u'added <strong>"{}"</strong>.'.format(name)
+        message = u'added <strong>"{}"</strong>.'.format(name.decode('utf8'))
     elif version != 1:
         # Sends link with compare
         add = {'view': str(version), 'compare': str(version - 1)}
         message = u'updated <strong>"{}"</strong>; it is now version {}.' \
-            .format(name, version)
-    return dict(path=path, add=add, message=message)
+            .format(name.decode('utf8'), version)
+    wiki_updates(node=node, user=user, path=path, add=add, message=message, **kwargs)
 
 
 @wiki_renamed.connect
-@wiki_updates
-def subscribe_wiki_renamed(name, node, new_name="wiki-error", **kwargs):
+def subscribe_wiki_renamed(name, node, user, new_name="wiki-error", **kwargs):
     message = u'renamed <strong>"{}"</strong> to <strong>"{}"</strong>' \
-        .format(name, new_name)
+        .format(name.decode('utf8'), new_name.decode('utf8'))
     path = build_wiki_url(node, new_name)  # new wiki link
-    return dict(path=path, message=message)
+    wiki_updates(node=node, user=user, path=path, message=message, **kwargs)
 
 
 def build_wiki_url(node, label, base=None, end=None):

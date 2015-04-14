@@ -413,6 +413,16 @@ class TestNotificationUtils(OsfTestCase):
                 'children': [
                     {
                         'event': {
+                            'title': 'wiki_updated',
+                            'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                            'notificationType': 'none',
+                            'parent_notification_type': None
+                        },
+                        'kind': 'event',
+                        'children': []
+                    },
+                    {
+                        'event': {
                             'title': 'comments',
                             'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                             'notificationType': 'email_transactional',
@@ -431,6 +441,16 @@ class TestNotificationUtils(OsfTestCase):
 
                         'kind': 'node',
                         'children': [
+                            {
+                                'event': {
+                                    'title': 'wiki_updated',
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                                    'notificationType': 'adopt_parent',
+                                    'parent_notification_type': 'none'
+                                },
+                                'kind': 'event',
+                                'children': []
+                            },
                             {
                                 'event': {
                                     'title': 'comments',
@@ -458,6 +478,16 @@ class TestNotificationUtils(OsfTestCase):
             },
             'kind': 'node',
             'children': [
+                {
+                    'event': {
+                        'title': 'wiki_updated',
+                        'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                        'notificationType': 'adopt_parent',
+                        'parent_notification_type': 'none'
+                    },
+                    'kind': 'event',
+                    'children': []
+                },
                 {
                     'event': {
                         'title': 'comments',
@@ -490,6 +520,16 @@ class TestNotificationUtils(OsfTestCase):
                 'children': [
                     {
                         'event': {
+                            'title': 'wiki_updated',
+                            'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                            'notificationType': 'none',
+                            'parent_notification_type': None
+                        },
+                        'kind': 'event',
+                        'children': []
+                    },
+                    {
+                        'event': {
                             'title': 'comments',
                             'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
                             'notificationType': 'email_transactional',
@@ -507,6 +547,16 @@ class TestNotificationUtils(OsfTestCase):
 
                         'kind': 'node',
                         'children': [
+                            {
+                                'event': {
+                                    'title': 'wiki_updated',
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                                    'notificationType': 'adopt_parent',
+                                    'parent_notification_type': 'none'
+                                },
+                                'kind': 'event',
+                                'children': []
+                            },
                             {
                                 'event': {
                                     'title': 'comments',
@@ -528,6 +578,16 @@ class TestNotificationUtils(OsfTestCase):
 
                         'kind': 'node',
                         'children': [
+                            {
+                                'event': {
+                                    'title': 'wiki_updated',
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                                    'notificationType': 'adopt_parent',
+                                    'parent_notification_type': 'none'
+                                },
+                                'kind': 'event',
+                                'children': []
+                            },
                             {
                                 'event': {
                                     'title': 'comments',
@@ -568,6 +628,16 @@ class TestNotificationUtils(OsfTestCase):
             },
             'kind': 'folder',
             'children': [
+                {
+                    'event': {
+                        'title': 'wiki_updated',
+                        'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                        'notificationType': 'none',
+                        'parent_notification_type': None
+                    },
+                    'kind': 'event',
+                    'children': []
+                },
                 {
                     'event': {
                         'title': 'comments',
@@ -612,6 +682,16 @@ class TestNotificationUtils(OsfTestCase):
 
                         'kind': 'folder',
                         'children': [
+                            {
+                                'event': {
+                                    'title': 'wiki_updated',
+                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['wiki_updated'],
+                                    'notificationType': 'adopt_parent',
+                                    'parent_notification_type': None
+                                },
+                                'kind': 'event',
+                                'children': []
+                            },
                             {
                                 'event': {
                                     'title': 'comments',
@@ -992,7 +1072,7 @@ class TestSendEmails(OsfTestCase):
             title=self.project.title,
             url=self.project.absolute_url,
         )
-        subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
+        subject = Template(constants.EMAIL_SUBJECT_MAP['comments']).render(
             timestamp=timestamp,
             user=self.project.creator,
             gravatar_url=self.user.gravatar_url,

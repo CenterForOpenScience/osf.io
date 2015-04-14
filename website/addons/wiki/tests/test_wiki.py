@@ -459,14 +459,24 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_in('data-osf-panel="Edit"', res.text)
 
-    @mock.patch('website.addons.wiki.model.notify')
-    def test_subscribed_wiki_changed_notify_called(self, mock_notify):
+    @mock.patch('website.addons.wiki.model.wiki_updates')
+    def test_subscribed_wiki_changed_updates_called(self, mock_wiki_updates):
         time_now = datetime.utcnow()
         subscribe_wiki_changed('other', self.project, self.user, version=2, timestamp=time_now)
-        mock_notify.assert_called()
-        #mock_notify.assert_called_with(uid=self.project._id, event='wiki_updated', node=self.project,
-        #                          timestamp=time_now, gravatar_url=self.user.gravatar_url,
-        #                          url=?, message=?)
+        path = '/project/' + self.project._id + '/wiki/other/'
+        mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now, add={'compare': '1', 'view': '2'},
+                                             user=self.user, path=path,
+                                             message=u'updated <strong>"other"</strong>; it is now version 2.')
+
+    @mock.patch('website.addons.wiki.model.notify')
+    def test_wiki_updates_notify_called(self, mock_notify):
+        time_now = datetime.utcnow()
+        path = 'blarg/'
+        wiki_updates(self.project, self.user, path=self.project._id + '/' + path, message='the end', timestamp=time_now)
+        mock_notify.assert_called_with(node=self.project, uid=self.project._id,
+                                       url=self.project.absolute_url + path, timestamp=time_now,
+                                       gravatar_url=self.user.gravatar_url, user=self.user,
+                                       message='the end', event="wiki_updated", )
 
 
 class TestViewHelpers(OsfTestCase):
@@ -541,11 +551,15 @@ class TestWikiDelete(OsfTestCase):
         self.project.reload()
         assert_not_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
 
-    @mock.patch('website.addons.wiki.model.notify')
-    def test_subscribed_wiki_deleted_notify_called(self, mock_notify):
+    @mock.patch('website.addons.wiki.model.wiki_updates')
+    def test_subscribed_wiki_deleted_updates_called(self, mock_wiki_updates):
         time_now = datetime.utcnow()
-        subscribe_wiki_deleted('other', self.project, self.user, version=2, timestamp=time_now)
-        mock_notify.assert_called()
+        user = AuthUserFactory()
+        subscribe_wiki_deleted('other', self.project, user, timestamp=time_now)
+        path = '/project/' + self.project._id + '/wiki/home/'
+        mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now,
+                                             user=user, path=path,
+                                             message=u'deleted <strong>"other"</strong>.')
 
 
 class TestWikiRename(OsfTestCase):
@@ -699,11 +713,15 @@ class TestWikiRename(OsfTestCase):
     def test_rename_wiki_page_with_invalid_special_character_title(self):
         self.test_rename_wiki_page_invalid(new_name=SPECIAL_CHARACTERS_ALL)
 
-    @mock.patch('website.addons.wiki.model.notify')
-    def test_subscribed_wiki_removed_notify_called(self, mock_notify):
+    @mock.patch('website.addons.wiki.model.wiki_updates')
+    def test_subscribed_wiki_renamed_updates_called(self, mock_wiki_updates):
         time_now = datetime.utcnow()
-        subscribe_wiki_renamed('other', self.project, self.user, version=2, timestamp=time_now)
-        mock_notify.assert_called()
+        user = AuthUserFactory()
+        subscribe_wiki_renamed('other', self.project, user, new_name='other2', timestamp=time_now)
+        path = '/project/' + self.project._id + '/wiki/other2/'
+        mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now,
+                                             user=user, path=path,
+                                             message=u'renamed <strong>"other"</strong> to <strong>"other2"</strong>')
 
 
 class TestWikiLinks(OsfTestCase):
