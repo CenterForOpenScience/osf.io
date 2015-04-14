@@ -657,11 +657,11 @@ class TestCreateFolder:
             'message': 'Invalid request.\n\n"sha" wasn\'t supplied.'
         })
 
-        with pytest.raises(exceptions.CreateFolderError) as e:
+        with pytest.raises(exceptions.FolderNamingConflict) as e:
             yield from provider.create_folder(str(path))
 
         assert e.value.code == 409
-        assert e.value.message == 'Folder "/Imarealboy/" already exists.'
+        assert e.value.message == 'Cannot create folder "Imarealboy" because a file or folder already exists at path "/Imarealboy/"'
 
     @async
     @pytest.mark.aiohttpretty

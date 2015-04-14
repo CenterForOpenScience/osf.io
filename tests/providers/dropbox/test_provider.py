@@ -215,11 +215,11 @@ class TestCreateFolder:
             'error': 'because a file or folder already exists at path'
         })
 
-        with pytest.raises(exceptions.CreateFolderError) as e:
+        with pytest.raises(exceptions.FolderNamingConflict) as e:
             yield from provider.create_folder(str(path))
 
         assert e.value.code == 409
-        assert e.value.message == 'Folder "/newfolder/" already exists.'
+        assert e.value.message == 'Cannot create folder "newfolder" because a file or folder already exists at path "/newfolder/"'
 
     @async
     @pytest.mark.aiohttpretty

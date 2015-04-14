@@ -415,11 +415,11 @@ class TestCreateFolder:
         url = provider.bucket.generate_url(100, 'GET')
         aiohttpretty.register_uri('GET', url, body=just_a_folder_metadata, headers={'Content-Type': 'application/xml'})
 
-        with pytest.raises(exceptions.CreateFolderError) as e:
+        with pytest.raises(exceptions.FolderNamingConflict) as e:
             yield from provider.create_folder(str(path))
 
         assert e.value.code == 409
-        assert e.value.message == 'Folder "/alreadyexists/" already exists.'
+        assert e.value.message == 'Cannot create folder "alreadyexists" because a file or folder already exists at path "/alreadyexists/"'
 
     @async
     @pytest.mark.aiohttpretty

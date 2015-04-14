@@ -399,11 +399,11 @@ class TestCreateFolder:
             url = provider.build_url('files', q=query, alt='json')
             aiohttpretty.register_json_uri('GET', url, body=body)
 
-        with pytest.raises(exceptions.CreateFolderError) as e:
+        with pytest.raises(exceptions.FolderNamingConflict) as e:
             yield from provider.create_folder(path)
 
         assert e.value.code == 409
-        assert e.value.message == 'Folder "/hugo/kim/pins/" already exists.'
+        assert e.value.message == 'Cannot create folder "pins" because a file or folder already exists at path "/hugo/kim/pins/"'
 
     @async
     @pytest.mark.aiohttpretty
