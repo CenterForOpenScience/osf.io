@@ -5,7 +5,6 @@ from tests.utils import async
 import io
 import json
 
-import aiohttp
 import aiohttpretty
 
 from waterbutler.core import streams
@@ -13,7 +12,6 @@ from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import DataverseProvider
 from waterbutler.providers.dataverse.metadata import DataverseFileMetadata
-from waterbutler.providers.dataverse.utils import unpack_filename
 
 
 @pytest.fixture
@@ -356,8 +354,6 @@ class TestMetadata:
         assert result[0]['kind'] == 'file'
         assert result[0]['name'] == 'UnZip.java'
         assert result[0]['path'] == '/19'
-        assert result[0]['extra']['original'] == 'UnZip.java'
-        assert result[0]['extra']['version'] == 0
         assert result[0]['extra']['fileId'] == '19'
 
     @async
@@ -387,8 +383,6 @@ class TestMetadata:
         assert result[0]['kind'] == 'file'
         assert result[0]['name'] == 'UnZip.java'
         assert result[0]['path'] == '/19'
-        assert result[0]['extra']['original'] == 'UnZip.java'
-        assert result[0]['extra']['version'] == 0
         assert result[0]['extra']['fileId'] == '19'
 
     @async
@@ -427,35 +421,3 @@ class TestMetadata:
 
         assert isinstance(result, list)
         assert len(result) == 6
-
-
-class TestUtils:
-
-    def test_unpack_filename(self):
-        filename = 'somefile.ext'
-        original, version = unpack_filename(filename)
-        assert original == 'somefile.ext'
-        assert version == 0
-
-    def test_unpack_filename_with_spaces(self):
-        filename = 'some file.ext'
-        original, version = unpack_filename(filename)
-        assert original == 'some_file.ext'
-        assert version == 0
-
-    def test_unpack_filename_with_version(self):
-        filename = 'some file-3.ext'
-        original, version = unpack_filename(filename)
-        assert original == 'some_file.ext'
-        assert version == 3
-
-    def test_unpack_filename_false_alarms(self):
-        filename = 'some-file_3.ext'
-        original, version = unpack_filename(filename)
-        assert original == 'some-file_3.ext'
-        assert version == 0
-
-        filename = '1-some-2-file-3.ext'
-        original, version = unpack_filename(filename)
-        assert original == '1-some-2-file.ext'
-        assert version == 3

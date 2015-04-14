@@ -1,5 +1,4 @@
 from waterbutler.core import metadata
-from waterbutler.providers.dataverse import utils as dataverse_utils
 
 
 class BaseDataverseMetadata(metadata.BaseMetadata):
@@ -13,12 +12,6 @@ class BaseDataverseMetadata(metadata.BaseMetadata):
 
 
 class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
-
-    def __init__(self, raw):
-        super().__init__(raw)
-        original_name, version = dataverse_utils.unpack_filename(self.name)
-        self.original_name = original_name
-        self.version = version
 
     @property
     def id(self):
@@ -47,8 +40,6 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
     @property
     def extra(self):
         return {
-            'original': self.original_name,
-            'version': self.version,
             'fileId': self.id
         }
 
