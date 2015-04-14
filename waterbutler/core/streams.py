@@ -355,7 +355,6 @@ class ZipStreamReader(MultiStream):
         self.filename = ''
         self.header = b''
         self.data_descriptor = b''
-        self.footer = b''
         self.compressor = zlib.compressobj(
             zlib.Z_DEFAULT_COMPRESSION,
             zlib.DEFLATED,
@@ -485,7 +484,7 @@ class ZipStreamReader(MultiStream):
             self.zinfo.header_offset,
         )
 
-        output = centdir + filename + extra_data + self.zinfo.comment
+        footer = centdir + filename + extra_data + self.zinfo.comment
 
         centdir_offset = len(self.header) + self.compress_size + len(self.data_descriptor)
 
@@ -496,15 +495,13 @@ class ZipStreamReader(MultiStream):
             0,
             count,
             count,
-            len(output),
+            len(footer),
             centdir_offset,
             0,
         )
 
-        output += endrec
-        self.footer = output
-
-        return self.footer
+        footer += endrec
+        return footer
 
     @property
     def size(self):
