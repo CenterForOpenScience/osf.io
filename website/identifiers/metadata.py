@@ -49,7 +49,6 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         return u'{}, {}'.format(contributor.family_name, contributor.given_name)
     creators = [format_contrib(each)
                 for each in node.visible_contributors]
-
     return datacite_metadata(
         doi=doi,
         title=node.title,

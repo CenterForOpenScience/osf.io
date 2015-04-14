@@ -34,11 +34,13 @@ class TestMetadataGeneration(OsfTestCase):
     def setUp(self):
         OsfTestCase.setUp(self)
         self.visible_contrib = AuthUserFactory()
+        visible_contrib2 = AuthUserFactory(given_name=u'ヽ༼ ಠ益ಠ ༽ﾉ', family_name=u'ლ(´◉❥◉｀ლ)')
         self.invisible_contrib = AuthUserFactory()
         self.node = RegistrationFactory(is_public=True)
         self.identifier = Identifier(referent=self.node, category='catid', value='cat:7')
         self.node.add_contributor(self.visible_contrib, visible=True)
         self.node.add_contributor(self.invisible_contrib, visible=False)
+        self.node.add_contributor(visible_contrib2, visible=True)
         self.node.save()
 
     def test_metadata_for_node_only_includes_visible_contribs(self):
