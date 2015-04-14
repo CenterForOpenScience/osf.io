@@ -317,6 +317,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         **extras
     )
 
+    # print file_guid
     ret = serialize_node(node, auth, primary=True)
     ret.update({
         'provider': file_guid.provider,
@@ -328,6 +329,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
+        'file_ext': os.path.splitext(file_guid.waterbutler_path)[1],
     })
 
     return ret

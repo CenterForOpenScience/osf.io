@@ -12,18 +12,7 @@
 
     <div id="file-container" class="row">
 
-        % if not user['can_edit']:
-            <div class="col-md-8">
-                <div id="fileRendered" class="mfr mfr-file">
-                    % if rendered is not None:
-                        ${rendered}
-                    % else:
-                        <img src="/static/img/loading.gif">
-                    % endif
-                </div>
-            </div>
-
-        % else:
+        % if user['can_edit'] and file_ext == '.txt':
             <div class="wiki" id="filePageContext">
             <div
                     data-bind="with: $root.editVM.wikiEditor.viewModel"
@@ -56,8 +45,10 @@
                   <div class="wiki-panel-body" style="padding: 10px">
                         <div class="row">
                         <div class="col-xs-12">
-                            <div id="wmd-button-bar"></div>
-                            <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
+                            <div class="form-group wmd-panel">
+                                <div id="wmd-button-bar"></div>
+                                <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
+                            </div>
                         </div>
                       </div>
                   </div>
@@ -84,6 +75,17 @@
 ##                </form>
                 </div>
             </div>
+            </div>
+
+        % else:
+            <div class="col-md-8">
+                <div id="fileRendered" class="mfr mfr-file">
+                    % if rendered is not None:
+                        ${rendered}
+                    % else:
+                        <img src="/static/img/loading.gif">
+                    % endif
+                </div>
             </div>
         % endif
 
