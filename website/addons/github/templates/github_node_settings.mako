@@ -18,7 +18,7 @@
                 </a>
             </span>
              <span data-bind="if: showCreateCredentials">
-                <a data-bind="click: createNodeAuth" id="githubAddKey" class="text-primary pull-right addon-auth">
+                <a data-bind="click: connectAccount" id="githubAddKey" class="text-primary pull-right addon-auth">
                     Create Access Token
                 </a>
              </span>

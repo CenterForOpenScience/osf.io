@@ -86,7 +86,7 @@ ViewModel.prototype.selectRepo = function() {
         .done(function(response) {
             self.updateFromData(response);
             self.changeMessage('Successfully linked Github repo \'' + self.currentRepo() + '\'. Go to the <a href="' +
-                               self.filesUrl + '">Files page</a> to view your content.', 'text-success');
+                self.urls().files + '">Files page</a> to view your content.', 'text-success');
             self.loading(false);
         })
         .fail(function(xhr, status, error) {
@@ -115,36 +115,60 @@ ViewModel.prototype.connectAccount = function() {
                     self.urls().importAuth, {
                         external_account_id: self.accounts()[0].id
                     }
-                ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
+                ).done(function(response) {
+                    self.changeMessage('Successfully created Github credentials.', 'text-success');
+                    self.updateFromData(response);
+
+                }).fail(function(xhr, status, error) {
+                    var message = 'Could not import Github credentials at ' +
+                        'this time. Please refresh the page. If the problem persists, email ' +
+                        '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    self.changeMessage(message, 'text-warning');
+                    Raven.captureMessage('Could not create Github credentials', {
+                        url: self.urls().importAuth,
+                        textStatus: status,
+                        error: error
+                    });
+                });
             });
     };
     window.open(self.urls().auth);
 };
 
-ViewModel.prototype.connectExistingAccount = function(account_id) {
-        var self = this;
+ViewModel.prototype.connectAccount = function() {
+    var self = this;
 
-        return $osf.putJSON(
-            self.urls().importAuth, {
-                external_account_id: account_id
-            }
-        ).done(function(response) {
-            self.changeMessage('Successfully imported Github credentials.', 'text-success');
-            self.updateFromData(response);
-
-        }).fail(function(xhr, status, error) {
-            var message = 'Could not import Github credentials at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
-            Raven.captureMessage('Could not import Github credentials', {
-                url: self.urls().importAuth,
-                textStatus: status,
-                error: error
-            });
-        });
+    window.oauthComplete = function(res) {
+        // Update view model based on response
+        self.changeMessage("Succesfully created a GitHub access token", 'text-success', 3000);
+        self.importAuth.call(self);
+    };
+    window.open(self.urls().auth);
 };
 
+ViewModel.prototype.connectExistingAccount = function(account_id) {
+    var self = this;
+
+    return $osf.putJSON(
+        self.urls().importAuth, {
+            external_account_id: account_id
+        }
+    ).done(function(response) {
+        self.changeMessage('Successfully imported Github credentials.', 'text-success');
+        self.updateFromData(response);
+
+    }).fail(function(xhr, status, error) {
+        var message = 'Could not import Github credentials at ' +
+            'this time. Please refresh the page. If the problem persists, email ' +
+            '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        self.changeMessage(message, 'text-warning');
+        Raven.captureMessage('Could not import Github credentials', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
+    });
+};
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {
     var self = this;
@@ -181,18 +205,14 @@ ViewModel.prototype.deauthorizeNode = function() {
     });
 };
 
-
-
-
-ViewModel.prototype.updateRepoList = function(){
+ViewModel.prototype.updateRepoList = function() {
     var self = this;
     return self.fetchRepoList()
-        .done(function(repos){
+        .done(function(repos) {
             self.repoList(repos);
             self.selectedRepo(self.currentRepo());
         });
 };
-
 
 ViewModel.prototype.createRepo = function(repoName) {
     var self = this;
@@ -206,7 +226,7 @@ ViewModel.prototype.createRepo = function(repoName) {
         self.creating(false);
         self.repoList(response.repos);
         self.loadedRepoList(true);
-        self.selectedRepo((self.ownerName() + " / "+ repoName));
+        self.selectedRepo((self.ownerName() + " / " + repoName));
         self.showSelect(true);
         var msg = 'Successfully created repo "' + repoName + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
@@ -259,40 +279,38 @@ ViewModel.prototype.fetchRepoList = function() {
     var self = this;
 
     var ret = $.Deferred();
-    if(self.loadedRepoList()){
+    if (self.loadedRepoList()) {
         ret.resolve(self.repoList());
-    }
-    else{
-         $.ajax({
-            url: self.urls().repo_list,
-            type: 'GET',
-            dataType: 'json'
-        }).done(function(response) {
-            self.loadedRepoList(true);
-            ret.resolve(response.repo_names);
-        })
-        .fail(function(xhr, status, error) {
-            var message = 'Could not retrieve list of Github repos at' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
-            Raven.captureMessage('Could not GET github repo list', {
+    } else {
+        $.ajax({
                 url: self.urls().repo_list,
-                textStatus: status,
-                error: error
+                type: 'GET',
+                dataType: 'json'
+            }).done(function(response) {
+                self.loadedRepoList(true);
+                ret.resolve(response.repo_names);
+            })
+            .fail(function(xhr, status, error) {
+                var message = 'Could not retrieve list of Github repos at' +
+                    'this time. Please refresh the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                self.changeMessage(message, 'text-warning');
+                Raven.captureMessage('Could not GET github repo list', {
+                    url: self.urls().repo_list,
+                    textStatus: status,
+                    error: error
+                });
+                ret.reject(xhr, status, error);
             });
-            ret.reject(xhr, status, error);
-        });
     }
     return ret.promise();
 };
-
 
 ViewModel.prototype.updateFromData = function(data) {
     var self = this;
     var ret = $.Deferred();
 
-    var applySettings = function(settings){
+    var applySettings = function(settings) {
         self.nodeHasAuth(settings.nodeHasAuth);
         self.userHasAuth(settings.userHasAuth);
         self.userIsOwner(settings.userIsOwner);
@@ -301,46 +319,43 @@ ViewModel.prototype.updateFromData = function(data) {
         self.urls(settings.urls);
         ret.resolve(settings);
     };
-    if (typeof data === 'undefined'){
+    if (typeof data === 'undefined') {
         return self.fetchFromServer()
             .done(applySettings);
-    }
-    else {
+    } else {
         applySettings(data.result);
     }
     return ret.promise();
 };
 
-
 ViewModel.prototype.fetchFromServer = function() {
     var self = this;
     var ret = $.Deferred();
     $.ajax({
-        url: self.url,
-        type: 'GET',
-        dataType: 'json',
-        contentType: 'application/json'
-    })
-    .done(function(response) {
-        var settings = response.result;
-        self.loadedSettings(true);
-        ret.resolve(settings);
-    })
-    .fail(function(xhr, status, error) {
-        var message = 'Could not retrieve Github settings at ' +
+            url: self.url,
+            type: 'GET',
+            dataType: 'json',
+            contentType: 'application/json'
+        })
+        .done(function(response) {
+            var settings = response.result;
+            self.loadedSettings(true);
+            ret.resolve(settings);
+        })
+        .fail(function(xhr, status, error) {
+            var message = 'Could not retrieve Github settings at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
-        Raven.captureMessage('Could not GET github settings', {
-            url: self.url,
-            textStatus: status,
-            error: error
+            self.changeMessage(message, 'text-warning');
+            Raven.captureMessage('Could not GET github settings', {
+                url: self.url,
+                textStatus: status,
+                error: error
+            });
+            ret.reject(xhr, status, error);
         });
-        ret.reject(xhr, status, error);
-    });
     return ret.promise();
 };
-
 
 /** Change the flashed message. */
 ViewModel.prototype.changeMessage = function(text, css, timeout) {
@@ -357,7 +372,6 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-
 ViewModel.prototype.fetchAccounts = function() {
     var self = this;
     var ret = $.Deferred();
@@ -367,8 +381,8 @@ ViewModel.prototype.fetchAccounts = function() {
     });
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage('Could not retrieve GitHub  account list at ' +
-                    'this time. Please refresh the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-warning');
+            'this time. Please refresh the page. If the problem persists, email ' +
+            '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-warning');
         Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
             url: self.url,
             textStatus: textStatus,
@@ -397,7 +411,7 @@ ViewModel.prototype.updateAccounts = function() {
 ViewModel.prototype.importAuth = function() {
     var self = this;
     self.updateAccounts()
-        .then(function(){
+        .then(function() {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
                     title: 'Choose GitHub Access Token to Import',
@@ -426,13 +440,10 @@ ViewModel.prototype.importAuth = function() {
                 });
             }
         });
-}
+};
 
 
-
-
-
-var githubConfig = function(selector, url){
+var githubConfig = function(selector, url) {
     var viewModel = new ViewModel(url, selector);
     $osf.applyBindings(viewModel, selector);
     viewModel.updateFromData();

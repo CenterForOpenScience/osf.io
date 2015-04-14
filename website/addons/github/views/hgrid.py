@@ -30,7 +30,8 @@ def github_hgrid_data(node_settings, auth, **kwargs):
     if not node_settings.complete:
         return
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_settings.api.account)
+
 
     # Initialize repo here in the event that it is set in the privacy check
     # below. This potentially saves an API call in _check_permissions, below.

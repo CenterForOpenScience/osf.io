@@ -16,9 +16,8 @@ from website.addons.github.exceptions import NotFoundError
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import TooBigToRenderError
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
-from website.addons.github.model import AddonGitHubUserSettings
-from website.addons.github.model import AddonGitHubNodeSettings
-from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.github.model import GitHubUserSettings
+from website.addons.github.model import GitHubNodeSettings
 from website.addons.github.model import GithubGuidFile
 
 from .utils import create_mock_github
@@ -304,11 +303,11 @@ class TestCallbacks(OsfTestCase):
         assert_false(registration.has_addon('github'))
 
 
-class TestAddonGithubUserSettings(OsfTestCase):
+class TestGithubUserSettings(OsfTestCase):
 
     def setUp(self):
         OsfTestCase.setUp(self)
-        self.user_settings = AddonGitHubUserSettings()
+        self.user_settings = GitHubUserSettings()
         self.oauth_settings = AddonGitHubOauthSettings()
         self.oauth_settings.github_user_id = 'testuser'
         self.oauth_settings.save()
@@ -364,7 +363,7 @@ class TestAddonGithubNodeSettings(OsfTestCase):
         self.oauth_settings.save()
         self.user_settings.oauth_settings = self.oauth_settings
         self.user_settings.save()
-        self.node_settings = AddonGitHubNodeSettings(
+        self.node_settings = GitHubNodeSettings(
             owner=ProjectFactory(),
             user='chrisseto',
             repo='openpokemon',

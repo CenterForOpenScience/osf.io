@@ -1,8 +1,24 @@
-from website.addons.base.serializer import GenericAddonSerializer
+from website.addons.base.serializer import OAuthAddonSerializer
 from website.util import web_url_for
+from website.util import api_url_for, web_url_for
 
 
-class GitHubSerializer(GenericAddonSerializer):
+class GitHubSerializer(OAuthAddonSerializer):
+
+    @property
+    def serialized_urls(self):
+        external_account = self.node_settings.external_account
+        ret = {
+            'auth': api_url_for('oauth_connect',
+                                service_name=self.node_settings.provider_name),
+            'settings': web_url_for('user_addons'),
+        }
+        if external_account and external_account.profile_url:
+            ret['owner'] = external_account.profile_url
+
+        addon_urls = self.addon_serialized_urls
+        ret.update(addon_urls)
+        return ret
 
     @property
     def addon_serialized_urls(self):
@@ -13,7 +29,6 @@ class GitHubSerializer(GenericAddonSerializer):
         result = {
             'create_repo': node.api_url_for('github_create_repo'),
             'importAuth': node.api_url_for('github_add_user_auth'),
-            # 'create_auth': node.api_url_for('github_oauth_start'),
             'deauthorize': node.api_url_for('github_remove_user_auth'),
             'repo_list': node.api_url_for('github_repo_list'),
             'config': node.api_url_for('github_set_config'),

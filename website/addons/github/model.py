@@ -2,22 +2,15 @@
 
 import os
 import urlparse
-import itertools
-import httplib as http
 
 import pymongo
 from github3 import GitHubError
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+from modularodm import fields
 
 from framework.auth import Auth
-from framework.mongo import StoredObject
 
 from website import settings
-from website.util import web_url_for
-from website.addons.base import GuidFile
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.base import GuidFile
@@ -29,6 +22,7 @@ from website.addons.github import serializer
 from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
 from website.oauth.models import ExternalProvider
+from website.oauth.decorators import api_call
 
 from .serializer import GitHubSerializer
 
@@ -108,9 +102,13 @@ class GitHubProvider(ExternalProvider):
 
     _client = None
 
+    @property
+    def api_error_classes(self):
+        return GitHubError
+
     def handle_callback(self, response):
         client = self.client(response)
-        import ipdb; ipdb.set_trace()
+
         return {
             'display_name': client.user().name,
             'provider_id': client.user().id,
@@ -156,10 +154,6 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     def find_or_create_file_guid(self, path):
         return GithubGuidFile.get_or_create(node=self.owner, path=path)
 
-    # def set_folder(self, folder, auth, add_log=True):
-    #     self.repo_folder_id = folder['id']
-    #     self.folder_path = folder['path']
-
     @property
     def provider_name(self):
         return 'github'
@@ -171,58 +165,6 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     def clear_auth(self):
         self.github_list_id = None
         return super(GitHubNodeSettings, self).clear_auth()
-
-
-    # # TODO: Delete me and replace with serialize_settings / Knockout
-    # def to_json(self, user):
-    #     ret = super(GitHubNodeSettings, self).to_json(user)
-    #
-    #     user_settings = user.get_addon('github')
-    #
-    #     ret.update({
-    #         'repo': self.repo or '',
-    #         'has_repo': self.repo is not None,
-    #         'user_has_auth': user_settings and user_settings.has_auth,
-    #         'node_has_auth': False,
-    #         'user_is_owner': (
-    #             (self.user_settings and self.user_settings.owner == user) or False
-    #         ),
-    #         'owner': None,
-    #         'repo_names': None,
-    #         'is_registration': self.owner.is_registration,
-    #     })
-    #
-    #     if self.user_settings and self.user_settings.has_auth:
-    #         owner = self.user_settings.owner
-    #         if user_settings and user_settings.owner == owner:
-    #             connection = GitHub.from_settings(user_settings)
-    #             # TODO: Fetch repo list client-side
-    #             # Since /user/repos excludes organization repos to which the
-    #             # current user has push access, we have to make extra requests to
-    #             # find them
-    #             repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-    #             repo_names = [
-    #                 '{0} / {1}'.format(repo.owner.login, repo.name)
-    #                 for repo in repos
-    #             ]
-    #             ret.update({
-    #                 'repo_names': repo_names,
-    #             })
-    #
-    #         ret.update({
-    #             'node_has_auth': True,
-    #             'github_user': self.user or '',
-    #             'github_repo': self.repo or '',
-    #             'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo),
-    #             'auth_osf_name': owner.fullname,
-    #             'auth_osf_url': owner.url,
-    #             'auth_osf_id': owner._id,
-    #             'github_user_name': self.user_settings.github_user_name,
-    #             'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
-    #             'is_owner': owner == user,
-    #             'owner': self.user_settings.owner.fullname
-    #         })
-    #     return ret
 
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
@@ -240,7 +182,8 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
 
-        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='github')
+        url = self.owner.web_url_for(
+            'addon_view_or_download_file', path=path, provider='github')
 
         if not metadata.get('extra'):
             sha = None
@@ -293,7 +236,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         # Quit if no user authorization
         if self.user_settings is None:
             return messages
-        
+
         connect = GitHub.from_settings(self.api.account)
 
         try:
@@ -555,7 +498,8 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         if self.user_settings and self.hook_id:
             connection = GitHub.from_settings(self.api.account)
             try:
-                response = connection.delete_hook(self.user, self.repo, self.hook_id)
+                response = connection.delete_hook(
+                    self.user, self.repo, self.hook_id)
             except (GitHubError, NotFoundError):
                 return False
             if response:
