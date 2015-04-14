@@ -243,7 +243,7 @@ MEETING_DATA = {
     'MADSSCi2015': {
         'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2015',
         'info_url': 'http://madssci.abrf.org',
-        'logo_url': 'http://madssci.abrf.org/sites/default/files/madssci-logo-bk.png',
+        'logo_url': 'http://s24.postimg.org/qtc3baefp/2015madssci_seasr.png',
         'active': True,
         'admins': [],
         'public_projects': True,
