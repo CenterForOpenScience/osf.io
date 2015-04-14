@@ -32,18 +32,33 @@
                                 <h4> Improve your search:</h4>
                                 <span class="tag-cloud" data-bind="foreach: tags">
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
-                                    <span class="cloud-tag tag-big pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name }}
+                                    <span class="cloud-tag tag-big pointer tag-container"
+                                          data-bind="click: $root.addTag.bind($parentContext, name, 'add')">
+                                        <span>
+                                            {{name}}
+                                        </span>
+                                        <i class="fa fa-times-circle remove-tag big"
+                                           data-bind="click: $root.addTag.bind($parentContext, name, 'remove')"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
-                                    <span class="cloud-tag tag-med pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name }}
+                                    <span class="cloud-tag tag-med pointer tag-container"
+                                          data-bind="click: $root.addTag.bind($parentContext, name, 'add')">
+                                        <span>
+                                            {{name}}
+                                        </span>
+                                        <i class="fa fa-times-circle remove-tag med"
+                                           data-bind="click: $root.addTag.bind($parentContext, name, 'remove')"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
-                                    <span class="cloud-tag tag-sm pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name }}
+                                    <span class="cloud-tag tag-sm pointer tag-container"
+                                          data-bind="click: $root.addTag.bind($parentContext, name, 'add')">
+                                        <span>
+                                            {{name}}
+                                        </span>
+                                        <i class="fa fa-times-circle remove-tag"
+                                           data-bind="click: $root.addTag.bind($parentContext, name, 'remove')"></i>
                                     </span>
                                     <!-- /ko -->
                                 </span>
@@ -194,10 +209,14 @@
             </span>
         </p>
         <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer tag-container"
+                      data-bind="click: $root.addTag.bind($parentContext, $data, 'add')">
+                    <span data-bind="text: $data">
+                    </span>
+                    <i class="fa fa-times-circle remove-tag"
+                       data-bind="click: $root.addTag.bind($parentContext, $data, 'remove')"></i>
                 </span>
             </span>
         </p>
@@ -205,7 +224,6 @@
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
         </p>
-        <!-- /ko -->
     </script>
     <script type="text/html" id="app">
         <h4><a data-bind="attr.href: url">{{ title }}</a></h4>

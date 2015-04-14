@@ -1055,6 +1055,35 @@ h1.unavailable {
         margin: 0;
     }
 
+.tag-container
+{
+    position: relative;
+}
+
+.remove-tag
+{
+    position: absolute;
+    top: -5px;
+    right: -5px;
+}
+
+.remove-tag.big
+{
+    top: -8px;
+    right: -8px;
+}
+
+.remove-tag.med
+{
+    top: -6px;
+    right: -6px;
+}
+
+.remove-tag:hover
+{
+    color: #cc0000;
+}
+
 .registration a {
     color: #666;
 }
