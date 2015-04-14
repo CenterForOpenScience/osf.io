@@ -352,7 +352,7 @@ class ZipStreamReader(MultiStream):
         self.original_size = 0
         self.compress_size = 0
         self.zinfo = None
-        self.filename = ''
+        self.filename = filename
         self.header = b''
         self.data_descriptor = b''
         self.compressor = zlib.compressobj(
@@ -362,7 +362,11 @@ class ZipStreamReader(MultiStream):
         )
         super().__init__()
 
-        self.add_file(filename, file_stream)
+        # Do not add data descriptor/footer until file_stream is read in
+        self.add_streams(
+            StringStream(self.make_header()),
+            file_stream,
+        )
 
     def _cycle(self):
         """Override to keep track of index, add data descriptor/footer"""
@@ -415,16 +419,6 @@ class ZipStreamReader(MultiStream):
         next_chunk = (yield from self.read(nextn))
         chunk += self._compress(next_chunk) if self.on_data_stream else next_chunk
         return chunk
-
-    def add_file(self, filename, file_stream):
-
-        self.filename = filename
-
-        # Do not add data descriptor/footer until file_stream is read in
-        self.add_streams(
-            StringStream(self.make_header()),
-            file_stream,
-        )
 
     def make_header(self):
         self.zinfo = zipfile.ZipInfo(
