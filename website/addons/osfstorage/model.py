@@ -126,6 +126,30 @@ class OsfStorageFileNode(StoredObject):
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
 
     @classmethod
+    def create_child_by_path(cls, path, node_settings):
+        """Attempts to create a child node from a path formatted as
+        /parentid/child_name
+        returns created, child_node
+        """
+        try:
+            parent_id, child_name = path.strip('/').split('/')
+        except ValueError:
+            raise errors.InvalidPathError('Path {} is invalid'.format(path))
+
+        parent = cls.get_folder(parent_id, node_settings)
+
+        try:
+            if path.endswith('/'):
+                return True, parent.append_folder(child_name)
+            else:
+                return True, parent.append_file(child_name)
+        except KeyExistsException:
+            if path.endswith('/'):
+                return False, parent.find_child_by_name(child_name, kind='folder')
+            else:
+                return False, parent.find_child_by_name(child_name, kind='file')
+
+    @classmethod
     def get(cls, path, node_settings):
         return cls.find_one(
             Q('_id', 'eq', path) &
