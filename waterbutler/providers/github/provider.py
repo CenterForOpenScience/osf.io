@@ -200,14 +200,14 @@ class GitHubProvider(provider.BaseProvider):
             'PUT',
             self.build_repo_url('contents', keep_path),
             data=json.dumps(data),
-            expects=(201, 422),
+            expects=(201, 422, 409),
             throws=exceptions.CreateFolderError
         )
 
         data = yield from resp.json()
 
-        if resp.status == 422:
-            if data.get('message') == 'Invalid request.\n\n"sha" wasn\'t supplied.':
+        if resp.status in (422, 409):
+            if resp.status == 409 or data.get('message') == 'Invalid request.\n\n"sha" wasn\'t supplied.':
                 raise exceptions.FolderNamingConflict(str(path))
             raise exceptions.CreateFolderError(data, code=resp.status)
 
