@@ -172,6 +172,9 @@ class NodeProjectCollector(object):
 
     def collect_all_projects_smart_folder(self):
         contributed = self.auth.user.node__contributed
+        roots = {node.root for node in contributed}
+        return roots
+    """
         all_my_projects = contributed.find(
             Q('category', 'eq', 'project') &
             Q('is_deleted', 'eq', False) &
@@ -192,6 +195,7 @@ class NodeProjectCollector(object):
         )
         children_count = all_my_projects.count() + comps.count()
         return self.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, children_count)
+    """
 
     def collect_all_registrations_smart_folder(self):
         contributed = self.auth.user.node__contributed
@@ -324,7 +328,6 @@ class NodeProjectCollector(object):
             #TODO Remove the replace when mako html safe comes around
             'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
             'kind': FOLDER,
-            'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
                 'edit': can_edit,
