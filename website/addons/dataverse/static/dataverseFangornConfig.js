@@ -56,7 +56,7 @@ function _fangornActionColumn (item, col) {
                 self.modal.update(modalContent, modalActions);
                 item.data.state = 'published';
                 item.data.hasPublishedFiles = item.children.length > 0;
-            }).fail(function(xhr) {
+            }).fail(function(xhr, status, error) {
                 var statusCode = xhr.responseJSON.code;
                 var message;
                 switch (statusCode) {
@@ -68,6 +68,11 @@ function _fangornActionColumn (item, col) {
                         break;
                     default:
                         message = 'Error: Something went wrong when attempting to publish your dataset.';
+                        Raven.captureMessage('Could not publish dataset', {
+                            url: url,
+                            textStatus: status,
+                            error: error
+                        });
                 }
 
                 var modalContent = [

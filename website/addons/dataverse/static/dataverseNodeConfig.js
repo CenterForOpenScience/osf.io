@@ -239,7 +239,7 @@ ViewModel.prototype.setInfo = function() {
         self.submitting(false);
         var errorMessage = (xhr.status === 410) ? self.messages.datasetDeaccessioned :
             (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
- self.changeMessage(errorMessage, 'text-danger');
+        self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
             url: self.urls().set,
             textStatus: textStatus,
@@ -276,8 +276,13 @@ ViewModel.prototype.getDatasets = function() {
         self.loadedDatasets(true);
         self.selectedDatasetDoi(self.savedDatasetDoi());
         self.findDataset();
-    }).fail(function() {
+    }).fail(function(xhr, status, error) {
         self.changeMessage(self.messages.getDatasetsError, 'text-danger');
+        Raven.captureMessage('Could not GET datasets', {
+            url: self.urls().getDatasets,
+            textStatus: status,
+            error: error
+        });
     });
 };
 
@@ -288,8 +293,13 @@ ViewModel.prototype.authorizeNode = function() {
     ).done(function(response) {
         self.updateFromData(response.result);
         self.changeMessage(self.messages.importAuthSuccess, 'text-success', 3000);
-    }).fail(function() {
+    }).fail(function(xhr, status, error) {
         self.changeMessage(self.messages.importAuthError, 'text-danger');
+        Raven.captureMessage('Could not import Dataverse node auth', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
     });
 };
 
