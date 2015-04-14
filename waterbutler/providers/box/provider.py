@@ -146,7 +146,8 @@ class BoxProvider(provider.BaseProvider):
         )
 
         if resp.status == 409:
-            raise exceptions.FolderNamingConflict(str(path))
+            data = yield from self.metadata(str(path.parent), folder=True)
+            raise exceptions.FolderNamingConflict(os.path.join(data['extra']['fullPath'], path.name))
 
         return BoxFolderMetadata(
             (yield from resp.json()),
