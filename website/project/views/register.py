@@ -17,6 +17,7 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration
 )
 from website.identifiers.model import Identifier
+from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import ADMIN
 from website.models import MetaSchema
@@ -158,13 +159,10 @@ def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See
     http://ezid.cdlib.org/doc/apidoc.html for details.
     """
-    doi = '{0}{1}'.format(settings.DOI_NAMESPACE, node._id)
+    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=node._id)
     metadata = {
         '_target': node.absolute_url,
-        'datacite.creator': node.creator.fullname,
-        'datacite.title': node.title,
-        'datacite.publisher': 'Open Science Framework',
-        'datacite.publicationyear': str(node.registered_date.year),
+        'datacite': datacite_metadata_for_node(node=node, doi=doi)
     }
     return doi, metadata
 
