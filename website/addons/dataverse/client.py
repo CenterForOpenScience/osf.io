@@ -42,15 +42,18 @@ def upload_file(dataset, filename, content):
 
 
 def get_file(dataset, filename, published=False):
-    return dataset.get_file(filename, published)
+    version = 'latest-published' if published else 'latest'
+    return dataset.get_file(filename, version)
 
 
 def get_file_by_id(dataset, file_id, published=False):
-    return dataset.get_file_by_id(file_id, published)
+    version = 'latest-published' if published else 'latest'
+    return dataset.get_file_by_id(file_id, version)
 
 
 def get_files(dataset, published=False):
-    return dataset.get_files(published)
+    version = 'latest-published' if published else 'latest'
+    return dataset.get_files(version)
 
 
 def publish_dataverse(dataverse):

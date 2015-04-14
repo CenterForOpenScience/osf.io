@@ -1,1 +1,1 @@
--e git+https://github.com/rliebz/dvn-client-python.git@4.0#egg=dataverse
+-e git+https://github.com/IQSS/dataverse-client-python.git@master#egg=dataverse
