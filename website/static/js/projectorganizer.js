@@ -565,14 +565,16 @@ function _poModified(item) {
 function _poResolveRows(item) {
     var css = '',
         draggable = false,
+        disabled = false,
         default_columns;
     if (item.data.permissions) {
         draggable = item.data.permissions.movable || item.data.permissions.copyable;
+        disabled = (!item.data.permissions.view);
     }
     if (draggable) {
         css = 'po-draggable';
     }
-    item.css = '';
+    item.css = disabled ? 'disabled po-private' : '';
     default_columns = [{
         data : 'name',  // Data field name
         folderIcons : true,
@@ -630,8 +632,9 @@ function _poToggleCheck(item) {
     if (item.data.permissions.view) {
         return true;
     }
-    item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
-    return false;
+    //item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
+    //    return false;
+    return true;
 }
 
 /**
@@ -718,9 +721,15 @@ function _poResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus'),
         togglePlus = m('i.fa.fa-plus'),
         childrenCount = item.data.childrenCount || item.children.length;
+    var userCanAccess = item.data.permissions.view;
     if (item.kind === 'folder' && childrenCount > 0 && item.depth > 1) {
         if (item.open) {
-            return toggleMinus;
+            if (userCanAccess) {
+                return toggleMinus;
+            }
+            else {
+                return m('');
+            }
         }
         return togglePlus;
     }
@@ -752,6 +761,16 @@ function expandStateLoad(item) {
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
     }
+    if(item.children.filter(function(child) {
+        return child.children.length;
+    }).length) {
+        for(var i = 0 ; i < item.children.length; i++) {
+            item.children[i].load = true;
+            item.children[i].open = true;
+        }
+        tb.redraw();
+    }
+
     if (item.children.length > 0 && item.depth > 0) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.expand) {
@@ -761,7 +780,7 @@ function expandStateLoad(item) {
                 triggerClickOnItem.call(tb, item.children[i], true);
             }
         }
-    }
+    }    
     _cleanupMithril();
 }
 
@@ -1251,8 +1270,6 @@ var tbOptions = {
         $('.gridWrapper').on('mouseout', function(){
             rowDiv.removeClass('po-hover');
         });
-
-
     },
     createcheck : function (item, parent) {
         return true;
