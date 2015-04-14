@@ -1,5 +1,3 @@
-import abc
-
 from waterbutler.core import metadata
 from waterbutler.providers.dataverse import utils as dataverse_utils
 
@@ -14,7 +12,7 @@ class BaseDataverseMetadata(metadata.BaseMetadata):
         return 'dataverse'
 
 
-class BaseDataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
+class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
 
     def __init__(self, raw):
         super().__init__(raw)
@@ -22,9 +20,13 @@ class BaseDataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata
         self.original_name = original_name
         self.version = version
 
-    @abc.abstractproperty
+    @property
     def id(self):
-        pass
+        return str(self.raw['id'])
+
+    @property
+    def name(self):
+        return self.raw['name']
 
     @property
     def path(self):
@@ -32,6 +34,14 @@ class BaseDataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata
 
     @property
     def size(self):
+        pass
+
+    @property
+    def content_type(self):
+        return self.raw['contentType']
+
+    @property
+    def modified(self):
         pass
 
     @property
@@ -43,68 +53,16 @@ class BaseDataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata
         }
 
 
-class DataverseSwordFileMetadata(BaseDataverseFileMetadata):
-
-    def __init__(self, raw):
-        self._content = raw['content']
-        self._edit_media_uri = self._content['@src']
-
-        # Call last to ensure name has been defined by _edit_media_uri
-        super().__init__(raw)
-
-    @property
-    def content_type(self):
-        return self._content['@type']
-
-    @property
-    def id(self):
-        return self._edit_media_uri.rsplit("/", 2)[-2]
-
-    @property
-    def name(self):
-        return self._edit_media_uri.rsplit("/", 1)[-1]
-
-    @property
-    def modified(self):
-        return self.raw['updated']
-
-
-class DataverseNativeFileMetadata(BaseDataverseFileMetadata):
-
-    @property
-    def content_type(self):
-        return self.raw['contentType']
-
-    @property
-    def id(self):
-        return str(self.raw['id'])
-
-    @property
-    def name(self):
-        return self.raw['name']
-
-    @property
-    def modified(self):
-        pass
-
-
 class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadata):
 
-    def __init__(self, raw, name, doi, native=True):
+    def __init__(self, raw, name, doi):
         super().__init__(raw)
         self._name = name
         self.doi = doi
 
-        if native:
-            files = self.raw['files']
-            self._entries = [DataverseNativeFileMetadata(f['datafile']) for f in files]
+        files = self.raw['files']
+        self._entries = [DataverseFileMetadata(f['datafile']) for f in files]
 
-        else:
-            entry_feed = raw['feed'].get('entry', [])
-            if isinstance(entry_feed, dict):
-                self._entries = [DataverseSwordFileMetadata(entry_feed)]
-            else:
-                self._entries = [DataverseSwordFileMetadata(e) for e in entry_feed]
 
     @property
     def name(self):

@@ -1,7 +1,6 @@
 import asyncio
 import http
 import tempfile
-import xmltodict
 
 from waterbutler.core import streams
 from waterbutler.core import provider
@@ -76,8 +75,8 @@ class DataverseProvider(provider.BaseProvider):
             throws=exceptions.UploadError
         )
 
-        # Find appropriate version of file from metadata url
-        data = yield from self.get_draft_data()
+        # Find appropriate version of file
+        data = yield from self.get_data('latest')
         filename, version = dataverse_utils.unpack_filename(filename)
         highest_compatible = None
 
@@ -101,7 +100,7 @@ class DataverseProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         # Can only delete files in draft
-        metadata = yield from self.get_draft_data()
+        metadata = yield from self.get_data('latest')
         self.validate_path(path, metadata)
 
         yield from self.make_request(
@@ -117,9 +116,9 @@ class DataverseProvider(provider.BaseProvider):
 
         # Get appropriate metadata
         if state == 'draft':
-            dataset_metadata = yield from self.get_draft_data()
+            dataset_metadata = yield from self.get_data('latest')
         elif state == 'published':
-            dataset_metadata = yield from self.get_published_data()
+            dataset_metadata = yield from self.get_data('latest-published')
         else:
             dataset_metadata = yield from self.get_all_data()
 
@@ -141,25 +140,17 @@ class DataverseProvider(provider.BaseProvider):
         raise exceptions.ProviderError({'message': 'Dataverse does not support file revisions.'}, code=405)
 
     @asyncio.coroutine
-    def get_draft_data(self):
-        url = self.build_url(self.METADATA_BASE_URL, self.doi)
-        resp = yield from self.make_request(
-            'GET',
-            url,
-            auth=(self.token, ),
-            expects=(200, ),
-            throws=exceptions.MetadataError
+    def get_data(self, version):
+        """
+        :param str version:
+            'latest' for draft files
+            'latest-published' for published files
+        """
+
+        url = self.build_url(
+            self.JSON_BASE_URL.format(self.id, version),
+            key=self.token,
         )
-        data = yield from resp.text()
-        data = xmltodict.parse(data)
-
-        return DataverseDatasetMetadata(
-            data, self.name, self.doi, native=False
-        ).serialized()
-
-    @asyncio.coroutine
-    def get_published_data(self):
-        url = self.build_url(self.JSON_BASE_URL.format(self.id), key=self.token)
         resp = yield from self.make_request(
             'GET',
             url,
@@ -171,15 +162,15 @@ class DataverseProvider(provider.BaseProvider):
         data = data['data']
 
         return DataverseDatasetMetadata(
-            data, self.name, self.doi, native=True
+            data, self.name, self.doi,
         ).serialized()
 
     @asyncio.coroutine
     def get_all_data(self):
         # Unspecified (file view page), check both sets for metadata
-        published_data = yield from self.get_published_data()
+        published_data = yield from self.get_data('latest-published')
         published_files = published_data if isinstance(published_data, list) else []
-        draft_data = yield from self.get_draft_data()
+        draft_data = yield from self.get_data('latest')
         draft_files = draft_data if isinstance(draft_data, list) else []
         return published_files + draft_files
 
