@@ -21,7 +21,7 @@
                 <div class="panel-heading">Sign In</div>
                     <div class="panel-body">
                         <label for="username">Email Address</label>
-                        <input type="email" class="form-control" data-bind="value: username" name="username" placeholder="Enter your username" autofocus/>
+                        <input type="email" class="form-control" data-bind="value: username" name="username" placeholder="Enter your email address" autofocus/>
                         <label class="m-t-md" for="password">Password</label>
                         <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Enter your password">
 

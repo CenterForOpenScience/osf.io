@@ -115,8 +115,11 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
         project['articles'] = []
         if(articles):
-            project['articles'] = [self.article(node_settings, article['id'])['items'][0]
-                                   for article in articles]
+            project['articles'] = []
+            for article in articles:
+                fetched = self.article(node_settings, article['id'])
+                if fetched:
+                    project['articles'].append(fetched['items'][0])
         return project
 
     # ARTICLE LEVEL API

@@ -3,7 +3,7 @@
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 'use strict';
-
+require('css/addon_folderpicker.css');
 var ko = require('knockout');
 require('knockout.punches');
 var $ = require('jquery');
@@ -37,12 +37,13 @@ ko.punches.enableAll();
  *   - implement an _updateCustomFields method to capture additional parameters in updateFromData
  */    
 var FolderPickerViewModel = oop.defclass({
-    constructor: function(addonName, url, selector, folderPicker) {
+    constructor: function(addonName, url, selector, folderpickerSelector) {
         var self = this;
         self.url = url;
         self.addonName = addonName;
         self.selector = selector;
-        self.folderPicker = folderPicker;
+        self.folderpickerSelector = folderpickerSelector;
+        self.folderpicker = null;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
         // whether current user has an auth token
@@ -163,7 +164,7 @@ var FolderPickerViewModel = oop.defclass({
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder) ? folder.name : '';
+            return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
@@ -353,7 +354,9 @@ var FolderPickerViewModel = oop.defclass({
             self.nodeHasAuth(false);
             self.cancelSelection();
             self.currentDisplay(null);
-            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
+            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);     
+            self.loadedFolders(false);
+            self.destroyPicker();
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
@@ -400,6 +403,15 @@ var FolderPickerViewModel = oop.defclass({
             this.cancelSelection();
         }
     },
+    destroyPicker: function() {        
+        this.folderpicker.destroy();
+    },
+    doActivatePicker: function(opts) {
+        var self = this;
+        // Show loading indicator
+        self.loading(true);
+        self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);        
+    },
     /**
      *  Activates the HGrid folder picker.
      */
@@ -415,6 +427,8 @@ var FolderPickerViewModel = oop.defclass({
                 odd: 'addon-folderpicker-odd',
                 even: 'addon-folderpicker-even'
             },
+            multiselect: false,
+            allowMove: false,
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);
@@ -453,9 +467,7 @@ var FolderPickerViewModel = oop.defclass({
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
         if (!self.loadedFolders()) {
-            // Show loading indicator
-            self.loading(true);
-            $(self.folderPicker).folderpicker(opts);
+            self.doActivatePicker(opts);
         }
     }    
 });

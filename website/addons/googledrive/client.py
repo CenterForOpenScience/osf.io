@@ -1,56 +1,14 @@
-import os
-import itertools
+# -*- coding: utf-8 -*-
 
-import furl
-import requests
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import InvalidGrantError
 
 from framework.exceptions import HTTPError
 
 from website.util import api_url_for
+from website.util.client import BaseClient
 from website.addons.googledrive import settings
 from website.addons.googledrive import exceptions
-
-
-class BaseClient(object):
-
-    @property
-    def default_headers(self):
-        return {}
-
-    def _make_request(self, method, url, params=None, **kwargs):
-        expects = kwargs.pop('expects', None)
-        throws = kwargs.pop('throws', None)
-
-        kwargs['headers'] = self._build_headers(**kwargs.get('headers', {}))
-
-        response = requests.request(method, url, params=params, **kwargs)
-        if expects and response.status_code not in expects:
-            raise throws if throws else HTTPError(response.status_code)
-
-        return response
-
-    def _build_headers(self, **kwargs):
-        headers = self.default_headers
-        headers.update(kwargs)
-        return {
-            key: value
-            for key, value in headers.items()
-            if value is not None
-        }
-
-    def _build_url(self, base, *segments):
-        url = furl.furl(base)
-        segments = filter(
-            lambda segment: segment,
-            map(
-                lambda segment: segment.strip('/'),
-                itertools.chain(url.path.segments, segments)
-            )
-        )
-        url.path = os.path.join(*segments)
-        return url.url
 
 
 class GoogleAuthClient(BaseClient):
@@ -128,7 +86,7 @@ class GoogleDriveClient(BaseClient):
         self.access_token = access_token
 
     @property
-    def default_headers(self):
+    def _default_headers(self):
         if self.access_token:
             return {'authorization': 'Bearer {}'.format(self.access_token)}
         return {}

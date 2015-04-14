@@ -211,7 +211,7 @@ ViewModel.prototype.updateFromData = function(data) {
         self.savedDataverseAlias(data.savedDataverse.alias);
         self.savedDataverseTitle(data.savedDataverse.title);
         self.selectedDataverseAlias(data.savedDataverse.alias);
-        self.savendStudyHdl(data.savedStudy.hdl);
+        self.savedStudyHdl(data.savedStudy.hdl);
         self.savedStudyTitle(data.savedStudy.title);
         self.connected(data.connected);
         if (self.userIsOwner()) {
