@@ -83,7 +83,7 @@ class UserFactory(ModularOdmFactory):
     api_keys = []
     date_confirmed = datetime.datetime(2014, 2, 21)
     merged_by = None
-    email_verification = {}
+    email_verifications = {}
     verification_key = None
 
     @post_generation
