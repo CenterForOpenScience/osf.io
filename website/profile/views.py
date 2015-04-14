@@ -103,13 +103,16 @@ def update_user(auth):
                             for x in data['emails']]
         ]
 
+        #currently we only allow delete one email address at a time
+        #if there are more than one emails deleted, this should be an error
+        if len(removed_emails) > 1:
+            raise HTTPError(httplib.FORBIDDEN)
+
         for address in removed_emails:
             if address in user.emails:
                 user.remove_email(address)
-            elif address in user.unconfirmed_emails:
-                user.remove_unconfirmed_email(address)
-            else:
-                raise HTTPError(httplib.FORBIDDEN)
+            user.remove_unconfirmed_email(address)
+
 
         # additions
         added_emails = [
