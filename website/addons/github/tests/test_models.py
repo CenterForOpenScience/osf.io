@@ -9,7 +9,7 @@ from github3 import GitHubError
 from github3.repos import Repository
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory
+from tests.factories import UserFactory, ProjectFactory, AuthUserFactory
 
 from framework.auth import Auth
 
@@ -103,24 +103,25 @@ class TestCallbacks(OsfTestCase):
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
-
-        self.project = ProjectFactory.build()
-        self.consolidated_auth = Auth(self.project.creator)
-        self.non_authenticator = UserFactory()
-        self.project.save()
-        self.project.add_contributor(
-            contributor=self.non_authenticator,
-            auth=self.consolidated_auth,
-        )
-
-        self.project.add_addon('github', auth=self.consolidated_auth)
-        self.project.creator.add_addon('github')
+        self.account = GitHubAccountFactory()
+        self.user = AuthUserFactory(external_accounts=[self.account])
+        self.user_settings = self.user.get_or_add_addon('github')
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('github', Auth(self.user))
         self.node_settings = self.project.get_addon('github')
         self.user_settings = self.project.creator.get_addon('github')
         self.node_settings.user_settings = self.user_settings
         self.node_settings.user = 'Queen'
         self.node_settings.repo = 'Sheer-Heart-Attack'
         self.node_settings.save()
+        self.non_authenticator = UserFactory()
+        self.consolidated_auth = Auth(self.project.creator)
+        self.project.add_contributor(
+             contributor=self.non_authenticator,
+             auth=self.consolidated_auth,
+        )
+        self.project.save()
+
 
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_before_make_public(self, mock_repo):

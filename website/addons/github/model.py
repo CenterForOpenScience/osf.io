@@ -201,6 +201,29 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
             auth=auth,
         )
 
+    def delete(self, save=False):
+        super(GitHubNodeSettings, self).delete(save=False)
+        self.deauthorize(save=False, log=False)
+        if save:
+            self.save()
+
+    @property
+    def repo_url(self):
+        if self.user and self.repo:
+            return 'https://github.com/{0}/{1}/'.format(
+                self.user, self.repo
+            )
+
+    @property
+    def short_url(self):
+        if self.user and self.repo:
+            return '/'.join([self.user, self.repo])
+
+    @property
+    def is_private(self):
+        connection = GitHub.from_settings(self.user_settings)
+        return connection.repo(user=self.user, repo=self.repo).private
+
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')

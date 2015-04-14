@@ -232,6 +232,43 @@ class TestGithubViews(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
+    @mock.patch('website.addons.github.api.GitHub.branches')
+    def test_link_repo_registration(self, mock_branches):
+
+        mock_branches.return_value = [
+            Branch.from_json({
+                'name': 'master',
+                'commit': {
+                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
+                }
+            }),
+            Branch.from_json({
+                'name': 'develop',
+                'commit': {
+                    'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
+                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                }
+            })
+        ]
+
+        registration = self.project.register_node(
+            None, Auth(self.user), '', ''
+        )
+
+        url = registration.api_url + 'github/settings/'
+        res = self.app.post_json(
+            url,
+            {
+                'github_repo': 'queen / night at the opera',
+            },
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
+
+
 
     @mock.patch('website.addons.github.api.GitHub.repos')
     @mock.patch('website.addons.github.api.GitHub.my_org_repos')
