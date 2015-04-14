@@ -61,7 +61,7 @@ function ViewModel(url) {
             return 'Successfully unlinked your Dataverse account.';
         }),
         authInvalid: ko.pureComputed(function() {
-            return 'Your Dataverse api token is invalid.';
+            return 'Your Dataverse API token is invalid.';
         }),
         authError: ko.pureComputed(function() {
             return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
