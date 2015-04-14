@@ -54,7 +54,6 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
         files = self.raw['files']
         self._entries = [DataverseFileMetadata(f['datafile']) for f in files]
 
-
     @property
     def name(self):
         return self._name
