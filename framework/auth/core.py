@@ -81,18 +81,19 @@ def validate_year(item):
 
 
 validate_url = URLValidator()
-def validate_personal_site(value):
-    print(value)
-    if value:
-        try:
-            validate_url(value)
-        except ValidationError:
-            # Reraise with a better message
-            raise ValidationError('Invalid personal URL.')
+def validate_profileWebsites(profileWebsites):
+    print "in validate_profileWebsites, profileWebsites is %s." % profileWebsites
+    for profileWebsite in profileWebsites:
+        if profileWebsite:
+            try:
+                validate_url(profileWebsite)
+            except ValidationError:
+                # Reraise with a better message
+                raise ValidationError('Invalid personal URL.')
 
 def validate_social(value):
-    print "in validate social, profileWebsites is %s." % value.get('profileWebsites')
-
+    validate_profileWebsites(value.get('profileWebsites'))
+    
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')

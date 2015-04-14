@@ -263,15 +263,22 @@ BaseViewModel.prototype.handleSuccess = function() {
     }
 };
 
-BaseViewModel.prototype.handleError = function(response) {
+BaseViewModel.prototype.handleError = function(response) {    
     var defaultMsg = 'Could not update settings';
-    var msg = response.responseJSON.message_long || defaultMsg;
-//    var msg = defaultMsg;
-    this.changeMessage(
-        msg,
-        'text-danger',
+    var msg;
+    console.log("response is " + JSON.stringify(response));
+    if (typeof response.responseJSON != "undefined") {
+        msg = response.responseJSON.message_long
+    }
+    else {
+        msg = defaultMsg;
+    }
+     this.changeMessage(
+         msg,
+         'text-danger',
         5000
     );
+
 };
 
 BaseViewModel.prototype.setOriginal = function() {};
@@ -477,37 +484,17 @@ var SocialViewModel = function(urls, modes) {
   
     self.profileWebsites = ko.observableArray(); // Initially an empty array
     
-//    for (i = 0; i < self.profileWebsites().length; i++) {
-//        self.profileWebsites()[i] = extendLink(
-//            // Note: Apply extenders in reverse order so that `ensureHttp` is
-//            // applied before `url`.
-//            ko.observable().extend({
-//                trimmed: true,
-//                    url: true,
-//                ensureHttp: true
-//            }),
-//            self, 'profileWebsites'
-//            
-//        );
-////         console.log("self.profileWebsites()[i] is " + self.profileWebsites()[i]);
-//    }
+    self.profileWebsites()[0] = extendLink(
+        // Note: Apply extenders in reverse order so that `ensureHttp` is
+        // applied before `url`.
+        ko.observable().extend({
+            trimmed: true,
+                url: true,
+            ensureHttp: true
+        }),
+        self, 'ProfileWebsites'
+    );
 
-//    self.personal = extendLink(
-//        // Note: Apply extenders in reverse order so that `ensureHttp` is
-//        // applied before `url`.
-//        ko.observable().extend({
-//            trimmed: true,
-//            url: true,
-//            ensureHttp: true
-//        }),
-//        self, 'personal'
-//    );
-//    self.profileWebsites.push(self.personal); 
-    
-//    //BH hard code true
-//    self.hasMultiple = function () {
-//        return true;
-//    };
 
     self.hasMultiple = ko.computed(function() {
         return self.profileWebsites().length > 1;
@@ -524,7 +511,17 @@ var SocialViewModel = function(urls, modes) {
     }
 
      self.addWebsite = function(profileWebsite) {
-        this.profileWebsites.push('');
+        var nextItemIndex = self.profileWebsites().length;
+        this.profileWebsites.push(extendLink(
+        // Note: Apply extenders in reverse order so that `ensureHttp` is
+        // applied before `url`.
+            ko.observable().extend({
+                trimmed: true,
+                    url: true,
+                ensureHttp: true
+        }),
+        this, 'Profile Websites')
+        );
     }
 
     self.orcid = extendLink(
@@ -604,53 +601,6 @@ var SocialViewModel = function(urls, modes) {
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
-//SocialViewModel.prototype.addContent = function() {
-//    this.profileWebsites.push('');
-//};
-//
-//SocialViewModel.prototype.removeContent = function(profileWebsite) {
-//    //BH console message
-////    console.log("profileWebsite is " + profileWebsite);
-////    console.log("this is" + this.profileWebsites());
-//    
-//    var idx = this.profileWebsites().indexOf(profileWebsites);
-//    console.log("idx is" + idx);
-//    this.profileWebsites.splice(idx, 1);
-//
-//};
-
-//SocialViewModel.prototype.unserialize = function(data) {
-//    var self = this;
-//    if(self.editAllowed) {
-//        self.editable(data.editable);
-//    } else {
-//        self.editable(false);
-//    }
-//    self.profileWebsites(ko.utils.arrayMap(data.profileWebsites || [], function (each) {
-//        return new self.ContentModel(self).unserialize(each);
-//    }));
-//
-//    // Ensure at least one item is visible
-//    if (self.profileWebsites().length === 0) {
-//        self.addContent();
-//    }
-//
-//    self.setOriginal();
-//};
-//
-//SocialViewModel.prototype.serialize = function() {
-//    var profileWebsites = [];
-//    if (this.profileWebsites().length !== 0 && typeof(this.profileWebsites()[0].serialize() !== undefined)) {
-//        for (var i=0; i < this.profileWebsites().length; i++) {
-//            profileWebsites.push(this.profileWebsites()[i].serialize());
-//        }
-//    }
-//    else {
-//        profileWebsites = ko.toJS(this.profileWebsites);
-//    }
-//
-//    return {profileWebsites: profileWebsites};
-//};
 
 
 var ListViewModel = function(ContentModel, urls, modes) {

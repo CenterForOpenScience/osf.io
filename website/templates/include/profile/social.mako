@@ -4,10 +4,8 @@
 
         <form role="form" data-bind="submit: submit">
 
-
-
           <div data-bind="sortable: {
-                    data: profileWebsites(),
+                    data: profileWebsites,
                     options: {
                         handle: '.sort-handle',
                         containment: '#containDrag'
@@ -16,7 +14,7 @@
 
                 <div>
 
-                    <div class="well well-sm sort-handle">
+                    <div class="sort-handle">
                         <label>Website {{ $index() + 1 }} </label>
                         <span data-bind="visible: $parent.hasMultiple()">
                             &nbsp;&nbsp;(drag to reorder)
@@ -25,30 +23,32 @@
                                 class="text-danger pull-right"
                                 data-bind="click: $parent.removeWebsite,
                                            visible: $parent.canRemove"
-                            >Remove</a>
-                    </div>
-
-                    <div class="form-group">
-
+                        >Remove</a>
+                        
                         <div class="input-group">
                             <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
                             <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
                         </div>
+
+                    </div>
+
+                    <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)">
+
                     </div>
 
 
-                    <hr data-bind="visible: $index() != ($parent.profileWebsites().length - 1)" />
+     
 
                 </div>
 
             </div>
 
-            <div>
+            <div class="padded">
                 <a class="btn btn-default" data-bind="click: addWebsite">
                     Add another
                 </a>
             </div>
-
+    
             <div class="padded">
                 
                 <div class="form-group">
