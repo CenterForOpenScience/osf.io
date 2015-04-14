@@ -16,6 +16,7 @@ from modularodm import Q
 
 from website.app import init_app
 from scripts import utils as script_utils
+from framework.transactions.context import TokuTransaction
 
 from website.addons.dataverse.model import AddonDataverseNodeSettings
 
@@ -25,17 +26,18 @@ logger = logging.getLogger(__name__)
 def do_migration(records, dry=True):
     for node_addon in records:
 
-        logger.info('Record found for dataset {}'.format(node_addon.study_hdl))
-        logger.info('renaming fields for to {}'.format(node_addon.study_hdl))
+        with TokuTransaction():
+            logger.info('Record found for dataset {}'.format(node_addon.study_hdl))
+            logger.info('renaming fields for to {}'.format(node_addon.study_hdl))
 
-        if not dry:
-            node_addon.dataset_doi = node_addon.study_hdl
-            node_addon.dataset = node_addon.study
+            if not dry:
+                node_addon.dataset_doi = node_addon.study_hdl
+                node_addon.dataset = node_addon.study
 
-            node_addon.study_hdl = None
-            node_addon.study = None
+                node_addon.study_hdl = None
+                node_addon.study = None
 
-            node_addon.save()
+                node_addon.save()
 
 
 def get_targets():
