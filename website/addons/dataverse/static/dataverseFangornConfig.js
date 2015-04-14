@@ -56,8 +56,8 @@ function _fangornActionColumn (item, col) {
                 self.modal.update(modalContent, modalActions);
                 item.data.state = 'published';
                 item.data.hasPublishedFiles = item.children.length > 0;
-            }).fail(function(args) {
-                var statusCode = args.responseJSON.code;
+            }).fail(function(xhr) {
+                var statusCode = xhr.responseJSON.code;
                 var message;
                 switch (statusCode) {
                     case 405:
