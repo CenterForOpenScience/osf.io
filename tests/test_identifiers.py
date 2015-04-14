@@ -8,7 +8,6 @@ from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
 from tests.factories import ModularOdmFactory
 from tests.factories import RegistrationFactory
-from tests.factories import NodeFactory
 from tests.test_addons import assert_urls_equal
 
 import furl
@@ -19,6 +18,7 @@ from website import settings
 from website.identifiers.utils import to_anvl
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
+from website.identifiers import metadata
 
 
 class IdentifierFactory(ModularOdmFactory):
@@ -31,22 +31,47 @@ class IdentifierFactory(ModularOdmFactory):
 
 class TestMetadataGeneration(OsfTestCase):
 
-    def test_metadata_for_node(self):
-        visible_contrib = AuthUserFactory()
-        invisible_contrib = AuthUserFactory()
-        node = RegistrationFactory(is_public=True)
-        identifier = Identifier(referent=node, category='catid', value='cat:7')
-        node.add_contributor(visible_contrib, visible=True)
-        node.add_contributor(invisible_contrib, visible=False)
-        node.save()
-        metadata_xml = datacite_metadata_for_node(node, doi=identifier.value)
-        # includes visible contrib name
-        assert_in('{}, {}'.format(visible_contrib.family_name, visible_contrib.given_name),
-                metadata_xml)
-        # doesn't include invisible contrib name
-        assert_not_in(invisible_contrib.family_name, metadata_xml)
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.visible_contrib = AuthUserFactory()
+        self.invisible_contrib = AuthUserFactory()
+        self.node = RegistrationFactory(is_public=True)
+        self.identifier = Identifier(referent=self.node, category='catid', value='cat:7')
+        self.node.add_contributor(self.visible_contrib, visible=True)
+        self.node.add_contributor(self.invisible_contrib, visible=False)
+        self.node.save()
 
-        assert_in(identifier.value, metadata_xml)
+    def test_metadata_for_node_only_includes_visible_contribs(self):
+        metadata_xml = datacite_metadata_for_node(self.node, doi=self.identifier.value)
+        # includes visible contrib name
+        assert_in(u'{}, {}'.format(
+            self.visible_contrib.family_name, self.visible_contrib.given_name),
+            metadata_xml)
+        # doesn't include invisible contrib name
+        assert_not_in(self.invisible_contrib.family_name, metadata_xml)
+
+        assert_in(self.identifier.value, metadata_xml)
+
+    def test_metadata_for_node_has_correct_structure(self):
+        metadata_xml = datacite_metadata_for_node(self.node, doi=self.identifier.value)
+        root = lxml.etree.fromstring(metadata_xml)
+        xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
+        expected_location = 'http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd'
+        assert_equal(root.attrib[xsi_location], expected_location)
+
+        identifier = root.find('{%s}identifier' % metadata.NAMESPACE)
+        assert_equal(identifier.attrib['identifierType'], 'DOI')
+        assert_equal(identifier.text, self.identifier.value)
+
+        creators = root.find('{%s}creators' % metadata.NAMESPACE)
+        assert_equal(len(creators.getchildren()), len(self.node.visible_contributors))
+
+        publisher = root.find('{%s}publisher' % metadata.NAMESPACE)
+        assert_equal(publisher.text, 'OSF')
+
+        pub_year = root.find('{%s}publicationYear' % metadata.NAMESPACE)
+        assert_equal(pub_year.text, str(self.node.registered_date.year))
+
 
 class TestIdentifierModel(OsfTestCase):
 
