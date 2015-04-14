@@ -19,10 +19,11 @@ class BaseBoxMetadata(metadata.BaseMetadata):
             return None
 
         path = []
-        for entry in reversed(self.raw['path_collection']['entries']):
-            if self.folder == entry['id']:
-                break
-            path.append(entry['name'])
+        if self.raw['id'] != self.folder:
+            for entry in reversed(self.raw['path_collection']['entries']):
+                if self.folder == entry['id']:
+                    break
+                path.append(entry['name'])
 
         return '/' + os.path.join('/'.join(reversed(path)), self.name)
 
