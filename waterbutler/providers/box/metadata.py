@@ -15,15 +15,17 @@ class BaseBoxMetadata(metadata.BaseMetadata):
 
     @property
     def full_path(self):
+        if self.raw['id'] == self.folder:
+            return ''
+
         if 'path_collection' not in self.raw:
             return None
 
         path = []
-        if self.raw['id'] != self.folder:
-            for entry in reversed(self.raw['path_collection']['entries']):
-                if self.folder == entry['id']:
-                    break
-                path.append(entry['name'])
+        for entry in reversed(self.raw['path_collection']['entries']):
+            if self.folder == entry['id']:
+                break
+            path.append(entry['name'])
 
         return '/' + os.path.join('/'.join(reversed(path)), self.name)
 
