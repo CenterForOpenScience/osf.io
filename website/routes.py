@@ -772,6 +772,16 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/retraction/',
         ], 'get', project_views.register.node_registration_retraction_get,
             OsfWebRenderer('project/retract_registration.mako')),
+        Rule([
+            '/project/<pid>/retraction/approve/<token>/',
+            '/project/<pid>/node/<nid>/retraction,disapprove/<token>/',
+        ], 'get', project_views.register.node_registration_retraction_approve,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/retraction/disapprove/<token>/',
+            '/project/<pid>/node/<nid>/retraction,disapprove/<token>/',
+        ], 'get', project_views.register.node_registration_retraction_disapprove,
+            OsfWebRenderer('error.mako', render_mako_string)),
 
         # Statistics
         Rule([

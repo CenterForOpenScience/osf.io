@@ -7,7 +7,10 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
+from framework import status
+from framework.auth import exceptions
 from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.mongo.utils import to_mongo
 
@@ -74,6 +77,77 @@ def node_registration_retraction_post(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     return {'redirectUrl': node.web_url_for('view_project')}
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_be_public_registration
+def node_registration_retraction_approve(auth, **kwargs):
+    """Handles disapproval of registration retractions
+    :param auth: User wanting to disapprove retraction
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    node = kwargs['node'] or kwargs['project']
+    token = kwargs['token']
+
+    if node.retraction.state != 'pending':
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending a retraction.'
+        })
+
+    try:
+        node.retraction.disapprove_retraction(auth.user, token)
+    except exceptions.InvalidRetractionApprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except ValidationValueError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your approval has been accepted.')
+    return redirect(node.web_url_for('view_project'))
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_be_public_registration
+def node_registration_retraction_disapprove(auth, **kwargs):
+    """Handles approval of registration retractions
+    :param auth: User wanting to approve retraction
+    :param kwargs:
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    node = kwargs['node'] or kwargs['project']
+    token = kwargs['token']
+
+    if node.retraction.state != 'pending':
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending a retraction.'
+        })
+
+    try:
+        node.retraction.approve_retraction(auth.user, token)
+    except exceptions.InvalidRetractionDisapprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except ValidationValueError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your disapproval has been accepted and the retraction has been cancelled.')
+    return redirect(node.web_url_for('view_project'))
 
 @must_be_valid_project
 @must_be_contributor_or_public

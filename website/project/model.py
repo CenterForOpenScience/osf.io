@@ -36,8 +36,7 @@ from framework.analytics import (
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 
-from website import language
-from website import settings
+from website import language, settings, security
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
@@ -2449,6 +2448,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Collect list of admins for registration
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
 
+        approval_state = {'num_of_approvals': 0}
+        # Create approve/disapprove keys
+        for admin in admins:
+            approval_state[admin._id] = {
+                'approval_token': security.random_string(30),
+                'disapproval_token': security.random_string(30),
+                'has_approved': False
+            }
+
+        retraction.approval_state = approval_state
+
         # Send approve/disapprove emails to each admin
         for admin in admins:
             self._send_retraction_email(admin, justification)
@@ -2470,7 +2480,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         pass
         #raise NotImplementedError
-
 
     def retract_registration(self, user, justification=None):
         """Retract public registration. Instantiate new Retraction object
@@ -2584,8 +2593,16 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+
+from framework.auth import exceptions
+
+
 class Retraction(StoredObject):
     """Retraction object for public registrations."""
+
+    def __init__(self):
+        super(Retraction, self).__init__()
+        self.approval_state = fields.DictionaryField()
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     justification = fields.StringField(validate=MaxLengthValidator(2048))
@@ -2596,3 +2613,26 @@ class Retraction(StoredObject):
     @property
     def is_retracted(self):
         return self.state == 'retracted'
+
+    def disapprove_retraction(self, user, token):
+        """Cancels retraction if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['disapproval_token'] != token:
+                raise exceptions.InvalidRetractionDisapprovalToken
+            self.state = 'cancelled'
+        except KeyError:
+            raise ValidationValueError('User must be an admin to disapprove retraction of a registration.')
+
+    def approve_retraction(self, user, token):
+        """Add user to approval list if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['approval_token'] != token:
+                raise exceptions.InvalidRetractionApprovalToken
+            self.approval_state[user._id]['has_approved'] = True
+            num_of_approvals = self.approval_state['num_of_approvals']
+            self.approval_state['num_of_approvals'] = num_of_approvals + 1
+
+            if self.approval_state['num_of_approvals'] == (len(self.approval_state.keys()) - 1):
+                self.state = 'retracted'
+        except KeyError:
+            raise ValidationValueError('User must be an admin to disapprove retraction of a registration.')
