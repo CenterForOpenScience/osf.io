@@ -588,11 +588,11 @@ function reapplyTooltips () {
  * @this Treebeard.controller
  * @private
  */
-function _fangornLazyLoadOnLoad (tree) {
+function _fangornLazyLoadOnLoad (tree, event) {
     tree.children.forEach(function(item) {
         inheritFromParent(item, tree);
     });
-    resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
+    resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree, event]);
     reapplyTooltips();
 
     if (tree.depth > 1) {
