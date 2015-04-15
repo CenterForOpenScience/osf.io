@@ -208,6 +208,36 @@ class TestRegistrationRetractions(SearchTestCase):
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 1)
 
+    def test_pending_retraction_wiki_content_is_searchable(self):
+        # Add unique string to wiki
+        wiki_content = {'home': 'public retraction test'}
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
+            assert_equal(len(docs), 0)
+            self.registration.update_node_wiki(
+                key, value, self.consolidate_auth,
+            )
+            # Query and ensure unique string shows up
+            docs = query(value)['results']
+            assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+        # Retract registration
+        self.registration.retract_registration(self.user, '')
+        self.registration.save()
+        self.registration.reload()
+
+        # Query and ensure unique string in wiki doesn't show up
+        docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
+        assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
     def test_retraction_wiki_content_is_not_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
@@ -227,6 +257,8 @@ class TestRegistrationRetractions(SearchTestCase):
 
         # Retract registration
         self.registration.retract_registration(self.user, '')
+        self.registration.retraction.state = 'retracted'
+        self.registration.retraction.save()
         self.registration.save()
         self.registration.reload()
 

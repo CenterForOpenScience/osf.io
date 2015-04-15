@@ -23,7 +23,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
-from framework.auth import get_user, User, Auth
+from framework.auth import exceptions, get_user, User, Auth
 from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
@@ -2461,25 +2461,37 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Send approve/disapprove emails to each admin
         for admin in admins:
-            self._send_retraction_email(admin, justification)
+            self._send_retraction_email(
+                admin,
+                justification,
+                approval_state[admin._id]['approval_token'],
+                approval_state[admin._id]['disapproval_token']
+            )
 
         return retraction
 
-    # @TODO(hrybacki)implement
-    def _send_retraction_email(self, user, justification):
+    def _send_retraction_email(self, user, justification, approval_token, disapproval_token):
         """ Sends Approve/Disapprove email for retraction of a public registration to user
         :param user: Admin user to be emailed
         :param justification: Justification, if given, for retraction
         """
 
-        # Get approve link
-
-        # Get disapprove link
+        base = settings.DOMAIN[:-1]
+        registration_link = "{0}{1}".format(base, self.web_url_for('view_project'))
+        approval_link = "{0}{1}approve/{2}/".format(base, self.web_url_for('node_registration_retraction_get'), approval_token)
+        disapproval_link = "{0}{1}disapprove/{2}/".format(base, self.web_url_for('node_registration_retraction_get'), disapproval_token)
 
         # send email
-
-        pass
-        #raise NotImplementedError
+        from website import mails
+        mails.send_mail(
+            user.username,
+            mails.PENDING_RETRACTION,
+            'plain',
+            user=user,
+            approval_link=approval_link,
+            disapproval_link=disapproval_link,
+            registration_link=registration_link
+        )
 
     def retract_registration(self, user, justification=None):
         """Retract public registration. Instantiate new Retraction object
@@ -2594,21 +2606,15 @@ class PrivateLink(StoredObject):
         }
 
 
-from framework.auth import exceptions
-
-
 class Retraction(StoredObject):
     """Retraction object for public registrations."""
 
-    def __init__(self):
-        super(Retraction, self).__init__()
-        self.approval_state = fields.DictionaryField()
-
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    justification = fields.StringField(validate=MaxLengthValidator(2048))
+    justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
     initiation_date = fields.DateTimeField()
     initiated_by = fields.ForeignField('user', backref='retracted_by')
-    state = fields.StringField()
+    approval_state = fields.DictionaryField()
+    state = fields.StringField(default='pending')
 
     @property
     def is_retracted(self):
