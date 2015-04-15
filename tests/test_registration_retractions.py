@@ -26,7 +26,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.valid_justification = fake.sentence()
         self.invalid_justification = fake.text(max_nb_chars=3000)
 
-    def test_disapprove_retraction_cancels_retraction(self):
+    def test_one_disapproval_cancels_retraction(self):
         self.registration.is_public = True
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -37,7 +37,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
         assert_equal(self.registration.retraction.state, 'cancelled')
 
-    def test_approve_retraction_with_two_admin_stays_pending(self):
+    def test_one_approval_with_one_admin_retracts(self):
         self.registration.is_public = True
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -49,7 +49,28 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_true(self.registration.retraction.is_retracted)
         assert_equal(self.registration.retraction.approval_state['num_of_approvals'], 1)
 
-    def test_approve_retraction_with_one_admin_retracts(self):
+    def test_two_approvals_with_two_admins_retracts(self):
+        self.admin2 = UserFactory()
+        self.registration.contributors.append(self.admin2)
+        self.registration.add_permission(self.admin2, 'admin', save=True)
+        self.registration.is_public = True
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+
+        self.registration.reload()
+        # First admin approves
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_equal(self.registration.retraction.state, 'pending')
+        assert_equal(self.registration.retraction.approval_state['num_of_approvals'], 1)
+
+        # Second admin approves
+        approval_token = self.registration.retraction.approval_state[self.admin2._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.admin2, approval_token)
+        assert_equal(self.registration.retraction.approval_state['num_of_approvals'], 2)
+        assert_true(self.registration.retraction.is_retracted)
+
+    def test_one_approval_with_two_admins_stays_pending(self):
         self.admin2 = UserFactory()
         self.registration.contributors.append(self.admin2)
         self.registration.add_permission(self.admin2, 'admin', save=True)
