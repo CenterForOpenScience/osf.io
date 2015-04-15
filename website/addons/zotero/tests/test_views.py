@@ -327,11 +327,11 @@ class ZoteroViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, 403)
 
-    @responses.activate
+    @httpretty.activate
     def test_zotero_citation_list_not_first_page(self):
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(
                 API_URL,
                 'users/{}/collections'.format(self.account.provider_id)
@@ -340,8 +340,8 @@ class ZoteroViewsTestCase(OsfTestCase):
             content_type='application/json'
         )
 
-        responses.add(
-            responses.GET,
+        httpretty.register_uri(
+            httpretty.GET,
             urlparse.urljoin(
                 API_URL,
                 'users/{}/items'.format(self.account.provider_id)
@@ -354,5 +354,6 @@ class ZoteroViewsTestCase(OsfTestCase):
             self.project.api_url_for('zotero_citation_list', zotero_list_id='ROOT', page='2'),
             auth=self.user.auth
         )
-
-        assert_equal(len(res.json['contents']), 50)
+        
+        # 50 documents, 1 folder
+        assert_equal(len(res.json['contents']), 51)
