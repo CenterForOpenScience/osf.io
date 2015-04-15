@@ -251,6 +251,11 @@ def node_fork_page(**kwargs):
     auth = kwargs['auth']
 
     if node:
+        if settings.DISK_SAVING_MODE:
+            raise HTTPError(
+                http.FORBIDDEN,
+                redirect_url=node.url
+            )
         node_to_use = node
         raise HTTPError(
             http.FORBIDDEN,
