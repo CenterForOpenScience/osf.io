@@ -578,11 +578,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
-    # is_retracted = fields.BooleanField(default=False)
     retraction = fields.ForeignField('retraction')
-    # retracted_justification = fields.StringField(validate=MaxLengthValidator(2048))
-    # retraction_date = fields.DateTimeField()
-    # retracted_by = fields.ForeignField('user', backref='retracted_registration')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -2467,40 +2463,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             }
 
         retraction.approval_state = approval_state
-
-        # Send approve/disapprove emails to each admin
-        for admin in admins:
-            self._send_retraction_email(
-                admin,
-                justification,
-                approval_state[admin._id]['approval_token'],
-                approval_state[admin._id]['disapproval_token']
-            )
-
         return retraction
-
-    def _send_retraction_email(self, user, justification, approval_token, disapproval_token):
-        """ Sends Approve/Disapprove email for retraction of a public registration to user
-        :param user: Admin user to be emailed
-        :param justification: Justification, if given, for retraction
-        """
-
-        base = settings.DOMAIN[:-1]
-        registration_link = "{0}{1}".format(base, self.web_url_for('view_project'))
-        approval_link = "{0}{1}approve/{2}/".format(base, self.web_url_for('node_registration_retraction_get'), approval_token)
-        disapproval_link = "{0}{1}disapprove/{2}/".format(base, self.web_url_for('node_registration_retraction_get'), disapproval_token)
-
-        # send email
-        from website import mails
-        mails.send_mail(
-            user.username,
-            mails.PENDING_RETRACTION,
-            'plain',
-            user=user,
-            approval_link=approval_link,
-            disapproval_link=disapproval_link,
-            registration_link=registration_link
-        )
 
     def retract_registration(self, user, justification=None):
         """Retract public registration. Instantiate new Retraction object
@@ -2628,6 +2591,10 @@ class Retraction(StoredObject):
     @property
     def is_retracted(self):
         return self.state == 'retracted'
+
+    @property
+    def pending_retraction(self):
+        return self.state == 'pending'
 
     def disapprove_retraction(self, user, token):
         """Cancels retraction if user is admin and token verifies."""

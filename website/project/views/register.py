@@ -28,7 +28,7 @@ from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
 from website.models import MetaSchema
 from website.models import NodeLog
-from website import language
+from website import language, mails
 
 from website.identifiers.client import EzidClient
 
@@ -83,7 +83,40 @@ def node_registration_retraction_post(auth, **kwargs):
     except ValidationValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+    # Email project admins
+    admins = [contrib for contrib in node.contributors if node.has_permission(contrib, 'admin')]
+    for admin in admins:
+            _send_retraction_email(
+                node,
+                admin,
+                node.retraction.approval_state[admin._id]['approval_token'],
+                node.retraction.approval_state[admin._id]['disapproval_token'],
+            )
+
     return {'redirectUrl': node.web_url_for('view_project')}
+
+def _send_retraction_email(node, user, approval_token, disapproval_token):
+    """ Sends Approve/Disapprove email for retraction of a public registration to user
+        :param node: Node being retracted
+        :param user: Admin user to be emailed
+        :param approval_token: token `user` needs to approve retraction
+        :param disapproval_token: token `user` needs to disapprove retraction
+    """
+
+    base = settings.DOMAIN[:-1]
+    registration_link = "{0}{1}".format(base, node.web_url_for('view_project'))
+    approval_link = "{0}{1}approve/{2}/".format(base, node.web_url_for('node_registration_retraction_get'), approval_token)
+    disapproval_link = "{0}{1}disapprove/{2}/".format(base, node.web_url_for('node_registration_retraction_get'), disapproval_token)
+
+    mails.send_mail(
+        user.username,
+        mails.PENDING_RETRACTION,
+        'plain',
+        user=user,
+        approval_link=approval_link,
+        disapproval_link=disapproval_link,
+        registration_link=registration_link
+    )
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -105,7 +138,8 @@ def node_registration_retraction_approve(auth, **kwargs):
         })
 
     try:
-        node.retraction.disapprove_retraction(auth.user, token)
+        node.retraction.approve_retraction(auth.user, token)
+        node.retraction.save()
     except exceptions.InvalidRetractionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
@@ -141,7 +175,8 @@ def node_registration_retraction_disapprove(auth, **kwargs):
         })
 
     try:
-        node.retraction.approve_retraction(auth.user, token)
+        node.retraction.disapprove_retraction(auth.user, token)
+        node.retraction.save()
     except exceptions.InvalidRetractionDisapprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
