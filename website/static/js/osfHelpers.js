@@ -347,6 +347,10 @@ var applyBindings = function(viewModel, selector) {
     if ($elem.hasClass('scripted')){
         $elem.show();
     }
+    // Also show any child elements that have the scripted class
+    $(selector + ' .scripted').each(function(elm) {
+        $(this).show();
+    })
     ko.applyBindings(viewModel, $elem[0]);
 };
 
