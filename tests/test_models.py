@@ -1340,10 +1340,6 @@ class TestNode(OsfTestCase):
             addon_count
         )
 
-    def test_cant_add_component_to_component(self):
-        with assert_raises(ValueError):
-            NodeFactory(project=self.node)
-
     def test_url(self):
         assert_equal(
             self.node.url,
@@ -1387,7 +1383,7 @@ class TestNode(OsfTestCase):
         )
         assert_equal(
             self.node.logs[-1].params, {
-                'project': self.node.parent_id,
+                'parent_node': self.node.parent_id,
                 'node': self.node._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1473,7 +1469,7 @@ class TestNode(OsfTestCase):
         )
         assert_equal(
             self.node.logs[-1].params, {
-                'project': self.node.parent_id,
+                'parent_node': self.node.parent_id,
                 'node': self.node._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
