@@ -251,11 +251,6 @@ def node_fork_page(**kwargs):
     auth = kwargs['auth']
 
     if node:
-        if settings.DISK_SAVING_MODE:
-            raise HTTPError(
-                http.FORBIDDEN,
-                redirect_url=node.url
-            )
         node_to_use = node
         raise HTTPError(
             http.FORBIDDEN,
@@ -265,6 +260,11 @@ def node_fork_page(**kwargs):
     else:
         node_to_use = project
 
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node_to_use.url
+        )
     try:
         fork = node_to_use.fork_node(auth)
     except PermissionsError:
