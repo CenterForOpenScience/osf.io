@@ -169,7 +169,8 @@ var ViewModel = function(params) {
         }
     };
 
-    self.addTag = function(name, action) {
+    /** name of tag, action add or remove.*/
+    self.clickTag = function(name, action) {
         // To handle passing from template vs. in main html
         var tag = name;
 

@@ -33,32 +33,32 @@
                                 <span class="tag-cloud" data-bind="foreach: tags">
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
                                     <span class="cloud-tag tag-big pointer tag-container"
-                                          data-bind="click: $root.addTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span>
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag big"
-                                           data-bind="click: $root.addTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
                                     <span class="cloud-tag tag-med pointer tag-container"
-                                          data-bind="click: $root.addTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span>
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag med"
-                                           data-bind="click: $root.addTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
                                     <span class="cloud-tag tag-sm pointer tag-container"
-                                          data-bind="click: $root.addTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span>
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag"
-                                           data-bind="click: $root.addTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
                                     </span>
                                     <!-- /ko -->
                                 </span>
@@ -212,11 +212,11 @@
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer tag-container"
-                      data-bind="click: $root.addTag.bind($parentContext, $data, 'add')">
+                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
                     <span data-bind="text: $data">
                     </span>
                     <i class="fa fa-times-circle remove-tag"
-                       data-bind="click: $root.addTag.bind($parentContext, $data, 'remove')"></i>
+                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
                 </span>
             </span>
         </p>
@@ -247,7 +247,12 @@
         <!-- ko if: tags.length > 0 -->
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer tag-container"
+                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
+                    <span data-bind="text: $data">
+                    </span>
+                    <i class="fa fa-times-circle remove-tag"
+                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
                 </span>
             </span>
         </p>
@@ -279,7 +284,12 @@
         <!-- ko if: tags.length > 0 -->
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer tag-container"
+                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
+                    <span data-bind="text: $data">
+                    </span>
+                    <i class="fa fa-times-circle remove-tag"
+                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
                 </span>
             </span>
         </p>
@@ -311,7 +321,12 @@
         <!-- ko if: tags.length > 0 -->
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer tag-container"
+                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
+                    <span data-bind="text: $data">
+                    </span>
+                    <i class="fa fa-times-circle remove-tag"
+                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
                 </span>
             </span>
         </p>
