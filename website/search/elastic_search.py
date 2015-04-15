@@ -174,6 +174,7 @@ def format_result(result, parent_id=None):
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'is_retracted': result['is_retracted'],
+        'pending_retraction': result['pending_retraction'],
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
         'date_created': result.get('date_created'),
@@ -248,6 +249,7 @@ def update_node(node, index=INDEX):
             'url': node.url,
             'is_registration': node.is_registration,
             'is_retracted': getattr(node.retraction, 'is_retracted', False),
+            'pending_retraction': getattr(node.retraction, 'pending_retraction', False),
             'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,

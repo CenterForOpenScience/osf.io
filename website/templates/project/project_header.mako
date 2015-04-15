@@ -83,6 +83,10 @@
     </style>
 % endif
 
+% if node['is_registration'] and node['pending_retraction']:
+    <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a retracted state.</div>
+% endif
+
 % if node['is_registration'] and node['is_retracted']:
     <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
 % endif

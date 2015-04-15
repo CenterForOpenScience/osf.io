@@ -37,9 +37,6 @@
             </div>
             <button type="submit" class="btn btn-danger" data-bind="click: submit, visible: true">Retract Registration</button>
 
-            <hr />
-            ## NOTE(hrybacki): knockout viewmodel dump for testing purposes
-            <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
         </form>
     </div>
 
