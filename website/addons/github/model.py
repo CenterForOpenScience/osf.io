@@ -172,49 +172,11 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         self.repo = None
         return super(GitHubNodeSettings, self).clear_auth()
 
-    # def set_target_repo(self, repo, mendeley_list_name, auth):
-    #     """Configure this addon to point to a github repo
-    #
-    #     :param str repo:
-    #     :param ExternalAccount external_account:
-    #     :param User user:
-    #     """
-    #
-    #     # Tell the user's addon settings that this node is connecting
-    #     self.user_settings.grant_oauth_access(
-    #         node=self.owner,
-    #         external_account=self.external_account,
-    #         metadata={'repo': repo}
-    #     )
-    #     self.user_settings.save()
-    #
-    #     # update this instance
-    #     self.repo = repo
-    #     self.save()
-    #
-    #     self.owner.add_log(
-    #         'repo_selected',
-    #         params={
-    #             'project': self.owner.parent_id,
-    #             'node': self.owner._id,
-    #             'repo': repo,
-    #             'folder_name': mendeley_list_name,
-    #         },
-    #         auth=auth,
-    #     )
-
     def delete(self, save=False):
         super(GitHubNodeSettings, self).delete(save=False)
         self.deauthorize(save=False, log=False)
         if save:
             self.save()
-
-    @property
-    def repo_url(self):
-        if self.user and self.repo:
-            return 'https://github.com/{0}/{1}/'.format(
-                self.user, self.repo
-            )
 
     def serialize_water_butler_credentials(self):
         if not self.complete or not self.repo:

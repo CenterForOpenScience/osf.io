@@ -27,9 +27,6 @@ from website.addons.github.tests.factories import (
 )
 from website.addons.github import model
 
-
-
-
 mock_github = create_mock_github()
 
 
