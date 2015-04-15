@@ -17,6 +17,7 @@ from website.project.decorators import (
 )
 from website.util import rubeus
 
+from website.models import Node
 from website.models import NodeLog
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
@@ -270,14 +271,16 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
 @must_be_signed
 @utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
-def osf_storage_copy(payload, node_addon, **kwargs):
+def osf_storage_copy_hook(payload, node_addon, **kwargs):
     src_path = payload.get('src_path')
     dest_path = payload.get('dest_path')
+    dest_node = Node.load(payload.get('dest_nid'))
+    dest_node_addon = dest_node.get_addon('osfstorage')
 
-    if not (src_path or dest_path):
+    if not (src_path or dest_path or dest_node or dest_node_addon):
         raise HTTPError(httplib.BAD_REQUEST)
 
-    created, copied = model.OsfStorageFileNode.get(src_path, node_addon).copy_to_path(dest_path)
+    created, copied = model.OsfStorageFileNode.get(src_path, node_addon).copy_to_path(dest_path, dest_node_addon=dest_node_addon)
 
     return created.serialized(), httplib.CREATED if created else httplib.OK
 
@@ -285,17 +288,14 @@ def osf_storage_copy(payload, node_addon, **kwargs):
 @must_be_signed
 @utils.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
-def osf_storage_move(payload, node_addon, **kwargs):
+def osf_storage_move_hook(payload, node_addon, **kwargs):
+    import ipdb; ipdb.set_trace()
     src_path = payload.get('src_path')
     dest_path = payload.get('dest_path')
 
     if not (src_path or dest_path):
         raise HTTPError(httplib.BAD_REQUEST)
 
-    src_node = model.OsfStorageFileNode.get(src_path, node_addon)
-    if len(dest_path.strip('/').split('/')) == 1:
-        dest_node = model.OsfStorageFileNode.get(dest_path, node_addon)
-    else:
-        created, dest_node = model.OsfStorageFileNode.create_child_by_path(src_node, node_addon)
+    created, copied = model.OsfStorageFileNode.get(src_path, node_addon).move_to_path(dest_path)
 
-    dest_node
+    return created.serialized(), httplib.CREATED if created else httplib.OK
