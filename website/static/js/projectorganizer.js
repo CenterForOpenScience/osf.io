@@ -172,12 +172,12 @@ function saveExpandState(item, callback) {
     var collapseUrl,
         postAction,
         expandUrl;
-    if (!item.apiURL) {
+    if (!item.urls.api) {
         return;
     }
     if (item.expand) {
         // turn to false
-        collapseUrl = item.apiURL + 'collapse/';
+        collapseUrl = item.urls.api + 'collapse/';
         postAction = $osf.postJSON(collapseUrl, {});
         postAction.done(function () {
             item.expand = false;
@@ -187,7 +187,7 @@ function saveExpandState(item, callback) {
         }).fail($osf.handleJSONError);
     } else {
         // turn to true
-        expandUrl = item.apiURL + 'expand/';
+        expandUrl = item.urls.api + 'expand/';
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
             item.expand = false;
@@ -307,7 +307,7 @@ function _showProjectDetails(event, item, col) {
             }
         });
         $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
-            var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
+            var getChildrenURL = theItem.urls.api + 'get_folder_pointers/',
                 children;
             $.getJSON(getChildrenURL, function (data) {
                 children = data;
@@ -437,7 +437,7 @@ function _showProjectDetails(event, item, col) {
             }
         });
         $('#rename-node-button' + theItem.node_id).click(function () {
-            var url = theItem.apiURL + 'edit/',
+            var url = theItem.urls.api + 'edit/',
                 postAction,
                 postData = {
                     name: 'title',
@@ -1081,7 +1081,7 @@ function dropLogic(event, items, folder) {
         getAction;
     if (typeof folder !== 'undefined' && !folder.data.isSmartFolder && folder !== null && folder.data.isFolder) {
         theFolderNodeID = folder.data.node_id;
-        getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
+        getChildrenURL = folder.data.urls.api + 'get_folder_pointers/';
         sampleItem = items[0];
         itemParent = sampleItem.parent();
         itemParentNodeID = itemParent.data.node_id;
