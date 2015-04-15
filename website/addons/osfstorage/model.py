@@ -72,6 +72,16 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     def serialize_waterbutler_settings(self):
         ret = {
+            'copy': self.owner.api_url_for(
+                'osf_storage_copy_hook',
+                _absolute=True,
+                _offload=True
+            ),
+            'move': self.owner.api_url_for(
+                'osf_storage_move_hook',
+                _absolute=True,
+                _offload=True
+            ),
             'callback': self.owner.api_url_for(
                 'osf_storage_update_metadata_hook',
                 _absolute=True,
