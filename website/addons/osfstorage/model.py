@@ -355,16 +355,19 @@ class OsfStorageFileNode(StoredObject):
         if log:
             self.log(auth, NodeLog.FILE_ADDED if self.is_file else NodeLog.FOLDER_CREATED)
 
-    def serialized(self):
+    def serialized(self, include_full=False):
         """Build Treebeard JSON for folder or file.
         """
-        return {
+        data = {
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
             'version': len(self.versions),
             'downloads': self.get_download_count(),
         }
+        if include_full:
+            data['fullPath'] = self.materialized_path()
+        return data
 
     def copy_to_path(self, path, dest_node_addon=None, auth=None, log=True):
         try:
