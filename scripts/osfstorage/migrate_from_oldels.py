@@ -73,20 +73,31 @@ def migrate_file(node, old, parent, dry=True):
     migrate_download_counts(node, old, new, dry=dry)
 
 
+LOG_ACTIONS = set([
+    'osf_storage_file_added',
+    'osf_storage_file_updated',
+    'osf_storage_file_removed',
+    'osf_storage_file_restored',
+    'file_added',
+    'file_updated',
+    'file_removed',
+    'file_restored',
+])
 def migrate_log(node, old, new, dry=True):
     res = NodeLog.find(
         (
             Q('params.node', 'eq', node._id) |
             Q('params.project', 'eq', node._id)
         ) &
-        Q('params.path', 'eq', old.path) &
-        Q('action', 'istartswith', 'osf_storage_file')
+        Q('params.path', 'eq', old.path)
     )
 
-    if res.count():
-        logger.info('Migrating {} logs for {!r} in {!r}'.format(res.count(), old, node))
+    res = [each for each in res if each.action in LOG_ACTIONS]
+
+    if res:
+        logger.info('Migrating {} logs for {!r} in {!r}'.format(len(res), old, node))
     else:
-        logger.debug('No logs to migrate for {!r} in {!r}'.format(res.count(), old, node))
+        logger.debug('No logs to migrate for {!r} in {!r}'.format(len(res), old, node))
 
     for log in res:
         if dry:
