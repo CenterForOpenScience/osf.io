@@ -12,13 +12,13 @@ figshare in {{ nodeType }}
 </script>
 
 <script type="text/html" id="figshare_content_linked">
-linked figshare project <span data-bind="text: params.figshare.title"></span> to
+linked figshare project /<span data-bind="text: params.figshare.title"></span> to
 <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="figshare_content_unlinked">
-unlinked figshare project <span data-bind="text: params.figshare.title"></span> from
+unlinked figshare project /<span data-bind="text: params.figshare.title"></span> from
 <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>

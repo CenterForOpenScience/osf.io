@@ -73,7 +73,8 @@ utils.loadMore = function(vm) {
             url: '/api/v1/share/search/?' + $.param({
                 from: page,
                 q: utils.buildQuery(vm),
-                sort: sort
+                sort: sort,
+                v: 1
             })
         }).then(function(data) {
             vm.resultsLoading(false);

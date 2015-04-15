@@ -27,7 +27,7 @@
                 "text": "GitHub content cannot be registered."
             }
         },
-        "Amazon Simple Storage Service": {
+        "Amazon S3": {
             "Permissions": {
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of making an S3 bucket public or private. The OSF does not alter the permissions of linked S3 buckets."

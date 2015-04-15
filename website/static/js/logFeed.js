@@ -90,7 +90,7 @@ var LogsViewModel = oop.extend(Paginator, {
         self.tzname = ko.pureComputed(function() {
             var logs = self.logs();
             if (logs.length) {
-                var tz =  moment(logs[0].date).format('ZZ');
+                var tz =  moment(logs[0].date.date).format('ZZ');
                 return tz;
             }
             return '';

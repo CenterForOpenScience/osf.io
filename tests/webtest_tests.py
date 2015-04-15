@@ -8,12 +8,10 @@ import mock
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from modularodm import Q
-
 from framework.mongo.utils import to_mongo_key
 
 from framework.auth import exceptions as auth_exc
-from framework.auth.core import User, Auth
+from framework.auth.core import Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,
@@ -28,7 +26,6 @@ from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
 from website.util import web_url_for
-from website.addons.twofactor.tests import _valid_code
 
 
 class TestDisabledUser(OsfTestCase):
