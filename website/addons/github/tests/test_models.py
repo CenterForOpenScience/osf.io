@@ -422,6 +422,8 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
         self.user_settings = self.user.get_or_add_addon('github')
         self.node_settings.user_settings = self.user_settings
 
+
+
     def tearDown(self):
         super(GitHubNodeSettingsTestCase, self).tearDown()
         self.user_settings.remove()

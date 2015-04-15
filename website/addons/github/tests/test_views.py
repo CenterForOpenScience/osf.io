@@ -284,6 +284,30 @@ class TestGithubViews(OsfTestCase):
 
         assert_equals(ret.json, {'repo_names': ['{0} / {1}'.format(repo.owner.login, repo.name) for repo in fake_repos]})
 
+    @mock.patch('website.addons.github.api.GitHub.create_repo')
+    @mock.patch('website.addons.github.api.GitHub.repos')
+    @mock.patch('website.addons.github.api.GitHub.my_org_repos')
+    def test_create_repo(self, mock_my_org_repos, mock_repos, mock_repo):
+        fake_name = fake.domain_word()
+        mock_repo.return_value = MockGithubRepo(name=fake_name, owner=MockGithubOwner())
+
+        fake_repos = [
+            MockGithubRepo(name=fake.domain_word(), owner=MockGithubOwner())
+            # for i in range(10)
+        ]
+        mock_repos.return_value = fake_repos
+
+        ret = self.app.post_json(
+            self.project.api_url_for('github_create_repo'),
+            {
+                'external_account_id': self.account._id,
+                'repo_name': fake_name,
+            },
+            auth=self.user.auth,
+
+        )
+        assert_equals(ret.json['repos'], ['{0} / {1}'.format(repo.owner.login, repo.name) for repo in fake_repos])
+
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
         github_mock = self.github
         if mock_branches is None:

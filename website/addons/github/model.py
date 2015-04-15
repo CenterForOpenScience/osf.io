@@ -171,41 +171,40 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         self.repo = None
         return super(GitHubNodeSettings, self).set_auth(*args, **kwargs)
 
-
     def clear_auth(self):
         self.repo = None
         return super(GitHubNodeSettings, self).clear_auth()
 
-    def set_target_repo(self, repo, mendeley_list_name, auth):
-        """Configure this addon to point to a github repo
-
-        :param str repo:
-        :param ExternalAccount external_account:
-        :param User user:
-        """
-
-        # Tell the user's addon settings that this node is connecting
-        self.user_settings.grant_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'repo': repo}
-        )
-        self.user_settings.save()
-
-        # update this instance
-        self.repo = repo
-        self.save()
-
-        self.owner.add_log(
-            'repo_selected',
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'repo': repo,
-                'folder_name': mendeley_list_name,
-            },
-            auth=auth,
-        )
+    # def set_target_repo(self, repo, mendeley_list_name, auth):
+    #     """Configure this addon to point to a github repo
+    #
+    #     :param str repo:
+    #     :param ExternalAccount external_account:
+    #     :param User user:
+    #     """
+    #
+    #     # Tell the user's addon settings that this node is connecting
+    #     self.user_settings.grant_oauth_access(
+    #         node=self.owner,
+    #         external_account=self.external_account,
+    #         metadata={'repo': repo}
+    #     )
+    #     self.user_settings.save()
+    #
+    #     # update this instance
+    #     self.repo = repo
+    #     self.save()
+    #
+    #     self.owner.add_log(
+    #         'repo_selected',
+    #         params={
+    #             'project': self.owner.parent_id,
+    #             'node': self.owner._id,
+    #             'repo': repo,
+    #             'folder_name': mendeley_list_name,
+    #         },
+    #         auth=auth,
+    #     )
 
     def delete(self, save=False):
         super(GitHubNodeSettings, self).delete(save=False)
@@ -220,7 +219,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
                 self.user, self.repo
             )
 
-    def serialize_waterbutler_credentials(self):
+    def serialize_water_butler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')
         return {'token': self.api.account.oauth_key}
@@ -378,45 +377,45 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
                 ).format(url=url)
             #
             return message
-
-    def after_set_privacy(self, node, permissions):
-        """
-
-        :param Node node:
-        :param str permissions:
-        :return str: Alert message
-
-        """
-        if not github_settings.SET_PRIVACY:
-            return
-
-        connect = GitHub.from_settings(self.api.account)
-
-        data = connect.set_privacy(
-            self.user, self.repo, permissions == 'private'
-        )
-        if data is None or 'errors' in data:
-            repo = connect.repo(self.user, self.repo)
-            if repo is not None:
-                current_privacy = 'private' if repo.private else 'public'
-            else:
-                current_privacy = 'unknown'
-            return (
-                'Could not set privacy for repo {user}::{repo}. '
-                'Current privacy status is {perm}.'.format(
-                    user=self.user,
-                    repo=self.repo,
-                    perm=current_privacy,
-                )
-            )
-
-        return (
-            'GitHub repo {user}::{repo} made {perm}.'.format(
-                user=self.user,
-                repo=self.repo,
-                perm=permissions,
-            )
-        )
+    #
+    # def after_set_privacy(self, node, permissions):
+    #     """
+    #
+    #     :param Node node:
+    #     :param str permissions:
+    #     :return str: Alert message
+    #
+    #     """
+    #     if not github_settings.SET_PRIVACY:
+    #         return
+    #
+    #     connect = GitHub.from_settings(self.api.account)
+    #
+    #     data = connect.set_privacy(
+    #         self.user, self.repo, permissions == 'private'
+    #     )
+    #     if data is None or 'errors' in data:
+    #         repo = connect.repo(self.user, self.repo)
+    #         if repo is not None:
+    #             current_privacy = 'private' if repo.private else 'public'
+    #         else:
+    #             current_privacy = 'unknown'
+    #         return (
+    #             'Could not set privacy for repo {user}::{repo}. '
+    #             'Current privacy status is {perm}.'.format(
+    #                 user=self.user,
+    #                 repo=self.repo,
+    #                 perm=current_privacy,
+    #             )
+    #         )
+    #
+    #     return (
+    #         'GitHub repo {user}::{repo} made {perm}.'.format(
+    #             user=self.user,
+    #             repo=self.repo,
+    #             perm=permissions,
+    #         )
+    #     )
 
     def before_fork(self, node, user):
         """
