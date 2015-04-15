@@ -66,7 +66,7 @@ function FileViewTreebeard(data) {
         lazyLoadOnLoad: function(tree, event) {
             var tb = this;
             Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree, event);
-            Fangorn.Utils.findCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
+            Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
             // Do not scroll if user toggles a folder (mouseclick event)
             if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
