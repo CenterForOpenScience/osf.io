@@ -3,7 +3,6 @@ import json
 import httplib as http
 
 from flask import request
-from flask import redirect
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
