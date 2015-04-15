@@ -222,7 +222,7 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
     def test_public_parent_title(self):
-        self.project.set_title('hello &amp; world',self.consolidate_auth)
+        self.project.set_title('hello &amp; world', self.consolidate_auth)
         self.project.save()
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
@@ -379,10 +379,10 @@ class TestPublicNodes(SearchTestCase):
 
     def test_count_aggregation(self):
         docs = query("*")['counts']
-        assert_equal(docs['total'], 4)
-        assert_equal(docs['project'], 1)
-        assert_equal(docs['component'], 1)
-        assert_equal(docs['registration'], 1)
+        assert_equal(docs['total']['value'], 4)
+        assert_equal(docs['project']['value'], 1)
+        assert_equal(docs['component']['value'], 1)
+        assert_equal(docs['registration']['value'], 1)
 
 
 

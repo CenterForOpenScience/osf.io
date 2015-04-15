@@ -96,26 +96,60 @@ def get_counts(count_query, clean=True):
     category_agg = {
         'categories': {
             'terms': {
-                'field': 'category'
+                'field': 'descriptor'
             }
         }
     }
+    is_node = {
+        'type': {
+            'value': 'node'
+        }
+    }
+    not_registration = {
+        'term': {
+            'is_registration': False
+        }
+    }
+
     aggs = {
         'project': {
             'filter': {
-                'not': {
-                    'term': {
-                        'is_registration': True
+                'and': [
+                    is_node,
+                    not_registration,
+                    {
+                        'term': {
+                            'category': 'project'
+                        }
                     }
-                }
+                ]
+            },
+            'aggs': category_agg
+        },
+        'component': {
+            'filter': {
+                'and': [
+                    is_node,
+                    not_registration,
+                    {
+                        'term': {
+                            'category': 'component'
+                        }
+                    }
+                ]
             },
             'aggs': category_agg
         },
         'registration': {
             'filter': {
-                'term': {
-                    'is_registration': True
-                }
+                'and': [
+                    is_node,
+                    {
+                        'term': {
+                            'is_registration': True
+                        }
+                    }
+                ]
             },
             'aggs': category_agg
         },
@@ -257,17 +291,15 @@ def load_parent(parent_id):
 @requires_search
 def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
-
-    # component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
-    category = node.category  # 'component' if node.category in component_categories else node.category
-
-    '''
+    component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
+    category = 'component' if node.category in component_categories else node.category
     if category == 'project':
         elastic_document_id = node._id
         parent_id = None
         category = 'registration' if node.is_registration else category
     else:
-    '''
+        category = 'component'
+
     try:
         elastic_document_id = node._id
         parent_id = node.parent_id
@@ -299,6 +331,7 @@ def update_node(node, index=INDEX):
             'title': node.title,
             'normalized_title': normalized_title,
             'category': category,
+            'descriptor': node.category,
             'is_registration': node.is_registration,
             'is_node': True,
             'public': node.is_public,
@@ -394,8 +427,7 @@ def create_index(index=INDEX):
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=INDEX):
-    category = 'registration' if node.is_registration else node.project_or_component
-    es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
+    es.delete(index=index, doc_type='node', id=elastic_document_id, refresh=True, ignore=[404])
 
 
 @requires_search
