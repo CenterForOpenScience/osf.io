@@ -187,7 +187,7 @@ class OsfStorageFileNode(StoredObject):
     @classmethod
     def get_file(cls, path, node_settings):
         return cls.find_one(
-            Q('_id', 'eq', path) &
+            Q('_id', 'eq', path.strip('/')) &
             Q('kind', 'eq', 'file') &
             Q('node_settings', 'eq', node_settings)
         )
