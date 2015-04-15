@@ -241,9 +241,9 @@ MEETING_DATA = {
         'public_projects': True,
     },
     'MADSSCi2015': {
-        'name': 'Mid-Atlantic Directors and Staff of Scientific Cores 2015',
+        'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2015',
         'info_url': 'http://madssci.abrf.org',
-        'logo_url': 'http://madssci.abrf.org/sites/default/files/madssci-logo-bk.png',
+        'logo_url': 'http://s24.postimg.org/qtc3baefp/2015madssci_seasr.png',
         'active': True,
         'admins': [],
         'public_projects': True,
@@ -274,7 +274,8 @@ def populate_conferences():
                 setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
-            print('Changed: {}'.format(changed_fields))
+            if changed_fields:
+                print('Changed: {}'.format(changed_fields))
 
 
 if __name__ == '__main__':
