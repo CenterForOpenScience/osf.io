@@ -71,7 +71,24 @@ api_routes = {
             views.osf_storage_crud_hook_delete,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/project/<pid>/osfstorage/hooks/move/',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/move',
+            ],
+            'post',
+            views.osf_storage_move_hook,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/osfstorage/hooks/move/',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/move/',
+            ],
+            'post',
+            views.osf_storage_copy_hook,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/osfstorage/hooks/crud/',
