@@ -192,12 +192,6 @@ var ViewModel = function(params) {
         self.search();
     };
 
-    /** Takes current search string and moves all tags into AND or NOT bins
-     * /\((.*?)\)/;*/
-    self.simplify = function() {
-
-    }
-
     self.submit = function() {
         $('#searchPageFullBar').blur().focus();
         self.searchStarted(false);
