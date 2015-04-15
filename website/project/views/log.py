@@ -55,16 +55,6 @@ def _get_logs(node, count, auth, link=None, page=0):
         serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
         for log in logs_set[start:stop]
     ]
-    '''
-    while count < stop:
-        log = logs_set[index]
-        if include_log(log, node, auth):
-            logs.append(
-                serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
-            )
-            count = count + 1
-        index = index + 1
-    '''
     pages = math.ceil(total / float(count))
     return logs, total, pages
 
