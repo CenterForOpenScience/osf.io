@@ -59,9 +59,19 @@ def node_register_page(auth, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_public_registration
 def node_registration_retraction_get(auth, **kwargs):
-    """Prepares node object for registration retraction page."""
+    """Prepares node object for registration retraction page.
+
+    :return: serialized Node to be retracted
+    :raises: 400: BAD_REQUEST if registration already pending retraction
+    """
 
     node = kwargs['node'] or kwargs['project']
+    if node.retraction.pending_retraction:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'This registration is already pending a retraction.'
+        })
+
     return serialize_node(node, auth, primary=True)
 
 @must_be_valid_project

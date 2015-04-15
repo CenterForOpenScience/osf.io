@@ -218,7 +218,11 @@
                         justification or explanation of the retraction, should you wish to provide it. Retracted
                         registrations will be marked with a <strong>retracted</strong> tag.
                     </div>
-                    <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
+                    %if not node['pending_retraction']:
+                        <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
+                    % else:
+                        <p><strong>This registration is already pending a retraction.</strong></p>
+                    %endif
 
 
                 </div>

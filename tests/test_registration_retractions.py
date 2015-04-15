@@ -149,9 +149,21 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.save()
 
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
+        self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
 
-    def test_retract_private_registration_raises_400(self):
+    def test_GET_retraction_page_when_pending_retraction_raises_400(self):
+        self.registration.retract_registration(self.admin_user)
+        self.registration.save()
+
+        res = self.app.get(
+            self.retraction_get_url,
+            auth=self.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    def test_POST_retraction_to_private_registration_raises_400(self):
         self.registration.is_public = False
         self.registration.save()
 
@@ -165,14 +177,14 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
-    def test_non_admin_retract_raises_401(self):
+    def test_POST_retraction_by_non_admin_retract_raises_401(self):
         res = self.app.post_json(self.retraction_post_url, expect_errors=True)
 
         assert_equals(res.status_code, 401)
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
-    def test_retract_without_justification_raises_200(self):
+    def test_POST_retraction_without_justification_raises_200(self):
         res = self.app.post_json(
             self.retraction_post_url,
              {'justification': ''},
