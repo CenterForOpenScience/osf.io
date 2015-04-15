@@ -161,6 +161,11 @@ class OsfStorageFileNode(StoredObject):
 
     @classmethod
     def get(cls, path, node_settings):
+        path = path.strip('/')
+
+        if not path:
+            return node_settings.root_node
+
         return cls.find_one(
             Q('_id', 'eq', path) &
             Q('node_settings', 'eq', node_settings)
@@ -168,6 +173,11 @@ class OsfStorageFileNode(StoredObject):
 
     @classmethod
     def get_folder(cls, path, node_settings):
+        path = path.strip('/')
+
+        if not path:
+            return node_settings.root_node
+
         return cls.find_one(
             Q('_id', 'eq', path) &
             Q('kind', 'eq', 'folder') &
