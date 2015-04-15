@@ -519,13 +519,11 @@ function createFolder(event, parent, col) {
     function redraw() {
         self.modal.update(m('div', [
             m('h3.break-word', 'Enter a folder name'),
-            m('form', {onsubmit: doCreate}, [
-                m('input.form-control[autofocus][type=text]', {
-                    placeholder: 'Folder Name',
-                    onchange: m.withAttr('value', folderName),
-                    disabled: creatingFolder() ? 'disabled' : '',
-                })
-            ])
+            m('input.form-control[autofocus][type=text]', {
+                placeholder: 'Folder Name',
+                onkeyup: m.withAttr('value', folderName),
+                disabled: creatingFolder() ? 'disabled' : '',
+            })
         ]), (function() {
             return m('div', [
                 m('span.pull-left.text-danger', errorMessage()),
