@@ -456,10 +456,6 @@ $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototy
  * Custom observable for use with external services.
  */
 var extendLink = function(obs, $parent, label, baseUrl) {
-//    console.log("obs is " + obs);
-//    console.log("$parent is " + $parent);
-//    console.log("label is " + label);
-//    console.log("baseUrl is " + baseUrl);
     
     obs.url = ko.computed(function($data, event) {
         // Prevent click from submitting form
@@ -472,7 +468,6 @@ var extendLink = function(obs, $parent, label, baseUrl) {
         }
         return '';
     });
-//    console.log("obs.url is " + obs.url);
 
     obs.hasAddon = ko.computed(function() {
         return $parent.addons()[label] !== undefined;
@@ -492,6 +487,7 @@ var SocialViewModel = function(urls, modes) {
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
     var i;
+    self.profileWebsiteTrackValues = [];
 
     self.addons = ko.observableArray();
   
@@ -507,6 +503,12 @@ var SocialViewModel = function(urls, modes) {
         }),
         self, 'Profile Websites'
     );
+    
+    self.profileWebsiteTrackValues.push(ko.computed(function() {
+        return {label: 'Profile Websites', text: self.profileWebsites()[0], value: self.profileWebsites()[0].url}
+        }
+    ));
+
 
     console.log("self.profileWebsites()[0].url is " + self.profileWebsites()[0].url);
     
@@ -518,25 +520,6 @@ var SocialViewModel = function(urls, modes) {
         return self.profileWebsites().length > 1;
     });
     
-    self.removeWebsite = function(profileWebsite) {
-        var idx = self.profileWebsites.indexOf(profileWebsite);
-        self.profileWebsites.splice(idx, 1);
-        console.log("self.profileWebsites is " + self.profileWebsites());
-    }
-
-     self.addWebsite = function(profileWebsite) {
-        var nextItemIndex = self.profileWebsites().length;
-        this.profileWebsites.push(extendLink(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-            ko.observable().extend({
-                trimmed: true,
-                    url: true,
-                ensureHttp: true
-        }),
-        this, 'Profile Websites')
-        );
-    }
 
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
@@ -585,6 +568,9 @@ var SocialViewModel = function(urls, modes) {
     });
     self.hasValidProperty(true);
 
+    
+ 
+        
     self.values = ko.computed(function() {
         return [
 //            {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
@@ -610,7 +596,34 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
+        self.removeWebsite = function(profileWebsite) {
+        var idx = self.profileWebsites.indexOf(profileWebsite);
+        self.profileWebsites.splice(idx, 1);
+        console.log("self.profileWebsites is " + self.profileWebsites());
+    }
+
+     self.addWebsite = function(profileWebsite) {
+        var nextItemIndex = self.profileWebsites().length;
+        this.profileWebsites.push(extendLink(
+        // Note: Apply extenders in reverse order so that `ensureHttp` is
+        // applied before `url`.
+            ko.observable().extend({
+                trimmed: true,
+                    url: true,
+                ensureHttp: true
+        }),
+        this, 'Profile Websites')
+        );
+        self.profileWebsiteTrackValues.push(
+            ko.computed(function() {
+                return {label: 'Profile Websites', text: self.profileWebsites()[nextItemIndex], value: self.profileWebsites()[0].url}
+            }
+        ));
+
+    }    
+    
     self.fetch();
+    
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
