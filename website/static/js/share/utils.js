@@ -70,10 +70,11 @@ utils.loadMore = function(vm) {
         m.request({
             method: 'get',
             background: true,
-            url: '/api/v1/share/?' + $.param({
+            url: '/api/v1/share/search/?' + $.param({
                 from: page,
                 q: utils.buildQuery(vm),
-                sort: sort
+                sort: sort,
+                v: 1
             })
         }).then(function(data) {
             vm.resultsLoading(false);
@@ -199,24 +200,12 @@ utils.loadStats = function(vm){
         url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
         background: true
     }).then(function(data) {
-        var unload;
-        if (vm.statsData){
-            unload = $.map(vm.statsData.charts.shareDonutGraph.columns, function(datum) {
-                return datum[0];
-            });
-        } else {
-            unload = [];
-        }
         vm.statsData = data;
         $.map(Object.keys(vm.graphs), function(type) {
             if(type === 'shareDonutGraph') {
                 var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
                 $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
-                vm.statsData.charts.shareDonutGraph.columns = vm.statsData.charts[type].columns.filter(function(datum) {
-                    return (datum[1] > 0);
-                });
             }
-            vm.statsData.charts[type].unload = unload;
             vm.graphs[type].load(vm.statsData.charts[type]);
         }, utils.errorState.bind(this, vm));
         vm.statsLoaded(true);

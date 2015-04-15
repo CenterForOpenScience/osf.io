@@ -62,6 +62,9 @@ function timeGraph (data) {
         },
         legend: {
             show: false
+        },
+        tooltip: {
+          grouped: false
         }
     });
 }
@@ -71,14 +74,14 @@ Stats.view = function(ctrl) {
         m('.row.search-helper', {style: {color: 'darkgrey'}},
             m('.col-xs-12.col-lg-8.col-lg-offset-2', [
                 m('.col-md-4', m('p.text-center', ctrl.vm.latestDate ? utils.formatNumber(ctrl.vm.totalCount) + ' events as of ' + new Date().toDateString() : '')),
-                m('.col-md-4', m('p.text-center', (ctrl.vm.query() && ctrl.vm.query().length > 0) ? 'Found ' + utils.formatNumber(ctrl.vm.count) + ' events in ' + ctrl.vm.time + ' seconds' : '')),
+                m('.col-md-4', m('p.text-center.font-thick', (ctrl.vm.query() && ctrl.vm.query().length > 0) ? 'Found ' + utils.formatNumber(ctrl.vm.count) + ' events in ' + ctrl.vm.time + ' seconds' : '')),
                 m('.col-md-4', m('p.text-center', ctrl.vm.providers + ' content providers'))
             ])
         ),
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('.row', ctrl.vm.statsData ? [
+                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
                         m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
                         m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
                     ] : [])
@@ -125,7 +128,7 @@ Stats.controller = function(vm) {
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/?size=1',
+        url: '/api/v1/share/search/?size=1&v=1',
     }).then(function(data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;

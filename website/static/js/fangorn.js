@@ -10,11 +10,11 @@ var m = require('mithril');
 var URI = require('URIjs');
 var Treebeard = require('treebeard');
 
-var $osf = require('./osfHelpers');
-var waterbutler = require('./waterbutler');
+var $osf = require('js/osfHelpers');
+var waterbutler = require('js/waterbutler');
 
 // CSS
-require('../css/fangorn.css');
+require('css/fangorn.css');
 
 var tbOptions;
 
