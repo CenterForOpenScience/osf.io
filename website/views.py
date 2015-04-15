@@ -152,7 +152,6 @@ def get_dashboard(auth, nid=None, **kwargs):
         else:
             data = serializer.serialize(node)['children']
 
-
     return_value = {'data': [serialize(item) for item in data]}
     return_value['timezone'] = user.timezone
     return_value['locale'] = user.locale
