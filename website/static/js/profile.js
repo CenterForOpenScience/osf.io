@@ -192,6 +192,9 @@ TrackedMixin.prototype.restoreOriginal = function () {
 
 var BaseViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
+//    console.log("urls is " + JSON.stringify(urls));
+//    console.log("modes is " + modes);
+//    console.log("preventUnsaved is " + JSON.stringify(preventUnsaved));
 
     self.urls = urls;
     self.modes = modes || ['view'];
@@ -210,7 +213,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     if (preventUnsaved !== false) {
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
-                return 'There are unsaved changes to your settings.';
+                return 'You have unsaved changes.  Please click "Submit" or "Cancel" before leaving the page.';
             }
         });
     }
@@ -218,8 +221,8 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     // Warn on tab change if dirty
     $('body').on('show.bs.tab', function() {
         if (self.dirty()) {
-            $osf.growl('There are unsaved changes to your settings.',
-                    'Please save or discard your changes before switching ' +
+            $osf.growl('You have unsaved changes.',
+                    'Please click "Submit" or "Cancel" before switching ' +
                     'tabs.');
             return false;
         }
@@ -287,6 +290,7 @@ BaseViewModel.prototype.dirty = function() { return false; };
 
 BaseViewModel.prototype.fetch = function(callback) {
     var self = this;
+//    console.log("this.urls.crud is " + this.urls.crud);
     callback = callback || noop;
     $.ajax({
         type: 'GET',
@@ -452,14 +456,23 @@ $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototy
  * Custom observable for use with external services.
  */
 var extendLink = function(obs, $parent, label, baseUrl) {
+//    console.log("obs is " + obs);
+//    console.log("$parent is " + $parent);
+//    console.log("label is " + label);
+//    console.log("baseUrl is " + baseUrl);
+    
     obs.url = ko.computed(function($data, event) {
         // Prevent click from submitting form
+//    console.log("$data is " + $data);
+//    console.log("event is " + event);
+        
         event && event.preventDefault();
         if (obs()) {
             return baseUrl ? baseUrl + obs() : obs();
         }
         return '';
     });
+//    console.log("obs.url is " + obs.url);
 
     obs.hasAddon = ko.computed(function() {
         return $parent.addons()[label] !== undefined;
@@ -492,10 +505,11 @@ var SocialViewModel = function(urls, modes) {
                 url: true,
             ensureHttp: true
         }),
-        self, 'ProfileWebsites'
+        self, 'Profile Websites'
     );
 
-
+    console.log("self.profileWebsites()[0].url is " + self.profileWebsites()[0].url);
+    
     self.hasMultiple = ko.computed(function() {
         return self.profileWebsites().length > 1;
     });
