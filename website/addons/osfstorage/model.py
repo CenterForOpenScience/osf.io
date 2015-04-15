@@ -387,9 +387,9 @@ class OsfStorageFileNode(StoredObject):
             dest_path, new_name = path, self.name
 
         if not dest_path.strip('/'):
-            raise Exception
-
-        dest_node = self.__class__.get(dest_path, dest_node_addon or self.node_settings)
+            dest_node = self.node_settings.root_node
+        else:
+            dest_node = self.__class__.get(dest_path, dest_node_addon or self.node_settings)
 
         self.name = new_name
         self.parent = dest_node
