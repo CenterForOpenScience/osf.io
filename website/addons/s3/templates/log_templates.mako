@@ -10,7 +10,7 @@ bucket
 <script type="text/html" id="s3_folder_created">
 created folder
 <span class="overflow log-folder">{{ params.path }}</span> in
-bucket in {{ nodeType }}
+bucket {{ params.bucket }} in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
