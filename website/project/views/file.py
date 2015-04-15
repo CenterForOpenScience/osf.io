@@ -10,8 +10,9 @@ from framework.render.tasks import ensure_path, old_build_rendered_html
 
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
-from website.project.views.node import _view_project
 from website import settings
+from website.project.views.node import _view_project
+
 
 @must_be_contributor_or_public
 def collect_file_trees(**kwargs):
