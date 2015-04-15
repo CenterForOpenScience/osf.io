@@ -356,7 +356,7 @@ class OsfStorageFileNode(StoredObject):
             'downloads': self.get_download_count(),
         }
 
-    def copy_to_path(self, path, log=True):
+    def copy_to_path(self, path, dest_node_addon=None, auth=None, log=True):
         try:
             dest_path, new_name = path.strip('/').split('/')
         except ValueError:
@@ -365,7 +365,7 @@ class OsfStorageFileNode(StoredObject):
         if not dest_path.strip('/'):
             dest_node = self.node_settings.root_node
         else:
-            dest_node = self.__class__.get(dest_path, self.node_settings)
+            dest_node = self.__class__.get(dest_path, dest_node_addon or self.node_settings)
 
         # try:
         #     new_node = dest_node.find_child_by_name(new_name, kind=self.kind)
@@ -379,6 +379,22 @@ class OsfStorageFileNode(StoredObject):
         new_node.save()
 
         return True, new_node
+
+    def move_to_path(self, path, dest_node_addon=None, auth=None, log=True):
+        try:
+            dest_path, new_name = path.strip('/').split('/')
+        except ValueError:
+            dest_path, new_name = path, self.name
+
+        if not dest_path.strip('/'):
+            raise Exception
+
+        dest_node = self.__class__.get(dest_path, dest_node_addon or self.node_settings)
+
+        self.name = new_name
+        self.parent = dest_node
+        self.save()
+        return False, self
 
     def __repr__(self):
         return '<{}(name={!r}, node_settings={!r})>'.format(
