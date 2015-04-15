@@ -148,6 +148,7 @@ function _fangornLazyLoadOnLoad (tree, event) {
         Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
     });
     Fangorn.Utils.findCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
+    // Do not scroll if user toggles a folder (mouseclick event)
     if(!event){
         Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
     }

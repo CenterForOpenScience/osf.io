@@ -67,7 +67,8 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree, event);
             Fangorn.Utils.findCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-            if(!event) { 
+            // Do not scroll if user toggles a folder (mouseclick event)
+            if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
         },
