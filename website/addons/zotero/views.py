@@ -66,7 +66,6 @@ def zotero_add_user_auth(auth, node_addon, **kwargs):
     """Allows for importing existing auth to ZoteroNodeSettings """
 
     provider = ZoteroCitationsProvider()
-    import ipdb; ipdb.set_trace()
     external_account_id = request.get_json().get('external_account_id')
     return provider.add_user_auth(node_addon, auth.user, external_account_id)
 

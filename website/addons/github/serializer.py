@@ -1,5 +1,4 @@
 from website.addons.base.serializer import OAuthAddonSerializer
-from website.util import web_url_for
 from website.util import api_url_for, web_url_for
 
 

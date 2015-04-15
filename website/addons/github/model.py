@@ -22,8 +22,6 @@ from website.addons.github import serializer
 from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
 
 from website.oauth.models import ExternalProvider
-from website.oauth.decorators import api_call
-
 from .serializer import GitHubSerializer
 
 
@@ -160,7 +158,6 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
     @property
     def provider_name(self):
         return 'github'
-
 
     @property
     def is_private(self):

@@ -31,8 +31,6 @@ class Zotero(ExternalProvider):
     _client = None
 
     def handle_callback(self, response):
-        import ipdb; ipdb.set_trace()
-
         return {
             'display_name': response['username'],
             'provider_id': response['userID'],

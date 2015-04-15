@@ -10,7 +10,6 @@ from framework.exceptions import HTTPError
 from website.addons.base.exceptions import HookError
 
 from website.addons.github.api import GitHub
-from website.util import rubeus, web_url_for
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {

@@ -1,24 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
-import itertools
 
 from flask import request
 
 from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
-# from website.addons.github.utils import serialize_urls
 from website.addons.github.utils import get_repo_dropdown
 from website.addons.github.serializer import GitHubSerializer
 
 from ..api import GitHub
-
-
 
 @must_be_logged_in
 def github_get_user_accounts(auth):
@@ -28,13 +23,10 @@ def github_get_user_accounts(auth):
     user_settings = auth.user.get_addon('github')
     return GitHubSerializer(user_settings=user_settings).serialized_user_settings
 
-
 @must_have_permission('write')
 @must_have_addon('github', 'node')
 @must_not_be_registration
 def github_set_config(node_addon, **kwargs):
-
-
     auth = kwargs['auth']
     user = auth.user
 
@@ -103,9 +95,9 @@ def github_set_config(node_addon, **kwargs):
         node_addon.save()
 
     return GitHubSerializer(
-            node_settings=node_addon,
-            user_settings=auth.user.get_addon('github'),
-        ).serialized_node_settings
+        node_settings=node_addon,
+        user_settings=auth.user.get_addon('github'),
+    ).serialized_node_settings
 
 @must_have_addon('github', 'node')
 @must_have_permission('read')
@@ -138,4 +130,3 @@ def github_repo_list(auth, node_addon, **kwargs):
 #     connection = GitHub.from_settings(node_addon.api.account)
 #
 #     connection.set_privacy(github.user, github.repo, private)
-
