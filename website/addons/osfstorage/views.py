@@ -22,6 +22,7 @@ from website.models import NodeLog
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
+from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
 
 
@@ -268,34 +269,15 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     return folder.serialized(), httplib.CREATED
 
 
-@must_be_signed
-@utils.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_copy_hook(payload, node_addon, **kwargs):
-    src_path = payload.get('src_path')
-    dest_path = payload.get('dest_path')
-    dest_node = Node.load(payload.get('dest_nid'))
-    dest_node_addon = dest_node.get_addon('osfstorage')
+@decorators.waterbutler_opt_hook
+def osf_storage_copy_hook(source, destination, node_addon, **kwargs):
+    created, copied = model.OsfStorageFileNode.get(source['path'], node_addon).copy_to_path(destination['source'])
 
-    if not (src_path or dest_path or dest_node or dest_node_addon):
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    created, copied = model.OsfStorageFileNode.get(src_path, node_addon).copy_to_path(dest_path, dest_node_addon=dest_node_addon)
-
-    return created.serialized(), httplib.CREATED if created else httplib.OK
+    return copied.serialized(), httplib.CREATED if created else httplib.OK
 
 
-@must_be_signed
-@utils.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_move_hook(payload, node_addon, **kwargs):
-    import ipdb; ipdb.set_trace()
-    src_path = payload.get('src_path')
-    dest_path = payload.get('dest_path')
+@decorators.waterbutler_opt_hook
+def osf_storage_move_hook(source, destination, node_addon, **kwargs):
+    created, copied = model.OsfStorageFileNode.get(source['path'], node_addon).move_to_path(destination['path'])
 
-    if not (src_path or dest_path):
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    created, copied = model.OsfStorageFileNode.get(src_path, node_addon).move_to_path(dest_path)
-
-    return created.serialized(), httplib.CREATED if created else httplib.OK
+    return copied.serialized(), httplib.CREATED if created else httplib.OK
