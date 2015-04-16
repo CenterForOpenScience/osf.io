@@ -58,12 +58,9 @@ var SlideInViewModel = function (){
     };
     // Google Analytics click event tracking
     self.trackClick = function(source) {
-        if (source === 'Create Account') {
-            window.location = '/#signUp';
-        } else if (source === 'Learn More') {
-            window.location = '/getting-started/';
-        }
         window.ga('send', 'event', 'button', 'click', source);
+        //in order to make the href redirect work under knockout onclick binding
+        return true;
     };
 };
 
