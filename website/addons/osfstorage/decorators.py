@@ -13,6 +13,8 @@ from website.project.decorators import (
 )
 
 
+USER_ARG = Arg(None, required=True, dest='user', use=User.from_cookie, validate=lambda x: x is not None)
+
 class JSONParser(core.Parser):
     def __init__(self, data):
         self._data = data
