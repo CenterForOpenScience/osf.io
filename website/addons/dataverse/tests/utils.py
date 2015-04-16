@@ -41,7 +41,6 @@ def create_mock_connection(token='snowman-frosty'):
     mock_connection = mock.create_autospec(Connection)
 
     mock_connection.token = token
-    mock_connection.connected = True
 
     mock_connection.get_dataverses.return_value = [
         create_mock_dataverse('Example 1'),

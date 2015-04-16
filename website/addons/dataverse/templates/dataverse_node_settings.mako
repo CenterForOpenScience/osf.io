@@ -111,7 +111,13 @@
     <!-- Input Credentials-->
     <form data-bind="if: showInputCredentials">
         <div class="form-group">
-            <label for="apiToken">API Token</label>
+            <label for="apiToken">
+                API Token
+                <a href="{{urls().apiToken}}"
+                   target="_blank" class="text-muted addon-external-link">
+                    (Get from Dataverse <i class="fa fa-external-link-square"></i>)
+                </a>
+            </label>
             <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
         </div>
         <!-- Submit button for input credentials -->

@@ -19,7 +19,13 @@
             Your dataverse credentials may not be valid. Please re-enter your API token.
         </div>
         <div class="form-group">
-            <label for="apiToken">API Token</label>
+            <label for="apiToken">
+                API Token
+                <a href="{{urls().apiToken}}"
+                   target="_blank" class="text-muted addon-external-link">
+                    (Get from Dataverse <i class="fa fa-external-link-square"></i>)
+                </a>
+            </label>
             <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
         </div>
         <button data-bind="click: sendAuth" class="btn btn-success">

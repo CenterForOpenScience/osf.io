@@ -3,6 +3,7 @@ import httplib as http
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from website.addons.dataverse.client import connect_from_settings_or_401
+from website.addons.dataverse.settings import HOST
 from website.project import decorators
 from website.util import api_url_for
 
@@ -49,6 +50,7 @@ def dataverse_user_config_get(user_addon, auth, **kwargs):
     urls = {
         'create': api_url_for('dataverse_set_user_config'),
         'delete': api_url_for('dataverse_delete_user'),
+        'apiToken': 'https://{0}/account/apitoken'.format(HOST),
     }
     return {
         'result': {
