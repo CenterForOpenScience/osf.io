@@ -194,15 +194,16 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         }
     },
     removeEmail: function (email) {
-        this.changeMessage('', 'text-info');
-        if (this.profile().emails().indexOf(email) !== -1) {
+        var self = this;
+        self.changeMessage('', 'text-info');
+        if (self.profile().emails().indexOf(email) !== -1) {
             bootbox.confirm({
                 title: 'Remove Email?',
                 message: 'Are you sure that you want to remove ' + '<em><b>' + email.address() + '</b></em>' + ' from your email list?',
                 callback: function (confirmed) {
                     if (confirmed) {
-                        this.profile().emails.remove(email);
-                        this.client.update(this.profile()).done(function () {
+                        self.profile().emails.remove(email);
+                        self.client.update(self.profile()).done(function () {
                             $osf.growl('Email Removed', '<em>' + email.address() + '<em>', 'success');
                         });
                     }
