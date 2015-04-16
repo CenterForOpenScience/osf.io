@@ -2,6 +2,7 @@
 
 import logging
 import operator
+import httplib
 import httplib as http
 import os
 
@@ -108,6 +109,9 @@ def update_user(auth):
                             for x in data['emails']]
         ]
 
+        if user.username in removed_emails:
+            raise HTTPError(httplib.FORBIDDEN)
+
         for address in removed_emails:
             if address in user.emails:
                 user.remove_email(address)
@@ -140,14 +144,17 @@ def update_user(auth):
             (
                 each for each in data['emails']
                 # email is primary
-                if each.get('primary')
+                if each.get('primary') and each.get('confirmed')
                 # an address is specified (can't trust those sneaky users!)
                 and each.get('address')
             )
         )
 
         if primary_email:
-            username = primary_email['address'].strip().lower()
+            primary_email_address = primary_email['address'].strip().lower()
+            if primary_email_address not in user.emails:
+                raise HTTPError(httplib.FORBIDDEN)
+            username = primary_email_address
 
         # make sure the new username has already been confirmed
         if username and username in user.emails and username != user.username:

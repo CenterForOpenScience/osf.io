@@ -309,7 +309,7 @@ function NodeControl (selector, data, options) {
 
 NodeControl.prototype.init = function() {
     var self = this;
-    $.osf.applyBindings(self.viewModel, self.$element[0]);
+    osfHelpers.applyBindings(self.viewModel, this.selector);
 };
 
 module.exports = {
