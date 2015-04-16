@@ -38,7 +38,7 @@ ALIASES = {
     '': 'Uncategorized',
     'project': 'Project',
     'hypothesis': 'Hypothesis',
-    'methods and measures': 'Methods and Measures',
+    'methods_and_measures': 'Methods and Measures',
     'procedure': 'Procedure',
     'instrumentation': 'Instrumentation',
     'data': 'Data',
@@ -85,10 +85,10 @@ def requires_search(func):
         raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
     return wrapped
 
-def get_subcategory_counts(subcats):
+def get_subcategory_counts(key, subcats):
     if not subcats:
         return []
-    return [{cat['key']: cat['doc_count']} for cat in subcats['buckets']]
+    return [{cat['key']: cat['doc_count']} for cat in subcats['buckets'] if not key == cat['key']]
 
 
 @requires_search
@@ -110,7 +110,6 @@ def get_counts(count_query, clean=True):
             'is_registration': False
         }
     }
-
     aggs = {
         'project': {
             'filter': {
@@ -123,8 +122,7 @@ def get_counts(count_query, clean=True):
                         }
                     }
                 ]
-            },
-            'aggs': category_agg
+            }
         },
         'component': {
             'filter': {
@@ -168,7 +166,7 @@ def get_counts(count_query, clean=True):
     counts = {
         key: {
             'value': value['doc_count'],
-            'subcategories': get_subcategory_counts(value.get('categories')) or [],
+            'subcategories': get_subcategory_counts(key, value.get('categories')) or [],
         }
         for key, value in res['aggregations'].iteritems()
     }
@@ -240,7 +238,7 @@ def format_results(results):
     ret = []
     for result in results:
         if result.get('category') == 'user':
-            result['url'] = '/profile/' + result['id']
+            result['url'] = '/profile/' + result['id'] + '/'
         elif result.get('is_node'):
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
@@ -331,7 +329,7 @@ def update_node(node, index=INDEX):
             'title': node.title,
             'normalized_title': normalized_title,
             'category': category,
-            'descriptor': node.category,
+            'descriptor': ['_'.join(node.category.split(' ')), category],
             'is_registration': node.is_registration,
             'is_node': True,
             'public': node.is_public,
