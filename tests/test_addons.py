@@ -419,13 +419,12 @@ class TestAddonFileViews(OsfTestCase):
         super(TestAddonFileViews, self).setUp()
         self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
         self.test_app = webtest.TestApp(self.flask_app)
-        self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
-        self.test_app = webtest.TestApp(self.flask_app)
         self.account = GitHubAccountFactory()
         self.user = AuthUserFactory(external_accounts=[self.account])
         self.user_settings = self.user.get_or_add_addon('github')
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('github', Auth(self.user))
+
         self.node_addon = self.project.get_addon('github')
         self.node_addon.user_settings = self.user_settings
         self.node_addon.set_auth(external_account=self.account, user=self.user)
@@ -433,6 +432,7 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.repo = 'Sheer-Heart-Attack'
         self.node_addon.save()
         self.user_settings.save()
+
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
@@ -599,23 +599,23 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 401)
 
-    # def test_unconfigured_addons_raise(self):
-    #     path = 'cloudfiles'
-    #     self.node_addon.repo = None
-    #     self.node_addon.save()
-    #
-    #     resp = self.app.get(
-    #         self.project.api_url_for(
-    #             'addon_render_file',
-    #             path=path,
-    #             provider='github',
-    #             action='download'
-    #         ),
-    #         auth=self.user.auth,
-    #         expect_errors=True
-    #     )
-    #
-    #     assert_equals(resp.status_code, 400)
+    def test_unconfigured_addons_raise(self):
+        path = 'cloudfiles'
+        self.node_addon.repo = None
+        self.node_addon.save()
+
+        resp = self.app.get(
+            self.project.api_url_for(
+                'addon_render_file',
+                path=path,
+                provider='github',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
 
 
 class TestLegacyViews(OsfTestCase):
