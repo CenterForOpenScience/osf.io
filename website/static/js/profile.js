@@ -45,6 +45,9 @@ SerializeMixin.prototype.unserialize = function(data) {
     $.each(data || {}, function(key, value) {
         if (ko.isObservable(self[key])) {
             self[key](value);
+//            console.log("self[key] is " + ko.toJS(JSON.stringify(self)));
+
+            
             // Ensure that validation errors are displayed
             self[key].notifySubscribers();
         }
@@ -269,7 +272,6 @@ BaseViewModel.prototype.handleSuccess = function() {
 BaseViewModel.prototype.handleError = function(response) {    
     var defaultMsg = 'Could not update settings';
     var msg;
-    console.log("response is " + JSON.stringify(response));
     if (typeof response.responseJSON != "undefined") {
         msg = response.responseJSON.message_long
     }
@@ -290,7 +292,6 @@ BaseViewModel.prototype.dirty = function() { return false; };
 
 BaseViewModel.prototype.fetch = function(callback) {
     var self = this;
-//    console.log("this.urls.crud is " + this.urls.crud);
     callback = callback || noop;
     $.ajax({
         type: 'GET',
@@ -487,7 +488,6 @@ var SocialViewModel = function(urls, modes) {
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
     var i;
-    self.profileWebsiteTrackValues = [];
 
     self.addons = ko.observableArray();
   
@@ -504,14 +504,7 @@ var SocialViewModel = function(urls, modes) {
         self, 'Profile Websites'
     );
     
-    self.profileWebsiteTrackValues.push(ko.computed(function() {
-        return {label: 'Profile Websites', text: self.profileWebsites()[0], value: self.profileWebsites()[0].url}
-        }
-    ));
 
-
-    console.log("self.profileWebsites()[0].url is " + self.profileWebsites()[0].url);
-    
     self.hasMultiple = ko.computed(function() {
         return self.profileWebsites().length > 1;
     });
@@ -563,17 +556,36 @@ var SocialViewModel = function(urls, modes) {
     ];
 
     var validated = ko.validatedObservable(self);
+ 
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
     self.hasValidProperty(true);
 
-    
+    self.addWebsite = function(profileWebsite) {
+        var nextItemIndex = self.profileWebsites().length;
+        this.profileWebsites.push(extendLink(
+        // Note: Apply extenders in reverse order so that `ensureHttp` is
+        // applied before `url`.
+            ko.observable().extend({
+                trimmed: true,
+                    url: true,
+                ensureHttp: true
+        }),
+        this, 'Profile Websites')
+        );
  
+    }    
+    
+    self.removeWebsite = function(profileWebsite) {
+        var idx = self.profileWebsites.indexOf(profileWebsite);
+        self.profileWebsites.splice(idx, 1);
+    }
+
+
         
     self.values = ko.computed(function() {
         return [
-//            {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
             {label: 'Profile Websites', text: self.profileWebsites(), value: self.profileWebsites()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
@@ -596,34 +608,7 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
-        self.removeWebsite = function(profileWebsite) {
-        var idx = self.profileWebsites.indexOf(profileWebsite);
-        self.profileWebsites.splice(idx, 1);
-        console.log("self.profileWebsites is " + self.profileWebsites());
-    }
-
-     self.addWebsite = function(profileWebsite) {
-        var nextItemIndex = self.profileWebsites().length;
-        this.profileWebsites.push(extendLink(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-            ko.observable().extend({
-                trimmed: true,
-                    url: true,
-                ensureHttp: true
-        }),
-        this, 'Profile Websites')
-        );
-        self.profileWebsiteTrackValues.push(
-            ko.computed(function() {
-                return {label: 'Profile Websites', text: self.profileWebsites()[nextItemIndex], value: self.profileWebsites()[0].url}
-            }
-        ));
-
-    }    
-    
     self.fetch();
-    
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
