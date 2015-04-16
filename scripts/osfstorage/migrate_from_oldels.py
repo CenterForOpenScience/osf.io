@@ -188,8 +188,9 @@ def main(nworkers, worker_id, dry=True, catchup=True):
             continue
 
         try:
-            migrate_node_settings(node_settings, dry=dry)
-            migrate_children(node_settings, dry=dry)
+            with TokuTransaction():
+                migrate_node_settings(node_settings, dry=dry)
+                migrate_children(node_settings, dry=dry)
             count += 1
             progress_bar.update(count)
         except Exception as error:
