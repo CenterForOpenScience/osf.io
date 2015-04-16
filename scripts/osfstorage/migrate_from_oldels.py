@@ -111,10 +111,7 @@ def migrate_file(node, old, parent, dry=True):
 
 
 def migrate_logs(node, children, dry=True):
-    res = list(NodeLog.find(
-        Q('params.node', 'eq', node._id) |
-        Q('params.project', 'eq', node._id)
-    ))
+    res = list(NodeLog.find(Q('params.node', 'eq', node._id)))
 
     for log in res:
         if log.action not in LOG_ACTIONS:
