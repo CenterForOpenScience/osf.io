@@ -41,6 +41,7 @@ def migrate_download_counts(node, children, dry=True):
 
     for old_path, new in children.items():
         if dry:
+            # Note in dry mode new is None
             new_id = ':'.join(['download', node._id, 'new_id'])
             old_id = ':'.join(['download', node._id, old_path])
         else:
