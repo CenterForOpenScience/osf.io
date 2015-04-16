@@ -462,7 +462,7 @@ class TestWikiViews(OsfTestCase):
     @mock.patch('website.addons.wiki.model.wiki_updates')
     def test_subscribed_wiki_changed_updates_called(self, mock_wiki_updates):
         time_now = datetime.utcnow()
-        subscribe_wiki_changed('other', self.project, self.user, version=2, timestamp=time_now)
+        subscribe_wiki_changed(self.project, 'other', self.user, version=2, timestamp=time_now)
         path = '/project/' + self.project._id + '/wiki/other/'
         mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now, add={'compare': '1', 'view': '2'},
                                              user=self.user, path=path,
@@ -555,7 +555,7 @@ class TestWikiDelete(OsfTestCase):
     def test_subscribed_wiki_deleted_updates_called(self, mock_wiki_updates):
         time_now = datetime.utcnow()
         user = AuthUserFactory()
-        subscribe_wiki_deleted('other', self.project, user, timestamp=time_now)
+        subscribe_wiki_deleted(self.project, 'other', user, timestamp=time_now)
         path = '/project/' + self.project._id + '/wiki/home/'
         mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now,
                                              user=user, path=path,
@@ -717,11 +717,11 @@ class TestWikiRename(OsfTestCase):
     def test_subscribed_wiki_renamed_updates_called(self, mock_wiki_updates):
         time_now = datetime.utcnow()
         user = AuthUserFactory()
-        subscribe_wiki_renamed('other', self.project, user, new_name='other2', timestamp=time_now)
+        subscribe_wiki_renamed(self.project, 'other', user, new_name='other2', timestamp=time_now)
         path = '/project/' + self.project._id + '/wiki/other2/'
         mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now,
                                              user=user, path=path,
-                                             message=u'renamed <strong>"other"</strong> to <strong>"other2"</strong>')
+                                             message='renamed <strong>"other"</strong> to <strong>"other2"</strong>')
 
 
 class TestWikiLinks(OsfTestCase):

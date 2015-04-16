@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
 from datetime import datetime
 import functools
 import logging
@@ -76,32 +77,31 @@ def wiki_updates(node, user, **context):
 
 
 @wiki_deleted.connect
-def subscribe_wiki_deleted(name, node, user, **kwargs):
-    message = u'deleted <strong>"{}"</strong>.'.format(name.decode('utf8'))
+def subscribe_wiki_deleted(node, name, user, **kwargs):
+    message = 'deleted <strong>"{}"</strong>.'.format(name)
     path = build_wiki_url(node, 'home')  # the wiki home
-    print path
     wiki_updates(node=node, user=user, path=path, message=message, **kwargs)
 
 
 @wiki_changed.connect
-def subscribe_wiki_changed(name, node, user, version=-1, **kwargs):
+def subscribe_wiki_changed(node, name, user, version=-1, **kwargs):
     path = build_wiki_url(node, name)
     add = dict()
     message = "None"
     if version == 1:
-        message = u'added <strong>"{}"</strong>.'.format(name.decode('utf8'))
+        message = 'added <strong>"{}"</strong>.'.format(name)
     elif version != 1:
         # Sends link with compare
         add = {'view': str(version), 'compare': str(version - 1)}
-        message = u'updated <strong>"{}"</strong>; it is now version {}.' \
-            .format(name.decode('utf8'), version)
+        message = 'updated <strong>"{}"</strong>; it is now version {}.' \
+            .format(name, version)
     wiki_updates(node=node, user=user, path=path, add=add, message=message, **kwargs)
 
 
 @wiki_renamed.connect
-def subscribe_wiki_renamed(name, node, user, new_name="wiki-error", **kwargs):
-    message = u'renamed <strong>"{}"</strong> to <strong>"{}"</strong>' \
-        .format(name.decode('utf8'), new_name.decode('utf8'))
+def subscribe_wiki_renamed(node, name, user, new_name="wiki-error", **kwargs):
+    message = 'renamed <strong>"{}"</strong> to <strong>"{}"</strong>' \
+        .format(name, new_name)
     path = build_wiki_url(node, new_name)  # new wiki link
     wiki_updates(node=node, user=user, path=path, message=message, **kwargs)
 
