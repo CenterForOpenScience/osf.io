@@ -15,6 +15,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
 
 from framework.mongo import database
+from framework.analytics import clean_page
 from framework.transactions.context import TokuTransaction
 
 from scripts import utils as scripts_utils
@@ -26,32 +27,57 @@ from website.addons.osfstorage import model, oldels
 logger = logging.getLogger(__name__)
 
 
-def migrate_download_counts(node, old, new, dry=True):
-    escaped_old_path = old.path.replace('.', '_').replace('$', '_')
+LOG_ACTIONS = set([
+    'osf_storage_file_added',
+    'osf_storage_file_updated',
+    'osf_storage_file_removed',
+    'osf_storage_file_restored',
+    'file_added',
+    'file_updated',
+    'file_removed',
+    'file_restored',
+])
 
-    if dry:
-        new_id = ':'.join(['download', node._id, 'new id'])
-    else:
-        new_id = ':'.join(['download', node._id, new._id])
 
-    old_id = ':'.join(['download', node._id, escaped_old_path])
-    escaped_id = ':'.join(['download', node._id, re.escape(escaped_old_path)])
+def migrate_download_counts(node, children, dry=True):
+    collection = database['pagecounters']
 
-    for doc in database.pagecounters.find({'_id': {'$regex': '^{}(:\d+)?'.format(escaped_id)}}):
-        new_doc = copy.deepcopy(doc)
-        assert old_id in doc['_id']
-        if len(doc['_id'].split(':')) < 4:
-            new_doc['_id'] = doc['_id'].replace(old_id, new_id)
+    for old_path, new in children.items():
+        if dry:
+            new_id = ':'.join(['download', node._id, 'new_id'])
+            old_id = ':'.join(['download', node._id, old_path])
         else:
-            version = int(doc['_id'].split(':')[-1])
-            assert version > 0
-            logger.debug('Decrementing version {} to {}'.format(version, version - 1))
-            new_doc['_id'] = doc['_id'].replace('{}:{}'.format(old_id, version), '{}:{}'.format(new_id, version - 1))
+            new_id = ':'.join(['download', node._id, new._id])
+            old_id = ':'.join(['download', node._id, old_path])
 
-        logger.debug('{} -> {}'.format(doc, new_doc))
+        result = collection.find_one(
+            {'_id': clean_page(old_id)},
+            {'total': 1, 'unique': 1}
+        )
+
+        if not result:
+            continue
+
+        logger.info('Copying download counts of {!r} to {!r}'.format(old_path, new))
+
         if not dry:
-            database.pagecounters.insert(new_doc)
-            database.pagecounters.remove(doc['_id'])
+            result['_id'] = new_id
+            database.pagecounters.insert(result)
+        else:
+            continue
+
+        for idx in range(len(new.versions)):
+            result = collection.find_one(
+                {'_id': clean_page('{}:{}'.format(old_id, idx + 1))},
+                {'total': 1, 'unique': 1}
+            )
+            if not result:
+                continue
+
+            logger.info('Copying download count of version {} of {!r} to version {} of {!r}'.format(idx + 1, old_path, idx, new))
+            if not dry:
+                result['_id'] = '{}:{}'.format(new_id, idx)
+                database.pagecounters.insert(result)
 
 
 def migrate_node_settings(node_settings, dry=True):
@@ -59,6 +85,7 @@ def migrate_node_settings(node_settings, dry=True):
 
     if not dry:
         node_settings.on_add()
+
 
 def migrate_file(node, old, parent, dry=True):
     assert isinstance(old, oldels.OsfStorageFileRecord)
@@ -74,79 +101,64 @@ def migrate_file(node, old, parent, dry=True):
         new.save()
     else:
         new = None
-
-    migrate_guid(node, old, new, dry=dry)
-    migrate_log(node, old, new, dry=dry)
-    migrate_download_counts(node, old, new, dry=dry)
+    return new
 
 
-LOG_ACTIONS = set([
-    'osf_storage_file_added',
-    'osf_storage_file_updated',
-    'osf_storage_file_removed',
-    'osf_storage_file_restored',
-    'file_added',
-    'file_updated',
-    'file_removed',
-    'file_restored',
-])
-def migrate_log(node, old, new, dry=True):
-    res = NodeLog.find(
-        (
-            Q('params.node', 'eq', node._id) |
-            Q('params.project', 'eq', node._id)
-        ) &
-        Q('params.path', 'eq', old.path)
-    )
-
-    res = [each for each in res if each.action in LOG_ACTIONS]
-
-    if res:
-        logger.info('Migrating {} logs for {!r} in {!r}'.format(len(res), old, node))
-    else:
-        logger.debug('No logs to migrate for {!r} in {!r}'.format(len(res), old, node))
+def migrate_logs(node, children, dry=True):
+    res = list(NodeLog.find(
+        Q('params.node', 'eq', node._id) |
+        Q('params.project', 'eq', node._id)
+    ))
 
     for log in res:
+        if log.action not in LOG_ACTIONS:
+            continue
+
         if dry:
             logger.debug('{!r} {} -> {}'.format(log, log.params['path'], 'New path'))
-        else:
-            logger.debug('{!r} {} -> {}'.format(log, log.params['path'], new.materialized_path()))
-            log.params['path'] = new.materialized_path()
-            url = node.web_url_for(
-                'addon_view_or_download_file',
-                path=new.path.strip('/'),
-                provider='osfstorage'
-            )
-            log.params['urls'] = {
-                'view': url,
-                'download': url + '?action=download'
-            }
-            log.save()
+            continue
+
+        new = children[log.params['path']]
+        mpath = new.materialized_path()
+        url = '/{}/files/osfstorage/{}/'.format(node._id, new._id),
+        logger.debug('{!r} {} -> {}'.format(log, log.params['path'], mpath))
+
+        log.params['path'] = mpath()
+        log.params['urls'] = {
+            'view': url,
+            'download': url + '?action=download'
+        }
+
+        log.save()
+
+    NodeLog._cache.clear()
 
 
-def migrate_guid(node, old, new, dry=True):
-    try:
-        guid = model.OsfStorageGuidFile.find_one(
-            Q('node', 'eq', node) &
-            Q('path', 'eq', old.path)
-        )
+def migrate_guids(node, children, dry=True):
+    for guid in model.OsfStorageGuidFile.find(Q('node', 'eq', node)):
         logger.info('Migrating file guid {}'.format(guid._id))
-    except NoResultsFound:
-        logger.debug('No guids found for {}'.format(old.path))
-        return
+        if not dry:
+            guid.path = children[guid.path].path
+            guid.save()
+    model.OsfStorageGuidFile._cache.clear()
 
-    if not dry:
-        guid.path = new.path
-        guid.save()
 
 def migrate_children(node_settings, dry=True):
     if not node_settings.file_tree:
-        logger.warning('Skipping node {}; file_tree is None'.format(node_settings.owner._id))
-        return
+        return logger.warning('Skipping node {}; file_tree is None'.format(node_settings.owner._id))
 
     logger.info('Migrating children of node {}'.format(node_settings.owner._id))
-    for child in node_settings.file_tree.children:
-        migrate_file(node_settings.owner, child, node_settings.root_node, dry=dry)
+
+    children = {
+        x.path: migrate_file(node_settings.owner, x, node_settings.root_node)
+        for x in
+        node_settings.file_tree.children
+    }
+
+    migrate_logs(node_settings.owner, children, dry=dry)
+    migrate_guids(node_settings.owner, children, dry=dry)
+    migrate_download_counts(node_settings.owner, children, dry=dry)
+    del children
 
 
 def main(nworkers, worker_id, dry=True, catchup=True):
@@ -207,5 +219,5 @@ if __name__ == '__main__':
     elif 'error' in sys.argv:
         logger.setLevel(logging.ERROR)
 
-    with init_app(set_backends=True, routes=True).test_request_context():
-        main(nworkers, worker_id, dry=dry, catchup=catchup)
+    init_app(set_backends=True, routes=False)
+    main(nworkers, worker_id, dry=dry, catchup=catchup)
