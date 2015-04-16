@@ -33,6 +33,8 @@ class OSFStorageProvider(provider.BaseProvider):
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
+        self.copy_url = settings.get('copy')
+        self.move_url = settings.get('move')
         self.callback_url = settings.get('callback')
         self.metadata_url = settings.get('metadata')
         self.revisions_url = settings.get('revisions')
@@ -70,6 +72,22 @@ class OSFStorageProvider(provider.BaseProvider):
         resp = yield from self.make_signed_request(
             'POST',
             self.move_url,
+            data=json.dumps({
+                'auth': self.auth,
+                'source': source_options,
+                'destination': dest_options
+            }),
+            headers={'Content-Type': 'application/json'},
+            expects=(200, 201)
+        )
+
+        data = yield from resp.json()
+        return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+
+    def intra_copy(self, other, source_options, dest_options):
+        resp = yield from self.make_signed_request(
+            'POST',
+            self.copy_url,
             data=json.dumps({
                 'auth': self.auth,
                 'source': source_options,
