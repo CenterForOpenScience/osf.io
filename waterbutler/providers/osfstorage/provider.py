@@ -263,12 +263,6 @@ class OSFStorageProvider(provider.BaseProvider):
             for item in (yield from resp.json())['revisions']
         ]
 
-    def can_intra_move(self, other):
-        return self.can_intra_copy(other)
-
-    def can_intra_copy(self, other):
-        return self.provider == other.provider
-
     @asyncio.coroutine
     def create_folder(self, **kwargs):
         resp = yield from self.make_signed_request(
