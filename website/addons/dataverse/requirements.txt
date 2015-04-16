@@ -1,1 +1,1 @@
--e git+https://github.com/IQSS/dataverse-client-python.git@master#egg=dataverse
+-e git+https://github.com/IQSS/dataverse-client-python.git@b6aec5bc3fd1cc3199e3c97ac9c71705b54c3d11#egg=dataverse
