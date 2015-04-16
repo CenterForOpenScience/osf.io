@@ -774,7 +774,7 @@ class TestProjectViews(OsfTestCase):
         url = project.api_url_for('view_project')
         res = self.app.get(url, auth=user.auth)
         assert_in('fork_count', res.json['node'])
-        assert_equal(1, res.json['node']['fork_count'])
+        assert_equal(0, res.json['node']['fork_count'])
 
 
 class TestEditableChildrenViews(OsfTestCase):
