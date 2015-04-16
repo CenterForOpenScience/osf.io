@@ -1228,9 +1228,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def depth(self):
         return len(self.parents)
 
-    def next_descendants(self, auth, condition=lambda auth, node: node.can_view(auth)):
+    def next_descendants(self, auth, condition=lambda auth, node: True):
         """
-        Recursively find the first set of visible descedants under a given node
+        Recursively find the first set of descedants under a given node that meet a given condition
+
+        returns a list of [(node, [children]), ...]
         """
         ret = []
 

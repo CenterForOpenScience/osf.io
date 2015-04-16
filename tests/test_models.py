@@ -1254,7 +1254,7 @@ class TestNode(OsfTestCase):
         node = NodeFactory()
         assert_equal(node.category, 'hypothesis')
         assert_true(node.node__parent)
-        assert_equal(node.logs[0].action, 'node_created')
+        assert_equal(node.logs[0].action, 'project_created')
         assert_equal(
             set(node.get_addon_names()),
             set([
@@ -1348,9 +1348,8 @@ class TestNode(OsfTestCase):
 
     def test_watch_url(self):
         url = self.node.watch_url
-        assert_equal(url, '/api/v1/project/{0}/node/{1}/watch/'
-                                .format(self.parent._primary_key,
-                                        self.node._primary_key))
+        assert_equal(url, '/api/v1/project/{0}/watch/'
+                                .format(self.node._primary_key))
 
     def test_parent_id(self):
         assert_equal(self.node.parent_id, self.parent._id)
@@ -1363,7 +1362,7 @@ class TestNode(OsfTestCase):
 
     def test_log(self):
         latest_log = self.node.logs[-1]
-        assert_equal(latest_log.action, 'node_created')
+        assert_equal(latest_log.action, 'project_created')
         assert_equal(latest_log.params, {
             'node': self.node._primary_key,
             'project': self.parent._primary_key,
