@@ -99,7 +99,7 @@ def build_addon_root(node_settings, name, permissions=None,
         permissions = {
             'view': node_settings.owner.can_view(auth),
             'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration,
-            'disk_saving_mode': DISK_SAVING_MODE
+            'disk_saving_mode': DISK_SAVING_MODE if node_settings.config.short_name == 'osfstorage' else False
         }
 
     max_size = node_settings.config.max_file_size
