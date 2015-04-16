@@ -100,17 +100,20 @@ class TestCallbacks(OsfTestCase):
     def setUp(self):
 
         super(TestCallbacks, self).setUp()
-        self.account = GitHubAccountFactory()
-        self.user = AuthUserFactory(external_accounts=[self.account])
+        self.project = ProjectFactory()
+        self.node_settings = model.GitHubNodeSettings(owner=self.project)
+        self.node_settings.save()
+        self.external_account = ExternalAccountFactory()
+
+        self.user = self.project.creator
+        self.user.external_accounts.append(self.external_account)
+        self.user.save()
         self.user_settings = self.user.get_or_add_addon('github')
-        self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('github', Auth(self.user))
-        self.node_settings = self.project.get_addon('github')
-        self.user_settings = self.project.creator.get_addon('github')
         self.node_settings.user_settings = self.user_settings
         self.node_settings.user = 'Queen'
         self.node_settings.repo = 'Sheer-Heart-Attack'
         self.node_settings.save()
+        self.user_settings.save()
         self.non_authenticator = UserFactory()
         self.consolidated_auth = Auth(self.project.creator)
         self.project.add_contributor(
@@ -179,49 +182,6 @@ class TestCallbacks(OsfTestCase):
         message = self.node_settings.before_page_load(self.project, None)
         assert_false(message)
 
-    def test_before_remove_contributor_authenticator(self):
-        message = self.node_settings.before_remove_contributor(
-            self.project, self.project.creator
-        )
-        assert_true(message)
-
-    def test_before_remove_contributor_not_authenticator(self):
-        message = self.node_settings.before_remove_contributor(
-            self.project, self.non_authenticator
-        )
-        assert_false(message)
-
-    def test_after_remove_contributor_authenticator_self(self):
-        message = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator, self.consolidated_auth
-        )
-        assert_equal(
-            self.node_settings.user_settings,
-            None
-        )
-        assert_true(message)
-        assert_not_in("You can re-authenticate", message)
-
-    def test_after_remove_contributor_authenticator_not_self(self):
-        auth = Auth(user=self.non_authenticator)
-        message = self.node_settings.after_remove_contributor(
-            self.project, self.project.creator, auth
-        )
-        assert_equal(
-            self.node_settings.user_settings,
-            None
-        )
-        assert_true(message)
-        assert_in("You can re-authenticate", message)
-
-    def test_after_remove_contributor_not_authenticator(self):
-        self.node_settings.after_remove_contributor(
-            self.project, self.non_authenticator, self.consolidated_auth
-        )
-        assert_not_equal(
-            self.node_settings.user_settings,
-            None,
-        )
 
     @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
     @mock.patch('website.addons.github.api.GitHub.set_privacy')
@@ -475,15 +435,6 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
                 external_account=external_account,
                 user=UserFactory()
             )
-
-        # user_settings was updated
-        # TODO: The call to grant_oauth_access in set_auth should be mocked
-        assert_true(
-            self.user_settings.verify_oauth_access(
-                node=self.node,
-                external_account=external_account,
-            )
-        )
 
     def test_clear_auth(self):
         self.node_settings.external_account = ExternalAccountFactory()
