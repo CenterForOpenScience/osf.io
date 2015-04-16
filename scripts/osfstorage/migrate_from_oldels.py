@@ -167,15 +167,10 @@ def migrate_children(node_settings, dry=True):
 
     logger.info('Migrating children of node {}'.format(node_settings.owner._id))
 
-    # children = {
-    #     x.path: migrate_file(node_settings.owner, x, node_settings.root_node)
-    #     for x in
-    #     node_settings.file_tree.children
-    # }
     children = {}
     for x in node_settings.file_tree.children:
         n = migrate_file(node_settings.owner, x, node_settings.root_node, dry=dry)
-        if n:
+        if n:  # not migrated yet
             children[x.path] = n
 
     migrate_logs(node_settings.owner, children, dry=dry)
