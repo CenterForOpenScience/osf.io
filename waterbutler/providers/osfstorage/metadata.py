@@ -37,7 +37,7 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
         return {
             key: self.raw[key]
             for key in
-            ('version', 'downloads', 'fullPath')
+            ('version', 'downloads')
             if key in self.raw
         }
 
