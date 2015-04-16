@@ -80,7 +80,7 @@
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">
-            <div class='col-sm-2'>
+            <div class='col-sm-2 hidden-xs'>
                 <img class="logo" src="/static/img/circle_logo.png">
             </div>
             <div class='col-sm-10 col-xs-12'>
