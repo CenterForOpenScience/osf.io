@@ -306,7 +306,7 @@ function _fangornCanDrop(treebeard, item) {
     if (canDrop === null) {
         canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
     }
-    canDrop = canDrop && window.contextVars.uploadInstruction;
+    canDrop = canDrop && window.uploadEnabled;
     return canDrop;
 }
 
@@ -643,7 +643,7 @@ function _fangornActionColumn (item, col) {
 
     // Upload button if this is a folder
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
-    if (window.contextVars.uploadInstruction && window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
+    if (window.uploadEnabled && window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             name: '',
             icon: 'fa fa-upload',
@@ -890,7 +890,7 @@ tbOptions = {
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
     title : function() {
-        if(window.contextVars.uploadInstruction) {
+        if(window.uploadEnabled) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
             if (window.File && window.FileReader) {
                 return m('p', {
