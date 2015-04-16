@@ -95,18 +95,25 @@ def update_user(auth):
     ##########
 
     if 'emails' in data:
+
+        emails_list = [x['address'].strip().lower() for x in data['emails']]
+
+        if user.username not in emails_list:
+            raise HTTPError(httplib.FORBIDDEN)
+
         # removals
         removed_emails = [
             each
             for each in user.emails + user.unconfirmed_emails
-            if each not in [x['address'].strip().lower()
-                            for x in data['emails']]
+            if each not in emails_list
         ]
 
         if user.username in removed_emails:
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
+            if address == user.username:
+                raise HTTPError(httplib.FORBIDDEN)
             if address in user.emails:
                 user.remove_email(address)
             user.remove_unconfirmed_email(address)
