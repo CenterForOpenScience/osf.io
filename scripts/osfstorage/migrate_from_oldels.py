@@ -111,7 +111,7 @@ def migrate_logs(node, children, dry=True):
         if log.action not in LOG_ACTIONS:
             continue
 
-        if log.params.get('__path') is not None and log.params.get('__urls'):
+        if log.params.get('_path') is not None and log.params.get('_urls'):
             logger.warning('Log for file {} has already been migrated'.format(log.params['path']))
             continue
 
@@ -130,8 +130,8 @@ def migrate_logs(node, children, dry=True):
         url = '/{}/files/osfstorage/{}/'.format(node._id, new._id)
         logger.debug('{!r} {} -> {}'.format(log, log.params['path'], mpath))
 
-        log.params['__path'] = mpath
-        log.params['__urls'] = {
+        log.params['_path'] = mpath
+        log.params['_urls'] = {
             'view': url,
             'download': url + '?action=download'
         }
@@ -235,27 +235,27 @@ def main(nworkers, worker_id, dry=True, catchup=True):
 
 # Migrate logs
 # db.nodelog.update({
-#   'params.__path': {'$ne': null}
+#   'params._path': {'$ne': null}
 # }, {
 #     $rename:{'params.path': 'params.premigration_path'}
 # }, {multi: true})
 
 # db.nodelog.update({
-#   'params.__path': {'$ne': null}
+#   'params._path': {'$ne': null}
 # }, {
-#     $rename:{'params.__path': 'params.path'}
+#     $rename:{'params._path': 'params.path'}
 # }, {multi: true})
 
 # db.nodelog.update({
-#   'params.__urls': {'$ne': null}
+#   'params._urls': {'$ne': null}
 # }, {
 #     $rename:{'params.urls': 'params.premigration_urls'}
 # }, {multi: true})
 
 # db.nodelog.update({
-#   'params.__urls': {'$ne': null}
+#   'params._urls': {'$ne': null}
 # }, {
-#     $rename:{'params.__urls': 'params.urls'}
+#     $rename:{'params._urls': 'params.urls'}
 # }, {multi: true})
 
 if __name__ == '__main__':

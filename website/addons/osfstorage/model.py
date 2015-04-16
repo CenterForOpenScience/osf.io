@@ -422,7 +422,7 @@ class OsfStorageGuidFile(GuidFile):
             'key_or_list': [
                 ('node', pymongo.ASCENDING),
                 ('path', pymongo.ASCENDING),
-                ('__path', pymongo.ASCENDING),
+                ('_path', pymongo.ASCENDING),
             ],
             'unique': True,
         }
