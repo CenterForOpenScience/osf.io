@@ -221,15 +221,15 @@ def main(nworkers, worker_id, dry=True, catchup=True):
 
 # Migrate file guids
 # db.osfstorageguidfile.update({
-#   '__path': {'$ne': null}
+#   '_path': {'$ne': null}
 # }, {
 #     $rename:{'path': 'premigration_path'}
 # }, {multi: true})
 
 # db.osfstorageguidfile.update({
-#   '__path': {'$ne': null}
+#   '_path': {'$ne': null}
 # }, {
-#     $rename:{'__path': 'path'}
+#     $rename:{'_path': 'path'}
 # }, {multi: true})
 
 
