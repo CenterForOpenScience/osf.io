@@ -2,6 +2,7 @@ from nose.tools import *
 
 from framework import auth
 from framework.auth import exceptions
+from framework.exceptions import PermissionsError
 from website import models
 from tests import base
 from tests.base import fake
@@ -152,3 +153,13 @@ class UserTestCase(base.OsfTestCase):
         confirmed = u.confirm_email(token)
         assert_true(confirmed)
         assert_true(u.is_confirmed)
+
+    def test_cannot_remove_primary_email_from_email_list(self):
+        with assert_raises(PermissionsError) as e:
+            self.user.remove_email(self.user.username)
+        assert_equal(e.exception.message, "Can't remove primary email")
+
+    def test_cannot_remove_primary_email_from_unconfirmed_list(self):
+        with assert_raises(PermissionsError) as e:
+            self.user.remove_unconfirmed_email(self.user.username)
+        assert_equal(e.exception.message, "Can't remove primary email")
