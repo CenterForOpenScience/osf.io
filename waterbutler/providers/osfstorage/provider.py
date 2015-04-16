@@ -60,6 +60,28 @@ class OSFStorageProvider(provider.BaseProvider):
             self.settings['storage'],
         )
 
+    def can_intra_copy(self, other):
+        return isinstance(other, self.__class__)
+
+    def can_intra_move(self, other):
+        return isinstance(other, self.__class__)
+
+    def intra_move(self, other, source_options, dest_options):
+        resp = yield from self.make_signed_request(
+            'POST',
+            self.move_url,
+            data=json.dumps({
+                'auth': self.auth,
+                'source': source_options,
+                'destination': dest_options
+            }),
+            headers={'Content-Type': 'application/json'},
+            expects=(200, 201)
+        )
+
+        data = yield from resp.json()
+        return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+
     @asyncio.coroutine
     def copy(self, dest_provider, source_options, dest_options):
         source_options['is_upload'] = False
