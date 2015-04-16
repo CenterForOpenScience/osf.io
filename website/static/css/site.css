@@ -119,7 +119,7 @@ body {
 .validationMessage { color: #A94442; }
 .customMessage { color: #ed9c28; }
 
-.hideValidation .validationMessage { display: none; }
+/* .hideValidation .validationMessage { display: none; } */
 
 
 /* Home Page */
