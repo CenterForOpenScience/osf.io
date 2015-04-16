@@ -80,3 +80,24 @@ def waterbutler_opt_hook(func):
         return func(*args, **kwargs)
     return wrapped
 
+
+@must_be_signed
+@utils.handle_odm_errors
+@must_not_be_registration
+@must_have_addon('osfstorage', 'node')
+def waterbutler_crud_hook(func):
+
+    @functools.wraps(func)
+    def wrapped(payload, *args, **kwargs):
+        kwargs.update(JSONParser(payload)).parse({
+            'cookie': USER_ARG,
+            'path': Arg(
+                None,
+                required=True,
+                dest='file_node',
+                validate=lambda x: model.OsfStorageFileNode.get(x, kwargs.get('node_addon'))
+            ),
+        })
+
+        return func(*args, **kwargs)
+    return wrapped
