@@ -58,6 +58,11 @@ var SlideInViewModel = function (){
     };
     // Google Analytics click event tracking
     self.trackClick = function(source) {
+        if (source === 'Create Account') {
+            window.location = '/#signUpScopeTop';
+        } else if (source === 'Learn More') {
+            window.location = '/getting-started/';
+        }
         window.ga('send', 'event', 'button', 'click', source);
     };
 };

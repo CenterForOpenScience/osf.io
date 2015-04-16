@@ -9,6 +9,7 @@
             <br>
             <p class="hpSubHeadOne">The Open Science Framework (OSF) supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
         </div>
+        <div id="signUpScopeTop" class="anchor"></div>
         <div id="signUpScope" class="col-sm-4 col-md-offset-1 img-rounded hpSignUp">
             <form data-bind="submit: submit">
               <div class="form-group"
@@ -104,7 +105,7 @@
     </div>
     <div class="row text-center">
         <div class="col-md-12">
-            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="/account/">Sign up.</a></p>
+            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="#signUpScopeTop">Sign up.</a></p>
             <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="/getting-started/">Learn how to build a project.</a></p>
             <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="/explore/activity/">Get inspired.</a></p>
         </div>
