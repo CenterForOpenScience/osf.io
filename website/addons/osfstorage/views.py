@@ -197,10 +197,8 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     if fileobj.is_deleted:
         raise HTTPError(httplib.GONE)
 
-    if fileobj.kind == 'file':
-        data = fileobj.serialized()
-        data['fullPath'] = fileobj.materialized_path()
-        return data
+    if fileobj.is_file:
+        return fileobj.serialized(include_full=True)
 
     return [
         child.serialized()
