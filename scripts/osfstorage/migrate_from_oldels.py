@@ -4,8 +4,6 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import re
-import copy
 import math
 import logging
 import progressbar
@@ -13,7 +11,6 @@ import progressbar
 from pymongo.errors import DuplicateKeyError
 
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
 
 from framework.mongo import database
@@ -43,6 +40,7 @@ LOG_ACTIONS = set([
 
 def migrate_download_counts(node, children, dry=True):
     collection = database['pagecounters']
+    updates = []
 
     for old_path, new in children.items():
         if dry:
@@ -52,10 +50,7 @@ def migrate_download_counts(node, children, dry=True):
             new_id = ':'.join(['download', node._id, new._id])
             old_id = ':'.join(['download', node._id, old_path])
 
-        result = collection.find_one(
-            {'_id': clean_page(old_id)},
-            {'total': 1, 'unique': 1}
-        )
+        result = collection.find_one({'_id': clean_page(old_id)})
 
         if not result:
             continue
@@ -64,27 +59,31 @@ def migrate_download_counts(node, children, dry=True):
 
         if not dry:
             result['_id'] = new_id
-            try:
-                database.pagecounters.insert(result)
-            except DuplicateKeyError:
-                logger.warn('Already migrated {!r}'.format(old_path))
-                continue
+            updates.append(result)
+            # try:
+            #     # database.pagecounters.insert(result)
+            # except DuplicateKeyError:
+            #     logger.warn('Already migrated {!r}'.format(old_path))
+            #     continue
         else:
             continue
 
         for idx in range(len(new.versions)):
-            result = collection.find_one(
-                {'_id': clean_page('{}:{}'.format(old_id, idx + 1))},
-                {'total': 1, 'unique': 1}
-            )
+            result = collection.find_one({'_id': clean_page('{}:{}'.format(old_id, idx + 1))})
             if not result:
                 continue
 
             logger.info('Copying download count of version {} of {!r} to version {} of {!r}'.format(idx + 1, old_path, idx, new))
             if not dry:
                 result['_id'] = '{}:{}'.format(new_id, idx)
-                database.pagecounters.insert(result)
+                updates.append(result)
+                # database.pagecounters.insert(result)
 
+        if dry:
+            try:
+                database.pagecounters.insert(updates, continue_on_error=True)
+            except DuplicateKeyError:
+                pass
 
 def migrate_node_settings(node_settings, dry=True):
     logger.info('Running `on add` for node settings of {}'.format(node_settings.owner._id))
