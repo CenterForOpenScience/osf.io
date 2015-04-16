@@ -285,68 +285,45 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
             messages.append(message)
             return messages
 
-    def after_set_privacy(self, node, permissions):
-        """
+    # def after_set_privacy(self, node, permissions):
+    #     """
+    #
+    #     :param Node node:
+    #     :param str permissions:
+    #     :return str: Alert message
+    #
+    #     """
+    #     if not github_settings.SET_PRIVACY:
+    #         return
+    #
+    #     connect = GitHub.from_settings(self.api.account)
+    #
+    #     data = connect.set_privacy(
+    #         self.user, self.repo, permissions == 'private'
+    #     )
+    #     if data is None or 'errors' in data:
+    #         repo = connect.repo(self.user, self.repo)
+    #         if repo is not None:
+    #             current_privacy = 'private' if repo.private else 'public'
+    #         else:
+    #             current_privacy = 'unknown'
+    #         return (
+    #             'Could not set privacy for repo {user}::{repo}. '
+    #             'Current privacy status is {perm}.'.format(
+    #                 user=self.user,
+    #                 repo=self.repo,
+    #                 perm=current_privacy,
+    #             )
+    #         )
+    #
+    #     return (
+    #         'GitHub repo {user}::{repo} made {perm}.'.format(
+    #             user=self.user,
+    #             repo=self.repo,
+    #             perm=permissions,
+    #         )
+    #     )
 
-        :param Node node:
-        :param str permissions:
-        :return str: Alert message
-
-        """
-        if not github_settings.SET_PRIVACY:
-            return
-
-        connect = GitHub.from_settings(self.api.account)
-
-        data = connect.set_privacy(
-            self.user, self.repo, permissions == 'private'
-        )
-        if data is None or 'errors' in data:
-            repo = connect.repo(self.user, self.repo)
-            if repo is not None:
-                current_privacy = 'private' if repo.private else 'public'
-            else:
-                current_privacy = 'unknown'
-            return (
-                'Could not set privacy for repo {user}::{repo}. '
-                'Current privacy status is {perm}.'.format(
-                    user=self.user,
-                    repo=self.repo,
-                    perm=current_privacy,
-                )
-            )
-
-        return (
-            'GitHub repo {user}::{repo} made {perm}.'.format(
-                user=self.user,
-                repo=self.repo,
-                perm=permissions,
-            )
-        )
-
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the GitHub add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this GitHub add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
-        )
 
     def after_fork(self, node, fork, user, save=True):
         """
