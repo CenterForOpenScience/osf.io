@@ -178,7 +178,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
         if save:
             self.save()
 
-    def serialize_water_butler_credentials(self):
+    def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')
         return {'token': self.api.account.oauth_key}
