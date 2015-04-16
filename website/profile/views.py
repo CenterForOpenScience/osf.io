@@ -18,7 +18,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
@@ -95,12 +95,17 @@ def update_user(auth):
     ##########
 
     if 'emails' in data:
+
+        emails_list = [x['address'].strip().lower() for x in data['emails']]
+
+        if user.username not in emails_list:
+            raise HTTPError(httplib.FORBIDDEN)
+
         # removals
         removed_emails = [
             each
             for each in user.emails + user.unconfirmed_emails
-            if each not in [x['address'].strip().lower()
-                            for x in data['emails']]
+            if each not in emails_list
         ]
 
         if user.username in removed_emails:
@@ -108,8 +113,14 @@ def update_user(auth):
 
         for address in removed_emails:
             if address in user.emails:
-                user.remove_email(address)
-            user.remove_unconfirmed_email(address)
+                try:
+                    user.remove_email(address)
+                except PermissionsError as e:
+                    raise HTTPError(httplib.FORBIDDEN, e.message)
+            try:
+                user.remove_unconfirmed_email(address)
+            except PermissionsError as e:
+                raise HTTPError(httplib.FORBIDDEN, e.message)
 
         # additions
         added_emails = [
