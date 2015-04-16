@@ -49,7 +49,6 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-
 html_parser = HTMLParser()
 
 logger = logging.getLogger(__name__)
@@ -678,9 +677,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
 
-    def ids_above(self, auth):
+    def ids_above(self):
         parents = self.parents
-        return {p._id for p in parents if p.can_view(auth)}
+        return {p._id for p in parents}
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -871,6 +870,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return [self.parent_node] + self.parent_node.parents
         return []
 
+    def parents_until(self, stop):
+        if self.parent_node and not stop(self.parent_node):
+            return [self.parent_node] + self.parent_node.parents
+        return []
+
     @property
     def root(self):
         if self.parent_node:
@@ -975,34 +979,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
-            # TODO NODEREFACTOR
-            #
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
 
-            #
-            if getattr(self, 'project', None):
+            # Define log fields for non-component project
+            log_action = NodeLog.PROJECT_CREATED
+            log_params = {
+                'node': self._primary_key,
+            }
 
+            if getattr(self, 'project', None):
                 # Append log to parent
                 self.project.nodes.append(self)
                 self.project.save()
-
-                # Define log fields for component
-                log_action = NodeLog.NODE_CREATED
-                log_params = {
-                    'node': self._primary_key,
-                    'project': self.project._primary_key,
-                }
-
-            else:
-
-                # Define log fields for non-component project
-                log_action = NodeLog.PROJECT_CREATED
-                log_params = {
-                    'project': self._primary_key,
-                }
+                log_params.update({'project': self.project._primary_key})
 
             # Add log with appropriate fields
             self.add_log(
@@ -1236,27 +1228,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def depth(self):
         return len(self.parents)
 
-    def next_visible_descendants(self, auth, serialize_node=None):
+    def next_descendants(self, auth, condition=lambda auth, node: node.can_view(auth)):
         """
         Recursively find the first set of visible descedants under a given node
         """
         ret = []
+
         for node in self.nodes:
-            if node.can_view(auth):
+            if condition(auth, node):
                 # base case
-                ret.append(
-                    serialize_node(node)
-                    if serialize_node
-                    else {}
-                )
+                ret.append((node, []))
             else:
-                target = (
-                    serialize_node(node)
-                    if serialize_node
-                    else {}
-                )
-                target['children'] = node.next_visible_descendants(auth, serialize_node)
-                ret.append(target)
+                ret.append((node, node.next_descendants(auth, condition)))
+        ret = [item for item in ret if item[1] or condition(auth, item[0])]  # prune empty branches
         return ret
 
     def get_descendants_recursive(self):
