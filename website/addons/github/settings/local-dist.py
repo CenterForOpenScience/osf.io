@@ -3,5 +3,5 @@
 these settings.
 """
 # Get an app key and secret at http://dev.mendeley.com/
-CLIENT_ID = 'changeme'
-CLIENT_SECRET = 'changeme'
+GITHUB_CLIENT_ID = 'changeme'
+GITHUB_CLIENT_SECRET = 'changeme'
