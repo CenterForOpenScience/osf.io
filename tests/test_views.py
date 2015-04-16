@@ -767,7 +767,6 @@ class TestProjectViews(OsfTestCase):
         project = ProjectFactory(creator=user)
         auth = Auth(project.creator)
         fork = project.fork_node(auth)
-        fork2 = project.fork_node(auth)
         project.save()
         fork.remove_node(auth)
         fork.save()
@@ -866,7 +865,7 @@ class TestChildrenViews(OsfTestCase):
 
         # self.user only has read access to this project, which project points
         # to
-        read_only_pointed =  ProjectFactory()
+        read_only_pointed = ProjectFactory()
         read_only_creator = read_only_pointed.creator
         read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
         read_only_pointed.save()
@@ -876,7 +875,6 @@ class TestChildrenViews(OsfTestCase):
         read_only = ProjectFactory()
         read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
         project.nodes.append(read_only)
-
 
         # self.user adds a pointer to read_only
         project.add_pointer(read_only_pointed, Auth(self.user))
@@ -903,7 +901,7 @@ class TestChildrenViews(OsfTestCase):
 
     def test_get_children_render_nodes_receives_auth(self):
         project = ProjectFactory(creator=self.user)
-        child = NodeFactory(project=project, creator=self.user)
+        NodeFactory(project=project, creator=self.user)
 
         url = project.api_url_for('get_children')
         res = self.app.get(url, auth=self.user.auth)

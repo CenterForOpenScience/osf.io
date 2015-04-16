@@ -1435,7 +1435,7 @@ class TestNode(OsfTestCase):
         )
         assert_equal(
             self.node.logs[-1].params, {
-                'project': self.node.parent_id,
+                'parent_node': self.node.parent_id,
                 'node': self.node._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1534,7 +1534,10 @@ class TestRemoveNode(OsfTestCase):
 
         assert_true(self.project.is_deleted)
         # parent node should have a log of the event
-        assert_equal(self.parent_project.logs[-1].action, 'node_removed')
+        assert_equal(
+            self.parent_project.get_aggregate_logs_set(self.consolidate_auth)[0].action,
+            'node_removed'
+        )
 
     def test_delete_project_log_present(self):
         self.project.remove_node(auth=self.consolidate_auth)
@@ -1739,7 +1742,7 @@ class TestProject(OsfTestCase):
     def test_log(self):
         latest_log = self.project.logs[-1]
         assert_equal(latest_log.action, 'project_created')
-        assert_equal(latest_log.params['project'], self.project._primary_key)
+        assert_equal(latest_log.params['node'], self.project._primary_key)
         assert_equal(latest_log.user, self.user)
 
     def test_url(self):
