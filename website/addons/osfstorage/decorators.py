@@ -1,11 +1,16 @@
+import httplib
 import functools
 
 from webargs import Arg
 from webargs import core
 
+from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import ValidationValueError
+from modularodm.storage.base import KeyExistsException
 from framework.auth.decorators import must_be_signed
 
 from website.models import User
+from website.addons.osfstorage import model
 from framework.exceptions import HTTPError
 from website.addons.osfstorage import utils
 from website.project.decorators import (
@@ -36,14 +41,31 @@ def path_validator(path):
 
 file_opt_args = {
     'source': Arg({
+        'cookie': USER_ARG,
         'path': Arg(str, required=True, validate=path_validator),
-        'cookie': Arg(None, required=True, use=User.from_cookie, validate=lambda x: x is not None)
     }),
     'destination': Arg({
+        'cookie': USER_ARG,
         'path': Arg(str, required=True, validate=path_validator),
-        'cookie': Arg(None, required=True, use=User.from_cookie, validate=lambda x: x is not None)
     })
 }
+
+waterbutler_crud_args = {
+    'cookie': USER_ARG,
+    'path': Arg(str, required=True, validate=path_validator),
+}
+
+
+def handle_odm_errors(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except NoResultsFound:
+            raise HTTPError(httplib.NOT_FOUND)
+        except KeyExistsException:
+            raise HTTPError(httplib.CONFLICT)
+    return wrapped
 
 
 def waterbutler_opt_hook(func):

@@ -5,10 +5,7 @@ import httplib
 import logging
 import functools
 
-
-from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
-from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
@@ -18,18 +15,6 @@ from website.addons.osfstorage import settings
 
 logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
-
-
-def handle_odm_errors(func):
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except NoResultsFound:
-            raise HTTPError(httplib.NOT_FOUND)
-        except KeyExistsException:
-            raise HTTPError(httplib.CONFLICT)
-    return wrapped
 
 
 def update_analytics(node, file_id, version_idx):
