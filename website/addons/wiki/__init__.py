@@ -1,5 +1,7 @@
-from website.addons.wiki import model
-from website.addons.wiki import routes
+from __future__ import absolute_import
+
+from . import model
+from . import routes
 
 MODELS = [model.AddonWikiNodeSettings, model.NodeWikiPage]
 NODE_SETTINGS_MODEL = model.AddonWikiNodeSettings

@@ -644,7 +644,6 @@ function _fangornActionColumn (item, col) {
             name: '',
             icon: 'fa fa-upload',
             'tooltip' : 'Upload files',
-
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
         });

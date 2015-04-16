@@ -1,11 +1,14 @@
 'use strict';
 
+require('css/search.css');
+
 var ko = require('knockout');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
 
+var iconmap = require('js/iconmap');
 var $osf = require('js/osfHelpers');
 // Enable knockout punches
 ko.punches.enableAll();
@@ -17,15 +20,7 @@ $.ajaxSetup({
 
 //https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
 
-var SubCategory = function(cat, url, aliases) {
-    var self = this;
-    self.name = Object.keys(cat)[0];
-    self.count = cat[self.name];
-    self.display = aliases[self.name];
-    self.url = url + '?category=' + self.name;
-};
-
-var Category = function(name, count, display, children, aliases) {
+var Category = function(name, count, display, opts) {
     var self = this;
 
     self.name = name;
@@ -33,13 +28,18 @@ var Category = function(name, count, display, children, aliases) {
     self.display = display;
     self.url = '';
     if (self.name !== 'total') {
-        self.url = self.name + '/';
+        self.url = 'project/';
     }
-    
-    self.children = $.map((children || []), function(c) { 
-        return new SubCategory(c, self.url, aliases);
-    });
 
+    opts = opts || {};
+    if(opts.parent) {
+        self.parent = opts.parent;
+        self.iconClass = iconmap.componentIcons[name];
+    }    
+    self.children = $.map((opts.children || []), function(c) {         
+        var childName = Object.keys(c)[0];
+        return new Category(childName, c[childName], opts.aliases[childName], {parent: self});
+    });
 };
 
 var Tag = function(tagInfo) {
@@ -76,11 +76,15 @@ var ViewModel = function(params) {
     self.appURL = self.params.appURL;
 
     self.tag = ko.observable('');
-    self.stateJustPushed = true;
-    self.query = ko.observable('');
-    self.category = ko.observable({});
     self.tags = ko.observableArray([]);
     self.tagMaxCount = ko.observable(1);
+
+    self.stateJustPushed = true;
+
+    self.query = ko.observable('');
+    self.type = ko.observable('');
+    self.category = ko.observable({});
+
     self.currentPage = ko.observable(1);
     self.totalResults = ko.observable(0);
     self.results = ko.observableArray([]);
@@ -130,25 +134,35 @@ var ViewModel = function(params) {
         return 'Page ' + self.currentPage() + ' of ' + self.totalPages();
     });
 
+    self.filters = ko.pureComputed(function() {
+        return self.type() ? {
+            term: {
+                descriptor: self.type()
+            }
+        } : {
+            match_all: {}
+        };
+    });
+
     self.queryObject = ko.pureComputed(function() {
         return {
-            'query_string': {
-                'default_field': '_all',
-                'query': self.query(),
-                'analyze_wildcard': true,
-                'lenient': true
+            query_string: {
+                default_field: '_all',
+                query: self.query(),
+                analyze_wildcard: true,
+                lenient: true
             }
         };
     });
-
-
     self.fullQuery = ko.pureComputed(function() {
         return {
-            'filtered': {
-                'query': self.queryObject()
+            filtered: {
+                query: self.queryObject(),
+                filter: self.filters()
             }
         };
     });
+};
 
 ViewModel.prototype.help = function() {
     bootbox.dialog({
@@ -169,6 +183,13 @@ ViewModel.prototype.filter = function(alias) {
     self.searchStarted(false);
     self.currentPage(1);
     self.category(alias);
+    if (alias.parent) {
+        self.type(alias.name);
+    }
+    else {
+        self.type('');
+    }
+
     if (alias.name === 'SHARE') {
         document.location = '/share/?' + $.param({
             q: self.query()
@@ -209,6 +230,50 @@ ViewModel.prototype.submit = function() {
     self.search();
 };
 
+ViewModel.prototype.sortCategories = function(a, b) {
+    if(a.name === 'total') {
+        return -1;
+    } else if (b.name === 'total') {
+        return 1;
+    }
+    return a.count >  b.count ? -1 : 1;
+};
+
+ViewModel.prototype.updateCategories = function(counts, typeAliases){
+    var self = this;
+
+    var categories = counts;
+    //Load our categories
+    $.each(categories, function(key, cat) {
+        if (cat.value === null) {
+            cat.value = 0;
+        }
+        self.categories.push(new Category(key, cat.value, typeAliases[key], {
+            children: cat.subcategories, 
+            aliases: typeAliases
+        }));
+    });
+
+    self.categories(self.categories().sort(self.sortCategories));
+
+    // If our category is named attempt to load its total else set it to the total total
+    if (self.category().name !== undefined) {
+        self.totalResults(counts[self.category().name] || 0);
+    } else {
+        self.totalResults(self.self.categories()[0].count);
+    }
+};
+
+ViewModel.prototype.updateTags = function(tags) {
+    var self = this;
+
+    // Load up our tags
+    $.each(tags, function(key, value) {
+        self.tags.push(new Tag(value));
+        self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
+    });
+};
+
 ViewModel.prototype.updateFromSearch = function(noPush, validate, data) {
     var self = this;
     //Clear out our variables
@@ -229,29 +294,8 @@ ViewModel.prototype.updateFromSearch = function(noPush, validate, data) {
         }
     });
 
-    //Load our categories
-    var categories = data.counts;
-    $.each(categories, function(key, cat) {
-        if (cat.value === null) {
-            cat.value = 0;
-        }
-        self.categories.push(new Category(key, cat.value, data.typeAliases[key], cat.subcategories, data.typeAliases));
-    });
-
-    self.categories(self.categories().sort(self.sortCategories));
-
-    // If our category is named attempt to load its total else set it to the total total
-    if (self.category().name !== undefined) {
-        self.totalResults(data.counts[self.category().name] || 0);
-    } else {
-        self.totalResults(self.self.categories()[0].count);
-    }
-
-    // Load up our tags
-    $.each(data.tags, function(key, value) {
-        self.tags.push(new Tag(value));
-        self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
-    });
+    self.updateCategories(data.counts, data.typeAliases);
+    self.updateTags(data.tags);
 
     self.searchStarted(true);
 
@@ -274,7 +318,11 @@ ViewModel.prototype.updateShareCount = function(jsonData) {
 ViewModel.prototype.search = function(noPush, validate) {
     var self = this;
 
-    var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
+    var jsonData = {
+        query: self.fullQuery(), 
+        from: self.currentIndex(),
+        size: self.resultsPerPage()
+    };
     var url = self.queryUrl + self.category().url;
 
     $osf.postJSON(url, jsonData)
@@ -342,6 +390,7 @@ ViewModel.prototype.loadState = function() {
     self.currentPage(state.page || 1);
     self.setCategory(state.filter);
     self.query(state.query || '');
+    self.type(state.filter || '');
 };
 
 //Push a new state to History
@@ -349,6 +398,7 @@ ViewModel.prototype.pushState = function() {
     var self = this;
     var state = {
         filter: '',
+        category: '',
         query: self.query(),
         page: self.currentPage(),
         scrollTop: $(window).scrollTop()
@@ -358,6 +408,12 @@ ViewModel.prototype.pushState = function() {
 
     if (self.category().name !== undefined && self.category().url !== '') {
         state.filter = self.category().name;
+        if (['project', 'registration', 'SHARE'].indexOf(self.category().name) >= 0){
+            state.category = self.category().name;
+        }
+        else {
+            state.category = 'component';
+        }
         url += ('&filter=' + self.category().name);
     }
 
@@ -372,6 +428,9 @@ ViewModel.prototype.pushState = function() {
 ViewModel.prototype.setCategory = function(cat) {
     var self = this;
     if (cat !== undefined && cat !== null && cat !== '') {
+        if (!['project', 'registration', 'SHARE'].indexOf(cat)){
+            cat = 'component';
+        }
         self.category(new Category(cat, 0, cat.charAt(0).toUpperCase() + cat.slice(1) + 's', []));
     } else {
         self.category(new Category('total', 0, 'Total', []));
@@ -392,7 +451,8 @@ function Search(selector, url, appURL) {
         query: $osf.urlParams().q,
         page: Number($osf.urlParams().page),
         scrollTop: 0,
-        filter: $osf.urlParams().filter
+        filter: $osf.urlParams().filter,
+        category: $osf.urlParams().category
     };
     //Ensure our state keeps its URL paramaters
     History.replaceState(data, 'OSF | Search', window.location.search);
