@@ -59,7 +59,7 @@ var SlideInViewModel = function (){
     // Google Analytics click event tracking
     self.trackClick = function(source) {
         if (source === 'Create Account') {
-            window.location = '/#signUpScopeTop';
+            window.location = '/#signUp';
         } else if (source === 'Learn More') {
             window.location = '/getting-started/';
         }
