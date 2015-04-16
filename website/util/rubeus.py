@@ -12,7 +12,7 @@ from framework.auth.decorators import Auth
 from website.util import paths
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
-    ALL_MY_REGISTRATIONS_NAME
+    ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 )
 
 
@@ -24,7 +24,8 @@ KIND = 'kind'
 
 DEFAULT_PERMISSIONS = {
     'view': True,
-    'edit': False
+    'edit': False,
+    'disk_saving_mode': False
 }
 
 
@@ -97,7 +98,8 @@ def build_addon_root(node_settings, name, permissions=None,
         auth = permissions
         permissions = {
             'view': node_settings.owner.can_view(auth),
-            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
+            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration,
+            'disk_saving_mode': DISK_SAVING_MODE
         }
 
     max_size = node_settings.config.max_file_size
@@ -446,6 +448,7 @@ class NodeFileCollector(object):
             'permissions': {
                 'edit': node.can_edit(self.auth) and not node.is_registration,
                 'view': can_view,
+                'disk_saving_mode': DISK_SAVING_MODE
             },
             'urls': {
                 'upload': None,
