@@ -79,7 +79,7 @@ def migrate_download_counts(node, children, dry=True):
                 updates.append(result)
                 # database.pagecounters.insert(result)
 
-        if dry:
+        if not dry:
             try:
                 database.pagecounters.insert(updates, continue_on_error=True)
             except DuplicateKeyError:
