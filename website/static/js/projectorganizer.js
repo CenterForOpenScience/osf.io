@@ -19,18 +19,8 @@ var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');    
 var $osf = require('js/osfHelpers');
+var iconmap = require('js/iconmap');
 
-var componentIcons = {
-    'hypothesis': 'fa fa-lightbulb-o',
-    'methods and measures': 'fa fa-pencil',
-    'procedure': 'fa fa-cogs',
-    'instrumentation': 'fa fa-flask',
-    'data': 'fa fa-database',
-    'analysis': 'fa fa-bar-chart',
-    'communication': 'fa fa-comment',
-    'other': 'fa fa-question',
-    '': 'fa fa-circle-thin'
-};
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
@@ -68,7 +58,7 @@ projectOrganizer.publicProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
+        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -92,7 +82,7 @@ projectOrganizer.myProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
+        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -645,28 +635,9 @@ function _poToggleCheck(item) {
  * @private
  */
 function _poResolveIcon(item) {
-    var viewLink,
-        icons = {
-            folder : 'project-organizer-icon-folder',
-            smartFolder : 'project-organizer-icon-smart-folder',
-            project : 'project-organizer-icon-project',
-            registration :  'project-organizer-icon-reg-project',
-            component :  'project-organizer-icon-component',
-            registeredComponent :  'project-organizer-icon-reg-component',
-            link :  'project-organizer-icon-pointer'
-        };
-    var componentIcons = {
-        'hypothesis': 'fa fa-lightbulb-o',
-        'methods and measures': 'fa fa-pencil',
-        'procedure': 'fa fa-cogs',
-        'instrumentation': 'fa fa-flask',
-        'data': 'fa fa-database',
-        'analysis': 'fa fa-bar-chart',
-        'communication': 'fa fa-comment',
-        'other': 'fa fa-question',
-        '': 'fa fa-circle-thin'
-    };
-    viewLink = item.data.urls.fetch;
+    var icons = iconmap.projectIcons;
+    var componentIcons = iconmap.componentIcons;
+    var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
         var iconType = icons[type];
         if (type === 'component' || type === 'registeredComponent') {            
