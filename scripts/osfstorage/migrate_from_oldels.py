@@ -10,6 +10,8 @@ import math
 import logging
 import progressbar
 
+from pymongo.errors import DuplicateKeyError
+
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
@@ -62,7 +64,11 @@ def migrate_download_counts(node, children, dry=True):
 
         if not dry:
             result['_id'] = new_id
-            database.pagecounters.insert(result)
+            try:
+                database.pagecounters.insert(result)
+            except DuplicateKeyError:
+                logger.warn('Already migrated {!r}'.format(old_path))
+                continue
         else:
             continue
 
@@ -89,13 +95,13 @@ def migrate_node_settings(node_settings, dry=True):
 
 def migrate_file(node, old, parent, dry=True):
     assert isinstance(old, oldels.OsfStorageFileRecord)
-    logger.debug('Creating new child {}'.format(old.name))
     if not dry:
         try:
             new = parent.append_file(old.name)
+            logger.debug('Created new child {}'.format(old.name))
         except KeyExistsException:
             logger.warning('{!r} has already been migrated'.format(old))
-            return
+            return parent.find_child_by_name(old.name)
         new.versions = old.versions
         new.is_deleted = old.is_deleted
         new.save()
@@ -118,12 +124,18 @@ def migrate_logs(node, children, dry=True):
             logger.debug('{!r} {} -> {}'.format(log, log.params['path'], 'New path'))
             continue
 
-        new = children[log.params['path']]
+        try:
+            new = children[log.params['path']]
+        except KeyError:
+            if not log.params['path'].startswith('/'):
+                logger.warning('Failed to migrate log with path {}'.format(log.params['path']))
+            continue
+
         mpath = new.materialized_path()
-        url = '/{}/files/osfstorage/{}/'.format(node._id, new._id),
+        url = '/{}/files/osfstorage/{}/'.format(node._id, new._id)
         logger.debug('{!r} {} -> {}'.format(log, log.params['path'], mpath))
 
-        log.params['path'] = mpath()
+        log.params['path'] = mpath
         log.params['urls'] = {
             'view': url,
             'download': url + '?action=download'
@@ -138,7 +150,13 @@ def migrate_guids(node, children, dry=True):
     for guid in model.OsfStorageGuidFile.find(Q('node', 'eq', node)):
         logger.info('Migrating file guid {}'.format(guid._id))
         if not dry:
-            guid.path = children[guid.path].path
+            try:
+                guid.path = children[guid.path].path
+            except KeyError:
+                if not guid.path.startswith('/'):
+                    raise
+                logger.warning('Already migrated {!r}'.format(guid))
+                continue
             guid.save()
     model.OsfStorageGuidFile._cache.clear()
 
@@ -149,11 +167,16 @@ def migrate_children(node_settings, dry=True):
 
     logger.info('Migrating children of node {}'.format(node_settings.owner._id))
 
-    children = {
-        x.path: migrate_file(node_settings.owner, x, node_settings.root_node)
-        for x in
-        node_settings.file_tree.children
-    }
+    # children = {
+    #     x.path: migrate_file(node_settings.owner, x, node_settings.root_node)
+    #     for x in
+    #     node_settings.file_tree.children
+    # }
+    children = {}
+    for x in node_settings.file_tree.children:
+        n = migrate_file(node_settings.owner, x, node_settings.root_node, dry=dry)
+        if n:
+            children[x.path] = n
 
     migrate_logs(node_settings.owner, children, dry=dry)
     migrate_guids(node_settings.owner, children, dry=dry)
@@ -188,9 +211,9 @@ def main(nworkers, worker_id, dry=True, catchup=True):
             continue
 
         try:
-            with TokuTransaction():
-                migrate_node_settings(node_settings, dry=dry)
-                migrate_children(node_settings, dry=dry)
+            # with TokuTransaction():
+            migrate_node_settings(node_settings, dry=dry)
+            migrate_children(node_settings, dry=dry)
             count += 1
             progress_bar.update(count)
         except Exception as error:
