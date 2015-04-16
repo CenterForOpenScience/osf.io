@@ -25,7 +25,7 @@ KIND = 'kind'
 DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False,
-    'disk_saving_mode': False
+    'diskSavingMode': False
 }
 
 
@@ -99,7 +99,7 @@ def build_addon_root(node_settings, name, permissions=None,
         permissions = {
             'view': node_settings.owner.can_view(auth),
             'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration,
-            'disk_saving_mode': DISK_SAVING_MODE if node_settings.config.short_name == 'osfstorage' else False
+            'diskSavingMode': DISK_SAVING_MODE if node_settings.config.short_name == 'osfstorage' else False
         }
 
     max_size = node_settings.config.max_file_size
@@ -448,7 +448,7 @@ class NodeFileCollector(object):
             'permissions': {
                 'edit': node.can_edit(self.auth) and not node.is_registration,
                 'view': can_view,
-                'disk_saving_mode': DISK_SAVING_MODE
+                'diskSavingMode': DISK_SAVING_MODE
             },
             'urls': {
                 'upload': None,
