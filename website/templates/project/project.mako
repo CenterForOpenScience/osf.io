@@ -5,7 +5,7 @@
     is_project = node['node_type'] == 'project'
 %>
 
-<div id="projectScope" class="scripted">
+<div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
             <div class="col-sm-6 col-md-7 cite-container">
@@ -115,16 +115,16 @@
                 <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 | Last Updated:
                 <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
-                <!-- ko if: hasIdentifiers -->
-                    <br />
+                <span data-bind="if: hasIdentifiers()" class="scripted">
+                  <br />
                     Identifiers:
                     DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
                     ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
-                <!-- /ko -->
-                <!-- ko if: canCreateIdentifiers -->
-                    <br />
+                </span>
+                <span data-bind="if: canCreateIdentifiers()" class="scripted">
+                  <br />
                     <a data-bind="click: askCreateIdentifiers">Create DOI / ARK</a>
-                <!-- /ko -->
+                </span>
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:

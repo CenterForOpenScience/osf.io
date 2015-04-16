@@ -330,12 +330,22 @@ ko.bindingHandlers.anchorScroll = {
 
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
-  * is bound to the expected element. Also shows the element if it was
-  * previously hidden.
+  * is bound to the expected element. Also shows the element (and child elements) if it was
+  * previously hidden by applying the 'scripted' CSS class.
   *
-  * Takes a ViewModel and a selector (String).
+  * Takes a ViewModel and a selector (string) or a DOM element.
   */
 var applyBindings = function(viewModel, selector) {
+    var elem, cssSelector;
+    var $elem = $(selector);
+    if (typeof(selector.nodeName) === 'string') { // dom element
+        elem = selector;
+        // NOTE: Only works with DOM elements that have an ID
+        cssSelector = '#' + elem.id;
+    } else {
+        elem = $elem[0];
+        cssSelector = selector;
+    }
     var $elem = $(selector);
     if ($elem.length === 0) {
         throw "No elements matching selector '" + selector + "'";  // jshint ignore: line
@@ -347,6 +357,10 @@ var applyBindings = function(viewModel, selector) {
     if ($elem.hasClass('scripted')){
         $elem.show();
     }
+    // Also show any child elements that have the scripted class
+    $(cssSelector + ' .scripted').each(function(elm) {
+        $(this).show();
+    })
     ko.applyBindings(viewModel, $elem[0]);
 };
 
