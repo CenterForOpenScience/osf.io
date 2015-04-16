@@ -1,1 +1,1 @@
-HOST = 'thedata.harvard.edu'    # Dataverse PRODUCTION server
+HOST = 'dataverse.harvard.edu'  # Dataverse PRODUCTION server

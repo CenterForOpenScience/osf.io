@@ -1,1 +1,1 @@
-HOST = 'dataverse-demo.iq.harvard.edu'    # Dataverse test server
+HOST = 'apitest.dataverse.org'  # Dataverse TEST server
