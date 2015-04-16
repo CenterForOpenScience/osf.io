@@ -1,6 +1,6 @@
 # GitHub application credentials
-GITHUB_CLIENT_ID = '4873a5300483f765dcdd'
-GITHUB_CLIENT_SECRET = '07cd08f2ebe92bf5fda61599af774938691d226d'
+CLIENT_ID = '4873a5300483f765dcdd'
+CLIENT_SECRET = '07cd08f2ebe92bf5fda61599af774938691d226d'
 
 # GitHub access scope
 SCOPE = ['repo']
