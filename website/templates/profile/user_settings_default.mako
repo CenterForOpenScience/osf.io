@@ -9,7 +9,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Authorized as <a href="{{ profileUrl }}"><em>{{ name }}</em></a></th>
+                <th>Authorized by <a href="{{ profileUrl }}"><em>{{ name }}</em></a></th>
                 <th><a data-bind="click: $root.askDisconnect" class="text-danger">Disconnect Account</a></th>
             </tr>
         </thead>
@@ -22,7 +22,7 @@
                 </td>
                 <td>
                     <a data-bind="click: $parent.deauthorizeNode">
-                        <i class="fa fa-times text-danger" title="Deauthorize Project"></i>
+                        <i class="fa fa-times text-danger" title="Disconnect Project"></i>
                     </a>
                 </td>
             </tr>

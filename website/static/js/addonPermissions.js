@@ -17,7 +17,7 @@ var AddonPermissionsTable = {
             var apiUrl = $(this).attr('api-url')+ addonShortName + '/config/';
             bootbox.confirm({
                 title: 'Remove addon?',
-                message: 'Are you sure you want to remove the ' + addonFullname + ' authorization from this project?',
+                message: 'Are you sure you want to disconnnect the ' + addonFullname + ' Account from this project?',
                 callback: function (confirm) {
                     if (confirm) {
                         $.ajax({
@@ -38,7 +38,7 @@ var AddonPermissionsTable = {
                             },
 
                             error: function () {
-                                $osf.growl('An error occurred, the project has not been deauthorized. ',
+                                $osf.growl('An error occurred, the Account is still connected to the project. ', 
                                     'If the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.');
                             }
                         });

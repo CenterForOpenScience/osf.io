@@ -305,18 +305,15 @@ def user_addons(auth, **kwargs):
 
     user = auth.user
 
-    ret = {}
-
-    addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
-    addons_enabled = []
-    addon_enabled_settings = []
-    user_addons_enabled = {}
-
+    ret = {
+        'addon_settings': addon_utils.get_addons_by_config_type('accounts', user),
+    }
     accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
-    ret['addon_enabled_settings'] = [addon.short_name for addon in accounts_addons]
-    ret['addon_js'] = collect_user_config_js(accounts_addons)
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret.update({
+        'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
+        'addons_js': collect_user_config_js(accounts_addons),
+        'addon_capabilities': settings.ADDON_CAPABILITIES,
+    })
     return ret
 
 @must_be_logged_in
