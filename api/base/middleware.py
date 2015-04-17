@@ -1,4 +1,5 @@
 from framework.transactions import handlers, commands
+from pymongo.errors import OperationFailure
 
 class TokuTransactionsMiddleware(object):
     """TokuMX transaction middleware."""
@@ -10,4 +11,7 @@ class TokuTransactionsMiddleware(object):
         commands.rollback()
 
     def process_response(self, request, response):
-        return handlers.transaction_after_request(response)
+        try:
+            return handlers.transaction_after_request(response)
+        except OperationFailure:
+            return response
