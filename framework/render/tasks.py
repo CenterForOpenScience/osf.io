@@ -68,13 +68,13 @@ def get_file_contents(download_url, cache_path, temp_path, public_download_url):
                 rendered_html = mfr.render(fp=temp_file, src=public_download_url).content
                 soup = BeautifulSoup(rendered_html)
                 content = soup.find('pre').contents
-                return content
             except MFRError as err:
                 # Rendered MFR error
                 rendered = render_mfr_error(err)
 
     # Cleanup when we're done
     os.remove(temp_path)
+    return content
 
 
 # TODO only allow one task at a time
