@@ -39,7 +39,7 @@ def make_error(code, message_short=None, message_long=None):
 
 
 @must_be_signed
-@utils.handle_odm_errors
+@decorators.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_download_file_hook(node_addon, payload, **kwargs):
     try:
@@ -151,7 +151,7 @@ def osf_storage_update_metadata_hook(node_addon, payload, **kwargs):
 
 
 @must_be_signed
-@utils.handle_odm_errors
+@decorators.handle_odm_errors
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
@@ -181,7 +181,7 @@ def osf_storage_crud_hook_delete(payload, node_addon, **kwargs):
 
 
 @must_be_signed
-@utils.handle_odm_errors
+@decorators.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     path = payload.get('path')
@@ -224,7 +224,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
 
 
 @must_be_signed
-@utils.handle_odm_errors
+@decorators.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
@@ -244,7 +244,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
 
 @must_be_signed
-@utils.handle_odm_errors
+@decorators.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_create_folder(payload, node_addon, **kwargs):
     path = payload.get('path')
