@@ -36,14 +36,14 @@ function donutGraph (data, vm) {
             show: false
         },
         tooltip: {
-          format: {
-            name: function (name, ratio, id, index) {
-                if (name == 'pubmed') {
-                    name = 'pubmed central'
+            format: {
+                name: function (name, ratio, id, index) {
+                    if (name == 'pubmed') {
+                        name = 'pubmed central'
+                    }
+                    return name; 
                 }
-                return name; 
             }
-          }
         }
     });
 }
@@ -74,7 +74,15 @@ function timeGraph (data) {
             show: false
         },
         tooltip: {
-          grouped: false
+            grouped: false,
+            format: {
+              name: function (name, ratio, id, index) {
+                  if (name == 'pubmed') {
+                      name = 'pubmed central'
+                  }
+                  return name; 
+              }
+            }
         }
     });
 }
