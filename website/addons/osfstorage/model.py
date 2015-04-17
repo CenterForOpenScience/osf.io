@@ -510,3 +510,14 @@ class OsfStorageFileNode(StoredObject):
     @property
     def path(self):
         return '/{}{}'.format(self._id, '/' if self.kind == 'folder' else '')
+
+    def get_download_count(self, version=None):
+        """
+        :param int version: Optional one-based version index
+        """
+        parts = ['download', self.node_settings.owner._id, self._id]
+        if version is not None:
+            parts.append(version)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
+        return count or 0
