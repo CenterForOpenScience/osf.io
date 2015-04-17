@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
 def iso8601format(dt):
     """Given a datetime object, return an associated ISO-8601 string"""
-    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    return dt.strftime('%Y-%m-%dT%H:%M:%SZ') if dt else ''
 
 
 def secure_filename(filename):
