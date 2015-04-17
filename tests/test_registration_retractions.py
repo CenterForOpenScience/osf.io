@@ -2,18 +2,13 @@
 
 import datetime
 from nose.tools import *  # noqa
-from faker import Factory
-
-from tests.base import OsfTestCase
+from tests.base import fake, OsfTestCase
 from tests.factories import ProjectFactory, RegistrationFactory, UserFactory, AuthUserFactory
 
-from modularodm.exceptions import ValidationTypeError, ValidationValueError
+from modularodm.exceptions import ValidationValueError
 from website.exceptions import NodeStateError
 
 from framework.auth.core import Auth
-
-
-fake = Factory.create()
 
 
 class RegistrationRetractionModelsTestCase(OsfTestCase):
