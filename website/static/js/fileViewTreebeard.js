@@ -38,9 +38,7 @@ function FileViewTreebeard(data) {
         ondataload: function () {
             var tb = this;
             tb.fangornFolderIndex = 0;
-            if (window.contextVars.file.provider === 'figshare') {
-                tb.fangornFolderArray = [window.contextVars.file.name]
-            } else if (window.contextVars.file.path) {
+            if (window.contextVars.file.path && window.contextVars.file.provider !== 'figshare') {
                 window.contextVars.file.path = decodeURIComponent(window.contextVars.file.path);
                 tb.fangornFolderArray = window.contextVars.file.path.split("/");
                 if (tb.fangornFolderArray.length > 1) {
@@ -67,7 +65,7 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree, event);
             Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-            if(!event) { 
+            if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
         },
