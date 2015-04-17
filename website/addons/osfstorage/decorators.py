@@ -71,7 +71,7 @@ def handle_odm_errors(func):
 def waterbutler_opt_hook(func):
 
     @must_be_signed
-    @utils.handle_odm_errors
+    @handle_odm_errors
     @must_not_be_registration
     @must_have_addon('osfstorage', 'node')
     @functools.wraps(func)
@@ -82,7 +82,7 @@ def waterbutler_opt_hook(func):
 
 
 @must_be_signed
-@utils.handle_odm_errors
+@handle_odm_errors
 @must_not_be_registration
 @must_have_addon('osfstorage', 'node')
 def waterbutler_crud_hook(func):
