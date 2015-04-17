@@ -24,8 +24,8 @@ class DataverseProvider(provider.BaseProvider):
     @asyncio.coroutine
     def download(self, path, **kwargs):
         # Can download draft or published files
-        metadata = yield from self.get_all_data()
-        self.validate_path(path, metadata)
+        metadata = yield from self._get_all_data()
+        self._validate_path(path, metadata)
 
         resp = yield from self.make_request(
             'GET',
@@ -61,7 +61,7 @@ class DataverseProvider(provider.BaseProvider):
         }
 
         # Delete old file if it exists
-        metadata = yield from self.get_data('latest')
+        metadata = yield from self._get_data('latest')
         files = metadata if isinstance(metadata, list) else []
 
         try:
@@ -83,7 +83,7 @@ class DataverseProvider(provider.BaseProvider):
         )
 
         # Find appropriate version of file
-        metadata = yield from self.get_data('latest')
+        metadata = yield from self._get_data('latest')
         files = metadata if isinstance(metadata, list) else []
         file_metadata = next(file for file in files if file['name'] == filename)
 
@@ -92,8 +92,8 @@ class DataverseProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         # Can only delete files in draft
-        metadata = yield from self.get_data('latest')
-        self.validate_path(path, metadata)
+        metadata = yield from self._get_data('latest')
+        self._validate_path(path, metadata)
 
         yield from self.make_request(
             'DELETE',
@@ -108,11 +108,11 @@ class DataverseProvider(provider.BaseProvider):
 
         # Get appropriate metadata
         if state == 'draft':
-            dataset_metadata = yield from self.get_data('latest')
+            dataset_metadata = yield from self._get_data('latest')
         elif state == 'published':
-            dataset_metadata = yield from self.get_data('latest-published')
+            dataset_metadata = yield from self._get_data('latest-published')
         else:
-            dataset_metadata = yield from self.get_all_data()
+            dataset_metadata = yield from self._get_all_data()
 
         if path == '/':
             return dataset_metadata
@@ -132,7 +132,7 @@ class DataverseProvider(provider.BaseProvider):
         raise exceptions.ProviderError({'message': 'Dataverse does not support file revisions.'}, code=405)
 
     @asyncio.coroutine
-    def get_data(self, version):
+    def _get_data(self, version):
         """
         :param str version:
             'latest' for draft files
@@ -158,15 +158,18 @@ class DataverseProvider(provider.BaseProvider):
         ).serialized()
 
     @asyncio.coroutine
-    def get_all_data(self):
+    def _get_all_data(self):
         # Unspecified (file view page), check both sets for metadata
-        published_data = yield from self.get_data('latest-published')
+        try:
+            published_data = yield from self._get_data('latest-published')
+        except exceptions.MetadataError:
+            published_data = []
         published_files = published_data if isinstance(published_data, list) else []
-        draft_data = yield from self.get_data('latest')
+        draft_data = yield from self._get_data('latest')
         draft_files = draft_data if isinstance(draft_data, list) else []
         return published_files + draft_files
 
-    def validate_path(self, path, metadata):
+    def _validate_path(self, path, metadata):
         if path.lstrip('/') not in [item['path'].lstrip('/') for item in metadata]:
             raise exceptions.MetadataError(
                 "Could not retrieve file '{}'".format(path),
