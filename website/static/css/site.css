@@ -860,14 +860,14 @@ h1.node-title, h1.node-parent-title {
     }
 }
 
-.wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
+.osf-panel-header .fa-angle-right, .osf-panel-header .fa-angle-left {
     cursor: pointer;
 }
-.wiki-panel-header .fa-list {
+.osf-panel-header .fa-list {
     color: #808080;
 }
 
-.wiki-panel-body .superlist li {
+.osf-panel-body .superlist li {
     display: block;
     font-size: 20px;
 }
@@ -2294,7 +2294,7 @@ span#profileFullname{
     to {transform:rotate(360deg);}
 }
 /* Wiki additions */
-.wiki-panel {
+.osf-panel {
     border: 1px solid #ddd;
     height: 750px;
     overflow: auto;
@@ -2302,37 +2302,39 @@ span#profileFullname{
     position: relative;
     overflow-x: hidden;
 }
-.reset-height {
-    height: auto;
-}
+
 .superlist li.active {
     background: #EFEFEF;
     font-weight: bold;
 }
-.wiki-panel-body {
+.osf-panel-body {
     overflow: auto;
     overflow-x: hidden;
 }
-.wiki-panel-body .navbar-collapse {
+.osf-panel-body .navbar-collapse {
     background: #F5F5F5;
     padding: 0px;
 }
-.wiki-panel-header {
+.osf-panel-header {
     background: #efefef;
     padding: 10px;
     font-size: 16px;
     font-weight: 300;
 }
-.wiki-panel-header.no-background {
+
+.osf-panel-header.no-background {
     background: transparent;
 }
-.wiki-panel-header.bottom-border {
+
+.osf-panel-header.bottom-border {
     border-bottom: 1px solid #eee;
 }
-.wiki-panel-header.bordered {
+
+.osf-panel-header.bordered {
     border: 1px solid #ddd;
 }
-.wiki-panel-footer {
+
+.osf-panel-footer {
     position: absolute;
     bottom : 0;
     left: 0;
@@ -2341,6 +2343,7 @@ span#profileFullname{
     width: 100%;
     z-index: 99;
 }
+
 #wiki-form {
     padding: 10px;
 }
@@ -2355,7 +2358,7 @@ span#profileFullname{
 }
 
 @media (max-width: 991px) {
-    .wiki-panel {
+    .osf-panel {
         margin-bottom: 20px;
     }
 }
@@ -2406,7 +2409,7 @@ span#profileFullname{
     text-decoration: none !important;
 }
 
-.wiki-panel-flex {
+.osf-panel-flex {
     width: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -2428,7 +2431,7 @@ span#profileFullname{
     flex-wrap: wrap;
 }
 
-.wiki-panel-header-flex {
+.osf-panel-header-flex {
     width: 100%;
     margin: auto;
     -webkit-box-flex: 0 0 auto;
@@ -2436,7 +2439,7 @@ span#profileFullname{
     -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
-.wiki-panel-body-flex{
+.osf-panel-body-flex {
     width: 100%;
     margin: auto;
     -webkit-box-flex: 3 0 auto;
@@ -2444,6 +2447,25 @@ span#profileFullname{
     -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px;
+}
+
+.reset-height {
+    height: auto;
+}
+
+/* File view page css */
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}
+.file-page #tb-tbody {
+    border: none;
+}
+#filesSearch {
+    width: 95%;
+}
+#toggleIcon {
+    margin-top: 5px;
 }
 
 /* scroll fix for wherever treebeard is used */
