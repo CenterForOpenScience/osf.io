@@ -36,7 +36,7 @@ def init_addons(settings, routes=True):
         try:
             addon = init_addon(app, addon_name, routes=routes)
         except AssertionError as error:
-            logger.exception(error)
+            logger.warning(error)
             continue
         if addon:
             if addon not in settings.ADDONS_AVAILABLE:
