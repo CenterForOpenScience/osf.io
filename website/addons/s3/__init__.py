@@ -11,7 +11,7 @@ NODE_SETTINGS_MODEL = model.AddonS3NodeSettings
 ROUTES = [routes.settings_routes]
 
 SHORT_NAME = 's3'
-FULL_NAME = 'Amazon Simple Storage Service'
+FULL_NAME = 'Amazon S3'
 
 
 OWNERS = ['user', 'node']

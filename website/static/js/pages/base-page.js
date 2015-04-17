@@ -59,6 +59,8 @@ var SlideInViewModel = function (){
     // Google Analytics click event tracking
     self.trackClick = function(source) {
         window.ga('send', 'event', 'button', 'click', source);
+        //in order to make the href redirect work under knockout onclick binding
+        return true;
     };
 };
 

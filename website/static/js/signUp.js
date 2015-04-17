@@ -48,11 +48,10 @@ var ViewModel = function(submitUrl) {
     // Collect validated fields
     self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
 
-    self.showValidation = ko.observable(false);
     self.submitted = ko.observable(false);
 
-    self.flashMessage = ko.observable();
-    self.flashMessageClass = ko.observable();
+    self.flashMessage = ko.observable('');
+    self.flashMessageClass = ko.observable('');
     self.flashTimeout = null;
 
     self.trim = function(observable) {
@@ -104,10 +103,6 @@ var ViewModel = function(submitUrl) {
         );
     };
 
-    self.hideValidation = function() {
-        self.showValidation(false);
-    };
-
     self.submit = function() {
         // Show errors if invalid
         if (!self.isValid()) {
@@ -115,8 +110,7 @@ var ViewModel = function(submitUrl) {
             $.each(validatedFields, function(key, value) {
                 value.notifySubscribers();
             });
-            self.showValidation(true);
-            return;
+            return false;
         }
         // Else submit
         $osf.postJSON(
@@ -128,6 +122,8 @@ var ViewModel = function(submitUrl) {
             self.submitError
         );
     };
+
+    self.errors = ko.validation.group(self);
 
 };
 

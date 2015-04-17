@@ -5,7 +5,7 @@
     "jquery-ui": "~1.10.4",
     "bootstrap": "~3.3.0",
     "select2": "~3.5.1",
-    "ace-builds": "~1.1.8",
+    "ace-builds": "1.1.8",
     "handlebars": "~2.0.0",
     "bootstrap.growl": "~2.0.0",
     "MathJax": "~2.5",
