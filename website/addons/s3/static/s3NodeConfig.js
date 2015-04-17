@@ -278,7 +278,7 @@ ViewModel.prototype.fetchBucketList = function() {
             ret.resolve(response.buckets);
         })
         .fail(function(xhr, status, error) {
-            var message = 'Could not retrieve list of S3 buckets at' +
+            var message = 'Could not retrieve list of S3 buckets at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.changeMessage(message, 'text-warning');
@@ -301,7 +301,7 @@ ViewModel.prototype.updateFromData = function(data) {
         self.userHasAuth(settings.user_has_auth);
         self.userIsOwner(settings.user_is_owner);
         self.ownerName(settings.owner);
-        self.currentBucket(settings.has_bucket ? settings.bucket : 'None');
+        self.currentBucket(settings.has_bucket ? settings.bucket : null);
         if (settings.urls) {
             self.urls(settings.urls);
         }
