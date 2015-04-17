@@ -30,9 +30,7 @@ def _kwargs_to_nodes(kwargs):
         raise HTTPError(http.GONE)
 
     '''
-    ATM node gets elevated to the value of project everywhere this is used:
-    node = kwargs['node'] or kwargs['project']
-    Consider changing the interface to just return node
+    Mostly for backwards compatibility, make node equal project
     '''
     node = kwargs.get('node') or project
 
