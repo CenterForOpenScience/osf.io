@@ -380,6 +380,72 @@ class GoogleDriveProvider(provider.BaseProvider):
         return item_id
 
     @asyncio.coroutine
+    def _resolve_path_to_ids(self, path, parent_id=None):
+        parts = path.parts
+        item_id = parent_id or self.folder['id']
+
+        while parts:
+            resp = yield from self.make_request(
+                'GET',
+                self.build_url('files', item_id, 'children', q='title = "{}"', fields='id,title'.format(parts.pop(0))),
+                expects=(200, ),
+                throws=exceptions.MetadataError,
+            )
+            try:
+                item_id = (yield from resp.json())['items'][0]['id']
+            except (KeyError, IndexError):
+                raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
+
+        return item_id
+
+    @asyncio.coroutine
+    def _resolve_id_to_parts(self, _id, accum=None):
+        if _id == self.folder['id']:
+            return [self.folder] + (accum or [])
+
+        if accum is None:
+            resp = yield from self.make_request(
+                'GET',
+                self.build_url('files', _id, fields='id,title'),
+                expects=(200, ),
+                throws=exceptions.MetadataError,
+            )
+            accum = [(yield from resp.json())]
+
+        for parent in (yield from self._get_parent_ids(_id)):
+            if self.folder['id'] == parent['id']:
+                return [parent] + (accum or [])
+                try:
+                    return (yield from _resolve_id_to_parts(
+                        self, parent['id'],
+                        [parent] + (accum or [])
+                    ))
+                except exceptions.MetadataError:
+                    pass
+
+        raise exceptions.MetadataError('ID is out of scope')
+
+    @asyncio.coroutine
+    def _get_parent_ids(self, _id):
+        resp = yield from self.make_request(
+            'GET',
+            self.build_url('files', _id, 'parents', fields='items(id)'),
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+
+        parents = []
+        for parent in (yield from resp.json())['items']:
+            p_resp = yield from self.make_request(
+                'GET',
+                self.build_url('files', parent['id'], fields='id,title'),
+                expects=(200, ),
+                throws=exceptions.MetadataError,
+            )
+            parents.append((yield from p_resp.json()))
+        return parents
+
+    @asyncio.coroutine
     def _handle_docs_versioning(self, path, item, raw=True):
         revisions_response = yield from self.make_request(
             'GET',
