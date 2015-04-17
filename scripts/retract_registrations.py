@@ -25,7 +25,7 @@ def main(dry_run=True):
 
 def should_be_retracted(retraction):
     """Returns true if retraction was initiated more than 48 hours prior"""
-    return (datetime.datetime.utcnow() - retraction.initiation_date).days >= 2
+    return (datetime.datetime.utcnow() - retraction.initiation_date) >= settings.RETRACTION_PENDING_TIME
 
 
 if __name__ == '__main__':

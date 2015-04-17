@@ -6,8 +6,8 @@ To approve this action click the following link: ${approval_link}
 
 To disapprove this action, click the following link: ${disapproval_link}
 
-Note: Clicking the disapproval link will immiedietly cancel the pending retraction. If you neither approve nor disapprove
-the retraction within 48 hours of midnight toninght (EDT) the registration will become retracted. This operation is unreversible.
+Note: Clicking the disapproval link will immediately cancel the pending retraction. If you neither approve nor disapprove
+the retraction within ${approval_time_span} hours of midnight tonight (EDT) the registration will become retracted. This operation is irreversible.
 
 Sincerely yours,
 

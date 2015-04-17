@@ -114,9 +114,10 @@ def _send_retraction_email(node, user, approval_token, disapproval_token):
     """
 
     base = settings.DOMAIN[:-1]
-    registration_link = "{0}{1}".format(base, node.web_url_for('view_project'))
+    registration_link = node.web_url_for('view_project', _absolute=True)
     approval_link = node.web_url_for('node_registration_retraction_approve', token=approval_token, _absolute=True)
     disapproval_link = node.web_url_for('node_registration_retraction_disapprove', token=disapproval_token, _absolute=True)
+    approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
 
 
     mails.send_mail(
@@ -126,7 +127,8 @@ def _send_retraction_email(node, user, approval_token, disapproval_token):
         user=user,
         approval_link=approval_link,
         disapproval_link=disapproval_link,
-        registration_link=registration_link
+        registration_link=registration_link,
+        approval_time_span=approval_time_span
     )
 
 @must_be_valid_project
