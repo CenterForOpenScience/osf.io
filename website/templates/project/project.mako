@@ -122,8 +122,16 @@
                     ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
+                  <!-- ko if: idCreationInProgress() -->
+                    <br />
+                      <i class="fa fa-spinner fa-lg fa-spin"></i>
+                        <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                  <!-- /ko -->
+
+                  <!-- ko ifnot: idCreationInProgress() -->
                   <br />
-                    <a data-bind="click: askCreateIdentifiers">Create DOI / ARK</a>
+                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  <!-- /ko -->
                 </span>
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${node['category']}</span>
