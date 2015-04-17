@@ -1,21 +1,17 @@
 <ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
-    % if not len(nodes):
-        <h4 class="text-muted">None</h4>
-    %else:
-        % for each in nodes:
-            <div mod-meta='{
-                    "tpl": "util/render_node.mako",
-                    "uri": "${each['api_url']}get_summary/",
-                    "view_kwargs": {
-                        "rescale_ratio": ${rescale_ratio},
-                        "primary": ${int(each['primary'])},
-                        "link_id": "${each['id']}",
-                        "uid": "${user_id}"
-                    },
-                    "replace": true
-                }'></div>
-        % endfor
-    % endif
+    % for each in nodes:
+        <div mod-meta='{
+                "tpl": "util/render_node.mako",
+                "uri": "${each['api_url']}get_summary/",
+                "view_kwargs": {
+                    "rescale_ratio": ${rescale_ratio},
+                    "primary": ${int(each['primary'])},
+                    "link_id": "${each['id']}",
+                    "uid": "${user_id}"
+                },
+                "replace": true
+            }'></div>
+    % endfor
 ## TODO: make sure these templates are only included once on a page.
 <%include file='_log_templates.mako'/>
 </ul>

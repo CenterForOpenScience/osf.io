@@ -144,24 +144,28 @@
 
 <hr />
 <div class="row">
-    <div class="col-sm-6">
-        <h3>Public Projects</h3>
-        <div mod-meta='{
-                "tpl" : "util/render_nodes.mako",
-                "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
-                "replace" : true,
-                "kwargs" : {"sortable" : true}
-            }'></div>
-    </div>
-    <div class="col-sm-6">
-        <h3>Public Components</h3>
-        <div mod-meta='{
-                "tpl" : "util/render_nodes.mako",
-                "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
-                "replace" : true,
-                "kwargs" : {"sortable" : true}
-            }'></div>
-    </div>
+    % if profile.get("number_public_projects") > 0:
+        <div class="col-sm-6">
+            <h3>Public Projects</h3>
+            <div mod-meta='{
+                    "tpl" : "util/render_nodes.mako",
+                    "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
+                    "replace" : true,
+                    "kwargs" : {"sortable" : true}
+                }'></div>
+        </div>
+    % endif
+    %if profile.get("number_public_components") > 0:
+        <div class="col-sm-6">
+            <h3>Public Components</h3>
+            <div mod-meta='{
+                    "tpl" : "util/render_nodes.mako",
+                    "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
+                    "replace" : true,
+                    "kwargs" : {"sortable" : true}
+                }'></div>
+        </div>
+    %endif
 </div><!-- end row -->
 
 <%include file="_log_templates.mako"/>
