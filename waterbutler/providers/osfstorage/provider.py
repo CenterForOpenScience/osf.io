@@ -82,7 +82,9 @@ class OSFStorageProvider(provider.BaseProvider):
         )
 
         data = yield from resp.json()
-        return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+        if data['kind'] == 'file':
+            return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+        return OsfStorageFolderMetadata(data).serialized(), resp.status == 201
 
     def intra_copy(self, other, source_options, dest_options):
         resp = yield from self.make_signed_request(
