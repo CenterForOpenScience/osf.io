@@ -14,7 +14,7 @@ class BaseDataverseMetadata(metadata.BaseMetadata):
 class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
 
     @property
-    def id(self):
+    def file_id(self):
         return str(self.raw['id'])
 
     @property
@@ -23,7 +23,7 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return self.build_path(self.id)
+        return self.build_path(self.file_id)
 
     @property
     def size(self):
@@ -40,7 +40,7 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
     @property
     def extra(self):
         return {
-            'fileId': self.id
+            'fileId': self.file_id
         }
 
 
