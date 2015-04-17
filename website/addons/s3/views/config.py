@@ -156,7 +156,7 @@ def s3_bucket_list(auth, node_addon, user_addon, **kwargs):
         }
     else:
         raise HTTPError(status_code)
-        
+
 @must_have_permission('write')
 @must_have_addon('s3', 'node')
 @must_not_be_registration
