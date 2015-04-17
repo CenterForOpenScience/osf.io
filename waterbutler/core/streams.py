@@ -5,7 +5,6 @@ import struct
 import time
 import binascii
 import asyncio
-
 import zipfile
 import zlib
 
