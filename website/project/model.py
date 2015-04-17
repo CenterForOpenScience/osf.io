@@ -2590,7 +2590,7 @@ class PrivateLink(StoredObject):
 
 
 def validate_retraction_state(value):
-    acceptable_states = ['pending', 'retracted']
+    acceptable_states = ['pending', 'retracted', 'cancelled']
     if value not in acceptable_states:
         raise ValidationValueError
 
@@ -2612,7 +2612,7 @@ class Retraction(StoredObject):
     #     'disapproval_token': 'UotzClTFOic2PYxHDStby94bCQMwJy'}
     # }
     approval_state = fields.DictionaryField()
-    # One of 'pending', 'retracted'
+    # One of 'pending', 'retracted', or 'cancelled'
     state = fields.StringField(default='pending', validate=validate_retraction_state)
 
     @property

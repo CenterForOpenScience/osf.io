@@ -15,6 +15,7 @@ from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 
 from website import settings
+from website.exceptions import InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission, must_not_be_registration,
@@ -131,7 +132,7 @@ def _send_retraction_email(node, user, approval_token, disapproval_token):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_be_public_registration
-def node_registration_retraction_approve(auth, **kwargs):
+def node_registration_retraction_approve(auth, token, **kwargs):
     """Handles disapproval of registration retractions
     :param auth: User wanting to disapprove retraction
     :return: Redirect to registration or
@@ -139,7 +140,6 @@ def node_registration_retraction_approve(auth, **kwargs):
     """
 
     node = kwargs['node'] or kwargs['project']
-    token = kwargs['token']
 
     if not node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -150,7 +150,7 @@ def node_registration_retraction_approve(auth, **kwargs):
     try:
         node.retraction.approve_retraction(auth.user, token)
         node.retraction.save()
-    except exceptions.InvalidRetractionApprovalToken as e:
+    except InvalidRetractionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
@@ -167,7 +167,7 @@ def node_registration_retraction_approve(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_be_public_registration
-def node_registration_retraction_disapprove(auth, **kwargs):
+def node_registration_retraction_disapprove(auth, token, **kwargs):
     """Handles approval of registration retractions
     :param auth: User wanting to approve retraction
     :param kwargs:
@@ -176,7 +176,6 @@ def node_registration_retraction_disapprove(auth, **kwargs):
     """
 
     node = kwargs['node'] or kwargs['project']
-    token = kwargs['token']
 
     if not node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -187,7 +186,7 @@ def node_registration_retraction_disapprove(auth, **kwargs):
     try:
         node.retraction.disapprove_retraction(auth.user, token)
         node.retraction.save()
-    except exceptions.InvalidRetractionDisapprovalToken as e:
+    except InvalidRetractionDisapprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
