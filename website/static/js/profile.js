@@ -483,17 +483,24 @@ var extendLink = function(obs, $parent, label, baseUrl) {
     return obs;
 };
 
-var SocialViewModel = function(urls, modes) {
-    var self = this;
-    BaseViewModel.call(self, urls, modes);
-    TrackedMixin.call(self);
-    var i;
-
-    self.addons = ko.observableArray();
-  
-    self.profileWebsites = ko.observableArray(); // Initially an empty array
+var extendProfileWebsite = function(obs, $parent, label, baseUrl) {
     
-    self.profileWebsites()[0] = extendLink(
+    obs.url = ko.computed(function($data, event) {
+        // Prevent click from submitting form
+        event && event.preventDefault();
+        if (obs()) {
+            return baseUrl ? baseUrl + obs() : obs();
+        }
+        return '';
+    });
+
+
+    return obs;
+};
+
+
+function ProfileWebsite() {
+    return extendProfileWebsite(
         // Note: Apply extenders in reverse order so that `ensureHttp` is
         // applied before `url`.
         ko.observable().extend({
@@ -502,7 +509,30 @@ var SocialViewModel = function(urls, modes) {
             ensureHttp: true
         }),
         self, 'Profile Websites'
-    );
+    );    
+}
+
+
+var SocialViewModel = function(urls, modes) {
+    var self = this;
+    BaseViewModel.call(self, urls, modes);
+    TrackedMixin.call(self);
+    var i;
+
+    self.addons = ko.observableArray();
+  
+    self.profileWebsites = ko.observableArray([new ProfileWebsite]); // Initially a single item with a blank first entry
+    
+//    self.profileWebsites()[0] = extendLink(
+//        // Note: Apply extenders in reverse order so that `ensureHttp` is
+//        // applied before `url`.
+//        ko.observable().extend({
+//            trimmed: true,
+//                url: true,
+//            ensureHttp: true
+//        }),
+//        self, 'Profile Websites'
+//    );
     
 
     self.hasMultiple = ko.computed(function() {
@@ -564,16 +594,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.addWebsite = function(profileWebsite) {
         var nextItemIndex = self.profileWebsites().length;
-        this.profileWebsites.push(extendLink(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-            ko.observable().extend({
-                trimmed: true,
-                    url: true,
-                ensureHttp: true
-        }),
-        this, 'Profile Websites')
-        );
+        this.profileWebsites.push(new ProfileWebsite);
  
     }    
     

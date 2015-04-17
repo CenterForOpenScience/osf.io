@@ -82,20 +82,22 @@ def validate_year(item):
 
 validate_url = URLValidator()
 def validate_profileWebsites(profileWebsites):
-    print "in validate_profileWebsites, profileWebsites is %s." % profileWebsites
+#    print "in validate_profileWebsites, profileWebsites is %s." % profileWebsites
     for profileWebsite in profileWebsites:
         if profileWebsite:
-            print "in before add http://, beginning of profileWebsite is %s." % profileWebsite[:7]
-            print "in validate_profileWebsite, profileWebsite is %s." % profileWebsite.startswith("http://")
+#            print "in before add http://, beginning of profileWebsite is %s." % profileWebsite[:7]
+#            print "in validate_profileWebsite, profileWebsite is %s." % profileWebsite.startswith("http://")
             if not profileWebsite.startswith("http://"):
                 profileWebsite = "http://" + profileWebsite
-                print "in if not profileWebsite, profileWebsite is %s." % profileWebsite
+#                print "in if not profileWebsite, profileWebsite is %s." % profileWebsite
             try:
+                validate_url(profileWebsite)
                 validate_url(profileWebsite)
 #                profileWebsites.save()
             except ValidationError:
                 # Reraise with a better message
                 raise ValidationError('Invalid personal URL.')
+#        print "in for loop, profileWebsites is %s." % profileWebsites
 
 def validate_social(value):
     validate_profileWebsites(value.get('profileWebsites'))

@@ -55,6 +55,27 @@ addExtender('ensureHttp', function(value) {
     return 'http://' + value;
 });
 
+addExtender('profileWebsiteCleanup', function(value) {
+    console.log("in profileWebsiteEnsureHttp, value is " + value);
+//        return value;
+    var profileWebsite;
+    if (value) {
+        for (var i = 0; i < value.length; i++) {
+            profileWebsite = value[i];
+            profileWebsite = $.trim(profileWebsite);
+            if (!profileWebsite || profileWebsite.search(/^https?:\/\//i) === 0) {
+            value[i] = profileWebsite;
+            }
+            else  value[i] ='http://' + profileWebsite;
+        }
+    }
+    
+    
+    
+    return value;
+});
+
+
 addExtender('trimmed', function(value) {
     return $.trim(value);
 });

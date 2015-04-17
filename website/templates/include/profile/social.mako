@@ -25,7 +25,7 @@
                                            visible: $parent.canRemove"
                         >Remove</a>
                         
-                        <div class="input-group">
+                        <div class="input-group" >
                             <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
                             <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
                         </div>
@@ -34,10 +34,7 @@
 
                     <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)">
 
-                    </div>
-
-
-     
+                    </div>  
 
                 </div>
 

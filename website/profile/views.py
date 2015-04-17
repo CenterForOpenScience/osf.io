@@ -567,7 +567,7 @@ def unserialize_social(auth, **kwargs):
 
     user = auth.user
     json_data = escape_html(request.get_json())
-
+    print "in unserialize_social, soc is %s." % json_data
     for soc in user.SOCIAL_FIELDS.keys():
         user.social[soc] = json_data.get(soc)
 
