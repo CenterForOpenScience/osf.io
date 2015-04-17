@@ -97,7 +97,9 @@ var UserProfileClient = oop.defclass({
         ).done(function (data) {
             ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'User profile not updated.', 'danger');
+            $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
+                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                'if the problem persists.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
                 url: this.urls.update,
                 status: status,
@@ -192,15 +194,16 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         }
     },
     removeEmail: function (email) {
-        this.changeMessage('', 'text-info');
-        if (this.profile().emails().indexOf(email) !== -1) {
+        var self = this;
+        self.changeMessage('', 'text-info');
+        if (self.profile().emails().indexOf(email) !== -1) {
             bootbox.confirm({
                 title: 'Remove Email?',
                 message: 'Are you sure that you want to remove ' + '<em><b>' + email.address() + '</b></em>' + ' from your email list?',
                 callback: function (confirmed) {
                     if (confirmed) {
-                        this.profile().emails.remove(email);
-                        this.client.update(this.profile()).done(function () {
+                        self.profile().emails.remove(email);
+                        self.client.update(self.profile()).done(function () {
                             $osf.growl('Email Removed', '<em>' + email.address() + '<em>', 'success');
                         });
                     }
