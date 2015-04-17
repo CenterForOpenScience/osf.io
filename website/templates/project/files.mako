@@ -32,7 +32,7 @@ ${parent.javascript_bottom()}
 
     <% import json %>
     % if 'write' in user['permissions'] and not node['is_registration']:
-        window.uploadEnabled = !${json.dumps(disk_saving_mode)};
+        window.contextVars.diskSavingMode = !${json.dumps(disk_saving_mode)};
     % endif
 
 </script>

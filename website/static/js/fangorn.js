@@ -889,7 +889,7 @@ tbOptions = {
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
     title : function() {
-        if(window.uploadEnabled) {
+        if(window.contextVars.diskSavingMode) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
             if (window.File && window.FileReader) {
                 return m('p', {
