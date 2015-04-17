@@ -95,12 +95,12 @@ def node_registration_retraction_post(auth, **kwargs):
     # Email project admins
     admins = [contrib for contrib in node.contributors if node.has_permission(contrib, 'admin')]
     for admin in admins:
-            _send_retraction_email(
-                node,
-                admin,
-                node.retraction.approval_state[admin._id]['approval_token'],
-                node.retraction.approval_state[admin._id]['disapproval_token'],
-            )
+        _send_retraction_email(
+            node,
+            admin,
+            node.retraction.approval_state[admin._id]['approval_token'],
+            node.retraction.approval_state[admin._id]['disapproval_token'],
+        )
 
     return {'redirectUrl': node.web_url_for('view_project')}
 
@@ -114,8 +114,9 @@ def _send_retraction_email(node, user, approval_token, disapproval_token):
 
     base = settings.DOMAIN[:-1]
     registration_link = "{0}{1}".format(base, node.web_url_for('view_project'))
-    approval_link = "{0}{1}approve/{2}/".format(base, node.web_url_for('node_registration_retraction_get'), approval_token)
-    disapproval_link = "{0}{1}disapprove/{2}/".format(base, node.web_url_for('node_registration_retraction_get'), disapproval_token)
+    approval_link = node.web_url_for('node_registration_retraction_approve', token=approval_token, _absolute=True)
+    disapproval_link = node.web_url_for('node_registration_retraction_disapprove', token=disapproval_token, _absolute=True)
+
 
     mails.send_mail(
         user.username,
