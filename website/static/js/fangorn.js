@@ -218,6 +218,7 @@ function onItemDrop(e) {
     var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected;
 
     if (items.length < 1) return;
+    if (items.indexOf(folder) > -1) return;
     if (!folder.open) {
         tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
     }
