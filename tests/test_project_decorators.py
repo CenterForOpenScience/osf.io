@@ -5,7 +5,7 @@ from nose.tools import *  # noqa
 from website.project.decorators import must_be_valid_project
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, NodeFactory
+from tests.factories import ProjectFactory, NodeFactory, RetractionFactory
 
 from framework.exceptions import HTTPError
 
@@ -25,6 +25,7 @@ class TestValidProject(OsfTestCase):
         super(TestValidProject, self).setUp()
         self.project = ProjectFactory()
         self.node = NodeFactory(project=self.project)
+        self.retraction = RetractionFactory()
 
     def test_populates_kwargs_project(self):
         res = valid_project_helper(pid=self.project._id)
@@ -67,7 +68,8 @@ class TestValidProject(OsfTestCase):
 
     def test_valid_project_as_factory_allow_retractions_is_retracted(self):
         self.project.is_registration = True
-        self.project.is_retracted = True
-        self.project.save()
+        self.project.retraction = self.retraction
+        self.retraction.state = 'retracted'
+        self.retraction.save()
         res = as_factory_allow_retractions(pid=self.project._id)
         assert_equal(res['project'], self.project)

@@ -478,6 +478,7 @@ class Pointer(StoredObject):
             )
         )
 
+
 def get_pointer_parent(pointer):
     """Given a `Pointer` object, return its parent node.
     """
@@ -529,7 +530,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_fork',
         'is_registration',
         'retraction',
-        'retracted',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
@@ -656,6 +656,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]
+
+    @property
+    def is_retracted(self):
+        return getattr(self.retraction, 'is_retracted', False)
+
+    @property
+    def pending_retraction(self):
+        return getattr(self.retraction, 'pending_retraction', False)
 
     @property
     def private_links(self):
@@ -2477,7 +2485,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise NodeStateError('Cannot retract private node or non-registration')
 
         retraction = self._initiate_retraction(user, justification)
-        # Retraction record needs to be in the database for backrefs to work correctly
+        # Retraction record needs to be saved to ensure the forward reference Node->Retraction
         retraction.save()
         self.retraction = retraction
 

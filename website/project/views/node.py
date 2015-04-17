@@ -731,8 +731,8 @@ def _view_project(node, auth, primary=False):
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
-            'is_retracted': getattr(node.retraction, 'is_retracted', False),
-            'pending_retraction': getattr(node.retraction, 'pending_retraction', False),
+            'is_retracted': node.is_retracted,
+            'pending_retraction': node.pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
@@ -909,8 +909,8 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
-        'is_retracted': getattr(node.retraction, 'is_retracted', False),
-        'pending_retraction': getattr(node.retraction, 'pending_retraction', False),
+        'is_retracted': node.is_retracted,
+        'pending_retraction': node.pending_retraction,
     }
 
     if node.can_view(auth):
