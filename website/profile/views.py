@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib
 import httplib as http
-import os
 
 from dateutil.parser import parse as parse_date
 
