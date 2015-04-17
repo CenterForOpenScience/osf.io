@@ -24,7 +24,10 @@
       <div class="col-md-12">
         <p>
           <strong>Current Bucket:</strong>
-          <a data-bind="attr.href: urls().files">
+          <span data-bind="ifnot: currentBucket">
+            None
+          </span>
+          <a data-bind="if: currentBucket, attr.href: urls().files">
             {{currentBucket}}
           </a>
         </p>
