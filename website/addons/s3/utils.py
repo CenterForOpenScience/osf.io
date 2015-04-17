@@ -1,9 +1,10 @@
 import re
 from bson import ObjectId
+import httplib as http
 
 from boto.iam import IAMConnection
 from boto.s3.cors import CORSConfiguration
-from boto.exception import BotoServerError
+from boto.exception import BotoServerError, NoAuthHandlerFound
 
 from website.util import web_url_for
 from api import get_bucket_list
@@ -48,9 +49,11 @@ def get_bucket_drop_down(user_settings):
         return [
             bucket.name
             for bucket in get_bucket_list(user_settings)
-        ]
-    except BotoServerError:
-        return None
+        ], http.OK
+    except BotoServerError as e:
+        return None, e.status
+    except NoAuthHandlerFound:
+        return None, http.FORBIDDEN
 
 
 def create_osf_user(access_key, secret_key, name):
