@@ -3,7 +3,7 @@
 
         <div id="title" class="row">
             <h2 class="node-title">
-                <span id="nodeTitleEditable" class="overflow">${ node['title'] }</span>
+                <span id="nodeTitle" class="overflow">${ node['title'] }</span>
             </h2>
         </div>
 
