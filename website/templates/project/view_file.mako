@@ -1,5 +1,10 @@
 <%inherit file="project/project_base.mako"/>
+
+## Use full page width
+<%def name="container_class()">container-xxl</%def>
+
 <%def name="title()">${file_name | h}</%def>
+
     <div>
         <h2 class="break-word">
             ${file_name | h}
@@ -7,87 +12,103 @@
                 <small>&nbsp;${file_revision | h}</small>
             % endif
         </h2>
-        <hr/>
+        <hr />
     </div>
 
     <div id="file-container" class="row">
 
-        % if user['can_edit'] and file_ext == '.txt':
-            <div class="wiki" id="filePageContext">
-            <div
-                    data-bind="with: $root.editVM.wikiEditor.viewModel"
-                 data-osf-panel="Edit"
-                 class="col-md-8">
-                <div class="wiki-panel">
-                  <div class="wiki-panel-header">
-                    <div class="row">
-                      <div class="col-md-6">
-                           <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"></i>   Edit </span>
-                      </div>
-                        <div class="col-md-6">
-                          <div class="pull-right">
-                            <div class="progress progress-no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
-                                <div role="progressbar"data-bind="attr: progressBar">
-                                    <span class="progress-bar-content">
-                                        <span data-bind="text: statusDisplay"></span>
-                                        <span class="sharejs-info-btn">
-                                            <i class="fa fa-question-circle fa-large"></i>
-                                        </span>
-                                    </span>
+    <div id="file-navigation" class="panel-toggle col-md-3">
+        <div class="osf-panel osf-panel-flex hidden-xs reset-height">
+            <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+                <div id="filesSearch"></div>
+                <div id="toggleIcon" class="pull-right">
+                    <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div>
+                </div>
+            </div>
+
+            <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+                <div id="grid">
+                    <div class="fangorn-loading"> <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Menu toggle closed -->
+        <div class="osf-panel panel-collapsed hidden-xs text-center reset-height"  style="display: none">
+            <div class="osf-panel-header">
+                <i class="fa fa-file"> </i>
+                <i class="fa fa-angle-right"> </i>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-expand col-md-6">
+        <div id="fileRendered" class="mfr mfr-file">
+
+            % if user['can_edit'] and file_ext == '.txt':
+                <div class="wiki" id="filePageContext">
+                    <div data-bind="with: $root.editVM.wikiEditor.viewModel" data-osf-panel="Edit">
+                        <div class="wiki-panel">
+                            <div class="wiki-panel-header">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"></i>   Edit </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="pull-right">
+                                            <div class="progress progress-no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
+                                                <div role="progressbar"data-bind="attr: progressBar">
+                                                    <span class="progress-bar-content">
+                                                        <span data-bind="text: statusDisplay"></span>
+                                                        <span class="sharejs-info-btn">
+                                                            <i class="fa fa-question-circle fa-large"></i>
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                          </div>
+
+##                            <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
+                            <div class="wiki-panel-body" style="padding: 10px">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="form-group wmd-panel">
+                                            <div id="wmd-button-bar"></div>
+                                            <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="wiki-panel-footer">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="pull-right">
+                                            <button id="revert-button" class="btn btn-danger" data-bind="click: revertChanges">Revert</button>
+                                            <input type="submit" class="btn btn-success" value="Save" onclick=$(window).off('beforeunload')>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Invisible textarea for form submission -->
+                                <textarea name="content" style="display: none;" data-bind="value: currentText"></textarea>
+                            </div>
+##                            </form>
                         </div>
                     </div>
-                  </div>
-
-##                  <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                  <div class="wiki-panel-body" style="padding: 10px">
-                        <div class="row">
-                        <div class="col-xs-12">
-                            <div class="form-group wmd-panel">
-                                <div id="wmd-button-bar"></div>
-                                <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
-                            </div>
-                        </div>
-                      </div>
-                  </div>
-
-                  <div class="wiki-panel-footer">
-                      <div class="row">
-                        <div class="col-xs-12">
-                           <div class="pull-right">
-                              <button id="revert-button"
-                                      class="btn btn-danger"
-                                      data-bind="click: revertChanges"
-                                      >Revert</button>
-                              <input type="submit"
-                                     class="btn btn-success"
-                                     value="Save"
-                                     onclick=$(window).off('beforeunload')>
-                          </div>
-                        </div>
-                      </div>
-                        <!-- Invisible textarea for form submission -->
-                        <textarea name="content" style="display: none;"
-                                  data-bind="value: currentText"></textarea>
-                  </div>
-##                </form>
                 </div>
-            </div>
-            </div>
 
-        % else:
-            <div class="col-md-8">
-                <div id="fileRendered" class="mfr mfr-file">
-                    % if rendered is not None:
-                        ${rendered}
-                    % else:
-                        <img src="/static/img/loading.gif">
-                    % endif
-                </div>
-            </div>
-        % endif
+            % else:
+                % if rendered is not None:
+                    ${rendered}
+                % else:
+                    <img src="/static/img/loading.gif">
+                % endif
+            % endif
+        </div>
+    </div>
 
     <div class="modal fade" id="connectedModal" tabindex="-1">
       <div class="modal-dialog">
@@ -158,7 +179,7 @@
       </div>
     </div>
 
-      <div class="col-md-4">
+    <div class="col-md-3">
         <div id="fileRevisions" class="scripted">
           <ol class="breadcrumb">
             <li><a href="{{ node.urls.files }}" data-bind="text: node.title"></a></li>
@@ -240,6 +261,10 @@
 <%def name="javascript_bottom()">
 <% import json %>
     ${parent.javascript_bottom()}
+    % for script in tree_js:
+        <script type="text/javascript" src="${script | webpack_asset}"></script>
+    % endfor
+
     % if 'osf.io' in domain:
     <script>
         // IE10 Same Origin (CORS) fix
@@ -280,12 +305,11 @@
                 }
             }
       });
-        console.log(window.contextVars.files.urls.draft);
-        console.log(window.contextVars.file.safeName);
     </script>
 
     <script src="//localhost:7007/text.js"></script>
     <script src="//localhost:7007/share.js"></script>
     <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>
