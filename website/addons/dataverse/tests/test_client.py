@@ -7,8 +7,8 @@ from dataverse.exceptions import UnauthorizedError
 
 from framework.exceptions import HTTPError
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
-from website.addons.dataverse.client import (_connect, delete_file, upload_file,
-    get_file, get_file_by_id, get_files, publish_dataset, get_datasets, get_dataset,
+from website.addons.dataverse.client import (_connect, get_files,
+    publish_dataset, get_datasets, get_dataset,
     get_dataverses, get_dataverse, connect_from_settings, connect_or_401,
     connect_from_settings_or_401)
 from website.addons.dataverse.model import AddonDataverseUserSettings
@@ -111,39 +111,10 @@ class TestClient(DataverseAddonTestCase):
         )
         assert_equal(e.exception.code, 401)
 
-    def test_delete_file(self):
-        delete_file(self.mock_file)
-        self.mock_dataset.delete_file.assert_called_once_with(self.mock_file)
-
-    def test_upload_file(self):
-        upload_file(self.mock_dataset, 'filename.txt', b'File Content')
-        self.mock_dataset.upload_file.assert_called_once_with('filename.txt',
-                                                             b'File Content')
-
-    def test_get_file(self):
-        published = False
-        get_file(self.mock_dataset, 'filename.txt', published)
-        self.mock_dataset.get_file.assert_called_once_with('filename.txt', 'latest')
-
-    def test_get_file_by_id(self):
-        published = False
-        get_file_by_id(self.mock_dataset, '12345', published)
-        self.mock_dataset.get_file_by_id.assert_called_once_with('12345', 'latest')
-
     def test_get_files(self):
         published = False
         get_files(self.mock_dataset, published)
         self.mock_dataset.get_files.assert_called_once_with('latest')
-
-    def test_get_file_published(self):
-        published = True
-        get_file(self.mock_dataset, 'filename.txt', published)
-        self.mock_dataset.get_file.assert_called_once_with('filename.txt', 'latest-published')
-
-    def test_get_file_by_id_published(self):
-        published = True
-        get_file_by_id(self.mock_dataset, '12345', published)
-        self.mock_dataset.get_file_by_id.assert_called_once_with('12345', 'latest-published')
 
     def test_get_files_published(self):
         published = True

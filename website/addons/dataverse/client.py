@@ -32,25 +32,6 @@ def connect_from_settings_or_401(user_settings):
     return connect_or_401(user_settings.api_token) if user_settings else None
 
 
-def delete_file(file):
-    dataset = file.dataset
-    dataset.delete_file(file)
-
-
-def upload_file(dataset, filename, content):
-    dataset.upload_file(filename, content)
-
-
-def get_file(dataset, filename, published=False):
-    version = 'latest-published' if published else 'latest'
-    return dataset.get_file(filename, version)
-
-
-def get_file_by_id(dataset, file_id, published=False):
-    version = 'latest-published' if published else 'latest'
-    return dataset.get_file_by_id(file_id, version)
-
-
 def get_files(dataset, published=False):
     version = 'latest-published' if published else 'latest'
     return dataset.get_files(version)
