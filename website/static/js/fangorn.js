@@ -844,15 +844,15 @@ function expandStateLoad(item) {
 function setCurrentFileID(tree, nodeID, file) {
     var tb = this;
     if (file.provider === 'figshare') {
-        for (var j = 0; j < tree.children.length; j++) {
-            var child = tree.children[j];
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path) {
                 tb.currentFileID = child.id;
             }
         }
     } else if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
-        for (var i = 0; i < tree.children.length; i++) {
-            var child = tree.children[i];
+        for (var j = 0; j < tree.children.length; j++) {
+            var child = tree.children[j];
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.name === tb.fangornFolderArray[tb.fangornFolderIndex]) {
                 tb.fangornFolderIndex++;
                 if (child.data.kind === 'folder') {
