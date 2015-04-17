@@ -3,6 +3,7 @@
 import os
 import json
 import codecs
+import errno
 import httplib
 import functools
 
@@ -16,7 +17,7 @@ from framework.auth import Auth
 from framework.sessions import Session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
-from framework.render.tasks import build_rendered_html
+from framework.render.tasks import build_rendered_html, get_file_contents
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
 from mfr.core import get_file_extension
@@ -237,6 +238,24 @@ def get_or_start_render(file_guid, start_render=True):
     return None
 
 
+def file_content(file_guid):
+    content = get_file_contents(
+        file_guid.mfr_download_url,
+        file_guid.mfr_cache_path,
+        file_guid.mfr_temp_path,
+        file_guid.public_download_url
+    )
+    return content
+
+
+def ensure_path(path):
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
+
+
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
@@ -325,12 +344,14 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'render_url': render_url,
         'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
+        'content': file_content(file_guid),
         'rendered': get_or_start_render(file_guid),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
         'file_ext': get_file_extension(file_guid.waterbutler_path),
+
     })
 
     return ret
@@ -374,7 +395,8 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     ret = serialize_node(node, auth, primary=True)
     ret.update({
-        'rendered': get_or_start_render(file_guid)
+        'rendered': get_or_start_render(file_guid),
+        'content': file_content(file_guid)
     })
 
     return ret

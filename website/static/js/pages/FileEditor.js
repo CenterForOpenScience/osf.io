@@ -132,12 +132,11 @@ function ViewModel(url, viewText) {
             url: url,
             dataType: 'json'
         });
-        console.log('URL in fetchData is: ' + url);
         request.done(function (response) {
+            var content = response.content.toString();
             // Most recent version, whether saved or in mongo
-//            self.initText(response.wiki_draft);
-            self.initText(response.rendered);
-            console.log(response);
+            self.initText(content);
+
         });
         request.fail(function (xhr, textStatus, error) {
             $osf.growl('Error','The wiki content could not be loaded.');

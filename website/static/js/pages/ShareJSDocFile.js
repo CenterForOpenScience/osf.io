@@ -35,7 +35,8 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     if (!collaborative) {
         // Populate editor with most recent draft
         viewModel.fetchData().done(function(response) {
-            self.editor.setValue(response.rendered, -1);
+            var content = response.content.toString();
+            self.editor.setValue(content, -1);
             self.editor.setReadOnly(false);
             if (typeof WebSocket === 'undefined') {
                 viewModel.status('unsupported');
