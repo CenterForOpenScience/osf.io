@@ -143,10 +143,12 @@ class OsfStorageFileNode(StoredObject):
         """
         try:
             parent_id, child_name = path.strip('/').split('/')
+            parent = cls.get_folder(parent_id, node_settings)
         except ValueError:
-            raise errors.InvalidPathError('Path {} is invalid'.format(path))
-
-        parent = cls.get_folder(parent_id, node_settings)
+            try:
+                parent, (child_name, ) = node_settings.root_node, path.strip('/').split('/')
+            except ValueError:
+                raise errors.InvalidPathError('Path {} is invalid'.format(path))
 
         try:
             if path.endswith('/'):
