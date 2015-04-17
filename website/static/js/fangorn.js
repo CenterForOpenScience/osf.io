@@ -871,7 +871,7 @@ function scrollToFile(fileID) {
         var visibleIndex = tb.visibleIndexes.indexOf(index);
         if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
             var scrollTo = visibleIndex * tb.options.rowHeight;
-            $('#tb-tbody').scrollTop(scrollTo);
+            this.select('#tb-tbody').scrollTop(scrollTo);
         }
     }
 }
