@@ -27,7 +27,7 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
 
     @property
     def size(self):
-        pass
+        return None
 
     @property
     def content_type(self):
@@ -35,7 +35,7 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
 
     @property
     def modified(self):
-        pass
+        return None
 
     @property
     def extra(self):
