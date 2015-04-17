@@ -1,8 +1,13 @@
 from rest_framework import authentication
 import itsdangerous
 from website import settings
+
+from django.utils.translation import ugettext_lazy as _
 from framework.sessions.model import Session
-from framework.auth.core import User
+from framework.auth.core import User, get_user
+
+from rest_framework.authentication import BasicAuthentication
+from rest_framework import exceptions
 
 def get_session_from_cookie(cookie_val):
     """Given a cookie value, return the `Session` object or `None`."""
@@ -26,3 +31,19 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         if user:
             return user, None
         return None
+
+
+class OSFBasicAuthentication(BasicAuthentication):
+
+    # override BasicAuthentication
+    def authenticate_credentials(self, userid, password):
+        """
+        Authenticate the userid and password against username and password.
+        """
+        user = get_user(email=userid, password=password)
+
+        if userid and user is None:
+            raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
+        else:
+            raise exceptions.NotAuthenticated()
+        return (user, None)

@@ -75,7 +75,7 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
 class NodeContributorsList(generics.ListAPIView, NodeMixin):
     """Return the contributors (users) fora node."""
 
-    permissions_classes = (
+    permission_classes = (
         ContributorOrPublic,
     )
 
