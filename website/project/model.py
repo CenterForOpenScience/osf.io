@@ -23,7 +23,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
-from framework.auth import exceptions, get_user, User, Auth
+from framework.auth import get_user, User, Auth
 from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
@@ -39,7 +39,10 @@ from framework.transactions.context import TokuTransaction
 from website import language, settings, security
 from website.util import web_url_for
 from website.util import api_url_for
-from website.exceptions import NodeStateError
+from website.exceptions import (
+    NodeStateError, InvalidRetractionApprovalToken,
+    InvalidRetractionDisapprovalToken
+)
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
@@ -2600,16 +2603,16 @@ class Retraction(StoredObject):
         """Cancels retraction if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
-                raise exceptions.InvalidRetractionDisapprovalToken
+                raise InvalidRetractionDisapprovalToken
             self.state = 'cancelled'
         except KeyError:
-            raise ValidationValueError('User must be an admin to disapprove retraction of a registration.')
+            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
 
     def approve_retraction(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['approval_token'] != token:
-                raise exceptions.InvalidRetractionApprovalToken
+                raise InvalidRetractionApprovalToken
             self.approval_state[user._id]['has_approved'] = True
             num_of_approvals = self.approval_state['num_of_approvals']
             self.approval_state['num_of_approvals'] = num_of_approvals + 1
@@ -2617,4 +2620,4 @@ class Retraction(StoredObject):
             if self.approval_state['num_of_approvals'] == (len(self.approval_state.keys()) - 1):
                 self.state = 'retracted'
         except KeyError:
-            raise ValidationValueError('User must be an admin to disapprove retraction of a registration.')
+            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
