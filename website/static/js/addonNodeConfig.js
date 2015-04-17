@@ -75,7 +75,18 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         );
     },
     _updateCustomFields: function(settings){
-        this.validCredentials(settings.validCredentials);
+        var self = this;
+        self.validCredentials(settings.validCredentials);
+        if (!settings.validCredentials) {
+            var message;
+            if (settings.userIsOwner) {
+                message = self.messages.invalidCredOwner();
+            }
+            else {
+                message = self.messages.invalidCredNotOwner();
+            }
+            self.changeMessage(message, 'text-danger');
+        }
     },
     /**
      * Allows a user to create an access token from the nodeSettings page

@@ -146,7 +146,7 @@ var FolderPickerViewModel = oop.defclass({
 
         /** Whether or not to show the full settings pane. */
         self.showSettings = ko.pureComputed(function() {
-            return self.nodeHasAuth();
+            return self.nodeHasAuth() && self.validCredentials();
         });
 
         /** Whether or not to show the Create Access Token button */
