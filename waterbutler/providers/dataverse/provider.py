@@ -60,15 +60,17 @@ class DataverseProvider(provider.BaseProvider):
             "Content-Length": str(stream.size),
         }
 
+        # Delete old file if it exists
+        metadata = yield from self.get_data('latest')
+        files = metadata if isinstance(metadata, list) else []
+
         try:
-            # Delete old file if it exists
-            metadata = yield from self.get_data('latest')
-            files = metadata if isinstance(metadata, list) else []
             old_file = next(file for file in files if file['name'] == filename)
-            yield from self.delete(old_file['path'])
-            created = False
         except StopIteration:
-            created = True
+            old_file = None
+
+        if old_file:
+            yield from self.delete(old_file['path'])
 
         yield from self.make_request(
             'POST',
@@ -85,7 +87,7 @@ class DataverseProvider(provider.BaseProvider):
         files = metadata if isinstance(metadata, list) else []
         file_metadata = next(file for file in files if file['name'] == filename)
 
-        return file_metadata, created
+        return file_metadata, old_file is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
