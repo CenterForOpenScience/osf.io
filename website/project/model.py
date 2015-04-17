@@ -870,18 +870,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return [self.parent_node] + self.parent_node.parents
         return []
 
-    def parents_until(self, stop):
-        if self.parent_node and not stop(self.parent_node):
-            return [self.parent_node] + self.parent_node.parents
-        return []
-
-    @property
-    def root(self):
-        if self.parent_node:
-            return self.parent_node.root
-        else:
-            return self
-
     @property
     def admin_contributor_ids(self, contributors=None):
         contributor_ids = self.contributors._to_primary_keys()
@@ -990,11 +978,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'node': self._primary_key,
             }
 
-            if getattr(self, 'project', None):
+            if getattr(self, 'parent', None):
                 # Append log to parent
-                self.project.nodes.append(self)
-                self.project.save()
-                log_params.update({'project': self.project._primary_key})
+                self.parent.nodes.append(self)
+                self.parent.save()
+                log_params.update({'parent_node': self.parent._primary_key})
 
             # Add log with appropriate fields
             self.add_log(
@@ -1235,7 +1223,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         returns a list of [(node, [children]), ...]
         """
         ret = []
-
         for node in self.nodes:
             if condition(auth, node):
                 # base case
@@ -1245,12 +1232,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ret = [item for item in ret if item[1] or condition(auth, item[0])]  # prune empty branches
         return ret
 
-    def get_descendants_recursive(self):
-        return list(self.nodes) + [
+    def get_descendants_recursive(self, include=lambda n: True):
+        descedants = list(self.nodes) + [
             item
             for node in self.nodes
-            for item in node.get_descendants_recursive()
+            for item in node.get_descendants_recursive(include)
         ]
+        return [d for d in descedants if include(d)]
+
+    def get_descendants_iterative(self, include=lambda n: True):
+        ret = []
+        stack = list(self.nodes)
+        while stack:
+            node = stack.pop()
+            if include(node):
+                ret.append(node)
+            stack = list(node.nodes) + stack
+        return ret
 
     def get_aggregate_logs_set(self, auth):
         ids = [self._id] + [n._id
