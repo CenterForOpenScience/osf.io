@@ -13,16 +13,12 @@ from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 class DataverseProvider(provider.BaseProvider):
 
     BASE_URL = 'https://{0}'.format(settings.HOSTNAME)
-    EDIT_MEDIA_BASE_URL = settings.EDIT_MEDIA_BASE_URL
-    DOWN_BASE_URL = settings.DOWN_BASE_URL
-    METADATA_BASE_URL = settings.METADATA_BASE_URL
-    JSON_BASE_URL = settings.JSON_BASE_URL
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
         self.doi = self.settings['doi']
-        self.id = self.settings['id']
+        self._id = self.settings['id']
         self.name = self.settings['name']
 
     @asyncio.coroutine
@@ -33,7 +29,7 @@ class DataverseProvider(provider.BaseProvider):
 
         resp = yield from self.make_request(
             'GET',
-            self.build_url(self.DOWN_BASE_URL, path, key=self.token),
+            self.build_url(settings.DOWN_BASE_URL, path, key=self.token),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -76,7 +72,7 @@ class DataverseProvider(provider.BaseProvider):
 
         yield from self.make_request(
             'POST',
-            self.build_url(self.EDIT_MEDIA_BASE_URL, 'study', self.doi),
+            self.build_url(settings.EDIT_MEDIA_BASE_URL, 'study', self.doi),
             headers=dv_headers,
             auth=(self.token, ),
             data=stream,
@@ -99,7 +95,7 @@ class DataverseProvider(provider.BaseProvider):
 
         yield from self.make_request(
             'DELETE',
-            self.build_url(self.EDIT_MEDIA_BASE_URL, 'file', path),
+            self.build_url(settings.EDIT_MEDIA_BASE_URL, 'file', path),
             auth=(self.token, ),
             expects=(204, ),
             throws=exceptions.DeleteError,
@@ -142,7 +138,7 @@ class DataverseProvider(provider.BaseProvider):
         """
 
         url = self.build_url(
-            self.JSON_BASE_URL.format(self.id, version),
+            settings.JSON_BASE_URL.format(self._id, version),
             key=self.token,
         )
         resp = yield from self.make_request(
