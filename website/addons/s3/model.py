@@ -192,7 +192,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'owner': None,
             'bucket_list': None,
             'is_registration': self.owner.is_registration,
-            'valid_credentials': user_settings.is_valid,
+            'valid_credentials': user_settings and user_settings.is_valid,
         })
 
         if self.has_auth:
