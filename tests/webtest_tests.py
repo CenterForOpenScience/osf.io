@@ -1141,10 +1141,9 @@ class TestConfirmingEmail(OsfTestCase):
 
     def test_cannot_update_user_without_user_id(self):
         user1 = AuthUserFactory()
-        user2 = AuthUserFactory()
         url = api_url_for('update_user')
         header = {'emails': [{'address': user1.username}]}
-        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in("User id not in the request send.", res.body)
 
