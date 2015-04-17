@@ -33,11 +33,25 @@ var cleanByRule = function(rule) {
 
 var noop = function() {};
 
+
+
+
+
 var SerializeMixin = function() {};
 
 /** Serialize to a JS Object. */
 SerializeMixin.prototype.serialize = function() {
-    return ko.toJS(this);
+    var serializedData = ko.toJS(this);
+    
+    // Remove blank websites from profileWebsites array before save
+    if (serializedData.urls.crud = "/api/v1/settings/social/") {
+        var profileWebsites = serializedData.trackedProperties[0];
+        if (profileWebsites.length > 1) {
+            serializedData.profileWebsites = $.grep(profileWebsites,function(n){ return(n) });
+        }
+    }        
+
+    return serializedData;
 };
 
 SerializeMixin.prototype.unserialize = function(data) {
@@ -45,7 +59,6 @@ SerializeMixin.prototype.unserialize = function(data) {
     $.each(data || {}, function(key, value) {
         if (ko.isObservable(self[key])) {
             self[key](value);
-//            console.log("self[key] is " + ko.toJS(JSON.stringify(self)));
 
             
             // Ensure that validation errors are displayed
@@ -195,9 +208,6 @@ TrackedMixin.prototype.restoreOriginal = function () {
 
 var BaseViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
-//    console.log("urls is " + JSON.stringify(urls));
-//    console.log("modes is " + modes);
-//    console.log("preventUnsaved is " + JSON.stringify(preventUnsaved));
 
     self.urls = urls;
     self.modes = modes || ['view'];
@@ -257,8 +267,6 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 BaseViewModel.prototype.handleSuccess = function() {
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
-        console.log("BaseViewModel.prototype.handleSuccess, this.modes is " + JSON.stringify(this.modes));
-
         
     } else {
         this.changeMessage(
@@ -335,6 +343,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     if (this.hasValidProperty() && this.isValid()) {
+        
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -460,8 +469,6 @@ var extendLink = function(obs, $parent, label, baseUrl) {
     
     obs.url = ko.computed(function($data, event) {
         // Prevent click from submitting form
-//    console.log("$data is " + $data);
-//    console.log("event is " + event);
         
         event && event.preventDefault();
         if (obs()) {
@@ -508,7 +515,7 @@ function ProfileWebsite() {
                 url: true,
             ensureHttp: true
         }),
-        self, 'Profile Websites'
+        self, 'Profile Website'
     );    
 }
 
@@ -521,19 +528,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.addons = ko.observableArray();
   
-    self.profileWebsites = ko.observableArray([new ProfileWebsite]); // Initially a single item with a blank first entry
-    
-//    self.profileWebsites()[0] = extendLink(
-//        // Note: Apply extenders in reverse order so that `ensureHttp` is
-//        // applied before `url`.
-//        ko.observable().extend({
-//            trimmed: true,
-//                url: true,
-//            ensureHttp: true
-//        }),
-//        self, 'Profile Websites'
-//    );
-    
+    self.profileWebsites = ko.observableArray([new ProfileWebsite]); // Initially a single item with a blank first entry    
 
     self.hasMultiple = ko.computed(function() {
         return self.profileWebsites().length > 1;
@@ -543,7 +538,6 @@ var SocialViewModel = function(urls, modes) {
         return self.profileWebsites().length > 1;
     });
     
-
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -607,7 +601,6 @@ var SocialViewModel = function(urls, modes) {
         
     self.values = ko.computed(function() {
         return [
-            {label: 'Profile Websites', text: self.profileWebsites(), value: self.profileWebsites()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
@@ -618,9 +611,44 @@ var SocialViewModel = function(urls, modes) {
         ];
     });
     
+ 
+   self.hasProfileWebsites = ko.computed(function() {
+        var profileWebsites = self.profileWebsites();
+               
+        for (var i=0; i<self.profileWebsites().length; i++) {
+            if (profileWebsites[i]) {
+                return true;
+            }
+        }
+
+        return false;
+    });
+    
+    
+//    self.hasBlankProfileWebsite = ko.computed(function() {
+//
+//            for (var i=0; i < self.profileWebsites().length; i++) {
+//                console.log("profileWebsite[i] = " + ko.toJS(self.profileWebsites()[i]));
+//                if (ko.toJS(self.profileWebsites()[i]) == "") {
+//                    return true;
+//                    console.log("profileWebsite is " + self.profileWebsites()[i]);
+//
+//                }
+//            }
+//
+//        return false;
+//    });
     
     self.hasValues = ko.computed(function() {
         var values = self.values();
+        var profileWebsites = self.profileWebsites();
+        
+        //inserted profileWebsites hook because hasValues is top level conditional in social.mako view portion of template
+        for (var i=0; i<self.profileWebsites().length; i++) {
+            if (profileWebsites[i]) {
+                return true;
+            }
+        }
         for (var i=0; i<self.values().length; i++) {
             if (values[i].value) {
                 return true;

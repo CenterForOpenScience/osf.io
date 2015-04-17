@@ -1,7 +1,6 @@
 <script id="profileSocial" type="text/html">
 
     <div data-bind="if: mode() === 'edit'">
-<pre>{{ko.toJSON($data)}}</pre>
         <form role="form" data-bind="submit: submit">
 
           <div data-bind="sortable: {
@@ -143,30 +142,22 @@
 
     <div data-bind="if: mode() === 'view'">
 
-       <div data-bind="if: profileWebsites().length">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Profile&nbsp;Website</th>
-                    </tr>
-                </thead>
-                <tbody data-bind="foreach: profileWebsites">
-                    <tr>
-                        <td>{{ profileWebsite }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
 
+         <table class="table" data-bind="if: hasValues()">
+            <tbody>
+                <tr data-bind="if: hasProfileWebsites()">
+                    <td>Profile Websites</td>
+                    <td data-bind="foreach: profileWebsites"><a target="_blank" data-bind="attr.href: $data">{{ $data }}</a></br></td>
+                </tr>
+            </tbody>
 
-        <table class="table" data-bind="if: hasValues()">
             <tbody data-bind="foreach: values">
                 <tr data-bind="if: value">
                     <td>{{ label }}</td>
                     <td><a target="_blank" data-bind="attr.href: value">{{ text }}</a></td>
                 </tr>
             </tbody>
-        </table>
+         </table>
 
         <div data-bind="ifnot: hasValues()">
             <div class="well well-sm">Not provided</div>
