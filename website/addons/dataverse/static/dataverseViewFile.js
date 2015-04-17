@@ -17,12 +17,12 @@ function ViewModel(url) {
     self.nodeTitle = ko.observable();
     self.filename = ko.observable();
     self.dataverse = ko.observable();
-    self.dataverse_url = ko.observable();
+    self.dataverseUrl = ko.observable();
     self.dataset = ko.observable();
-    self.dataset_url = ko.observable();
-    self.download_url = ko.observable();
-    self.delete_url = ko.observable();
-    self.files_url = ko.observable();
+    self.datasetUrl = ko.observable();
+    self.downloadUrl = ko.observable();
+    self.deleteUrl = ko.observable();
+    self.filesUrl = ko.observable();
     self.loaded = ko.observable(false);
     self.deleting = ko.observable(false);
 
@@ -36,12 +36,12 @@ function ViewModel(url) {
             self.nodeTitle(data.node.title);
             self.filename(data.filename);
             self.dataverse(data.dataverse);
-            self.dataverse_url(data.urls.dataverse);
+            self.dataverseUrl(data.urls.dataverse);
             self.dataset(data.dataset);
-            self.dataset_url(data.urls.dataset);
-            self.download_url(data.urls.download);
-            self.delete_url(data.urls.delete);
-            self.files_url(data.urls.files);
+            self.datasetUrl(data.urls.dataset);
+            self.downloadUrl(data.urls.download);
+            self.deleteUrl(data.urls.delete);
+            self.filesUrl(data.urls.files);
             self.loaded(true);
         }
     });
@@ -57,10 +57,10 @@ function ViewModel(url) {
                         self.deleting(true);
                         var request = $.ajax({
                             type: 'DELETE',
-                            url: self.delete_url()
+                            url: self.deleteUrl()
                         });
                         request.done(function() {
-                            window.location = self.files_url();
+                            window.location = self.filesUrl();
                         });
                         request.fail(function( jqXHR, textStatus ) {
                             self.deleting(false);
