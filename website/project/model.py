@@ -2457,14 +2457,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.initiated_by = user
         if justification:
             retraction.justification = justification
-        retraction.initiation_date = datetime.datetime.utcnow()
+        # retraction.initiation_date = datetime.datetime.utcnow()
         retraction.state = 'pending'
 
         # @todo(hrybacki) investigate why Node#admin_contributors isn't working
         # Collect list of admins for registration
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
 
-        approval_state = {'num_of_approvals': 0}
+        approval_state = {}  # {'num_of_approvals': 0}
         # Create approve/disapprove keys
         for admin in admins:
             approval_state[admin._id] = {
@@ -2602,11 +2602,10 @@ class Retraction(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
-    initiation_date = fields.DateTimeField()
+    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     initiated_by = fields.ForeignField('user', backref='retracted_by')
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
-    #   'num_of_approvals': 0,
     #   'b3k97': {
     #     'has_approved': False,
     #     'approval_token': 'Cru7wj1Puf7DENUPFPnXSwa1rf3xPN',
@@ -2639,10 +2638,9 @@ class Retraction(StoredObject):
             if self.approval_state[user._id]['approval_token'] != token:
                 raise InvalidRetractionApprovalToken
             self.approval_state[user._id]['has_approved'] = True
-            num_of_approvals = self.approval_state['num_of_approvals']
-            self.approval_state['num_of_approvals'] = num_of_approvals + 1
+            num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
 
-            if self.approval_state['num_of_approvals'] == (len(self.approval_state.keys()) - 1):
+            if num_of_approvals == len(self.approval_state.keys()):
                 self.state = 'retracted'
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
