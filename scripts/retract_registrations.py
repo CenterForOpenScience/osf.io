@@ -30,7 +30,7 @@ def should_be_retracted(retraction):
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
-    init_app()
+    init_app(routes=False, mfr=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)

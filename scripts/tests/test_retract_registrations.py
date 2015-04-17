@@ -9,6 +9,7 @@ from tests.factories import UserFactory
 
 from scripts.retract_registrations import main
 
+
 class TestRetractRegistrations(OsfTestCase):
 
     def setUp(self):
@@ -26,7 +27,13 @@ class TestRetractRegistrations(OsfTestCase):
         assert_false(self.registration.retraction.is_retracted)
 
     def test_should_not_retract_pending_retraction_less_than_48_hours_old(self):
-        self.registration.retraction.initiation_date = datetime.utcnow() - timedelta(hours=47)
+        # Retraction#iniation_date is read only
+        self.registration.retraction._fields['initiation_date'].__set__(
+            self.registration.retraction,
+            (datetime.utcnow() - timedelta(hours=47)),
+            safe=True
+        )
+        # setattr(self.registration.retraction, 'initiation_date', (datetime.utcnow() - timedelta(hours=47)))
         self.registration.retraction.save()
         assert_false(self.registration.retraction.is_retracted)
 
@@ -34,7 +41,12 @@ class TestRetractRegistrations(OsfTestCase):
         assert_false(self.registration.retraction.is_retracted)
 
     def test_should_retract_pending_retraction_that_is_48_hours_old(self):
-        self.registration.retraction.initiation_date = datetime.utcnow() - timedelta(hours=48)
+        # Retraction#iniation_date is read only
+        self.registration.retraction._fields['initiation_date'].__set__(
+            self.registration.retraction,
+            (datetime.utcnow() - timedelta(hours=48)),
+            safe=True
+        )
         self.registration.retraction.save()
         assert_false(self.registration.retraction.is_retracted)
 
@@ -42,7 +54,12 @@ class TestRetractRegistrations(OsfTestCase):
         assert_true(self.registration.retraction.is_retracted)
 
     def test_should_retract_pending_retraction_more_than_48_hours_old(self):
-        self.registration.retraction.initiation_date = datetime.utcnow() - timedelta(days=365)
+        # Retraction#iniation_date is read only
+        self.registration.retraction._fields['initiation_date'].__set__(
+            self.registration.retraction,
+            (datetime.utcnow() - timedelta(days=365)),
+            safe=True
+        )
         self.registration.retraction.save()
         assert_false(self.registration.retraction.is_retracted)
 
