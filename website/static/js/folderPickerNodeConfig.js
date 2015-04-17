@@ -80,7 +80,8 @@ var FolderPickerViewModel = oop.defclass({
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
                     'this time. The ' + self.addonName + ' addon credentials may no longer be valid.' +
-                    ' Try deauthorizing and reauthorizing ' + self.addonName + '.';
+                    ' Try deauthorizing and reauthorizing ' + self.addonName + ' on your <a href="' +
+                    self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
