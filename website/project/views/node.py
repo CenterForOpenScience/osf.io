@@ -380,7 +380,7 @@ def configure_comments(**kwargs):
 # View Project
 ##############################################################################
 
-@must_be_valid_project(are_retractions_valid=True)
+@must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
 def view_project(**kwargs):
     auth = kwargs['auth']
@@ -954,7 +954,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
 
 
 @collect_auth
-@must_be_valid_project(are_retractions_valid=True)
+@must_be_valid_project(retractions_valid=True)
 def get_summary(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     rescale_ratio = kwargs.get('rescale_ratio')

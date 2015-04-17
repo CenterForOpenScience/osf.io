@@ -14,7 +14,7 @@ from framework.exceptions import HTTPError
 def valid_project_helper(**kwargs):
     return kwargs
 
-@must_be_valid_project(are_retractions_valid=True)
+@must_be_valid_project(retractions_valid=True)
 def as_factory_allow_retractions(**kwargs):
     return kwargs
 
