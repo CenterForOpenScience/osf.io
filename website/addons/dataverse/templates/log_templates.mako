@@ -19,9 +19,24 @@ linked Dataverse dataset
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
+<!-- Legacy version -->
+<script type="text/html" id="dataverse_study_linked">
+linked Dataverse dataset
+<span class="overflow">{{ params.study }}</span> to {{ nodeType }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
 <script type="text/html" id="dataverse_dataset_published">
 published a new version of Dataverse dataset
 <span class="overflow">{{ params.dataset }}</span> to {{ nodeType }}
+for {{ nodeType }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+<!-- Legacy version -->
+<script type="text/html" id="dataverse_study_released">
+published a new version of Dataverse dataset
+<span class="overflow">{{ params.study }}</span> to {{ nodeType }}
 for {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
