@@ -65,7 +65,7 @@ def node_registration_retraction_get(auth, **kwargs):
     """
 
     node = kwargs['node'] or kwargs['project']
-    if node.retraction.pending_retraction:
+    if node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'This registration is already pending a retraction.'
@@ -141,7 +141,7 @@ def node_registration_retraction_approve(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     token = kwargs['token']
 
-    if node.retraction.state != 'pending':
+    if not node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending a retraction.'
@@ -178,7 +178,7 @@ def node_registration_retraction_disapprove(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     token = kwargs['token']
 
-    if node.retraction.state != 'pending':
+    if not node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending a retraction.'
