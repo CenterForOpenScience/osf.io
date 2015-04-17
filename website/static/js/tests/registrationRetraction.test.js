@@ -113,7 +113,7 @@ describe('registrationRetraction', () => {
                         assert.equal(response, redirectUrl);
                         assert.called(onSubmitErrorSpy);
                         assert.called(postSpy);
-                        assert.notCalled(growlSpy);
+                        assert.called(growlSpy);
                     });
 
                     onSubmitErrorSpy.restore();

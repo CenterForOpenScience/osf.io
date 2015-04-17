@@ -14,7 +14,6 @@ var koHelpers = require('js/koHelpers');
 var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
 
     var self = this;
-    var mustEqual = koHelpers.mustEqual;
 
     self.registrationTitle = registrationTitle;
     self.justification = ko.observable('').extend({
@@ -28,6 +27,11 @@ var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
         window.location = response.redirectUrl;
     };
     self.onSubmitError = function(error) {
+        $osf.growl(
+            'Error',
+            error,
+            'warning'
+        );
         Raven.captureMessage('Could not submit registration retraction.', {
            error: error
         });
