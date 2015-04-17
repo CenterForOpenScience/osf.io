@@ -19,6 +19,7 @@ module.exports = {
         registration :  'project-organizer-icon-reg-project',
         component :  'project-organizer-icon-component',
         registeredComponent :  'project-organizer-icon-reg-component',
-        link :  'project-organizer-icon-pointer'
+        link :  'project-organizer-icon-pointer',
+        private: 'fa fa-lock'
     }
 };
