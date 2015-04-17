@@ -21,6 +21,13 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.valid_justification = fake.sentence()
         self.invalid_justification = fake.text(max_nb_chars=3000)
 
+    def test_invalid_state_raises_ValidationValueError(self):
+        self.registration.is_public = True
+        self.registration.retract_registration(self.user)
+        with assert_raises(ValidationValueError):
+            self.registration.retraction.state = 'invalid_state'
+            self.registration.retraction.save()
+
     def test_one_disapproval_cancels_retraction(self):
         self.registration.is_public = True
         self.registration.retract_registration(self.user)

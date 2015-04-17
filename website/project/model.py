@@ -2589,6 +2589,14 @@ class PrivateLink(StoredObject):
         }
 
 
+def validate_retraction_state(value):
+    acceptable_states = ['pending', 'retracted']
+    if value not in acceptable_states:
+        raise ValidationValueError
+
+    return True
+
+
 class Retraction(StoredObject):
     """Retraction object for public registrations."""
 
@@ -2596,8 +2604,17 @@ class Retraction(StoredObject):
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
     initiation_date = fields.DateTimeField()
     initiated_by = fields.ForeignField('user', backref='retracted_by')
+    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
+    # {
+    #   'num_of_approvals': 0,
+    #   'b3k97': {
+    #     'has_approved': False,
+    #     'approval_token': 'Cru7wj1Puf7DENUPFPnXSwa1rf3xPN',
+    #     'disapproval_token': 'UotzClTFOic2PYxHDStby94bCQMwJy'}
+    # }
     approval_state = fields.DictionaryField()
-    state = fields.StringField(default='pending')
+    # One of 'pending', 'retracted'
+    state = fields.StringField(default='pending', validate=validate_retraction_state)
 
     @property
     def is_retracted(self):
