@@ -1206,7 +1206,7 @@ class TestConfirmingEmail(OsfTestCase):
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_resend_form(self, send_confirm_email):
-        #todo rewrite tests
+        # TODO: rewrite tests
         pass
         # res = self.app.get('/resend/')
         # form = res.forms['resendForm']
@@ -1216,7 +1216,7 @@ class TestConfirmingEmail(OsfTestCase):
         # assert_in('Resent email to', res)
 
     def test_resend_form_does_nothing_if_not_in_db(self):
-        #todo rewrite tests
+        # TODO: rewrite tests
         pass
         # res = self.app.get('/resend/')
         # form = res.forms['resendForm']
@@ -1225,7 +1225,7 @@ class TestConfirmingEmail(OsfTestCase):
         # assert_equal(res.request.path, '/resend/')
 
     def test_resend_form_shows_alert_if_email_already_confirmed(self):
-        #todo rewrite tests
+        # TODO: rewrite tests
         pass
         # user = UnconfirmedUserFactory()
         # url = user.get_confirmation_url(user.username, external=False)

@@ -2528,7 +2528,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
 
     def test_resend_confirmation_get(self):
-        #todo rewrite tests
+        # TODO: rewrite tests
         pass
         # res = self.app.get('/resend/')
         # assert_equal(res.status_code, 200)
@@ -2557,7 +2557,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
-        #todo rewrite tests
+        # TODO: rewrite tests
         pass
         # # Make sure user has a confirmation token for their primary email
         # u = UnconfirmedUserFactory()
@@ -2573,7 +2573,7 @@ class TestAuthViews(OsfTestCase):
     @mock.patch('website.security.random_string')
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
-        #todo rewrite tests
+        # TODO: rewrite tests
         pass
         # expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
         # random_string.return_value = '12345'
@@ -2591,7 +2591,8 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_if_user_not_in_database(self, send_mail):
-        #todo rewrite tests
+        # TODO: rewrite tests
+        pass
         # self.app.post('/resend/', {'email': 'norecord@norecord.no'})
         # assert_false(send_mail.called)
 
