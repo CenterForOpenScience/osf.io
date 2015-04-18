@@ -17,7 +17,7 @@ from framework.sessions import set_previous_url
 from framework.auth import (login, logout, get_user, DuplicateEmailError, verify_two_factor)
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
-        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
+        ResetPasswordForm, ForgotPasswordForm)
 from framework.sessions import session
 
 import website.settings

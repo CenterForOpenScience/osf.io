@@ -610,7 +610,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         validate_email(email)
 
-         #If the unconfirmed email is already present, refresh the token
+        # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
             self.remove_unconfirmed_email(email)
             self.save()
