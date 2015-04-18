@@ -91,6 +91,7 @@
                             <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">
                         </div>
                         <button type="submit" class="btn btn-sm btn-success">Sign In</button>
+                        <a class="btn btn-sm btn-primary" href="/#signUp">Sign Up</a>
                     </form>
                 </li>
                 <li>
