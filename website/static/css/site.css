@@ -2538,6 +2538,9 @@ span#profileFullname{
 .m-r-xl {
     margin-right: 50px;
 }
+.m-r-xxl {
+    margin-right: 100px;
+}
 /*Top Margin Only*/
 .m-t-xs {
     margin-top: 5px;
