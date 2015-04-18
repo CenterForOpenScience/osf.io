@@ -43,6 +43,7 @@ class UserTestCase(base.OsfTestCase):
         assert_true(self.unconfirmed.can_be_merged)
 
     def test_merge_unconfirmed(self):
+        unconfirmed_email = self.unconfirmed.username
         self.user.merge_user(self.unconfirmed)
 
         assert_true(self.unconfirmed.is_merged)
@@ -58,7 +59,7 @@ class UserTestCase(base.OsfTestCase):
         assert_equal(self.user.system_tags, ['shared', 'user', 'unconfirmed'])
         assert_equal(self.user.aka, ['shared', 'user', 'unconfirmed'])
 
-        # TODO: test emails
+        assert_in(unconfirmed_email, self.user.emails)
         # TODO: test watched
         # TODO: test external_accounts
 
