@@ -68,7 +68,8 @@ var UserProfileClient = oop.defclass({
     constructor: function () {},
     urls: {
         fetch: '/api/v1/profile/',
-        update: '/api/v1/profile/'
+        update: '/api/v1/profile/',
+        resend: '/api/v1/resend/'
     },
     fetch: function () {
         var ret = $.Deferred();
@@ -110,16 +111,48 @@ var UserProfileClient = oop.defclass({
 
         return ret;
     },
-    serialize: function (profile) {
+    resend: function (profile, email){
+        var ret = $.Deferred();
+        var request = $osf.putJSON(
+            this.urls.resend,
+            this.serialize(profile, email)
+        ).done(function (data) {
+            ret.resolve(this.unserialize(data, profile));
+        }.bind(this)).fail(function(xhr, status, error) {
+            $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
+                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                'if the problem persists.', 'danger');
+            Raven.captureMessage('Error fetching user profile', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+                ret.reject(xhr, status, error);
+        }.bind(this));
+
+        return ret;
+    },
+    serialize: function (profile, email) {
+        if(email){
+            return {
+                id: profile.id(),
+                email: {
+                    address: email.address(),
+                    primary: email.isPrimary(),
+                    confirmed: email.isConfirmed()
+                }
+            };
+        }
         return {
             id: profile.id(),
-            emails: ko.utils.arrayMap(profile.emails(), function(email) {
+            emails: ko.utils.arrayMap(profile.emails(), function (email) {
                 return {
                     address: email.address(),
                     primary: email.isPrimary(),
                     confirmed: email.isConfirmed()
                 };
             })
+
         };
     },
     unserialize: function (data, profile) {
@@ -192,6 +225,21 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         } else {
             this.changeMessage('Email cannot be empty.', 'text-danger');
         }
+    },
+    reSendConfirm: function(email){
+        var self = this;
+        self.changeMessage('', 'text-info');
+        bootbox.confirm({
+            title: 'Resend Email Confirmation?',
+            message: 'Are you sure that you want to resend email confirmation at ' + '<em><b>' + email.address() + '</b></em>',
+            callback: function (confirmed) {
+                if (confirmed) {
+                    self.client.resend(self.profile(), email).done(function () {
+                        $osf.growl('Email confirmation resends to ', '<em>' + email.address() + '<em>', 'success');
+                    });
+                }
+            }
+        });
     },
     removeEmail: function (email) {
         var self = this;
