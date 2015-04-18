@@ -145,7 +145,7 @@ var UserProfileClient = oop.defclass({
         }
         return {
             id: profile.id(),
-            emails: ko.utils.arrayMap(profile.emails(), function (email) {
+            emails: ko.utils.arrayMap(profile.emails(), function(email) {
                 return {
                     address: email.address(),
                     primary: email.isPrimary(),

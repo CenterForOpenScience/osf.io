@@ -102,14 +102,16 @@ def resend_confirmation(auth):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not primary and not confirmed:
-        user.add_unconfirmed_email(address)
+    if primary or confirmed:
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
 
-        # TODO: This setting is now named incorrectly.
-        if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-            send_confirm_email(user, email=address)
+    user.add_unconfirmed_email(address)
 
-        user.save()
+    # TODO: This setting is now named incorrectly.
+    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+        send_confirm_email(user, email=address)
+
+    user.save()
 
     return _profile_view(user)
 
