@@ -1856,6 +1856,14 @@ span#profileFullname{
     margin-bottom: 2px;
     margin-left: 0;
     margin-right: 0;
+    padding-right:3px;
+}
+
+.navbar-form a.btn-sign-up{
+    padding:5px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
 }
 
 .navbar-toggle {
