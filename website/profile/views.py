@@ -94,7 +94,7 @@ def update_user(auth):
             raise HTTPError(httplib.FORBIDDEN)
     else:
         # raise an error if request doesn't have user id
-        raise HTTPError(httplib.BAD_REQUEST, data={"message_long": "User id not in the request send."})
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
 
     # TODO: Expand this to support other user attributes
 
