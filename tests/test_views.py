@@ -1218,7 +1218,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_timezone(self):
         assert_equal(self.user.timezone, 'Etc/UTC')
-        payload = {'timezone': 'America/New_York'}
+        payload = {'timezone': 'America/New_York', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1226,7 +1226,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': 'de_DE'}
+        payload = {'locale': 'de_DE', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1234,7 +1234,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_none(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': None}
+        payload = {'locale': None, 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1242,7 +1242,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_empty_string(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': ''}
+        payload = {'locale': '', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
