@@ -154,10 +154,7 @@ def update_user(auth):
                     user.remove_email(address)
                 except PermissionsError as e:
                     raise HTTPError(httplib.FORBIDDEN, e.message)
-            try:
                 user.remove_unconfirmed_email(address)
-            except PermissionsError as e:
-                raise HTTPError(httplib.FORBIDDEN, e.message)
 
         # additions
         added_emails = [
