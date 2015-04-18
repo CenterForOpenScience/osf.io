@@ -1248,6 +1248,13 @@ class TestUserProfile(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.locale, 'en_US')
 
+    def test_cannot_update_user_without_user_id(self):
+        user1 = AuthUserFactory()
+        url = api_url_for('update_user')
+        header = {'emails': [{'address': user1.username}]}
+        res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], '"id" is required')
 
 class TestUserAccount(OsfTestCase):
 
