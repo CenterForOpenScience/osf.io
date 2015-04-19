@@ -68,16 +68,16 @@ function cancelUploads (row) {
     var treebeard = this;
     var filesArr = treebeard.dropzone.getQueuedFiles();
     for (var i = 0; i < filesArr.length; i++) {
-        var m = filesArr[i];
+        var j = filesArr[i];
         if(!row){
-            var parent = m.treebeardParent || treebeard.dropzoneItemCache;
-            var item = findByTempID(parent, m.tmpID);
-            treebeard.dropzone.removeFile(m);
+            var parent = j.treebeardParent || treebeard.dropzoneItemCache;
+            var item = findByTempID(parent, j.tmpID);
+            treebeard.dropzone.removeFile(j);
             treebeard.deleteNode(parent.id,item.id);
         } else {
             treebeard.deleteNode(row.parentID,row.id);
-            if(row.data.tmpID === m.tmpID){
-                treebeard.dropzone.removeFile(m);
+            if(row.data.tmpID === j.tmpID){
+                treebeard.dropzone.removeFile(j);
             }
         }
     }
