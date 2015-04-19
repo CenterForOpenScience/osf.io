@@ -184,6 +184,11 @@ text-align: center;
 	font-weight: bold;
 }
 
+.fg-hover-hide {
+    cursor: pointer;
+}
+
+
 /* File icons */
 .file-extension {
 	width: 16px;

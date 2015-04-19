@@ -212,10 +212,15 @@ function _resolveLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item, {ref: item.data.branch});
 }
 
-function _fangornLazyLoadOnLoad (tree) {
+function _fangornLazyLoadOnLoad (tree, event) {
+    var tb = this;
     tree.children.forEach(function(item) {
         Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
     });
+    Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
+    if(!event){
+        Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
+    }
 }
 
 function _fangornGithubTitle(item, col)  {
@@ -249,6 +254,12 @@ function _fangornGithubTitle(item, col)  {
 
 
 function _fangornColumns (item) {
+    var selectClass = '';
+    var node = item.parent().parent();
+    if (item.data.kind === 'file' && this.currentFileID === item.id) {
+        selectClass = 'fangorn-hover';
+    }
+
     var columns = [];
     columns.push(
     {
@@ -266,6 +277,7 @@ function _fangornColumns (item) {
         data : 'name',
         folderIcons : true,
         filter: true,
+        css: selectClass,
         custom : _fangornGithubTitle
     });
 

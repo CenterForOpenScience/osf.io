@@ -188,6 +188,12 @@ function _fangornDataverseTitle(item, col) {
 }
 
 function _fangornColumns(item) {
+    var selectClass = '';
+    var tb = this;
+    if (item.data.kind === 'file' && tb.currentFileID === item.id) {
+        selectClass = 'fangorn-hover';
+    }
+
     var columns = [];
     columns.push(
     {
@@ -205,6 +211,7 @@ function _fangornColumns(item) {
         data : 'name',
         folderIcons : true,
         filter : true,
+        css: selectClass,
         custom: _fangornDataverseTitle
     });
 

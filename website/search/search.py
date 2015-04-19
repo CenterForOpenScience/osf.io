@@ -52,11 +52,11 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
                                               exclude=exclude, current_user=current_user)
     return result
 
-def search_share(query, raw=False):
-    return share_search.search(query, raw=raw)
+def search_share(query, raw=False, index='share'):
+    return share_search.search(query, raw=raw, index=index)
 
-def count_share(query):
-    return share_search.count(query)
+def count_share(query, index='share'):
+    return share_search.count(query, index=index)
 
 def share_stats(query=None):
     query = query or {}
