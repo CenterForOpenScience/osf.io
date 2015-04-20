@@ -2,6 +2,7 @@
 
 <div id="googleDriveAddonScope" class="addon-settings scripted">
 <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
     Google Drive
     <small>
         <!-- Delete Access Token Button-->

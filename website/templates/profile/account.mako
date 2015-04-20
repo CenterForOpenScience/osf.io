@@ -1,6 +1,8 @@
 
 <%inherit file="base.mako"/>
 
+
+
 <%def name="title()">Account Settings</%def>
 
 <%def name="content()">
@@ -117,6 +119,13 @@
         </div>
     </div>
     <script src=${"/static/public/js/profile-account-settings-page.js" | webpack_asset}></script>
+</%def>
+
+<%def name="stylesheets()">
+  ${parent.stylesheets()}
+  % for stylesheet in addons_css:
+      <link rel="stylesheet" type="text/css" href="${stylesheet}">
+  % endfor
 </%def>
 
 <%def name="render_user_settings(config)">

@@ -2,6 +2,7 @@
 <div id="boxAddonScope" class="addon-settings scripted">
 
     <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
         Box
         <!-- Delete Access Token Button -->
         <small class="authorized-by">

@@ -285,6 +285,7 @@ def user_account(auth, **kwargs):
         'user_id': user._id,
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': []
     }
 
 
@@ -319,6 +320,7 @@ def user_addons(auth, **kwargs):
         'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
         'addons_js': collect_user_config_js(accounts_addons),
         'addon_capabilities': settings.ADDON_CAPABILITIES,
+        'addons_css': []
     })
     return ret
 

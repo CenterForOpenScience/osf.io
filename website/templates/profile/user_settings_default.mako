@@ -1,9 +1,12 @@
 <!-- Authorization -->
 <div class="addon-oauth"
      data-addon-short-name="${ addon_short_name }"
-     data-addon-name="${ addon_full_name }">
+     data-addon-name="${ addon_full_name }">  
     <a data-bind="click: connectAccount" class="pull-right text-primary">Connect Account</a>
-    <h4 class="addon-title">{{ properName }}</h4>
+    <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
+      {{ properName }}
+    </h4>
     <!-- ko foreach: accounts -->
 
     <table class="table">

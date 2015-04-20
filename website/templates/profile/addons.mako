@@ -1,6 +1,12 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Configure External Accounts </%def>
 <%def name="content()">
+<style>
+.addon-icon {
+    width: 20px;
+}
+</style>
+
 <% from website import settings %>
 <h2 class="page-header">Configure External Accounts</h2>
 
@@ -47,6 +53,13 @@
        tpl = template.render(**config)
     %>
     ${tpl}
+</%def>
+
+<%def name="stylesheets()">
+  ${parent.stylesheets()}
+  % for stylesheet in addons_css:
+      <link rel="stylesheet" type="text/css" href="${stylesheet}">
+  % endfor
 </%def>
 
 
