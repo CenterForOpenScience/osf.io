@@ -7,7 +7,6 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework import status
-from framework.auth import exceptions
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
@@ -113,12 +112,10 @@ def _send_retraction_email(node, user, approval_token, disapproval_token):
         :param disapproval_token: token `user` needs to disapprove retraction
     """
 
-    base = settings.DOMAIN[:-1]
     registration_link = node.web_url_for('view_project', _absolute=True)
     approval_link = node.web_url_for('node_registration_retraction_approve', token=approval_token, _absolute=True)
     disapproval_link = node.web_url_for('node_registration_retraction_disapprove', token=disapproval_token, _absolute=True)
     approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
-
 
     mails.send_mail(
         user.username,
