@@ -42,11 +42,12 @@ function _fangornActionColumn (item, col) {
 
         function publishDataset() {
             self.modal.dismiss();
-            item.notify.update('Publishing ' + toPublish, 'info', 1, 3000);
+            item.notify.update('Publishing ' + toPublish, 'info', 1, 1);
             $.osf.putJSON(
                 url,
                 {}
             ).done(function(data) {
+                item.notify.update();
                 var modalContent = [
                     m('p.m-md', 'Your content has been published.')
                 ];
