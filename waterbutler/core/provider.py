@@ -258,7 +258,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         pass
 
     def revisions(self, **kwargs):
-        return []
+        return []  # TODO Raise 405 by default h/t @rliebz
 
     def create_folder(self, *args, **kwargs):
         """Create a folder in the current provider
