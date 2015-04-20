@@ -1,6 +1,7 @@
 import logging
 
 from framework.mongo import database
+import pymongo
 
 from website.app import init_app
 
@@ -11,11 +12,16 @@ logger = logging.getLogger(__name__)
 def migrate():
     logger.info('migrating osfstorageguidfiles')
     logger.info('path -> premigration_path')
-    database.osfstorageguidfile.update({
-        '_path': {'$ne': None}
-    }, {
-        '$rename': {'path': 'premigration_path'}
-    }, multi=True)
+
+    try:
+        database.osfstorageguidfile.drop_index(
+            [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+        )
+    except pymongo.errors.OperationFailure:
+        logger.warn('Index on node and path already removed')
 
     logger.info('_path -> path')
     database.osfstorageguidfile.update({
