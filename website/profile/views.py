@@ -94,6 +94,14 @@ def update_user(auth):
 
     data = request.get_json()
 
+    # check if the user in request is the user who log in
+    if 'id' in data:
+        if data['id'] != user._id:
+            raise HTTPError(httplib.FORBIDDEN)
+    else:
+        # raise an error if request doesn't have user id
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
+
     # TODO: Expand this to support other user attributes
 
     ##########

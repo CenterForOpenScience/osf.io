@@ -1217,7 +1217,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_timezone(self):
         assert_equal(self.user.timezone, 'Etc/UTC')
-        payload = {'timezone': 'America/New_York'}
+        payload = {'timezone': 'America/New_York', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1225,7 +1225,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': 'de_DE'}
+        payload = {'locale': 'de_DE', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1233,7 +1233,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_none(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': None}
+        payload = {'locale': None, 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1241,12 +1241,19 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_empty_string(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': ''}
+        payload = {'locale': '', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
         assert_equal(self.user.locale, 'en_US')
 
+    def test_cannot_update_user_without_user_id(self):
+        user1 = AuthUserFactory()
+        url = api_url_for('update_user')
+        header = {'emails': [{'address': user1.username}]}
+        res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], '"id" is required')
 
 class TestUserAccount(OsfTestCase):
 

@@ -155,6 +155,7 @@ def get_dashboard(auth, nid=None, **kwargs):
     return_value = {'data': [serialize(item) for item in data]}
     return_value['timezone'] = user.timezone
     return_value['locale'] = user.locale
+    return_value['id'] = user._id
     return return_value
 
 @must_be_logged_in
