@@ -885,7 +885,9 @@ function _cleanupMithril() {
  function _toolbarDismissEvent ( ){
     var tb = this;
     $('.tb-header-row .twitter-typeahead').remove();
-    tb.options.iconState.mode = 'bar'; tb.resetFilter(); 
+    tb.options.iconState.mode = 'bar'; 
+    tb.resetFilter();
+    tb.filterText(''); 
  }
 
 function toolbarDismissIcon (){
