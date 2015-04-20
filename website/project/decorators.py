@@ -53,6 +53,15 @@ def must_be_valid_project(func):
 
     return wrapped
 
+def must_be_valid_file(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        kwargs['file_guid'] = _kwargs_to_nodes(kwargs)
+        return func(*args, **kwargs)
+
+    return wrapped
 
 def must_not_be_registration(func):
 

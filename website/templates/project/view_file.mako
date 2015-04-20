@@ -165,6 +165,7 @@
     </script>
     %endif
     <script type="text/javascript">
+
       window.contextVars = $.extend(true, {}, window.contextVars, {
     %if rendered is None:
         renderURL: '${render_url | js_str}',
@@ -176,7 +177,9 @@
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}'
+            safeName: '${file_name | h,js_str}',
+            file_guid: '${file_guid | js_str}'
+
         },
         node: {
           urls: {
