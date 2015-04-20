@@ -280,6 +280,11 @@ def dashboard(auth):
             'dashboard_id': dashboard_id,
             }
 
+@must_be_logged_in
+def dashboard_static(auth):
+    import pdb; pdb.set_trace()
+    url = request.url
+
 
 def paginate(items, total, page, size):
     start = page * size
