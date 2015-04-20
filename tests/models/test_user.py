@@ -160,6 +160,5 @@ class UserTestCase(base.OsfTestCase):
         assert_equal(e.exception.message, "Can't remove primary email")
 
     def test_cannot_remove_primary_email_from_unconfirmed_list(self):
-        with assert_raises(PermissionsError) as e:
-            self.user.remove_unconfirmed_email(self.user.username)
-        assert_equal(e.exception.message, "Can't remove primary email")
+        res = self.user.remove_unconfirmed_email(self.user.username)
+        assert_false(res)
