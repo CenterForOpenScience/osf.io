@@ -184,7 +184,17 @@
       <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="node">
-      <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
+      <h4>
+        <span data-bind="if: parent_title">
+        /
+        </span>
+        <a data-bind="if: parent_url, attr.href: parent_url">{{ parent_title }}</a>
+        <span data-bind="ifnot: parent_url, attr.href: parent_url">{{ parent_title }}</span>        
+        /
+        <a data-bind="attr.href: url">{{ title }}</a>
+        <i data-bind="click: $root.nodeLoadMore"
+           class="fa fa-info-circle"></i>
+      </h4> 
       <p data-bind="visible: description">
         <strong>Description:</strong> {{ description | fit:500 }}
       </p>

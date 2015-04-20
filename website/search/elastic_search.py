@@ -293,7 +293,6 @@ def update_node(node, index=INDEX):
     category = 'component' if node.category in component_categories else node.category
     if category == 'project':
         elastic_document_id = node._id
-        parent_id = None
         category = 'registration' if node.is_registration else category
     else:
         category = 'component'

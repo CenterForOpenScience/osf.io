@@ -39,7 +39,7 @@ def create_fake_projects(creator, depth, num_logs, level=1, parent=None):
         return None
     descriptor = choice(descriptors) if (level % 2 == 0) else 'project'
     project_title = parent.title + (': ' + CATEGORY_MAP[descriptor]) if (level % 2 == 0) else fake.word()
-    project = NodeFactory.build(title=project_title, description=fake.sentences(), creator=creator, project=parent, is_public=True, privacy='public', category=descriptor)
+    project = NodeFactory.build(title=project_title, description=fake.sentences(), creator=creator, parent=parent, is_public=True, privacy='public', category=descriptor)
     for i in range(int(num_logs)):
         project.add_log('wiki_updated', {
             'project': project._id,

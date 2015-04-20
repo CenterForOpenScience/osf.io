@@ -1,4 +1,4 @@
-from datetime import datetime
+ofrom datetime import datetime
 
 from website.project.model import Node
 
@@ -188,3 +188,30 @@ class ProjectOrganizerSerializer(NodeSerializer):
             'node_id': node_id,
             'childrenCount': children_count,
         }
+
+class SearchNodeSerializer(NodeSerializer):
+
+    def __init__(self, auth):
+        self.maybe_hide = lambda value, default='': value if child.can_view(auth) else default
+
+    def _serialize_child(self, child):
+        return {
+            'url': self.maybe_hide(child.url),
+            'title': self.maybe_hide(child.title)
+        }
+
+    def _serialize_children(self, node):
+        return [self._serialize_child(child) for child in node.nodes]
+
+    def _serialize_parent(self, parent):
+        return {
+            'url': self.maybe_hide(child.url),
+            'title': self.maybe_hide(child.title)
+        }
+
+    def serialize(self, node):
+        ret = super(SearchNodeSerializer, self).serialize(node)
+        ret.update({
+            'parents': [self._serialize_parent(parent) for parent in node.parents]
+        })
+        return ret

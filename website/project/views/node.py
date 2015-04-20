@@ -38,6 +38,7 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
+from website.util.serializers import SearchNodeSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -1312,3 +1313,8 @@ def get_pointed(auth, node, **kwargs):
         for each in node.pointed
         if not get_pointer_parent(each).is_folder
     ]}
+
+@must_be_logged_in
+@must_be_valid_project
+def get_project_info(auth, node, **kwargs):
+    return SearchNodeSerializer(auth).serialize(node)

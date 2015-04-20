@@ -258,9 +258,9 @@ ViewModel.prototype.updateCategories = function(counts, typeAliases){
 
     // If our category is named attempt to load its total else set it to the total total
     if (self.category().name !== undefined) {
-        self.totalResults(counts[self.category().name] || 0);
+        self.totalResults(counts[self.category().name].value || 0);
     } else {
-        self.totalResults(self.self.categories()[0].count);
+        self.totalResults(self.categories()[0].value);
     }
 };
 
@@ -435,6 +435,23 @@ ViewModel.prototype.setCategory = function(cat) {
     } else {
         self.category(new Category('total', 0, 'Total', []));
     }
+};
+
+ViewModel.prototype.nodeShowMore = function(info) {
+    bootbox.dialog({
+        title: info.name,
+        message: 
+    });
+};
+
+ViewModel.prototype.nodeLoadMore = function(node) {
+    var self = this;
+    var url = ['/api/v1/project', node.url, 'info/'].join('');
+    $.getJSON(url)
+        .done(self.nodeShowMore)
+        .fail(function(xhr, status, error) {
+
+        });
 };
 
 function Search(selector, url, appURL) {
