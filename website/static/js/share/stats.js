@@ -38,8 +38,8 @@ function donutGraph (data, vm) {
         tooltip: {
             format: {
                 name: function (name, ratio, id, index) {
-                    if (name == 'pubmed') {
-                        name = 'pubmed central'
+                    if (name === 'pubmed') {
+                        name = 'pubmed central';
                     }
                     return name; 
                 }
@@ -77,8 +77,8 @@ function timeGraph (data) {
             grouped: false,
             format: {
               name: function (name, ratio, id, index) {
-                  if (name == 'pubmed') {
-                      name = 'pubmed central'
+                  if (name === 'pubmed') {
+                      name = 'pubmed central';
                   }
                   return name; 
               }
