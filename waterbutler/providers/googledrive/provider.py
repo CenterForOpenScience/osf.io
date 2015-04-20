@@ -380,23 +380,38 @@ class GoogleDriveProvider(provider.BaseProvider):
         return item_id
 
     @asyncio.coroutine
-    def _resolve_path_to_ids(self, path, parent_id=None):
-        parts = path.parts
-        item_id = parent_id or self.folder['id']
+    def _resolve_path_to_ids(self, path):
+        if path == '/':
+            return [{
+                'id': self.folder['id'],
+                'title': self.folder['name']
+            }]
+
+        parts = []
+        item_id = self.folder['id']
+        parts = path.strip('/').split('/')
 
         while parts:
+            current_part = parts.pop(0)
+
             resp = yield from self.make_request(
                 'GET',
-                self.build_url('files', item_id, 'children', q='title = "{}"', fields='id,title'.format(parts.pop(0))),
+                self.build_url('files', item_id, 'children', q='title = "{}"', fields='id'.format(current_part)),
                 expects=(200, ),
                 throws=exceptions.MetadataError,
             )
+
             try:
                 item_id = (yield from resp.json())['items'][0]['id']
             except (KeyError, IndexError):
                 raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
 
-        return item_id
+            parts.append({
+                'id': item['id'],
+                'title': current_part
+            })
+
+        return parts
 
     @asyncio.coroutine
     def _resolve_id_to_parts(self, _id, accum=None):
