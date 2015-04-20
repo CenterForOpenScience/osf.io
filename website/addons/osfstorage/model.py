@@ -91,7 +91,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
         :param OsfStorageNodeSettings dest: Destination settings object
         """
-        dest.save()
+        dest.save()s
         if self.file_tree:
             dest.file_tree = copy_file_tree(self.file_tree, dest)
             dest.save()
