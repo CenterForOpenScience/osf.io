@@ -216,7 +216,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
 
     def test_must_be_contributor_parent_admin(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         res = view_that_needs_contributor(
             pid=self.project._id,
             nid=node._id,
@@ -226,7 +226,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
 
     def test_must_be_contributor_parent_write(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         self.project.set_permissions(self.project.creator, ['read', 'write'])
         self.project.save()
         with assert_raises(HTTPError) as exc_info:

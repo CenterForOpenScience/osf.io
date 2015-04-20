@@ -904,7 +904,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory()
-        self.node = NodeFactory(creator=self.user, project=self.project)
+        self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         self.versions = self.project.wiki_pages_versions
@@ -989,7 +989,7 @@ class TestRenameNodeWiki(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory()
-        self.node = NodeFactory(creator=self.user, project=self.project)
+        self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         self.versions = self.project.wiki_pages_versions
@@ -1104,7 +1104,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory()
-        self.node = NodeFactory(creator=self.user, project=self.project)
+        self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         self.versions = self.project.wiki_pages_versions
@@ -1166,7 +1166,7 @@ class TestNode(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.parent = ProjectFactory(creator=self.user)
-        self.node = NodeFactory(creator=self.user, project=self.parent)
+        self.node = NodeFactory(creator=self.user, parent=self.parent)
 
     def test_validate_categories(self):
         with assert_raises(ValidationError):
@@ -1187,8 +1187,7 @@ class TestNode(OsfTestCase):
             result2,
             web_url_for(
                 'view_project',
-                pid=self.parent._primary_key,
-                nid=self.node._primary_key
+                pid=self.node._primary_key
             )
         )
 
@@ -1229,8 +1228,7 @@ class TestNode(OsfTestCase):
             result2,
             api_url_for(
                 'view_project',
-                pid=self.parent._id,
-                nid=self.node._id,
+                pid=self.node._id,
             )
         )
 
@@ -1365,7 +1363,7 @@ class TestNode(OsfTestCase):
         assert_equal(latest_log.action, 'project_created')
         assert_equal(latest_log.params, {
             'node': self.node._primary_key,
-            'project': self.parent._primary_key,
+            'parent_node': self.parent._primary_key,
         })
         assert_equal(latest_log.user, self.user)
 
@@ -1623,7 +1621,7 @@ class TestRemoveNode(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.parent_project = ProjectFactory(creator=self.user)
         self.project = ProjectFactory(creator=self.user,
-                                      project=self.parent_project)
+                                      parent=self.parent_project)
 
     def test_remove_project_without_children(self):
         self.project.remove_node(auth=self.consolidate_auth)
@@ -1648,7 +1646,7 @@ class TestRemoveNode(OsfTestCase):
             self.parent_project.remove_node(self.consolidate_auth)
 
     def test_remove_project_with_component_child_fails(self):
-        NodeFactory(creator=self.user, project=self.project)
+        NodeFactory(creator=self.user, parent=self.project)
 
         with assert_raises(NodeStateError):
             self.parent_project.remove_node(self.consolidate_auth)
@@ -2136,41 +2134,41 @@ class TestProject(OsfTestCase):
 
     def test_is_admin_parent_parent_admin(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         assert_true(node.is_admin_parent(self.project.creator))
 
     def test_is_admin_parent_grandparent_admin(self):
         user = UserFactory()
         parent_node = NodeFactory(
-            project=self.project,
+            parent=self.project,
             category='project',
             creator=user
         )
-        child_node = NodeFactory(project=parent_node, creator=user)
+        child_node = NodeFactory(parent=parent_node, creator=user)
         assert_true(child_node.is_admin_parent(self.project.creator))
         assert_true(parent_node.is_admin_parent(self.project.creator))
 
     def test_is_admin_parent_parent_write(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         self.project.set_permissions(self.project.creator, ['read', 'write'])
         assert_false(node.is_admin_parent(self.project.creator))
 
     def test_has_permission_read_parent_admin(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         assert_true(node.has_permission(self.project.creator, 'read'))
         assert_false(node.has_permission(self.project.creator, 'admin'))
 
     def test_has_permission_read_grandparent_admin(self):
         user = UserFactory()
         parent_node = NodeFactory(
-            project=self.project,
+            parent=self.project,
             category='project',
             creator=user
         )
         child_node = NodeFactory(
-            project=parent_node,
+            parent=parent_node,
             creator=user
         )
         assert_true(child_node.has_permission(self.project.creator, 'read'))
@@ -2180,19 +2178,19 @@ class TestProject(OsfTestCase):
 
     def test_can_view_parent_admin(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         assert_true(node.can_view(Auth(user=self.project.creator)))
         assert_false(node.can_edit(Auth(user=self.project.creator)))
 
     def test_can_view_grandparent_admin(self):
         user = UserFactory()
         parent_node = NodeFactory(
-            project=self.project,
+            parent=self.project,
             creator=user,
             category='project'
         )
         child_node = NodeFactory(
-            project=parent_node,
+            parent=parent_node,
             creator=user
         )
         assert_true(parent_node.can_view(Auth(user=self.project.creator)))
@@ -2202,7 +2200,7 @@ class TestProject(OsfTestCase):
 
     def test_can_view_parent_write(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         self.project.set_permissions(self.project.creator, ['read', 'write'])
         assert_false(node.can_view(Auth(user=self.project.creator)))
         assert_false(node.can_edit(Auth(user=self.project.creator)))
@@ -2237,16 +2235,16 @@ class TestProject(OsfTestCase):
         assert_true(self.project.can_view(other_guy_auth))
 
     def test_parents(self):
-        child1 = ProjectFactory(project=self.project)
-        child2 = ProjectFactory(project=child1)
+        child1 = ProjectFactory(parent=self.project)
+        child2 = ProjectFactory(parent=child1)
         assert_equal(self.project.parents, [])
         assert_equal(child1.parents, [self.project])
         assert_equal(child2.parents, [child1, self.project])
 
     def test_admin_contributor_ids(self):
         assert_equal(self.project.admin_contributor_ids, set())
-        child1 = ProjectFactory(project=self.project)
-        child2 = ProjectFactory(project=child1)
+        child1 = ProjectFactory(parent=self.project)
+        child2 = ProjectFactory(parent=child1)
         assert_equal(child1.admin_contributor_ids, {self.project.creator._id})
         assert_equal(child2.admin_contributor_ids, {self.project.creator._id, child1.creator._id})
         self.project.set_permissions(self.project.creator, ['read', 'write'])
@@ -2256,8 +2254,8 @@ class TestProject(OsfTestCase):
 
     def test_admin_contributors(self):
         assert_equal(self.project.admin_contributors, [])
-        child1 = ProjectFactory(project=self.project)
-        child2 = ProjectFactory(project=child1)
+        child1 = ProjectFactory(parent=self.project)
+        child2 = ProjectFactory(parent=child1)
         assert_equal(child1.admin_contributors, [self.project.creator])
         assert_equal(
             child2.admin_contributors,
@@ -2318,7 +2316,7 @@ class TestProject(OsfTestCase):
         user = UserFactory()
         project = ProjectFactory(creator=user)
         project.set_permissions(user, ['admin', 'write', 'read'])
-        child = NodeFactory(project=project, is_public=False)
+        child = NodeFactory(parent=project, is_public=False)
         assert_false(child.can_edit(auth=Auth(user=user)))  # sanity check
 
         registration = project.register_node(None, Auth(user=user), '', None)
@@ -2500,8 +2498,8 @@ class TestTemplateNode(OsfTestCase):
         self.project.add_pointer(self.pointee, auth=self.consolidate_auth)
 
         # create direct children
-        self.component = NodeFactory(creator=self.user, project=self.project)
-        self.subproject = ProjectFactory(creator=self.user, project=self.project)
+        self.component = NodeFactory(creator=self.user, parent=self.project)
+        self.subproject = ProjectFactory(creator=self.user, parent=self.project)
 
     @staticmethod
     def _default_title(x):
@@ -2595,15 +2593,15 @@ class TestTemplateNode(OsfTestCase):
         self.subproject.save()
 
         # add new children, for which the user has each level of access
-        self.read = NodeFactory(creator=self.user, project=self.project)
+        self.read = NodeFactory(creator=self.user, parent=self.project)
         self.read.add_contributor(other_user, permissions=['read', ])
         self.read.save()
 
-        self.write = NodeFactory(creator=self.user, project=self.project)
+        self.write = NodeFactory(creator=self.user, parent=self.project)
         self.write.add_contributor(other_user, permissions=['read', 'write', ])
         self.write.save()
 
-        self.admin = NodeFactory(creator=self.user, project=self.project)
+        self.admin = NodeFactory(creator=self.user, parent=self.project)
         self.admin.add_contributor(other_user)
         self.admin.save()
 
@@ -2704,8 +2702,8 @@ class TestForkNode(OsfTestCase):
         """Omnibus test for forking.
         """
         # Make some children
-        self.component = NodeFactory(creator=self.user, project=self.project)
-        self.subproject = ProjectFactory(creator=self.user, project=self.project)
+        self.component = NodeFactory(creator=self.user, parent=self.project)
+        self.subproject = ProjectFactory(creator=self.user, parent=self.project)
 
         # Add pointers to test copying
         pointee = ProjectFactory()
@@ -2736,34 +2734,34 @@ class TestForkNode(OsfTestCase):
         # Make some children
         self.public_component = NodeFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
             title='Forked',
             is_public=True,
         )
         self.public_subproject = ProjectFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
             title='Forked',
             is_public=True,
         )
         self.private_component = NodeFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
             title='Not Forked',
         )
         self.private_subproject = ProjectFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
             title='Not Forked',
         )
         self.private_subproject_public_component = NodeFactory(
             creator=self.user,
-            project=self.private_subproject,
+            parent=self.private_subproject,
             title='Not Forked',
         )
         self.public_subproject_public_component = NodeFactory(
             creator=self.user,
-            project=self.private_subproject,
+            parent=self.private_subproject,
             title='Forked',
         )
         user2 = UserFactory()
@@ -2919,17 +2917,17 @@ class TestRegisterNode(OsfTestCase):
         # Create some nodes
         self.component = NodeFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
             title='Title1',
         )
         self.subproject = ProjectFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
             title='Title2',
         )
         self.subproject_component = NodeFactory(
             creator=self.user,
-            project=self.subproject,
+            parent=self.subproject,
             title='Title3',
         )
 
@@ -2955,21 +2953,21 @@ class TestRegisterNode(OsfTestCase):
         # Create some nodes
         self.component = NodeFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
         )
         self.subproject = ProjectFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
         )
 
         # Create some nodes to share
         self.shared_component = NodeFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
         )
         self.shared_subproject = ProjectFactory(
             creator=self.user,
-            project=self.project,
+            parent=self.project,
         )
 
         # Share the project and some nodes
@@ -3011,7 +3009,7 @@ class TestRegisterNode(OsfTestCase):
         user2 = UserFactory()
         self.project.add_contributor(user2)
         # Second contributor registers project
-        registration = RegistrationFactory(project=self.project, user=user2)
+        registration = RegistrationFactory(parent=self.project, user=user2)
         assert_equal(registration.registered_user, user2)
 
     def test_registered_from(self):
@@ -3240,7 +3238,7 @@ class TestPointer(OsfTestCase):
 
     def test_has_pointers_recursive_true(self):
         project = ProjectFactory()
-        node = NodeFactory(project=project)
+        node = NodeFactory(parent=project)
         node.nodes.append(self.pointer)
         assert_true(node.has_pointers_recursive)
         assert_true(project.has_pointers_recursive)
@@ -3540,7 +3538,7 @@ class TestPrivateLink(OsfTestCase):
     def test_node_scale(self):
         link = PrivateLinkFactory()
         project = ProjectFactory()
-        comp = NodeFactory(project=project)
+        comp = NodeFactory(parent=project)
         link.nodes.append(project)
         link.save()
         assert_equal(link.node_scale(project), -40)

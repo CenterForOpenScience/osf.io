@@ -555,7 +555,7 @@ class TestComponents(OsfTestCase):
         self.component = NodeFactory(
             category='hypothesis',
             creator=self.user,
-            project=self.project,
+            parent=self.project,
         )
         self.component.save()
         self.component.set_privacy('public', self.consolidate_auth)
@@ -873,7 +873,7 @@ class TestShortUrls(OsfTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)

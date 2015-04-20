@@ -1731,25 +1731,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return '/{}/'.format(self._primary_key)
 
     def web_url_for(self, view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, _guid=_guid, *args, **kwargs)
-        else:
-            return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, _guid=_guid, *args, **kwargs)
+        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                           _offload=_offload, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, _offload=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, *args, **kwargs)
-        else:
-            return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, *args, **kwargs)
-
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                           _offload=_offload, *args, **kwargs)
     @property
     def absolute_url(self):
         if not self.url:
@@ -1841,6 +1828,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except IndexError:
             pass
         return None
+
+    @property
+    def root(self):
+        if self.parent_node:
+            return self.parent_node.root
+        else:
+            return self
 
     @property
     def watch_url(self):

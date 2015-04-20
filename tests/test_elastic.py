@@ -193,7 +193,7 @@ class TestPublicNodes(SearchTestCase):
             is_public=True,
         )
         self.component = NodeFactory(
-            project=self.project,
+            parent=self.project,
             title=self.title,
             creator=self.user,
             is_public=True

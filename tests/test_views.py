@@ -151,14 +151,14 @@ class TestProjectViews(OsfTestCase):
         self.parent_project = NodeFactory(
             title='parent project',
             category='project',
-            project=self.project,
+            parent=self.project,
             is_public=False
         )
         self.parent_project.save()
         self.child_project = NodeFactory(
             title='child project',
             category='project',
-            project=self.parent_project,
+            parent=self.parent_project,
             is_public=False
         )
         self.child_project.save()
@@ -613,7 +613,7 @@ class TestProjectViews(OsfTestCase):
             )
         self.project.is_public = True
         self.project.save()
-        child = NodeFactory(project=self.project)
+        child = NodeFactory(parent=self.project)
         for _ in range(5):
             child.add_log(
                 auth=self.consolidate_auth1,
@@ -662,7 +662,7 @@ class TestProjectViews(OsfTestCase):
             )
         self.project.is_public = True
         self.project.save()
-        child = NodeFactory(project=self.project)
+        child = NodeFactory(parent=self.project)
         child.is_public = False
         child.set_title("foo", auth=self.consolidate_auth1)
         child.set_title("bar", auth=self.consolidate_auth1)
@@ -716,7 +716,7 @@ class TestProjectViews(OsfTestCase):
         assert_true(link.is_deleted)
 
     def test_remove_component(self):
-        node = NodeFactory(project=self.project, creator=self.user1)
+        node = NodeFactory(parent=self.project, creator=self.user1)
         url = node.api_url
         res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
         node.reload()
@@ -725,7 +725,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.json['url'], self.project.url)
 
     def test_cant_remove_component_if_not_admin(self):
-        node = NodeFactory(project=self.project, creator=self.user1)
+        node = NodeFactory(parent=self.project, creator=self.user1)
         non_admin = AuthUserFactory()
         node.add_contributor(
             non_admin,
@@ -783,10 +783,10 @@ class TestEditableChildrenViews(OsfTestCase):
         OsfTestCase.setUp(self)
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=False)
-        self.child = ProjectFactory(project=self.project, creator=self.user, is_public=True)
-        self.grandchild = ProjectFactory(project=self.child, creator=self.user, is_public=False)
-        self.great_grandchild = ProjectFactory(project=self.grandchild, creator=self.user, is_public=True)
-        self.great_great_grandchild = ProjectFactory(project=self.great_grandchild, creator=self.user, is_public=False)
+        self.child = ProjectFactory(parent=self.project, creator=self.user, is_public=True)
+        self.grandchild = ProjectFactory(parent=self.child, creator=self.user, is_public=False)
+        self.great_grandchild = ProjectFactory(parent=self.grandchild, creator=self.user, is_public=True)
+        self.great_great_grandchild = ProjectFactory(parent=self.great_grandchild, creator=self.user, is_public=False)
         url = self.project.api_url_for('get_editable_children')
         self.project_results = self.app.get(url, auth=self.user.auth).json
 
@@ -835,7 +835,7 @@ class TestChildrenViews(OsfTestCase):
 
     def test_get_children(self):
         project = ProjectFactory(creator=self.user)
-        child = NodeFactory(project=project, creator=self.user)
+        child = NodeFactory(parent=project, creator=self.user)
 
         url = project.api_url_for('get_children')
         res = self.app.get(url, auth=self.user.auth)
@@ -890,7 +890,7 @@ class TestChildrenViews(OsfTestCase):
 
     def test_get_children_rescale_ratio(self):
         project = ProjectFactory(creator=self.user)
-        child = NodeFactory(project=project, creator=self.user)
+        child = NodeFactory(parent=project, creator=self.user)
 
         url = project.api_url_for('get_children')
         res = self.app.get(url, auth=self.user.auth)
@@ -901,7 +901,7 @@ class TestChildrenViews(OsfTestCase):
 
     def test_get_children_render_nodes_receives_auth(self):
         project = ProjectFactory(creator=self.user)
-        NodeFactory(project=project, creator=self.user)
+        NodeFactory(parent=project, creator=self.user)
 
         url = project.api_url_for('get_children')
         res = self.app.get(url, auth=self.user.auth)
@@ -1528,7 +1528,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(len(self.project.logs), n_logs_pre + 1)
 
     def test_add_contribs_to_multiple_nodes(self):
-        child = NodeFactory(project=self.project, creator=self.creator)
+        child = NodeFactory(parent=self.project, creator=self.creator)
         n_contributors_pre = len(child.contributors)
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
@@ -1970,7 +1970,7 @@ class TestWatchViews(OsfTestCase):
 
     def test_toggle_watch_node(self):
         # The project has a public sub-node
-        node = NodeFactory(creator=self.user, project=self.project, is_public=True)
+        node = NodeFactory(creator=self.user, parent=self.project, is_public=True)
         url = "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
                                                                node._id)
         res = self.app.post_json(url, {}, auth=self.auth)
@@ -3534,7 +3534,7 @@ class TestDashboardViews(OsfTestCase):
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         # Get the All My Projects smart folder from the dashboard
@@ -3544,7 +3544,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_get_dashboard_nodes(self):
         project = ProjectFactory(creator=self.creator)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
 
         url = api_url_for('get_dashboard_nodes')
 
@@ -3560,7 +3560,7 @@ class TestDashboardViews(OsfTestCase):
     def test_get_dashboard_nodes_shows_components_if_user_is_not_contrib_on_project(self):
         # User creates a project with a component
         project = ProjectFactory(creator=self.creator)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
         # User adds friend as a contributor to the component but not the
         # project
         friend = AuthUserFactory()
@@ -3606,7 +3606,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         project.register_node(
@@ -3924,7 +3924,7 @@ class TestProfileNodeList(OsfTestCase):
         self.user = AuthUserFactory()
 
         self.public = ProjectFactory(is_public=True)
-        self.public_component = NodeFactory(project=self.public, is_public=True)
+        self.public_component = NodeFactory(parent=self.public, is_public=True)
         self.private = ProjectFactory(is_public=False)
         self.deleted = ProjectFactory(is_public=True, is_deleted=True)
 

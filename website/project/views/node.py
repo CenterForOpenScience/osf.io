@@ -191,7 +191,7 @@ def project_new_node(auth, project, **kwargs):
             title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
-            project=project,
+            parent=project,
         )
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
