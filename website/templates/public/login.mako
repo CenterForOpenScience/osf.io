@@ -25,9 +25,9 @@
                         <label class="m-t-md" for="password">Password</label>
                         <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Enter your password">
 
-                        <fieldset class="pull-right">
-                            <a class="m-t-md m-r-xxl" href="${ web_url_for('_forgot_password') }">Forgot Your Password?</a>
-                            <button type="submit" class="btn btn-success m-t-md">Sign In</button>
+                        <fieldset>
+                            <a class="forget-password m-t-md" href="${ web_url_for('_forgot_password') }">Forgot Your Password?</a>
+                            <button type="submit" class="btn btn-success m-t-md pull-right">Sign In</button>
 
                         </fieldset>
                     </div>
