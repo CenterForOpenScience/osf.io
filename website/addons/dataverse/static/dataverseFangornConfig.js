@@ -55,8 +55,8 @@ function _fangornActionColumn (item, col) {
                     m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
                 ];
                 self.modal.update(modalContent, modalActions);
-                item.data.state = 'published';
                 item.data.hasPublishedFiles = item.children.length > 0;
+                item.data.state = item.data.hasPublishedFiles ? 'published' : 'draft';
             }).fail(function(xhr, status, error) {
                 var statusCode = xhr.responseJSON.code;
                 var message;
