@@ -162,3 +162,20 @@ class UserTestCase(base.OsfTestCase):
     def test_cannot_remove_primary_email_from_unconfirmed_list(self):
         res = self.user.remove_unconfirmed_email(self.user.username)
         assert_false(res)
+
+    def test_add_same_unconfirmed_email_twice(self):
+        email = "test@example.com"
+        token1 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(token1, self.user.get_confirmation_token(email))
+        assert_equal(email, self.user._get_unconfirmed_email_for_token(token1))
+
+        token2 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_not_equal(token1, self.user.get_confirmation_token(email))
+        assert_equal(token2, self.user.get_confirmation_token(email))
+        assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
+        with assert_raises(exceptions.InvalidTokenError):
+            self.user._get_unconfirmed_email_for_token(token1)
