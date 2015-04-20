@@ -13,6 +13,7 @@ class NodeSerializer(JSONAPISerializer):
     category = ser.ChoiceField(choices=Node.CATEGORY_MAP.keys())
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
+    tags = ser.SerializerMethodField()
 
     links = LinksField({
         'html': 'absolute_url',
@@ -42,6 +43,14 @@ class NodeSerializer(JSONAPISerializer):
             'registration': obj.is_registration,
             'collection': obj.is_folder,
             'dashboard': obj.is_dashboard,
+        }
+        return ret
+
+    @staticmethod
+    def get_tags(obj):
+        ret = {
+            'system': [tag._id for tag in obj.system_tags],
+            'user': [tag._id for tag in obj.tags],
         }
         return ret
 
