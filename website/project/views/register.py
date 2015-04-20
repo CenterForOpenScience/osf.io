@@ -268,6 +268,7 @@ def node_register_template_page(auth, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def project_before_register(auth, **kwargs):
+    """Returns prompt informing user that addons, if any, won't be registered."""
     node = kwargs['node'] or kwargs['project']
     user = auth.user
 
