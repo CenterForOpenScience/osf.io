@@ -32,6 +32,24 @@ class WaterButlerPath:
     PART_CLASS = WaterButlerPathPart
 
     @classmethod
+    def generic_path_validation(cls, path):
+        """Validates a WaterButler specific path, e.g. /folder/file.txt, /folder/
+        :param str path: WaterButler path
+        """
+        if not path:
+            raise exceptions.InvalidPathError('Must specify path')
+        if not path.startswith('/'):
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(path))
+        if '//' in path:
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(path))
+        # Do not allow path manipulation via shortcuts, e.g. '..'
+        absolute_path = os.path.abspath(path)
+        if not path == '/' and path.endswith('/'):
+            absolute_path += '/'
+        if not path == absolute_path:
+            raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(absolute_path))
+
+    @classmethod
     def from_parts(cls, parts, folder=False):
         _ids, _parts = [], ['']
         for part in parts:
