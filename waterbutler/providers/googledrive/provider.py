@@ -17,49 +17,12 @@ from waterbutler.providers.googledrive.metadata import GoogleDriveRevision
 from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
 from waterbutler.providers.googledrive.metadata import GoogleDriveFolderMetadata
 
+class GoogleDrivePathPart(path.WaterButlerPathPart):
+    DECODE = parse.unquote
+    ENCODE = functools.partial(parse.quote, safe='')
 
-class GoogleDrivePath(utils.WaterButlerPath):
-
-    def __init__(self, folder, path, prefix=True, suffix=False):
-        super().__init__(path, prefix=prefix, suffix=suffix)
-        self._folder = folder
-        full_path = os.path.join(folder, path.lstrip('/'))
-        self._full_path = self._format_path(full_path)
-
-    @property
-    def parent(self):
-        cls = self.__class__
-        return cls(self._folder, '/'.join(self._parts[:-1]) + '/', prefix=self._prefix, suffix=self._suffix)
-
-    @property
-    def child(self):
-        cls = self.__class__
-        path = '/' + '/'.join(self._parts[2:])
-        if self.is_dir:
-            path += '/'
-        path = path.replace('//', '/')
-        return cls(self._folder, path, prefix=self._prefix, suffix=self._suffix)
-
-    @property
-    def path(self):
-        return parse.unquote(self._path)
-
-    @property
-    def parts(self):
-        return [parse.unquote(x) for x in self._parts][1:]
-
-    @property
-    def name(self):
-        return parse.unquote(self._parts[-1])
-
-    def increment_name(self):
-        self._count += 1
-        name, ext = os.path.splitext(self._orig_name)
-        new_name = parse.quote('{} ({}){}'.format(name, self._count, ext), safe='')
-        self._orig_path = self._orig_path.replace(parse.quote(self.name, safe=''), new_name)
-        self._parts[-1] = new_name
-        self._path = self._format_path(self._orig_path)
-        return self
+class GoogleDrivePath(path.WaterButlerPath):
+    PART_CLASS = GoogleDrivePathPart
 
 
 class GoogleDriveProvider(provider.BaseProvider):
