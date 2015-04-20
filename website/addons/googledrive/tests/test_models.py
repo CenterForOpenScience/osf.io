@@ -503,7 +503,7 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
         assert_in("You can re-authenticate", message)
-    
+
     def test_after_remove_authorized_googledrive_user_self(self):
         auth = Auth(user=self.user_settings.owner)
         message = self.node_settings.after_remove_contributor(

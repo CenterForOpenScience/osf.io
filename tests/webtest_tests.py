@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Functional tests using WebTest.'''
+import httplib as http
 import unittest
 import re
 import mock
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from modularodm import Q
-
 from framework.mongo.utils import to_mongo_key
 
-from framework.auth.core import User, Auth
+from framework.auth import exceptions as auth_exc
+from framework.auth.core import Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,
@@ -25,8 +25,7 @@ from website.addons.twofactor.tests import _valid_code
 from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
-from website.util import web_url_for
-from website.addons.twofactor.tests import _valid_code
+from website.util import web_url_for, api_url_for
 
 
 class TestDisabledUser(OsfTestCase):
@@ -1140,6 +1139,40 @@ class TestConfirmingEmail(OsfTestCase):
             self.user.username
         )
 
+    def test_cannot_remove_another_user_email(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        url = api_url_for('update_user')
+        header = {'id': user1.username, 'emails': [{'address': user1.username}]}
+        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_cannnot_make_primary_email_for_another_user(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        email = 'test@cos.io'
+        user1.emails.append(email)
+        user1.save()
+        url = api_url_for('update_user')
+        header = {'id': user1.username,
+                  'emails': [{'address': user1.username, 'primary': False, 'confirmed': True},
+                            {'address': email, 'primary': True, 'confirmed': True}
+                  ]}
+        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_cannnot_add_email_for_another_user(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        email = 'test@cos.io'
+        url = api_url_for('update_user')
+        header = {'id': user1.username,
+                  'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
+                            {'address': email, 'primary': False, 'confirmed': False}
+                  ]}
+        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_redirects_to_settings(self):
         res = self.app.get(self.confirmation_url).follow()
         assert_equal(
@@ -1150,11 +1183,13 @@ class TestConfirmingEmail(OsfTestCase):
         assert_in('Welcome to the OSF!', res, 'shows flash message')
         assert_in('Please update the following settings.', res)
 
-    def test_error_page_if_confirm_link_is_expired(self):
+    def test_error_page_if_confirm_link_is_used(self):
         self.user.confirm_email(self.confirmation_token)
         self.user.save()
         res = self.app.get(self.confirmation_url, expect_errors=True)
-        assert_in('Link Expired', res)
+
+        assert_in(auth_exc.InvalidTokenError.message_short, res)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_flash_message_does_not_break_page_if_email_unconfirmed(self):
         # set a password for user

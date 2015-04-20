@@ -24,7 +24,7 @@
                     </div>
             </div>
             <hr class="m-t-lg m-b-sm"/>
-            <h6 class="text-center text-muted text-300"><a href="${ web_url_for('auth_login') }">Back to OSF</a></h6>
+            <h6 class="text-center text-muted text-300"><a href="${ web_url_for('index') }">Back to OSF</a></h6>
         </form>
     </div>
 

@@ -11,7 +11,6 @@ import subprocess
 import logging
 
 from invoke import task, run
-from invoke.exceptions import Failure
 
 from website import settings
 
@@ -34,10 +33,11 @@ def bin_prefix(cmd):
 
 
 try:
-    run('pip freeze | grep rednose', hide='both')
-    TEST_CMD = 'nosetests --rednose'
-except Failure:
+    __import__('rednose')
+except ImportError:
     TEST_CMD = 'nosetests'
+else:
+    TEST_CMD = 'nosetests --rednose'
 
 
 @task
@@ -326,7 +326,7 @@ def pip_install(req_file):
     """Return the proper 'pip install' command for installing the dependencies
     defined in ``req_file``.
     """
-    cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
+    cmd = bin_prefix('pip install --exists-action w --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     return cmd
@@ -450,7 +450,7 @@ def addon_requirements():
                 requirements_file = os.path.join(path, 'requirements.txt')
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
-                cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                cmd = 'pip install --exists-action w --upgrade -r {0}'.format(requirements_file)
                 if WHEELHOUSE_PATH:
                     cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
                 run(bin_prefix(cmd))

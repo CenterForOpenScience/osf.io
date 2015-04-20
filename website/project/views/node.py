@@ -765,6 +765,11 @@ def _view_project(node, auth, primary=False, check_files=False):
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
 
+            'identifiers': {
+                'doi': node.get_identifier_value('doi'),
+                'ark': node.get_identifier_value('ark'),
+            },
+
         },
         'parent_node': {
             'id': parent._primary_key if parent else '',
