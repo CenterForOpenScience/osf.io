@@ -1,6 +1,7 @@
 <script id="profileSchools" type="text/html">
 
     <div data-bind="if: mode() === 'edit'">
+<pre>{{ko.toJSON($data)}}</pre>
 
         <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
 
