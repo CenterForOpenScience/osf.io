@@ -154,7 +154,7 @@ class DataverseProvider(provider.BaseProvider):
         data = data['data']
 
         return DataverseDatasetMetadata(
-            data, self.name, self.doi,
+            data, self.name, self.doi, version,
         ).serialized()
 
     @asyncio.coroutine
@@ -167,7 +167,7 @@ class DataverseProvider(provider.BaseProvider):
         published_files = published_data if isinstance(published_data, list) else []
         draft_data = yield from self._get_data('latest')
         draft_files = draft_data if isinstance(draft_data, list) else []
-        return published_files + draft_files
+        return draft_files + published_files
 
     def _validate_path(self, path, metadata):
         if path.lstrip('/') not in [item['path'].lstrip('/') for item in metadata]:

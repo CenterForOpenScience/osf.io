@@ -283,7 +283,7 @@ class TestCRUD:
         metadata, created = yield from provider.upload(file_stream, path)
 
         entry = native_file_metadata['datafile']
-        expected = DataverseFileMetadata(entry).serialized()
+        expected = DataverseFileMetadata(entry, 'latest').serialized()
 
         assert metadata == expected
         assert created is True
@@ -304,7 +304,7 @@ class TestCRUD:
         metadata, created = yield from provider.upload(file_stream, path)
 
         entry = native_file_metadata['datafile']
-        expected = DataverseFileMetadata(entry).serialized()
+        expected = DataverseFileMetadata(entry, 'latest').serialized()
 
         assert metadata == expected
         assert created is False

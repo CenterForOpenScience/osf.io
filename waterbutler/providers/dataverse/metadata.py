@@ -3,15 +3,16 @@ from waterbutler.core import metadata
 
 class BaseDataverseMetadata(metadata.BaseMetadata):
 
-    def __init__(self, raw):
-        super().__init__(raw)
-
     @property
     def provider(self):
         return 'dataverse'
 
 
 class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
+
+    def __init__(self, raw, dataset_version):
+        super().__init__(raw)
+        self.dataset_version = dataset_version
 
     @property
     def file_id(self):
@@ -38,21 +39,27 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
         return None
 
     @property
+    def can_delete(self):
+        """Files can be deleted if they are part of the draft dataset"""
+        return self.dataset_version == 'latest' or self.dataset_version == 'draft'
+
+    @property
     def extra(self):
         return {
-            'fileId': self.file_id
+            'fileId': self.file_id,
+            'canDelete': self.can_delete,
         }
 
 
 class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadata):
 
-    def __init__(self, raw, name, doi):
+    def __init__(self, raw, name, doi, version):
         super().__init__(raw)
         self._name = name
         self.doi = doi
 
         files = self.raw['files']
-        self._entries = [DataverseFileMetadata(f['datafile']) for f in files]
+        self._entries = [DataverseFileMetadata(f['datafile'], version) for f in files]
 
     @property
     def name(self):
