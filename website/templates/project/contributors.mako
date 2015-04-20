@@ -175,6 +175,7 @@
             </table>
 
         </div>
+
     % endif
 
     </div><!-- end col-md -->

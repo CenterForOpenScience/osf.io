@@ -192,6 +192,7 @@ def get_all_registrations_smart_folder(auth, **kwargs):
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
+        Q('is_retracted', 'ne', True) &
         Q('is_folder', 'eq', False) &
         # parent is not in the nodes list
         Q('__backrefs.parent.node.nodes', 'eq', None)
@@ -213,7 +214,8 @@ def get_all_registrations_smart_folder(auth, **kwargs):
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
-        Q('is_registration', 'eq', True)
+        Q('is_registration', 'eq', True) &
+        Q('is_retracted', 'ne', True)
     )
 
     return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]

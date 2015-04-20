@@ -41,18 +41,44 @@ def _kwargs_to_nodes(kwargs):
     return project, node
 
 
-def must_be_valid_project(func):
+def must_be_valid_project(func=None, retractions_valid=False):
+    """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
+    def must_be_valid_project_inner(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+
+            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+            if not retractions_valid and getattr(kwargs['project'].retraction, 'is_retracted', False):
+                raise HTTPError(http.BAD_REQUEST)
+            elif kwargs['node'] and not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
+                raise HTTPError(http.BAD_REQUEST)
+            else:
+                return func(*args, **kwargs)
+
+        return wrapped
+
+    if func:
+        return must_be_valid_project_inner(func)
+
+    return must_be_valid_project_inner
+
+
+def must_be_public_registration(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
 
-        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+        project, node = _kwargs_to_nodes(kwargs)
+        node = node or project
+
+        if not node.is_public or not node.is_registration:
+            raise HTTPError(http.BAD_REQUEST)
         return func(*args, **kwargs)
 
     return wrapped
-
 
 def must_not_be_registration(func):
 
@@ -97,7 +123,6 @@ def check_key_expired(key, node, url):
         url = furl(url).add({'status': 'expired'}).url
 
     return url
-
 
 def _must_be_contributor_factory(include_public):
     """Decorator factory for authorization wrappers. Decorators verify whether
