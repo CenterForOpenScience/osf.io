@@ -445,7 +445,9 @@ function _poMultiselect(event, tree) {
         someItemsAreFolders,
         pointerIds;
     tb.options.iconState.rowIcons = [];
-    tb.options.iconState.mode = 'bar';
+    if(!tb.filterOn){
+        tb.options.iconState.mode = 'bar';
+    }
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = tree.icons;
