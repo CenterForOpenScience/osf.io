@@ -582,6 +582,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
     retraction = fields.ForeignField('retraction')
+    embargo = fields.ForeignField('embargo')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -664,6 +665,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pending_retraction(self):
         return getattr(self.retraction, 'pending_retraction', False)
+
+    @property
+    def is_embargoed(self):
+        return getattr(self.embargo, 'is_embargoed', False)
+
+    @property
+    def pending_embargo(self):
+        return getattr(self.embargo, 'pending_embargo', False)
 
     @property
     def private_links(self):
@@ -2489,6 +2498,38 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.save()
         self.retraction = retraction
 
+    def _is_embargo_date_valid(self, end_date):
+        # TODO(hrybacki) make these dates use constants set i ndefault.py
+        today = datetime.date.today()
+        if (end_date - today).days >= 2:
+            if (end_date - today).days <= 365:
+                return True
+        return False
+
+    def embargo_registration(self, user, end_date):
+        """Enter registration into an embargo period at end of which, it will
+        be made public
+        :param user: User initiating the embargo
+        :param end_date: Date when the registration should be made public
+        :return:
+        """
+
+        if not self.is_registration:
+            raise NodeStateError('Cannot embargo a non-registration')
+
+        if not self.has_permission(user, 'admin'):
+            raise PermissionsError('Only admins may embargo a registration')
+
+        if not self._is_embargo_date_valid(end_date):
+            raise ValidationValueError('Embargo end date must be more than one day in the future')
+
+        embargo = Embargo()
+        embargo.user = user
+        # Embargo record needs to be saved to ensure the forward reference Node->Embargo
+        embargo.save()
+        self.embargo = embargo
+
+
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
     """Ensure that user IDs in `contributors` and `permissions` match.
@@ -2644,3 +2685,38 @@ class Retraction(StoredObject):
                 self.state = 'retracted'
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
+
+
+def validate_embargo_state(value):
+    acceptable_states = ['pending', 'embargoed', 'cancelled']
+    if value not in acceptable_states:
+        raise ValidationValueError
+
+    return True
+
+
+class Embargo(StoredObject):
+    """Embargo object for registrations waiting to go public."""
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    initiated_by = fields.ForeignField('user', backref='embargoed_by')
+    end_date = fields.DateTimeField()
+    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
+    # {
+    #   'b3k97': {
+    #     'has_approved': False,
+    #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
+    #     'disapproval_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
+    # }
+    approval_state = fields.DictionaryField()
+    # One of 'pending', 'retracted', or 'cancelled'
+    state = fields.StringField(default='pending', validate=validate_embargo_state)
+
+    @property
+    def is_embargoed(self):
+        return self.state == 'embargoed'
+
+    @property
+    def pending_embargo(self):
+        return self.state == 'pending'
