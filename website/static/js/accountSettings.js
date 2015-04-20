@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
+var bootbox = require('bootbox');
 var ko = require('knockout');
 var oop = require('js/oop');
 var Raven = require('raven-js');
@@ -96,7 +97,9 @@ var UserProfileClient = oop.defclass({
         ).done(function (data) {
             ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'User profile not updated.', 'danger');
+            $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
+                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                'if the problem persists.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
                 url: this.urls.update,
                 status: status,
@@ -147,6 +150,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
         this.emailInput = ko.observable();
+
     },
     init: function () {
         this.client.fetch().done(
@@ -190,19 +194,36 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         }
     },
     removeEmail: function (email) {
-        this.changeMessage('', 'text-info');
-        this.profile().emails.remove(email);
-        this.client.update(this.profile()).done(function() {
-            $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
-        });
+        var self = this;
+        self.changeMessage('', 'text-info');
+        if (self.profile().emails().indexOf(email) !== -1) {
+            bootbox.confirm({
+                title: 'Remove Email?',
+                message: 'Are you sure that you want to remove ' + '<em><b>' + email.address() + '</b></em>' + ' from your email list?',
+                callback: function (confirmed) {
+                    if (confirmed) {
+                        self.profile().emails.remove(email);
+                        self.client.update(self.profile()).done(function () {
+                            $osf.growl('Email Removed', '<em>' + email.address() + '<em>', 'success');
+                        });
+                    }
+                }
+            });
+        } else {
+            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+        }
     },
     makeEmailPrimary: function (email) {
         this.changeMessage('', 'text-info');
-        this.profile().primaryEmail().isPrimary(false);
-        email.isPrimary(true);
-        this.client.update(this.profile()).done(function () {
-            $osf.growl('Made Primary', '<em>' + email.address()  + '<em>', 'success');
-        });
+        if (this.profile().emails().indexOf(email) !== -1) {
+            this.profile().primaryEmail().isPrimary(false);
+            email.isPrimary(true);
+            this.client.update(this.profile()).done(function () {
+                $osf.growl('Made Primary', '<em>' + email.address() + '<em>', 'success');
+            });
+        } else {
+            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+        }
     }
 });
 
