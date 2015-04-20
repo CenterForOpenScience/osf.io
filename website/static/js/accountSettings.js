@@ -90,34 +90,18 @@ var UserProfileClient = oop.defclass({
 
         return ret.promise();
     },
-    update: function (profile) {
+    update: function (profile, email) {
+        var self = this;
+        var url = self.urls.update;
+        if(email) {
+            url = self.urls.resend;
+        }
         var ret = $.Deferred();
         var request = $osf.putJSON(
-            this.urls.update,
-            this.serialize(profile)
+            url,
+            self.serialize(profile, email)
         ).done(function (data) {
-            ret.resolve(this.unserialize(data, profile));
-        }.bind(this)).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                'if the problem persists.', 'danger');
-            Raven.captureMessage('Error fetching user profile', {
-                url: this.urls.update,
-                status: status,
-                error: error
-            });
-                ret.reject(xhr, status, error);
-        }.bind(this));
-
-        return ret;
-    },
-    resend: function (profile, email){
-        var ret = $.Deferred();
-        var request = $osf.putJSON(
-            this.urls.resend,
-            this.serialize(profile, email)
-        ).done(function (data) {
-            ret.resolve(this.unserialize(data, profile));
+            ret.resolve(self.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
             $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
                 'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
@@ -234,7 +218,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             message: 'Are you sure that you want to resend email confirmation at ' + '<em><b>' + email.address() + '</b></em>',
             callback: function (confirmed) {
                 if (confirmed) {
-                    self.client.resend(self.profile(), email).done(function () {
+                    self.client.update(self.profile(), email).done(function () {
                         $osf.growl('Email confirmation resends to ', '<em>' + email.address() + '<em>', 'success');
                     });
                 }
