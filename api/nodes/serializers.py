@@ -24,6 +24,9 @@ class NodeSerializer(JSONAPISerializer):
         'contributors': {
             'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'})
         },
+        'pointers': {
+            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'})
+        },
         'registrations': {
             'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'})
         },
@@ -35,7 +38,8 @@ class NodeSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'nodes'
 
-    def get_properties(self, obj):
+    @staticmethod
+    def get_properties(obj):
         ret = {
             'registration': obj.is_registration,
             'collection': obj.is_folder,
@@ -76,10 +80,9 @@ class NodePointersSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'pointers'
 
-    def get_links(self, obj):
-        return {
-            'html': obj.absolute_url,
-        }
+    links = LinksField({
+        'html': 'absolute_url',
+    })
 
     def create(self, validated_data):
         # TODO
