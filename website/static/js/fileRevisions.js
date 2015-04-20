@@ -69,7 +69,7 @@ var RevisionsViewModel = function(node, file, editable) {
 
     // Hack: Set Figshare files to uneditable by default, then update after
     // fetching file metadata after revisions request fails
-    self.editable = ko.observable(editable && file.provider !== 'figshare');
+    self.editable = ko.observable(editable && file.provider !== 'figshare' && file.provider !== 'dataverse');
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
         download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
@@ -115,9 +115,9 @@ RevisionsViewModel.prototype.fetch = function() {
 
         self.errorMessage(err);
 
-        if (self.file.provider === 'figshare') {
-            // Hack for Figshare
-            // only figshare will error on a revisions request
+        if (self.file.provider === 'figshare' || self.file.provider === 'dataverse') {
+            // Hack for Figshare / Dataverse
+            // only these addons will error on a revisions request
             // so dont allow downloads and set a fake current version
             $.ajax({
                 method: 'GET',
