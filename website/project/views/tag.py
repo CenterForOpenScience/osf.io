@@ -7,7 +7,7 @@ from framework.auth.decorators import collect_auth
 from website.project.model import Tag
 from website.util.sanitize import clean_tag
 from website.project.decorators import (
-    must_be_valid_project, must_have_permission, must_not_be_registration
+    must_be_valid_project, must_have_permission, must_not_be_registration, must_be_valid_file
 )
 
 
@@ -61,20 +61,18 @@ def project_removetag(auth, **kwargs):
         return {'status': 'success'}
 
 
-@must_be_valid_project  # injects project
+@must_be_valid_file  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def file_addtag(auth, **kwargs):
 
     tag = clean_tag(kwargs['tag'])
-    if kwargs is not None:
-                for key, value in kwargs.iteritems():
-                    print("%s == %s" %(key,value))
-    file = kwargs['file']
-    #node = kwargs['node'] or kwargs['project']
+    file = kwargs['file_guid']
     if tag:
         try:
-
+            if kwargs is not None:
+                for key, value in kwargs.iteritems():
+                    print("%s == %s" %(key,value))
             file.add_tag(tag=tag, auth=auth)
             return {'status': 'success'}, http.CREATED
         except ValidationError:
@@ -87,12 +85,11 @@ def file_addtag(auth, **kwargs):
 def file_removetag(auth, **kwargs):
 
     tag = clean_tag(kwargs['tag'])
-    file = kwargs['BaseFileObject']
+    file = kwargs['file_guid']
 
-   # node = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
     if tag:
         file.remove_tag(tag=tag, auth=auth)
         return {'status': 'success'}
-        print("REMOVING TAG**********")
 

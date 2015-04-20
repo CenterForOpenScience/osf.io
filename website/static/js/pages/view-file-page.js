@@ -10,8 +10,6 @@ require('jquery-tagsinput');
         maxChars: 128,
         onAddTag: function(tag){
             var url = nodeApiUrl + 'file/addfiletag/' + tag + '/';
-            console.log(url)
-            console.log("Himica")
             var request = $.ajax({
                 url: url,
                 type: 'POST',
