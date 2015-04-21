@@ -65,23 +65,23 @@ function findByTempID(parent, tmpID){
 }
 
 function cancelUploads (row) {
-    var treebeard = this;
-    var filesArr = treebeard.dropzone.getQueuedFiles();
+    var tb = this;
+    var filesArr = tb.dropzone.getQueuedFiles();
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
-            var parent = j.treebeardParent || treebeard.dropzoneItemCache;
+            var parent = j.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, j.tmpID);
-            treebeard.dropzone.removeFile(j);
-            treebeard.deleteNode(parent.id,item.id);
+            tb.dropzone.removeFile(j);
+            tb.deleteNode(parent.id,item.id);
         } else {
-            treebeard.deleteNode(row.parentID,row.id);
+            tb.deleteNode(row.parentID,row.id);
             if(row.data.tmpID === j.tmpID){
-                treebeard.dropzone.removeFile(j);
+                tb.dropzone.removeFile(j);
             }
         }
     }
-    treebeard.options.iconState.generalIcons.cancelUploads.on = false;
+    tb.options.iconState.generalIcons.cancelUploads.on = false;
 }
 
 var cancelUploadTemplate = function(row){
