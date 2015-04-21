@@ -1,4 +1,7 @@
 import os
+import itertools
+from waterbutler.core import exceptions
+
 
 class WaterButlerPathPart:
     DECODE = lambda x: x
@@ -19,6 +22,13 @@ class WaterButlerPathPart:
     @property
     def raw(self):
         return self._part
+
+    @property
+    def ext(self):
+        return None  # Todo
+
+    def increment_file_name(self):
+        pass  # Todo
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self._part)
