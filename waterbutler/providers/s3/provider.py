@@ -22,12 +22,6 @@ from waterbutler.providers.s3.metadata import S3FolderKeyMetadata
 from waterbutler.providers.s3.metadata import S3FileMetadataHeaders
 
 
-class S3Path(utils.WaterButlerPath):
-
-    def __init__(self, path, prefix=False, suffix=True):
-        super().__init__(path, prefix=prefix, suffix=suffix)
-
-
 class S3Provider(provider.BaseProvider):
     """Provider for the Amazon's S3
     """
