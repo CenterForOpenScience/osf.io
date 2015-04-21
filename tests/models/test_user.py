@@ -13,63 +13,11 @@ class UserTestCase(base.OsfTestCase):
     def setUp(self):
         super(UserTestCase, self).setUp()
         self.user = factories.AuthUserFactory()
-        self.unregistered = factories.UnregUserFactory()
-        self.unconfirmed = factories.UnconfirmedUserFactory()
-        self.USERS = (self.user, self.unregistered, self.unconfirmed)
-
-        factories.ProjectFactory(creator=self.user)
-        self.project_with_unreg_contrib = factories.ProjectFactory()
-        self.project_with_unreg_contrib.add_unregistered_contributor(
-            fullname='Unreg',
-            email=self.unregistered.username,
-            auth=auth.Auth(self.project_with_unreg_contrib.creator)
-        )
-        self.project_with_unreg_contrib.save()
-
-        self.user.system_tags = ['shared', 'user']
-        self.unconfirmed.system_tags = ['shared', 'unconfirmed']
-
-        self.user.aka = ['shared', 'user']
-        self.unconfirmed.aka = ['shared', 'unconfirmed']
 
     def tearDown(self):
         models.Node.remove()
         models.User.remove()
         super(UserTestCase, self).tearDown()
-
-    def test_merge_unconfirmed(self):
-        self.user.merge_user(self.unconfirmed)
-
-        assert_true(self.unconfirmed.is_merged)
-        assert_equal(self.unconfirmed.merged_by, self.user)
-
-        assert_true(self.user.is_claimed)
-        assert_false(self.user.is_invited)
-
-        # TODO: test profile fields - jobs, schools, social
-        # TODO: test security_messages
-        # TODO: test mailing_lists
-
-        assert_equal(self.user.system_tags, ['shared', 'user', 'unconfirmed'])
-        assert_equal(self.user.aka, ['shared', 'user', 'unconfirmed'])
-
-        # TODO: test emails
-        # TODO: test watched
-        # TODO: test external_accounts
-
-        # TODO: test api_keys
-        assert_equal(self.unconfirmed.email_verifications, {})
-        assert_is_none(self.unconfirmed.username)
-        assert_is_none(self.unconfirmed.password)
-        assert_is_none(self.unconfirmed.verification_key)
-
-    def test_merge_unregistered(self):
-        # test only those behaviors that are not tested with unconfirmed users
-        self.user.merge_user(self.unregistered)
-
-        assert_true(self.user.is_invited)
-
-        assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
     def test_add_unconfirmed_email_when_email_verifications_is_None(self):
@@ -92,20 +40,25 @@ class UserTestCase(base.OsfTestCase):
             ['foo@bar.com']
         )
 
-        assert_equal(
-            self.unregistered.unconfirmed_emails,
-            []
-        )
-
-        assert_equal(
-            self.unconfirmed.unconfirmed_emails,
-            [self.unconfirmed.username]
-        )
-
         # email_verifications field may be None
         self.user.email_verifications = None
         self.user.save()
         assert_equal(self.user.unconfirmed_emails, [])
+
+    def test_unconfirmed_emails_unregistered_user(self):
+
+        assert_equal(
+            factories.UnregUserFactory().unconfirmed_emails,
+            []
+        )
+
+    def test_unconfirmed_emails_unconfirmed_user(self):
+        user = factories.UnconfirmedUserFactory()
+
+        assert_equal(
+            user.unconfirmed_emails,
+            [user.username]
+        )
 
     def test_remove_unconfirmed_email(self):
         self.user.add_unconfirmed_email('foo@bar.com')
@@ -176,6 +129,27 @@ class UserMergingTestCase(base.OsfTestCase):
         super(UserMergingTestCase, self).setUp()
         self.user = factories.UserFactory()
 
+    def _add_unconfirmed_user(self):
+
+        self.unconfirmed = factories.UnconfirmedUserFactory()
+
+        self.user.system_tags = ['shared', 'user']
+        self.unconfirmed.system_tags = ['shared', 'unconfirmed']
+
+        self.user.aka = ['shared', 'user']
+        self.unconfirmed.aka = ['shared', 'unconfirmed']
+
+    def _add_unregistered_user(self):
+        self.unregistered = factories.UnregUserFactory()
+
+        self.project_with_unreg_contrib = factories.ProjectFactory()
+        self.project_with_unreg_contrib.add_unregistered_contributor(
+            fullname='Unreg',
+            email=self.unregistered.username,
+            auth=auth.Auth(self.project_with_unreg_contrib.creator)
+        )
+        self.project_with_unreg_contrib.save()
+
     def test_can_be_merged_no_addons(self):
         # No addons present
         assert_true(self.user.can_be_merged)
@@ -195,3 +169,40 @@ class UserMergingTestCase(base.OsfTestCase):
         self.user.add_addon('unmergeable')
 
         assert_false(self.user.can_be_merged)
+
+    def test_merge_unconfirmed(self):
+        self._add_unconfirmed_user()
+        self.user.merge_user(self.unconfirmed)
+
+        assert_true(self.unconfirmed.is_merged)
+        assert_equal(self.unconfirmed.merged_by, self.user)
+
+        assert_true(self.user.is_claimed)
+        assert_false(self.user.is_invited)
+
+        # TODO: test profile fields - jobs, schools, social
+        # TODO: test security_messages
+        # TODO: test mailing_lists
+
+        assert_equal(self.user.system_tags, ['shared', 'user', 'unconfirmed'])
+        assert_equal(self.user.aka, ['shared', 'user', 'unconfirmed'])
+
+        # TODO: test emails
+        # TODO: test watched
+        # TODO: test external_accounts
+
+        # TODO: test api_keys
+        assert_equal(self.unconfirmed.email_verifications, {})
+        assert_is_none(self.unconfirmed.username)
+        assert_is_none(self.unconfirmed.password)
+        assert_is_none(self.unconfirmed.verification_key)
+
+    def test_merge_unregistered(self):
+        # test only those behaviors that are not tested with unconfirmed users
+        self._add_unregistered_user()
+
+        self.user.merge_user(self.unregistered)
+
+        assert_true(self.user.is_invited)
+
+        assert_in(self.user, self.project_with_unreg_contrib.contributors)
