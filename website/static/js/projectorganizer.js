@@ -719,18 +719,6 @@ function _poResolveLazyLoad(item) {
     return '/api/v1/dashboard/' + item.data.node_id;
 }
 
-
-function expandChildren(item) {   
-    for(var i = 0 ; i < item.children.length; i++) {
-        var child = item.children[i];
-        child.load = true;
-        child.open = true;
-        if(child.children) {
-            expandChildren(child);
-        }
-    }   
-}
-
 /**
  * Hook to run after lazyloading has successfully loaded
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -738,8 +726,8 @@ function expandChildren(item) {
  * @private
  */
 function expandStateLoad(item) {
-    var tb = this;
-    var i;
+    var tb = this,
+        i;
     if(item.children.length === 0 && item.data.childrenCount > 0){
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
@@ -747,7 +735,10 @@ function expandStateLoad(item) {
     if(item.children.filter(function(child) {
         return child.children.length;
     }).length) {
-        expandChildren(item);
+        for(var i = 0 ; i < item.children.length; i++) {
+            item.children[i].load = true;
+            item.children[i].open = true;
+        }
         tb.redraw();
     }
 
