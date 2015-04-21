@@ -286,6 +286,9 @@ class GuidFile(GuidStoredObject):
         if self.revision:
             url.args[self.version_identifier] = self.revision
 
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
+
         return url.url
 
     @property
@@ -298,6 +301,9 @@ class GuidFile(GuidStoredObject):
 
         if self.revision:
             url.args[self.version_identifier] = self.revision
+
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
 
         return url.url
 
