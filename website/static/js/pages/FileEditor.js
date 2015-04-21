@@ -132,10 +132,9 @@ function ViewModel(url, viewText) {
             url: url,
             dataType: 'json'
         });
+        console.log('URL in fetchData is: ' + url);
         request.done(function (response) {
-            var content = response.content.toString();
-            // Most recent version, whether saved or in mongo
-            self.initText(content);
+            self.initText(response.content);
 
         });
         request.fail(function (xhr, textStatus, error) {

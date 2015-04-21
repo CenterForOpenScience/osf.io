@@ -66,8 +66,10 @@ def get_file_contents(download_url, cache_path, temp_path, public_download_url):
         with codecs.open(temp_path, encoding=encoding) as temp_file:
             try:
                 rendered_html = mfr.render(fp=temp_file, src=public_download_url).content
-                soup = BeautifulSoup(rendered_html)
-                content = soup.find('pre').contents
+                content = rendered_html
+                if get_file_extension(temp_path) == '.txt':
+                    soup = BeautifulSoup(rendered_html)
+                    content = soup.find('pre').contents
             except MFRError as err:
                 # Rendered MFR error
                 rendered = render_mfr_error(err)

@@ -197,6 +197,7 @@ function ViewModel(options){
     self.pageURL = options.urls.page;
 //    self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
+    self.isEditable = options.isEditable;
 
     self.viewText = ko.observable('');
 //    self.renderedView = ko.observable('');
@@ -273,7 +274,7 @@ function ViewModel(options){
 //    });
 
 
-    if(self.canEdit) {
+    if(self.canEdit && self.isEditable) {
         self.editor = ace.edit('editor'); // jshint ignore: line
 
         var ShareJSDoc = require('./ShareJSDocFile.js');

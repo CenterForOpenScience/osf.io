@@ -352,7 +352,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
         'file_ext': get_file_extension(file_guid.waterbutler_path),
-
+        'panels_used': ['edit', 'view'],
     })
 
     ret.update(rubeus.collect_addon_assets(node))
