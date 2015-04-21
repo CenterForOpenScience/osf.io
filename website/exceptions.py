@@ -31,3 +31,20 @@ class InvalidRetractionDisapprovalToken(RetractionTokenError):
     """Raised if a retraction disapproval token is not found."""
     message_short = "Invalid Token"
     message_long = "This retraction disapproval link is invalid."
+
+
+class EmbargoTokenError(NodeError):
+    """Base class for errors arising from the user of a embargo token."""
+    pass
+
+
+class InvalidEmbargoApprovalToken(EmbargoTokenError):
+    """Raised if a embargo approval token is not found."""
+    message_short = "Invalid Token"
+    message_long = "This embargo approval link is invalid."
+
+
+class InvalidEmbargoDisapprovalToken(EmbargoTokenError):
+    """Raised if a embargo disapproval token is not found."""
+    message_short = "Invalid Token"
+    message_long = "This embargo disapproval link is invalid."

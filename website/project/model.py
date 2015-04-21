@@ -41,7 +41,8 @@ from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import (
     NodeStateError, InvalidRetractionApprovalToken,
-    InvalidRetractionDisapprovalToken
+    InvalidRetractionDisapprovalToken, InvalidEmbargoApprovalToken,
+    InvalidEmbargoDisapprovalToken,
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
@@ -2506,25 +2507,51 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return True
         return False
 
+    def _initiate_embargo(self, user, end_date):
+        """Initiates the retraction process for a registration
+        :param user: User who initiated the retraction
+        :param end_date: Date when the registration should be made public
+        """
+
+        embargo = Embargo()
+        embargo.initiated_by = user
+        embargo.state = 'pending'
+        # Convert Date to Datetime
+        embargo.end_date = datetime.datetime.combine(end_date, datetime.datetime.min.time())
+
+        # Collect list of admins for registration
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
+
+        approval_state = {}
+        # Create approve/disapprove keys
+        for admin in admins:
+            approval_state[admin._id] = {
+                'approval_token': security.random_string(30),
+                'disapproval_token': security.random_string(30),
+                'has_approved': False
+            }
+
+        embargo.approval_state = approval_state
+        return embargo
+
     def embargo_registration(self, user, end_date):
         """Enter registration into an embargo period at end of which, it will
         be made public
         :param user: User initiating the embargo
         :param end_date: Date when the registration should be made public
-        :return:
+        :raises: NodeStateError if Node is not a registration
+        :raises: PermissionsError if user is not an admin for the Node
+        :raises: ValidationValueError if end_date is not within time constraints
         """
 
         if not self.is_registration:
             raise NodeStateError('Cannot embargo a non-registration')
-
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
-
         if not self._is_embargo_date_valid(end_date):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
-        embargo = Embargo()
-        embargo.user = user
+        embargo = self._initiate_embargo(user, end_date)
         # Embargo record needs to be saved to ensure the forward reference Node->Embargo
         embargo.save()
         self.embargo = embargo
@@ -2720,3 +2747,25 @@ class Embargo(StoredObject):
     @property
     def pending_embargo(self):
         return self.state == 'pending'
+
+    def disapprove_embargo(self, user, token):
+        """Cancels retraction if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['disapproval_token'] != token:
+                raise InvalidEmbargoDisapprovalToken
+            self.state = 'cancelled'
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+
+    def approve_embargo(self, user, token):
+        """Add user to approval list if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['approval_token'] != token:
+                raise InvalidEmbargoApprovalToken
+            self.approval_state[user._id]['has_approved'] = True
+            num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
+
+            if num_of_approvals == len(self.approval_state.keys()):
+                self.state = 'embargoed'
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')

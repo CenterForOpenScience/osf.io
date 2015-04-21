@@ -7,14 +7,17 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework import status
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 
 from website import settings
-from website.exceptions import InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken
+from website.exceptions import (
+    InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
+    InvalidEmbargoApprovalToken,
+)
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission, must_not_be_registration,
@@ -154,6 +157,7 @@ def node_registration_retraction_approve(auth, token, **kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         })
+    # FIXME(hrybacki) should be PermissionsError
     except ValidationValueError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
@@ -190,6 +194,7 @@ def node_registration_retraction_disapprove(auth, token, **kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         })
+    # FIXME(hrybacki) should be PermissionsError
     except ValidationValueError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
@@ -198,6 +203,54 @@ def node_registration_retraction_disapprove(auth, token, **kwargs):
 
     status.push_status_message('Your disapproval has been accepted and the retraction has been cancelled.')
     return redirect(node.web_url_for('view_project'))
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_registration_embargo_approve(auth, token, **kwargs):
+    """Handles approval of registration embargoes
+    :param auth: User wanting to approve the embargo
+    :param kwargs:
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    node = kwargs['node'] or kwargs['project']
+
+    if not node.pending_embargo:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending an embargo.'
+        })
+
+    try:
+        node.embargo.approve_embargo(auth.user, token)
+        node.embargo.save()
+    except InvalidEmbargoApprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except PermissionsError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your approval has been accepted.')
+    return redirect(node.web_url_for('view_project'))
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_registration_embargo_disapprove(auth, token, **kwargs):
+    """Handles disapproval of registration embargoes
+    :param auth: User wanting to disapprove the embargo
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    node = kwargs['node'] or kwargs['project']
+
+    raise NotImplementedError
 
 @must_be_valid_project
 @must_be_contributor_or_public

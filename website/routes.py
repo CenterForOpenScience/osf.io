@@ -774,6 +774,7 @@ def make_url_map(app):
             OsfWebRenderer('project/retract_registration.mako')),
         Rule([
             '/project/<pid>/retraction/approve/<token>/',
+            # FIXME(hrybacki) should be /retraction/approve/...
             '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
         ], 'get', project_views.register.node_registration_retraction_approve,
             OsfWebRenderer('error.mako', render_mako_string)),
@@ -782,6 +783,17 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
         ], 'get', project_views.register.node_registration_retraction_disapprove,
             OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/embargo/approve/<token>/',
+            '/project/<pid>/node/<nid>/embargo/approve/<token>/',
+        ], 'get', project_views.register.node_registration_embargo_approve,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/embargo/disapprove/<token>/',
+            '/project/<pid>/node/<nid>/embargo/disapprove/<token>/',
+        ], 'get', project_views.register.node_registration_embargo_disapprove,
+            OsfWebRenderer('error.mako', render_mako_string)),
+
         Rule(
             '/ids/<category>/<path:value>/',
             'get',
