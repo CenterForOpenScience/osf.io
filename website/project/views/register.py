@@ -195,10 +195,9 @@ def _get_or_create_identifiers(node):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def node_identifiers_get(**kwargs):
+def node_identifiers_get(node, **kwargs):
     """Retrieve identifiers for a node. Node must be a public registration.
     """
-    node = kwargs['node'] or kwargs['project']
     if not node.is_registration or not node.is_public:
         raise HTTPError(http.BAD_REQUEST)
     return {
@@ -209,10 +208,9 @@ def node_identifiers_get(**kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-def node_identifiers_post(auth, **kwargs):
+def node_identifiers_post(auth, node, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
     """
-    node = kwargs['node'] or kwargs['project']
     # TODO: Fail if `node` is retracted
     if not node.is_registration or not node.is_public:  # or node.is_retracted:
         raise HTTPError(http.BAD_REQUEST)
@@ -227,7 +225,7 @@ def node_identifiers_post(auth, **kwargs):
     node.add_log(
         NodeLog.EXTERNAL_IDS_ADDED,
         params={
-            'project': node.parent_id,
+            'parent_node': node.parent_id,
             'node': node._id,
             'identifiers': identifiers,
         },

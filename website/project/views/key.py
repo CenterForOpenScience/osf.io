@@ -13,7 +13,7 @@ from ..model import ApiKey
 from .node import _view_project
 
 
-@must_be_valid_project  # injects project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 def get_node_keys(node, **kwargs):
     return {
@@ -26,7 +26,7 @@ def get_node_keys(node, **kwargs):
         ]
     }
 
-@must_be_valid_project  # injects project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 def create_node_key(node, **kwargs):
 
@@ -41,7 +41,7 @@ def create_node_key(node, **kwargs):
     # Return response
     return {'response': 'success'}, http.CREATED
 
-@must_be_valid_project  # injects project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 def revoke_node_key(node, **kwargs):
 
@@ -55,7 +55,7 @@ def revoke_node_key(node, **kwargs):
     # Send response
     return {'response': 'success'}
 
-@must_be_valid_project  # injects project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 def node_key_history(auth, node, **kwargs):
 
