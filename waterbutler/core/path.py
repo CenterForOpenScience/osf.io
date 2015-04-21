@@ -50,6 +50,14 @@ class WaterButlerPath:
             raise exceptions.InvalidPathError('Invalid path \'{}\' specified'.format(absolute_path))
 
     @classmethod
+    def validate_folder(cls, path):
+        if not path.is_dir:
+            raise exceptions.CreateFolderError('Path must be a directory', code=400)
+
+        if path.is_root:
+            raise exceptions.CreateFolderError('Path can not be root', code=400)
+
+    @classmethod
     def from_parts(cls, parts, folder=False):
         _ids, _parts = [], ['']
         for part in parts:
