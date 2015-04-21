@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from modularodm import Q
+
 from website.project.model import Node
 
 def delta_date(d):
