@@ -256,6 +256,30 @@
         </p>
         <!-- /ko -->
     </script>
+    <script type="text/html" id="nodeInfo">
+      <div>        
+        Path: 
+        <span data-bind="foreach: parents">
+          /
+          <a data-bind="if: url, attr.href: url">
+            <span data-bind="text: name"></span>
+          </a>
+          <span data-bind="ifnot: url">
+            <span data-bind="text: name"></span>
+          </span>
+        </span>
+        /
+        <a data-bind="attr.href: urls.web, text: name"></a>
+      </div>
+      <div data-bind="if: children.length">
+        Children: 
+        <ul data-bind="foreach: children">
+          <li>
+            <a data-bind="attr.href: url, text: name"></a>
+          </li>
+        </ul>
+      </div>
+    </script>
 </%def>
 
 <%def name="javascript_bottom()">
@@ -264,6 +288,5 @@
             search:true
         });
     </script>
-
     <script src=${"/static/public/js/search-page.js" | webpack_asset}></script>
 </%def>
