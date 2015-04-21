@@ -42,7 +42,7 @@ from website.util.sanitize import strip_html
 logger = logging.getLogger(__name__)
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_have_permission(WRITE)
 @must_not_be_registration
 def edit_node(auth, node, **kwargs):
@@ -110,10 +110,10 @@ def project_new_post(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
-def project_new_from_template(node, **kwargs):
+def project_new_from_template(auth, node, **kwargs):
     original_node = node
     new_node = original_node.use_as_template(
-        auth=kwargs['auth'],
+        auth=auth,
         changes=dict(),
     )
     return {'url': new_node.url}, http.CREATED, None
@@ -132,8 +132,9 @@ def folder_new(**kwargs):
     return return_value
 
 
+@must_be_valid_project
 @must_be_logged_in
-def folder_new_post(auth, nid, **kwargs):
+def folder_new_post(auth, node, **kwargs):
     user = auth.user
 
     title = request.json.get('title')
@@ -141,8 +142,7 @@ def folder_new_post(auth, nid, **kwargs):
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
 
-    node = Node.load(nid)
-    if node.is_deleted or node.is_registration or not node.is_folder:
+    if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
     folder = new_folder(strip_html(title), user)
     folders = [folder]
@@ -155,14 +155,12 @@ def folder_new_post(auth, nid, **kwargs):
         'projectUrl': '/dashboard/',
     }, http.CREATED
 
-
+@must_be_valid_project
 @collect_auth
-def add_folder(auth, **kwargs):
+def add_folder(auth, node, **kwargs):
     user = auth.user
     title = strip_html(request.json.get('title'))
-    node_id = request.json.get('node_id')
-    node = Node.load(node_id)
-    if node.is_deleted or node.is_registration or not node.is_folder:
+    if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
 
     folder = new_folder(
@@ -180,10 +178,10 @@ def add_folder(auth, **kwargs):
 ##############################################################################
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_have_permission(WRITE)
 @must_not_be_registration
-def project_new_node(auth, project, **kwargs):
+def project_new_node(auth, node, **kwargs):
     form = NewNodeForm(request.form)
     user = auth.user
     if form.validate():
@@ -191,12 +189,12 @@ def project_new_node(auth, project, **kwargs):
             title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
-            parent=project,
+            parent=node,
         )
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
             'or return to the <u><a href="{url}">Project Page</a></u>.'
-        ).format(url=project.url)
+        ).format(url=node.url)
         status.push_status_message(message, 'info')
 
         return {
@@ -204,11 +202,11 @@ def project_new_node(auth, project, **kwargs):
         }, 201, None, node.url
     else:
         status.push_errors_to_status(form.errors)
-    raise HTTPError(http.BAD_REQUEST, redirect_url=project.url)
+    raise HTTPError(http.BAD_REQUEST, redirect_url=node.url)
 
 
 @must_be_logged_in
-@must_be_valid_project  # returns project
+@must_be_valid_project
 def project_before_fork(auth, node, **kwargs):
     user = auth.user
 
@@ -225,7 +223,7 @@ def project_before_fork(auth, node, **kwargs):
 
 
 @must_be_logged_in
-@must_be_valid_project  # returns project
+@must_be_valid_project
 def project_before_template(auth, node, **kwargs):
     prompts = []
 
@@ -240,18 +238,6 @@ def project_before_template(auth, node, **kwargs):
 @must_be_logged_in
 @must_be_valid_project
 def node_fork_page(auth, node, **kwargs):
-    ''' NODEREFACTOR
-    if node:
-        node_to_use = node
-        raise HTTPError(
-            http.FORBIDDEN,
-            message='At this time, only projects can be forked; however, this behavior is coming soon.',
-            redirect_url=node_to_use.url
-        )
-    else:
-        node_to_use = project
-    '''
-
     try:
         fork = node.fork_node(auth)
     except PermissionsError:
@@ -259,18 +245,17 @@ def node_fork_page(auth, node, **kwargs):
             http.FORBIDDEN,
             redirect_url=node.url
         )
-
     return fork.url
 
 
 @must_be_valid_project
-@must_be_contributor_or_public  # returns user, project
+@must_be_contributor_or_public
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
 
 @must_be_valid_project
-@must_be_contributor_or_public  # returns user, project
+@must_be_contributor_or_public
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
@@ -397,7 +382,7 @@ def collapse(auth, node, **kwargs):
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission(WRITE)
-def project_reorder_components(project, **kwargs):
+def project_reorder_components(node, **kwargs):
     """Reorders the components in a project's component list.
 
     :param-json list new_list: List of strings that include node IDs and
@@ -411,8 +396,8 @@ def project_reorder_components(project, **kwargs):
     #   }
     # }
     new_list = [
-        tuple(node.split(':'))
-        for node in request.json.get('new_list', [])
+        tuple(n.split(':'))
+        for n in request.json.get('new_list', [])
     ]
     nodes_new = [
         StoredObject.get_collection(schema).load(key)
@@ -420,16 +405,16 @@ def project_reorder_components(project, **kwargs):
     ]
 
     valid_nodes = [
-        node for node in project.nodes
-        if not node.is_deleted
+        n for n in node.nodes
+        if not n.is_deleted
     ]
     deleted_nodes = [
-        node for node in project.nodes
-        if node.is_deleted
+        n for n in node.nodes
+        if n.is_deleted
     ]
     if len(valid_nodes) == len(nodes_new) and set(valid_nodes) == set(nodes_new):
-        project.nodes = nodes_new + deleted_nodes
-        project.save()
+        node.nodes = nodes_new + deleted_nodes
+        node.save()
         return {}
 
     logger.error('Got invalid node list in reorder components')
@@ -440,7 +425,7 @@ def project_reorder_components(project, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public  # returns user, project
+@must_be_contributor_or_public
 def project_statistics(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
@@ -482,7 +467,7 @@ def project_set_privacy(auth, node, **kwargs):
     }
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_registration
 def watch_post(auth, node, **kwargs):
@@ -503,7 +488,7 @@ def watch_post(auth, node, **kwargs):
     }
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_registration
 def unwatch_post(auth, node, **kwargs):
@@ -522,7 +507,7 @@ def unwatch_post(auth, node, **kwargs):
     }
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_registration
 def togglewatch_post(auth, node, **kwargs):
@@ -551,7 +536,7 @@ def togglewatch_post(auth, node, **kwargs):
     }
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def component_remove(auth, node, **kwargs):
@@ -609,7 +594,7 @@ def delete_folder(auth, node, **kwargs):
     return {}
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_have_permission("admin")
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
@@ -692,7 +677,6 @@ def _view_project(node, auth, primary=False):
             'is_public': node.is_public,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
-
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
@@ -706,7 +690,6 @@ def _view_project(node, auth, primary=False):
                 for meta in node.registered_meta or []
             ],
             'registration_count': len(node.node__registrations),
-
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
@@ -719,16 +702,13 @@ def _view_project(node, auth, primary=False):
             'anonymous': anonymous,
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
-
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
-
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-
         },
         'parent_node': {
             'id': parent._primary_key if parent else '',
@@ -763,7 +743,6 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-
     }
     return data
 
@@ -797,7 +776,7 @@ def _get_children(node, auth, indent=0):
     return children
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 def private_link_table(node, **kwargs):
     data = {
@@ -972,7 +951,7 @@ def get_registrations(auth, node, **kwargs):
     return _render_nodes(registrations, auth)
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 def project_generate_private_link_post(auth, node, **kwargs):
     """ creata a new private link object and add it to the node and its selected children"""
@@ -1001,7 +980,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
     return new_link
 
 
-@must_be_valid_project  # returns project
+@must_be_valid_project
 @must_have_permission(ADMIN)
 def project_private_link_edit(auth, **kwargs):
     new_name = request.json.get('value', '')
