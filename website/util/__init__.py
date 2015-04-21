@@ -30,7 +30,7 @@ def _get_guid_url_for(url):
     return guid_url
 
 def api_v2_url_for(*args, **kwargs):
-    return reverse(*args, **kwargs)
+    return '/api/v2' + reverse(*args, **kwargs)
 
 
 def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, **kwargs):
