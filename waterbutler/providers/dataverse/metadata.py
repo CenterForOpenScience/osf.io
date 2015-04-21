@@ -47,6 +47,7 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
     def extra(self):
         return {
             'fileId': self.file_id,
+            'datasetVersion': self.dataset_version,
             'canDelete': self.can_delete,
         }
 
