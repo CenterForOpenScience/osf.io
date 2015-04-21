@@ -32,6 +32,35 @@ class BoxProvider(provider.BaseProvider):
         self.token = self.credentials['token']
         self.folder = self.settings['folder']
 
+    @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        if path == '/':
+            return p.WaterButlerPath('/', _ids=[self.folder])
+
+        parts = path.strip('/').split('/')
+        folder_or_file = 'folders' if path.endswith('/') else 'files'
+
+        response = yield from self.make_request(
+            'get',
+            self.build_url(folder_or_file, parts[0]),
+            expects=(200, ),
+            throws=exceptions.MetadataError,
+        )
+        data = yield from response.json()
+
+        names, ids = zip(*[(x['name'], x['id']) for x in data['path_collection']['entries'] + [data]])
+
+        try:
+            names, ids = names[ids.index(self.folder) + 1:], ids[ids.index(self.folder):]
+        except ValueError:
+            raise Exception  # TODO
+
+        if len(parts) == 2:
+            ids += (None, )
+            names += (parts[1], )
+
+        return p.WaterButlerPath('/'.join(('',) + names), _ids=ids, folder=folder_or_file)
+
     def can_intra_move(self, other):
         return self == other
 
