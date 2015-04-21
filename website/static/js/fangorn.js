@@ -275,11 +275,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     var item,
         child,
-        column,
-        msgWithCancel,
-        msgWithoutCancel,
-        fullRowTemplate = m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
-        columnTemplate = m('span', 'Uploaded ' + Math.floor(progress) + '%');
+        templateWithCancel;
+
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -290,20 +287,16 @@ function _fangornUploadProgress(treebeard, file, progress) {
         }
     }
 
-    // if(treebeard.options.placement === 'dashboard'){
-    //     column = null;
-    //     msgWithCancel = m('span', [ fullRowTemplate, cancelUploadTemplate.call(treebeard, item) ]);
-    //     msgWithoutCancel = fullRowTemplate;
-    // } else {
-        column = 1;
-        msgWithCancel = m('span', [ columnTemplate, cancelUploadTemplate.call(treebeard, item) ]);
-        msgWithoutCancel = columnTemplate;
-    // }
+    templateWithCancel = m('span', [ 
+        m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
+        cancelUploadTemplate.call(treebeard, item)
+    ]);
+
 
     if (progress < 100) {
-        item.notify.update(msgWithCancel, 'success', column, 0);
+        item.notify.update(templateWithCancel, 'success', null, 0);
     } else {
-        item.notify.update(msgWithoutCancel, 'success', column, 2000);
+        item.notify.update(templateWithCancel, 'success', null, 2000);
     }
 }
 
