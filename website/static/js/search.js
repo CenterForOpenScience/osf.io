@@ -149,6 +149,7 @@ var ViewModel = function(params) {
             }
         };
     });
+};
 
 ViewModel.prototype.help = function() {
     bootbox.dialog({
