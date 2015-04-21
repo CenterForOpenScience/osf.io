@@ -81,9 +81,26 @@ class DbTestCase(unittest.TestCase):
     """
     DB_NAME = getattr(settings, 'TEST_DB_NAME', 'osf_test')
 
+    # dict of addons to inject into the app.
+    ADDONS_UNDER_TEST = {}
+    # format: {
+    #    <addon shortname>: {
+    #        'user_settings': <AddonUserSettingsBase instance>,
+    #        'node_settings': <AddonNodeSettingsBase instance>,
+    #}
+
+
+    # list of AddonConfig instances of injected addons
+    __ADDONS_UNDER_TEST = []
+
     @classmethod
     def setUpClass(cls):
         super(DbTestCase, cls).setUpClass()
+
+        for (short_name, options) in cls.ADDONS_UNDER_TEST.iteritems():
+            cls.__ADDONS_UNDER_TEST.append(
+                init_mock_addon(short_name, **options)
+            )
 
         cls._original_db_name = settings.DB_NAME
         settings.DB_NAME = cls.DB_NAME
@@ -105,6 +122,10 @@ class DbTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(DbTestCase, cls).tearDownClass()
+
+        for addon in cls.__ADDONS_UNDER_TEST:
+            remove_mock_addon(addon)
+
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
@@ -114,32 +135,6 @@ class DbTestCase(unittest.TestCase):
 class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
-
-    # dict of addons to inject into the app.
-    ADDONS_UNDER_TEST = {}
-    # format: {
-    #    <addon shortname>: {
-    #        'user_settings': <AddonUserSettingsBase instance>,
-    #        'node_settings': <AddonNodeSettingsBase instance>,
-    #}
-
-
-    # list of AddonConfig instances of injected addons
-    __ADDONS_UNDER_TEST = []
-
-    @classmethod
-    def setUpClass(cls):
-        for (short_name, options) in cls.ADDONS_UNDER_TEST.iteritems():
-            cls.__ADDONS_UNDER_TEST.append(
-                init_mock_addon(short_name, **options)
-            )
-        super(AppTestCase, cls).setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        for addon in cls.__ADDONS_UNDER_TEST:
-            remove_mock_addon(addon)
-        super(AppTestCase, cls).tearDownClass()
 
     def setUp(self):
         super(AppTestCase, self).setUp()

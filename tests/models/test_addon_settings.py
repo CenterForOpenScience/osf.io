@@ -6,33 +6,16 @@ from tests import base
 from tests import factories
 
 
-class MockUserSettings(addons_base.AddonUserSettingsBase):
-    pass
-
-
-class MockNodeSettings(addons_base.AddonNodeSettingsBase):
-    pass
-
-
-class MockMergeUserSettings(addons_base.AddonUserSettingsBase):
-    def merge(self, user_settings):
-        pass
-
-
-class MockMergeNodeSetting(addons_base.AddonNodeSettingsBase):
-    pass
-
-
 class AddonUserSettingsTestCase(base.OsfTestCase):
 
     ADDONS_UNDER_TEST = {
         'mock': {
-            'user_settings': MockUserSettings,
-            'node_settings': MockNodeSettings,
+            'user_settings': factories.MockAddonUserSettings,
+            'node_settings': factories.MockAddonNodeSettings,
         },
         'mock_merging': {
-            'user_settings': MockMergeUserSettings,
-            'node_settings': MockMergeNodeSetting,
+            'user_settings': factories.MockAddonUserSettingsMergeable,
+            'node_settings': factories.MockAddonNodeSettings,
         }
     }
 
