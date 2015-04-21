@@ -18,7 +18,7 @@ def do_migration(records, dry=False):
             user.email_verifications = {}
             user.verification_key = None
             user.save()
-    logger.info('{}Migrated {0} users'.format('[dry]'if dry else '', len(records)))
+    logger.info('{}Migrated {} users'.format('[dry]'if dry else '', len(records)))
 
 
 def get_targets():
@@ -27,15 +27,9 @@ def get_targets():
 
 def log_info(user):
     logger.info(
-        'Migrating user - {}: merged_by={}, '
-        'username={}, password={}, '
-        'email_verification={}, verification_key={}'.format(
+        'Migrating user - {}: merged_by={}, '.format(
             user._id,
-            user.merged_by,
-            user.username,
-            user.password,
-            user.email_verifications,
-            user.verification_key
+            user.merged_by._id,
         )
     )
 

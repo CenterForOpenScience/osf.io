@@ -2404,6 +2404,10 @@ span#profileFullname{
     background: #D9E8D9;
 }
 
+.addon-external-link:hover,
+.addon-external-link:focus {
+    text-decoration: none !important;
+}
 
 .osf-panel-flex {
     width: 100%;

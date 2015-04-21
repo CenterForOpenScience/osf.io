@@ -13,9 +13,9 @@ function ViewModel(url) {
     self.connected = ko.observable();
     self.dataverse = ko.observable();
     self.dataverseUrl = ko.observable();
-    self.study = ko.observable();
+    self.dataset = ko.observable();
     self.doi = ko.observable();
-    self.studyUrl = ko.observable('');
+    self.datasetUrl = ko.observable('');
     self.citation = ko.observable('');
     self.loaded = ko.observable(false);
 
@@ -31,9 +31,9 @@ function ViewModel(url) {
                 self.connected(data.connected);
                 self.dataverse(data.dataverse);
                 self.dataverseUrl(data.dataverseUrl);
-                self.study(data.study);
+                self.dataset(data.dataset);
                 self.doi(data.doi);
-                self.studyUrl(data.studyUrl);
+                self.datasetUrl(data.datasetUrl);
                 self.citation(data.citation);
                 self.loaded(true);
             },

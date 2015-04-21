@@ -138,6 +138,7 @@ def get_dashboard(auth, nid=None, **kwargs):
 
     return_value['timezone'] = user.timezone
     return_value['locale'] = user.locale
+    return_value['id'] = user._id
     return return_value
 
 
