@@ -35,6 +35,7 @@ from website.addons.wiki.model import NodeWikiPage
 import website.models
 from website.signals import ALL_SIGNALS
 from website.app import init_app
+from website.addons.base import AddonConfig
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
@@ -113,6 +114,33 @@ class DbTestCase(unittest.TestCase):
 class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
+
+    # dict of addons to inject into the app.
+    ADDONS_UNDER_TEST = {}
+    # format: {
+    #    <addon shortname>: {
+    #        'user_settings': <AddonUserSettingsBase instance>,
+    #        'node_settings': <AddonNodeSettingsBase instance>,
+    #}
+
+
+    # list of AddonConfig instances of injected addons
+    __ADDONS_UNDER_TEST = []
+
+    @classmethod
+    def setUpClass(cls):
+        for (short_name, options) in cls.ADDONS_UNDER_TEST.iteritems():
+            cls.__ADDONS_UNDER_TEST.append(
+                init_mock_addon(short_name, **options)
+            )
+        super(AppTestCase, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        for addon in cls.__ADDONS_UNDER_TEST:
+            remove_mock_addon(addon)
+        super(AppTestCase, cls).tearDownClass()
+
     def setUp(self):
         super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
@@ -260,3 +288,38 @@ def assert_before(lst, item1, item2):
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""
     assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
+
+
+def init_mock_addon(short_name, user_settings, node_settings):
+    """Add an addon to the settings, so that it is ready for app init
+
+    This is used to inject addons into the application context for tests."""
+    settings.ADDONS_REQUESTED.append(short_name)
+
+    addon_config = AddonConfig(
+        short_name=short_name,
+        full_name=short_name,
+        owners=['User', 'Node'],
+        categories=['Storage'],
+        user_settings_model=user_settings,
+        node_settings_model=node_settings,
+        models=[user_settings, node_settings],
+    )
+    settings.ADDONS_AVAILABLE_DICT[addon_config.short_name] = addon_config
+    settings.ADDONS_AVAILABLE.append(addon_config)
+    return addon_config
+
+
+def remove_mock_addon(addon_config):
+    """Given an AddonConfig instance, remove that addon from the settings"""
+    settings.ADDONS_AVAILABLE_DICT.pop(addon_config.short_name, None)
+
+    try:
+        settings.ADDONS_AVAILABLE.remove(addon_config)
+    except ValueError:
+        pass
+
+    try:
+        settings.ADDONS_REQUESTED.remove(addon_config.short_name)
+    except ValueError:
+        pass
