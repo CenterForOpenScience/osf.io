@@ -70,7 +70,7 @@ class TestNodeContributorList(OsfTestCase):
 
         # non-contrib
         res = self.app.get(url, auth=(non_contrib.username, pw), expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 403)
 
         # contrib
         res = self.app.get(url, auth=(self.user.username, self.password))
