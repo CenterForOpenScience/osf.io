@@ -77,7 +77,7 @@ describe('githubNodeConfigViewModel', () => {
                             .always(function() {
                                 // VM is updated with data from the fake server
                                 // observables
-                                assert.equal(vm.ownerName(), expected.owner);
+                                assert.equal(vm.ownerName(), expected.ownerName);
                                 assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
                                 assert.equal(vm.userHasAuth(), expected.userHasAuth);
                                 assert.equal(vm.currentRepo(), (expected.repo === null) ? 'None' : '');
@@ -258,9 +258,17 @@ describe('githubNodeConfigViewModel', () => {
         var postEndpoint = makeSettingsEndpoint();
         postEndpoint.method = 'POST';
         postEndpoint.response = postEndpoint.response.result;
+        var user = faker.internet.domainWord();
         var repo = faker.internet.domainWord();
-        postEndpoint.response.repo = repo;
-        postEndpoint.response.has_repo = true;
+        postEndpoint.response = {'result':{
+            repo: repo,
+            user: user,
+            has_repo: true,
+            nodeHasAuth: true,
+            userIsOwner: true,
+            ownerName: faker.name.findName(),
+            urls: {'files': "/project/12345/files/"}
+        }};
         var endpoints = [
             postEndpoint,
             makeSettingsEndpoint()
@@ -277,11 +285,10 @@ describe('githubNodeConfigViewModel', () => {
 
             vm.updateFromData()
                 .always(function() {
-                    debugger;
-                    vm.selectedRepo(repo);
+                    vm.selectedRepo(user + " / " + repo);
                     var promise = vm.selectRepo();
                     promise.always(function() {
-                        assert.equal(vm.currentRepo(), repo);
+                        assert.equal(vm.currentRepo(), user + " / " + repo);
                         done();
                     });
                 });
