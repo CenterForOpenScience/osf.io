@@ -28,7 +28,7 @@ from website.project import model
 from website.util import web_url_for
 from website.util import permissions
 from website.util.serializers import ProjectOrganizerSerializer
-from website.util import projectorganizer as po_utils
+from website.util.projectorganizer import get_all_projects_smart_folder, get_all_registrations_smart_folder
 from website.project import new_dashboard
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
@@ -134,21 +134,21 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = find_dashboard(user)
         data = [node]
     elif nid == ALL_MY_PROJECTS_ID:
-        data = po_utils.get_all_projects_smart_folder(auth)
+        data = get_all_projects_smart_folder(auth)
     elif nid == ALL_MY_REGISTRATIONS_ID:
-        data = po_utils.get_all_registrations_smart_folder(auth)
+        data = get_all_registrations_smart_folder(auth)
     else:
         serialize = noop
         node = Node.load(nid)
         if not node:
             raise HTTPError(http.BAD_REQUEST)
         if node.is_dashboard:
-            projects_count = len(po_utils.get_all_projects_smart_folder(auth))
-            registrations_count = len(po_utils.get_all_registrations_smart_folder(auth))
+            projects_count = len(get_all_projects_smart_folder(auth))
+            registrations_count = len(get_all_registrations_smart_folder(auth))
             data = [
                 serializer.make_smart_folder(ALL_MY_REGISTRATIONS_NAME, ALL_MY_REGISTRATIONS_ID, registrations_count),
                 serializer.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, projects_count),
-            ] + [serializer.serialize(n) for n in po_utils.get_dashboard_nodes(node, auth)]
+            ]
         else:
             data = serializer.serialize(node)['children']
 
