@@ -6,7 +6,6 @@ from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
-from api.nodes import permissions as node_perms
 from .serializers import UserSerializer
 
 class UserMixin(object):
