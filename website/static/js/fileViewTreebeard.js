@@ -80,11 +80,7 @@ function FileViewTreebeard(data) {
                 selectClass = 'fangorn-hover';
             }   
 
-            // define the toolbar icons for this item
-            configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'defineToolbar', [item]);
-            if (!configOption){
-                Fangorn.Utils.defineToolbar.call(this, item);
-            }
+            item.icons = []; // In this view there won't be toolbar items. 
 
             var defaultColumns = [
                 {
