@@ -16,3 +16,11 @@
 .filebrowser #tb-tbody {
     height: 300px;
 }
+
+p.current-folder{
+    word-wrap: break-word;
+}
+
+h4#connect-folder{
+    word-wrap: break-word;
+}
