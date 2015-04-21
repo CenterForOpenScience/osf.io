@@ -481,6 +481,10 @@ class AddonUserSettingsBase(AddonSettingsBase):
             if not node_addon.owner.is_deleted
         ]
 
+    @property
+    def can_be_merged(self):
+        return hasattr(self, 'merge')
+
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret['has_auth'] = self.has_auth

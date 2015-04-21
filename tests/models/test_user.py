@@ -37,18 +37,6 @@ class UserTestCase(base.OsfTestCase):
         models.User.remove()
         super(UserTestCase, self).tearDown()
 
-    def test_can_be_merged(self):
-        # No addons present
-        assert_true(self.user.can_be_merged)
-        assert_true(self.unregistered.can_be_merged)
-        assert_true(self.unconfirmed.can_be_merged)
-
-        # Add an addon
-        addon = self.user.get_or_add_addon('mendeley')
-        addon.save()
-
-        assert_false(self.user.can_be_merged)
-
     def test_merge_unconfirmed(self):
         self.user.merge_user(self.unconfirmed)
 
@@ -170,3 +158,40 @@ class UserTestCase(base.OsfTestCase):
         with assert_raises(PermissionsError) as e:
             self.user.remove_unconfirmed_email(self.user.username)
         assert_equal(e.exception.message, "Can't remove primary email")
+
+
+class UserMergingTestCase(base.OsfTestCase):
+    ADDONS_UNDER_TEST = {
+        'unmergeable': {
+            'user_settings': factories.MockAddonUserSettings,
+            'node_settings': factories.MockAddonNodeSettings,
+        },
+        'mergeable': {
+            'user_settings': factories.MockAddonUserSettingsMergeable,
+            'node_settings': factories.MockAddonNodeSettings,
+        }
+    }
+
+    def setUp(self):
+        super(UserMergingTestCase, self).setUp()
+        self.user = factories.UserFactory()
+
+    def test_can_be_merged_no_addons(self):
+        # No addons present
+        assert_true(self.user.can_be_merged)
+
+    def test_can_be_merged_unmergable_addon(self):
+        self.user.add_addon('unmergeable')
+
+        assert_false(self.user.can_be_merged)
+
+    def test_can_be_merged_mergable_addon(self):
+        self.user.add_addon('mergeable')
+
+        assert_true(self.user.can_be_merged)
+
+    def test_can_be_merged_both_addons(self):
+        self.user.add_addon('mergeable')
+        self.user.add_addon('unmergeable')
+
+        assert_false(self.user.can_be_merged)

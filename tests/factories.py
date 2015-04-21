@@ -19,6 +19,7 @@ from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
@@ -408,3 +409,16 @@ class MockOAuth2Provider(ExternalProvider):
         return {
             'provider_id': 'mock_provider_id'
         }
+
+
+class MockAddonNodeSettings(addons_base.AddonNodeSettingsBase):
+    pass
+
+
+class MockAddonUserSettings(addons_base.AddonUserSettingsBase):
+    pass
+
+
+class MockAddonUserSettingsMergeable(addons_base.AddonUserSettingsBase):
+    def merge(self):
+        pass
