@@ -22,6 +22,10 @@ class DropboxProvider(provider.BaseProvider):
         self.token = self.credentials['token']
         self.folder = self.settings['folder']
 
+    @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        return p.WaterButlerPath(path, prepend=self.folder)
+
     @property
     def default_headers(self):
         return {
