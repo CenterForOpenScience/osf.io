@@ -24,11 +24,11 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
+from website.util import rubeus
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
 from website.util.serializers import ProjectOrganizerSerializer
-from website.util.projectorganizer import get_all_projects_smart_folder, get_all_registrations_smart_folder
 from website.project import new_dashboard
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
@@ -127,36 +127,74 @@ def find_dashboard(user):
 def get_dashboard(auth, nid=None, **kwargs):
     serializer = ProjectOrganizerSerializer(auth)
     user = auth.user
-    data = []
-    noop = lambda x: x
-    serialize = serializer.serialize
     if nid is None:
         node = find_dashboard(user)
-        data = [node]
+        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
+        return_value = {'data': dashboard_projects}
     elif nid == ALL_MY_PROJECTS_ID:
-        data = get_all_projects_smart_folder(auth)
+        return_value = {'data': [serializer.serialize(p) for p in get_all_projects_smart_folder(**kwargs)]}
     elif nid == ALL_MY_REGISTRATIONS_ID:
-        data = get_all_registrations_smart_folder(auth)
+        return_value = {'data': [serializer.serialize(p) for p in get_all_registrations_smart_folder(**kwargs)]}
     else:
-        serialize = noop
         node = Node.load(nid)
         if not node:
             raise HTTPError(http.BAD_REQUEST)
+        dashboard_projects = []
         if node.is_dashboard:
-            projects_count = len(get_all_projects_smart_folder(auth))
-            registrations_count = len(get_all_registrations_smart_folder(auth))
-            data = [
+            projects_count = len(get_all_projects_smart_folder())
+            registrations_count = len(get_all_registrations_smart_folder())
+            dashboard_projects = [
                 serializer.make_smart_folder(ALL_MY_REGISTRATIONS_NAME, ALL_MY_REGISTRATIONS_ID, registrations_count),
                 serializer.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, projects_count),
             ]
         else:
-            data = serializer.serialize(node)['children']
+            dashboard_projects = serializer.serialize(node)['children']
+        return_value = {'data': dashboard_projects}
 
-    return_value = {'data': [serialize(item) for item in data]}
     return_value['timezone'] = user.timezone
     return_value['locale'] = user.locale
-    return_value['id'] = user._id
     return return_value
+
+@must_be_logged_in
+def get_all_projects_smart_folder(auth, **kwargs):
+    # TODO: Unit tests
+    user = auth.user
+
+    contributed = user.node__contributed
+
+    nodes = contributed.find(
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False)
+    ).sort('-title')
+    index = []
+    ret = []
+    for node in [n.root for n in nodes]:
+        if node._id in index:
+            continue
+        index.append(node._id)
+        ret.append(node)
+    return ret
+
+@must_be_logged_in
+def get_all_registrations_smart_folder(auth, **kwargs):
+    # TODO: Unit tests
+    user = auth.user
+    contributed = user.node__contributed
+
+    nodes = contributed.find(
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', True) &
+        Q('is_folder', 'eq', False)
+    ).sort('-title')
+    index = []
+    ret = []
+    for node in [n.root for n in nodes]:
+        if node._id in index:
+            continue
+        index.append(node._id)
+        ret.append(node)
+    return ret
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):
