@@ -438,9 +438,10 @@ ViewModel.prototype.setCategory = function(cat) {
 };
 
 ViewModel.prototype.nodeShowMore = function(info) {
+    info.parents = info.parents.reverse();
     bootbox.dialog({
         title: info.name,
-        message: 
+        message: $osf.renderMicroTemplate('nodeInfo', info)
     });
 };
 
