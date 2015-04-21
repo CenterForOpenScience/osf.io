@@ -670,7 +670,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
-        Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
+        Rule('/search/projects/visible/', 'get', search_views.search_visible_projects_by_title, json_renderer),
         Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
         Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
         Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
@@ -1348,6 +1348,15 @@ def make_url_map(app):
             ],
             'post',
             project_views.contributor.invite_contributor_post,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/info/',
+                '/project/<pid>/node/<nid>/info/'
+            ],
+            'get',
+            project_views.node.get_project_info,
             json_renderer
         ),
     ], prefix='/api/v1')

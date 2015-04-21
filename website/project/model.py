@@ -7,6 +7,7 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
+import pymongo
 
 import pytz
 import blinker
@@ -47,7 +48,6 @@ from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
-
 
 html_parser = HTMLParser()
 
@@ -284,6 +284,16 @@ class ApiKey(StoredObject):
 
 
 class NodeLog(StoredObject):
+
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('params.node', pymongo.ASCENDING),
+                ('_id', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -627,11 +637,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def __init__(self, *args, **kwargs):
         super(Node, self).__init__(*args, **kwargs)
 
-        # Crash if parent provided and not project
-        project = kwargs.get('project')
-        if project and project.category != 'project':
-            raise ValueError('Parent must be a project.')
-
         if kwargs.get('_is_loaded', False):
             return
 
@@ -667,6 +672,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def private_link_keys_deleted(self):
         return [x.key for x in self.private_links if x.is_deleted]
+
+    def path_above(self, auth):
+        parents = self.parents
+        return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
+
+    def ids_above(self):
+        parents = self.parents
+        return {p._id for p in parents}
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -913,7 +926,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.add_log(
                 message,
                 params={
-                    'project': self.parent_id,
+                    'parent': self.parent_id,
                     'node': self._id,
                     'contributors': [user._id],
                 },
@@ -932,7 +945,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
-
         update_piwik = kwargs.pop('update_piwik', True)
 
         self.adjust_permissions()
@@ -955,34 +967,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
-
-            #
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
 
-            #
-            if getattr(self, 'project', None):
+            # Define log fields for non-component project
+            log_action = NodeLog.PROJECT_CREATED
+            log_params = {
+                'node': self._primary_key,
+            }
 
+            if getattr(self, 'parent', None):
                 # Append log to parent
-                self.project.nodes.append(self)
-                self.project.save()
-
-                # Define log fields for component
-                log_action = NodeLog.NODE_CREATED
-                log_params = {
-                    'node': self._primary_key,
-                    'project': self.project._primary_key,
-                }
-
-            else:
-
-                # Define log fields for non-component project
-                log_action = NodeLog.PROJECT_CREATED
-                log_params = {
-                    'project': self._primary_key,
-                }
+                self.parent.nodes.append(self)
+                self.parent.save()
+                log_params.update({'parent_node': self.parent._primary_key})
 
             # Add log with appropriate fields
             self.add_log(
@@ -1148,7 +1148,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.POINTER_CREATED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1184,7 +1184,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.POINTER_REMOVED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1211,6 +1211,51 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             for node in self.nodes
             if node.primary
         ]
+
+    @property
+    def depth(self):
+        return len(self.parents)
+
+    def next_descendants(self, auth, condition=lambda auth, node: True):
+        """
+        Recursively find the first set of descedants under a given node that meet a given condition
+
+        returns a list of [(node, [children]), ...]
+        """
+        ret = []
+        for node in self.nodes:
+            if condition(auth, node):
+                # base case
+                ret.append((node, []))
+            else:
+                ret.append((node, node.next_descendants(auth, condition)))
+        ret = [item for item in ret if item[1] or condition(auth, item[0])]  # prune empty branches
+        return ret
+
+    def get_descendants_recursive(self, include=lambda n: True):
+        descedants = list(self.nodes) + [
+            item
+            for node in self.nodes
+            for item in node.get_descendants_recursive(include)
+        ]
+        return [d for d in descedants if include(d)]
+
+    def get_descendants_iterative(self, include=lambda n: True):
+        ret = []
+        stack = list(self.nodes)
+        while stack:
+            node = stack.pop()
+            if include(node):
+                ret.append(node)
+            stack = list(node.nodes) + stack
+        return ret
+
+    def get_aggregate_logs_set(self, auth):
+        ids = [self._id] + [n._id
+                            for n in self.get_descendants_recursive()
+                            if n.can_view(auth)]
+        query = Q('__backrefs.logged.node.logs', 'in', ids)
+        return NodeLog.find(query).sort('-_id')
 
     @property
     def nodes_pointer(self):
@@ -1296,7 +1341,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             NodeLog.POINTER_FORKED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1351,7 +1396,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'title_new': self.title,
                 'title_original': original_title,
@@ -1375,7 +1420,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'project': self.parent_node,  # None if no parent
+                'parent_node': self.parent_node,
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -1517,7 +1562,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
-                'project': original.parent_id,
+                'parent_node': original.parent_id,
                 'node': original._primary_key,
                 'registration': forked._primary_key,
             },
@@ -1527,7 +1572,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
 
         forked.save()
-
         # After fork callback
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
@@ -1603,7 +1647,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'project': original.parent_id,
+                'parent_node': original.parent_id,
                 'node': original._primary_key,
                 'registration': registered._primary_key,
             },
@@ -1625,7 +1669,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
-                    'project': self.parent_id,
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
@@ -1645,7 +1689,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.add_log(
                 action=NodeLog.TAG_ADDED,
                 params={
-                    'project': self.parent_id,
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
@@ -1658,6 +1702,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
+        params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
@@ -1673,10 +1718,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
+        '''
         if self.node__parent:
             parent = self.node__parent[0]
             parent.logs.append(log)
             parent.save()
+        '''
         return log
 
     @property
@@ -1684,25 +1731,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return '/{}/'.format(self._primary_key)
 
     def web_url_for(self, view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, _guid=_guid, *args, **kwargs)
-        else:
-            return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, _guid=_guid, *args, **kwargs)
+        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                           _offload=_offload, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, _offload=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, *args, **kwargs)
-        else:
-            return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, *args, **kwargs)
-
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                           _offload=_offload, *args, **kwargs)
     @property
     def absolute_url(self):
         if not self.url:
@@ -1725,15 +1759,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def deep_url(self):
-        if self.category == 'project':
-            return '/project/{}/'.format(self._primary_key)
-        else:
-            if self.node__parent and self.node__parent[0].category == 'project':
-                return '/project/{}/node/{}/'.format(
-                    self.parent_id,
-                    self._primary_key
-                )
-        logger.error("Node {0} has a parent that is not a project".format(self._id))
+        return '/project/{}/'.format(self._primary_key)
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -1802,6 +1828,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except IndexError:
             pass
         return None
+
+    @property
+    def root(self):
+        if self.parent_node:
+            return self.parent_node.root
+        else:
+            return self
 
     @property
     def watch_url(self):
@@ -2414,7 +2447,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # TODO: Deprecate this; it duplicates much of what serialize_project already
     # does
-    def serialize(self):
+    def serialize(self, auth=None):
         """Dictionary representation of node that is nested within a NodeLog's
         representation.
         """
@@ -2426,9 +2459,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),
+            'path': self.path_above(auth),
             'api_url': self.api_url,
             'is_public': self.is_public,
-            'is_registration': self.is_registration
+            'is_registration': self.is_registration,
         }
 
 

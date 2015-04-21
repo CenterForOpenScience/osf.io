@@ -10,19 +10,21 @@
                     <div class="col-md-3">
                         <div class="row">
                             <div class="col-md-12">
-                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-
-                                    <!-- ko if: $parent.category().name === name -->
-                                            <li class="active">
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
-                                            </li>
-                                        <!-- /ko -->
-                                        <!-- ko if: $parent.category().name !== name -->
-                                            <li>
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
-                                            </li>
-                                        <!-- /ko -->
-
+                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">                                  
+                                  <li data-bind="css: {active: $parent.category().name === name}">   
+                                    <a data-bind="click: $parent.filter">{{ display }}<span class="badge pull-right">{{count}}</span></a>
+                                    <div data-bind="if: children && children.length"
+                                         class="search-nav-indented">
+                                      <ul class="nav nav-pills nav-stacked" data-bind="foreach: children">
+                                        <li data-bind="">
+                                          <a data-bind="click: $root.filter"> 
+                                            <i data-bind="css: iconClass"></i>
+                                            {{ display }}<span class="badge pull-right">{{count}}</span>
+                                          </a>
+                                        </li>
+                                      </ul>
+                                    </div>
+                                  </li>
                                 </ul>
                             </div>
                         </div>
@@ -176,100 +178,51 @@
 
     </script>
     <script type="text/html" id="project">
-        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
-
-        <!-- ko if: contributors.length > 0 -->
-        <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
-                <!-- /ko-->
-                <!-- ko ifnot: url -->
-                    {{ fullname }}
-                <!-- /ko -->
-
-
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
-        <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
-                </span>
-            </span>
-        </p>
-        <p><strong>Jump to:</strong>
-            <a data-bind="attr.href: wikiUrl">Wiki</a> -
-            <a data-bind="attr.href: filesUrl">Files</a>
-        </p>
-        <!-- /ko -->
-    </script>
-    <script type="text/html" id="app">
-        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
-
-        <!-- ko if: contributors.length > 0 -->
-        <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
-                <!-- /ko-->
-                <!-- ko ifnot: url -->
-                    {{ fullname }}
-                <!-- /ko -->
-
-
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
-        <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
-                </span>
-            </span>
-        </p>
-        <!-- /ko -->
+      <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="component">
-        <!-- ko if: parent_url -->
-            <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
-        <!-- /ko -->
-        <!-- ko if: !parent_url -->
-            <h4>{{ parent_title}} / <a data-bind="attr.href: url">{{title }}</a></h4>
-        <!-- /ko -->
-
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
-
-        <!-- ko if: contributors.length > 0 -->
-        <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
-                <!-- /ko-->
-                <!-- ko ifnot: url -->
-                    {{ fullname }}
-                <!-- /ko -->
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
-        <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
-                </span>
-            </span>
-        </p>
-        <p><strong>Jump to:</strong>
-            <a data-bind="attr.href: wikiUrl">Wiki</a> -
-            <a data-bind="attr.href: filesUrl">Files</a>
-        </p>
-        <!-- /ko -->
+      <div data-bind="template: {name: 'node', data: $data}"></div>
+    </script>
+    <script type="text/html" id="node">
+      <h4>
+        <span data-bind="if: parent_title">
+        /
+        </span>
+        <a data-bind="if: parent_url, attr.href: parent_url">{{ parent_title }}</a>
+        <span data-bind="ifnot: parent_url, attr.href: parent_url">{{ parent_title }}</span>        
+        /
+        <a data-bind="attr.href: url">{{ title }}</a>
+        <i data-bind="click: $root.nodeLoadMore"
+           class="fa fa-info-circle"></i>
+      </h4> 
+      <p data-bind="visible: description">
+        <strong>Description:</strong> {{ description | fit:500 }}
+      </p>
+      <!-- ko if: contributors.length > 0 -->
+      <p>
+        <strong>Contributors:</strong> <span data-bind="foreach: contributors">
+          <!-- ko if: url -->
+          <a data-bind="attr.href: url">{{ fullname }}</a>
+          <!-- /ko-->
+          <!-- ko ifnot: url -->
+          {{ fullname }}
+          <!-- /ko -->
+          <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
+        </span>
+      </p>
+      <!-- /ko -->
+      <!-- ko if: tags.length > 0 -->
+      <p data-bind="visible: tags.length"><strong>Tags:</strong>
+        <span class="tag-cloud" data-bind="foreach: tags">
+          <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+          </span>
+        </span>
+      </p>
+      <p><strong>Jump to:</strong>
+        <a data-bind="attr.href: wikiUrl">Wiki</a> -
+        <a data-bind="attr.href: filesUrl">Files</a>
+      </p>
+      <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{ title }}</a>  (Registration)</h4>
@@ -303,6 +256,30 @@
         </p>
         <!-- /ko -->
     </script>
+    <script type="text/html" id="nodeInfo">
+      <div>        
+        Path: 
+        <span data-bind="foreach: parents">
+          /
+          <a data-bind="if: url, attr.href: url">
+            <span data-bind="text: name"></span>
+          </a>
+          <span data-bind="ifnot: url">
+            <span data-bind="text: name"></span>
+          </span>
+        </span>
+        /
+        <a data-bind="attr.href: urls.web, text: name"></a>
+      </div>
+      <div data-bind="if: children.length">
+        Children: 
+        <ul data-bind="foreach: children">
+          <li>
+            <a data-bind="attr.href: url, text: name"></a>
+          </li>
+        </ul>
+      </div>
+    </script>
 </%def>
 
 <%def name="javascript_bottom()">
@@ -311,8 +288,5 @@
             search:true
         });
     </script>
-
     <script src=${"/static/public/js/search-page.js" | webpack_asset}></script>
-
-
 </%def>

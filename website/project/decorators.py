@@ -21,22 +21,18 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of project and component
 
     """
-    project = kwargs.get('project') or Node.load(kwargs.get('pid', kwargs.get('nid')))
+    project = kwargs.get('node') or kwargs.get('project')
+    if not project:
+        project = Node.load(kwargs.get('nid') or kwargs.get('pid'))
     if not project:
         raise HTTPError(http.NOT_FOUND)
-    if project.category != 'project':
-        raise HTTPError(http.BAD_REQUEST)
     if project.is_deleted:
         raise HTTPError(http.GONE)
 
-    if kwargs.get('nid') or kwargs.get('node'):
-        node = kwargs.get('node') or Node.load(kwargs.get('nid'))
-        if not node:
-            raise HTTPError(http.NOT_FOUND)
-        if node.is_deleted:
-            raise HTTPError(http.GONE)
-    else:
-        node = None
+    '''
+    Mostly for backwards compatibility, make node equal project
+    '''
+    node = kwargs.get('node') or project
 
     return project, node
 
@@ -47,7 +43,6 @@ def must_be_valid_project(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-
         kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
         return func(*args, **kwargs)
 

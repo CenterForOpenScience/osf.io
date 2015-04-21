@@ -34,7 +34,17 @@ ALIASES = {
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total'
+    'total': 'Total',
+    '': 'Uncategorized',
+    'project': 'Project',
+    'hypothesis': 'Hypothesis',
+    'methods_and_measures': 'Methods and Measures',
+    'procedure': 'Procedure',
+    'instrumentation': 'Instrumentation',
+    'data': 'Data',
+    'analysis': 'Analysis',
+    'communication': 'Communication',
+    'other': 'Other',
 }
 
 INDEX = settings.ELASTIC_INDEX
@@ -75,22 +85,95 @@ def requires_search(func):
         raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
     return wrapped
 
+def get_subcategory_counts(key, subcats):
+    if not subcats:
+        return []
+    return [{cat['key']: cat['doc_count']} for cat in subcats['buckets'] if not key == cat['key']]
+
 
 @requires_search
 def get_counts(count_query, clean=True):
-    count_query['aggregations'] = {
-        'counts': {
+    category_agg = {
+        'categories': {
             'terms': {
-                'field': '_type',
+                'field': 'descriptor'
+            }
+        }
+    }
+    is_node = {
+        'type': {
+            'value': 'node'
+        }
+    }
+    not_registration = {
+        'term': {
+            'is_registration': False
+        }
+    }
+    aggs = {
+        'project': {
+            'filter': {
+                'and': [
+                    is_node,
+                    not_registration,
+                    {
+                        'term': {
+                            'category': 'project'
+                        }
+                    }
+                ]
+            }
+        },
+        'component': {
+            'filter': {
+                'and': [
+                    is_node,
+                    not_registration,
+                    {
+                        'term': {
+                            'category': 'component'
+                        }
+                    }
+                ]
+            },
+            'aggs': category_agg
+        },
+        'registration': {
+            'filter': {
+                'and': [
+                    is_node,
+                    {
+                        'term': {
+                            'is_registration': True
+                        }
+                    }
+                ]
+            },
+            'aggs': category_agg
+        },
+        'user': {
+            'filter': {
+                'term': {
+                    '_type': 'user'
+                }
             }
         }
     }
 
+    count_query['aggs'] = aggs
+
     res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+    counts = {
+        key: {
+            'value': value['doc_count'],
+            'subcategories': get_subcategory_counts(key, value.get('categories')) or [],
+        }
+        for key, value in res['aggregations'].iteritems()
+    }
 
-    counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
-
-    counts['total'] = sum([val for val in counts.values()])
+    counts['total'] = {
+        'value': sum([val['value'] for val in counts.values()])
+    }
     return counts
 
 
@@ -135,6 +218,9 @@ def search(query, index=INDEX, doc_type='_all'):
     tags = get_tags(tag_query, index)
     counts = get_counts(count_query, index)
 
+    if doc_type in ('project', 'component'):
+        doc_type = 'node'
+
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)
 
@@ -152,8 +238,8 @@ def format_results(results):
     ret = []
     for result in results:
         if result.get('category') == 'user':
-            result['url'] = '/profile/' + result['id']
-        elif result.get('category') in {'project', 'component', 'registration'}:
+            result['url'] = '/profile/' + result['id'] + '/'
+        elif result.get('is_node'):
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
     return ret
@@ -203,23 +289,21 @@ def load_parent(parent_id):
 @requires_search
 def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
-
     component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
     category = 'component' if node.category in component_categories else node.category
-
     if category == 'project':
         elastic_document_id = node._id
-        parent_id = None
         category = 'registration' if node.is_registration else category
     else:
-        try:
-            elastic_document_id = node._id
-            parent_id = node.parent_id
-            category = 'registration' if node.is_registration else category
-        except IndexError:
-            # Skip orphaned components
-            return
-    if node.is_deleted or not node.is_public:
+        category = 'component'
+
+    try:
+        elastic_document_id = node._id
+        parent_id = node.parent_id
+    except IndexError:
+        # Skip orphaned components
+        return
+    if node.is_deleted or not node.is_public or node.is_dashboard:
         delete_doc(elastic_document_id, node)
     else:
         try:
@@ -227,6 +311,9 @@ def update_node(node, index=INDEX):
         except TypeError:
             normalized_title = node.title
         normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+
+        boost = int(not node.is_registration) + 1  # This is for making registered projects less relevant
+        boost = boost + (-1.0 * (node.depth / 5.0))
 
         elastic_document = {
             'id': elastic_document_id,
@@ -241,6 +328,9 @@ def update_node(node, index=INDEX):
             'title': node.title,
             'normalized_title': normalized_title,
             'category': category,
+            'descriptor': ['_'.join(node.category.split(' ')), category],
+            'is_registration': node.is_registration,
+            'is_node': True,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
@@ -250,7 +340,7 @@ def update_node(node, index=INDEX):
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
-            'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
+            'boost': boost,
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -258,7 +348,7 @@ def update_node(node, index=INDEX):
         ]:
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+        es.index(index=index, doc_type='node', id=elastic_document_id, body=elastic_document, refresh=True)
 
 
 @requires_search
@@ -328,14 +418,13 @@ def create_index(index=INDEX):
         }
     }
     es.indices.create(index, ignore=[400])
-    for type_ in ['project', 'component', 'registration', 'user']:
+    for type_ in ['node', 'user']:
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=INDEX):
-    category = 'registration' if node.is_registration else node.project_or_component
-    es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
+    es.delete(index=index, doc_type='node', id=elastic_document_id, refresh=True, ignore=[404])
 
 
 @requires_search
@@ -362,7 +451,9 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']
-    pages = math.ceil(results['counts'].get('user', 0) / size)
+    counts = results['counts']
+    user_count = counts['user'].get('value', 0) if counts.get('user') else 0
+    pages = math.ceil(user_count / size)
 
     users = []
     for doc in docs:

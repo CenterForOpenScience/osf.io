@@ -149,9 +149,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if node['node_type'] == 'project':
-    <%include file="project/modal_add_component.mako"/>
-% endif
+<%include file="project/modal_add_component.mako"/>
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako"/>
@@ -261,35 +259,32 @@
 </div>
 
 <%def name="children()">
-% if node['node_type'] == 'project':
-     <div class="components addon-widget-container">
-        <div class="addon-widget-header clearfix">
-            <h4>Components </h4>
-            <div class="pull-right">
-              % if 'write' in user['permissions'] and not node['is_registration']:
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-                % endif
-
-            </div>
-        </div>
-        <div class="addon-widget-body">
-              % if node['children']:
-                  <div id="containment">
-                      <div mod-meta='{
-                              "tpl": "util/render_nodes.mako",
-                              "uri": "${node["api_url"]}get_children/",
-                              "replace": true,
-                      "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
-                          }'></div>
-                  </div>
-              % else:
-                <p>No components have been added to this project.</p>
-              % endif
-
-        </div>
+<div class="components addon-widget-container">
+  <div class="addon-widget-header clearfix">
+    <h4>Components </h4>
+    <div class="pull-right">
+      % if 'write' in user['permissions'] and not node['is_registration']:
+      <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+      <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+      % endif
+      
     </div>
-% endif
+  </div>
+  <div class="addon-widget-body">
+    % if node['children']:
+    <div id="containment">
+      <div mod-meta='{
+           "tpl": "util/render_nodes.mako",
+           "uri": "${node["api_url"]}get_children/",
+           "replace": true,
+           "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
+           }'></div>
+    </div>
+    % else:
+    <p>No components have been added to this project.</p>
+    % endif    
+  </div>
+</div>
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>

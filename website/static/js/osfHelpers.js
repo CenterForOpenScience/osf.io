@@ -360,7 +360,7 @@ var applyBindings = function(viewModel, selector) {
     // Also show any child elements that have the scripted class
     $(cssSelector + ' .scripted').each(function(elm) {
         $(this).show();
-    })
+    });
     ko.applyBindings(viewModel, $elem[0]);
 };
 
@@ -390,6 +390,27 @@ var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
 };
 
+/**
+ * Does a one-time render into a knockout template and
+ * returns the rendered html
+ */
+var renderMicroTemplate = function(id, vm) {
+    var $div = $('<div>', {
+        visible: false
+    });
+    $('body').append($div);
+    ko.renderTemplate(
+        id,
+        vm,
+        {},
+        $div[0],
+        'replaceChildren'
+    );
+    var html = $div.html();
+    $div.remove();
+    return html;    
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -409,5 +430,6 @@ module.exports = window.$.osf = {
     FormattableDate: FormattableDate,
     throttle: throttle,
     debounce: debounce,
-    htmlEscape: htmlEscape
+    htmlEscape: htmlEscape,
+    renderMicroTemplate: renderMicroTemplate
 };

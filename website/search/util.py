@@ -22,9 +22,9 @@ RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
 RE_XML_ILLEGAL_COMPILED = re.compile(RE_XML_ILLEGAL)
 
 
-def build_query(q='*', start=0, size=10, sort=None):
+def build_query(qs='*', start=0, size=10, sort=None):
     query = {
-        'query': build_query_string(q),
+        'query': build_query_string(qs),
         'from': start,
         'size': size,
     }
@@ -39,11 +39,11 @@ def build_query(q='*', start=0, size=10, sort=None):
     return query
 
 
-def build_query_string(q):
+def build_query_string(qs):
     return {
         'query_string': {
             'default_field': '_all',
-            'query': q,
+            'query': qs,
             'analyze_wildcard': True,
             'lenient': True  # TODO, may not want to do this
         }

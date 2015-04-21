@@ -24,13 +24,16 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
-from website.util import rubeus
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
+from website.util.serializers import ProjectOrganizerSerializer
+from website.util import projectorganizer as po_utils
 from website.project import new_dashboard
-from website.settings import ALL_MY_PROJECTS_ID
-from website.settings import ALL_MY_REGISTRATIONS_ID
+from website.settings import (
+    ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
+    ALL_MY_REGISTRATIONS_NAME
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +79,8 @@ def _render_node(node, auth=None):
         'primary': node.primary,
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
-        'permissions': perm,  # A string, e.g. 'admin', or None
+        'permissions': perm,  # A string, e.g. 'admin', or None,
+        'path': node.path_above(auth)
     }
 
 
@@ -121,105 +125,38 @@ def find_dashboard(user):
 
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
+    serializer = ProjectOrganizerSerializer(auth)
     user = auth.user
-
+    data = []
+    noop = lambda x: x
+    serialize = serializer.serialize
     if nid is None:
         node = find_dashboard(user)
-        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
-        return_value = {'data': dashboard_projects}
+        data = [node]
     elif nid == ALL_MY_PROJECTS_ID:
-        return_value = {'data': get_all_projects_smart_folder(**kwargs)}
+        data = po_utils.get_all_projects_smart_folder(auth)
     elif nid == ALL_MY_REGISTRATIONS_ID:
-        return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
+        data = po_utils.get_all_registrations_smart_folder(auth)
     else:
+        serialize = noop
         node = Node.load(nid)
-        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
-        return_value = {'data': dashboard_projects}
+        if not node:
+            raise HTTPError(http.BAD_REQUEST)
+        if node.is_dashboard:
+            projects_count = len(po_utils.get_all_projects_smart_folder(auth))
+            registrations_count = len(po_utils.get_all_registrations_smart_folder(auth))
+            data = [
+                serializer.make_smart_folder(ALL_MY_REGISTRATIONS_NAME, ALL_MY_REGISTRATIONS_ID, registrations_count),
+                serializer.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, projects_count),
+            ] + [serializer.serialize(n) for n in po_utils.get_dashboard_nodes(node, auth)]
+        else:
+            data = serializer.serialize_children(node)
 
+    return_value = {'data': [serialize(item) for item in data]}
     return_value['timezone'] = user.timezone
     return_value['locale'] = user.locale
     return_value['id'] = user._id
     return return_value
-
-
-@must_be_logged_in
-def get_all_projects_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-
-    contributed = user.node__contributed
-
-    nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'eq', None)
-    ).sort('-title')
-
-    parents_to_exclude = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
-    )
-
-    comps = contributed.find(
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', False)
-    )
-
-    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
-    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return return_value
-
-
-@must_be_logged_in
-def get_all_registrations_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-    contributed = user.node__contributed
-
-    nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'eq', None)
-    ).sort('-title')
-
-    parents_to_exclude = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False)
-    )
-
-    comps = contributed.find(
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', True)
-    )
-
-    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
-    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return return_value
-
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):
@@ -318,7 +255,7 @@ def watched_logs_get(**kwargs):
     }
 
 
-def serialize_log(node_log, anonymous=False):
+def serialize_log(node_log, auth=None, anonymous=False):
     '''Return a dictionary representation of the log.'''
     return {
         'id': str(node_log._primary_key),
@@ -330,7 +267,7 @@ def serialize_log(node_log, anonymous=False):
         'action': node_log.action,
         'params': node_log.params,
         'date': utils.iso8601format(node_log.date),
-        'node': node_log.node.serialize() if node_log.node else None,
+        'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous
     }
 

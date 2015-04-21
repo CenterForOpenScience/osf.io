@@ -1,4 +1,3 @@
-
 import unittest
 from nose.tools import *  # PEP8 asserts
 
@@ -194,7 +193,7 @@ class TestPublicNodes(SearchTestCase):
             is_public=True,
         )
         self.component = NodeFactory(
-            project=self.project,
+            parent=self.project,
             title=self.title,
             creator=self.user,
             is_public=True
@@ -223,7 +222,7 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
     def test_public_parent_title(self):
-        self.project.set_title('hello &amp; world',self.consolidate_auth)
+        self.project.set_title('hello &amp; world', self.consolidate_auth)
         self.project.save()
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
@@ -380,19 +379,33 @@ class TestPublicNodes(SearchTestCase):
 
     def test_count_aggregation(self):
         docs = query("*")['counts']
-        assert_equal(docs['total'], 4)
-        assert_equal(docs['project'], 1)
-        assert_equal(docs['component'], 1)
-        assert_equal(docs['registration'], 1)
+        assert_equal(docs['total']['value'], 4)
+        assert_equal(docs['project']['value'], 1)
+        assert_equal(docs['component']['value'], 1)
+        assert_equal(docs['registration']['value'], 1)
 
+    def test_count_subcategories(self):
+        [ProjectFactory(is_public=True, creator=self.user, category='data').save() for i in range(5)]
+        [ProjectFactory(is_public=True, creator=self.user, category='methods and measures').save() for i in range(4)]
+        [ProjectFactory(is_public=True, creator=self.user, category='communication').save() for i in range(3)]
 
+        docs = query('*')['counts']
+
+        assert_equal(docs['component']['value'], 5 + 4 + 3 + 1)
+        subcats = {
+            o.keys()[0]: o[o.keys()[0]]
+            for o in 
+            docs['component']['subcategories']
+        }
+        assert_equal(subcats['data'], 5)
+        assert_equal(subcats['methods_and_measures'], 4)
+        assert_equal(subcats['communication'], 3)
 
 @requires_search
 class TestAddContributor(SearchTestCase):
     """Tests of the search.search_contributor method
 
     """
-
     def setUp(self):
         super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
@@ -404,7 +417,6 @@ class TestAddContributor(SearchTestCase):
         contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
-
     def test_unreg_users_do_show_on_projects(self):
         unreg = UnregUserFactory(fullname='Robert Paulson')
         self.project = ProjectFactory(
@@ -414,7 +426,6 @@ class TestAddContributor(SearchTestCase):
         )
         results = query(unreg.fullname)['results']
         assert_equal(len(results), 1)
-
 
     def test_search_fullname(self):
         """Verify that searching for full name yields exactly one result.
@@ -465,7 +476,6 @@ class TestSearchExceptions(OsfTestCase):
         super(TestSearchExceptions, cls).tearDownClass()
         if settings.SEARCH_ENGINE == 'elastic':
             search.search_engine.es = cls._es
-
 
     def test_connection_error(self):
         """
