@@ -296,11 +296,18 @@ describe('githubNodeConfigViewModel', () => {
     });
     describe('Authorization/Authentication: ', () => {
         var deleteEndpoint = makeSettingsEndpoint({
-            userHasAuth: true,
-            userIsOwner: true,
-            nodeHasAuth: false
+            'result': {
+                repo: faker.internet.domainWord(),
+                user: faker.internet.domainWord(),
+                has_repo: true,
+                nodeHasAuth: false,
+                userHasAuth: true,
+                userIsOwner: true,
+                ownerName: faker.name.findName()
+            }
         });
         deleteEndpoint.method = 'DELETE';
+        deleteEndpoint.url = URLS.deauthorize;
         deleteEndpoint.response = deleteEndpoint.response.result;
         var importEndpoint = makeSettingsEndpoint({
             nodeHasAuth: true,
@@ -344,8 +351,8 @@ describe('githubNodeConfigViewModel', () => {
                     .always(function() {
                         var promise = vm._deauthorizeNodeConfirm();
                         promise.always(function() {
-                            assert.equal(vm.userHasAuth(), expected.userHasAuth);
-                            assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
+                            assert.equal(vm.userHasAuth(), expected.result.userHasAuth);
+                            assert.equal(vm.nodeHasAuth(), expected.result.nodeHasAuth);
                             assert.isFalse(vm.showSettings());
                             assert.isTrue(vm.showImport());
                             done();
