@@ -1151,6 +1151,7 @@ function filterRowsNotInParent(rows) {
         }
             tb.select('#tb-tbody').addClass('unselectable');
     }
+    tb.redraw();
 }   
 
 
