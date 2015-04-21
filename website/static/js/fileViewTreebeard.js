@@ -75,6 +75,12 @@ function FileViewTreebeard(data) {
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
                 selectClass = 'fangorn-hover';
+            }   
+
+            // define the toolbar icons for this item
+            configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'defineToolbar', [item]);
+            if (!configOption){
+                Fangorn.Utils.defineToolbar.call(this, item);
             }
 
             var defaultColumns = [
