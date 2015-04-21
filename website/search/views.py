@@ -91,8 +91,9 @@ def conditionally_add_query_item(query, item, condition):
 
     raise HTTPError(http.BAD_REQUEST)
 
+
 @must_be_logged_in
-def search_visible_projects_by_title(**kwargs):
+def search_projects_by_title(**kwargs):
     """ Search for nodes by title. Can pass in arguments from the URL to modify the search
     :arg term: The substring of the title.
     :arg category: Category of the node.
