@@ -2,12 +2,34 @@
 Changelog
 *********
 
-0.30.0 (unreleased)
+0.33.0 (2015-04-20)
+===================
+
+- Update Dataverse addon for compatibility with Dataverse 4.0.
+
+0.32.0 (2015-04-18)
+===================
+
+- Add file tree to file detail pages.
+
+0.31.0 (2015-04-12)
+===================
+
+- Updates to SHARE search API, UI, and documentation page.
+- Add SHARE provider registration page.
+- Users can associate multiple emails to their account.
+- DOIs and ARKs can be created for public registrations.
+- Updated login UI.
+- Fix consistency of addon logs display.
+- Dev: Refactor folderpicker for consistency of addon settings UI.
+- Dev: Update markdown-it to version 4.1 along with plugins
+markdown-it-sanitizer, markdown-it-toc, and markdown-toc-video.
+
+0.30.0 (2015-03-27)
 ===================
 
 - Wiki: Single-column view: uses page scrolling rather than container
 scrolling when only one column is enabled.
-- Comments support Markdown syntax.
 - SHARE: Updated UI: added filtering by provider.
 - Remove combined login/register/forgot-password page. Sign-in can be done in the navbar.
 Registration can be done on the landing page.

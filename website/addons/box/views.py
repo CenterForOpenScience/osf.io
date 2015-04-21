@@ -18,7 +18,6 @@ from website.project.decorators import (
 
 from website.addons.box.serializer import BoxSerializer
 
-
 @must_be_logged_in
 def box_get_user_settings(auth):
     """ Returns the list of all of the current user's authorized Box accounts """

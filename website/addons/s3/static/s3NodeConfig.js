@@ -1,7 +1,6 @@
 'use strict';
 var ko = require('knockout');
 require('knockout.punches');
-require('knockout-mapping');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -9,8 +8,6 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
-
-var noop = function() {};
 
 var ViewModel = function(url, selector) {
     var self = this;
@@ -55,7 +52,7 @@ var ViewModel = function(url, selector) {
         return self.userHasAuth() && !self.nodeHasAuth();
     });
     self.showCreateCredentials = ko.pureComputed(function() {
-        return !self.nodeHasAuth() && !self.userHasAuth();
+        return self.loadedSettings() && (!self.nodeHasAuth() && !self.userHasAuth());
     });
     self.canChange = ko.pureComputed(function() {
         return self.userIsOwner() && self.nodeHasAuth();
@@ -213,21 +210,12 @@ ViewModel.prototype.createBucket = function(bucketName) {
         }
     ).done(function(response) {
         self.creating(false);
-        self.updateFromData(response);
-        self.bucketList().push(bucketName);
-        if (!self.loadedBucketList()) {
-            self.updateBucketList();
-        }
+        self.bucketList(response.buckets);
+        self.loadedBucketList(true);
         self.selectedBucket(bucketName);
-        self.selectedBucket();
-        self.bucketList();
         self.showSelect(true);
         var msg = 'Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
-        if ($.inArray(bucketName, self.bucketList()) > -1) {
-            msg = 'Bucket is already in your bucket list.';
-            msgType = 'text-info';
-        }
         self.changeMessage(msg, msgType);
     }).fail(function(xhr) {
         var resp = JSON.parse(xhr.responseText);

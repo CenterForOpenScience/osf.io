@@ -32,10 +32,12 @@ var entry = {
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
+    'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
     'view-file-page': staticPath('js/pages/view-file-page.js'),
+    'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
@@ -93,7 +95,6 @@ var resolve = {
     // Need to alias libraries that aren't managed by bower or npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
-        'knockout-mapping': staticPath('vendor/knockout-mapping/knockout.mapping.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),

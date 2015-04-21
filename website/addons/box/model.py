@@ -501,6 +501,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
 
     def set_folder(self, folder_id, auth):
         self.folder_id = str(folder_id)
+        self._update_folder_data()
         self.save()
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
@@ -533,6 +534,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
         self.folder_id = None
+        self._update_folder_data()
         self.user_settings = None
 
         self.save()

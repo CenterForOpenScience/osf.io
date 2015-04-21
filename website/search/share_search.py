@@ -16,6 +16,10 @@ from website.search.elastic_search import requires_search
 
 from util import generate_color, html_and_illegal_unicode_replace
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
     request_timeout=settings.ELASTIC_TIMEOUT
@@ -23,24 +27,27 @@ share_es = Elasticsearch(
 
 
 @requires_search
-def search(query, raw=False):
+def search(query, raw=False, index='share'):
     # Run the real query and get the results
-    results = share_es.search(index='share', doc_type=None, body=query)
+    results = share_es.search(index=index, doc_type=None, body=query)
 
     return results if raw else {
-        'results': [hit['_source'] for hit in results['hits']['hits']],
+        'results': [remove_key(hit['_source'], 'raw') for hit in results['hits']['hits']],
         'count': results['hits']['total'],
     }
 
+def remove_key(d, k):
+    d.pop(k, None)
+    return d
 
 @requires_search
-def count(query):
+def count(query, index='share'):
     if query.get('from') is not None:
         del query['from']
     if query.get('size') is not None:
         del query['size']
 
-    count = share_es.count(index='share', body=query)
+    count = share_es.count(index=index, body=query)
 
     return {
         'results': [],
@@ -63,6 +70,7 @@ def providers():
             hit['_source']['short_name']: hit['_source'] for hit in provider_map['hits']['hits']
         }
     }
+
 
 @requires_search
 def stats(query=None):
@@ -162,8 +170,8 @@ def stats(query=None):
         }
     }
 
-    results = share_es.search(index='share', body=query)
-    date_results = share_es.search(index='share', body=date_histogram_query)
+    results = share_es.search(index='share_v1', body=query)
+    date_results = share_es.search(index='share_v1', body=date_histogram_query)
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)
@@ -232,6 +240,10 @@ def data_for_charts(elastic_results):
         'group_names': names
     }
 
+    if date_totals.get('date_numbers') == [[u'x']]:
+        for name in date_totals.get('group_names'):
+            date_totals.get('date_numbers').append([name, 0])
+
     for_charts['date_totals'] = date_totals
 
     all_data = {}
@@ -256,6 +268,8 @@ def data_for_charts(elastic_results):
 
 
 def to_atom(result):
+    if not result['id']['url']:
+        logger.error('ATOM error for {}: Missing id'.format(result['source']))
     return {
         'title': html_and_illegal_unicode_replace(result.get('title')) or 'No title provided.',
         'summary': html_and_illegal_unicode_replace(result.get('description')) or 'No summary provided.',

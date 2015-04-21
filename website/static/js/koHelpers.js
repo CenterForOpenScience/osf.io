@@ -69,6 +69,31 @@ var sanitizedObservable = function(value) {
     });
 };
 
+/* maps js data one deep to observables
+    options:
+        exclude: adds listed parameters without making observable
+*/
+var mapJStoKO = function(data, options) {
+    var settings = $.extend({
+        exclude: []   //List of object parameters to exclude
+    }, options || {});
+    var dataOut = {};
+
+    for (var key in data) {
+        // checks for key, if in the exclude list
+        if (data.hasOwnProperty(key) && $.inArray(key, settings.exclude) === -1) {
+            if(Array.isArray(data[key])) {
+                dataOut[key] = ko.observableArray(data[key]);
+            } else {
+                dataOut[key] = ko.observable(data[key]);
+            }
+        } else if (data.hasOwnProperty(key)) {
+            dataOut[key] = data[key]; //excluded parameters
+        }
+    }
+    return dataOut;
+};
+
 // Add custom validators
 
 ko.validation.rules.minDate = {
@@ -180,5 +205,6 @@ module.exports = {
     makeExtender: makeExtender,
     addExtender: addExtender,
     makeRegexValidator: makeRegexValidator,
-    sanitizedObservable: sanitizedObservable
+    sanitizedObservable: sanitizedObservable,
+    mapJStoKO: mapJStoKO
 };

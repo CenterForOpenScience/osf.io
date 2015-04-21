@@ -83,13 +83,14 @@ var LogsViewModel = oop.extend(Paginator, {
     constructor: function(logs, url) {
         this.super.constructor.call(this);
         var self = this;
+        self.loading = ko.observable(false);
         self.logs = ko.observableArray(logs);
         self.url = url;
 
         self.tzname = ko.pureComputed(function() {
             var logs = self.logs();
             if (logs.length) {
-                var tz =  moment(logs[0].date).format('ZZ');
+                var tz =  moment(logs[0].date.date).format('ZZ');
                 return tz;
             }
             return '';
@@ -98,6 +99,7 @@ var LogsViewModel = oop.extend(Paginator, {
     //send request to get more logs when the more button is clicked
     fetchResults: function(){
         var self = this;
+        self.loading(true);
         return $.ajax({
             type: 'get',
             url: self.url,
@@ -106,6 +108,7 @@ var LogsViewModel = oop.extend(Paginator, {
             },
             cache: false
         }).done(function(response) {
+            self.loading(false);
             // Initialize LogViewModel
             self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
@@ -117,7 +120,9 @@ var LogsViewModel = oop.extend(Paginator, {
             self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
-        );
+        ).fail(function() {
+            self.loading(false);
+        });
 
     }
 });

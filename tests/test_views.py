@@ -1218,7 +1218,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_timezone(self):
         assert_equal(self.user.timezone, 'Etc/UTC')
-        payload = {'timezone': 'America/New_York'}
+        payload = {'timezone': 'America/New_York', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1226,7 +1226,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': 'de_DE'}
+        payload = {'locale': 'de_DE', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1234,7 +1234,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_none(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': None}
+        payload = {'locale': None, 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1242,12 +1242,19 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_empty_string(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': ''}
+        payload = {'locale': '', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
         assert_equal(self.user.locale, 'en_US')
 
+    def test_cannot_update_user_without_user_id(self):
+        user1 = AuthUserFactory()
+        url = api_url_for('update_user')
+        header = {'emails': [{'address': user1.username}]}
+        res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], '"id" is required')
 
 class TestUserAccount(OsfTestCase):
 
@@ -1436,7 +1443,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(len(self.project.contributors),
                      n_contributors_pre + len(payload['users']))
 
-        new_unreg = auth.get_user(username=email)
+        new_unreg = auth.get_user(email=email)
         assert_false(new_unreg.is_registered)
         # unclaimed record was added
         new_unreg.reload()
@@ -2488,7 +2495,7 @@ class TestAuthViews(OsfTestCase):
 
         new_user.reload()
         # Password and fullname should be updated
-        assert_true(new_user.is_confirmed())
+        assert_true(new_user.is_confirmed)
         assert_true(new_user.check_password(password))
         assert_equal(new_user.fullname, real_name)
 
@@ -2549,12 +2556,13 @@ class TestAuthViews(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
-        self.user.add_email_verification(self.user.username)
-        self.user.save()
-        self.app.post('/resend/', {'email': self.user.username})
+        u = UnconfirmedUserFactory()
+        u.add_unconfirmed_email(u.username)
+        u.save()
+        self.app.post('/resend/', {'email': u.username})
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr=self.user.username
+            to_addr=u.username
         ))
 
     # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
@@ -2563,14 +2571,15 @@ class TestAuthViews(OsfTestCase):
     def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
         expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
         random_string.return_value = '12345'
-        self.user.add_email_verification(self.user.username, expiration=expiration)
-        self.user.save()
+        u = UnconfirmedUserFactory()
+        u.add_unconfirmed_email(u.username, expiration=expiration)
+        u.save()
 
-        self.app.post('/resend/', {'email': self.user.username})
-        confirm_url = self.user.get_confirmation_url(self.user.username, force=True)
+        self.app.post('/resend/', {'email': u.username})
+        confirm_url = u.get_confirmation_url(u.username, force=True)
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr=self.user.username,
+            to_addr=u.username,
             confirmation_url=confirm_url
         ))
 
@@ -2589,20 +2598,6 @@ class TestAuthViews(OsfTestCase):
         res = res.follow()
         user.reload()
         assert_true(user.is_registered)
-
-    def test_expired_link_returns_400(self):
-        user = User.create_unconfirmed(
-            'brian1@queen.com',
-            'bicycle123',
-            'Brian May',
-        )
-        user.save()
-        token = user.get_confirmation_token('brian1@queen.com')
-        url = user.get_confirmation_url('brian1@queen.com', external=False)
-        user.confirm_email(token)
-        user.save()
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
 
 
 # TODO: Use mock add-on
