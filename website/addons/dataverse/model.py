@@ -40,7 +40,7 @@ class DataverseFile(GuidFile):
 
     @property
     def version_identifier(self):
-        return 'state'
+        return 'version'
 
     @property
     def unique_identifier(self):

@@ -170,6 +170,7 @@ function _fangornDataverseTitle(item, col) {
                         .segment('files')
                         .segment(item.data.provider)
                         .segment(item.data.extra.fileId)
+                        .query({version: item.data.extra.datasetVersion})
                         .toString();
                 },
                 'data-toggle': 'tooltip',

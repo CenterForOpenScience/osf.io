@@ -21,10 +21,22 @@ var Revision = function(data, index, file, node) {
         options.branch = urlParams.branch;
     }
     options[self.versionIdentifier] = self.version;
-    // Note: Google Drive version identifiers often begin with the same sequence
-    self.displayVersion = file.provider === 'googledrive' ?
-        self.version.substring(self.version.length - 8) :
-        self.version.substring(0, 8);
+    self.displayVersion = null;
+    switch (file.provider) {
+        // Note: Google Drive version identifiers often begin with the same sequence
+        case 'googledrive':
+            self.displayVersion = self.version.substring(self.version.length - 8);
+            break;
+        // Note: Dataverse internal version names are ugly; Substitute our own
+        case 'dataverse':
+            self.displayVersion = self.version === 'latest' ? 'Draft' :
+                self.version === 'latest-published' ? 'Published' :
+                self.version.substring(0, 8);
+            break;
+        default:
+            self.displayVersion = self.version.substring(0, 8);
+    }
+
 
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
@@ -69,7 +81,8 @@ var RevisionsViewModel = function(node, file, editable) {
 
     // Hack: Set Figshare files to uneditable by default, then update after
     // fetching file metadata after revisions request fails
-    self.editable = ko.observable(editable && file.provider !== 'figshare' && file.provider !== 'dataverse');
+    self.editable = ko.observable(editable && file.provider !== 'figshare' &&
+        (file.provider !== 'dataverse' || file.provider === 'dataverse' && urlParams.version === 'latest'));
     self.urls = {
         delete: waterbutler.buildDeleteUrl(file.path, file.provider, node.id, fileExtra),
         download: waterbutler.buildDownloadUrl(file.path, file.provider, node.id, fileExtra),
@@ -115,9 +128,9 @@ RevisionsViewModel.prototype.fetch = function() {
 
         self.errorMessage(err);
 
-        if (self.file.provider === 'figshare' || self.file.provider === 'dataverse') {
-            // Hack for Figshare / Dataverse
-            // only these addons will error on a revisions request
+        if (self.file.provider === 'figshare') {
+            // Hack for Figshare
+            // only figshare will error on a revisions request
             // so dont allow downloads and set a fake current version
             $.ajax({
                 method: 'GET',
