@@ -13,26 +13,6 @@ from waterbutler.providers.dropbox.metadata import DropboxFileMetadata
 from waterbutler.providers.dropbox.metadata import DropboxFolderMetadata
 
 
-class DropboxPath(utils.WaterButlerPath):
-
-    def __init__(self, folder, path, prefix=True, suffix=False):
-        super().__init__(path, prefix=prefix, suffix=suffix)
-        self._folder = folder
-        full_path = os.path.join(folder, path.lstrip('/'))
-        self._full_path = self._format_path(full_path)
-
-    def __repr__(self):
-        return "{}({!r}, {!r})".format(self.__class__.__name__, self._folder, self._orig_path)
-
-    @asyncio.coroutine
-    def validate_path(self, path, **kwargs):
-        return p.WaterButlerPath(path, prepend=self.folder)
-
-    @property
-    def full_path(self):
-        return self._full_path
-
-
 class DropboxProvider(provider.BaseProvider):
     NAME = 'dropbox'
     BASE_URL = settings.BASE_URL
