@@ -20,6 +20,7 @@ from website.project.decorators import (
     must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
+from website.project.model import has_anonymous_link
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
@@ -302,6 +303,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
     page = payload.get('page') or 0
     path = payload.get('path')
+    is_anon = has_anonymous_link(node, Auth(private_key=payload.get('view_only')))
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -323,7 +325,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     return {
         'revisions': [
-            utils.serialize_revision(node, record, versions[idx], indices[idx])
+            utils.serialize_revision(node, record, versions[idx], indices[idx], anon=is_anon)
             for idx in range(len(versions))
         ],
         'more': more,
