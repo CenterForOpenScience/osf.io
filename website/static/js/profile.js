@@ -562,6 +562,10 @@ var ListViewModel = function(ContentModel, urls, modes) {
 
     self.ContentModel = ContentModel;
     self.contents = ko.observableArray();
+    
+//    self.institutionArray = ko.computed( function() {
+//        self.contents().institution;
+//    });
 
     self.tracked = self.contents;
 
@@ -577,7 +581,21 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return true;
     });
+
+    self.hasBlankInstitution = ko.computed(function() {
+//        console.log("In hasBlankInstitution");
+        // return index of blank item if blank
+        for (var i=0; i<self.contents().length; i++) {
+            if (self.contents()[i].institution() == "") { 
+                return i; 
+            }
+        }
+        return false;
+    });
+
+    
     self.hasMultiple = ko.computed(function() {
+//        console.log("Not In hasBlankInstitution");
         return self.contents().length > 1;
     });
     self.hasValidProperty(true);
@@ -601,6 +619,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return false;
     };
+
 
     /** Restore all items in the list to their original state
         *
@@ -664,7 +683,12 @@ ListViewModel.prototype.unserialize = function(data) {
 };
 
 ListViewModel.prototype.serialize = function() {
+    self = this;
     var contents = [];
+    if (self.hasBlankInstitution())
+        console.log("In serialize, hasBlankInstitution");
+        console.log("In serialize, contents is " + self.contents());
+    
     if (this.contents().length !== 0 && typeof(this.contents()[0].serialize() !== undefined)) {
         for (var i=0; i < this.contents().length; i++) {
             contents.push(this.contents()[i].serialize());
@@ -673,7 +697,7 @@ ListViewModel.prototype.serialize = function() {
     else {
         contents = ko.toJS(this.contents);
     }
-
+    console.log("In serialize, contents is " + JSON.stringify(contents));
     return {contents: contents};
 };
 
@@ -685,7 +709,7 @@ var JobViewModel = function() {
     self.institution = ko.observable('').extend({required: true, trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
-
+    
     self.trackedProperties = [
         self.institution,
         self.department,
@@ -732,7 +756,6 @@ $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype)
 var JobsViewModel = function(urls, modes) {
     var self = this;
     ListViewModel.call(self, JobViewModel, urls, modes);
-
     self.fetch();
 };
 JobsViewModel.prototype = Object.create(ListViewModel.prototype);
