@@ -25,7 +25,7 @@
                 <thead>
                 <tr>
                     <th>Dataverse</th>
-                    <th>Study</th>
+                    <th>Dataset</th>
                     <th>Download</th>
                 </tr>
                 </thead>
@@ -37,8 +37,8 @@
                                 {{dataverse}}</a>
                         </td>
                         <td>
-                            <a data-bind="attr: {href: study_url}">
-                                {{study}}</a>
+                            <a data-bind="attr: {href: dataset_url}">
+                                {{dataset}}</a>
                         </td>
                         <td>
                             <a data-bind="attr: {href: download_url}" class="btn btn-primary btn-sm">

@@ -1,7 +1,7 @@
 import mock
 
 from webtest_plus import TestApp
-from dataverse import Connection, Dataverse, Study, DataverseFile
+from dataverse import Connection, Dataverse, Dataset, DataverseFile
 
 import website
 from website.addons.base.testing import AddonTestCase
@@ -18,34 +18,34 @@ class DataverseAddonTestCase(AddonTestCase):
         return TestApp(app)
 
     def set_user_settings(self, settings):
-        settings.dataverse_username = 'snowman'
-        settings.dataverse_password = 'frosty'
+        settings.api_token = 'snowman-frosty'
 
     def set_node_settings(self, settings):
         settings.dataverse_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
-        settings.study_hdl = 'doi:12.3456/DVN/00001'
-        settings.study = 'Example (DVN/00001)'
+        settings.dataset_doi = 'doi:12.3456/DVN/00001'
+        settings.dataset_id = '18'
+        settings.dataset = 'Example (DVN/00001)'
 
 
-def create_mock_connection(username='snowman', password='frosty'):
+def create_mock_connection(token='snowman-frosty'):
     """
     Create a mock dataverse connection.
 
     Pass any credentials other than the default parameters and the connection
-    will fail.
+    will return none.
     """
+    if not token == 'snowman-frosty':
+        return None
 
     mock_connection = mock.create_autospec(Connection)
 
-    mock_connection.username = username
-    mock_connection.password = password
-    mock_connection.status = 200
+    mock_connection.token = token
 
     mock_connection.get_dataverses.return_value = [
         create_mock_dataverse('Example 1'),
         create_mock_dataverse('Example 2'),
-        create_mock_dataverse('Example 3')
+        create_mock_dataverse('Example 3'),
     ]
 
     def _get_dataverse(alias):
@@ -59,8 +59,7 @@ def create_mock_connection(username='snowman', password='frosty'):
     )
     mock_connection.get_dataverse.return_value = create_mock_dataverse()
 
-    if username == 'snowman' and password == 'frosty':
-        return mock_connection
+    return mock_connection
 
 
 def create_mock_dataverse(title='Example Dataverse 0'):
@@ -68,67 +67,68 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     mock_dataverse = mock.create_autospec(Dataverse)
 
     type(mock_dataverse).title = mock.PropertyMock(return_value=title)
-    type(mock_dataverse).is_released = mock.PropertyMock(return_value=True)
+    type(mock_dataverse).is_published = mock.PropertyMock(return_value=True)
     type(mock_dataverse).alias = mock.PropertyMock(
         return_value='ALIAS{}'.format(title[-1])
     )
 
-    mock_dataverse.get_studies.return_value = [
-        create_mock_study('DVN/00001'),
-        create_mock_study('DVN/00002'),
-        create_mock_study('DVN/00003')
+    mock_dataverse.get_datasets.return_value = [
+        create_mock_dataset('DVN/00001'),
+        create_mock_dataset('DVN/00002'),
+        create_mock_dataset('DVN/00003'),
     ]
 
-    def _get_study_by_doi(hdl):
+    def _get_dataset_by_doi(doi):
         return next((
-            study for study in mock_dataverse.get_studies()
-            if study.doi == hdl), None
+            dataset for dataset in mock_dataverse.get_datasets()
+            if dataset.doi == doi), None
         )
 
-    mock_dataverse.get_study_by_doi = mock.MagicMock(
-        side_effect=_get_study_by_doi
+    mock_dataverse.get_dataset_by_doi = mock.MagicMock(
+        side_effect=_get_dataset_by_doi
     )
 
     return mock_dataverse
 
 
-def create_mock_study(id='DVN/12345'):
-    mock_study = mock.create_autospec(Study)
+def create_mock_dataset(id='DVN/12345'):
+    mock_dataset = mock.create_autospec(Dataset)
 
-    mock_study.citation = 'Example Citation for {0}'.format(id)
-    mock_study.title = 'Example ({0})'.format(id)
-    mock_study.doi = 'doi:12.3456/{0}'.format(id)
-    mock_study.get_state.return_value = 'DRAFT'
+    mock_dataset.citation = 'Example Citation for {0}'.format(id)
+    mock_dataset.title = 'Example ({0})'.format(id)
+    mock_dataset.doi = 'doi:12.3456/{0}'.format(id)
+    mock_dataset.id = '18'
+    mock_dataset.get_state.return_value = 'DRAFT'
 
-    def _create_file(name, released=False):
-        return create_mock_released_file() if released else create_mock_draft_file()
+    def _create_file(name, published=False):
+        return create_mock_published_file() if published else create_mock_draft_file()
 
-    def _create_files(released=False):
-        return [_create_file('name.txt', released)]
+    def _create_files(published=False):
+        return [_create_file('name.txt', published)]
 
-    mock_study.get_files = mock.MagicMock(side_effect=_create_files)
-    mock_study.get_file = mock.MagicMock(side_effect=_create_file)
-    mock_study.get_file_by_id = mock.MagicMock(side_effect=_create_file)
+    mock_dataset.get_files = mock.MagicMock(side_effect=_create_files)
+    mock_dataset.get_file = mock.MagicMock(side_effect=_create_file)
+    mock_dataset.get_file_by_id = mock.MagicMock(side_effect=_create_file)
 
     # Fail if not given a valid ID
     if 'DVN' in id:
-        return mock_study
+        return mock_dataset
 
 def create_mock_draft_file(id='54321'):
     mock_file = mock.create_autospec(DataverseFile)
 
     mock_file.name = 'file.txt'
     mock_file.id = id
-    mock_file.is_released = False
+    mock_file.is_published = False
 
     return mock_file
 
-def create_mock_released_file(id='54321'):
+def create_mock_published_file(id='54321'):
     mock_file = mock.create_autospec(DataverseFile)
 
-    mock_file.name = 'released.txt'
+    mock_file.name = 'published.txt'
     mock_file.id = id
-    mock_file.is_released = True
+    mock_file.is_published = True
 
     return mock_file
 
@@ -143,7 +143,7 @@ mock_responses = {
                  u'view': u'/project/xxxxx/dataverse/file/54321/'},
         u'permissions': {u'edit': False, u'view': True},
         u'addon': u'dataverse',
-        u'hasReleasedFiles': True,
-        u'state': 'released',
+        u'hasPublishedFiles': True,
+        u'state': 'published',
     }
 }
