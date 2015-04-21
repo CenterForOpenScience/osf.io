@@ -77,3 +77,18 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
         if self._entries:
             return [e.serialized() for e in self._entries]
         return super(DataverseDatasetMetadata, self).serialized()
+
+
+class DataverseRevision(metadata.BaseFileRevisionMetadata):
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def version(self):
+        return self.raw
+
+    @property
+    def modified(self):
+        return None

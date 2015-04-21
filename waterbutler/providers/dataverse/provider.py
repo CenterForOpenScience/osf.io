@@ -7,6 +7,7 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import settings
+from waterbutler.providers.dataverse.metadata import DataverseRevision
 from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 
 
@@ -22,9 +23,12 @@ class DataverseProvider(provider.BaseProvider):
         self.name = self.settings['name']
 
     @asyncio.coroutine
-    def download(self, path, **kwargs):
+    def download(self, path, revision=None, **kwargs):
         # Can download draft or published files
-        metadata = yield from self._get_all_data()
+        if revision:
+            metadata = yield from self._get_data(revision)
+        else:
+            metadata = yield from self._get_all_data()
         self._validate_path(path, metadata)
 
         resp = yield from self.make_request(
@@ -129,7 +133,17 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Dataverse does not support file revisions.'}, code=405)
+        versions = ['latest', 'latest-published']
+        revisions = []
+        for version in versions:
+            metadata = yield from self._get_data(version)
+            revision = next(
+                (item for item in metadata if item['path'] == path), None
+            )
+            if revision:
+                revisions.append(DataverseRevision(version).serialized())
+
+        return revisions
 
     @asyncio.coroutine
     def _get_data(self, version):
