@@ -263,6 +263,11 @@ function moveItem(to, from, conflict) {
         }
 
         inheritFromParent(from, from.parent());
+
+        if (from.data.kind === 'folder' && from.data.open) {
+            tb.updateFolder(from.children, from);
+        }
+
         tb.redraw();
     }).fail(function() {
         from.move(ogParent);
