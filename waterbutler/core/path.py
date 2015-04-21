@@ -59,23 +59,42 @@ class WaterButlerPath:
         return cls('/'.join(_parts), _ids=_ids, folder=folder)
 
     def __init__(self, path, _ids=(), prepend=None, folder=None):
-        self._generic_path_validation(path)
+        self.__class__.generic_path_validation(path)
 
         self._orig_path = path
-        path = path.strip('/').split('/')
 
-        _ids = [None] * len(_ids) - len(path) + _ids
+        self._prepend = prepend
+
+        if prepend:
+            self._prepend_parts = [self.PART_CLASS(part, None) for part in prepend.rstrip('/').split('/')]
+        else:
+            self._prepend_parts = []
 
         self._parts = [
             self.PART_CLASS(part, _id)
-            for part, _id
-            in zip(path, _ids)
+            for _id, part in
+            itertools.zip_longest(_ids, path.rstrip('/').split('/'))
         ]
 
         if folder is not None:
-            self.is_folder = bool(folder)
+            self._is_folder = bool(folder)
         else:
-            self.is_folder = self.path.endswith('/')
+            self._is_folder = self._orig_path.endswith('/')
+
+        if self.is_dir and not self._orig_path.endswith('/'):
+            self._orig_path += '/'
+
+    @property
+    def is_root(self):
+        return len(self._parts) == 1
+
+    @property
+    def is_dir(self):
+        return self._is_folder
+
+    @property
+    def is_file(self):
+        return not self._is_folder
 
     @property
     def parts(self):
