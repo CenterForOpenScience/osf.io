@@ -58,7 +58,6 @@ website/static/robots.local.txt
 # OSF-specific
 ##############
 
-api/db.sqlite3
 api/static/
 
 # Local settings files
