@@ -631,6 +631,27 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if node_settings.external_account == external_account:
                 yield node
 
+    def merge(self, user_settings):
+        """Merge `user_settings` into this instance"""
+        if user_settings.__class__ is not self.__class__:
+            raise TypeError('Cannot merge different addons')
+
+        for node_id, data in user_settings.oauth_grants.iteritems():
+            if node_id not in self.oauth_grants:
+                self.oauth_grants[node_id] = data
+            else:
+                for ext_acct, meta in user_settings.oauth_grants[node_id]:
+                    if ext_acct not in self.oauth_grants[node_id]:
+                        self.oauth_grants[node_id][ext_acct] = meta
+                    else:
+                        for k, v in meta:
+                            if k not in self.oauth_grants[node_id][ext_acct]:
+                                self.oauth_grants[node_id][ext_acct][k] = v
+
+        user_settings.oauth_grants = {}
+        user_settings.save()
+        self.save()
+
     def to_json(self, user):
         ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
 

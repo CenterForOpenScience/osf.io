@@ -1,3 +1,5 @@
+import datetime
+
 from nose.tools import *
 
 from framework import auth
@@ -169,6 +171,163 @@ class UserMergingTestCase(base.OsfTestCase):
         self.user.add_addon('unmergeable')
 
         assert_false(self.user.can_be_merged)
+
+    def test_merge(self):
+        other_user = factories.UserFactory()
+        other_user.save()
+
+        # define values for users' fields
+        today = datetime.datetime.now()
+        yesterday = today - datetime.timedelta(days=1)
+
+        self.user.aka = ['foo']
+        other_user.aka = ['bar']
+
+        self.user.api_keys = [factories.ApiKeyFactory()]
+        other_user.api_keys = [factories.ApiKeyFactory()]
+
+        self.user.comments_viewed_timestamp['shared_gt'] = today
+        other_user.comments_viewed_timestamp['shared_gt'] = yesterday
+        self.user.comments_viewed_timestamp['shared_lt'] = yesterday
+        other_user.comments_viewed_timestamp['shared_lt'] = today
+        self.user.comments_viewed_timestamp['user'] = yesterday
+        other_user.comments_viewed_timestamp['other'] = yesterday
+
+        self.user.email_verifications = {'user': {'email': 'a'}}
+        other_user.email_verifications = {'other': {'email': 'b'}}
+
+        self.user.external_accounts = [factories.ExternalAccountFactory()]
+        other_user.external_accounts = [factories.ExternalAccountFactory()]
+
+        self.user.mailing_lists = {
+            'user': True,
+            'shared_gt': True,
+            'shared_lt': False,
+        }
+        other_user.mailing_lists = {
+            'other': True,
+            'shared_gt': False,
+            'shared_lt': True,
+        }
+
+        self.user.piwik_token = 'abc'
+        other_user.piwik_token = 'def'
+
+        self.user.security_messages = {
+            'user': today,
+            'shared': today,
+        }
+        other_user.security_messages = {
+            'other': today,
+            'shared': today,
+        }
+
+        self.user.system_tags = ['user', 'shared']
+        other_user.system_tags = ['other', 'shared']
+
+        self.user.watched = [factories.WatchConfigFactory()]
+        other_user.watched = [factories.WatchConfigFactory()]
+
+        self.user.save()
+        other_user.save()
+
+        # define expected behavior for ALL FIELDS of the User object
+        default_to_master_user_fields = [
+            '_id',
+            'date_confirmed',
+            'date_disabled',
+            'date_last_login',
+            'date_registered',
+            'family_name',
+            'fullname',
+            'given_name',
+            'is_claimed',
+            'is_invited',
+            'is_registered',
+            'jobs',
+            'locale',
+            'merged_by',
+            'middle_names',
+            'password',
+            'piwik_token',
+            'recently_added',
+            'schools',
+            'social',
+            'suffix',
+            'timezone',
+            'username',
+            'verification_key',
+        ]
+
+        calculated_fields = {
+            'aka': ['foo', 'bar'],
+            'api_keys': [
+                self.user.api_keys[0]._id,
+                other_user.api_keys[0]._id,
+            ],
+            'comments_viewed_timestamp': {
+                'user': yesterday,
+                'other': yesterday,
+                'shared_gt': today,
+                'shared_lt': today,
+            },
+            'email_verifications': {
+                'user': {'email': 'a'},
+                'other': {'email': 'b'},
+            },
+            'emails': [
+                self.user.username,
+                other_user.username,
+            ],
+            'external_accounts': [
+                self.user.external_accounts[0]._id,
+                other_user.external_accounts[0]._id,
+            ],
+            'mailing_lists': {
+                'user': True,
+                'other': True,
+                'shared_gt': True,
+                'shared_lt': True,
+            },
+            'security_messages': {
+                'user': today,
+                'other': today,
+                'shared': today,
+            },
+            'system_tags': ['user', 'shared', 'other'],
+            'unclaimed_records': {},
+            'watched': [
+                self.user.watched[0]._id,
+                other_user.watched[0]._id,
+            ],
+        }
+
+        # from the explicit rules above, compile expected field/value pairs
+        expected = {}
+        expected.update(calculated_fields)
+        for key in default_to_master_user_fields:
+            expected[key] = getattr(self.user, key)
+
+        # ensure all fields of the user object have an explicit expectation
+        assert_equal(
+            set(expected.keys()),
+            set(self.user._fields),
+        )
+
+        # perform the merge
+        self.user.merge_user(other_user)
+        self.user.save()
+
+        # check each field/value pair
+        for k, v in expected.iteritems():
+            assert_equal(
+                getattr(self.user, k),
+                v,
+                # "{} doesn't match expectation".format(k)
+            )
+
+        # check fields set on merged user
+        assert_equal(other_user.merged_by, self.user)
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()

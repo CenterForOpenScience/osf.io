@@ -1070,7 +1070,7 @@ class User(GuidStoredObject, AddonModelMixin):
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
 
-        self.aka = list(set(self.aka + user.aka))
+        [self.aka.append(each) for each in user.aka if each not in self.aka]
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
@@ -1097,11 +1097,22 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = self.mailing_lists.get(key, value)
+            self.mailing_lists[key] = value or self.mailing_lists.get(key)
         # - clear subscriptions for merged user
         user.mailing_lists = {}
 
+        for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(node_id):
+                self.comments_viewed_timestamp[node_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[node_id]:
+                self.comments_viewed_timestamp[node_id] = timestamp
+
         self.emails.extend(user.emails)
+
+        for k, v in user.email_verifications.iteritems():
+            if k not in self.email_verifications:
+                self.email_verifications[k] = v
+        user.email_verifications = {}
 
         # FOREIGN FIELDS
         for watched in user.watched:
@@ -1114,7 +1125,8 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.external_accounts.append(account)
         user.external_accounts = []
 
-        self.api_keys += user.api_keys
+        for api_key in user.api_keys:
+            self.api_keys.append(api_key)
         user.api_keys = []
 
         # - projects where the user was a contributor
@@ -1151,7 +1163,6 @@ class User(GuidStoredObject, AddonModelMixin):
         #   in the future.
         user.username = None
         user.password = None
-        user.email_verifications = {}
         user.verification_key = None
         user.merged_by = self
 
