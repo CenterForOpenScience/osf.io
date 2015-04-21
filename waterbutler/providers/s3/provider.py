@@ -12,6 +12,7 @@ from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.s3 import settings
 from waterbutler.providers.s3.metadata import S3Revision
@@ -47,6 +48,10 @@ class S3Provider(provider.BaseProvider):
         self.connection = S3Connection(credentials['access_key'],
                 credentials['secret_key'], calling_format=OrdinaryCallingFormat())
         self.bucket = self.connection.get_bucket(settings['bucket'], validate=False)
+
+    @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        return WaterButlerPath(path)
 
     def can_intra_copy(self, dest_provider):
         return type(self) == type(dest_provider)
@@ -90,8 +95,6 @@ class S3Provider(provider.BaseProvider):
         :rtype: :class:`waterbutler.core.streams.ResponseStreamReader`
         :raises: :class:`waterbutler.core.exceptions.DownloadError`
         """
-        path = S3Path(path)
-
         if not path.is_file:
             raise exceptions.DownloadError('No file specified for download', code=400)
 
@@ -100,14 +103,14 @@ class S3Provider(provider.BaseProvider):
         else:
             query_parameters = {'versionId': version}
 
-        key = self.bucket.new_key(path.path)
-
         if kwargs.get('displayName'):
             response_headers = {'response-content-disposition': 'attachment; filename*=UTF-8\'\'{}'.format(parse.quote(kwargs['displayName']))}
         else:
             response_headers = {'response-content-disposition': 'attachment'}
 
-        url = key.generate_url(
+        url = self.bucket.new_key(
+            path.path
+        ).generate_url(
             settings.TEMP_URL_SECS,
             query_parameters=query_parameters,
             response_headers=response_headers
@@ -134,24 +137,24 @@ class S3Provider(provider.BaseProvider):
 
         :rtype: dict, bool
         """
-        path, exists = yield from self.handle_name_conflict(S3Path(path), conflict=conflict)
+        path, exists = yield from self.handle_name_conflict(path, conflict=conflict)
 
-        key = self.bucket.new_key(path.path)
-        url = key.generate_url(settings.TEMP_URL_SECS, 'PUT')
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
 
         resp = yield from self.make_request(
-            'PUT', url,
+            'PUT',
+            self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'PUT'),
             data=stream,
             headers={'Content-Length': str(stream.size)},
             expects=(200, 201, ),
             throws=exceptions.UploadError,
         )
+
         # md5 is returned as ETag header as long as server side encryption is not used.
         # TODO: nice assertion error goes here
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
-        return (yield from self.metadata(str(path), **kwargs)), not exists
+        return (yield from self.metadata(path, **kwargs)), not exists
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -159,12 +162,9 @@ class S3Provider(provider.BaseProvider):
 
         :param str path: The path of the key to delete
         """
-        path = S3Path(path)
-        key = self.bucket.new_key(path.path)
-        url = key.generate_url(settings.TEMP_URL_SECS, 'DELETE')
         yield from self.make_request(
             'DELETE',
-            url,
+            self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'DELETE'),
             expects=(200, 204, ),
             throws=exceptions.DeleteError,
         )
@@ -176,7 +176,6 @@ class S3Provider(provider.BaseProvider):
         :param str path: The path to a key
         :rtype list:
         """
-        path = S3Path(path)
         url = self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET', query_parameters={'versions': ''})
         resp = yield from self.make_request(
             'GET',
@@ -201,11 +200,9 @@ class S3Provider(provider.BaseProvider):
     def metadata(self, path, **kwargs):
         """Get Metadata about the requested file or folder
 
-        :param str path: The path to a key or folder
+        :param WaterButlerPath path: The path to a key or folder
         :rtype: dict or list
         """
-        path = S3Path(path)
-
         if path.is_dir:
             return (yield from self._metadata_folder(path))
 
@@ -216,11 +213,10 @@ class S3Provider(provider.BaseProvider):
         """
         :param str path: The path to create a folder at
         """
-        path = S3Path(path)
-        path.validate_folder()
+        WaterButlerPath.validate_folder(path)
 
         try:
-            yield from self.metadata(str(path))
+            yield from self.metadata(path)
             raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
         except exceptions.MetadataError as e:
             if e.code != 404:
@@ -239,10 +235,9 @@ class S3Provider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _metadata_file(self, path):
-        url = self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD')
         resp = yield from self.make_request(
             'HEAD',
-            url,
+            self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD'),
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
@@ -250,10 +245,9 @@ class S3Provider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _metadata_folder(self, path):
-        url = self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET')
         resp = yield from self.make_request(
             'GET',
-            url,
+            self.bucket.generate_url(settings.TEMP_URL_SECS, 'GET'),
             params={'prefix': path.path, 'delimiter': '/'},
             expects=(200, ),
             throws=exceptions.MetadataError,
