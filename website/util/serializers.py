@@ -192,12 +192,13 @@ class ProjectOrganizerSerializer(NodeSerializer):
 class SearchNodeSerializer(NodeSerializer):
 
     def __init__(self, auth):
+        super(SearchNodeSerializer, self).__init__(auth)
         self.maybe_hide = lambda child, value, default='': value if child.can_view(auth) else default
 
     def _serialize_child(self, child):
         return {
             'url': self.maybe_hide(child, child.url),
-            'title': self.maybe_hide(child, child.title)
+            'name': self.maybe_hide(child, child.title)
         }
 
     def _serialize_children(self, node):
@@ -206,7 +207,7 @@ class SearchNodeSerializer(NodeSerializer):
     def _serialize_parent(self, parent):
         return {
             'url': self.maybe_hide(parent, parent.url),
-            'title': self.maybe_hide(parent, parent.title)
+            'name': self.maybe_hide(parent, parent.title)
         }
 
     def serialize(self, node):
