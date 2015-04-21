@@ -424,7 +424,6 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
             self.user_settings
         )
 
-    # failing
     def test_set_auth_wrong_user(self):
         external_account = ExternalAccountFactory()
         self.user.external_accounts.append(external_account)

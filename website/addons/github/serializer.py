@@ -43,5 +43,6 @@ class GitHubSerializer(OAuthAddonSerializer):
     @property
     def serialized_node_settings(self):
         result = super(GitHubSerializer, self).serialized_node_settings
-        result['repo'] = {'name': self.node_settings.repo}
+        result['repo'] = self.node_settings.repo
+        result['user'] = self.node_settings.user
         return {'result': result}

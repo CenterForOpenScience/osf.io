@@ -9,16 +9,19 @@ var faker = require('faker');
 
 var githubNodeConfigVM = require('../githubNodeConfig')._githubNodeConfigViewModel;
 
-var API_BASE = '/api/v1/12345/github';
+var API_BASE = '/api/v1/project/12345/github';
 var SETTINGS_URL = [API_BASE, 'settings', ''].join('/');
 var URLS = {
-    create_repo: [API_BASE, 'newrepo', ''].join('/'),
-    import_auth: [API_BASE, 'user_auth', ''].join('/'),
-    create_auth: [API_BASE, 'oauth', ''].join('/'),
-    deauthorize: SETTINGS_URL,
-    repo_list: [API_BASE, 'repos', ''].join('/'),
-    set_repo: SETTINGS_URL,
-    settings: '/settings/addons/'
+    accounts: "/api/v1/settings/github/accounts/?pid=12345",
+    auth: "/oauth/connect/github/",
+    config: "/api/v1/project/12345/github/settings/",
+    create_repo: "/api/v1/project/12345/github/newrepo/",
+    deauthorize: "/api/v1/project/12345/github/user_auth/",
+    files: "/project/12345/files/",
+    importAuth: "/api/v1/project/12345/github/user_auth/",
+    //owner: "/profile/bnmye/",
+    repo_list: "/api/v1/project/12345/github/repos/",
+    settings: "/settings/addons/"
 };
 var makeSettingsEndpoint = function(result, urls) {
     return {
@@ -69,14 +72,14 @@ describe('githubNodeConfigViewModel', () => {
                     before(tc.before);
                     after(tc.after);
                     it('fetches data from the server and updates its state', (done) => {
-                        var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                        var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                         vm.updateFromData()
                             .always(function() {
                                 // VM is updated with data from the fake server
                                 // observables
                                 assert.equal(vm.ownerName(), expected.owner);
-                                assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
-                                assert.equal(vm.userHasAuth(), expected.user_has_auth);
+                                assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
+                                assert.equal(vm.userHasAuth(), expected.userHasAuth);
                                 assert.equal(vm.currentRepo(), (expected.repo === null) ? 'None' : '');
                                 assert.deepEqual(vm.urls(), expected.urls);
                                 done();
@@ -84,7 +87,7 @@ describe('githubNodeConfigViewModel', () => {
                     });
                     describe('... and after updating computed values work as expected', () => {
                         it('shows settings if Node has auth', (done) => {
-                            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showSettings(), expected.showSettings);
@@ -92,7 +95,7 @@ describe('githubNodeConfigViewModel', () => {
                                 });
                         });
                         it('disables settings in User dosen\'t have auth and is not auth owner', (done) => {
-                            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.disableSettings(), expected.disableSettings);
@@ -100,7 +103,7 @@ describe('githubNodeConfigViewModel', () => {
                                 });
                         });
                         it('shows the new repo button if User has auth and is auth owner', (done) => {
-                            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showNewRepo(), expected.showNewRepo);
@@ -108,7 +111,7 @@ describe('githubNodeConfigViewModel', () => {
                                 });
                         });
                         it('shows the import auth link if User has auth and Node is unauthorized', (done) => {
-                            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showImport(), expected.showImportAuth);
@@ -116,7 +119,7 @@ describe('githubNodeConfigViewModel', () => {
                                 });
                         });
                         it('shows the create credentials link if User is unauthorized and Node is unauthorized ', (done) => {
-                            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showCreateCredentials(), expected.showCreateCredentials);
@@ -124,7 +127,7 @@ describe('githubNodeConfigViewModel', () => {
                                 });
                         });
                         it('lets User see change repo UI if they are auth owner and Node has auth', (done) => {
-                            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.canChange(), expected.canChange);
@@ -132,7 +135,7 @@ describe('githubNodeConfigViewModel', () => {
                                 });
                         });
                         it('allows User to change repos if there are repos to be seleted and repos are not currently being loaded ', (done) => {
-                            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.allowSelectRepo(), expected.allowSelectRepo);
@@ -144,10 +147,10 @@ describe('githubNodeConfigViewModel', () => {
             }, [{
                 description: 'Node is unauthorized and User is unauthorized',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: false,
-                    user_has_auth: false,
-                    user_is_owner: false,
-                    owner: null,
+                    nodeHasAuth: false,
+                    userHasAuth: false,
+                    userIsOwner: false,
+                    ownerName: '',
                     repo: null
                 }),
                 data: {
@@ -162,10 +165,10 @@ describe('githubNodeConfigViewModel', () => {
             }, {
                 description: 'Node is authorized and User not auth owner',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: true,
-                    user_has_auth: false,
-                    user_is_owner: false,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: true,
+                    userHasAuth: false,
+                    userIsOwner: false,
+                    ownerName: faker.name.findName(),
                     repo: null,
                     allowSelectRepo: false
                 }),
@@ -181,10 +184,10 @@ describe('githubNodeConfigViewModel', () => {
             }, {
                 description: 'Node is unauthorized and User has auth',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: false,
-                    user_has_auth: true,
-                    user_is_owner: true,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: false,
+                    userHasAuth: true,
+                    userIsOwner: true,
+                    owneNamer: faker.name.findName(),
                     repo: null
                 }),
                 data: {
@@ -199,10 +202,10 @@ describe('githubNodeConfigViewModel', () => {
             }, {
                 description: 'Node is authorized and User is auth owner',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: true,
-                    user_has_auth: true,
-                    user_is_owner: true,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: true,
+                    userHasAuth: true,
+                    userIsOwner: true,
+                    ownerName: faker.name.findName(),
                     repo: null
                 }),
                 data: {
@@ -234,7 +237,7 @@ describe('githubNodeConfigViewModel', () => {
             server.restore();
         });
         it('shows the repo selector when disabled and if repos aren\'t loaded fetches the list of repos', (done) => {
-            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
             vm.updateFromData()
                 .always(function() {
                     vm.showSelect(false);
@@ -270,9 +273,11 @@ describe('githubNodeConfigViewModel', () => {
             server.restore();
         });
         it('submits the selected repo to the server, and updates data on success', (done) => {
-            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
+
             vm.updateFromData()
                 .always(function() {
+                    debugger;
                     vm.selectedRepo(repo);
                     var promise = vm.selectRepo();
                     promise.always(function() {
@@ -284,33 +289,33 @@ describe('githubNodeConfigViewModel', () => {
     });
     describe('Authorization/Authentication: ', () => {
         var deleteEndpoint = makeSettingsEndpoint({
-            user_has_auth: true,
-            user_is_owner: true,
-            node_has_auth: false
+            userHasAuth: true,
+            userIsOwner: true,
+            nodeHasAuth: false
         });
         deleteEndpoint.method = 'DELETE';
         deleteEndpoint.response = deleteEndpoint.response.result;
         var importEndpoint = makeSettingsEndpoint({
-            node_has_auth: true,
-            user_has_auth: true,
-            user_is_owner: true
+            nodeHasAuth: true,
+            userHasAuth: true,
+            userIsOwner: true
         });
         importEndpoint.method = 'POST';
-        importEndpoint.url = URLS.import_auth;
+        importEndpoint.url = URLS.importAuth;
         importEndpoint.response = importEndpoint.response.result;
         var createEndpoint = makeSettingsEndpoint({
-            node_has_auth: true,
-            user_has_auth: true,
-            user_is_owner: true
+            nodeHasAuth: true,
+            userHasAuth: true,
+            userIsOwner: true
         });
         createEndpoint.method = 'POST';
-        createEndpoint.url = URLS.create_auth;
+        createEndpoint.url = URLS.auth;
         createEndpoint.response = createEndpoint.response.result;
         var endpoints = [
             makeSettingsEndpoint({
-                user_has_auth: true,
-                user_is_owner: true,
-                node_has_auth: true
+                userHasAuth: true,
+                userIsOwner: true,
+                nodeHasAuth: true
             }),
             deleteEndpoint,
             importEndpoint,
@@ -327,13 +332,13 @@ describe('githubNodeConfigViewModel', () => {
         describe('#_deauthorizeNodeConfirm', () => {
             it('makes a delete request to the server and updates settings on success', (done) => {
                 var expected = endpoints[1].response;
-                var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm._deauthorizeNodeConfirm();
                         promise.always(function() {
-                            assert.equal(vm.userHasAuth(), expected.user_has_auth);
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                            assert.equal(vm.userHasAuth(), expected.userHasAuth);
+                            assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
                             assert.isFalse(vm.showSettings());
                             assert.isTrue(vm.showImport());
                             done();
@@ -344,52 +349,23 @@ describe('githubNodeConfigViewModel', () => {
         describe('#_importAuthConfirm', () => {
             before(() => {
                 // Prepare settings endpoint for next test
-                endpoints[0].response.result.node_has_auth = false;
+                endpoints[0].response.result.nodeHasAuth = false;
             });
             it('makes a POST request to import auth and updates settings on success', (done) => {
                 var expected = endpoints[2].response;
-                var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+                var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm._importAuthConfirm();
                         promise.always(function() {
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                            assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
                             assert.isTrue(vm.showSettings());
                             done();
                         });
                     });
             });
         });
-        //describe('#createCredentials', () => {
-        //    before(() => {
-        //        // Prepare settings endpoint for next test
-        //        endpoints[0].response.result.node_has_auth = false;
-        //        endpoints[0].response.result.user_has_auth = false;
-        //        endpoints[0].response.result.user_is_owner = false;
-        //        // temporarily disable mock server autoRespond
-        //        server.autoRespond = false;
-        //    });
-        //    after(() => {
-        //        // restore fake server autoRespond
-        //        server.autoRespond = true;
-        //    });
-        //    var expected = endpoints[0].response;
-        //    it('makes a POST request to create auth and updates settings on success', (done) => {
-        //        var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
-        //        vm.updateFromData()
-        //            .always(function() {
-        //                var promise = vm.createCredentials();
-        //                assert.isTrue(vm.creatingCredentials());
-        //                assert.isFalse(vm.userHasAuth());
-        //                server.respond();
-        //                promise.always(function() {
-        //                    assert.isFalse(vm.creatingCredentials());
-        //                    assert.isTrue(vm.userHasAuth());
-        //                    done();
-        //                });
-        //            });
-        //    });
-        //});
+
     });
     describe('#createRepo', () => {
         var createEndpoint = makeSettingsEndpoint({
@@ -412,7 +388,7 @@ describe('githubNodeConfigViewModel', () => {
         });
 
         it('sends a POST to create repo and on success updates the repo list', (done) => {
-            var vm = new githubNodeConfigVM('/api/v1/12345/github/settings/', '', '/12345');
+            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
             vm.updateFromData()
                 .always(function() {
                     var name = faker.internet.password();

@@ -315,7 +315,7 @@ ViewModel.prototype.updateFromData = function(data) {
         self.userHasAuth(settings.userHasAuth);
         self.userIsOwner(settings.userIsOwner);
         self.ownerName(settings.ownerName);
-        self.currentRepo(settings.repo.name);
+        self.currentRepo( (settings.repo === null) ? 'None' : settings.user + " / " + settings.repo);
         self.urls(settings.urls);
         ret.resolve(settings);
     };
