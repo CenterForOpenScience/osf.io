@@ -110,17 +110,20 @@ class WaterButlerPath:
 
     @property
     def path(self):
-        return '/'.join([x.value for x in self.parts])
+        return '/'.join([x.value for x in self.parts[1:]]) + ('/' if self.is_dir else '')
+
+    @property
+    def full_path(self):
+        return '/'.join([x.value for x in self._prepend_parts + self.parts[1:]]) + ('/' if self.is_dir else '')
 
     @property
     def parent(self):
-        return self.__class__.from_parts(self.parts[:-1])
-
-    def _generic_path_validation(self, path):
-        pass
+        if len(self.parts) == 1:
+            return None
+        return self.__class__.from_parts(self.parts[:-1], folder=True, prepend=self._prepend)
 
     def __str__(self):
-        return '/'.join([''] + [x.raw for x in self.parts]) + ('/' if self.is_folder else '')
+        return '/'.join([x.raw for x in self.parts]) + ('/' if self.is_dir else '')
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self._orig_path)
+        return '{}({!r}, prepend={!r})'.format(self.__class__.__name__, self._orig_path, self._prepend)
