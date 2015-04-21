@@ -218,21 +218,22 @@ function _fangornColumns(item) {
     if (item.data.kind === 'file' && tb.currentFileID === item.id) {
         selectClass = 'fangorn-hover';
     }
-
     var columns = [];
-    columns.push(
-    {
-        data : null,
-        folderIcons: false,
-        filter : false,
-        custom : function(){
-            if(this.isMultiselected(item.id)) {
-                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
+    if (tb.options.placement === 'fileview') {
+        columns.push({
+            data : null,
+            folderIcons: false,
+            filter : false,
+            custom : function(){
+                if(this.isMultiselected(item.id)) {
+                    return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
+                }
+                return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
             }
-            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
-        }
-    },
-    {
+        });
+    }
+ 
+    columns.push({
         data : 'name',
         folderIcons : true,
         filter : true,
@@ -240,7 +241,7 @@ function _fangornColumns(item) {
         custom: _fangornDataverseTitle
     });
 
-    if (this.options.placement === 'project-files') {
+    if (tb.options.placement === 'project-files') {
         columns.push(
             {
                 data: 'downloads',
