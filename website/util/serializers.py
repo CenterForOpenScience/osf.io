@@ -1,4 +1,4 @@
-ofrom datetime import datetime
+from datetime import datetime
 
 from website.project.model import Node
 
@@ -101,7 +101,7 @@ class ProjectOrganizerSerializer(NodeSerializer):
         })
         return ret
 
-    def _serialize_children(self, node):
+    def serialize_children(self, node):
         return [self._do_serialize_children(pair) for pair in node.next_descendants(
             self.auth,
             condition=lambda auth, n: n.is_contributor(auth.user)
@@ -112,11 +112,11 @@ class ProjectOrganizerSerializer(NodeSerializer):
 
         parent = node.parent_node
 
-        date_modified = node.date_modified.isoformat()
-        modified_delta = delta_date(node.date_modified)
+        date_modified = node.date_modified.isoformat() if node.date_modified else node.date_created.isoformat()
+        modified_delta = delta_date(node.date_modified) if node.date_modified else delta_date(node.date_created)
         modified_by = ''
         try:
-            user = node.logs[-1].user
+            user = node.logs[-1].user if node.logs else None
             modified_by = user.family_name or user.given_name
         except AttributeError:
             modified_by = ''
@@ -192,12 +192,12 @@ class ProjectOrganizerSerializer(NodeSerializer):
 class SearchNodeSerializer(NodeSerializer):
 
     def __init__(self, auth):
-        self.maybe_hide = lambda value, default='': value if child.can_view(auth) else default
+        self.maybe_hide = lambda child, value, default='': value if child.can_view(auth) else default
 
     def _serialize_child(self, child):
         return {
-            'url': self.maybe_hide(child.url),
-            'title': self.maybe_hide(child.title)
+            'url': self.maybe_hide(child, child.url),
+            'title': self.maybe_hide(child, child.title)
         }
 
     def _serialize_children(self, node):
@@ -205,8 +205,8 @@ class SearchNodeSerializer(NodeSerializer):
 
     def _serialize_parent(self, parent):
         return {
-            'url': self.maybe_hide(child.url),
-            'title': self.maybe_hide(child.title)
+            'url': self.maybe_hide(parent, parent.url),
+            'title': self.maybe_hide(parent, parent.title)
         }
 
     def serialize(self, node):

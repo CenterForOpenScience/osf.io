@@ -150,7 +150,7 @@ def get_dashboard(auth, nid=None, **kwargs):
                 serializer.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, projects_count),
             ] + [serializer.serialize(n) for n in po_utils.get_dashboard_nodes(node, auth)]
         else:
-            data = serializer.serialize(node)['children']
+            data = serializer.serialize_children(node)
 
     return_value = {'data': [serialize(item) for item in data]}
     return_value['timezone'] = user.timezone
