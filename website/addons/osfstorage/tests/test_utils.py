@@ -166,3 +166,24 @@ class TestSerializeRevision(StorageTestCase):
             1,
         )
         assert_equal(expected, observed)
+
+    def test_anon_revisions(self):
+        sessions.sessions[request._get_current_object()] = Session()
+        views.update_analytics(self.project, self.path, 1)
+        views.update_analytics(self.project, self.path, 1)
+        views.update_analytics(self.project, self.path, 3)
+        expected = {
+            'index': 1,
+            'user': None,
+            'date': self.versions[0].date_created.isoformat(),
+            'downloads': 2,
+        }
+        observed = utils.serialize_revision(
+            self.project,
+            self.record,
+            self.versions[0],
+            1,
+            anon=True
+        )
+        assert_equal(expected, observed)
+
