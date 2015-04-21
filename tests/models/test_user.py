@@ -38,9 +38,16 @@ class UserTestCase(base.OsfTestCase):
         super(UserTestCase, self).tearDown()
 
     def test_can_be_merged(self):
-        assert_false(self.user.can_be_merged)
+        # No addons present
+        assert_true(self.user.can_be_merged)
         assert_true(self.unregistered.can_be_merged)
         assert_true(self.unconfirmed.can_be_merged)
+
+        # Add an addon
+        addon = self.user.get_or_add_addon('mendeley')
+        addon.save()
+
+        assert_false(self.user.can_be_merged)
 
     def test_merge_unconfirmed(self):
         self.user.merge_user(self.unconfirmed)

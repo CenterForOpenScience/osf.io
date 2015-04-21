@@ -1051,10 +1051,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return (
-            self.is_confirmed is False and
-            self.get_addons() == []
-        )
+        return self.get_addons() == []
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
@@ -1062,6 +1059,9 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :param user: A User object to be merged.
         """
+
+        if not user.can_be_merged:
+            raise ValueError("User cannot be merged")
 
         # Move over the other user's attributes
 
