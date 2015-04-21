@@ -36,9 +36,7 @@ class TestNodeList(OsfTestCase):
 
         Node.remove()
 
-# FIXME: These tests show different results when run in isolation vs. full suite
-# I believe this is because api_v2_url_for behaves differently depending on
-# app initialization state. May need to subclass Django's test case?
+
 class TestNodeContributorList(OsfTestCase):
 
     def setUp(self):
