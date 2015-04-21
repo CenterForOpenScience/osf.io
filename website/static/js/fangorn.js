@@ -853,12 +853,12 @@ function _fangornResolveRows(item) {
         },
         {
             data : '',  // Data field name
-            css : '.t-a-c',
-            custom : function(){ return m('span.text-muted', [m('span', ' Uploading:' + item.data.name) ]); }
+            css : 't-a-c',
+            custom : function(){ return m('span.text-muted', [m('span', ' Uploading:' + item.data.name), m('span', cancelUploadTemplate.call(this, item))]); }
         },
         {
             data : '',  // Data field name
-            custom : function(){ return m('span', cancelUploadTemplate.call(this, item)); }
+            custom : function(){ return '';}
         }
         ];
     }
