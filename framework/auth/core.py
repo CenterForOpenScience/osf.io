@@ -281,7 +281,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = fields.DictionaryField()
+    email_verifications = fields.DictionaryField(default=dict)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
@@ -664,12 +664,18 @@ class User(GuidStoredObject, AddonModelMixin):
 
         token = generate_confirm_token()
 
+        # handle when email_verifications is None
+        if not self.email_verifications:
+            self.email_verifications = {}
+
         self.email_verifications[token] = {'email': email}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
+        if email == self.username:
+            raise PermissionsError("Can't remove primary email")
         for token, value in self.email_verifications.iteritems():
             if value.get('email') == email:
                 del self.email_verifications[token]
@@ -679,6 +685,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def remove_email(self, email):
         """Remove a confirmed email"""
+        if email == self.username:
+            raise PermissionsError("Can't remove primary email")
         if email in self.emails:
             self.emails.remove(email)
             signals.user_email_removed.send(self, email=email)
@@ -794,10 +802,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def unconfirmed_emails(self):
+        # Handle when email_verifications field is None
+        email_verifications = self.email_verifications or {}
         return [
             each['email']
             for each
-            in self.email_verifications.values()
+            in email_verifications.values()
         ]
 
     def update_search_nodes(self):
