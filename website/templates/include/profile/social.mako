@@ -42,15 +42,6 @@
                 <span class="input-group-addon">https://github.com/</span>
                 <div data-bind="css: {'input-group': github.hasAddon()}">
                     <input class="form-control" data-bind="value: github" placeholder="username"/>
-                    <span
-                            class="input-group-btn"
-                            data-bind="if: github.hasAddon()"
-                        >
-                        <button
-                                class="btn btn-default"
-                                data-bind="click: github.importAddon"
-                            >Import</button>
-                    </span>
                     </div>
                 </div>
             </div>
