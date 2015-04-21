@@ -78,7 +78,6 @@ def _render_node(node, auth=None):
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
-        'path': node.path_above(auth)
     }
 
 
@@ -124,6 +123,7 @@ def find_dashboard(user):
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
     user = auth.user
+
     if nid is None:
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
@@ -134,18 +134,12 @@ def get_dashboard(auth, nid=None, **kwargs):
         return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
     else:
         node = Node.load(nid)
-        if not node:
-            raise HTTPError(http.BAD_REQUEST)
-        dashboard_projects = []
-        serializer = ProjectOrganizerSerializer(auth)
-        if node.is_dashboard:
-            dashboard_projects = [serializer.serialize(n) for n in get_all_projects_smart_folder()]
-        else:
-            dashboard_projects = serializer.serialize(node)['children']
+        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
         return_value = {'data': dashboard_projects}
 
     return_value['timezone'] = user.timezone
     return_value['locale'] = user.locale
+    return_value['id'] = user._id
     return return_value
 
 @must_be_logged_in
