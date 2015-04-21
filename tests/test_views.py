@@ -3385,7 +3385,7 @@ class TestODMTitleSearch(OsfTestCase):
         self.registration_project = RegistrationFactory(creator=self.user, title="qux")
         self.folder = FolderFactory(creator=self.user, title="quux")
         self.dashboard = DashboardFactory(creator=self.user, title="Dashboard")
-        self.url = api_url_for('search_visible_projects_by_title')
+        self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
         res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
