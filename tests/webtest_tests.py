@@ -1143,7 +1143,7 @@ class TestConfirmingEmail(OsfTestCase):
         user1 = AuthUserFactory()
         user2 = AuthUserFactory()
         url = api_url_for('update_user')
-        header = {'id': user1.username, 'emails':[{'address':user1.username}]}
+        header = {'id': user1.username, 'emails': [{'address': user1.username}]}
         res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 

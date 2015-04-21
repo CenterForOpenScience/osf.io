@@ -6,8 +6,8 @@
         Dataverse
         <span data-bind="if: showDeleteAuth">
             <small class="authorized-by">
-                authorized by {{ dataverseUsername }}
-                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete Credentials</a>
+                authorized
+                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete API Token</a>
 
             </small>
         </span>
@@ -16,15 +16,17 @@
     <!-- Enter Credentials -->
     <form data-bind="if: showInputCredentials">
         <div class="text-info dataverse-settings" data-bind="if: credentialsChanged">
-            Your dataverse credentials may not be valid. Please re-enter your password.
+            Your dataverse credentials may not be valid. Please re-enter your API token.
         </div>
         <div class="form-group">
-            <label for="dataverseUsername">Dataverse Username</label>
-            <input class="form-control" name="dataverseUsername" data-bind="value: dataverseUsername"/>
-        </div>
-        <div class="form-group">
-            <label for="dataversePassword">Dataverse Password</label>
-            <input class="form-control" type="password" name="dataversePassword" data-bind="value: dataversePassword" />
+            <label for="apiToken">
+                API Token
+                <a href="{{urls().apiToken}}"
+                   target="_blank" class="text-muted addon-external-link">
+                    (Get from Dataverse <i class="fa fa-external-link-square"></i>)
+                </a>
+            </label>
+            <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
         </div>
         <button data-bind="click: sendAuth" class="btn btn-success">
             Submit

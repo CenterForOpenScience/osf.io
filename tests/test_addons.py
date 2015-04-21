@@ -17,7 +17,7 @@ from framework.sessions.model import Session
 from framework.mongo import set_up_storage
 
 from website import settings
-from website.util import api_url_for
+from website.util import api_url_for, rubeus
 from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
 from website.project.utils import serialize_node
@@ -450,6 +450,7 @@ class TestAddonFileViews(OsfTestCase):
             'file_name': '',
             'render_url': '',
         })
+        ret.update(rubeus.collect_addon_assets(self.project))
         return ret
 
     def test_redirects_to_guid(self):
