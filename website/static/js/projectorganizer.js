@@ -650,6 +650,9 @@ function _poResolveIcon(item) {
         }
         return template;
     }
+    if (!item.data.permissions.view) {
+        return m('i', {className: iconmap.projectIcons.private});
+    }
     if (item.data.isSmartFolder) {
         return returnView('smartFolder');
     }
@@ -666,7 +669,6 @@ function _poResolveIcon(item) {
             return returnView('project');
         }
     }
-
     if (item.data.isComponent) {
         if (item.data.isRegistration) {
             return returnView('registeredComponent');
@@ -721,11 +723,13 @@ function _poResolveLazyLoad(item) {
 
 
 function expandChildren(item) {   
+    item.load = true;
+    item.open = true;
     for(var i = 0 ; i < item.children.length; i++) {
         var child = item.children[i];
-        child.load = true;
-        child.open = true;
-        if(child.children) {
+        if(child.children.length) {
+            child.load = true;
+            child.open = true;            
             expandChildren(child);
         }
     }   
