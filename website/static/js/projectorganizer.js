@@ -666,7 +666,7 @@ function _poResolveIcon(item) {
 
     if (item.data.isComponent) {
         if (item.data.isRegistration) {
-            return returnView('registeredComponent');
+            return returnView('registeredComponent', item.data.category);
         }else {
             return returnView('component', item.data.category);
         }
