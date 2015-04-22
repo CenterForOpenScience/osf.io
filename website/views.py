@@ -147,39 +147,14 @@ def get_all_projects_smart_folder(auth, **kwargs):
     user = auth.user
 
     contributed = user.node__contributed
-
     nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'eq', None)
-    ).sort('-title')
-
-    parents_to_exclude = contributed.find(
-        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
-    )
+    ).sort('-title')
 
-    comps = contributed.find(
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', False)
-    )
-
-    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
-    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return return_value
-
+    keys = nodes.get_keys()
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
@@ -236,12 +211,11 @@ def get_dashboard_nodes(auth):
     contributed = user.node__contributed  # nodes user contributed to
 
     nodes = contributed.find(
-        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
     )
-
+    '''
     # TODO: Store truthy values in a named constant available site-wide
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
         comps = contributed.find(
@@ -256,8 +230,8 @@ def get_dashboard_nodes(auth):
         )
     else:
         comps = []
-
-    nodes = list(nodes) + list(comps)
+    '''
+    nodes = list(nodes)  # + list(comps)
     if request.args.get('permissions'):
         perm = request.args['permissions'].strip().lower()
         if perm not in permissions.PERMISSIONS:

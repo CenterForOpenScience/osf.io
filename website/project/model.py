@@ -677,6 +677,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
 
+    @property
     def ids_above(self):
         parents = self.parents
         return {p._id for p in parents}
