@@ -1147,54 +1147,6 @@ function filterRowsNotInParent(rows) {
     tb.redraw();
 }   
 
-// Handles the up and down arrow keys since they do almost identical work
-function _multiSelectArrows (direction){
-    var tb = this;
-    var val = direction === 'down' ? 1 : -1;
-    var selectedIndex = tb.returnRangeIndex(tb.multiselected[0].id);
-    var previousItemIndex = tb.showRange[selectedIndex+val];
-    var flatItem = tb.flatData[previousItemIndex].id;
-    var treeItem = tb.find(flatItem);
-    tb.clearMultiselect();
-    tb.multiselected.push(treeItem);
-    tb.highlightMultiselect.call(tb);
-    _fangornMultiselect.call(tb, null, treeItem);
-}
-
-// Handles the toggling of folders with the right and left arrow keypress 
-function _keyboardFolderToggle (action) {
-    var tb = this;
-    var item = tb.multiselected[0];
-    if(item.kind === 'folder') {
-        if((item.open === true && action === 'close') || (item.open === false && action === 'open'))  {
-            var index = tb.returnIndex(item.id);
-            tb.toggleFolder(index, null);
-        } 
-    }
-}
-
-// Handles what the up, down, left, right arrow keys do. 
-function _handleArrowKeys (key) {
-    var tb = this;
-    // if pressed key is up arrow
-    if(key === 38) {
-        _multiSelectArrows.call(tb, 'up');
-    }
-    // if pressed key is down arrow
-    if(key === 40) {
-        _multiSelectArrows.call(tb,'down');
-    }
-    // if pressed key is left arrow
-    if(key === 37) {
-        _keyboardFolderToggle.call(tb, 'close');
-    }
-    // if pressed key is right arrow
-    if(key === 39) {
-        _keyboardFolderToggle.call(tb, 'open');
-    }   
-}
-
-
 
 /**
  * OSF-specific Treebeard options common to all addons.
@@ -1233,16 +1185,6 @@ tbOptions = {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
         });
-
-        $(window).on('keydown', function(event){
-            var key = event.keyCode;
-            if(tb.multiselected.length === 1) {
-                _handleArrowKeys.call(tb, key);             
-            }
-
-        });
-
-
     },
     createcheck : function (item, parent) {
         return true;
