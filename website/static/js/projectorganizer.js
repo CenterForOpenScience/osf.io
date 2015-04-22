@@ -640,6 +640,9 @@ function _poResolveIcon(item) {
         if (type === 'component' || type === 'registeredComponent') {            
             iconType = componentIcons[category];
         }
+        if (type === 'registeredComponent') {
+            iconType += ' po-registered';
+        }
 
         var template = m('span', { 'class' : iconType});
         if (viewLink) {
