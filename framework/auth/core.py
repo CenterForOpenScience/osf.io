@@ -1172,6 +1172,12 @@ class User(GuidStoredObject, AddonModelMixin):
             node.creator = self
             node.save()
 
+        # - addons
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
+
         # finalize the merge
 
         # - username is set to None so the resultant user can set it primary

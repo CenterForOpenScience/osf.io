@@ -393,6 +393,7 @@ class ExternalAccountFactory(ModularOdmFactory):
     provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
     provider_name = 'Fake Provider'
+    display_name = Sequence(lambda n: 'user-{0}'.format(n))
 
 
 class MockOAuth2Provider(ExternalProvider):
