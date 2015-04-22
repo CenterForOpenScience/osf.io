@@ -33,11 +33,15 @@ def _kwargs_to_nodes(kwargs):
 
     pid = kwargs.get('project') or kwargs.get('pid')
     nid = kwargs.get('node') or kwargs.get('nid')
-    if pid and not nid:
-        node = _load_node_or_fail(pid)
     if pid and nid:
         node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
+    elif pid and not nid:
+        node = _load_node_or_fail(pid)
+    elif nid and not pid:
+        node = _load_node_or_fail(nid)
+    elif not pid and not nid:
+        raise HTTPError(http.NOT_FOUND)
 
     return parent, node
 
