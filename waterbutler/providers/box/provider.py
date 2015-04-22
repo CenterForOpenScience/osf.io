@@ -263,11 +263,10 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
-        if len(path.split('/')) == 3:
-            path = '/{}{}'.format(self.folder, path)
+        p.WaterButlerPath.validate_folder(path)
 
-        path = BoxPath(path)
-        path.validate_folder()
+        if path.identifier is not None:
+            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
 
         resp = yield from self.make_request(
             'POST',
@@ -275,13 +274,14 @@ class BoxProvider(provider.BaseProvider):
             data={
                 'name': path.name,
                 'parent': {
-                    'id': path._id or self.folder
+                    'id': path.parent.identifier
                 }
             },
             expects=(201, 409),
             throws=exceptions.CreateFolderError,
         )
 
+        # Catch 409s to avoid race conditions
         if resp.status == 409:
             raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
 
