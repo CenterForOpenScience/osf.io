@@ -208,6 +208,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     // Must be set after isValid is defined in inherited view models
     self.hasValidProperty = ko.observable(false);
     self.requiredFieldEmpty = ko.observable(false);
+    self.otherFieldsEmpty = ko.observable(false);
 
     // Warn on URL change if dirty
     if (preventUnsaved !== false) {
@@ -628,17 +629,36 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return true;
     });
-
     
-    self.hasBlankInstitution = ko.computed(function() {
-//        console.log("In hasBlankInstitution");
-        for (var i=0; i<self.contents().length; i++) {
-            if (self.contents()[i].institution() == "") { 
-                return true; 
-            }
-        }
-        return false;
-    });
+ //   console.log("modes are " + JSON.stringify(urls));
+
+//    self.otherFieldsEmpty = ko.computed(function() {
+//        if (self.department() == "" && self.title() == "") {
+//            return true;        
+//        }
+//        else return false;
+//    });
+//  
+    
+    
+//    self.otherFieldsEmpty = ko.computed(function() {
+////        console.log("In hasBlankInstitution");
+//        //If in Jobs, set other non required Jobs fields, if in Schools, set the schools fields
+//            if (modes.crud="/api/v1/settings/jobs/")   
+//                for (var i=0; i<self.contents().length; i++) {                
+//                    if (self.contents()[i].department() == "" && self.contents()[i].title() == "") { 
+//                        return true; 
+//                }
+//            }
+//            else if (modes.crud="/api/v1/settings/schools/") 
+//                for (var i=0; i<self.contents().length; i++) {                
+//                    if (self.contents()[i].department() == "" && self.contents()[i].degree() == "") { 
+//                        return true; 
+//                }
+//
+//        }
+//        return false;
+//    });
     
 //    self.hasBlankObject = ko.computed(function() {
 ////        console.log("In hasBlankInstitution");
@@ -728,7 +748,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
     self.setOriginal = function() {
         self.originalItems = [];
         for (var i=0; i<self.contents().length; i++) {
-            self.contents()[i].hasBlankInstitution = self.hasBlankInstitution();
+ //           self.contents()[i].hasBlankInstitution = self.hasBlankInstitution();
 //            self.contents()[i].hasBlankObject = self.hasBlankObject();
             self.contents()[i].setOriginal();
             self.originalItems.push(self.contents()[i].originalValues());
@@ -770,17 +790,15 @@ ListViewModel.prototype.unserialize = function(data) {
 ListViewModel.prototype.serialize = function() {
     self = this;
     var contents = [];
-    if (self.hasBlankInstitution())
-        console.log("In serialize, hasBlankInstitution");
-        console.log("In serialize, contents is " + JSON.stringify(self.contents()));
+//         console.log("In serialize, contents is " + JSON.stringify(self.contents()));
     
     if (self.contents().length !== 0 && typeof(self.contents()[0].serialize() !== undefined)) {
         for (var i=0; i < self.contents().length; i++) {
- //           if (!self.contents()[i].requiredFieldEmpty()) {
+            // If the requiredField is empty, it will not save it.  
+            if (!self.contents()[i].requiredFieldEmpty()) {
  //           console.log("self.contents()[" + i + "].hasBlankInstitution is " + self.contents()[i].hasBlankInstitution);
-                
                 contents.push(self.contents()[i].serialize());
- //           }
+            }
         }
     }
     else {
@@ -821,12 +839,6 @@ var JobViewModel = function() {
         else return false;
     });
 
-   self.departmentAndTitleFieldsEmpty = ko.computed(function() {
-        if (self.department() == "" && self.title() == "") {
-            return true;        
-        }
-        else return false;
-    });
     
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
@@ -861,6 +873,14 @@ var SchoolViewModel = function() {
         }
         else return false;
     });
+    
+//    self.otherFieldsEmpty = ko.computed(function() {
+//        if (self.department() == "" && self.degree() == "") {
+//            return true;        
+//        }
+//        else return false;
+//    });
+
 
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
