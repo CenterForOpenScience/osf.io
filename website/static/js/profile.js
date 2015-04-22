@@ -38,7 +38,8 @@ var SerializeMixin = function() {};
 
 /** Serialize to a JS Object. */
 SerializeMixin.prototype.serialize = function() {
-    return ko.toJS(this);
+    var self = this;
+    return ko.toJS(self);
 };
 
 SerializeMixin.prototype.unserialize = function(data) {
@@ -206,12 +207,13 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
 
     // Must be set after isValid is defined in inherited view models
     self.hasValidProperty = ko.observable(false);
+    self.requiredFieldEmpty = ko.observable(false);
 
     // Warn on URL change if dirty
     if (preventUnsaved !== false) {
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
-                return 'There are unsaved changes to your settings.';
+                return 'You have unsaved changes to your settings.';
             }
         });
     }
@@ -219,17 +221,17 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     // Warn on tab change if dirty
     $('body').on('show.bs.tab', function() {
         if (self.dirty()) {
-            $osf.growl('There are unsaved changes to your settings.',
+            $osf.growl('There are unsaved changes.',
                     'Please save or discard your changes before switching ' +
                     'tabs.');
             return false;
         }
         return true;
     });
-
-    this.message = ko.observable();
-    this.messageClass = ko.observable();
-    this.showMessages = ko.observable(false);
+    
+    self.message = ko.observable();
+    self.messageClass = ko.observable();
+    self.showMessages = ko.observable(false);
 };
 
 BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
@@ -250,10 +252,11 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 BaseViewModel.prototype.handleSuccess = function() {
-    if ($.inArray('view', this.modes) >= 0) {
-        this.mode('view');
+    var self = this;
+    if ($.inArray('view', self.modes) >= 0) {
+        self.mode('view');
     } else {
-        this.changeMessage(
+        self.changeMessage(
             'Settings updated',
             'text-success',
             5000
@@ -262,9 +265,11 @@ BaseViewModel.prototype.handleSuccess = function() {
 };
 
 BaseViewModel.prototype.handleError = function(response) {
+    var self = this;
+ //   console.log("in BaseViewModel.prototype.handleError, response is " + JSON.stringify(response));
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
-    this.changeMessage(
+    self.changeMessage(
         msg,
         'text-danger',
         5000
@@ -280,16 +285,17 @@ BaseViewModel.prototype.fetch = function(callback) {
     callback = callback || noop;
     $.ajax({
         type: 'GET',
-        url: this.urls.crud,
+        url: self.urls.crud,
         dataType: 'json',
-        success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self)],
-        error: this.handleError.bind(this, 'Could not fetch data')
+        success: [self.unserialize.bind(self), self.setOriginal.bind(self), callback.bind(self)],
+        error: self.handleError.bind(self, 'Could not retrieve your data')
     });
 };
 
 BaseViewModel.prototype.edit = function() {
-    if (this.editable() && this.editAllowed) {
-        this.mode('edit');
+    var self = this;
+    if (self.editable() && this.editAllowed) {
+        self.mode('edit');
     }
 };
 
@@ -297,7 +303,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
     var self = this;
     event && event.preventDefault();
 
-    if (this.dirty()) {
+    if (self.dirty()) {
         bootbox.confirm({
             title: 'Discard changes?',
             message: 'Are you sure you want to discard your unsaved changes?',
@@ -319,20 +325,29 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-    if (this.hasValidProperty() && this.isValid()) {
-        $osf.putJSON(
-            this.urls.crud,
-            this.serialize()
-        ).done(
-            this.handleSuccess.bind(this)
-        ).done(
-            this.setOriginal.bind(this)
-        ).fail(
-            this.handleError.bind(this)
-        );
-    } else {
-        this.showMessages(true);
+    var self = this;
+//    console.log("In BaseViewModel.prototype.submit, self is " + data);
+    if (self.hasValidProperty() && self.isValid()) {
+        if (self.requiredFieldEmpty()) {
+            $osf.growl('Please enter Required field before pressing "Save"');            
+        }
+          else {
+            $osf.putJSON(
+                self.urls.crud,
+                self.serialize()
+            ).done(
+                self.handleSuccess.bind(self)
+            ).done(
+                self.setOriginal.bind(self)
+            ).fail(
+                self.handleError.bind(self)
+            );
+        } 
+    } 
+    else {
+            self.showMessages(true);
     }
+
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -346,7 +361,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
-
+    
     self.trackedProperties = [
         self.full,
         self.given,
@@ -359,6 +374,37 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+    
+   self.requiredFieldEmpty = ko.computed(function() {
+        if (self.full() == "") {
+        return true;        
+        }
+        else return false;
+    });
+
+var myViewModel = ko.validatedObservable({
+   property1: ko.computed(function() {
+       return  self.full;
+   }).extend({ required: true })
+});
+
+
+//     self.validatedFields = ko.validatedObservable($.extend({}, self.trackedProperties));
+
+// self.isValid2 = ko.computed(function() {
+//         return self.validatedFields.isValid();
+//     });
+
+    
+//    var result = ko.validation.group(self, { deep: true });
+    
+//    self.fullIsValid = ko.computed(function() {
+//        return self.full.isValid()
+//    });
+    
+//    console.log("self.full().isvalid is " + ko.toJS(self.full.isValid()));
+
+    
     self.hasValidProperty(true);
 
     self.citations = ko.observable();
@@ -510,6 +556,7 @@ var SocialViewModel = function(urls, modes) {
         self, 'github', 'https://github.com/'
     );
 
+    
     self.trackedProperties = [
         self.personal,
         self.orcid,
@@ -582,16 +629,49 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return true;
     });
 
+    
     self.hasBlankInstitution = ko.computed(function() {
 //        console.log("In hasBlankInstitution");
-        // return index of blank item if blank
         for (var i=0; i<self.contents().length; i++) {
             if (self.contents()[i].institution() == "") { 
-                return i; 
+                return true; 
             }
         }
         return false;
     });
+    
+//    self.hasBlankObject = ko.computed(function() {
+////        console.log("In hasBlankInstitution");
+////        for (var i=0; i<self.tracked().length; i++) {
+//            if (self.institution == "" &&
+//                self.department == "")
+//                return true; 
+//            else 
+//                return false;
+//    });
+    
+    
+//    self.hasBlankContentObject = ko.computed(function() {
+//        console.log("In hasBlankContentObject");
+//        for (var i=0; i<self.contents().length; i++) {
+//            if (self.contents()[i].trackedProperties)
+//            for (var j=0; i < self.contents()[i].trackedProperties.length; j++) {
+//                if (self.contents()[i].trackedProperties[j] != null)
+//                    return true
+//            }
+//        }
+//        return false;    
+//            
+//            //            for (var j=0; i< self.contents()[i].trackedProperties().length; j++) {
+////                if (!trackedProperties) { 
+////                    return false; 
+////                }
+////            }
+////        }
+////        if (typeof self.contents()[0].trackedProperties() !== undefined)
+////            return self.contents()[0].trackedProperties();
+////        else return "yourmomma"
+//    });
 
     
     self.hasMultiple = ko.computed(function() {
@@ -621,6 +701,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
     };
 
 
+
     /** Restore all items in the list to their original state
         *
         * Emulates the interface of TrackedMixin.restoreOriginal
@@ -647,6 +728,8 @@ var ListViewModel = function(ContentModel, urls, modes) {
     self.setOriginal = function() {
         self.originalItems = [];
         for (var i=0; i<self.contents().length; i++) {
+            self.contents()[i].hasBlankInstitution = self.hasBlankInstitution();
+//            self.contents()[i].hasBlankObject = self.hasBlankObject();
             self.contents()[i].setOriginal();
             self.originalItems.push(self.contents()[i].originalValues());
         }
@@ -655,12 +738,14 @@ var ListViewModel = function(ContentModel, urls, modes) {
 ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
 ListViewModel.prototype.addContent = function() {
-    this.contents.push(new this.ContentModel(this));
+    var self = this;
+    self.contents.push(new self.ContentModel(self));
 };
 
 ListViewModel.prototype.removeContent = function(content) {
-    var idx = this.contents().indexOf(content);
-    this.contents.splice(idx, 1);
+    var self = this;
+    var idx = self.contents().indexOf(content);
+    self.contents.splice(idx, 1);
 };
 
 ListViewModel.prototype.unserialize = function(data) {
@@ -687,15 +772,19 @@ ListViewModel.prototype.serialize = function() {
     var contents = [];
     if (self.hasBlankInstitution())
         console.log("In serialize, hasBlankInstitution");
-        console.log("In serialize, contents is " + self.contents());
+        console.log("In serialize, contents is " + JSON.stringify(self.contents()));
     
-    if (this.contents().length !== 0 && typeof(this.contents()[0].serialize() !== undefined)) {
-        for (var i=0; i < this.contents().length; i++) {
-            contents.push(this.contents()[i].serialize());
+    if (self.contents().length !== 0 && typeof(self.contents()[0].serialize() !== undefined)) {
+        for (var i=0; i < self.contents().length; i++) {
+ //           if (!self.contents()[i].requiredFieldEmpty()) {
+ //           console.log("self.contents()[" + i + "].hasBlankInstitution is " + self.contents()[i].hasBlankInstitution);
+                
+                contents.push(self.contents()[i].serialize());
+ //           }
         }
     }
     else {
-        contents = ko.toJS(this.contents);
+        contents = ko.toJS(self.contents);
     }
     console.log("In serialize, contents is " + JSON.stringify(contents));
     return {contents: contents};
@@ -724,6 +813,21 @@ var JobViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+    
+    self.requiredFieldEmpty = ko.computed(function() {
+        if (self.institution() == "") {
+            return true;        
+        }
+        else return false;
+    });
+
+   self.departmentAndTitleFieldsEmpty = ko.computed(function() {
+        if (self.department() == "" && self.title() == "") {
+            return true;        
+        }
+        else return false;
+    });
+    
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -750,6 +854,14 @@ var SchoolViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+    
+    self.requiredFieldEmpty = ko.computed(function() {
+        if (self.institution() == "") {
+        return true;        
+        }
+        else return false;
+    });
+
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -757,6 +869,9 @@ var JobsViewModel = function(urls, modes) {
     var self = this;
     ListViewModel.call(self, JobViewModel, urls, modes);
     self.fetch();
+    
+//    self.isValid = ListViewModel.prototype.isValid;
+    
 };
 JobsViewModel.prototype = Object.create(ListViewModel.prototype);
 
@@ -769,26 +884,26 @@ var SchoolsViewModel = function(urls, modes) {
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
 var Names = function(selector, urls, modes) {
-    this.viewModel = new NameViewModel(urls, modes);
-    $osf.applyBindings(this.viewModel, selector);
-    window.nameModel = this.viewModel;
+    self.viewModel = new NameViewModel(urls, modes);
+    $osf.applyBindings(self.viewModel, selector);
+    window.nameModel = self.viewModel;
 };
 
 var Social = function(selector, urls, modes) {
-    this.viewModel = new SocialViewModel(urls, modes);
-    $osf.applyBindings(this.viewModel, selector);
-    window.social = this.viewModel;
+    self.viewModel = new SocialViewModel(urls, modes);
+    $osf.applyBindings(self.viewModel, selector);
+    window.social = self.viewModel;
 };
 
 var Jobs = function(selector, urls, modes) {
-    this.viewModel = new JobsViewModel(urls, modes);
-    $osf.applyBindings(this.viewModel, selector);
-    window.jobsModel = this.viewModel;
+    self.viewModel = new JobsViewModel(urls, modes);
+    $osf.applyBindings(self.viewModel, selector);
+    window.jobsModel = self.viewModel;
 };
 
 var Schools = function(selector, urls, modes) {
-    this.viewModel = new SchoolsViewModel(urls, modes);
-    $osf.applyBindings(this.viewModel, selector);
+    self.viewModel = new SchoolsViewModel(urls, modes);
+    $osf.applyBindings(self.viewModel, selector);
 };
 
 module.exports = {

@@ -1,6 +1,7 @@
 <script id="profileSocial" type="text/html">
 
     <div data-bind="if: mode() === 'edit'">
+<pre>{{ko.toJSON($data)}}</pre>
 
         <form role="form" data-bind="submit: submit">
 
@@ -90,7 +91,7 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-                    >Submit</button>
+                    >Save</button>
 
             </div>
 

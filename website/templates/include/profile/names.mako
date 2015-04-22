@@ -1,10 +1,11 @@
 <script id="profileName" type="text/html">
 
     <form role="form" data-bind="submit: submit">
+<pre>{{ko.toJSON($data)}}</pre>
 
         <div class="form-group">
             <label>Full Name (e.g. Rosalind Elsie Franklin)</label>
-            <input class="form-control" data-bind="value: full" />
+            <input class="form-control" data-bind="value: full"  placeholder="Required"/>
         </div>
 
         <span class="help-block">
@@ -19,7 +20,7 @@
         </div>
 
         <div class="form-group">
-            <label>Given Name (e.g. Rosalind)</label>
+            <label>Given Name (e.g. Rosalind)</label>       
             <input class="form-control" data-bind="value: given" />
         </div>
 

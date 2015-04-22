@@ -12,7 +12,9 @@
         <div id="signUp" class="anchor"></div>
         <div id="signUpScope" class="col-sm-4 col-md-offset-1 img-rounded hpSignUp">
             <form data-bind="submit: submit">
-              <div class="form-group"
+<pre>{{ko.toJSON($data)}}</pre>
+
+<div class="form-group"
                 data-bind="css: {'has-error': fullName() && !fullName.isValid(),
                                 'has-success': fullName() && fullName.isValid()}">
                     <label class="placeholder-replace" style="display:none">Full Name</label>

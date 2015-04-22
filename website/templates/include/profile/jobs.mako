@@ -2,7 +2,7 @@
 
     <div data-bind="if: mode() === 'edit'">
 <pre>{{ko.toJSON($data)}}</pre>
-        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
+        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: true}">
 
             <div data-bind="sortable: {
                     data: contents,
@@ -111,7 +111,7 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-                    >Submit</button>
+                    >Save</button>
 
             </div>
 
