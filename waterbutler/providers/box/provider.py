@@ -29,21 +29,27 @@ class BoxProvider(provider.BaseProvider):
             return p.WaterButlerPath('/', _ids=[self.folder])
 
         parts = path.strip('/').split('/')
-        folder_or_file = 'folders' if path.endswith('/') or len(parts) > 1 else 'files'
 
-        try:
+        if len(parts) > 2 or not path.endswith('/'):
+            is_folder = False
             response = yield from self.make_request(
                 'get',
-                self.build_url(folder_or_file, parts[0]),
-                expects=(200, ),
+                self.build_url('files', parts[0], fields='path_collection,name,id'),
+                expects=(200, 404),
                 throws=exceptions.MetadataError,
             )
-            data = yield from response.json()
-        except exceptions.MetadataError as e:
-            if e.code == 404:
-                return p.WaterButlerPath('/'.join(('', parts[0])), _ids=(self.folder, None), folder=path.endswith('/'))
-            raise
+            if response.status == 404:
+                return p.WaterButlerPath('/'.join(('', parts[1])), _ids=(self.folder, None), folder=False)
+        else:
+            is_folder = True
+            response = yield from self.make_request(
+                'get',
+                self.build_url('folders', parts[0], fields='path_collection,name,id'),
+                expects=(200,),
+                throws=exceptions.MetadataError,
+            )
 
+        data = yield from response.json()
         names, ids = zip(*[(x['name'], x['id']) for x in data['path_collection']['entries'] + [data]])
 
         try:
@@ -51,11 +57,11 @@ class BoxProvider(provider.BaseProvider):
         except ValueError:
             raise Exception  # TODO
 
-        if len(parts) == 2:
+        if len(parts) == 2 and data['name'] != parts[1]:
             ids += (None, )
             names += (parts[1], )
 
-        return p.WaterButlerPath('/'.join(('',) + names), _ids=ids, folder=path.endswith('/'))
+        return p.WaterButlerPath('/'.join(('',) + names), _ids=ids, folder=is_folder)
 
     def can_intra_move(self, other):
         return self == other
