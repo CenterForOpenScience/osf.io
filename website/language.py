@@ -72,6 +72,21 @@ EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a hre
 
 INVALID_EMAIL_CONFIRM_TOKEN = 'This confirmation link is invalid. Please <a href="/login/">log in</a> to continue.'
 
+CANNOT_MERGE_ACCOUNTS_SHORT = 'Cannot Merge Accounts'
+
+CANNOT_MERGE_ACCOUNTS_LONG = 'Accounts cannot be merged due to a conflict.'
+
+MERGE_COMPLETE = 'Accounts successfully merged.'
+
+MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
+
+MERGE_CONFIRMATION_REQUIRED_LONG = (
+    'This email is confirmed to another account. '
+    '<a href="?confirm_merge">Click here</a> to merge account '
+    '<em>{user_to_merge.username}</em> with the account '
+    '<em>{user.username}</em>.'
+)
+
 # Node Actions
 
 BEFORE_REGISTER_HAS_POINTERS = (

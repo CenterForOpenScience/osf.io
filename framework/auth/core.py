@@ -767,13 +767,26 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return record['token'] == token
 
-    def confirm_email(self, token):
+    def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self._get_unconfirmed_email_for_token(token)
 
         # If this email is confirmed on another account, abort
-        if User.find(Q('emails', 'iexact', email)).count() > 0:
-            raise exceptions.DuplicateEmailError()
+        try:
+            user_to_merge = User.find_one(Q('emails', 'iexact', email))
+        except NoResultsFound:
+            user_to_merge = None
+
+        if user_to_merge and not user_to_merge.can_be_merged:
+            raise exceptions.MergeConflictError()
+
+        if user_to_merge and merge:
+            self.merge_user(user_to_merge)
+        elif user_to_merge:
+            raise exceptions.MergeConfirmedRequiredError(
+                user=self,
+                user_to_merge=user_to_merge,
+            )
 
         # If another user has this email as its username, get it
         try:
