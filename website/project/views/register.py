@@ -16,7 +16,7 @@ from framework.forms.utils import process_payload, unprocess_payload
 from website import settings
 from website.exceptions import (
     InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
-    InvalidEmbargoApprovalToken,
+    InvalidEmbargoApprovalToken, InvalidEmbargoDisapprovalToken,
 )
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
@@ -250,7 +250,28 @@ def node_registration_embargo_disapprove(auth, token, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
-    raise NotImplementedError
+    if not node.pending_embargo:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending an embargo.'
+        })
+
+    try:
+        node.embargo.disapprove_embargo(auth.user, token)
+        node.embargo.save()
+    except InvalidEmbargoDisapprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except PermissionsError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your disapproval has been accepted and the embargo has been cancelled.')
+    return redirect(node.web_url_for('view_project'))
 
 @must_be_valid_project
 @must_be_contributor_or_public
