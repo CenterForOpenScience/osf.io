@@ -1061,7 +1061,23 @@ function _fangornToolbar () {
                         )
                     ])
             ]);  
-    }    
+    }
+    if(tb.options.iconState.mode === 'rename'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
+                        m('.col-xs-3.tb-buttons-col', 
+                            m('.fangorn-toolbar.pull-right', 
+                                [
+                                renameButton.call(tb),
+                                toolbarDismissIcon.call(tb)
+                                ]
+                            )
+                        )
+                    ])
+            ]);  
+    }
+
 } 
 
 /** 
