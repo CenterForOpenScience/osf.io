@@ -226,7 +226,6 @@ def confirm_email_get(**kwargs):
     else:
         status.push_status_message(language.CONFIRMED_EMAIL, 'success')
 
-
     return framework.auth.authenticate(user, response=response)
 
 
