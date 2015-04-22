@@ -1124,6 +1124,37 @@ function toolbarDismissIcon (){
     ]);
  }
 
+ function renameButton (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-info', { 
+            onclick : function () { 
+                _renameEvent.call(tb);
+            }
+        }, [
+        m('i.fa.fa-pencil'),
+        m('span.hidden-xs', 'Rename')
+    ]);
+ }
+
+ function _renameEvent () {
+    var tb = this;
+    // var val = $.trim($('#renameInput').val());
+    // if(tb.multiselected.length !== 1 || val.length < 1){
+    //     tb.options.iconState.mode = 'bar'; 
+    //     return; 
+    // }
+    // var item = tb.multiselected[0];
+    // var theItem = item.data;
+    // //var url = needs url here
+    // postAction = $osf.postJSON(url, postData);
+    // postAction.done(function () {
+    //     tb.updateFolder(null, tb.find(1));
+    //     // Also update every
+    // }).fail($osf.handleJSONError);
+    // tb.options.iconState.mode = 'bar'; 
+}
+
+
 /**
  * When multiple rows are selected remove those that are not in the parent
  * @param {Array} rows List of item objects
