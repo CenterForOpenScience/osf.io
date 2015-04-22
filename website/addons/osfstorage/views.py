@@ -308,7 +308,6 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     is_anon = has_anonymous_link(node, Auth(private_key=payload.get('view_only')))
 
-
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
