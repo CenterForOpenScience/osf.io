@@ -1147,6 +1147,7 @@ function filterRowsNotInParent(rows) {
     tb.redraw();
 }   
 
+// Handles the up and down arrow keys since they do almost identical work
 function _multiSelectArrows (direction){
     var tb = this;
     var val = direction === 'down' ? 1 : -1;
@@ -1172,9 +1173,11 @@ function _handleArrowKeys (key) {
     }
     // if pressed key is left arrow
     if(key === 37) {
+        _keyboardFolderToggle.call(tb, 'close');
     }
     // if pressed key is right arrow
     if(key === 39) {
+        _keyboardFolderToggle.call(tb, 'open');
     }   
 }
 
