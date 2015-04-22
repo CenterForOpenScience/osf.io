@@ -1147,14 +1147,28 @@ function filterRowsNotInParent(rows) {
     tb.redraw();
 }   
 
+function _multiSelectArrows (direction){
+    var tb = this;
+    var val = direction === 'down' ? 1 : -1;
+    var selectedIndex = tb.returnRangeIndex(tb.multiselected[0].id);
+    var previousItemIndex = tb.showRange[selectedIndex+val];
+    var flatItem = tb.flatData[previousItemIndex].id;
+    var treeItem = tb.find(flatItem);
+    tb.clearMultiselect();
+    tb.multiselected.push(treeItem);
+    tb.highlightMultiselect.call(tb);
+    _fangornMultiselect.call(tb, null, treeItem);
+}
 
 function _handleArrowKeys (key) {
     var tb = this;
     // if pressed key is up arrow
     if(key === 38) {
+        _multiSelectArrows.call(tb, 'up');
     }
     // if pressed key is down arrow
     if(key === 40) {
+        _multiSelectArrows.call(tb,'down');
     }
     // if pressed key is left arrow
     if(key === 37) {
