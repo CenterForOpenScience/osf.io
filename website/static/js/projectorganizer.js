@@ -643,6 +643,9 @@ function _poResolveIcon(item) {
         if (type === 'component' || type === 'registeredComponent') {            
             iconType = componentIcons[category];
         }
+        if (type === 'registeredComponent') {
+            iconType += ' po-registered';
+        }
 
         var template = m('span', { 'class' : iconType});
         if (viewLink) {
@@ -671,7 +674,7 @@ function _poResolveIcon(item) {
     }
     if (item.data.isComponent) {
         if (item.data.isRegistration) {
-            return returnView('registeredComponent');
+            return returnView('registeredComponent', item.data.category);
         }else {
             return returnView('component', item.data.category);
         }

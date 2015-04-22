@@ -24,13 +24,11 @@ var request = $.getJSON(url, function(response) {
     var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
         return $.inArray(node.permissions, ['write', 'admin']) !== -1;
     });
-    // Filter out components and nodes for which user is not admin
-    var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
-        return node.category === 'project' && node.permissions === 'admin';
-    });
+
+    var registrationSelection = uploadSelection;
 
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-    $osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+    $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
     $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
 
     function ProjectCreateViewModel() {
