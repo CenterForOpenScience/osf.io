@@ -163,37 +163,13 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     contributed = user.node__contributed
 
     nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'eq', None)
-    ).sort('-title')
-
-    parents_to_exclude = contributed.find(
-        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
         Q('is_folder', 'eq', False)
-    )
+    ).sort('-title')
 
-    comps = contributed.find(
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', True)
-    )
-
-    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
-    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return return_value
-
+    keys = nodes.get_keys()
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):
