@@ -1161,6 +1161,19 @@ function _multiSelectArrows (direction){
     _fangornMultiselect.call(tb, null, treeItem);
 }
 
+// Handles the toggling of folders with the right and left arrow keypress 
+function _keyboardFolderToggle (action) {
+    var tb = this;
+    var item = tb.multiselected[0];
+    if(item.kind === 'folder') {
+        if((item.open === true && action === 'close') || (item.open === false && action === 'open'))  {
+            var index = tb.returnIndex(item.id);
+            tb.toggleFolder(index, null);
+        } 
+    }
+}
+
+// Handles what the up, down, left, right arrow keys do. 
 function _handleArrowKeys (key) {
     var tb = this;
     // if pressed key is up arrow
