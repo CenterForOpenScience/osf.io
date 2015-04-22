@@ -68,26 +68,25 @@ class BoxProvider(provider.BaseProvider):
                 raise Exception  # TODO
 
         if new_name is not None:
+            #TODO Research the search api endpoint
             resp = yield from self.make_request(
-                'OPTIONS',
-                self.build_url('files', 'content'),
-                data=json.dumps({
-                    'name': new_name,
-                    'parent': {
-                        'id': ids[-1]
-                    }
-                }),
-                headers={'Content-Type': 'application/json'},
-                expects=(200, 409),
+                'GET',
+                self.build_url('folders', ids[-1], 'items', fields='id,name,type'),
+                expects=(200,),
                 throws=exceptions.ProviderError
             )
 
-            if resp.status == 409:
-                data = yield from resp.json()
-                item = data['context_info']['conflicts']
+            data = yield from resp.json()
+            lower_name = new_name.lower()
+
+            try:
+                item = next(x for x in data['entries'] if x['name'].lower() == lower_name)
                 ids += (item['id'],)
                 names += (item['name'],)
                 is_folder = item['type'] == 'folder'
+            except StopIteration:
+                ids += (None,)
+                names += (new_name,)
 
         return p.WaterButlerPath('/'.join(names), _ids=ids, folder=is_folder)
 
