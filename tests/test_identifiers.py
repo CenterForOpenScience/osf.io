@@ -133,6 +133,7 @@ class TestIdentifierViews(OsfTestCase):
         assert_equal(res.json['doi'], 'FK424601')
         assert_equal(res.json['ark'], 'fk224601')
 
+    @httpretty.activate
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
@@ -166,6 +167,8 @@ class TestIdentifierViews(OsfTestCase):
         )
         assert_equal(res.status_code, 201)
 
+
+    @httpretty.activate
     def test_create_identifiers_exists(self):
         identifier = self.node._id
         doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
