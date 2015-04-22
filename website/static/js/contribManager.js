@@ -91,7 +91,16 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     });
     self.formatPermission = ko.computed(function() {
         var permission = self.permission();
-        return permission.charAt(0).toUpperCase() + permission.slice(1);
+        switch (permission) {
+            case "admin":
+                return "Administrator";
+            case "write":
+                return "Read + Write";
+            case "read":
+                return "Read";
+            default:
+                return permission.charAt(0).toUpperCase() + permission.slice(1);
+         }
     });
 
     self.canRemove = ko.computed(function(){
