@@ -42,8 +42,6 @@ def get_all_registrations_smart_folder(auth, **kwargs):
 def get_dashboard_nodes(node, auth):
     rv = []
     for child in reversed(node.nodes):
-        # (child.resolve()._id not in visited or node.is_folder) and
         if child is not None and not child.is_deleted and child.resolve().can_view(auth=auth) and node.can_view(auth):
-            # visited.append(child.resolve()._id)
             rv.append(child)
     return rv

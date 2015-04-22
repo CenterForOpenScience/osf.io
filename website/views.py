@@ -32,6 +32,8 @@ from website.util import projectorganizer as po_utils
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
+from website.settings import ALL_MY_PROJECTS_NAME
+from website.settings import ALL_MY_REGISTRATIONS_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -172,18 +174,16 @@ def get_dashboard_nodes(auth):
     contributed = user.node__contributed  # nodes user contributed to
 
     nodes = contributed.find(
+        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
     )
-    '''
-    # TODO: Store truthy values in a named constant available site-wide
+
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
         comps = contributed.find(
             # components only
             Q('category', 'ne', 'project') &
-            # parent is not in the nodes list
-            Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
             # exclude deleted nodes
             Q('is_deleted', 'eq', False) &
             # exclude registrations
@@ -191,8 +191,8 @@ def get_dashboard_nodes(auth):
         )
     else:
         comps = []
-    '''
-    nodes = list(nodes)  # + list(comps)
+
+    nodes = list(nodes) + list(comps)
     if request.args.get('permissions'):
         perm = request.args['permissions'].strip().lower()
         if perm not in permissions.PERMISSIONS:
