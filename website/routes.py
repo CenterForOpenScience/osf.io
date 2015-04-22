@@ -767,6 +767,13 @@ def make_url_map(app):
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
 
+        Rule(
+            '/ids/<category>/<path:value>/',
+            'get',
+            project_views.register.get_referent_by_identifier,
+            notemplate,
+        ),
+
         # Statistics
         Rule([
             '/project/<pid>/statistics/',
@@ -1155,6 +1162,26 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'post', project_views.register.node_register_template_page_post, json_renderer),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'get',
+            project_views.register.node_identifiers_get,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'post',
+            project_views.register.node_identifiers_post,
+            json_renderer,
+        ),
 
         # Statistics
         Rule([

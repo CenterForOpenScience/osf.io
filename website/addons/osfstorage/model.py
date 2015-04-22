@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import os
 import bson
 import logging
 
 import furl
-import pymongo
 
+import pymongo
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
 from modularodm.storage.base import KeyExistsException
@@ -14,7 +14,9 @@ from dateutil.parser import parse as parse_date
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
+from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
+
 from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
@@ -70,6 +72,21 @@ def copy_files(files, node_settings):
 class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     file_tree = fields.ForeignField('OsfStorageFileTree')
+    root_node = fields.ForeignField('OsfStorageFileNode')
+
+    # Temporary field to mark that a record has been migrated by the
+    # migrate_from_oldels scripts
+    _migrated_from_old_models = fields.BooleanField(default=False)
+
+    def on_add(self):
+        if self.root_node:
+            return
+
+        self.save()
+        root = OsfStorageFileNode(name='', kind='folder', node_settings=self)
+        root.save()
+        self.root_node = root
+        self.save()
 
     @property
     def has_auth(self):
@@ -136,16 +153,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         pass
 
 
+@unique_on(['path', 'node_settings'])
 class BaseFileObject(StoredObject):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('path', pymongo.ASCENDING),
-                ('node_settings', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
 
     path = fields.StringField(required=True, index=True)
     node_settings = fields.ForeignField(
@@ -416,11 +425,13 @@ class OsfStorageGuidFile(GuidFile):
             'key_or_list': [
                 ('node', pymongo.ASCENDING),
                 ('path', pymongo.ASCENDING),
+                ('_path', pymongo.ASCENDING),
             ],
             'unique': True,
         }
     ]
 
+    _path = fields.StringField(index=True)
     path = fields.StringField(required=True, index=True)
 
     @property
@@ -451,3 +462,66 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
+
+##### STUBBED MODEL REMOVE UPON MERGE @chrisseto #####
+@unique_on(['name', 'kind', 'parent', 'node_settings'])
+class OsfStorageFileNode(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
+
+    is_deleted = fields.BooleanField(default=False)
+    name = fields.StringField(required=True, index=True)
+    kind = fields.StringField(required=True, index=True)
+    parent = fields.ForeignField('OsfStorageFileNode', index=True)
+    versions = fields.ForeignField('OsfStorageFileVersion', list=True)
+    node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
+
+    def materialized_path(self):
+        def lineage():
+            current = self
+            while current:
+                yield current
+                current = current.parent
+
+        path = os.path.join(*reversed([x.name for x in lineage()]))
+        if self.kind == 'folder':
+            return '/{}/'.format(path)
+        return '/{}'.format(path)
+
+    def append_file(self, name, save=True):
+        assert self.kind == 'folder'
+
+        child = OsfStorageFileNode(
+            name=name,
+            kind='file',
+            parent=self,
+            node_settings=self.node_settings
+        )
+
+        if save:
+            child.save()
+
+        return child
+
+    def find_child_by_name(self, name):
+        assert self.kind == 'folder'
+
+        return self.__class__.find_one(
+            Q('name', 'eq', name) &
+            Q('kind', 'eq', 'file') &
+            Q('parent', 'eq', self)
+        )
+
+    @property
+    def path(self):
+        return '/{}{}'.format(self._id, '/' if self.kind == 'folder' else '')
+
+    def get_download_count(self, version=None):
+        """
+        :param int version: Optional one-based version index
+        """
+        parts = ['download', self.node_settings.owner._id, self._id]
+        if version is not None:
+            parts.append(version)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
+        return count or 0

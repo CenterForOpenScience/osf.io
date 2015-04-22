@@ -1,10 +1,13 @@
 import re
 import copy
+import logging
 import webcolors
 
 from werkzeug.contrib.atom import AtomFeed
 
 from website.util.sanitize import strip_html
+
+logger = logging.getLogger(__name__)
 
 
 COLORBREWER_COLORS = [(166, 206, 227), (31, 120, 180), (178, 223, 138), (51, 160, 44), (251, 154, 153), (227, 26, 28), (253, 191, 111), (255, 127, 0), (202, 178, 214), (106, 61, 154), (255, 255, 153), (177, 89, 40)]
@@ -114,7 +117,11 @@ def create_atom_feed(name, data, query, size, start, url, to_atom):
     )
 
     for doc in data:
-        feed.add(**to_atom(doc))
+        try:
+            feed.add(**to_atom(doc))
+        except ValueError as e:
+            logger.error('Atom feed error for source {}'.format(doc.get('source')))
+            logger.exception(e)
 
     return feed
 

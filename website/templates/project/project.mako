@@ -71,9 +71,15 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a rel="tooltip" title="Duplicate" data-placement="bottom"
-                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
-                            data-toggle="modal" data-target="#duplicateModal">
+                        <a
+                        % if is_project:
+                            class="btn btn-default"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                            data-target="#duplicateModal" data-toggle="modal"
+                        % else:
+                            class="btn btn-default disabled"
+                        % endif
+                            href="#">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
@@ -115,6 +121,24 @@
                 <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 | Last Updated:
                 <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                <span data-bind="if: hasIdentifiers()" class="scripted">
+                  <br />
+                    Identifiers:
+                    DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
+                    ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                </span>
+                <span data-bind="if: canCreateIdentifiers()" class="scripted">
+                  <!-- ko if: idCreationInProgress() -->
+                    <br />
+                      <i class="fa fa-spinner fa-lg fa-spin"></i>
+                        <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                  <!-- /ko -->
+
+                  <!-- ko ifnot: idCreationInProgress() -->
+                  <br />
+                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  <!-- /ko -->
+                </span>
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${node['category']}</span>
                 % elif node['description'] or 'write' in user['permissions']:

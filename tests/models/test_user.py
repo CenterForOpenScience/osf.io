@@ -2,8 +2,10 @@ from nose.tools import *
 
 from framework import auth
 from framework.auth import exceptions
+from framework.exceptions import PermissionsError
 from website import models
 from tests import base
+from tests.base import fake
 from tests import factories
 
 
@@ -74,6 +76,16 @@ class UserTestCase(base.OsfTestCase):
 
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
+    def test_add_unconfirmed_email_when_email_verifications_is_None(self):
+
+        self.user.email_verifications = None
+        self.user.save()
+        email = fake.email()
+        self.user.add_unconfirmed_email(email)
+        self.user.save()
+        assert_in(email, self.user.unconfirmed_emails)
+
     def test_unconfirmed_emails(self):
         assert_equal(
             self.user.unconfirmed_emails,
@@ -95,6 +107,11 @@ class UserTestCase(base.OsfTestCase):
             [self.unconfirmed.username]
         )
 
+        # email_verifications field may be None
+        self.user.email_verifications = None
+        self.user.save()
+        assert_equal(self.user.unconfirmed_emails, [])
+
     def test_remove_unconfirmed_email(self):
         self.user.add_unconfirmed_email('foo@bar.com')
         self.user.save()
@@ -105,7 +122,6 @@ class UserTestCase(base.OsfTestCase):
         self.user.save()
 
         assert_not_in('foo@bar.com', self.user.unconfirmed_emails)
-
 
     def test_confirm_email(self):
         token = self.user.add_unconfirmed_email('foo@bar.com')
@@ -137,3 +153,13 @@ class UserTestCase(base.OsfTestCase):
         confirmed = u.confirm_email(token)
         assert_true(confirmed)
         assert_true(u.is_confirmed)
+
+    def test_cannot_remove_primary_email_from_email_list(self):
+        with assert_raises(PermissionsError) as e:
+            self.user.remove_email(self.user.username)
+        assert_equal(e.exception.message, "Can't remove primary email")
+
+    def test_cannot_remove_primary_email_from_unconfirmed_list(self):
+        with assert_raises(PermissionsError) as e:
+            self.user.remove_unconfirmed_email(self.user.username)
+        assert_equal(e.exception.message, "Can't remove primary email")

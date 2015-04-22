@@ -5,9 +5,11 @@ if (window.contextVars.renderURL !== undefined) {
     FileRenderer.start(window.contextVars.renderURL, '#fileRendered');
 }
 
-new FileRevisions(
-    '#fileRevisions',
-    window.contextVars.node,
-    window.contextVars.file,
-    window.contextVars.currentUser.canEdit
-);
+$(document).ready(function() {
+    new FileRevisions(
+        '#fileRevisions',
+        window.contextVars.node,
+        window.contextVars.file,
+        window.contextVars.currentUser.canEdit
+    );
+});

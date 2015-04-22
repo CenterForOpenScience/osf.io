@@ -34,6 +34,16 @@ function donutGraph (data, vm) {
         },
         legend: {
             show: false
+        },
+        tooltip: {
+            format: {
+                name: function (name, ratio, id, index) {
+                    if (name === 'pubmed') {
+                        name = 'pubmed central';
+                    }
+                    return name; 
+                }
+            }
         }
     });
 }
@@ -64,7 +74,15 @@ function timeGraph (data) {
             show: false
         },
         tooltip: {
-          grouped: false
+            grouped: false,
+            format: {
+              name: function (name, ratio, id, index) {
+                  if (name === 'pubmed') {
+                      name = 'pubmed central';
+                  }
+                  return name; 
+              }
+            }
         }
     });
 }
@@ -128,7 +146,7 @@ Stats.controller = function(vm) {
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/search/?size=1',
+        url: '/api/v1/share/search/?size=1&v=1',
     }).then(function(data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;

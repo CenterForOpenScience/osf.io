@@ -21,20 +21,19 @@
                 <div class="panel-heading">Sign In</div>
                     <div class="panel-body">
                         <label for="username">Email Address</label>
-                        <input type="email" class="form-control" data-bind="value: username" name="username" placeholder="Enter your username" autofocus/>
+                        <input type="email" class="form-control" data-bind="value: username" name="username" placeholder="Enter your email address" autofocus/>
                         <label class="m-t-md" for="password">Password</label>
                         <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Enter your password">
 
-                        <fieldset class="pull-right">
-                            <button type="submit" class="btn btn-success m-t-md">Sign In</button>
+                        <fieldset>
+                            <a class="forget-password m-t-md" href="${ web_url_for('_forgot_password') }">Forgot Your Password?</a>
+                            <button type="submit" class="btn btn-success m-t-md pull-right">Sign In</button>
 
                         </fieldset>
                     </div>
             </div>
             <hr class="m-t-lg m-b-sm"/>
-            <h6 class="text-center text-muted text-300">
-                <a class="m-l-xl" href="${ web_url_for('_forgot_password') }">Forgot Your Password?</a>
-            </h6>
+            <h6 class="text-center text-muted text-300"><a href="${ web_url_for('index') }">Back to OSF</a></h6>
         </form>
     </div>
 
