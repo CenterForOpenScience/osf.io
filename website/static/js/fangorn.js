@@ -1148,6 +1148,22 @@ function filterRowsNotInParent(rows) {
 }   
 
 
+function _handleArrowKeys (key) {
+    var tb = this;
+    // if pressed key is up arrow
+    if(key === 38) {
+    }
+    // if pressed key is down arrow
+    if(key === 40) {
+    }
+    // if pressed key is left arrow
+    if(key === 37) {
+    }
+    // if pressed key is right arrow
+    if(key === 39) {
+    }   
+}
+
 
 
 /**
@@ -1187,6 +1203,16 @@ tbOptions = {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
         });
+
+        $(window).on('keydown', function(event){
+            var key = event.keyCode;
+            if(tb.multiselected.length === 1) {
+                _handleArrowKeys.call(tb, key);             
+            }
+
+        });
+
+
     },
     createcheck : function (item, parent) {
         return true;
