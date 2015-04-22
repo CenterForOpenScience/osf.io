@@ -63,7 +63,7 @@ def serialize_metadata_hgrid(item, node):
     return ret
 
 
-def serialize_revision(node, record, version, index):
+def serialize_revision(node, record, version, index, anon=False):
     """Serialize revision for use in revisions table.
 
     :param Node node: Root node
@@ -71,12 +71,18 @@ def serialize_revision(node, record, version, index):
     :param FileVersion version: The version to serialize
     :param int index: One-based index of version
     """
-    return {
-        'index': index,
-        'user': {
+
+    if anon:
+        user = None
+    else:
+        user = {
             'name': version.creator.fullname,
             'url': version.creator.url,
-        },
+        }
+
+    return {
+        'user': user,
+        'index': index,
         'date': version.date_created.isoformat(),
         'downloads': record.get_download_count(version=index),
     }
