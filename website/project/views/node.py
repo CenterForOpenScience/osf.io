@@ -111,8 +111,7 @@ def project_new_post(auth, **kwargs):
 @must_be_logged_in
 @must_be_valid_project
 def project_new_from_template(auth, node, **kwargs):
-    original_node = node
-    new_node = original_node.use_as_template(
+    new_node = node.use_as_template(
         auth=auth,
         changes=dict(),
     )
