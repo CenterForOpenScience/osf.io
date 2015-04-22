@@ -28,40 +28,68 @@ class BoxProvider(provider.BaseProvider):
         if path == '/':
             return p.WaterButlerPath('/', _ids=[self.folder])
 
-        parts = path.strip('/').split('/')
-
-        if len(parts) > 2 or not path.endswith('/'):
-            is_folder = False
-            response = yield from self.make_request(
-                'get',
-                self.build_url('files', parts[0], fields='path_collection,name,id'),
-                expects=(200, 404),
-                throws=exceptions.MetadataError,
-            )
-            if response.status == 404:
-                return p.WaterButlerPath('/'.join(('', parts[1])), _ids=(self.folder, None), folder=False)
-        else:
-            is_folder = True
-            response = yield from self.make_request(
-                'get',
-                self.build_url('folders', parts[0], fields='path_collection,name,id'),
-                expects=(200,),
-                throws=exceptions.MetadataError,
-            )
-
-        data = yield from response.json()
-        names, ids = zip(*[(x['name'], x['id']) for x in data['path_collection']['entries'] + [data]])
-
         try:
-            names, ids = names[ids.index(self.folder) + 1:], ids[ids.index(self.folder):]
+            obj_id, new_name = path.strip('/').split('/')
         except ValueError:
-            raise Exception  # TODO
+            obj_id, new_name = path.strip('/'), None
 
-        if len(parts) == 2 and data['name'] != parts[1]:
-            ids += (None, )
-            names += (parts[1], )
+        if path.endswith('/') or new_name is not None:
+            files_or_folders = 'folders'
+        else:
+            files_or_folders = 'files'
 
-        return p.WaterButlerPath('/'.join(('',) + names), _ids=ids, folder=is_folder)
+        response = yield from self.make_request(
+            'get',
+            self.build_url(files_or_folders, obj_id, fields='id,name,path_collection'),
+            expects=(200, 404),
+            throws=exceptions.MetadataError,
+        )
+
+        if response.status == 404:
+            if new_name is not None:
+                raise exceptions.MetadataError('Could not find {}'.format(path), code=404)
+
+            new_name = obj_id
+            is_folder = path.endswith('/')
+            names, ids = ('',), (self.folders,)
+        else:
+            data = yield from response.json()
+            names, ids = zip(*[
+                (x['name'], x['id'])
+                for x in
+                data['path_collection']['entries'] + [data]
+            ])
+
+            is_folder = files_or_folders == 'folders'
+
+            try:
+                names, ids = ('',) + names[ids.index(self.folder) + 1:], ids[ids.index(self.folder):]
+            except ValueError:
+                raise Exception  # TODO
+
+        if new_name is not None:
+            resp = yield from self.make_request(
+                'OPTIONS',
+                self.build_url('files', 'content'),
+                data=json.dumps({
+                    'name': new_name,
+                    'parent': {
+                        'id': ids[-1]
+                    }
+                }),
+                headers={'Content-Type': 'application/json'},
+                expects=(200, 409),
+                throws=exceptions.ProviderError
+            )
+
+            if resp.status == 409:
+                data = yield from resp.json()
+                item = data['context_info']['conflicts']
+                ids += (item['id'],)
+                names += (item['name'],)
+                is_folder = item['type'] == 'folder'
+
+        return p.WaterButlerPath('/'.join(names), _ids=ids, folder=is_folder)
 
     def can_intra_move(self, other):
         return self == other
