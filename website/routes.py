@@ -162,6 +162,8 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.dashboard_static, OsfWebRenderer('dashboard1.mako')),
+
 
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
@@ -234,6 +236,8 @@ def make_url_map(app):
             addon_views.get_addon_user_config,
             json_renderer,
         ),
+
+
     ], prefix='/api/v1')
 
     # OAuth
@@ -409,7 +413,7 @@ def make_url_map(app):
             '/confirm/<uid>/<token>/',
             'get',
             auth_views.confirm_email_get,
-            # View will either redirect or display error message
+            # View will either redirect or display error message    
             OsfWebRenderer('error.mako', render_mako_string)
         ),
 

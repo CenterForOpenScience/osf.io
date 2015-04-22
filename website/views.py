@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import os
 import logging
 import itertools
 import math
 import httplib as http
+import requests
 
 from modularodm import Q
 from flask import request
@@ -277,21 +279,27 @@ def dashboard(auth):
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
+    print "****"
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
             }
 
 @must_be_logged_in
-def dashboard_static(auth):
-    import pdb; pdb.set_trace()
+def dashboard_static(auth, **kwargs):
     url = request.url
+    response = requests.get('http://localhost:3000')
+    print request.url
+    return response
+
+    # content = os.system("phantomjs /website/static/js/staticSnapshot.js {0}". format(url))
+
+
 
 
 def paginate(items, total, page, size):
     start = page * size
     paginated_items = itertools.islice(items, start, start + size)
     pages = math.ceil(total / float(size))
-
     return paginated_items, pages
 
 
