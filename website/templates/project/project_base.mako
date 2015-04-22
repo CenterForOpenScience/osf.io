@@ -58,11 +58,16 @@ ${next.body()}
             ## TODO: Abstract me
             id: nodeId,
             title: ${json.dumps(node['title']) | n},
-            urls: {api: nodeApiUrl, web: ${json.dumps(node['url'])}},
+            urls: {
+                api: nodeApiUrl, 
+                web: ${json.dumps(node['url'])},
+                update: ${json.dumps(node['update_url'])}   
+            },
             isPublic: ${json.dumps(node.get('is_public', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)},
-            anonymous: ${json.dumps(node['anonymous'])}
+            anonymous: ${json.dumps(node['anonymous'])},
+            category: '${node['category_short']}'
         }
     });
 
