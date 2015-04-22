@@ -304,7 +304,7 @@ function _fangornAddedFile(treebeard, file) {
 function _fangornCanDrop(treebeard, item) {
     var canDrop = resolveconfigOption.call(treebeard, item, 'canDrop', [item]);
     if (canDrop === null) {
-        canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit && !item.data.permissions.diskSavingMode;
+        canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
     }
     return canDrop;
 }
@@ -642,7 +642,7 @@ function _fangornActionColumn (item, col) {
 
     // Upload button if this is a folder
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
-    if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit && !item.data.permissions.diskSavingMode) {
+    if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions.edit) {
         buttons.push({
             name: '',
             icon: 'fa fa-upload',
