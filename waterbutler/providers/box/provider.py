@@ -29,15 +29,20 @@ class BoxProvider(provider.BaseProvider):
             return p.WaterButlerPath('/', _ids=[self.folder])
 
         parts = path.strip('/').split('/')
-        folder_or_file = 'folders' if path.endswith('/') else 'files'
+        folder_or_file = 'folders' if path.endswith('/') or len(parts) > 1 else 'files'
 
-        response = yield from self.make_request(
-            'get',
-            self.build_url(folder_or_file, parts[0]),
-            expects=(200, ),
-            throws=exceptions.MetadataError,
-        )
-        data = yield from response.json()
+        try:
+            response = yield from self.make_request(
+                'get',
+                self.build_url(folder_or_file, parts[0]),
+                expects=(200, ),
+                throws=exceptions.MetadataError,
+            )
+            data = yield from response.json()
+        except exceptions.MetadataError as e:
+            if e.code == 404:
+                return p.WaterButlerPath('/'.join(('', parts[0])), _ids=(self.folder, None), folder=path.endswith('/'))
+            raise
 
         names, ids = zip(*[(x['name'], x['id']) for x in data['path_collection']['entries'] + [data]])
 
@@ -50,7 +55,7 @@ class BoxProvider(provider.BaseProvider):
             ids += (None, )
             names += (parts[1], )
 
-        return p.WaterButlerPath('/'.join(('',) + names), _ids=ids, folder=folder_or_file)
+        return p.WaterButlerPath('/'.join(('',) + names), _ids=ids, folder=path.endswith('/'))
 
     def can_intra_move(self, other):
         return self == other
