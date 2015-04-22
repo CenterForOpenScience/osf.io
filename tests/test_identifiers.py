@@ -69,7 +69,7 @@ class TestMetadataGeneration(OsfTestCase):
         assert_equal(len(creators.getchildren()), len(self.node.visible_contributors))
 
         publisher = root.find('{%s}publisher' % metadata.NAMESPACE)
-        assert_equal(publisher.text, 'OSF')
+        assert_equal(publisher.text, 'Open Science Framework')
 
         pub_year = root.find('{%s}publicationYear' % metadata.NAMESPACE)
         assert_equal(pub_year.text, str(self.node.registered_date.year))
@@ -136,12 +136,13 @@ class TestIdentifierViews(OsfTestCase):
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
-        url.path.segments.append('{0}{1}'.format(settings.DOI_NAMESPACE, identifier))
+        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
+        url.path.segments.append(doi)
         httpretty.register_uri(
             httpretty.PUT,
             url.url,
             body=to_anvl({
-                'success': '{doi}{ident} | {ark}{ident}'.format(
+                'success': '{doi}osf.io/{ident} | {ark}osf.io/{ident}'.format(
                     doi=settings.DOI_NAMESPACE,
                     ark=settings.ARK_NAMESPACE,
                     ident=identifier,
@@ -167,8 +168,9 @@ class TestIdentifierViews(OsfTestCase):
 
     def test_create_identifiers_exists(self):
         identifier = self.node._id
+        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
         url = furl.furl('https://ezid.cdlib.org/id')
-        url.path.segments.append('{0}{1}'.format(settings.DOI_NAMESPACE, identifier))
+        url.path.segments.append(doi)
         httpretty.register_uri(
             httpretty.PUT,
             url.url,
@@ -179,7 +181,7 @@ class TestIdentifierViews(OsfTestCase):
             httpretty.GET,
             url.url,
             body=to_anvl({
-                'success': '{0}{1}'.format(settings.DOI_NAMESPACE, identifier),
+                'success': doi,
             }),
             status=200,
         )

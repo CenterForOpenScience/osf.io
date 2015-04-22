@@ -53,7 +53,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         doi=doi,
         title=node.title,
         creators=creators,
-        publisher='OSF',
+        publisher='Open Science Framework',
         publication_year=node.registered_date.year,
         pretty_print=pretty_print
     )

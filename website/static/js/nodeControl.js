@@ -112,6 +112,7 @@ var ProjectViewModel = function(data) {
     self.parent = data.parent_node;
     self.doi = ko.observable(data.node.identifiers.doi);
     self.ark = ko.observable(data.node.identifiers.ark);
+    self.idCreationInProgress = ko.observable(false);
     self.watchedCount = ko.observable(data.node.watched_count);
     self.userIsWatching = ko.observable(data.user.is_watching);
     self.dateRegistered = new osfHelpers.FormattableDate(data.node.registered_date);
@@ -277,6 +278,10 @@ var ProjectViewModel = function(data) {
     };
 
     self.createIdentifiers = function() {
+        // Only show loading indicator for slow responses
+        var timeout = setTimeout(function() {
+            self.idCreationInProgress(true); // show loading indicator
+        }, 500);
         return $.post(
             self.apiUrl + 'identifiers/'
         ).done(function(resp) {
@@ -285,6 +290,9 @@ var ProjectViewModel = function(data) {
         }).fail(function() {
             osfHelpers.growl('Error', 'Could not create identifiers.', 'danger');
             Raven.captureMessage('Could not create identifiers');
+        }).always(function() {
+            clearTimeout(timeout);
+            self.idCreationInProgress(false); // hide loading indicator
         });
     };
 };
@@ -309,7 +317,7 @@ function NodeControl (selector, data, options) {
 
 NodeControl.prototype.init = function() {
     var self = this;
-    $.osf.applyBindings(self.viewModel, self.$element[0]);
+    osfHelpers.applyBindings(self.viewModel, this.selector);
 };
 
 module.exports = {

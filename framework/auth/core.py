@@ -623,6 +623,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
+        if email == self.username:
+            raise PermissionsError("Can't remove primary email")
         for token, value in self.email_verifications.iteritems():
             if value.get('email') == email:
                 del self.email_verifications[token]
@@ -632,6 +634,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def remove_email(self, email):
         """Remove a confirmed email"""
+        if email == self.username:
+            raise PermissionsError("Can't remove primary email")
         if email in self.emails:
             self.emails.remove(email)
             signals.user_email_removed.send(self, email=email)
