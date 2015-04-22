@@ -68,13 +68,17 @@ class WaterButlerPath:
             raise exceptions.CreateFolderError('Path can not be root', code=400)
 
     @classmethod
-    def from_parts(cls, parts, folder=False):
-        _ids, _parts = [], ['']
+    def from_parts(cls, parts, folder=False, **kwargs):
+        _ids, _parts = [], []
         for part in parts:
             _ids.append(part.identifier)
             _parts.append(part.raw)
 
-        return cls('/'.join(_parts), _ids=_ids, folder=folder)
+        path = '/'.join(_parts)
+        if parts and not path:
+            path = '/'
+
+        return cls(path, _ids=_ids, folder=folder, **kwargs)
 
     def __init__(self, path, _ids=(), prepend=None, folder=None):
         self.__class__.generic_path_validation(path)
