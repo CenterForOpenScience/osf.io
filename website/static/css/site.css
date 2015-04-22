@@ -876,7 +876,7 @@ h1.node-title, h1.node-parent-title {
     width:60%;
 }
 .wiki-nav-closed .icon-stack-base {
-    font-size: 20px;
+    font-size: 24px;
 }
 .wiki-nav-closed .icon-plus {
     margin-left: -14px;
@@ -2372,6 +2372,9 @@ span#profileFullname{
 .wiki-sidenav h4 {
     margin-top:20px;
     margin-bottom: 0;
+}
+.wiki-sidenav .wiki-menu {
+    margin-top: 5px;
 }
 .osf-sidenav.wiki-sidenav ul>li a:hover {
     background: transparent;

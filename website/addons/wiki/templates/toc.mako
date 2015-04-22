@@ -7,14 +7,21 @@
             <div class="col-xs-10">
                 ${node['category'].title()} Wiki Pages
             </div>
-            <div class="col-xs-2">
-                % if user['can_edit']:
-                    <a href="#" data-toggle="modal" data-target="#newWiki">
-                        <i class="fa fa-plus-circle pointer fa-lg" data-toggle="tooltip" title="New" data-placement="left"></i>
-                    </a>
-                % endif
-            </div>
         </div>
+        % if user['can_edit']:
+            <div class="row">
+                <div class="col-xs-2 wiki-sidenav">
+                    <a href="#" data-toggle="modal" data-target="#newWiki">
+                        <i class="fa fa-plus-circle pointer fa-lg wiki-menu" data-toggle="tooltip" title="New" data-placement="top"></i>
+                    </a>
+                </div>
+                <div class="col-xs-2">
+                    <a href="#" data-toggle="modal" data-target="#settings">
+                        <i class="fa fa-cog pointer fa-lg wiki-menu" data-toggle="tooltip" title="Settings" data-placement="top"></i>
+                    </a>
+                </div>
+            </div>
+        % endif
     </h4>
 
     
