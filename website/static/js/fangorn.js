@@ -780,6 +780,23 @@ function _fangornDefineToolbar (item) {
         }
     }
     if(item.data.provider && item.data.permissions && item.data.permissions.edit) {
+        buttons.push(
+            { name : 'renameItem', template : function(){
+            return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Change the name of the Collection or project',
+                    'data-placement' : 'bottom',
+                    onclick : function(event) {  
+                        self.options.iconState.mode = 'rename';
+                    }
+                }, [
+                m('i.fa.fa-font'),
+                m('span','Rename')
+            ]);
+        }}
+        )
+    }
+    
     item.icons = buttons;
 }
 
