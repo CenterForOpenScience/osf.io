@@ -50,7 +50,6 @@ var NodeClient = oop.extend(base.BaseClient, {
         this._request({url: '/nodes/',
                       query: query})
             .done(function(resp) {
-                console.log(resp);
                 var nodes = $.map(resp.data, function(nodeData) {
                     return new Node(nodeData);
                 });
