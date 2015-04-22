@@ -3552,7 +3552,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
         nodes = res.json['nodes']
-        assert_equal(len(nodes), 1)
+        assert_equal(len(nodes), 2)
 
         project_serialized = nodes[0]
         assert_equal(project_serialized['id'], project._primary_key)
