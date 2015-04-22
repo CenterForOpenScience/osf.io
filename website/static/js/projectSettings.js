@@ -3,9 +3,67 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var ko = require('knockout');
 var $osf = require('js/osfHelpers');
+var oop = require('js/oop');
+var ChangeMessageMixin = require('js/changeMessage');
 
-var ProjectSettings = {};
+var NodeCategorySettings = oop.extend(
+    ChangeMessageMixin, 
+    {
+        constructor: function(category, categories, updateUrl) {
+            this.super.constructor.call(this);
+
+            var self = this;
+
+            if (!updateUrl) {
+                throw new Error('Trying to instatiate NodeCategorySettings view model without an update URL');
+            }
+
+            self.categories = categories;
+            self.category = ko.observable(category);
+            self.updateUrl = updateUrl;
+
+            self.selectedCategory = ko.observable(category);
+            self.dirty = ko.observable(false);
+            self.selectedCategory.subscribe(function(value) {
+                if (value !== self.category()) {
+                    self.dirty(true);
+                }
+            });
+        },
+        updateSuccess: function(newcategory) {
+            var self = this;
+            self.changeMessage('Category updated successfully', 'text-success');
+            self.category(newcategory);
+            self.dirty(false);
+        },
+        updateError: function(xhr, status, error) {
+            var self = this;
+            self.changeMessage('Error updating category, please try again.', 'text-danger');
+        },
+        updateCategory: function() {
+            var self = this;
+            return $osf.putJSON(self.updateUrl, {
+                    category: self.selectedCategory()
+                })
+                .then(function(response) {
+                    return response.updated_fields.category;
+                })
+                .done(self.updateSuccess.bind(self))
+                .fail(self.updateError.bind(self));
+        },
+        cancelUpdateCategory: function() {
+            var self = this;
+            self.selectedCategory(self.category());
+            self.dirty(false);
+            self.resetMessage();
+        }
+    });
+
+var ProjectSettings = {
+    NodeCategorySettings: NodeCategorySettings
+};
 
 /**
  *  returns a random name from this list to use as a confirmation string
@@ -51,6 +109,7 @@ var scientists = [
     'Tyson',
     'Turing'
 ];
+
 function randomScientist() {
     return scientists[Math.floor(Math.random() * scientists.length)];
 }
@@ -75,17 +134,20 @@ request.done(function(response) {
 });
 request.fail(function(xhr, textStatus, err) {
     Raven.captureMessage('Error requesting contributors', {
-        url: contribURL, textStatus: textStatus, err: err,
+        url: contribURL,
+        textStatus: textStatus,
+        err: err,
     });
 });
 
 
 /**
-    * Pulls a random name from the scientist list to use as confirmation string
-*  Ignores case and whitespace
-*/
+ * Pulls a random name from the scientist list to use as confirmation string
+ *  Ignores case and whitespace
+ */
 ProjectSettings.getConfirmationCode = function(nodeType) {
     var key = randomScientist();
+
     function successHandler(response) {
         // Redirect to either the parent project or the dashboard
         window.location.href = response.url;
@@ -100,11 +162,11 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
     if (contribs.length) {
         // Build contributor unordered list
         var contriblist = '';
-        $.each(contribs, function(i, b){
+        $.each(contribs, function(i, b) {
             contriblist += '<li>' + b.fullname + '</li>';
         });
         contribsMsg = ' Contributors include:</p>' +
-            '<ol>' + contriblist +'</ol>' +
+            '<ol>' + contriblist + '</ol>' +
             '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
             ((moreContribs > 0) ? 'and <strong>' + moreContribs + '</strong> others.</p>' : '');
     }
