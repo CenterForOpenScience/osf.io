@@ -23,11 +23,15 @@ var ChangeMessageMixin = oop.defclass({
         self.messageClass(cssClass);
         if (timeout) {
             // Reset message after timeout period
-            setTimeout(function () {
+            window.setTimeout(function () {
                 self.message('');
                 self.messageClass('text-info');
             }, timeout);
         }
+    },
+    resetMessage: function() {
+        this.message('');
+        this.messageClass('text-info');        
     }
 });
 
