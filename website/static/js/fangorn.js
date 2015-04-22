@@ -779,6 +779,7 @@ function _fangornDefineToolbar (item) {
             }});
         }
     }
+    if(item.data.provider && item.data.permissions && item.data.permissions.edit) {
     item.icons = buttons;
 }
 
