@@ -179,27 +179,20 @@ def migrate_children(node_settings, dry=True):
     del children
 
 
-def main(nworkers, worker_id, dry=True, catchup=True):
+def main(nworkers, worker_id, dry=True):
     if not dry:
         scripts_utils.add_file_logger(logger, __file__)
         logger.info('Not running in dry mode, changes WILL be made')
     else:
         logger.info('Running in dry mode, changes NOT will be made')
 
-    if catchup:
-        logger.info('Running in catchup mode, looping over ALL OsfStorageNodeSettings objects')
-        to_migrate = model.OsfStorageNodeSettings.find()
-    else:
-        to_migrate = model.OsfStorageNodeSettings.find(Q('root_node', 'eq', None))
-
+    to_migrate = model.OsfStorageNodeSettings.find(Q('_migrated_from_old_models', 'ne', True))
     if to_migrate.count() == 0:
         logger.info('No nodes to migrate; exiting...')
         return
 
-    count = 0
     failed = 0
     logger.info('Found {} nodes to migrate'.format(to_migrate.count()))
-    progress_bar = progressbar.ProgressBar(maxval=math.ceil(to_migrate.count() / nworkers)).start()
 
     for node_settings in to_migrate:
         if hash(node_settings._id) % nworkers != worker_id:
@@ -209,8 +202,10 @@ def main(nworkers, worker_id, dry=True, catchup=True):
             with TokuTransaction():
                 migrate_node_settings(node_settings, dry=dry)
                 migrate_children(node_settings, dry=dry)
-            count += 1
-            progress_bar.update(count)
+                if not dry:
+                    node_settings.reload()
+                    node_settings._migrated_from_old_models = True
+                    node_settings.save()
         except Exception as error:
             logger.error('Could not migrate file tree from {}'.format(node_settings.owner._id))
             logger.exception(error)
@@ -266,7 +261,6 @@ if __name__ == '__main__':
     worker_id = int(sys.argv[2])
 
     dry = 'dry' in sys.argv
-    catchup = 'catchup' in sys.argv
 
     if 'debug' in sys.argv:
         logger.setLevel(logging.DEBUG)
@@ -276,4 +270,4 @@ if __name__ == '__main__':
         logger.setLevel(logging.ERROR)
 
     init_app(set_backends=True, routes=False)
-    main(nworkers, worker_id, dry=dry, catchup=catchup)
+    main(nworkers, worker_id, dry=dry)
