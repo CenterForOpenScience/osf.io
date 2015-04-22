@@ -181,23 +181,14 @@ class BoxProvider(provider.BaseProvider):
         return BoxFileMetadata(data['entries'][0], self.folder).serialized(), file_id is None
 
     @asyncio.coroutine
-    def delete(self, path, file_id=None, folder_id=None, **kwargs):
-        if not file_id or not folder_id:
-            path = BoxPath(path)
-            metadata = yield from self.metadata(str(path), raw=True, folder=path.is_dir)
-            if path.is_file:
-                file_id = metadata['id']
-            else:
-                folder_id = metadata['id']
-
-        if file_id:
-            url = self.build_url('files', file_id)
+    def delete(self, path, **kwargs):
+        if path.is_file:
+            url = self.build_url('files', path.identifier)
         else:
-            url = self.build_url('folders', folder_id, recursive=True)
+            url = self.build_url('folders', path.identifier, recursive=True)
 
         yield from self.make_request(
-            'DELETE',
-            url,
+            'DELETE', url,
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
