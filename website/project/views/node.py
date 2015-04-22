@@ -3,6 +3,7 @@ import logging
 import httplib as http
 import math
 from itertools import islice
+import warnings
 
 from flask import request
 from modularodm import Q
@@ -19,6 +20,7 @@ from website import language
 
 from website.util import paths
 from website.util import rubeus
+from website.util import js_to_python
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -30,7 +32,7 @@ from website.project.decorators import (
 )
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -298,9 +300,12 @@ def node_setting(auth, node, **kwargs):
         'level': node.comment_level,
     }
 
+    ret['categories'] = Node.CATEGORY_MAP
+    ret['categories'].update({
+        'project': 'Project'
+    })
+
     return ret
-
-
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the node addons config page.
@@ -534,6 +539,24 @@ def togglewatch_post(auth, node, **kwargs):
         'watched': user.is_watching(node)
     }
 
+@must_be_logged_in
+@must_be_valid_project
+@must_not_be_registration
+@must_have_permission(ADMIN)
+def update_node(auth, node, **kwargs):
+    try:
+        return {
+            'updated_fields': {
+                key: getattr(node, key)
+                for key in
+                node.update(js_to_python(request.json))
+            }
+        }
+    except NodeUpdateError as e:
+        raise HTTPError(400, data=dict(
+            message_short="Failed to update attribute '{0}'".format(e.key),
+            message_long=e.reason
+        ))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -665,6 +688,7 @@ def _view_project(node, auth, primary=False):
             'id': node._primary_key,
             'title': node.title,
             'category': node.category_display,
+            'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
             'url': node.url,
@@ -672,6 +696,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url': node.absolute_url,
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
+            'update_url': node.api_url_for('update_node'),
             'in_dashboard': in_dashboard,
             'is_public': node.is_public,
             'date_created': iso8601format(node.date_created),
