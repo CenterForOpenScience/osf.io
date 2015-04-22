@@ -28,7 +28,6 @@ from website.util import rubeus
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
-from website.util.serializers import ProjectOrganizerSerializer
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
@@ -123,7 +122,6 @@ def find_dashboard(user):
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
     user = auth.user
-
     if nid is None:
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
@@ -142,6 +140,7 @@ def get_dashboard(auth, nid=None, **kwargs):
     return_value['id'] = user._id
     return return_value
 
+
 @must_be_logged_in
 def get_all_projects_smart_folder(auth, **kwargs):
     # TODO: Unit tests
@@ -150,18 +149,37 @@ def get_all_projects_smart_folder(auth, **kwargs):
     contributed = user.node__contributed
 
     nodes = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
+    ).sort('-title')
+
+    parents_to_exclude = contributed.find(
+        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
-    ).sort('-title')
-    index = []
-    ret = []
-    for node in [n.root for n in nodes]:
-        if node._id in index:
-            continue
-        index.append(node._id)
-        ret.append(node)
-    return ret
+    )
+
+    comps = contributed.find(
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
+        # is not in the nodes list
+        Q('_id', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', False)
+    )
+
+    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
+    return return_value
+
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
