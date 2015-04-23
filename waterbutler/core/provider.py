@@ -145,15 +145,16 @@ class BaseProvider(metaclass=abc.ABCMeta):
             kwargs = {}
 
         if self.can_intra_move(dest_provider, src_path):
-                return (yield from self.intra_move(*args, **kwargs))
+            return (yield from self.intra_move(*args))
 
         if src_path.is_dir:
-            return (yield from self._folder_file_op(self.move, *args, **kwargs))
+            metadata, created = yield from self._folder_file_op(self.move, *args, **kwargs)
+        else:
+            metadata, created = yield from self.copy(*args, handle_naming=False, **kwargs)
 
-        res = yield from self.copy(*args, handle_naming=False, **kwargs)
         yield from self.delete(src_path)
 
-        return res
+        return metadata, created
 
     @asyncio.coroutine
     def copy(self, dest_provider, src_path, dest_path, rename=None, conflict='replace', handle_naming=True):
