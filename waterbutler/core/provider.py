@@ -310,6 +310,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
     def metadata(self, **kwargs):
         pass
 
+    @abc.abstractmethod
+    def validate_path(self, path, **kwargs):
+        pass
+
     def revisions(self, **kwargs):
         return []  # TODO Raise 405 by default h/t @rliebz
 
