@@ -348,39 +348,3 @@ class BoxProvider(provider.BaseProvider):
 
         path = '/'.join(reversed(path))
         return '/' + os.path.join(path, filename)
-
-    @asyncio.coroutine
-    def _check_conflict(self, path, kind='files'):
-        """Check if there would be a conflict upon upload/copy/moving/etc
-        a file to the given path
-
-        :param str url: The url to check against
-        :param BoxPath path: The path in question
-
-        :rtype: None or str
-        :returns: The id of the existing file or None
-        """
-
-        resp = yield from self.make_request(
-            'OPTIONS',
-            self.build_url(kind, 'content'),
-            data=json.dumps({
-                'name': path.name,
-                'parent': {
-                    'id': path._id
-                }
-            }),
-            headers={'Content-Type': 'application/json'},
-            expects=(200, 409),
-            throws=exceptions.ProviderError
-        )
-
-        if resp.status == 200:
-            return None
-
-        data = yield from resp.json()
-
-        if data['context_info']['conflicts']['type'] != 'file':
-            raise exceptions.ProviderError(code=409)
-
-        return data['context_info']['conflicts']['id']
