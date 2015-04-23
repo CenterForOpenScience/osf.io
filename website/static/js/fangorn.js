@@ -1212,6 +1212,50 @@ function filterRowsNotInParent(rows) {
     tb.redraw();
 }   
 
+/**
+ * Hook for the drag start event on jquery
+ * @param event jQuery UI drggable event object
+ * @param ui jQuery UI draggable ui object
+ * @private
+ */
+function _fangornDragStart(event, ui) {
+    var itemID = $(event.target).attr('data-id'),
+        item = this.find(itemID);
+    if (this.multiselected.length < 2) {
+        this.multiselected = [item];
+    }
+}
+
+/**
+ * Hook for the drop event of jQuery UI droppable
+ * @param event jQuery UI droppable event object
+ * @param ui jQuery UI droppable ui object
+ * @private
+ */
+function _fangornDrop(event, ui) {
+    var tb = this;
+    var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected,
+        folder = tb.find($(event.target).attr('data-id'));
+
+    // Run drop logic here
+        _dropLogic.call(tb, event, items, folder);
+
+}
+
+/**
+ * Hook for the over event of jQuery UI droppable
+ * @param event jQuery UI droppable event object
+ * @param ui jQuery UI droppable ui object
+ * @private
+ */
+function _fangornOver(event, ui) {
+    var tb = this;
+    var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected,
+        folder = tb.find($(event.target).attr('data-id')),
+        dragState = _dragLogic.call(tb, event, items, ui);
+
+}
+
 
 /**
  * OSF-specific Treebeard options common to all addons.
