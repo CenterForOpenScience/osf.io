@@ -1738,12 +1738,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
-        '''
-        if self.node__parent:
-            parent = self.node__parent[0]
-            parent.logs.append(log)
-            parent.save()
-        '''
         return log
 
     @property
