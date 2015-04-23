@@ -47,23 +47,22 @@ class S3Provider(provider.BaseProvider):
     def validate_path(self, path, **kwargs):
         return WaterButlerPath(path)
 
-    def can_intra_copy(self, dest_provider):
-        return type(self) == type(dest_provider)
+    def can_intra_copy(self, dest_provider, path=None):
+        return type(self) == type(dest_provider) and not getattr(path, 'is_dir', False)
 
-    def can_intra_move(self, dest_provider):
-        return type(self) == type(dest_provider)
+    def can_intra_move(self, dest_provider, path=None):
+        return type(self) == type(dest_provider) and not getattr(path, 'is_dir', False)
 
     @asyncio.coroutine
-    def intra_copy(self, dest_provider, source_options, dest_options):
+    def intra_copy(self, dest_provider, source_path, dest_path):
         """Copy key from one S3 bucket to another. The credentials specified in
         `dest_provider` must have read access to `source.bucket`.
         """
-        dest_path = S3Path(dest_options['path'])
-        source_path = S3Path(source_options['path'])
+        exists = yield from dest_provider.exists(dest_path)
         dest_key = dest_provider.bucket.new_key(dest_path.path)
-        exists = yield from dest_provider.exists(**dest_options)
+
         # ensure no left slash when joining paths
-        source_path = '/' + os.path.join(self.settings['bucket'], source_options['path'].lstrip('/'))
+        source_path = '/' + os.path.join(self.settings['bucket'], source_path.path)
         headers = {'x-amz-copy-source': source_path}
         url = dest_key.generate_url(
             settings.TEMP_URL_SECS,
@@ -71,13 +70,12 @@ class S3Provider(provider.BaseProvider):
             headers=headers,
         )
         yield from self.make_request(
-            'PUT',
-            url,
+            'PUT', url,
             headers=headers,
             expects=(200, ),
             throws=exceptions.IntraCopyError,
         )
-        return (yield from dest_provider.metadata(dest_options['path'])), not exists
+        return (yield from dest_provider.metadata(dest_path)), not exists
 
     @asyncio.coroutine
     def download(self, path, accept_url=False, version=None, **kwargs):
