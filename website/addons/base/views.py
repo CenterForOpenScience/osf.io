@@ -255,6 +255,16 @@ def addon_view_or_download_file_legacy(**kwargs):
     if kwargs.get('vid'):
         query_params['version'] = kwargs['vid']
 
+    # If provider is OSFstorage, check existence of requested file in the filetree
+    # This prevents invalid GUIDs from being created
+    if provider == 'osfstorage':
+        file_tree = node.get_addon('osfstorage').file_tree
+        if not file_tree or (file_tree and not file_tree.find_by_path(path)):
+            raise HTTPError(
+                404, data=dict(message_short='File not found',
+                               message_long='You requested a file that does not exist.')
+            )
+
     return redirect(
         node.web_url_for(
             'addon_view_or_download_file',
