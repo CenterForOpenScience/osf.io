@@ -7,6 +7,7 @@ from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.box import settings
 from waterbutler.providers.box.metadata import BoxRevision
@@ -26,7 +27,7 @@ class BoxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def validate_path(self, path, **kwargs):
         if path == '/':
-            return p.WaterButlerPath('/', _ids=[self.folder])
+            return WaterButlerPath('/', _ids=[self.folder])
 
         try:
             obj_id, new_name = path.strip('/').split('/')
@@ -50,7 +51,6 @@ class BoxProvider(provider.BaseProvider):
                 raise exceptions.MetadataError('Could not find {}'.format(path), code=404)
 
             new_name = obj_id
-            is_folder = path.endswith('/')
             names, ids = ('',), (self.folders,)
         else:
             data = yield from response.json()
@@ -60,12 +60,12 @@ class BoxProvider(provider.BaseProvider):
                 data['path_collection']['entries'] + [data]
             ])
 
-            is_folder = files_or_folders == 'folders'
-
             try:
                 names, ids = ('',) + names[ids.index(self.folder) + 1:], ids[ids.index(self.folder):]
             except ValueError:
                 raise Exception  # TODO
+
+        is_folder = path.endswith('/')
 
         if new_name is not None:
             #TODO Research the search api endpoint
@@ -88,7 +88,7 @@ class BoxProvider(provider.BaseProvider):
                 ids += (None,)
                 names += (new_name,)
 
-        return p.WaterButlerPath('/'.join(names), _ids=ids, folder=is_folder)
+        return WaterButlerPath('/'.join(names), _ids=ids, folder=is_folder)
 
     def can_intra_move(self, other):
         return self == other
