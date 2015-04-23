@@ -647,9 +647,16 @@ function _fangornActionColumn (item, col) {
             name: '',
             icon: 'fa fa-upload',
             'tooltip' : 'Upload files',
-
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
+        });
+    } else {
+        buttons.push({
+            name: '',
+            icon: '',
+            'tooltip' : '',
+            css: 'col-xs',
+            onclick: _blank
         });
     }
     //Download button if this is an item
@@ -671,6 +678,15 @@ function _fangornActionColumn (item, col) {
                 'onclick' : _removeEvent
             });
         }
+    }
+    if (item.data.permissions.edit) {
+        buttons.push({
+            name: '',
+            icon: 'fa fa-bell-slash-o',
+            'tooltip': 'Notify',
+            css: 'fangorn-clickable btn btn-default btn-xs',
+            onclick: _uploadEvent
+        });
     }
     // Build the template for icons
     return buttons.map(function (btn) {
@@ -1038,6 +1054,10 @@ Fangorn.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     }
+};
+
+function _blank() {
+  return null;
 };
 
 Fangorn.ButtonEvents = {
