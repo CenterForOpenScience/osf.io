@@ -111,4 +111,3 @@ class NodePointersList(generics.ListAPIView, NodeMixin):
 
     def get_queryset(self):
         return self.get_node().nodes_pointer
-
