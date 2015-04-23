@@ -13,11 +13,6 @@
         </div><!-- end div -->
 
         <div class="project-organizer" id="projectOrganizerScope">
-            <%include file="projectGridTemplates.html"/>
-            <div class="project-details">
-            </div>
-
-
             <div id="project-grid"></div>
             <div id="organizer-legends">
                 <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>

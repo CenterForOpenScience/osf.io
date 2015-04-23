@@ -2491,6 +2491,15 @@ span#profileFullname{
   padding-left: 20px;
   padding-right: 20px;
 }
+.unselectable {
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+
+  /* No support for these yet, use at own risk */
+  -o-user-select: none;
+  user-select: none;          
+}
 .inline {
     display: inline-block;
 }
@@ -2638,4 +2647,69 @@ span#profileFullname{
 }
 .m-xl {
     margin: 50px;
+}
+
+
+/* COS logo spin */
+.logo-spin {
+    -webkit-animation: spin 3s infinite linear, opacity 3s infinite linear;
+    animation: spin 3s infinite linear, opacity 3s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+@-webkit-keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@-moz-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@-webkit-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
 }

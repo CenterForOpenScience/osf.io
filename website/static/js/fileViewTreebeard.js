@@ -22,6 +22,8 @@ function FileViewTreebeard(data) {
         showFilter: false,
         title: undefined,
         hideColumnTitles: true,
+        multiselect : false,
+        placement : 'fileview',
         filterTemplate: function () {
             var tb = this;
             return m("input.pull-left.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
@@ -34,6 +36,8 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
             $('.osf-panel-header.osf-panel-header-flex').show();
+            tb.select('.tb-header-row').hide();
+
         },
         ondataload: function () {
             var tb = this;
@@ -75,7 +79,9 @@ function FileViewTreebeard(data) {
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
                 selectClass = 'fangorn-hover';
-            }
+            }   
+
+            item.icons = []; // In this view there won't be toolbar items. 
 
             var defaultColumns = [
                 {
