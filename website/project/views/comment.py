@@ -262,7 +262,7 @@ def add_comment(**kwargs):
         gravatar_url=auth.user.gravatar_url,
         content=content,
         page_type=get_page_type(page, node),
-        page_title=get_root_target_title(page, comment.root_target),
+        page_title=get_root_target_title(page, comment.root_target).title(),
         provider=comment.root_target.provider if page == 'files' else '',
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
