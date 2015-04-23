@@ -25,7 +25,7 @@ from website.addons.twofactor.tests import _valid_code
 from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.model import ensure_schemas
-from website.util import web_url_for
+from website.util import web_url_for, api_url_for
 
 
 class TestDisabledUser(OsfTestCase):
@@ -1138,6 +1138,40 @@ class TestConfirmingEmail(OsfTestCase):
         self.confirmation_token = self.user.get_confirmation_token(
             self.user.username
         )
+
+    def test_cannot_remove_another_user_email(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        url = api_url_for('update_user')
+        header = {'id': user1.username, 'emails': [{'address': user1.username}]}
+        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_cannnot_make_primary_email_for_another_user(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        email = 'test@cos.io'
+        user1.emails.append(email)
+        user1.save()
+        url = api_url_for('update_user')
+        header = {'id': user1.username,
+                  'emails': [{'address': user1.username, 'primary': False, 'confirmed': True},
+                            {'address': email, 'primary': True, 'confirmed': True}
+                  ]}
+        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_cannnot_add_email_for_another_user(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        email = 'test@cos.io'
+        url = api_url_for('update_user')
+        header = {'id': user1.username,
+                  'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
+                            {'address': email, 'primary': False, 'confirmed': False}
+                  ]}
+        res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_redirects_to_settings(self):
         res = self.app.get(self.confirmation_url).follow()

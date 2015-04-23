@@ -37,7 +37,7 @@ class TokuTransaction(object):
             if exc_type:
                 commands.rollback(self.database)
                 self.pending = False
-                raise exc_val
+                raise exc_type, exc_val, exc_tb
             try:
                 commands.commit(self.database)
                 self.pending = False

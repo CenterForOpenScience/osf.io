@@ -1,4 +1,4 @@
-# encoding: utf-8
+from __future__ import unicode_literals
 
 import httplib
 import logging
@@ -16,6 +16,7 @@ from website.project.decorators import (
     must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
+from website.project.model import has_anonymous_link
 
 from website.models import NodeLog
 from website.addons.osfstorage import model
@@ -228,6 +229,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
 def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
     path = payload.get('path')
+    is_anon = has_anonymous_link(node, Auth(private_key=payload.get('view_only')))
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -236,7 +238,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     return {
         'revisions': list(reversed([
-            utils.serialize_revision(node, record, version, idx)
+            utils.serialize_revision(node, record, version, idx, anon=is_anon)
             for idx, version in enumerate(reversed(record.versions))
         ]))
     }
