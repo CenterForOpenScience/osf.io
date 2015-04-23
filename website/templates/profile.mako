@@ -154,7 +154,7 @@
                         "kwargs" : {"sortable" : true}
                     }'></div>
             % elif user['is_profile']:
-                <div>
+                <div class="help-block">
                     You have no public projects.
                     <p>
                         Find out how to make your projects
@@ -175,7 +175,7 @@
                         "kwargs" : {"sortable" : true}
                     }'></div>
             % elif user['is_profile']:
-                <div>
+                <div class="help-block">
                     You have no public components.
                     <p>
                         Find out how to make your components
