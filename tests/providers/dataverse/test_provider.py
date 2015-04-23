@@ -347,7 +347,7 @@ class TestMetadata:
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
 
-        result = yield from provider.metadata(path='/', state='draft')
+        result = yield from provider.metadata(path='/', version='latest')
 
         assert isinstance(result, list)
         assert len(result) == 3
@@ -363,7 +363,7 @@ class TestMetadata:
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
 
-        result = yield from provider.metadata(path='/', state='draft')
+        result = yield from provider.metadata(path='/', version='latest')
 
         assert isinstance(result, dict)
         assert result['provider'] == 'dataverse'
@@ -376,7 +376,7 @@ class TestMetadata:
     def test_metadata_published(self, provider, native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
-        result = yield from provider.metadata(path='/', state='published')
+        result = yield from provider.metadata(path='/', version='latest-published')
 
         assert isinstance(result, list)
         assert len(result) == 3
@@ -392,7 +392,7 @@ class TestMetadata:
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
 
-        result = yield from provider.metadata(path='/', state='published')
+        result = yield from provider.metadata(path='/', version='latest-published')
 
         assert isinstance(result, dict)
         assert result['provider'] == 'dataverse'
@@ -407,7 +407,7 @@ class TestMetadata:
         aiohttpretty.register_json_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.MetadataError):
-            yield from provider.metadata(path='/', state='draft')
+            yield from provider.metadata(path='/', version='latest')
 
     @async
     @pytest.mark.aiohttpretty
