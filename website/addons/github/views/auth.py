@@ -38,7 +38,6 @@ def github_remove_user_auth(auth, node_addon, **kwargs):
     """Removes auth from GithubNodeSettings """
 
     node_addon.clear_auth()
-    node_addon.reload()
     return GitHubSerializer(
         node_settings=node_addon,
         user_settings=auth.user.get_addon('github'),
