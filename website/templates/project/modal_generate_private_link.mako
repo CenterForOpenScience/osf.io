@@ -26,7 +26,8 @@
                             <input type="checkbox" data-bind="checked: anonymous"/>
                             <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review).
                             <br>
-                            <i>Ensure the wiki pages, files, and registration supplements you have created do not contain identifying information</i>
+                            <i>Ensure the wiki pages, files, and registration supplements you have created
+                                and addons you have linked to project do not contain identifying information</i>
                         </label>
                     </div>
 
