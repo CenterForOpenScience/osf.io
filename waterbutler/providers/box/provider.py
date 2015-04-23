@@ -97,27 +97,30 @@ class BoxProvider(provider.BaseProvider):
         return self == other
 
     def intra_copy(self, destination_provider, source_options, destination_options):
-        source_path = BoxPath(source_options['path'], _id=self.folder)
-        destination_path = BoxPath(destination_options['path'], _id=destination_provider.folder)
+        src_path = source_options['path']
+        dest_path = destination_options['path']
 
-        #TODO Refactor this into handle_name_conflict
-        conflicting_id = yield from destination_provider._check_conflict(destination_path)
+        if dest_path.is_dir:
+            dest_path = yield from destination_provider.validate_path('/{}/{}'.format(dest_path.identifier, src_path.name))
 
-        if conflicting_id:
-            if destination_options.get('conflict') != 'keep':
-                yield from destination_provider.delete(file_id=conflicting_id, **destination_options)
+        if dest_path.identifier is not None:
+            if destination_options.get('conflict') == 'keep':
+                destination_options['path'] = dest_path
+                dest_path, meta = yield from destination_provider.handle_name_conflict(**destination_options)
             else:
-                while conflicting_id:
-                    destination_path.increment_name()
-                    conflicting_id = yield from destination_provider._check_conflict(destination_path)
+                yield from destination_provider.delete(**destination_options)
 
         resp = yield from self.make_request(
             'POST',
-            self.build_url('files', source_path._id, 'copy'),
+            self.build_url(
+                'files' if src_path.is_file else 'folders',
+                src_path.identifier,
+                'copy'
+            ),
             data=json.dumps({
-                'name': destination_path.name,
+                'name': dest_path.name,
                 'parent': {
-                    'id': destination_path._id
+                    'id': dest_path.parent.identifier
                 }
             }),
             headers={'Content-Type': 'application/json'},
@@ -127,8 +130,11 @@ class BoxProvider(provider.BaseProvider):
 
         data = yield from resp.json()
 
-        data['fullPath'] = self._build_full_path(data['path_collection']['entries'][1:], destination_path.name)
-        return BoxFileMetadata(data, destination_provider.folder).serialized(), conflicting_id is None
+        return self._serialize_item(data), dest_path.identifier is None
+
+    # TODO can just change parent ID
+    # def intra_move(self):
+    #     pass
 
     @property
     def default_headers(self):
