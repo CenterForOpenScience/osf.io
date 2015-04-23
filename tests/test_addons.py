@@ -602,7 +602,7 @@ class TestAddonFileViews(OsfTestCase):
 
     def test_unconfigured_addons_raise(self):
         path = 'cloudfiles'
-        self.node_addon.repo = None
+        self.node_addon.owner = "fakeowner"
         self.node_addon.save()
 
         resp = self.app.get(

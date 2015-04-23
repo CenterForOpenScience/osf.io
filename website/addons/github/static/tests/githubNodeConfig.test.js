@@ -19,7 +19,6 @@ var URLS = {
     deauthorize: "/api/v1/project/12345/github/user_auth/",
     files: "/project/12345/files/",
     importAuth: "/api/v1/project/12345/github/user_auth/",
-    //owner: "/profile/bnmye/",
     repo_list: "/api/v1/project/12345/github/repos/",
     settings: "/settings/addons/"
 };
