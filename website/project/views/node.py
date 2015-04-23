@@ -3,7 +3,6 @@ import logging
 import httplib as http
 import math
 from itertools import islice
-import warnings
 
 from flask import request
 from modularodm import Q

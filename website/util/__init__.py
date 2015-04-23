@@ -80,4 +80,3 @@ def js_to_python(obj):
     for key, value in obj.iteritems():
         ret[_camel_to_snake(key)] = value
     return ret
-

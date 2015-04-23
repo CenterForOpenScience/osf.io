@@ -31,8 +31,6 @@ from website.util import permissions
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
-from website.settings import ALL_MY_PROJECTS_NAME
-from website.settings import ALL_MY_REGISTRATIONS_NAME
 
 logger = logging.getLogger(__name__)
 
