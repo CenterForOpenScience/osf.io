@@ -63,7 +63,7 @@ class S3Provider(provider.BaseProvider):
 
         # ensure no left slash when joining paths
         source_path = '/' + os.path.join(self.settings['bucket'], source_path.path)
-        headers = {'x-amz-copy-source': source_path}
+        headers = {'x-amz-copy-source': parse.quote(source_path)}
         url = dest_key.generate_url(
             settings.TEMP_URL_SECS,
             'PUT',
