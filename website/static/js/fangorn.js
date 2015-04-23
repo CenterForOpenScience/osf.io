@@ -1310,7 +1310,7 @@ function _dragLogic(event, items, ui) {
         }
         canMove = canMove && item.data.permissions.edit;
     });
-    if (folder.data.permissions.edit && folder.kind === 'folder' && folder.parentID !== 0 && (canMove || canCopy)) {
+    if (folder.data.permissions.edit && folder.kind === 'folder' && folder.parentID !== 0 && canMove) {
         if (canMove) {
             if (altKey) {
                 copyMode = 'copy';
@@ -1342,6 +1342,7 @@ function _dragLogic(event, items, ui) {
     return copyMode;
 
 }
+/* END MOVE */
 
 
 function _resizeHeight () {
