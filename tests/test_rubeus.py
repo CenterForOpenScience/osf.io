@@ -308,7 +308,6 @@ class TestSerializingNodeWithAddon(OsfTestCase):
             {
                 'view': True,
                 'edit': True,
-                'diskSavingMode': DISK_SAVING_MODE,
             }
         )
         assert_equal(
