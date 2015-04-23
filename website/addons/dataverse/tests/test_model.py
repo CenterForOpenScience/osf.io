@@ -1,20 +1,30 @@
 from nose.tools import *
 import mock
 
+import itsdangerous
+
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
+from framework.sessions.model import Session
 from website.addons.dataverse.model import (
     AddonDataverseUserSettings, AddonDataverseNodeSettings, DataverseFile
 )
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
+from website import settings
 
 
 class TestDataverseFile(DataverseAddonTestCase):
 
+    def setUp(self):
+        super(TestDataverseFile, self).setUp()
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+
     def test_constants(self):
         dvf = DataverseFile()
         assert_equal('dataverse', dvf.provider)
-        assert_equal('state', dvf.version_identifier)
+        assert_equal('version', dvf.version_identifier)
 
     def test_path_doesnt_crash_without_addon(self):
         dvf = DataverseFile(node=self.project, file_id='12345')
@@ -52,8 +62,10 @@ class TestDataverseFile(DataverseAddonTestCase):
         assert_false(created2)
         assert_equals(dvf1, dvf2)
 
+    @mock.patch('website.addons.dataverse.model.request.cookies.get')
     @mock.patch('website.addons.base.requests.get')
-    def test_name(self, mock_get):
+    def test_name(self, mock_get, mock_cookie):
+        mock_cookie.return_value = self.cookie
         mock_response = mock.Mock(ok=True, status_code=200)
         mock_get.return_value = mock_response
         mock_response.json.return_value = {
@@ -68,8 +80,10 @@ class TestDataverseFile(DataverseAddonTestCase):
 
         assert_equal(dvf.name, 'Morty.foo')
 
+    @mock.patch('website.addons.dataverse.model.request.cookies.get')
     @mock.patch('website.addons.base.requests.get')
-    def test_mfr_temp_path(self, mock_get):
+    def test_mfr_temp_path(self, mock_get, mock_cookie):
+        mock_cookie.return_value = self.cookie
         mock_response = mock.Mock(ok=True, status_code=200)
         mock_get.return_value = mock_response
         mock_response.json.return_value = {
