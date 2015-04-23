@@ -55,9 +55,11 @@
                     <!-- Queued selection -->
                     <div class="${addon_short_name}-confirm-selection" data-bind="visible: currentDisplay() == PICKER && selected()">
                         <form data-bind="submit: submitSettings">
-                            <h4 data-bind="if: selected" class="${addon_short_name}-confirm-dlg" id="connect-folder">
-                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
-                            </h4>
+                            <div class="connect-folder">
+                                <h4 data-bind="if: selected" class="${addon_short_name}-confirm-dlg">
+                                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                                </h4>
+                            </div>
                             <div class="pull-right">
                                 <button class="btn btn-default" data-bind="click: cancelSelection">
                                     Cancel

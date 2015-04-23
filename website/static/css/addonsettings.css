@@ -20,7 +20,6 @@
 p.current-folder{
     word-wrap: break-word;
 }
-
-h4#connect-folder{
+.connect-folder{
     word-wrap: break-word;
 }
