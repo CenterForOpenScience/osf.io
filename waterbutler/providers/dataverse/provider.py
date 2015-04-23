@@ -168,23 +168,18 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        """Get past versions of the request file. Currently only checks
-        'latest' and 'latest-published' versions.
+        """Get past versions of the request file. Orders versions based on
+        `_get_all_data()`
 
         :param str path: The path to a key
         :rtype list:
         """
-        versions = ['latest', 'latest-published']
-        revisions = []
-        for version in versions:
-            metadata = yield from self._get_data(version)
-            revision = next(
-                (item for item in metadata if item['path'] == path), None
-            )
-            if revision:
-                revisions.append(DataverseRevision(version).serialized())
 
-        return revisions
+        metadata = yield from self._get_data()
+        return [
+            DataverseRevision(item['extra']['datasetVersion']).serialized()
+            for item in metadata if item['path'] == path
+        ]
 
     @asyncio.coroutine
     def _get_data(self, version=None):
