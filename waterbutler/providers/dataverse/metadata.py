@@ -14,6 +14,10 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
         super().__init__(raw)
         self.dataset_version = dataset_version
 
+        # Note: If versioning by number is added, this will have to check
+        # all published versions, not just 'latest-published'.
+        self.has_published_version = dataset_version == 'latest-published'
+
     @property
     def file_id(self):
         return str(self.raw['id'])
@@ -39,16 +43,11 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
         return None
 
     @property
-    def can_delete(self):
-        """Files can be deleted if they are part of the draft dataset"""
-        return self.dataset_version == 'latest' or self.dataset_version == 'draft'
-
-    @property
     def extra(self):
         return {
             'fileId': self.file_id,
             'datasetVersion': self.dataset_version,
-            'canDelete': self.can_delete,
+            'hasPublishedVersion': self.has_published_version,
         }
 
 

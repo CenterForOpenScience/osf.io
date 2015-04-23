@@ -25,10 +25,7 @@ class DataverseProvider(provider.BaseProvider):
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         # Can download draft or published files
-        if revision:
-            metadata = yield from self._get_data(revision)
-        else:
-            metadata = yield from self._get_all_data()
+        metadata = yield from self._get_data(revision)
         self._validate_path(path, metadata)
 
         resp = yield from self.make_request(
@@ -108,15 +105,16 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path, state=None, **kwargs):
+    def metadata(self, path, version=None, **kwargs):
+        """
+        :param str version:
+            'latest' for draft files
+            'latest-published' for published files
+            None for all data
+        """
 
         # Get appropriate metadata
-        if state == 'draft':
-            dataset_metadata = yield from self._get_data('latest')
-        elif state == 'published':
-            dataset_metadata = yield from self._get_data('latest-published')
-        else:
-            dataset_metadata = yield from self._get_all_data()
+        dataset_metadata = yield from self._get_data(version)
 
         if path == '/':
             return dataset_metadata
@@ -147,11 +145,17 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _get_data(self, version):
-        """
+        """Get list of file metadata for a given dataset version
+
         :param str version:
             'latest' for draft files
             'latest-published' for published files
+            None for all data
         """
+
+        if not version:
+            data = yield from self._get_all_data()
+            return data
 
         url = self.build_url(
             settings.JSON_BASE_URL.format(self._id, version),
@@ -173,7 +177,7 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _get_all_data(self):
-        # Unspecified (file view page), check both sets for metadata
+        """Get list of file metadata for all dataset versions"""
         try:
             published_data = yield from self._get_data('latest-published')
         except exceptions.MetadataError:
@@ -181,9 +185,17 @@ class DataverseProvider(provider.BaseProvider):
         published_files = published_data if isinstance(published_data, list) else []
         draft_data = yield from self._get_data('latest')
         draft_files = draft_data if isinstance(draft_data, list) else []
-        return draft_files + published_files
+
+        # Prefer published to guarantee users get published version by default
+        return published_files + draft_files
 
     def _validate_path(self, path, metadata):
+        """Ensure path is in configured dataset
+
+        :param str path: The path to a file
+        :param list metadata: List of file metadata from _get_data
+        """
+        # Ensure file is in specified dataset
         if path.lstrip('/') not in [item['path'].lstrip('/') for item in metadata]:
             raise exceptions.MetadataError(
                 "Could not retrieve file '{}'".format(path),
