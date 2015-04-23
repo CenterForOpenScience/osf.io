@@ -7,12 +7,15 @@ from framework.auth.core import Auth
 
 class NodeSerializer(JSONAPISerializer):
 
+    filterable_fields = ['title', 'description']
+
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
     category = ser.ChoiceField(choices=Node.CATEGORY_MAP.keys())
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
+    tags = ser.SerializerMethodField()
 
     links = LinksField({
         'html': 'absolute_url',
@@ -21,6 +24,9 @@ class NodeSerializer(JSONAPISerializer):
         },
         'contributors': {
             'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'})
+        },
+        'pointers': {
+            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'})
         },
         'registrations': {
             'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'})
@@ -33,11 +39,20 @@ class NodeSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'nodes'
 
-    def get_properties(self, obj):
+    @staticmethod
+    def get_properties(obj):
         ret = {
             'registration': obj.is_registration,
             'collection': obj.is_folder,
             'dashboard': obj.is_dashboard,
+        }
+        return ret
+
+    @staticmethod
+    def get_tags(obj):
+        ret = {
+            'system': [tag._id for tag in obj.system_tags],
+            'user': [tag._id for tag in obj.tags],
         }
         return ret
 
@@ -74,10 +89,13 @@ class NodePointersSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'pointers'
 
-    def get_links(self, obj):
-        return {
-            'html': obj.absolute_url,
-        }
+    links = LinksField({
+        'html': 'absolute_url',
+    })
+
+    def create(self, validated_data):
+        # TODO
+        pass
 
     def update(self, instance, validated_data):
         # TODO

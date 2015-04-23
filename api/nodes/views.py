@@ -23,6 +23,7 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
         return obj
 
+
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Return a list of nodes. By default, a GET
     will return a list of public nodes, sorted by date_modified.
