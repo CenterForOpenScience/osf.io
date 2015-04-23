@@ -7,6 +7,8 @@ from framework.auth.core import Auth
 
 class NodeSerializer(JSONAPISerializer):
 
+    filterable_fields = ['title', 'description']
+
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
@@ -78,6 +80,10 @@ class NodePointersSerializer(JSONAPISerializer):
         return {
             'html': obj.absolute_url,
         }
+
+    def create(self, validated_data):
+        # TODO
+        pass
 
     def update(self, instance, validated_data):
         # TODO
