@@ -190,6 +190,9 @@ text-align: center;
     cursor: pointer;
 }
 
+.tb-h-success {
+	background: #B8ECC0;
+}
 
 /* File icons */
 .file-extension {
