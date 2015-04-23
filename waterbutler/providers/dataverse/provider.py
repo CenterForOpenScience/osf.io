@@ -18,7 +18,7 @@ class DataverseProvider(provider.BaseProvider):
         """
         :param dict auth: Not used
         :param dict credentials: Contains `token`
-        :param dict settings: Contains `host, `doi`, `id`, and `name` of a dataset. Hosts:
+        :param dict settings: Contains `host`, `doi`, `id`, and `name` of a dataset. Hosts:
 
             - 'apitest.dataverse.org': Api Test Server
             - 'dataverse-demo.iq.harvard.edu': Harvard Demo Server
