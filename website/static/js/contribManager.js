@@ -357,7 +357,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                         }
                     }).fail(function(xhr) {
                         self.init();
-                        //var response = xhr.responseJSON;
+                        var response = xhr.responseJSON;
                         self.messages.push(
                             new MessageModel(
                                 'Submission failed: ' + response.message_long,
