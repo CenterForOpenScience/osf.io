@@ -31,9 +31,10 @@ def credentials():
 @pytest.fixture
 def settings():
     return {
+        'host': 'myfakehost.dataverse.org',
         'doi': 'doi:10.5072/FK2/ABCDEF',
         'id': '18',
-        'name': 'A look at wizards'
+        'name': 'A look at wizards',
     }
 
 
