@@ -551,6 +551,7 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
         assert_false(res)
         assert_false(mock_delete_hook.called)
 
+    # running test again
     @mock.patch('website.addons.github.api.GitHub.delete_hook')
     def test_delete_hook_not_found(self, mock_delete_hook):
         self.node_settings.hook_id = 'hook'
