@@ -1,6 +1,7 @@
 import os
 import abc
 import asyncio
+import functools
 import itertools
 
 import furl
@@ -260,67 +261,6 @@ class BaseProvider(metaclass=abc.ABCMeta):
         data, created = yield from self.intra_copy(dest_provider, src_path, dest_path)
         yield from self.delete(src_path)
         return data, created
-
-    @asyncio.coroutine
-    def copy(self, dest_provider, source_options, dest_options):
-        if self.can_intra_copy(dest_provider):
-            try:
-                return (yield from self.intra_copy(dest_provider, source_options, dest_options))
-            except NotImplementedError:
-                pass
-
-        if source_options['path'].endswith('/'):
-            return (yield from self._copy_folder(dest_provider, source_options, dest_options))
-
-        if dest_options['path'].endswith('/'):
-            dest_options['path'] += os.path.split(source_options['path'])[1]
-
-        return (yield from self._copy_file(dest_provider, source_options, dest_options))
-
-    @asyncio.coroutine
-    def move(self, dest_provider, source_options, dest_options):
-        """Moves a file or folder from the current provider to the specified one
-        Performs a copy and then a delete.
-        Calls :func:`BaseProvider.intra_move` if possible.
-
-        :param BaseProvider dest_provider: The provider to move to
-        :param dict source_options: A dict to be sent to either :func:`BaseProvider.intra_move`
-            or :func:`BaseProvider.copy` and :func:`BaseProvider.delete`
-        :param dict dest_options: A dict to be sent to either :func:`BaseProvider.intra_move`
-            or :func:`BaseProvider.copy`
-        """
-        if self.can_intra_move(dest_provider):
-            try:
-                return (yield from self.intra_move(dest_provider, source_options, dest_options))
-            except NotImplementedError:
-                pass
-
-        metadata = yield from self.copy(dest_provider, source_options, dest_options)
-        yield from self.delete(**source_options)
-        return metadata
-
-    @asyncio.coroutine
-    def _copy_file(self, dest_provider, source_options, dest_options):
-        return (yield from dest_provider.upload(
-            (yield from self.download(**source_options)),
-            **dest_options
-        ))
-
-    @asyncio.coroutine
-    def _copy_folder(self, dest_provider, source_options, dest_options):
-        try:
-            folder = yield from dest_provider.create_folder(**dest_options)
-        except exceptions.CreateFolderError as e:
-            if e.code != 409:
-                raise
-            #TODO
-        for file in (yield from self.metadata(**source_options)):
-            yield from self._copy_file(dest_provider, {
-                'path': file['path']
-            }, dict(dest_options, **{
-                'path': os.path.join(dest)
-            }))
-        return folder
 
     @asyncio.coroutine
     def exists(self, path, **kwargs):
