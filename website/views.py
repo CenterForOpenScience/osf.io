@@ -32,6 +32,8 @@ from website.util import projectorganizer as po_utils
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
+from website.settings import ALL_MY_PROJECTS_NAME
+from website.settings import ALL_MY_REGISTRATIONS_NAME
 
 logger = logging.getLogger(__name__)
 
