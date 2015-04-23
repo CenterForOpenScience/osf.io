@@ -144,6 +144,7 @@ def get_repo_dropdown(user, node_addon):
 
     connection = GitHub.from_settings(node_addon.api.account)
     repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+
     repo_names = [
         '{0} / {1}'.format(repo.owner.login, repo.name)
         for repo in repos

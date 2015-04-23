@@ -15,10 +15,10 @@ var URLS = {
     accounts: "/api/v1/settings/github/accounts/?pid=12345",
     auth: "/oauth/connect/github/",
     config: "/api/v1/project/12345/github/settings/",
-    create_repo: "/api/v1/project/12345/github/newrepo/",
-    deauthorize: "/api/v1/project/12345/github/user_auth/",
+    create_repo: "/api/v1/project/12345/github/repos/",
+    deauthorize: "/api/v1/project/12345/github/authorizations/",
     files: "/project/12345/files/",
-    importAuth: "/api/v1/project/12345/github/user_auth/",
+    importAuth: "/api/v1/project/12345/github/authorizations/",
     repo_list: "/api/v1/project/12345/github/repos/",
     settings: "/settings/addons/"
 };

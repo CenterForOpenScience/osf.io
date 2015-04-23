@@ -82,7 +82,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
-        'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
+        'zip': node_settings.owner.api_url + 'github/zip/' + (ref or ''),
         'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
 

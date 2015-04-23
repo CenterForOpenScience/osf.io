@@ -10,8 +10,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/github/newrepo/',
-                '/project/<pid>/node/<nid>/github/newrepo/',
+                '/project/<pid>/github/repos/',
+                '/project/<pid>/node/<nid>/github/repos/',
             ],
 
             'post',
@@ -69,8 +69,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/github/tarball/',
-                '/project/<pid>/node/<nid>/github/tarball/',
+                '/project/<pid>/github/tar/',
+                '/project/<pid>/node/<nid>/github/tar/',
             ],
             'get',
             views.crud.github_download_starball,
@@ -80,8 +80,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/github/zipball/',
-                '/project/<pid>/node/<nid>/github/zipball/',
+                '/project/<pid>/github/zip/',
+                '/project/<pid>/node/<nid>/github/zip/',
             ],
             'get',
             views.crud.github_download_starball,
@@ -100,8 +100,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/github/user_auth/',
-                '/project/<pid>/node/<nid>/github/user_auth/',
+                '/project/<pid>/github/authorizations/',
+                '/project/<pid>/node/<nid>/github/authorizations/',
             ],
             'put',
             views.auth.github_add_user_auth,
@@ -109,8 +109,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/github/user_auth/',
-                '/project/<pid>/node/<nid>/github/user_auth/',
+                '/project/<pid>/github/authorizations/',
+                '/project/<pid>/node/<nid>/github/authorizations/',
             ],
             'delete',
             views.auth.github_remove_user_auth,
