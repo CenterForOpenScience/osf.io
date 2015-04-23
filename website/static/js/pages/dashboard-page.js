@@ -88,7 +88,7 @@ $(document).ready(function() {
             multiselect : true
         });
 
-        ensureUserTimezone(data.timezone, data.locale, data._id);
+        ensureUserTimezone(data.timezone, data.locale, data.id);
     });
     request.fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Failed to populate user dashboard', {
