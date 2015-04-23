@@ -1231,7 +1231,7 @@ tbOptions = {
         return undefined;
     },
     showFilter : true,     // Gives the option to filter by showing the filter box.
-    allowMove : false,       // Turn moving on or off.
+    //allowMove : false,       // Turn moving on or off.
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
     sortButtonSelector : {
@@ -1338,7 +1338,17 @@ tbOptions = {
     defineToolbar : _fangornDefineToolbar,
     onselectrow : function(row) {
         console.log(row);
-    }
+    },
+    // DRAG AND DROP RELATED OPTIONS
+    dragOptions : {},
+    dropOptions : {},
+    dragEvents : {
+        start : _fangornDragStart
+    },
+    dropEvents : {
+        drop : _fangornDrop,
+        over : _fangornOver
+    },
 };
 
 /**
