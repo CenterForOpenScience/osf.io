@@ -222,14 +222,11 @@ class GoogleDriveProvider(provider.BaseProvider):
         return ' and '.join(queries)
 
     @asyncio.coroutine
-    def metadata(self, path, raw=False, parent_id=None, **kwargs):
-        path = GoogleDrivePath(self.folder['name'], path)
-        item_id = yield from self._materialized_path_to_id(path, parent_id=parent_id)
-
+    def metadata(self, path, raw=False, **kwargs):
         if path.is_dir:
-            return (yield from self._folder_metadata(path, item_id, raw=raw))
+            return (yield from self._folder_metadata(path, raw=raw))
 
-        return (yield from self._file_metadata(path, item_id, raw=raw))
+        return (yield from self._file_metadata(path, raw=raw))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
@@ -466,8 +463,9 @@ class GoogleDriveProvider(provider.BaseProvider):
         return self._serialize_item(path, item, raw=raw)
 
     @asyncio.coroutine
-    def _folder_metadata(self, path, item_id, raw=False):
-        query = self._build_query(item_id)
+    def _folder_metadata(self, path, raw=False):
+        query = self._build_query(path.identifier)
+
         resp = yield from self.make_request(
             'GET',
             self.build_url('files', q=query, alt='json'),
@@ -483,10 +481,10 @@ class GoogleDriveProvider(provider.BaseProvider):
         ]
 
     @asyncio.coroutine
-    def _file_metadata(self, path, item_id, raw=False):
+    def _file_metadata(self, path, raw=False):
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', item_id),
+            self.build_url('files', path.identifier),
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
