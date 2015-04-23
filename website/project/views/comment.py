@@ -2,6 +2,7 @@
 import collections
 import httplib as http
 import pytz
+import requests
 
 from flask import request
 from modularodm import Q
@@ -260,9 +261,12 @@ def add_comment(**kwargs):
     context = dict(
         gravatar_url=auth.user.gravatar_url,
         content=content,
+        page_type=get_page_type(page, node),
+        page_title=get_root_target_title(page, comment.root_target),
+        provider=comment.root_target.provider if page == 'files' else '',
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
-        url=get_comment_url(node, page, target)
+        url=get_comment_url(node, page, comment.root_target)
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
@@ -290,11 +294,37 @@ def add_comment(**kwargs):
     }, http.CREATED
 
 
-def get_comment_url(node, page, target):
+def get_page_type(page, node):
     if page == 'wiki':
-        return node.web_url_for('project_wiki_id_page', wid=target._id, _absolute=True)
+        return 'wiki'
     elif page == 'files':
-        return node.web_url_for('addon_view_or_download_file', provider=target.provider, path=target.path, _absolute=True)
+        return 'file'
+    elif node.parent_node:
+        return 'component'
+    else:
+        return 'project'
+
+
+def get_root_target_title(page, root_target):
+    if page == 'wiki':
+        return root_target.page_name
+    elif page == 'files':
+        metadata = requests.get(root_target.metadata_url).json()
+        return metadata['data']['name']
+    else:
+        return ''
+
+
+def get_comment_url(node, page, root_target):
+    if page == 'wiki':
+        return node.web_url_for('project_wiki_id_page', wid=root_target._id, _absolute=True)
+    elif page == 'files':
+        try:
+            path = root_target.path
+        except AttributeError:
+            metadata = requests.get(root_target.metadata_url).json()
+            path = metadata['data']['path'][1:]
+        return node.web_url_for('addon_view_or_download_file', provider=root_target.provider, path=path, _absolute=True)
     else:
         return node.absolute_url
 
