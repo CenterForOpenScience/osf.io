@@ -1303,10 +1303,14 @@ function _dragLogic(event, items, ui) {
         canMove = true,
         folder = this.find($(event.target).attr('data-id')),
         isSelf = false,
+        isParent  = false,
         dragGhost = $('.tb-drag-ghost');
     items.forEach(function (item) {
         if (!isSelf) {
             isSelf = item.id === folder.id;
+        }
+        if(!isParent){
+            isParent = item.parentID === folder.id;
         }
         canMove = canMove && item.data.permissions.edit;
     });
@@ -1321,7 +1325,7 @@ function _dragLogic(event, items, ui) {
     } else {
         copyMode = 'forbidden';
     }
-    if (isSelf) {
+    if (isSelf || isParent) {
         copyMode = 'forbidden';
     }
     // Set the cursor to match the appropriate copy mode
