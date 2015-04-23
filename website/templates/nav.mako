@@ -91,8 +91,11 @@
                             <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">
                         </div>
                         <button type="submit" class="btn btn-sm btn-success">Sign In</button>
-                        <a class="btn btn-primary btn-sign-up" href="/#signUp">Sign Up</a>
+
                     </form>
+                </li>
+                <li>
+                    <a href="/#signUp">Sign Up</a>
                 </li>
                 <li>
                     <a href="${web_url_for('_forgot_password')}">Forgot Password?</a>
