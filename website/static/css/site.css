@@ -29,6 +29,12 @@ body {
 .table-description{
     padding-left: 50px;
 }
+/* login Page */
+.forget-password{
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 34px;
+}
 
 /* Getting Started */
 
@@ -2555,6 +2561,7 @@ span#profileFullname{
 .m-r-xl {
     margin-right: 50px;
 }
+
 /*Top Margin Only*/
 .m-t-xs {
     margin-top: 5px;

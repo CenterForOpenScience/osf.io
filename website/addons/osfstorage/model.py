@@ -74,6 +74,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     file_tree = fields.ForeignField('OsfStorageFileTree')
     root_node = fields.ForeignField('OsfStorageFileNode')
 
+    # Temporary field to mark that a record has been migrated by the
+    # migrate_from_oldels scripts
+    _migrated_from_old_models = fields.BooleanField(default=False)
+
     def on_add(self):
         if self.root_node:
             return
