@@ -409,3 +409,24 @@ class TestMetadata:
 
         assert isinstance(result, list)
         assert len(result) == 6
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_never_published(self, provider, native_dataset_metadata):
+        published_url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=404)
+        draft_url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
+        aiohttpretty.register_json_uri('GET', draft_url, status=200, body=native_dataset_metadata)
+
+        result = yield from provider.metadata(path='/')
+
+        assert len(result) == 3
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_never_published_raises_errors(self, provider, native_dataset_metadata):
+        published_url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=400)
+
+        with pytest.raises(exceptions.MetadataError):
+            result = yield from provider.metadata(path='/')

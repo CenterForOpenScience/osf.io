@@ -226,7 +226,9 @@ class DataverseProvider(provider.BaseProvider):
         """Get list of file metadata for all dataset versions"""
         try:
             published_data = yield from self._get_data('latest-published')
-        except exceptions.MetadataError:
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
             published_data = []
         draft_data = yield from self._get_data('latest')
 
