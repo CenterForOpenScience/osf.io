@@ -4,6 +4,7 @@
 # To install dev requirements: inv requirements --dev
 
 invoke==0.9.0
+Werkzeug==0.10.4
 Flask==0.10.1
 Mako==1.0.0
 Markdown==2.4.1
