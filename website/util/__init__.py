@@ -69,3 +69,14 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
+
+# from http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
+def _camel_to_snake(key):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', key)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+def js_to_python(obj):
+    ret = {}
+    for key, value in obj.iteritems():
+        ret[_camel_to_snake(key)] = value
+    return ret

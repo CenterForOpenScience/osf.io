@@ -8,6 +8,7 @@ import datetime
 import urlparse
 from collections import OrderedDict
 import pymongo
+import warnings
 
 import pytz
 import blinker
@@ -521,6 +522,10 @@ def validate_user(value):
             raise ValidationValueError('User does not exist.')
     return True
 
+class NodeUpdateError(Exception):
+    def __init__(self, key, reason):
+        self.key = key
+        self.reason = reason
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
@@ -548,7 +553,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('', 'Uncategorized'),
         ('project', 'Project'),
         ('hypothesis', 'Hypothesis'),
-        ('methods and measures', 'Methods and Measures'),
+        ('methods_and_measures', 'Methods and Measures'),
         ('procedure', 'Procedure'),
         ('instrumentation', 'Instrumentation'),
         ('data', 'Data'),
@@ -944,6 +949,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
         return self.can_edit(auth)
+
+    def update(self, fields, save=True):
+        for key, value in fields.iteritems():
+            with warnings.catch_warnings():
+                try:
+                    setattr(self, key, value)
+                except AttributeError:
+                    raise NodeUpdateError(key=key, reason="Invalid value for attribute '{0}'".format(key))
+                except warnings.Warning:
+                    raise NodeUpdateError(key=key, reason="Attribute '{0}' doesn't exist on the Node class".format(key))
+        if save:
+            return self.save()
+        else:
+            return []
 
     def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)
