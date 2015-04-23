@@ -153,6 +153,7 @@ ViewModel.prototype.connectExistingAccount = function(account_id) {
             external_account_id: account_id
         }
     ).done(function(response) {
+            debugger;
         self.changeMessage('Successfully imported Github credentials.', 'text-success');
         self.updateFromData(response);
 

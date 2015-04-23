@@ -319,7 +319,7 @@ describe('githubNodeConfigViewModel', () => {
                 ownerName: faker.name.findName()
             }
         });
-        importEndpoint.method = 'POST';
+        importEndpoint.method = 'PUT';
         importEndpoint.url = URLS.importAuth;
         importEndpoint.response = importEndpoint.response.result;
         var createEndpoint = makeSettingsEndpoint({
@@ -365,29 +365,29 @@ describe('githubNodeConfigViewModel', () => {
                     });
             });
         });
-    //    describe('#importAuth', () => {
-    //        before(() => {
-    //            // Prepare settings endpoint for next tests
-    //            endpoints[0].response.result.nodeHasAuth = false;
-    //        });
-    //        it('makes a POST request to import auth and updates settings on success', (done) => {
-    //            var expected = endpoints[2].response;
-    //            var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
-    //
-    //            vm.updateFromData()
-    //                .always(function() {
-    //                    debugger;
-    //                    var promise = vm.connectExistingAccount("fakeid");
-    //                    promise.always(function() {
-    //                        assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
-    //                        assert.isTrue(vm.showSettings());
-    //                        done();
-    //                    });
-    //                });
-    //        });
-    //    });
-    //
-    //});
+        describe('#importAuth', () => {
+            before(() => {
+                // Prepare settings endpoint for next tests
+                endpoints[0].response.result.nodeHasAuth = false;
+            });
+            it('makes a POST request to import auth and updates settings on success', (done) => {
+                var expected = endpoints[2].response;
+                var vm = new githubNodeConfigVM('/api/v1/project/12345/github/settings/', '', '/12345');
+
+                vm.updateFromData()
+                    .always(function() {
+                        debugger;
+                        var promise = vm.connectExistingAccount("fakeid");
+                        promise.always(function() {
+                            assert.equal(vm.nodeHasAuth(), expected.result.nodeHasAuth);
+                            assert.isTrue(vm.showSettings());
+                            done();
+                        });
+                    });
+            });
+        });
+
+    });
     describe('#createRepo', () => {
         var createEndpoint = makeSettingsEndpoint({
             repos: new Array(10).map(faker.internet.password)
