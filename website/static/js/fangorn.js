@@ -1280,6 +1280,19 @@ function _dragLogic(event, items, ui) {
 }
 
 
+function _resizeHeight () {
+    var tb = this,
+        windowHeight = $(window).height(),
+        bodyHeight = $('body').height(),
+        availableSpace = windowHeight - bodyHeight;
+    if(availableSpace > 0) {
+        $('#tb-tbody').height(function (index, height) {
+            return (height + availableSpace);
+        });
+    }
+
+}
+
 /**
  * OSF-specific Treebeard options common to all addons.
  * Check Treebeard API for more information
