@@ -71,9 +71,15 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a rel="tooltip" title="Duplicate" data-placement="bottom"
-                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
-                            data-toggle="modal" data-target="#duplicateModal">
+                        <a
+                        % if is_project:
+                            class="btn btn-default"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                            data-target="#duplicateModal" data-toggle="modal"
+                        % else:
+                            class="btn btn-default disabled"
+                        % endif
+                            href="#">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
