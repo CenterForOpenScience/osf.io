@@ -16,3 +16,15 @@
 .filebrowser #tb-tbody {
     height: 300px;
 }
+
+.terms-and-conditions{
+    display: inline-block;
+    padding-top: 10px;
+    color: #337ab7;
+}
+
+.terms-and-conditions:hover{
+    text-decoration: underline;
+    color: #214762;
+    cursor: pointer;
+}

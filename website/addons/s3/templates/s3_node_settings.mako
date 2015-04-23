@@ -1,4 +1,4 @@
-<div id="s3Scope" class="scripted">
+<div id="s3Scope" class="scripted" data-addon="${addon_short_name}">
     <h4 class="addon-title">
         Amazon S3
         <small class="authorized-by">
@@ -72,5 +72,10 @@
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr.class: messageClass"></p>
+    </div>
+
+    <!-- Terms & Conditions -->
+    <div class="terms-and-conditions">
+        <p>Terms & Conditions</p>
     </div>
 </div>

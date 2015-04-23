@@ -79,6 +79,11 @@
         <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
     % endif
 
+    <!-- Terms & Conditions -->
+    <div class="terms-and-conditions">
+        <span>Terms & Conditions</span>
+    </div>
+
 </form>
 
 <%def name="on_submit()">
