@@ -653,10 +653,9 @@ function _fangornActionColumn (item, col) {
     } else {
         buttons.push({
             name: '',
-            icon: '',
+            icon: 'fa fa-upload',
             'tooltip' : '',
-            css: 'col-xs',
-            onclick: _blank
+            css: 'fangorn-clickable btn btn-default btn-xs'
         });
     }
     //Download button if this is an item
@@ -690,6 +689,12 @@ function _fangornActionColumn (item, col) {
     }
     // Build the template for icons
     return buttons.map(function (btn) {
+        if(btn.tooltip === '') {
+            return m('span[style="visibility: hidden"]', { 'data-col' : item.id }, [ m('i',
+            { 'class' : btn.css, style : btn.style},
+            [ m('span', { 'class' : btn.icon}) ])
+            ]);
+        }
         return m('span', { 'data-col' : item.id }, [ m('i',
             { 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom', style : btn.style, 'onclick' : function(event) { btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
@@ -1054,10 +1059,6 @@ Fangorn.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     }
-};
-
-function _blank() {
-  return null;
 };
 
 Fangorn.ButtonEvents = {
