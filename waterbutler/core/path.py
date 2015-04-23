@@ -164,6 +164,17 @@ class WaterButlerPath:
             return None
         return self.__class__.from_parts(self.parts[:-1], folder=True, prepend=self._prepend)
 
+    def child(self, name, _id=None, folder=False):
+        return self.__class__.from_parts(self.parts + [self.PART_CLASS(name, _id=_id)], folder=folder, prepend=self._prepend)
+
+    def increment_name(self):
+        self._parts[-1].increment_name()
+        return self
+
+    def rename(self, name):
+        self._parts[-1] = self._parts[-1].renamed(name)
+        return self
+
     def __str__(self):
         return '/'.join([x.raw for x in self.parts]) + ('/' if self.is_dir else '')
 
