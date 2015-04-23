@@ -148,7 +148,6 @@ ViewModel.prototype.connectAccount = function() {
 
 ViewModel.prototype.connectExistingAccount = function(account_id) {
     var self = this;
-
     return $osf.putJSON(
         self.urls().importAuth, {
             external_account_id: account_id
@@ -179,6 +178,7 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         dataType: 'json'
     }).done(function(response) {
         self.updateFromData(response);
+        self.changeMessage('Successfully deauthorized GitHub credentials', 'text-success');
     }).fail(function(xhr, status, error) {
         var message = 'Could not deauthorize Github at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
@@ -410,7 +410,7 @@ ViewModel.prototype.updateAccounts = function() {
 
 ViewModel.prototype.importAuth = function() {
     var self = this;
-    self.updateAccounts()
+    return self.updateAccounts()
         .then(function() {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
