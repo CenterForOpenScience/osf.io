@@ -176,30 +176,49 @@ class BaseProvider(metaclass=abc.ABCMeta):
         ))
 
     @asyncio.coroutine
-    def _batch_file_op(self, func, dest_provider, src_path, dest_path, **kwargs):
+    def _folder_file_op(self, func, dest_provider, src_path, dest_path, **kwargs):
+        assert src_path.is_dir, 'src_path must be a directory'
+        assert asyncio.iscoroutinefunction(func), 'func must be a coroutine'
+
         try:
-            folder = yield from dest_provider.create_folder(**dest_options)
+            folder = yield from dest_provider.create_folder(dest_path)
+            created = True
         except exceptions.CreateFolderError as e:
             if e.code != 409:
                 raise
-            #TODO
+            created = False
 
-        assert src_path.is_dir, 'src_path must be a directory'
-        assert asyncio.iscoroutinefunction(func), 'func must be a coroutine'
+            #TODO
 
         futures = []
         for item in (yield from self.metadata(src_path)):
             futures.append(
-                func(
-                    dest_provider,
-                    src_path.child(item['name']),
-                    dest_path.child(item['name']),
-                    **kwargs
+                asyncio.async(
+                    func(
+                        dest_provider,
+                        src_path.child(item['name']),
+                        dest_path.child(item['name']),
+                        handle_naming=False,
+                    )
                 )
             )
 
-        return asyncio.gather(futures)
+        if not futures:
+            folder['children'] = []
+            return folder, created
 
+        finished, pending = yield from asyncio.wait(futures, return_when=asyncio.FIRST_EXCEPTION)
+
+        assert len(pending) == 0
+
+        folder['children'] = [
+            future.result()
+            for future in finished
+        ]
+
+        return folder, created
+
+    @asyncio.coroutine
     def handle_naming(self, path, rename, is_dir=False, conflict='replace'):
         dest_path, _ = yield from self.handle_name_conflict(
             (yield from self.revalidate_path(
