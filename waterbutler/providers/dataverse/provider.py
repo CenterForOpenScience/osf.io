@@ -187,7 +187,7 @@ class DataverseProvider(provider.BaseProvider):
         return revisions
 
     @asyncio.coroutine
-    def _get_data(self, version):
+    def _get_data(self, version=None):
         """Get list of file metadata for a given dataset version
 
         :param str version:
@@ -198,8 +198,7 @@ class DataverseProvider(provider.BaseProvider):
         """
 
         if not version:
-            data = yield from self._get_all_data()
-            return data
+            return (yield from self._get_all_data())
 
         url = self.build_url(
             settings.JSON_BASE_URL.format(self._id, version),
