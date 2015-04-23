@@ -6,6 +6,7 @@ class GitHubSerializer(OAuthAddonSerializer):
 
     @property
     def serialized_urls(self):
+        # can this be none?
         external_account = self.node_settings.external_account
         ret = {
             'auth': api_url_for('oauth_connect',
