@@ -59,7 +59,7 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
         self.doi = doi
 
         files = self.raw['files']
-        self._entries = [DataverseFileMetadata(f['datafile'], version) for f in files]
+        self.contents = [DataverseFileMetadata(f['datafile'], version) for f in files]
 
     @property
     def name(self):
@@ -68,15 +68,6 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
     @property
     def path(self):
         return self.build_path(self.doi)
-
-    @property
-    def entries(self):
-        return self._entries
-
-    def serialized(self):
-        if self._entries:
-            return [e.serialized() for e in self._entries]
-        return super(DataverseDatasetMetadata, self).serialized()
 
 
 class DataverseRevision(metadata.BaseFileRevisionMetadata):

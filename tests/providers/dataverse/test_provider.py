@@ -347,10 +347,8 @@ class TestMetadata:
     def test_metadata(self, provider, native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
-
         result = yield from provider.metadata(path='/', version='latest')
 
-        assert isinstance(result, list)
         assert len(result) == 3
         assert result[0]['provider'] == 'dataverse'
         assert result[0]['kind'] == 'file'
@@ -363,14 +361,9 @@ class TestMetadata:
     def test_metadata_no_files(self, provider, empty_native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
-
         result = yield from provider.metadata(path='/', version='latest')
 
-        assert isinstance(result, dict)
-        assert result['provider'] == 'dataverse'
-        assert result['kind'] == 'folder'
-        assert result['name'] == 'A look at wizards'
-        assert result['path'] == '/{0}/'.format(provider.doi)
+        assert result == []
 
     @async
     @pytest.mark.aiohttpretty
@@ -379,7 +372,6 @@ class TestMetadata:
         aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
         result = yield from provider.metadata(path='/', version='latest-published')
 
-        assert isinstance(result, list)
         assert len(result) == 3
         assert result[0]['provider'] == 'dataverse'
         assert result[0]['kind'] == 'file'
@@ -392,14 +384,9 @@ class TestMetadata:
     def test_metadata_published_no_files(self, provider, empty_native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
-
         result = yield from provider.metadata(path='/', version='latest-published')
 
-        assert isinstance(result, dict)
-        assert result['provider'] == 'dataverse'
-        assert result['kind'] == 'folder'
-        assert result['name'] == 'A look at wizards'
-        assert result['path'] == '/{0}/'.format(provider.doi)
+        assert result == []
 
     @async
     @pytest.mark.aiohttpretty

@@ -215,9 +215,11 @@ class DataverseProvider(provider.BaseProvider):
         data = yield from resp.json()
         data = data['data']
 
-        return DataverseDatasetMetadata(
+        dataset_metadata = DataverseDatasetMetadata(
             data, self.name, self.doi, version,
-        ).serialized()
+        )
+
+        return [item.serialized() for item in dataset_metadata.contents]
 
     @asyncio.coroutine
     def _get_all_data(self):
@@ -226,12 +228,10 @@ class DataverseProvider(provider.BaseProvider):
             published_data = yield from self._get_data('latest-published')
         except exceptions.MetadataError:
             published_data = []
-        published_files = published_data if isinstance(published_data, list) else []
         draft_data = yield from self._get_data('latest')
-        draft_files = draft_data if isinstance(draft_data, list) else []
 
         # Prefer published to guarantee users get published version by default
-        return published_files + draft_files
+        return published_data + draft_data
 
     def _validate_path(self, path, metadata):
         """Ensure path is in configured dataset
