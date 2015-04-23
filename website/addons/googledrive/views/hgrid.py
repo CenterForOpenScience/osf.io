@@ -65,7 +65,7 @@ def googledrive_addon_folder(node_settings, auth, **kwargs):
         except exceptions.ExpiredAuthError:
             return None
 
-        items = GoogleDriveClient(access_token).validate_folder(node_settings.folder_name)
+        items = GoogleDriveClient(access_token).fetch_folder(node_settings.folder_name)
 
         if len(items) <= 0 and node_settings.folder_id not in [item['id'] for item in items]:
             return None

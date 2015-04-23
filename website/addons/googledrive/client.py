@@ -114,7 +114,7 @@ class GoogleDriveClient(BaseClient):
         )
         return res.json()['items']
 
-    def validate_folder(self, folder_name):
+    def fetch_folder(self, folder_name):
         query = ' and '.join([
             "title = '{0}'".format(folder_name),
             'trashed = false',
