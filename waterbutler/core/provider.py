@@ -290,6 +290,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
         # exists = self.exists(str(path))
         return path, False
 
+    @asyncio.coroutine
+    def revalidate_path(self, base, path, folder=False):
+        return base.child(path, folder=folder)
+
     @abc.abstractmethod
     def download(self, **kwargs):
         pass
