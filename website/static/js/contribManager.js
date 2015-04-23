@@ -35,23 +35,6 @@ var sortMap = {
     }
 };
 
-var setupEditable = function(elm, data) {
-    var $elm = $(elm);
-    var $editable = $elm.find('.permission-editable');
-    $editable.editable({
-        showbuttons: false,
-        value: data.permission(),
-        source: [
-            {value: 'read', text: 'Read'},
-            {value: 'write', text: 'Read + Write'},
-            {value: 'admin', text: 'Administrator'}
-        ],
-        success: function(response, value) {
-            data.permission(value);
-        }
-    });
-};
-
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
 var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
@@ -59,15 +42,34 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     var self = this;
     $.extend(self, contributor);
 
+    //if this is somewhere accessible, please remove.
+    self.permissionList = [
+        {value: 'read', text: 'Read'},
+        {value: 'write', text: 'Read + Write'},
+        {value: 'admin', text: 'Administrator'}
+    ];
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
+    //keeps original permission to diff against
+    self.original = self.permission();
+    // Maps the current permission to permissionList
+    var index = 0;
+    if (self.permission() === 'read') {
+        index = 0;
+    } else if (self.permission() == 'write') {
+        index = 1;
+    } else {
+        index = 2;
+    }
+    //gives the permission to current.
+    self.curPermission = ko.observable(self.permissionList[index]);
     self.deleteStaged = ko.observable(contributor.deleteStaged || false);
     self.removeContributor = 'Remove contributor';
     self.pageOwner = pageOwner;
     self.serialize = function() {
-        return ko.toJS(self);
+        return JSON.parse(ko.toJSON(self));
     };
 
     self.canEdit = ko.computed(function() {
@@ -105,6 +107,15 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.canRemove = ko.computed(function(){
         return (self.id === pageOwner.id) && !isRegistration;
+    });
+    //tracks the change in the select permissions
+    self.change = ko.computed(function() {
+        self.permission(self.curPermission().value);
+        var current_val = self.curPermission().value;
+        if (current_val === self.original) {
+            return true;
+        }
+        return false;
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -302,10 +313,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init();
     self.initListeners();
 
-    self.setupEditable = function(elm, data) {
-        setupEditable(elm, data);
-    };
-
     self.sort = function() {
         if (self.sortOrder() === 0) {
             self.sortOrder(sortMap[self.sortKey()].order);
@@ -333,7 +340,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                 return !contributor.deleteStaged();
             }),
             function(contributor) {
-                return contributor.serialize();
+                var temp = contributor.serialize();
+                var minInfo = {id: temp.id, permission: temp.permission, registered: temp.registered, visible: temp.visible};
+                return minInfo;
             }
         );
     };
@@ -362,6 +371,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                         }
                     }).fail(function(xhr) {
                         self.init();
+                        //var response = JSON.parse(xhr.responseText);
                         var response = xhr.responseJSON;
                         self.messages.push(
                             new MessageModel(
