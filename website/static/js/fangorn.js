@@ -1283,12 +1283,10 @@ function _dragLogic(event, items, ui) {
 function _resizeHeight () {
     var tb = this,
         windowHeight = $(window).height(),
-        bodyHeight = $('body').height(),
-        availableSpace = windowHeight - bodyHeight;
+        topBuffer = tb.select('#tb-tbody').offset().top + 50,
+        availableSpace = windowHeight - topBuffer;
     if(availableSpace > 0) {
-        $('#tb-tbody').height(function (index, height) {
-            return (height + availableSpace);
-        });
+        tb.select('#tb-tbody').height(availableSpace);
     }
 
 }
