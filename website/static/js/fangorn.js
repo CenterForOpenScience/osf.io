@@ -1317,6 +1317,13 @@ tbOptions = {
               return 'You have pending uploads, if you leave this page they may not complete.';
             }
         });
+        if(tb.options.placement === 'project-files') {
+            _resizeHeight.call(tb);
+            $(window).resize(function(){
+                _resizeHeight.call(tb);
+            })            
+        }
+
     },
     createcheck : function (item, parent) {
         return true;
