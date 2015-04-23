@@ -206,7 +206,6 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, raw=False, folder=False, **kwargs):
-        path = BoxPath(path)
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
         return (yield from self._get_folder_meta(path, raw=raw, folder=folder))
@@ -235,7 +234,7 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
-        p.WaterButlerPath.validate_folder(path)
+        WaterButlerPath.validate_folder(path)
 
         if path.identifier is not None:
             raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
@@ -288,7 +287,7 @@ class BoxProvider(provider.BaseProvider):
     def _get_file_meta(self, path, raw=False):
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', path._id),
+            self.build_url('files', path.identifier),
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
@@ -303,14 +302,10 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _get_folder_meta(self, path, raw=False, folder=False):
-        if str(path) == '/':
-            path = BoxPath('/{}/'.format(self.folder))
-        yield from self._assert_child_folder(path)
-
         if folder:
-            url = self.build_url('folders', path._id)
+            url = self.build_url('folders', path.identifier)
         else:
-            url = self.build_url('folders', path._id, 'items')
+            url = self.build_url('folders', path.identifier, 'items')
 
         response = yield from self.make_request(
             'GET',
