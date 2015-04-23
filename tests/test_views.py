@@ -2869,7 +2869,8 @@ class TestComments(OsfTestCase):
             wiki_page = NodeWikiPage.load(root_target)
             wiki_page.reload()
 
-    def _add_comment_files(self, project, content=None, path=None, provider='osfstorage', **kwargs):
+    @mock.patch('website.project.views.comment.get_root_target_title')
+    def _add_comment_files(self, project, mock_get_title, content=None, path=None, provider='osfstorage', **kwargs):
         project.add_addon(provider, auth=Auth(self.user))
         path = path if path is not None else 'mudhouse_coffee.txt'
         addon = project.get_addon(provider)
@@ -2878,6 +2879,7 @@ class TestComments(OsfTestCase):
         guid, _ = addon.find_or_create_file_guid('/' + path)
         content = content if content is not None else 'large hot mocha'
         url = project.api_url + 'comment/'
+        mock_get_title.return_value = 'files'
         return self.app.post_json(
             url,
             {
@@ -3330,7 +3332,7 @@ class TestComments(OsfTestCase):
 
     def test_view_comments_updates_user_comments_view_timestamp_files(self):
         path = 'skittles.txt'
-        self._add_comment_files(self.project, 'Red orange yellow skittles', path, 'osfstorage', auth=self.project.creator.auth)
+        self._add_comment_files(self.project, content='Red orange yellow skittles', path=path, provider='osfstorage', auth=self.project.creator.auth)
         addon = self.project.get_addon('osfstorage')
         guid, _ = addon.find_or_create_file_guid('/' + path)
 
