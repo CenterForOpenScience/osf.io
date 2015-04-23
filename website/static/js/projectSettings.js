@@ -16,8 +16,18 @@ var NodeCategorySettings = oop.extend(
 
             var self = this;
 
+            self.UPDATE_SUCCESS_MESSAGE = 'Category updated successfully';
+            self.UPDATE_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
+
+            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instatiate NodeCategorySettings view model without an update URL';
+            
+            self.MESSAGE_SUCCESS_CLASS = 'text-success';
+            self.MESSAGE_ERROR_CLASS = 'text-danger';
+
             if (!updateUrl) {
-                throw new Error('Trying to instatiate NodeCategorySettings view model without an update URL');
+                throw new Error(self.INSTANTIATION_ERROR_MESSAGE);
             }
 
             self.categories = categories;
@@ -34,13 +44,18 @@ var NodeCategorySettings = oop.extend(
         },
         updateSuccess: function(newcategory) {
             var self = this;
-            self.changeMessage('Category updated successfully', 'text-success');
+            self.changeMessage(self.UPDATE_SUCCESS_MESSAGE, self.MESSAGE_SUCCESS_CLASS);
             self.category(newcategory);
             self.dirty(false);
         },
         updateError: function(xhr, status, error) {
             var self = this;
-            self.changeMessage('Error updating category, please try again.', 'text-danger');
+            self.changeMessage(self.UPDATE_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
+            Raven.captureMessage(self.UPDATE_ERROR_MESSAGE_RAVEN, {
+                url: self.updateUrl,
+                textStatus: status,
+                err: error
+            });
         },
         updateCategory: function() {
             var self = this;
