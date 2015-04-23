@@ -1294,7 +1294,48 @@ function _dropLogic(event, items, folder) {
  */
 function _dragLogic(event, items, ui) {
     var tb = this;
-    console.log(event, items, ui);
+        var canCopy = true,
+        canMove = true,
+        folder = this.find($(event.target).attr('data-id')),
+        isSelf = false,
+        dragGhost = $('.tb-drag-ghost');
+    items.forEach(function (item) {
+        if (!isSelf) {
+            isSelf = item.id === folder.id;
+        }
+        canMove = canMove && item.data.permissions.edit;
+    });
+    if (folder.data.permissions.edit && folder.kind === 'folder' && (canMove || canCopy)) {
+        if (canMove) {
+            if (altKey) {
+                copyMode = 'copy';
+            } else {
+                copyMode = 'move';
+            }
+        }
+    } else {
+        copyMode = 'forbidden';
+    }
+    if (isSelf) {
+        copyMode = 'forbidden';
+    }
+    // Set the cursor to match the appropriate copy mode
+    switch (copyMode) {
+        case 'forbidden':
+            dragGhost.css('cursor', 'not-allowed');
+            break;
+        case 'copy':
+            dragGhost.css('cursor', 'copy');
+            break;
+        case 'move':
+            dragGhost.css('cursor', 'move');
+            break;
+        default:
+            dragGhost.css('cursor', 'default');
+    }
+    console.log(copyMode);
+    return copyMode;
+
 }
 
 
