@@ -18,11 +18,14 @@ from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
+from framework import status
+from framework.archiver import StatResult
 
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
+from website.project import signals as project_signals
 
 from website.oauth.signals import oauth_complete
 
@@ -698,6 +701,12 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             name=self.config.short_name,
             **data
         )
+    ############
+    # Archiver #
+    ############
+    def stat(self):
+        # TODO
+        return StatResult(self.config.short_name), None
 
     #############
     # Callbacks #
@@ -727,7 +736,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_make_public(self, node):
-
         """
 
         :param Node node:
@@ -791,6 +799,12 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         """
         pass
+
+    @project_signals.after_create_registration.connect
+    def _after_register(self, original, registered, user):
+        _, message = self.after_register(original, registered, user)
+        if message:
+            status.push_status_message(message)
 
     def after_register(self, node, registration, user, save=True):
         """
