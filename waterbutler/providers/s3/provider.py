@@ -207,12 +207,8 @@ class S3Provider(provider.BaseProvider):
         """
         WaterButlerPath.validate_folder(path)
 
-        try:
-            yield from self.metadata(path)
+        if (yield from self.exists(path)):
             raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
-        except exceptions.MetadataError as e:
-            if e.code != 404:
-                raise
 
         yield from self.make_request(
             'PUT',
