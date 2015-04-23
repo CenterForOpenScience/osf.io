@@ -1256,6 +1256,29 @@ function _fangornOver(event, ui) {
 
 }
 
+/**
+ * Where the drop actions happen
+ * @param event jQuery UI drop event
+ * @param {Array} items List of items being dragged at the time. Each item is a _item object
+ * @param {Object} folder Folder information as _item object
+ */
+function _dropLogic(event, items, folder) {
+    var tb = this;
+    console.log(event, items, folder);
+}
+
+/**
+ * Sets the copy state based on which item is being dragged on which other item
+ * @param {Object} event Browser drag event
+ * @param {Array} items List of items being dragged at the time. Each item is a _item object
+ * @param {Object} ui jQuery UI draggable drag ui object
+ * @returns {String} copyMode One of the copy states, from 'copy', 'move', 'forbidden'
+ */
+function _dragLogic(event, items, ui) {
+    var tb = this;
+    console.log(event, items, ui);
+}
+
 
 /**
  * OSF-specific Treebeard options common to all addons.
