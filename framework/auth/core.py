@@ -692,7 +692,10 @@ class User(GuidStoredObject, AddonModelMixin):
         # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
-                if info['expiration'] < dt.datetime.utcnow():
+                # Old records will not have an expiration key. If it's missing,
+                # assume the token is expired
+                expiration = info.get('expiration')
+                if not expiration or (expiration and expiration < dt.datetime.utcnow()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
                     else:
