@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import urlparse
 
+import itsdangerous
 import pymongo
+from flask import request
 from modularodm import fields
 
+from framework.auth.core import User
 from framework.auth.decorators import Auth
+from framework.sessions.model import Session
+from website import settings
 from website.security import encrypt, decrypt
 from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
 from website.addons.dataverse.client import connect_from_settings_or_401
-
-logging.getLogger('sword2').setLevel(logging.WARNING)
+from website.addons.dataverse.settings import HOST
 
 
 class DataverseFile(GuidFile):
@@ -45,6 +48,24 @@ class DataverseFile(GuidFile):
     @property
     def unique_identifier(self):
         return self.file_id
+
+    def enrich(self, save=True):
+        super(DataverseFile, self).enrich(save)
+
+        # Get user object from cookie
+        cookie = request.cookies.get(settings.COOKIE_NAME)
+        session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+        session = Session.load(session_id) or Session(_id=session_id)
+        user = User.load(session.data['auth_user_id'])
+
+        # Check permissions
+        if not self.node.can_edit(user=user):
+            try:
+                # Users without edit permission can only see published files
+                if not self._metadata_cache['extra']['hasPublishedVersion']:
+                    raise exceptions.FileDoesntExistError
+            except (KeyError, IndexError):
+                pass
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
@@ -176,6 +197,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     def serialize_waterbutler_settings(self):
         return {
+            'host': HOST,
             'doi': self.dataset_doi,
             'id': self.dataset_id,
             'name': self.dataset,
