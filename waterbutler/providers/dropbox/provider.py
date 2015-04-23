@@ -70,10 +70,7 @@ class DropboxProvider(provider.BaseProvider):
         return DropboxFileMetadata(data, self.folder).serialized(), resp.status == 201
 
     @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        source_path = DropboxPath(self.folder, source_options['path'])
-        dest_path = DropboxPath(self.folder, dest_options['path'])
-
+    def intra_move(self, dest_provider, src_path, dest_path):
         try:
             resp = yield from self.make_request(
                 'POST',
@@ -81,7 +78,7 @@ class DropboxProvider(provider.BaseProvider):
                 data={
                     'root': 'auto',
                     'to_path': dest_path.full_path,
-                    'from_path': source_path.full_path,
+                    'from_path': src_path.full_path,
                 },
                 expects=(200, ),
                 throws=exceptions.IntraMoveError,
@@ -90,12 +87,9 @@ class DropboxProvider(provider.BaseProvider):
             if e.code != 403:
                 raise
 
-            if dest_options.get('conflict') == 'keep':
-                dest_options['path'] = str(dest_path.increment_name())
-            else:
-                yield from dest_provider.delete(**dest_options)
-
-            return (yield from self.intra_move(dest_provider, source_options, dest_options))
+            yield from dest_provider.delete(dest_path)
+            resp, _ = yield from self.intra_move(dest_provider, src_path, dest_path)
+            return resp, False
 
         data = yield from resp.json()
         return DropboxFileMetadata(data, self.folder).serialized(), True
