@@ -207,8 +207,8 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
 
     // Must be set after isValid is defined in inherited view models
     self.hasValidProperty = ko.observable(false);
-    self.requiredFieldEmpty = ko.observable(false);
-    self.otherFieldsEmpty = ko.observable(false);
+    self.nameFieldEmpty = ko.observable(false);
+    self.extraFieldsEmpty = ko.observable(false);
 
     // Warn on URL change if dirty
     if (preventUnsaved !== false) {
@@ -327,11 +327,16 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     var self = this;
-//    console.log("In BaseViewModel.prototype.submit, self is " + data);
+    console.log("In submit, self.contents() is " + JSON.stringify(self.contents()));
+    console.log("In self.extraFieldsEmpty(), self is " + JSON.stringify(self.extraFieldsEmpty()));
     if (self.hasValidProperty() && self.isValid()) {
-        if (self.requiredFieldEmpty()) {
-            $osf.growl('Please enter Required field before pressing "Save"');            
+        if (self.nameFieldEmpty()) {
+            $osf.growl('Please enter Full Name before pressing "Save"');            
         }
+        else if (self.institutionsEmpty() && !self.extraFieldsEmpty() || (self.institutionsEmpty() && !self.hasMultiple())) {
+            $osf.growl('Please enter Institution before pressing "Save"');            
+        }
+        
           else {
             $osf.putJSON(
                 self.urls.crud,
@@ -376,34 +381,12 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         return validated.isValid();
     });
     
-   self.requiredFieldEmpty = ko.computed(function() {
+   self.nameFieldEmpty = ko.computed(function() {
         if (self.full() == "") {
         return true;        
         }
         else return false;
     });
-
-var myViewModel = ko.validatedObservable({
-   property1: ko.computed(function() {
-       return  self.full;
-   }).extend({ required: true })
-});
-
-
-//     self.validatedFields = ko.validatedObservable($.extend({}, self.trackedProperties));
-
-// self.isValid2 = ko.computed(function() {
-//         return self.validatedFields.isValid();
-//     });
-
-    
-//    var result = ko.validation.group(self, { deep: true });
-    
-//    self.fullIsValid = ko.computed(function() {
-//        return self.full.isValid()
-//    });
-    
-//    console.log("self.full().isvalid is " + ko.toJS(self.full.isValid()));
 
     
     self.hasValidProperty(true);
@@ -611,10 +594,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
     self.ContentModel = ContentModel;
     self.contents = ko.observableArray();
     
-//    self.institutionArray = ko.computed( function() {
-//        self.contents().institution;
-//    });
-
     self.tracked = self.contents;
 
     self.canRemove = ko.computed(function() {
@@ -630,68 +609,41 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return true;
     });
     
- //   console.log("modes are " + JSON.stringify(urls));
+//   console.log("in ListViewModel, urls is " + JSON.stringify(urls));
 
-//    self.otherFieldsEmpty = ko.computed(function() {
-//        if (self.department() == "" && self.title() == "") {
-//            return true;        
-//        }
-//        else return false;
-//    });
-//  
+    self.institutionsEmpty = ko.computed(function() {
+
+            for (var i=0; i<self.contents().length; i++) {
+                if (self.contents()[i].institutionEmpty()) { 
+                    return true;
+                }
+            }
+ 
+        return false;
+                
+    });
+
     
-    
-//    self.otherFieldsEmpty = ko.computed(function() {
-////        console.log("In hasBlankInstitution");
-//        //If in Jobs, set other non required Jobs fields, if in Schools, set the schools fields
-//            if (modes.crud="/api/v1/settings/jobs/")   
-//                for (var i=0; i<self.contents().length; i++) {                
-//                    if (self.contents()[i].department() == "" && self.contents()[i].title() == "") { 
-//                        return true; 
-//                }
-//            }
-//            else if (modes.crud="/api/v1/settings/schools/") 
-//                for (var i=0; i<self.contents().length; i++) {                
-//                    if (self.contents()[i].department() == "" && self.contents()[i].degree() == "") { 
-//                        return true; 
-//                }
-//
-//        }
-//        return false;
-//    });
-    
-//    self.hasBlankObject = ko.computed(function() {
-////        console.log("In hasBlankInstitution");
-////        for (var i=0; i<self.tracked().length; i++) {
-//            if (self.institution == "" &&
-//                self.department == "")
-//                return true; 
-//            else 
-//                return false;
-//    });
-    
-    
-//    self.hasBlankContentObject = ko.computed(function() {
-//        console.log("In hasBlankContentObject");
-//        for (var i=0; i<self.contents().length; i++) {
-//            if (self.contents()[i].trackedProperties)
-//            for (var j=0; i < self.contents()[i].trackedProperties.length; j++) {
-//                if (self.contents()[i].trackedProperties[j] != null)
-//                    return true
-//            }
-//        }
-//        return false;    
-//            
-//            //            for (var j=0; i< self.contents()[i].trackedProperties().length; j++) {
-////                if (!trackedProperties) { 
-////                    return false; 
-////                }
-////            }
-////        }
-////        if (typeof self.contents()[0].trackedProperties() !== undefined)
-////            return self.contents()[0].trackedProperties();
-////        else return "yourmomma"
-//    });
+    self.extraFieldsEmpty = ko.computed(function() {
+
+        if (urls.crud == "/api/v1/settings/jobs/") {       
+            for (var i=0; i<self.contents().length; i++) {
+                if (self.contents()[i].department() == "" && self.contents()[i].title() == "") { 
+                    return true;
+                }
+            }
+        }
+        else if (urls.crud == "/api/v1/settings/schools/") {
+            for (var i=0; i<self.contents().length; i++) {
+                if (self.contents()[i].department() == "" && self.contents()[i].degree() == "") { 
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+                
+    });
 
     
     self.hasMultiple = ko.computed(function() {
@@ -764,6 +716,7 @@ ListViewModel.prototype.addContent = function() {
 
 ListViewModel.prototype.removeContent = function(content) {
     var self = this;
+         console.log("In ListViewModel.prototype.removeContent , contents is " + JSON.stringify(self.contents()));
     var idx = self.contents().indexOf(content);
     self.contents.splice(idx, 1);
 };
@@ -790,21 +743,23 @@ ListViewModel.prototype.unserialize = function(data) {
 ListViewModel.prototype.serialize = function() {
     self = this;
     var contents = [];
-//         console.log("In serialize, contents is " + JSON.stringify(self.contents()));
+    console.log("In serialize, self.hasMultiple() is " + JSON.stringify(self.hasMultiple()));
     
     if (self.contents().length !== 0 && typeof(self.contents()[0].serialize() !== undefined)) {
-        for (var i=0; i < self.contents().length; i++) {
-            // If the requiredField is empty, it will not save it.  
-            if (!self.contents()[i].requiredFieldEmpty()) {
- //           console.log("self.contents()[" + i + "].hasBlankInstitution is " + self.contents()[i].hasBlankInstitution);
+
+        for (var i=0; i < self.contents().length; i++) {            
+            // If the requiredField is empty, it will not save it and will delete the blank structure from the database.  
+            if (!self.contents()[i].institutionEmpty() || !self.hasMultiple()) {
+            console.log("self.contents()[i].institutionEmpty() " + ko.toJS(self.contents()[i].institutionEmpty()));
                 contents.push(self.contents()[i].serialize());
             }
+            else  self.contents.splice(i, 1);
         }
     }
     else {
         contents = ko.toJS(self.contents);
     }
-    console.log("In serialize, contents is " + JSON.stringify(contents));
+ //   console.log("In serialize, contents is " + JSON.stringify(contents));
     return {contents: contents};
 };
 
@@ -813,7 +768,7 @@ var JobViewModel = function() {
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({required: true, trimmed: true});
+    self.institution = ko.observable('').extend({trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
     
@@ -832,12 +787,14 @@ var JobViewModel = function() {
         return validated.isValid();
     });
     
-    self.requiredFieldEmpty = ko.computed(function() {
+    self.institutionEmpty = ko.computed(function() {
         if (self.institution() == "") {
             return true;        
         }
         else return false;
     });
+    
+    
 
     
 };
@@ -848,7 +805,7 @@ var SchoolViewModel = function() {
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({required: true, trimmed: true});
+    self.institution = ko.observable('').extend({trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.degree = ko.observable('').extend({trimmed: true});
 
@@ -867,19 +824,13 @@ var SchoolViewModel = function() {
         return validated.isValid();
     });
     
-    self.requiredFieldEmpty = ko.computed(function() {
+    self.institutionEmpty = ko.computed(function() {
         if (self.institution() == "") {
         return true;        
         }
         else return false;
     });
     
-//    self.otherFieldsEmpty = ko.computed(function() {
-//        if (self.department() == "" && self.degree() == "") {
-//            return true;        
-//        }
-//        else return false;
-//    });
 
 
 };
