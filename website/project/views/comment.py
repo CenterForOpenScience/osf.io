@@ -262,7 +262,7 @@ def add_comment(**kwargs):
         content=content,
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
-        url=node.absolute_url
+        url=get_comment_url(node, page, target)
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
@@ -288,6 +288,15 @@ def add_comment(**kwargs):
     return {
         'comment': serialize_comment(comment, auth)
     }, http.CREATED
+
+
+def get_comment_url(node, page, target):
+    if page == 'wiki':
+        return node.web_url_for('project_wiki_id_page', wid=target._id, _absolute=True)
+    elif page == 'files':
+        return node.web_url_for('addon_view_or_download_file', provider=target.provider, path=target.path, _absolute=True)
+    else:
+        return node.absolute_url
 
 
 def is_reply(target):
