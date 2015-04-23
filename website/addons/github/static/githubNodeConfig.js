@@ -224,7 +224,8 @@ ViewModel.prototype.createRepo = function(repoName) {
         }
     ).done(function(response) {
         self.creating(false);
-        self.repoList(response.repos);
+        var repos = self.formatRepos(response);
+        self.repoList(repos);
         self.loadedRepoList(true);
         self.selectedRepo((self.ownerName() + " / " + repoName));
         self.showSelect(true);
@@ -250,6 +251,7 @@ ViewModel.prototype.createRepo = function(repoName) {
         });
     });
 };
+
 
 ViewModel.prototype.openCreateRepo = function() {
     var self = this;
@@ -288,7 +290,8 @@ ViewModel.prototype.fetchRepoList = function() {
                 dataType: 'json'
             }).done(function(response) {
                 self.loadedRepoList(true);
-                ret.resolve(response.repo_names);
+                var repos = self.formatRepos(response);
+                ret.resolve(repos);
             })
             .fail(function(xhr, status, error) {
                 var message = 'Could not retrieve list of Github repos at' +
@@ -304,6 +307,14 @@ ViewModel.prototype.fetchRepoList = function() {
             });
     }
     return ret.promise();
+};
+
+ViewModel.prototype.formatRepos = function(response) {
+    var repos = [];
+    for(var i = 0; i < response.repo_names.length; i++){
+        repos.push(response.user_names[i] + " / " + response.repo_names[i]);
+    }
+    return repos
 };
 
 ViewModel.prototype.updateFromData = function(data) {

@@ -34,6 +34,7 @@ def github_create_repo(auth, node_addon, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     return {
-        'repos': get_repo_dropdown(user, node_addon)['repo_names'],
+        'repo_names': get_repo_dropdown(user, node_addon)['repo_names'],
+        'user_names': get_repo_dropdown(user, node_addon)['user_names'],
         'user': user.username
     }
