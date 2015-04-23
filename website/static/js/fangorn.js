@@ -1212,6 +1212,25 @@ function filterRowsNotInParent(rows) {
     tb.redraw();
 }   
 
+
+/* MOVE */ 
+// copyMode can be 'copy', 'move', 'forbidden', or null.
+// This is set at draglogic and is used as global within this module
+var copyMode = null;
+
+// Set altkey global to fangorn
+    var altKey = false;
+    $(document).keydown(function (e) {
+        if (e.altKey) {
+            altKey = true;
+        }
+    });
+    $(document).keyup(function (e) {
+        if (!e.altKey) {
+            altKey = false;
+        }
+    });
+
 /**
  * Hook for the drag start event on jquery
  * @param event jQuery UI drggable event object
@@ -1264,7 +1283,6 @@ function _fangornOver(event, ui) {
  */
 function _dropLogic(event, items, folder) {
     var tb = this;
-    console.log(event, items, folder);
 }
 
 /**
