@@ -119,7 +119,96 @@ class BaseProvider(metaclass=abc.ABCMeta):
             raise (yield from exceptions.exception_from_response(response, error=throws, **kwargs))
         return response
 
-    def can_intra_copy(self, other):
+    @asyncio.coroutine
+    def move(self, dest_provider, src_path, dest_path, rename=None, conflict='replace', handle_naming=True):
+        """Moves a file or folder from the current provider to the specified one
+        Performs a copy and then a delete.
+        Calls :func:`BaseProvider.intra_move` if possible.
+
+        :param BaseProvider dest_provider: The provider to move to
+        :param dict source_options: A dict to be sent to either :func:`BaseProvider.intra_move`
+            or :func:`BaseProvider.copy` and :func:`BaseProvider.delete`
+        :param dict dest_options: A dict to be sent to either :func:`BaseProvider.intra_move`
+            or :func:`BaseProvider.copy`
+        """
+        args = (dest_provider, src_path, dest_path)
+        kwargs = {'rename': rename, 'conflict': conflict}
+
+        if handle_naming:
+            dest_path = yield from dest_provider.handle_naming(
+                dest_path,
+                rename or src_path.name,
+                is_dir=src_path.is_dir,
+                conflict=conflict
+            )
+            args = (dest_provider, src_path, dest_path)
+            kwargs = {}
+
+        if self.can_intra_move(dest_provider, src_path):
+                return (yield from self.intra_move(*args, **kwargs))
+
+        if src_path.is_dir:
+            return (yield from self._folder_file_op(self.move, *args, **kwargs))
+
+        res = yield from self.copy(*args, handle_naming=False, **kwargs)
+        yield from self.delete(src_path)
+
+        return res
+
+    @asyncio.coroutine
+    def copy(self, dest_provider, src_path, dest_path, rename=None, conflict='replace', handle_naming=True):
+        args = (dest_provider, src_path, dest_path)
+        kwargs = {'rename': rename, 'conflict': conflict, 'handle_naming': handle_naming}
+
+        if handle_naming:
+            dest_path = yield from self.handle_naming(*args, **kwargs)
+            args = (dest_provider, src_path, dest_path)
+
+        if self.can_intra_copy(dest_path, src_path):
+                return (yield from self._intra_copy())
+
+        if src_path.is_dir:
+            return (yield from self._folder_file_op(self.copy, *args, **kwargs))
+
+        return (yield from dest_provider.upload(
+            (yield from self.download(**source_options)),
+            **dest_options
+        ))
+
+    @asyncio.coroutine
+    def _batch_file_op(self, func, dest_provider, src_path, dest_path, **kwargs):
+        try:
+            folder = yield from dest_provider.create_folder(**dest_options)
+        except exceptions.CreateFolderError as e:
+            if e.code != 409:
+                raise
+            #TODO
+
+        assert src_path.is_dir, 'src_path must be a directory'
+        assert asyncio.iscoroutinefunction(func), 'func must be a coroutine'
+
+        futures = []
+        for item in (yield from self.metadata(src_path)):
+            futures.append(
+                func(
+                    dest_provider,
+                    src_path.child(item['name']),
+                    dest_path.child(item['name']),
+                    **kwargs
+                )
+            )
+
+        return asyncio.gather(futures)
+
+    def handle_naming(self, path, rename, is_dir=False, conflict='replace'):
+        dest_path, _ = yield from self.handle_name_conflict(
+            (yield from self.revalidate_path(
+                path, rename, folder=is_dir
+            )), conflict=conflict)
+
+        return dest_path
+
+    def can_intra_copy(self, other, path):
         """Indicates if a quick copy can be performed
         between the current and `other`.
 
@@ -131,7 +220,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         """
         return False
 
-    def can_intra_move(self, other):
+    def can_intra_move(self, other, path):
         """Indicates if a quick move can be performed
         between the current and `other`.
 
@@ -147,9 +236,9 @@ class BaseProvider(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        data, created = yield from self.intra_copy(dest_provider, source_options, dest_options)
-        yield from self.delete(**source_options)
+    def intra_move(self, dest_provider, src_path, dest_path):
+        data, created = yield from self.intra_copy(dest_provider, src_path, dest_path)
+        yield from self.delete(src_path)
         return data, created
 
     @asyncio.coroutine
