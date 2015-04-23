@@ -1305,7 +1305,7 @@ function _dragLogic(event, items, ui) {
         }
         canMove = canMove && item.data.permissions.edit;
     });
-    if (folder.data.permissions.edit && folder.kind === 'folder' && (canMove || canCopy)) {
+    if (folder.data.permissions.edit && folder.kind === 'folder' && folder.parentID !== 0 && (canMove || canCopy)) {
         if (canMove) {
             if (altKey) {
                 copyMode = 'copy';
