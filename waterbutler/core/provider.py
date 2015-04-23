@@ -198,8 +198,8 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 asyncio.async(
                     func(
                         dest_provider,
-                        src_path.child(item['name']),
-                        dest_path.child(item['name']),
+                        src_path.child(item['name'], folder=item['kind'] == 'folder'),
+                        dest_path.child(item['name'], folder=item['kind'] == 'folder'),
                         handle_naming=False,
                     )
                 )
