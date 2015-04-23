@@ -263,7 +263,7 @@ def add_comment(**kwargs):
         content=content,
         page_type=get_page_type(page, node),
         page_title=get_root_target_title(page, comment.root_target).title(),
-        provider=comment.root_target.provider if page == 'files' else '',
+        provider=get_file_provider(page, comment.root_target),
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
         url=get_comment_url(node, page, comment.root_target)
@@ -292,6 +292,16 @@ def add_comment(**kwargs):
     return {
         'comment': serialize_comment(comment, auth)
     }, http.CREATED
+
+
+def get_file_provider(page, root_target):
+    if page == 'files':
+        if root_target.provider == 'googledrive':
+            return 'Google Drive'
+        else:
+            return root_target.provider.title()
+    else:
+        return ''
 
 
 def get_page_type(page, node):
