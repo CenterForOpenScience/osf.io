@@ -2,6 +2,7 @@
 Update User.comments_viewed_timestamp field & comments model.
 Accompanies https://github.com/CenterForOpenScience/osf.io/pull/1762
 """
+from modularodm import Q
 from framework.auth.core import User
 from website.models import Comment
 from website.app import init_app
@@ -12,13 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    init_app(routes=False)
+    init_app(routes=False, set_backends=True, mfr=False)
     update_comments_viewed_timestamp()
     update_comments()
 
 
 def update_comments_viewed_timestamp():
-    users = User.find()
+    users = User.find(Q('comments_viewed_timestamp', 'ne', None) | Q('comments_viewed_timestamp', 'ne', {}))
     for user in users:
         if user.comments_viewed_timestamp:
             for node in user.comments_viewed_timestamp:
@@ -30,7 +31,7 @@ def update_comments():
     comments = Comment.find()
     for comment in comments:
         comment.root_target = comment.node
-        comment.page = 'node'
+        comment.page = Comment.OVERVIEW
         comment.is_hidden = False
         comment.save()
 
