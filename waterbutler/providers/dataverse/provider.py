@@ -12,10 +12,16 @@ from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 
 
 class DataverseProvider(provider.BaseProvider):
+    """Provider for Dataverse"""
 
     BASE_URL = 'https://{0}'.format(settings.HOSTNAME)
 
     def __init__(self, auth, credentials, settings):
+        """
+        :param dict auth: Not used
+        :param dict credentials: Contains `token`
+        :param dict settings: Contains `doi`, `id`, and `name` of a dataset
+        """
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
         self.doi = self.settings['doi']
@@ -24,7 +30,18 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-        # Can download draft or published files
+        """Returns a ResponseWrapper (Stream) for the specified path
+        raises FileNotFoundError if the status from Dataverse is not 200
+
+        :param str path: Path to the file you want to download
+        :param str revision: Used to verify if file is in selected dataset
+            'latest' to check draft files
+            'latest-published' to check published files
+            None to check all data
+        :param dict \*\*kwargs: Additional arguments that are ignored
+        :rtype: :class:`waterbutler.core.streams.ResponseStreamReader`
+        :raises: :class:`waterbutler.core.exceptions.DownloadError`
+        """
         metadata = yield from self._get_data(revision)
         self._validate_path(path, metadata)
 
@@ -38,6 +55,14 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
+        """Zips the given stream then uploads to Dataverse.
+        This will delete existing draft files with the same name.
+
+        :param waterbutler.core.streams.RequestWrapper stream: The stream to put to Dataverse
+        :param str path: The filename prepended with '/'
+
+        :rtype: dict, bool
+        """
 
         filename = path.strip('/')
 
@@ -92,6 +117,11 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
+        """Deletes the key at the specified path
+
+        :param str path: The path of the key to delete
+        """
+
         # Can only delete files in draft
         metadata = yield from self._get_data('latest')
         self._validate_path(path, metadata)
@@ -131,6 +161,12 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
+        """Get past versions of the request file. Currently only checks
+        'latest' and 'latest-published' versions.
+
+        :param str path: The path to a key
+        :rtype list:
+        """
         versions = ['latest', 'latest-published']
         revisions = []
         for version in versions:
