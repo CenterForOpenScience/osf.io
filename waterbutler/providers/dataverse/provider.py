@@ -14,15 +14,16 @@ from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 class DataverseProvider(provider.BaseProvider):
     """Provider for Dataverse"""
 
-    BASE_URL = 'https://{0}'.format(settings.HOSTNAME)
-
     def __init__(self, auth, credentials, settings):
         """
         :param dict auth: Not used
         :param dict credentials: Contains `token`
-        :param dict settings: Contains `doi`, `id`, and `name` of a dataset
+        :param dict settings: Contains `host, `doi`, `id`, and `name` of a dataset.
+            Hosts should be of the form: 'apitest.dataverse.org'
         """
         super().__init__(auth, credentials, settings)
+        self.BASE_URL = 'https://{0}'.format(self.settings['host'])
+
         self.token = self.credentials['token']
         self.doi = self.settings['doi']
         self._id = self.settings['id']
