@@ -118,26 +118,20 @@ class BaseProviderHandler(BaseHandler):
             self.payload['settings'],
         )
 
+        self.path = yield from self.provider.validate_path(**self.arguments)
+        self.arguments['path'] = self.path  # TODO Not this
+
     @utils.async_retry(retries=5, backoff=5)
     def _send_hook(self, action, metadata):
-        payload = {
+        #TODO handle better
+        metadata['materialized'] = str(self.path)
+        return (yield from utils.send_signed_request('PUT', self.payload['callback_url'], {
             'action': action,
-            'provider': self.arguments['provider'],
             'metadata': metadata,
             'auth': self.payload['auth'],
+            'provider': self.arguments['provider'],
             'time': time.time() + 60
-        }
-        message, signature = signer.sign_payload(payload)
-        resp = aiohttp.request(
-            'PUT',
-            self.payload['callback_url'],
-            data=json.dumps({
-                'payload': message.decode(),
-                'signature': signature,
-            }),
-            headers={'Content-Type': 'application/json'},
-        )
-        return resp
+        }))
 
 
 class BaseCrossProviderHandler(BaseHandler):
