@@ -280,11 +280,11 @@ class BaseProvider(metaclass=abc.ABCMeta):
         :param str conflict: replace or keep
         :rtype: (WaterButlerPath, dict or None)
         """
-        exists = yield from self.exists(str(path), **kwargs)
+        exists = yield from self.exists(path, **kwargs)
         if not exists or conflict != 'keep':
             return path, exists
 
-        while (yield from self.exists(str(path.increment_name()), **kwargs)):
+        while (yield from self.exists(path.increment_name(), **kwargs)):
             pass
         # path.increment_name()
         # exists = self.exists(str(path))
