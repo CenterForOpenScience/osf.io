@@ -246,7 +246,8 @@ function moveItem(to, from, conflict) {
         },
         data: JSON.stringify({
             'source': waterbutler.toJsonBlob(from),
-            'destination': waterbutler.toJsonBlob(to, {conflict: conflict})
+            'destination': waterbutler.toJsonBlob(to),
+            'conflict': conflict
         })
     }).done(function(resp, _, xhr) {
         if (xhr.status !== 202) {
