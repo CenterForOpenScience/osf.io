@@ -377,14 +377,6 @@ class TestPublicNodes(SearchTestCase):
         for doc in docs:
             assert doc['key'] in tags
 
-    def test_count_aggregation(self):
-        docs = query("*")['counts']
-        assert_equal(docs['total']['value'], 4)
-        assert_equal(docs['project']['value'], 1)
-        assert_equal(docs['component']['value'], 1)
-        assert_equal(docs['registration']['value'], 1)
-
-
 
 @requires_search
 class TestAddContributor(SearchTestCase):
