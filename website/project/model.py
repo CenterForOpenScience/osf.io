@@ -9,7 +9,6 @@ import urlparse
 from collections import OrderedDict
 
 import pytz
-import blinker
 from flask import request
 from HTMLParser import HTMLParser
 
@@ -47,7 +46,7 @@ from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
-
+from website.project import signals as project_signals
 
 html_parser = HTMLParser()
 
@@ -71,13 +70,6 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
-
-
-signals = blinker.Namespace()
-contributor_added = signals.signal('contributor-added')
-unreg_contributor_added = signals.signal('unreg-contributor-added')
-write_permissions_revoked = signals.signal('write-permissions-revoked')
-
 
 class MetaSchema(StoredObject):
 
@@ -510,8 +502,7 @@ def validate_user(value):
         if User.find(Q('_id', 'eq', user_id)).count() != 1:
             raise ValidationValueError('User does not exist.')
     return True
-
-
+    
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     #: Whether this is a pointer or not
@@ -577,6 +568,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
+
+    archiving = fields.BooleanField(default=False)
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -1559,6 +1552,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
+        before_register_responses = project_signals.before_register_node.send(original)
+        for response in before_register_responses:
+            response[1]()
 
         # Note: Cloning a node copies its `wiki_pages_current` and
         # `wiki_pages_versions` fields, but does not clone the underlying
@@ -1566,6 +1562,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # the cloned node must pass itself to its wiki objects to build the
         # correct URLs to that content.
         registered = original.clone()
+        project_signals.after_create_registration.send(original, registered, auth.user)
 
         registered.is_registration = True
         registered.registered_date = when
@@ -1584,12 +1581,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.piwik_site_id = None
 
         registered.save()
-
-        # After register callback
-        for addon in original.get_addons():
-            _, message = addon.after_register(original, registered, auth.user)
-            if message:
-                status.push_status_message(message)
 
         registered.nodes = []
 
@@ -1617,6 +1608,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
+        project_signals.after_register_node.send(original, registered)
         return registered
 
     def remove_tag(self, tag, auth, save=True):
@@ -2093,7 +2085,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         with TokuTransaction():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
-                write_permissions_revoked.send(self)
+                project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
@@ -2145,7 +2137,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            contributor_added.send(self, contributor=contributor, auth=auth)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
             return True
         else:
             return False
