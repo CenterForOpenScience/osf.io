@@ -139,10 +139,12 @@ function _fangornDataverseTitle(item, col) {
             if (item.data.permissions.edit) {
                 // Default to version in url parameters for file view page
                 var urlParams = $osf.urlParams();
-                var version = urlParams.version || item.data.version;
+                if (urlParams.version && urlParams.version != item.data.version) {
+                    item.data.version = urlParams.version;
+                }
                 var options = [
-                    m('option', {selected: version === 'latest-published', value: 'latest-published'}, 'Published'),
-                    m('option', {selected: version === 'latest', value: 'latest'}, 'Draft')
+                    m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
+                    m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
                 ];
                 contents.push(
                     m('span', [
