@@ -18,8 +18,12 @@ class DataverseProvider(provider.BaseProvider):
         """
         :param dict auth: Not used
         :param dict credentials: Contains `token`
-        :param dict settings: Contains `host, `doi`, `id`, and `name` of a dataset.
-            Hosts should be of the form: 'apitest.dataverse.org'
+        :param dict settings: Contains `host, `doi`, `id`, and `name` of a dataset. Hosts:
+
+            - 'apitest.dataverse.org': Api Test Server
+            - 'dataverse-demo.iq.harvard.edu': Harvard Demo Server
+            - 'dataverse.harvard.edu': Dataverse Production Server **(NO TEST DATA)**
+            - Other
         """
         super().__init__(auth, credentials, settings)
         self.BASE_URL = 'https://{0}'.format(self.settings['host'])
@@ -36,9 +40,10 @@ class DataverseProvider(provider.BaseProvider):
 
         :param str path: Path to the file you want to download
         :param str revision: Used to verify if file is in selected dataset
-            'latest' to check draft files
-            'latest-published' to check published files
-            None to check all data
+
+            - 'latest' to check draft files
+            - 'latest-published' to check published files
+            - None to check all data
         :param dict \*\*kwargs: Additional arguments that are ignored
         :rtype: :class:`waterbutler.core.streams.ResponseStreamReader`
         :raises: :class:`waterbutler.core.exceptions.DownloadError`
@@ -139,9 +144,10 @@ class DataverseProvider(provider.BaseProvider):
     def metadata(self, path, version=None, **kwargs):
         """
         :param str version:
-            'latest' for draft files
-            'latest-published' for published files
-            None for all data
+
+            - 'latest' for draft files
+            - 'latest-published' for published files
+            - None for all data
         """
 
         # Get appropriate metadata
@@ -185,9 +191,10 @@ class DataverseProvider(provider.BaseProvider):
         """Get list of file metadata for a given dataset version
 
         :param str version:
-            'latest' for draft files
-            'latest-published' for published files
-            None for all data
+
+            - 'latest' for draft files
+            - 'latest-published' for published files
+            - None for all data
         """
 
         if not version:
