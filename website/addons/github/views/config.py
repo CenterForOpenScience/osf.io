@@ -26,8 +26,7 @@ def github_get_user_accounts(auth):
 @must_have_permission('write')
 @must_have_addon('github', 'node')
 @must_not_be_registration
-def github_set_config(node_addon, **kwargs):
-    auth = kwargs['auth']
+def github_set_config(auth, node_addon, **kwargs):
     user = auth.user
 
     node = node_addon.owner
