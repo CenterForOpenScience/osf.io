@@ -29,7 +29,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     """Return a list of registered users."""
     # TODO: Allow unauthenticated requests?
     permission_classes = (
-        drf_permissions.IsAuthenticated,
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = UserSerializer
     ordering = ('-date_registered')
