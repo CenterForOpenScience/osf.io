@@ -119,4 +119,18 @@ $(document).ready(function() {
         }
     });
 
+    $('.terms').on('click', function(){
+        var that = this;
+        var $that = $(that);
+
+        var name = $that.attr('name');
+        var capabilities = $('#capabilities-' + name).html();
+        if (capabilities) {
+            bootbox.alert(
+                capabilities
+            );
+        }
+    });
+
+
 });

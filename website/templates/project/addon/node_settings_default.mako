@@ -65,8 +65,11 @@
                                 Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                             </h4>
                         </form>
-                    </div>         
+                    </div>
                 </div>
+                <p>
+                    <div class="terms">Terms & Conditions</div>
+                </p>
             </div>
             <!-- end col -->
         </div>
