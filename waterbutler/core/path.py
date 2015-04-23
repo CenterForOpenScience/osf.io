@@ -9,7 +9,10 @@ class WaterButlerPathPart:
 
     def __init__(self, part, _id=None):
         self._id = _id
-        self._part = part
+        self._count = 0
+        self._orig_id = _id
+        self._orig_part = part
+        self._name, self._ext = os.path.splitext(self.original_value)
 
     @property
     def identifier(self):
@@ -17,21 +20,36 @@ class WaterButlerPathPart:
 
     @property
     def value(self):
-        return self.__class__.DECODE(self._part)
+        if self._count:
+            return'{} ({}){}'.format(self._name, self._count, self._ext)
+        return'{}{}'.format(self._name, self._ext)
 
     @property
     def raw(self):
-        return self._part
+        return self.__class__.ENCODE(self.value)
+
+    @property
+    def original_value(self):
+        return self.__class__.DECODE(self._orig_part)
+
+    @property
+    def original_raw(self):
+        return self._orig_part
 
     @property
     def ext(self):
-        return None  # Todo
+        return self._ext
 
-    def increment_file_name(self):
-        pass  # Todo
+    def increment_name(self, _id=None):
+        self._id = _id
+        self._count += 1
+        return self
+
+    def renamed(self, name):
+        return self.__class__(self.__class__.ENCODE(name), _id=self._id)
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self._part)
+        return '{}({!r}, count={})'.format(self.__class__.__name__, self._orig_part, self._count)
 
 
 class WaterButlerPath:
