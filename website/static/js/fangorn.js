@@ -1272,7 +1272,12 @@ function _fangornOver(event, ui) {
     var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected,
         folder = tb.find($(event.target).attr('data-id')),
         dragState = _dragLogic.call(tb, event, items, ui);
-
+    $('.tb-row').removeClass('tb-h-success fangorn-hover');
+    if (dragState !== 'forbidden') {
+        $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
+    } else {
+        $('.tb-row[data-id="' + folder.id + '"]').addClass('fangorn-hover');
+    }
 }
 
 /**
