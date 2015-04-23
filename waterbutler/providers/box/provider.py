@@ -164,65 +164,32 @@ class BoxProvider(provider.BaseProvider):
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
-    def upload(self, stream, path, file_id=None, conflict='replace', box_path=None, **kwargs):
-        path = box_path or BoxPath(path, _id=self.folder)
-
-        preflight_resp = yield from self.make_request(
-            'OPTIONS',
-            self.build_url(*filter(lambda x: x is not None, ('files', file_id, 'content'))),
-            data=json.dumps({
-                'name': path.name,
-                'parent': {
-                    'id': path._id
-                }
-            }),
-            headers={'Content-Type': 'application/json'},
-            expects=(200, 409),
-            throws=exceptions.UploadError,
-        )
-
-        preflight = yield from preflight_resp.json()
-
-        if preflight_resp.status == 409:
-            if preflight['context_info']['conflicts']['type'] != 'file':
-                raise exceptions.UploadError(code=409)
-
-            if conflict == 'keep':
-                return (yield from self.upload(
-                    stream,
-                    str(path),
-                    conflict=conflict,
-                    box_path=path.increment_name(),
-                    **kwargs
-                ))
-            else:
-                return (yield from self.upload(
-                    stream,
-                    str(path),
-                    conflict=conflict,
-                    box_path=path,
-                    file_id=preflight['context_info']['conflicts']['id'],
-                    **kwargs
-                ))
+    def upload(self, stream, path, conflict='replace', **kwargs):
+        if path.identifier and conflict == 'keep':
+            path, _ = self.handle_name_conflict(path, conflict=conflict, kind='folder')
+            path._parts[-1]._id = None
 
         data_stream = streams.FormDataStream(
-            attributes=json.dumps({'name': path.name, 'parent': {'id': path._id}}),
+            attributes=json.dumps({
+                'name': path.name,
+                'parent': {
+                    'id': path.parent.identifier
+                }
+            })
         )
         data_stream.add_file('file', stream, path.name, disposition='form-data')
 
         resp = yield from self.make_request(
             'POST',
-            self._build_upload_url(*filter(lambda x: x is not None, ('files', file_id, 'content'))),
+            self._build_upload_url(*filter(lambda x: x is not None, ('files', path.identifier, 'content'))),
             data=data_stream,
             headers=data_stream.headers,
-            expects=(201, 409),
+            expects=(201,),
             throws=exceptions.UploadError,
         )
 
         data = yield from resp.json()
-
-        data['entries'][0]['fullPath'] = self._build_full_path(data['entries'][0]['path_collection']['entries'][1:], path.name)
-        return BoxFileMetadata(data['entries'][0], self.folder).serialized(), file_id is None
+        return BoxFileMetadata(data['entries'][0], self.folder).serialized(), path.identifier is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
