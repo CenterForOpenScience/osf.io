@@ -991,6 +991,9 @@ class TestSendEmails(OsfTestCase):
             parent_comment='',
             title=self.project.title,
             url=self.project.absolute_url,
+            page_type='project',
+            page_title='',
+            provider=''
         )
         subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
             timestamp=timestamp,
@@ -1011,6 +1014,9 @@ class TestSendEmails(OsfTestCase):
             title=self.project.title,
             url=self.project.absolute_url,
             localized_timestamp=emails.localize_timestamp(timestamp, self.user),
+            page_type='project',
+            page_title='',
+            provider=''
         )
 
         assert_true(send_mail.called)
@@ -1037,7 +1043,10 @@ class TestSendEmails(OsfTestCase):
                             content='',
                             parent_comment='',
                             title=self.project.title,
-                            url=self.project.absolute_url
+                            url=self.project.absolute_url,
+                            page_type='project',
+                            page_title='',
+                            provider=''
         )
         digest_count = NotificationDigest.find().count()
         assert_equal((digest_count - digest_count_before), 1)
@@ -1053,7 +1062,10 @@ class TestSendEmails(OsfTestCase):
                             content='',
                             parent_comment='',
                             title=self.project.title,
-                            url=self.project.absolute_url
+                            url=self.project.absolute_url,
+                            page_type='project',
+                            page_title='',
+                            provider=''
         )
         digest_count = NotificationDigest.find().count()
         assert_equal(digest_count_before, digest_count)
