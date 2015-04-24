@@ -20,6 +20,8 @@ def _url_val(val, obj, **kwargs):
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
+    elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
+        return val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's an attribute
         return getattr(obj, val)
     else:
@@ -105,6 +107,21 @@ class Link(object):
             kwargs=kwarg_values,
             **self.reverse_kwargs
         )
+
+
+class WaterbutlerLink(object):
+    """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
+    """
+
+    def __init__(self, endpoint, args=None, kwargs=None, **kw):
+        # self.endpoint = endpoint
+        self.kwargs = kwargs or {}
+        self.args = args or tuple()
+        self.reverse_kwargs = kw
+
+    # TODO Build this or use the function from the Folder PR
+    def resolve_url(self, obj):
+        return "TBD"
 
 
 class JSONAPIListSerializer(ser.ListSerializer):

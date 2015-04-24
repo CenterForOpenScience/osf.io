@@ -4,7 +4,7 @@ from modularodm import Q
 from website.models import Node
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import UserSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
 
@@ -111,3 +111,12 @@ class NodePointersList(generics.ListAPIView, NodeMixin):
 
     def get_queryset(self):
         return self.get_node().nodes_pointer
+
+
+class NodeFilesList(generics.ListAPIView, NodeMixin):
+    serializer_class = NodeFilesSerializer
+
+    def get_queryset(self):
+        addons = self.get_node().get_addons()
+        files = [addon for addon in addons if addon.config.has_hgrid_files]
+        return files

@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
 
@@ -30,6 +30,9 @@ class NodeSerializer(JSONAPISerializer):
         },
         'registrations': {
             'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'})
+        },
+        'files': {
+            'related': Link('nodes:node-files', kwargs={'pk': '<pk>'})
         },
     })
     properties = ser.SerializerMethodField()
@@ -91,6 +94,29 @@ class NodePointersSerializer(JSONAPISerializer):
 
     links = LinksField({
         'html': 'absolute_url',
+    })
+
+    def create(self, validated_data):
+        # TODO
+        pass
+
+    def update(self, instance, validated_data):
+        # TODO
+        pass
+
+
+class NodeFilesSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    name = ser.CharField(source='display_name')
+    folder = ser.CharField()
+
+
+    class Meta:
+        type_ = 'files'
+
+    links = LinksField({
+        'get': WaterbutlerLink(''),
     })
 
     def create(self, validated_data):
