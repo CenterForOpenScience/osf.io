@@ -658,7 +658,7 @@ function _removeEvent (event, items, col) {
                     ]);
                 var mithrilButtons = m('div', [
                         m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+                        m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete(folder); }  }, 'OK')
                     ]);
                 tb.modal.update(mithrilContent, mithrilButtons);
             }
