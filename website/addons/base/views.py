@@ -320,9 +320,9 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 
     ret = serialize_node(node, auth, primary=True)
 
-    forbid_edit = (settings.DISK_SAVING_MODE
-                   if node_addon.config.short_name == 'osfstorage' else False)
-    ret['user']['can_edit'] = ret['user']['can_edit'] and not forbid_edit
+    # Disable OSF Storage file deletion in DISK_SAVING_MODE
+    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
+        ret['user']['can_edit'] = False
 
     ret.update({
         'provider': file_guid.provider,
