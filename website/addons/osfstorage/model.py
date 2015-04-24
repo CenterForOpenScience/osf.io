@@ -6,7 +6,6 @@ import logging
 
 import furl
 
-import pymongo
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
 from modularodm.storage.base import KeyExistsException
