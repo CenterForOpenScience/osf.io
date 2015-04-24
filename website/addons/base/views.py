@@ -456,6 +456,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
+        'file_tags': [tag._id for tag in guid_file.tags],
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
     })
 

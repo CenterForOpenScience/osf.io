@@ -30,6 +30,12 @@ from website.project.model import Node
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
+from website.models import Tag
+from website.models import NodeLog
+
+from framework.analytics import (
+    get_basic_counters, increment_user_activity_counters
+)
 
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
@@ -211,6 +217,9 @@ class GuidFile(GuidStoredObject):
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
 
+    logs = fields.ForeignField('nodelog', list=True, backref='logged')
+    tags = fields.ForeignField('tag', list=True, backref='tagged')
+
     _meta = {
         'abstract': True,
     }
@@ -349,6 +358,66 @@ class GuidFile(GuidStoredObject):
     @property
     def revision(self):
         return getattr(self, '_revision', None)
+
+
+    def remove_tag(self, tag, auth, save=True):
+       if tag in self.tags:
+            self.tags.remove(tag)
+            self.add_log(
+               action=NodeLog.FILETAG_REMOVED,
+                params={
+                    'file': self._id,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
+
+    def add_tag(self, tag, auth, save=True):
+        if tag not in self.tags:
+            new_tag = Tag.load(tag)
+            if not new_tag:
+                new_tag = Tag(_id=tag)
+            new_tag.save()
+            self.tags.append(new_tag)
+            self.add_log(
+               action=NodeLog.FILETAG_ADDED,
+                params={
+                    'file': self._id,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
+
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
+        user = auth.user if auth else None
+        api_key = auth.api_key if auth else None
+        log = NodeLog(
+            action=action,
+            user=user,
+            foreign_user=foreign_user,
+            api_key=api_key,
+            params=params,
+        )
+        if log_date:
+            log.date = log_date
+        log.save()
+        self.logs.append(log)
+        if save:
+            self.save()
+        if user:
+            increment_user_activity_counters(user._primary_key, action, log.date)
+        if self.node__parent:
+            parent = self.node__parent[0]
+            parent.logs.append(log)
+            parent.save()
+        return log
+
 
     def maybe_set_version(self, **kwargs):
         self._revision = kwargs.get(self.version_identifier)

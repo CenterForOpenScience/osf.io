@@ -116,13 +116,13 @@ api_routes = {
         ),
 
          Rule([
-            '/project/<pid>/file/addfiletag/<tag>/',
-            '/project/<pid>/node/<nid>/removefiletag/<tag>/',
+            '/project/<pid>/file/addfiletag/<tag>/<guid>/',
+            '/project/<pid>/node/<nid>/addfiletag/<tag>/<guid>/',
         ], 'post', project_views.tag.file_addtag, json_renderer),
 
          Rule([
-            '/project/<pid>/file/removefiletag/<tag>/',
-            '/project/<pid>/node/<nid>/removefiletag/<tag>/',
+            '/project/<pid>/file/removefiletag/<tag>/<guid>/',
+            '/project/<pid>/node/<nid>/removefiletag/<tag>/<guid>/',
         ], 'post', project_views.tag.file_removetag, json_renderer),
 
 

@@ -324,6 +324,10 @@ class NodeLog(StoredObject):
     FILE_REMOVED = 'file_removed'
     FILE_RESTORED = 'file_restored'
 
+    FILETAG_ADDED = 'filetag_added'
+    FILETAG_REMOVED = 'filetag_removed'
+
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'

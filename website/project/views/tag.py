@@ -4,6 +4,8 @@ from flask import request
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
+from framework.guid.model import Guid
+from website.util.sanitize import clean_tag
 from website.project.model import Tag
 from website.util.sanitize import clean_tag
 from website.project.decorators import (
@@ -61,35 +63,36 @@ def project_removetag(auth, **kwargs):
         return {'status': 'success'}
 
 
-@must_be_valid_file  # injects project
+@must_be_valid_file  # injects file
 @must_have_permission('write')
 @must_not_be_registration
-def file_addtag(auth, **kwargs):
+def file_addtag(auth, guid, **kwargs):
 
     tag = clean_tag(kwargs['tag'])
-    file = kwargs['file_guid']
+
+
     if tag:
         try:
-            if kwargs is not None:
-                for key, value in kwargs.iteritems():
-                    print("%s == %s" %(key,value))
-            file.add_tag(tag=tag, auth=auth)
+
+            fileobject = Guid.load(guid).referent
+
+            fileobject.add_tag(tag=tag, auth=auth)
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
 
 
-@must_be_valid_project  # injects project
+@must_be_valid_file # injects file
 @must_have_permission('write')
 @must_not_be_registration
-def file_removetag(auth, **kwargs):
+def file_removetag(auth, guid, **kwargs):
 
     tag = clean_tag(kwargs['tag'])
-    file = kwargs['file_guid']
-
-    node = kwargs['node'] or kwargs['project']
 
     if tag:
-        file.remove_tag(tag=tag, auth=auth)
-        return {'status': 'success'}
+
+        if tag:
+            fileobject = Guid.load(guid).referent
+            fileobject.remove_tag(tag=tag, auth=auth)
+            return {'status': 'success'}
 
