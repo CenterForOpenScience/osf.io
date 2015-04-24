@@ -651,47 +651,49 @@ function _fangornActionColumn (item, col) {
             onclick: _uploadEvent
         });
     } else {
-        buttons.push({
-            name: '',
-            icon: 'fa fa-upload',
-            'tooltip' : '',
-            css: 'fangorn-clickable btn btn-default btn-xs'
-        });
+        buttons.push(_hiddenButtonSpacer('fa fa-upload'));
     }
+
+
     //Download button if this is an item
     if (item.kind === 'file') {
         buttons.push({
-            'name' : '',
-            'tooltip' : 'Download file',
-            'icon' : 'fa fa-download',
-            'css' : 'btn btn-info btn-xs',
-            'onclick' : _downloadEvent
+            'name': '',
+            'tooltip': 'Download file',
+            'icon': 'fa fa-download',
+            'css': 'btn btn-info btn-xs',
+            'onclick': _downloadEvent
         });
-        if (item.data.permissions.edit) {
-            buttons.push({
-                'name' : '',
-                'tooltip' : 'Delete',
-                'icon' : 'fa fa-times',
-                'css' : 'm-l-lg text-danger fg-hover-hide',
-                'style' : 'display:none',
-                'onclick' : _removeEvent
-            });
-        }
+    } else {
+        buttons.push(_hiddenButtonSpacer('fa fa-download'));
     }
-    if (item.data.permissions.edit) {
+
+    //Can always get a notification from anything.
+    buttons.push({
+        name: '',
+        icon: 'fa fa-bell-slash-o',
+        'tooltip': 'Notify',
+        css: 'fangorn-clickable btn btn-default btn-xs',
+        onclick: _uploadEvent
+    });
+
+    //Hover delete button if item is a file and user has permission to edit
+    if (item.kind === 'file' && item.data.permissions.edit) {
         buttons.push({
-            name: '',
-            icon: 'fa fa-bell-slash-o',
-            'tooltip': 'Notify',
-            css: 'fangorn-clickable btn btn-default btn-xs',
-            onclick: _uploadEvent
+            'name' : '',
+            'tooltip' : 'Delete',
+            'icon' : 'fa fa-times',
+            'css' : 'm-l-lg text-danger fg-hover-hide',
+            'style' : 'display:none',
+            'onclick' : _removeEvent
         });
     }
+
     // Build the template for icons
     return buttons.map(function (btn) {
         if(btn.tooltip === '') {
             return m('span[style="visibility: hidden"]', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, style : btn.style},
+            { 'class' : btn.css},
             [ m('span', { 'class' : btn.icon}) ])
             ]);
         }
@@ -700,6 +702,15 @@ function _fangornActionColumn (item, col) {
             [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
     });
+}
+
+function _hiddenButtonSpacer (icon) {
+    return {
+        name: '',
+        icon: icon,
+        'tooltip': '',
+        css: 'fangorn-clickable btn btn-default btn-xs'
+    }
 }
 
 /**
