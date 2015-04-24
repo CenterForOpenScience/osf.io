@@ -281,8 +281,8 @@ class TestGithubViews(OsfTestCase):
         mock_repos.return_value = fake_repos
         url = self.node_settings.owner.api_url_for('github_repo_list')
         ret = self.app.get(url, auth=self.user.auth)
-
-        assert_equals(ret.json, {'repo_names': ['{0} / {1}'.format(repo.owner.login, repo.name) for repo in fake_repos]})
+        assert_equals(ret.json['repo_names'], [repo.name for repo in fake_repos])
+        assert_equals(ret.json['user_names'], [repo.owner.login for repo in fake_repos])
 
     @mock.patch('website.addons.github.api.GitHub.create_repo')
     @mock.patch('website.addons.github.api.GitHub.repos')
