@@ -58,6 +58,13 @@
                                 </li>
                             % endif
                         % endfor
+                        <li>
+                            <a href="${node['url']}discussions/">Comments
+                                % if user['unread_comments']['total'] > 0:
+                                    <span class="badge">${user['unread_comments']['total']}</span>
+                                % endif
+                            </a>
+                        </li>
                         % if node['is_public'] or user['is_contributor']:
                             <li><a href="${node['url']}statistics/">Statistics</a></li>
                         % endif
@@ -71,13 +78,6 @@
                         % if not node['is_registration'] and user['has_read_permissions']:
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
-                        <li>
-                            <a href="${node['url']}discussions/">Discussions
-                                % if user['unread_comments']['total'] > 0:
-                                    <span class="badge">${user['unread_comments']['total']}</span>
-                                % endif
-                            </a>
-                        </li>
                     </ul>
                 </div>
             </div>
