@@ -132,9 +132,30 @@ class BoxProvider(provider.BaseProvider):
 
         return self._serialize_item(data), dest_path.identifier is None
 
-    # TODO can just change parent ID
-    # def intra_move(self):
-    #     pass
+    def intra_move(self, dest_provider, src_path, dest_path):
+        if dest_path.identifier is not None:
+            yield from dest_provider.delete(dest_path)
+
+        resp = yield from self.make_request(
+            'PUT',
+            self.build_url(
+                'files' if src_path.is_file else 'folders',
+                src_path.identifier,
+            ),
+            data=json.dumps({
+                'name': dest_path.name,
+                'parent': {
+                    'id': dest_path.parent.identifier
+                }
+            }),
+            headers={'Content-Type': 'application/json'},
+            expects=(200, 201),
+            throws=exceptions.IntraCopyError
+        )
+
+        data = yield from resp.json()
+
+        return self._serialize_item(data), dest_path.identifier is None
 
     @property
     def default_headers(self):
