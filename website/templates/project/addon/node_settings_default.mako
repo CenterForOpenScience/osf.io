@@ -1,6 +1,6 @@
-<div id="${addon_short_name}Scope" class="scripted">
+<div id="${addon_short_name}Scope" class="scripted" data-addon="${addon_short_name}">
     <h4 class="addon-title">
-    ${addon_full_name}        
+    ${addon_full_name}
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
@@ -27,6 +27,7 @@
             </span>
         </small>
     </h4>
+
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind="visible: showSettings">
         <div class="row">
@@ -65,7 +66,7 @@
                                 Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                             </h4>
                         </form>
-                    </div>         
+                    </div>
                 </div>
             </div>
             <!-- end col -->
@@ -75,5 +76,10 @@
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr.class: messageClass"></p>
+    </div>
+
+    <!-- Terms & Conditions -->
+    <div class="terms-and-conditions">
+        <p>Terms & Conditions</p>
     </div>
 </div>

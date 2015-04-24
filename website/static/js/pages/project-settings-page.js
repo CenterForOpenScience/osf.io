@@ -119,4 +119,17 @@ $(document).ready(function() {
         }
     });
 
+    $('.terms-and-conditions').on('click', function(){
+        var that = this;
+        var name = $(that).parent().attr("data-addon");
+
+        var capabilities = $('#capabilities-' + name).html();
+        if (capabilities) {
+            bootbox.alert(
+                capabilities
+            );
+        }
+    });
+
+
 });
