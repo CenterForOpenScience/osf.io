@@ -86,7 +86,7 @@ class GithubGuidFile(GuidFile):
 
         super(GithubGuidFile, self)._exception_from_response(response)
 
-
+#
 class GitHubProvider(ExternalProvider):
     name = "GitHub"
     short_name = "github"
