@@ -45,7 +45,7 @@
                         <textarea class="form-control" placeholder="Add the first comment on this page!" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </span>
                 </div>
-                <div data-bind="if: replyNotEmpty" class="form-inline">
+                <div data-bind="if: replyNotEmpty" class="form-group">
                     <a class="btn btn-primary" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
                     <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                     <span data-bind="text: replyErrorMessage" class="text-danger"></span>
