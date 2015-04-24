@@ -62,78 +62,50 @@ class GoogleDriveProvider(provider.BaseProvider):
         return self == other
 
     @asyncio.coroutine
-    def intra_move(self, destination_provider, source_options, destination_options):
-        source_path = GoogleDrivePath(self.folder['name'], source_options['path'])
-        destination_path = GoogleDrivePath(destination_provider.folder['name'], destination_options['path'])
-
-        source_id = yield from self._materialized_path_to_id(source_path)
-        destination_id = yield from destination_provider._materialized_path_to_id(destination_path.parent)
-
-        path, exists = yield from self.handle_name_conflict(
-            GoogleDrivePath(destination_provider.folder['name'], '/' + parse.quote(destination_path.name, safe='')),
-            raw=True,
-            parent_id=destination_id,
-            conflict=destination_options.get('conflict'),
-        )
-
-        if destination_options.get('conflict') != 'keep' and exists:
-            yield from destination_provider.delete(None, item_id=exists['id'])
+    def intra_move(self, dest_provider, src_path, dest_path):
+        if dest_path.identifier:
+            yield from dest_provider.delete(dest_path)
 
         resp = yield from self.make_request(
             'PATCH',
-            self.build_url('files', source_id),
+            self.build_url('files', src_path.identifier),
             headers={
                 'Content-Type': 'application/json'
             },
             data=json.dumps({
                 'parents': [{
-                    'id': destination_id
+                    'id': dest_path.parent.identifier
                 }],
-                'title': path.name
+                'title': dest_path.name
             }),
             expects=(200, ),
             throws=exceptions.IntraMoveError,
         )
 
         data = yield from resp.json()
-        return GoogleDriveFileMetadata(data, destination_path.parent).serialized(), not exists
+        return GoogleDriveFileMetadata(data, dest_path.parent).serialized(), dest_path.identifier is None
 
     @asyncio.coroutine
-    def intra_copy(self, destination, source_options, destination_options):
-        source_path = GoogleDrivePath(self.folder['name'], source_options['path'])
-        destination_path = GoogleDrivePath(destination_provider.folder['name'], destination_options['path'])
-
-        source_id = yield from self._materialized_path_to_id(source_path)
-        destination_id = yield from destination_provider._materialized_path_to_id(destination_path.parent)
-
-        path, exists = yield from self.handle_name_conflict(
-            GoogleDrivePath(destination_provider.folder['name'], '/' + parse.quote(destination_path.name, safe='')),
-            raw=True,
-            parent_id=destination_id,
-            conflict=destination_options.get('conflict'),
-        )
-
-        if destination_options.get('conflict') != 'keep' and exists:
-            yield from destination_provider.delete(None, item_id=exists['id'])
+    def intra_copy(self, dest_provider, src_path, dest_path):
+        if dest_path.identifier:
+            yield from dest_provider.delete(dest_path)
 
         resp = yield from self.make_request(
             'POST',
-            self.build_url('files', source_id, 'copy'),
-            headers={
-                'Content-Type': 'application/json'
-            },
+            self.build_url('files', src_path.identifier, 'copy'),
+            headers={'Content-Type': 'application/json'},
             data=json.dumps({
                 'parents': [{
-                    'id': destination_id
+                    'id': dest_path.parent.identifier
                 }],
-                'title': path.name
+                'title': dest_path.name
             }),
             expects=(200, ),
             throws=exceptions.IntraMoveError,
         )
 
         data = yield from resp.json()
-        return GoogleDriveFileMetadata(data, destination_path).serialized(), not exists
+        return GoogleDriveFileMetadata(data, dest_path.parent).serialized(), dest_path.identifier is None
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
