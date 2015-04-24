@@ -113,3 +113,18 @@ class GoogleDriveClient(BaseClient):
             throws=HTTPError(401)
         )
         return res.json()['items']
+
+    def fetch_folder(self, folder_name):
+        query = ' and '.join([
+            "title = '{0}'".format(folder_name),
+            'trashed = false',
+            "mimeType = 'application/vnd.google-apps.folder'",
+        ])
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ),
+            params={'q': query},
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()['items']

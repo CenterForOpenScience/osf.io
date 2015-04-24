@@ -56,7 +56,20 @@ def googledrive_addon_folder(node_settings, auth, **kwargs):
     # Quit if node settings does not have authentication
     if not node_settings.has_auth or not node_settings.folder_id:
         return None
+
     node = node_settings.owner
+
+    if node_settings.folder_path != '/':
+        try:
+            access_token = node_settings.user_settings.fetch_access_token()
+        except exceptions.ExpiredAuthError:
+            return None
+
+        items = GoogleDriveClient(access_token).fetch_folder(node_settings.folder_name)
+
+        if len(items) <= 0 and node_settings.folder_id not in [item['id'] for item in items]:
+            return None
+
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name=node_settings.folder_name,
