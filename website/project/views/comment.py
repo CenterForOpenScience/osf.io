@@ -295,16 +295,16 @@ def add_comment(**kwargs):
 
 
 def get_file_provider(page, root_target):
-    if page == 'files':
+    if page == Comment.FILES:
         return PROVIDERS[root_target.provider]
     else:
         return ''
 
 
 def get_page_type(page, node):
-    if page == 'wiki':
+    if page == Comment.WIKI:
         return 'wiki'
-    elif page == 'files':
+    elif page == Comment.FILES:
         return 'file'
     elif node.parent_node:
         return 'component'
@@ -313,9 +313,9 @@ def get_page_type(page, node):
 
 
 def get_root_target_title(page, root_target):
-    if page == 'wiki':
+    if page == Comment.WIKI:
         return root_target.page_name
-    elif page == 'files':
+    elif page == Comment.FILES:
         #TODO: handle Attribute error
         root_target.enrich()
         return root_target.name
@@ -324,9 +324,9 @@ def get_root_target_title(page, root_target):
 
 
 def get_comment_url(node, page, root_target):
-    if page == 'wiki':
+    if page == Comment.WIKI:
         return node.web_url_for('project_wiki_id_page', wid=root_target._id, _absolute=True)
-    elif page == 'files':
+    elif page == Comment.FILES:
         path = root_target.waterbutler_path[1:]
         return node.web_url_for('addon_view_or_download_file', provider=root_target.provider, path=path, _absolute=True)
     else:
