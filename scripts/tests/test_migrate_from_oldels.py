@@ -110,8 +110,8 @@ class TestMigrateOldels(OsfTestCase):
         paths = [x.path for x in model.OsfStorageFileNode.find(Q('kind', 'eq', 'file') & Q('node_settings', 'eq', self.node_settings))]
         assert len(guids) == 10
         for guid in guids:
-            old_paths.remove(guid._path)
-            paths.remove(guid.path)
+            old_paths.remove(guid.path)
+            paths.remove(guid._path)
         assert len(paths) == 0
         assert len(old_paths) == 0
 
@@ -173,6 +173,9 @@ class TestMigrateOldels(OsfTestCase):
                     'object': '{}{}'.format(index, _id),
                 })
                 utils.update_analytics(self.project, fobj.path, _id + 1)
+                self.project.logs[-1].params['path'] = 'notnone'
+                self.project.logs[-1].save()
+
             assert len(fobj.versions) == index
             assert fobj.get_download_count() == index
 
@@ -181,7 +184,7 @@ class TestMigrateOldels(OsfTestCase):
         migration.migrate_node_settings(self.node_settings, dry=False)
         migration.migrate_children(self.node_settings, dry=False)
 
-        children = oldels.OsfStorageFileNode.find(Q('kind', 'eq', 'file') & Q('node_settings', 'eq', self.node_settings))
+        children = model.OsfStorageFileNode.find(Q('kind', 'eq', 'file') & Q('node_settings', 'eq', self.node_settings))
 
         for index, child in enumerate(children):
             assert len(child.versions) == index
