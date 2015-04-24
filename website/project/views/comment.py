@@ -13,6 +13,7 @@ from framework.forms.utils import sanitize
 
 from website import settings
 from website.notifications.emails import notify
+from website.notifications.constants import PROVIDERS
 from website.filters import gravatar
 from website.models import Guid, Comment
 from website.addons.base import GuidFile
@@ -295,12 +296,7 @@ def add_comment(**kwargs):
 
 def get_file_provider(page, root_target):
     if page == 'files':
-        if root_target.provider == 'googledrive':
-            return 'Google Drive'
-        elif root_target.provider == 'osfstorage':
-            return 'OSF storage'
-        else:
-            return root_target.provider.title()
+        return PROVIDERS[root_target.provider]
     else:
         return ''
 
