@@ -218,6 +218,7 @@ def create_waterbutler_log(payload, **kwargs):
 
 def get_or_start_render(file_guid, start_render=True):
     try:
+
         file_guid.enrich()
     except exceptions.AddonEnrichmentError as error:
         return error.as_html()
@@ -318,6 +319,9 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         **extras
     )
     ret = serialize_node(node, auth, primary=True)
+
+
+
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
@@ -328,7 +332,9 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
+        'file_tags': [tag._id for tag in file_guid.tags],
         'file_guid': file_guid._stored_key
+
 
     })
 

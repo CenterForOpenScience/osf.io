@@ -16,6 +16,14 @@ var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
 
+var guid = window.contextVars.file.file_guid;
+console.log(guid);
+
+var path = window.contextVars.file.path;
+console.log(path);
+
+console.log(window.contextVars.file);
+
 var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
@@ -28,7 +36,7 @@ require('jquery-tagsinput');
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = nodeApiUrl + 'file/addfiletag/' + tag + '/';
+            var url = nodeApiUrl + 'file/addfiletag/' + tag + '/' + guid + '/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',
@@ -41,7 +49,7 @@ require('jquery-tagsinput');
             });
         },
         onRemoveTag: function(tag){
-            var url = nodeApiUrl + 'file/removefiletag/' + tag + '/';
+            var url = nodeApiUrl + 'file/removefiletag/' + tag + '/'+ guid + '/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',

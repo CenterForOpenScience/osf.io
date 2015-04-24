@@ -91,7 +91,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
         :param OsfStorageNodeSettings dest: Destination settings object
         """
-        dest.save()s
+        dest.save()
         if self.file_tree:
             dest.file_tree = copy_file_tree(self.file_tree, dest)
             dest.save()
@@ -268,8 +268,6 @@ class BaseFileObject(StoredObject):
             )
             if save:
                 self.save()
-
-
 
 
 class OsfStorageFileTree(BaseFileObject):
@@ -459,6 +457,7 @@ class OsfStorageGuidFile(GuidFile):
 
     path = fields.StringField(required=True, index=True)
 
+
     @property
     def waterbutler_path(self):
         return '/' + self.path
@@ -487,6 +486,8 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
+
+
 
 
 

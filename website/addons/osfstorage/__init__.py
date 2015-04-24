@@ -9,7 +9,7 @@ MODELS = [
     model.OsfStorageFileRecord,
     model.OsfStorageFileVersion,
     model.OsfStorageGuidFile,
-    model.OsfStorageFileNode
+    # model.OsfStorageFileNode
 ]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
 
