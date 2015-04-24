@@ -1,7 +1,6 @@
 <script id="profileName" type="text/html">
 
     <form role="form" data-bind="submit: submit">
-<pre>{{ko.toJSON($data)}}</pre>
 
         <div class="form-group">
             <label>Full Name (e.g. Rosalind Elsie Franklin)</label>

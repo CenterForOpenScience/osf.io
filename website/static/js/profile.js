@@ -267,7 +267,6 @@ BaseViewModel.prototype.handleSuccess = function() {
 
 BaseViewModel.prototype.handleError = function(response) {
     var self = this;
- //   console.log("in BaseViewModel.prototype.handleError, response is " + JSON.stringify(response));
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
     self.changeMessage(
@@ -327,16 +326,11 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     var self = this;
-    console.log("In submit, self.contents() is " + JSON.stringify(self.contents()));
-    console.log("In self.extraFieldsEmpty(), self is " + JSON.stringify(self.extraFieldsEmpty()));
     if (self.hasValidProperty() && self.isValid()) {
+        // Name on Name view is empty
         if (self.nameFieldEmpty()) {
             $osf.growl('Please enter Full Name before pressing "Save"');            
-        }
-        else if (self.institutionsEmpty() && !self.extraFieldsEmpty() || (self.institutionsEmpty() && !self.hasMultiple())) {
-            $osf.growl('Please enter Institution before pressing "Save"');            
-        }
-        
+        }        
           else {
             $osf.putJSON(
                 self.urls.crud,
@@ -609,7 +603,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return true;
     });
     
-//   console.log("in ListViewModel, urls is " + JSON.stringify(urls));
 
     self.institutionsEmpty = ko.computed(function() {
 
@@ -647,7 +640,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
 
     
     self.hasMultiple = ko.computed(function() {
-//        console.log("Not In hasBlankInstitution");
         return self.contents().length > 1;
     });
     self.hasValidProperty(true);
@@ -716,9 +708,23 @@ ListViewModel.prototype.addContent = function() {
 
 ListViewModel.prototype.removeContent = function(content) {
     var self = this;
-         console.log("In ListViewModel.prototype.removeContent , contents is " + JSON.stringify(self.contents()));
     var idx = self.contents().indexOf(content);
-    self.contents.splice(idx, 1);
+    //  If there is more then one model, then delete it.  If there is only one, then delete it and add another.
+    if (self.hasMultiple()) {
+        self.contents.splice(idx, 1);
+    }
+    else {
+        self.contents.splice(idx, 1);
+        self.contents.push(new self.ContentModel(self));
+
+    }
+        self.changeMessage(
+            'School Removed',
+            'text-danger',
+            5000
+        );
+
+    
 };
 
 ListViewModel.prototype.unserialize = function(data) {
@@ -743,14 +749,11 @@ ListViewModel.prototype.unserialize = function(data) {
 ListViewModel.prototype.serialize = function() {
     self = this;
     var contents = [];
-    console.log("In serialize, self.hasMultiple() is " + JSON.stringify(self.hasMultiple()));
     
     if (self.contents().length !== 0 && typeof(self.contents()[0].serialize() !== undefined)) {
-
         for (var i=0; i < self.contents().length; i++) {            
             // If the requiredField is empty, it will not save it and will delete the blank structure from the database.  
             if (!self.contents()[i].institutionEmpty() || !self.hasMultiple()) {
-            console.log("self.contents()[i].institutionEmpty() " + ko.toJS(self.contents()[i].institutionEmpty()));
                 contents.push(self.contents()[i].serialize());
             }
             else  self.contents.splice(i, 1);
@@ -759,9 +762,35 @@ ListViewModel.prototype.serialize = function() {
     else {
         contents = ko.toJS(self.contents);
     }
- //   console.log("In serialize, contents is " + JSON.stringify(contents));
     return {contents: contents};
 };
+
+ListViewModel.prototype.submit = function() {
+    var self = this;
+    /* In Schools or Jobs, either institution field is empty but other data exists in the object or institution is empty and there is only one                  object.  If the whole object is empty and there are multiple, it will be automatically deleted in ListViewModel.prototype.serialize  */
+    if (self.hasValidProperty() && self.isValid()) {
+        if (self.institutionsEmpty() && !self.extraFieldsEmpty()) {
+            $osf.growl('Please enter Institution before pressing "Save"');            
+        }  
+          else {
+            $osf.putJSON(
+                self.urls.crud,
+                self.serialize()
+            ).done(
+                self.handleSuccess.bind(self)
+            ).done(
+                self.setOriginal.bind(self)
+            ).fail(
+                self.handleError.bind(self)
+            );
+        } 
+    } 
+    else {
+            self.showMessages(true);
+    }
+
+};
+
 
 var JobViewModel = function() {
     var self = this;
