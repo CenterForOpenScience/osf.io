@@ -298,6 +298,8 @@ def get_file_provider(page, root_target):
     if page == 'files':
         if root_target.provider == 'googledrive':
             return 'Google Drive'
+        elif root_target.provider == 'osfstorage':
+            return 'OSF storage'
         else:
             return root_target.provider.title()
     else:
