@@ -24,6 +24,7 @@ function FileViewTreebeard(data) {
         hideColumnTitles: true,
         multiselect : false,
         placement : 'fileview',
+        allowMove : false,
         filterTemplate: function () {
             var tb = this;
             return m("input.pull-left.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
