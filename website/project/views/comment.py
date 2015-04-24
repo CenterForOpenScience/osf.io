@@ -321,8 +321,9 @@ def get_root_target_title(page, root_target):
     if page == 'wiki':
         return root_target.page_name
     elif page == 'files':
-        metadata = requests.get(root_target.metadata_url).json()
-        return metadata['data']['name']
+        #TODO: handle Attribute error
+        root_target.enrich()
+        return root_target.name
     else:
         return ''
 
