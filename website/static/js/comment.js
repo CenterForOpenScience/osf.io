@@ -250,14 +250,12 @@ BaseComment.prototype.checkFileExistsAndConfigure = function() {
 BaseComment.prototype.decrementUserFromDiscussion = function(discussions) {
     var self = this;
     var commenterId = self.author.id;
-    var ind;
     for (var i in discussions()) {
         if (discussions()[i].id === commenterId) {
             var commenter = discussions()[i];
-            ind = i;
             commenter.numOfComments -= 1;
             if (commenter.numOfComments === 0) {
-                discussions.splice(ind, 1);
+                discussions.splice(i, 1);
             }
             break;
         }
