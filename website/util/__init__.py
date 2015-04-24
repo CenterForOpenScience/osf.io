@@ -25,7 +25,7 @@ waterbutler_action_map = {
     'delete': 'file',
     'download': 'file',
     'metadata': 'data',
-    'create_folder': 'folders',
+    'create_folder': 'file',
 }
 
 
