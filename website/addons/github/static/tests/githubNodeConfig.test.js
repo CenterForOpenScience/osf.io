@@ -224,7 +224,8 @@ describe('githubNodeConfigViewModel', () => {
                 method: 'GET',
                 url: URLS.repo_list,
                 response: {
-                    repo_names: new Array(10).map(faker.internet.password)
+                    repo_names: new Array(10).map(faker.internet.password),
+                    user_names: new Array(10).map(faker.internet.password)
                 }
             },
             makeSettingsEndpoint()
@@ -390,7 +391,8 @@ describe('githubNodeConfigViewModel', () => {
     });
     describe('#createRepo', () => {
         var createEndpoint = makeSettingsEndpoint({
-            repos: new Array(10).map(faker.internet.password)
+            repo_names: new Array(10).map(faker.internet.password),
+            user_names: new Array(10).map(faker.internet.password)
         });
         createEndpoint.method = 'POST';
         createEndpoint.url = URLS.create_repo;
