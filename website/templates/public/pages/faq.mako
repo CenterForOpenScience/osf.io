@@ -104,7 +104,7 @@
 <p>Unfortunately, no - you will have to delete the file and re-upload a new file with the desired name.</p>
 
 <h3>My email address has changed. How do I change my login email?</h3>
-<p>From your <a href="osf.io/settings/account">account settings</a> page, you can additional email addresses to your account, and select which of these is your primary email address. Any of these emails can be used to log in to the OSF. </p>
+<p>From your <a href="https://osf.io/settings/account">account settings</a> page, you can additional email addresses to your account, and select which of these is your primary email address. Any of these emails can be used to log in to the OSF. </p>
 
 <h3>How can I license my data/code/etc.?</h3>
 <p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>
