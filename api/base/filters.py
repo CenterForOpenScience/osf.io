@@ -38,19 +38,12 @@ class ODMFilterMixin(object):
 
     Subclasses must define `get_default_odm_query()`.
 
-    Notes on making this better:
-    1. Check the field type vs. a list of known field types
-        If the field type is on that list, then perform the type of query that makes the most sense for that field type.
-        For example, Char fields would do 'icontains', while number-style fields and booleans would do 'eq', lists would
-        handle list containing, and so on.  isinstance(self.serializer_class._declared_fields[key],
-        serializers.ser.CharField)
-    2. If it's a built-in field type, then grab the source. If the source isn't blank, use that for the field name in
-        the query, otherwise use the name that was sent in. self.serializer_class._declared_fields[key].source is None
-        then key else source
-    3. Verify that the field is available for filtering by checking self.serializer_class.filterable_fields and seeing
-        if that field is in there. If the property doesn't exist, all fields are valid
-
+    Serializers that want to restrict which fields are used for filtering need to have a variable called
+    filterable_fields which is a list of strings representing the field names as they appear in the serialization.
     """
+
+    # TODO Handle simple and complex non-standard fields
+    
     TRUTHY = set(['true', 'True', 1, '1'])
     FALSY = set(['false', 'False', 0, '0'])
 
