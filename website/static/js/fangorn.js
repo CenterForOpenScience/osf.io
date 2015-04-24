@@ -876,11 +876,10 @@ function _fangornDefineToolbar (item) {
                 return m('.fangorn-toolbar-icon.text-info', {
                         onclick : function(event) { Fangorn.ButtonEvents.createFolder.call(self, event, item); } 
                     },[
-                    m('i.fa.fa-plus'),
+                    m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
                     m('span.hidden-xs','Create Folder')
                 ]);
             }});
-
         if(item.data.path) {
             buttons.push({ name : 'deleteFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-danger', {

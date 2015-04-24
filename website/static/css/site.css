@@ -2720,3 +2720,23 @@ span#profileFullname{
         opacity: 0.1
     }
 }
+
+/* OSF Font-Awesome Stack Alternative */
+.osf-fa-stack {
+  display: inline-block;
+  width: 15px;
+  height: 13px;
+  position: relative;
+} 
+.fangorn-toolbar-icon .osf-fa-stack-top {
+  font-size: 10px;
+  margin-top: 5px;
+  line-height: 11px;
+}
+.fangorn-toolbar-icon .osf-fa-stack-bottom {
+  font-size: 18px;
+  line-height: 20px;
+}
+.text-white {
+  color: #FFF;   
+}
