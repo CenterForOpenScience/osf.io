@@ -455,7 +455,7 @@ def undelete_comment(**kwargs):
     return {}
 
 
-def _update_comments_timestamp(auth, node, page='node', root_id=None):
+def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user) and page != 'total':
         user_timestamp = auth.user.comments_viewed_timestamp
         if not user_timestamp.get(node._id, None):
@@ -464,14 +464,14 @@ def _update_comments_timestamp(auth, node, page='node', root_id=None):
         if node_timestamp and isinstance(node_timestamp, datetime):
             overview_timestamp = user_timestamp[node._id]
             user_timestamp[node._id] = dict()
-            user_timestamp[node._id]['node'] = overview_timestamp
+            user_timestamp[node._id][Comment.OVERVIEW] = overview_timestamp
         timestamps = auth.user.comments_viewed_timestamp[node._id]
 
         # update node timestamp
-        if page == 'node':
-            timestamps['node'] = datetime.utcnow()
+        if page == Comment.OVERVIEW:
+            timestamps[Comment.OVERVIEW] = datetime.utcnow()
             auth.user.save()
-            return {node._id: auth.user.comments_viewed_timestamp[node._id]['node'].isoformat()}
+            return {node._id: auth.user.comments_viewed_timestamp[node._id][Comment.OVERVIEW].isoformat()}
 
         # set up timestamp dictionary for wiki/files page
         if not timestamps.get(page, None):
