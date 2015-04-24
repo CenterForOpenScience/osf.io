@@ -332,7 +332,7 @@ def get_comment_url(node, page, root_target):
         return node.web_url_for('project_wiki_id_page', wid=root_target._id, _absolute=True)
     elif page == 'files':
         try:
-            path = root_target.path
+            path = root_target.waterbutler_path[1:]
         except AttributeError:
             metadata = requests.get(root_target.metadata_url).json()
             path = metadata['data']['path'][1:]
