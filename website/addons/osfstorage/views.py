@@ -16,6 +16,7 @@ from website.project.decorators import (
     must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
+from website.project.model import has_anonymous_link
 
 from website.models import Node
 from website.models import NodeLog
@@ -229,6 +230,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
 def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
     path = payload.get('path')
+    is_anon = has_anonymous_link(node, Auth(private_key=payload.get('view_only')))
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -237,7 +239,7 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     return {
         'revisions': list(reversed([
-            utils.serialize_revision(node, record, version, idx)
+            utils.serialize_revision(node, record, version, idx, anon=is_anon)
             for idx, version in enumerate(reversed(record.versions))
         ]))
     }
@@ -260,7 +262,10 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
             folder.undelete(Auth(user), recurse=False)
         else:
             raise HTTPError(httplib.CONFLICT, data={
-                'message': 'Folder "{}" already exists.'.format(path)
+                'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+                    name=folder.name,
+                    path=folder.materialized_path(),
+                )
             })
 
     folder.log(Auth(user), NodeLog.FOLDER_CREATED)

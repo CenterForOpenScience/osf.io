@@ -71,9 +71,15 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a rel="tooltip" title="Duplicate" data-placement="bottom"
-                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
-                            data-toggle="modal" data-target="#duplicateModal">
+                        <a
+                        % if is_project:
+                            class="btn btn-default"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                            data-target="#duplicateModal" data-toggle="modal"
+                        % else:
+                            class="btn btn-default disabled"
+                        % endif
+                            href="#">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
@@ -178,7 +184,8 @@
             <div class="addon-widget-body">
                 <div id="treeGrid">
                     <div class="fangorn-loading">
-                        <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>

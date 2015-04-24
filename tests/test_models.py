@@ -371,6 +371,21 @@ class TestUser(OsfTestCase):
         token = u.get_confirmation_token('foo@bar.com', force=True)
         assert_equal(token, '54321')
 
+    # Some old users will not have an 'expired' key in their email_verifications.
+    # Assume the token in expired
+    def test_get_confirmation_token_if_email_verification_doesnt_have_expiration(self):
+        u = UserFactory()
+
+        email = fake.email()
+        u.add_unconfirmed_email(email)
+        # manually remove 'expiration' key
+        token = u.get_confirmation_token(email)
+        del u.email_verifications[token]['expiration']
+        u.save()
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token(email)
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
