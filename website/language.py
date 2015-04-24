@@ -151,4 +151,4 @@ STATA_VERSION_ERROR = 'Version of given Stata file is not 104, 105, 108, 113 (St
 BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
 
 #disk saving mode
-DISK_SAVING_MODE = 'Forks and registrations are currently disabled while the OSF is undergoing a server upgrade. These features will return shortly.'
+DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'
