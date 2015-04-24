@@ -294,7 +294,7 @@ ViewModel.prototype.fetchRepoList = function() {
                 ret.resolve(repos);
             })
             .fail(function(xhr, status, error) {
-                var message = 'Could not retrieve list of Github repos at' +
+                var message = 'Could not retrieve list of Github repos at ' +
                     'this time. Please refresh the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
                 self.changeMessage(message, 'text-warning');
