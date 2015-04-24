@@ -2,7 +2,6 @@
 import collections
 import httplib as http
 import pytz
-import requests
 
 from flask import request
 from modularodm import Q
@@ -332,11 +331,7 @@ def get_comment_url(node, page, root_target):
     if page == 'wiki':
         return node.web_url_for('project_wiki_id_page', wid=root_target._id, _absolute=True)
     elif page == 'files':
-        try:
-            path = root_target.waterbutler_path[1:]
-        except AttributeError:
-            metadata = requests.get(root_target.metadata_url).json()
-            path = metadata['data']['path'][1:]
+        path = root_target.waterbutler_path[1:]
         return node.web_url_for('addon_view_or_download_file', provider=root_target.provider, path=path, _absolute=True)
     else:
         return node.absolute_url
