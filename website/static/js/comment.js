@@ -22,16 +22,16 @@ var nodeId = window.contextVars.node.id;
 var nodeUrl = '/' + nodeId + '/';
 
 // Maximum length for comments, in characters
-var FIGSHARE = 'figshare'
+var FIGSHARE = 'figshare';
 
 var MAXLENGTH = 500;
 var MAXLEVEL = {
     'page': 10,
     'pane': 5,
     'widget': 5
-}
+};
 
-var TOGGLELEVEL = 2
+var TOGGLELEVEL = 2;
 
 var ABUSE_CATEGORIES = {
     spam: 'Spam or advertising',
@@ -197,9 +197,9 @@ BaseComment.prototype.getThread = function(thread_id) {
         deferred.resolve(self.comments());
         self.configureCommentsVisibility();
         self._loaded = true;
-    })
+    });
     return deferred.promise();
-}
+};
 
 BaseComment.prototype.configureCommentsVisibility = function() {
     var self = this;
@@ -406,7 +406,7 @@ var CommentModel = function(data, $parent, $root) {
     self.shouldContinueThread = ko.pureComputed(function() {
         if (self.shouldShowChildren()) { return false;}
         return ((!self.isHidden()) && self.hasChildren());
-    })
+    });
 
     self.cleanTitle = ko.pureComputed(function() {
         var cleaned;
@@ -641,14 +641,14 @@ var CommentListModel = function(userName, hostPage, hostName, mode, canComment, 
     self.discussionByFrequency = ko.observableArray();
     self.discussionByRecency = ko.observableArray();
     self.byRecency = ko.observable(true); // Default sorting is by recency
-    
+
     self.discussion = ko.computed(function(){
         if (self.byRecency()) {
             return self.discussionByRecency();
         } else {
             return self.discussionByFrequency();
         }
-    })
+    });
 
     self.page(hostPage);
     self.id = ko.observable(hostName);
@@ -695,11 +695,11 @@ CommentListModel.prototype.onSubmitSuccess = function() {};
 
 CommentListModel.prototype.showRecent = function() {
     this.byRecency(true);
-}
+};
 
 CommentListModel.prototype.showFrequent = function() {
     this.byRecency(false);
-}
+};
 
 CommentListModel.prototype.initListeners = function() {
     var self = this;
