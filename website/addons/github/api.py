@@ -16,13 +16,13 @@ default_adapter = HTTPAdapter()
 
 class GitHub(object):
 
-    def __init__(self, access_token=None, token_type=None):
+    def __init__(self, access_token=None):
 
         self.access_token = access_token
-        if access_token and token_type:
+        if access_token:
             self.gh3 = github3.login(token=access_token)
             self.gh3.set_client_id(
-                github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
+                github_settings.GITHUB_CLIENT_ID, github_settings.GITHUB_CLIENT_SECRET
             )
         else:
             self.gh3 = github3.GitHub()
@@ -36,8 +36,7 @@ class GitHub(object):
     def from_settings(cls, settings):
         if settings:
             return cls(
-                access_token=settings.oauth_access_token,
-                token_type=settings.oauth_token_type,
+                access_token=settings.oauth_key,
             )
         return cls()
 
