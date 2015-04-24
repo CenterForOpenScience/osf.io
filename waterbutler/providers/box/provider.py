@@ -77,38 +77,35 @@ class BoxProvider(provider.BaseProvider):
             )
 
             data = yield from resp.json()
-            lower_name = new_name.lower()
+            lower_name = path.lower()
 
             try:
-                item = next(x for x in data['entries'] if x['name'].lower() == lower_name)
-                ids += (item['id'],)
-                names += (item['name'],)
-                is_folder = item['type'] == 'folder'
+                item = next(
+                    x for x in data['entries']
+                    if x['name'].lower() == lower_name
+                    and (
+                        folder is None or
+                        (x['type'] == 'folder') == folder
+                    )
+                )
+                _id = item['id']
+                name = item['name']
+                folder = item['type'] == 'folder'
             except StopIteration:
-                ids += (None,)
-                names += (new_name,)
+                _id = None
+                name = path
 
-        return WaterButlerPath('/'.join(names), _ids=ids, folder=is_folder)
+            return base.child(name, _id=_id, folder=folder)
 
-    def can_intra_move(self, other):
+    def can_intra_move(self, other, path=None):
         return self == other
 
-    def can_intra_copy(self, other):
+    def can_intra_copy(self, other, path=None):
         return self == other
 
-    def intra_copy(self, destination_provider, source_options, destination_options):
-        src_path = source_options['path']
-        dest_path = destination_options['path']
-
-        if dest_path.is_dir:
-            dest_path = yield from destination_provider.validate_path('/{}/{}'.format(dest_path.identifier, src_path.name))
-
+    def intra_copy(self, dest_provider, src_path, dest_path):
         if dest_path.identifier is not None:
-            if destination_options.get('conflict') == 'keep':
-                destination_options['path'] = dest_path
-                dest_path, meta = yield from destination_provider.handle_name_conflict(**destination_options)
-            else:
-                yield from destination_provider.delete(**destination_options)
+            yield from dest_provider.delete(dest_path)
 
         resp = yield from self.make_request(
             'POST',
