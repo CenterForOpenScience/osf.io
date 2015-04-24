@@ -458,9 +458,9 @@ def undelete_comment(**kwargs):
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user) and page != 'total':
         user_timestamp = auth.user.comments_viewed_timestamp
-        if not user_timestamp.get(node._id, None):
-            user_timestamp[node._id] = dict()
         node_timestamp = user_timestamp.get(node._id, None)
+        if not node_timestamp:
+            user_timestamp[node._id] = dict()
         if node_timestamp and isinstance(node_timestamp, datetime):
             overview_timestamp = user_timestamp[node._id]
             user_timestamp[node._id] = dict()
