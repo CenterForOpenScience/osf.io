@@ -232,6 +232,9 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, raw=False, folder=False, **kwargs):
+        if path.identifier is None:
+            raise exceptions.MetadataError('{} not found'.format(str(path)), code=404)
+
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
         return (yield from self._get_folder_meta(path, raw=raw, folder=folder))
