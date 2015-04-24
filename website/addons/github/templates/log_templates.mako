@@ -8,6 +8,16 @@ GitHub repo
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="github_folder_created">
+created folder
+<span class="overflow log-folder">{{ params.path }}</span> in
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> in
+<span data-bind="text: nodeType"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
 <script type="text/html" id="github_file_updated">
 updated file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
