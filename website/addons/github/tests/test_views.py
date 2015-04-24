@@ -306,7 +306,7 @@ class TestGithubViews(OsfTestCase):
             auth=self.user.auth,
 
         )
-        assert_equals(ret.json['repos'], ['{0} / {1}'.format(repo.owner.login, repo.name) for repo in fake_repos])
+        assert_equals(ret.json['repo_names'], [repo.name for repo in fake_repos])
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
         github_mock = self.github
