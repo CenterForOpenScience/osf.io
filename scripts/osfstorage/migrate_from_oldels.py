@@ -19,6 +19,7 @@ from scripts import utils as scripts_utils
 from website.app import init_app
 from website.project.model import NodeLog
 from website.addons.osfstorage import model
+from website.addons.osfstorage import oldels
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ def migrate_node_settings(node_settings, dry=True):
 
 
 def migrate_file(node, old, parent, dry=True):
-    assert isinstance(old, model.OsfStorageFileRecord)
+    assert isinstance(old, oldels.OsfStorageFileRecord)
     if not dry:
         try:
             new = parent.append_file(old.name)
@@ -198,7 +199,7 @@ def main(nworkers, worker_id, dry=True):
     else:
         logger.info('Running in dry mode, changes NOT will be made')
 
-    to_migrate = model.OsfStorageNodeSettings.find(Q('_migrated_from_old_models', 'ne', True))
+    to_migrate = oldels.OsfStorageNodeSettings.find(Q('_migrated_from_old_models', 'ne', True))
     if to_migrate.count() == 0:
         logger.info('No nodes to migrate; exiting...')
         return

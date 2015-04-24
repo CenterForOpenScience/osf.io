@@ -387,7 +387,7 @@ class OsfStorageFileVersion(StoredObject):
         self.save()
 
 
-@unique_on(['node', 'path'])
+@unique_on(['node', 'path', '_path'])
 class OsfStorageGuidFile(GuidFile):
     """A reference back to a OsfStorageFileNode
 
@@ -399,6 +399,7 @@ class OsfStorageGuidFile(GuidFile):
     provider = 'osfstorage'
     version_identifier = 'version'
 
+    _path = fields.StringField(index=True)
     path = fields.StringField(required=True, index=True)
 
     @classmethod
