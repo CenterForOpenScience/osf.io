@@ -49,7 +49,17 @@ class GoogleDriveProvider(provider.BaseProvider):
             raise Exception  # TODO
 
         names, ids = zip(*[(parse.quote(x['title'], safe=''), x['id']) for x in parts])
-        return GoogleDrivePath('/'.join(names), _ids=ids, folder='folder' in parts[0]['mimeType'])
+        return GoogleDrivePath('/'.join(names), _ids=ids, folder='folder' in parts[-1]['mimeType'])
+
+    @asyncio.coroutine
+    def revalidate_path(self, base, name, folder=None):
+        parts = yield from self._resolve_path_to_ids(name, start_at=[{
+            'title': base.name,
+            'mimeType': 'folder',
+            'id': base.identifier,
+        }])
+        _id, name, mime = list(map(parts[-1].__getitem__, ('id', 'title', 'mimeType')))
+        return base.child(name, _id=_id, folder='folder' in mime)
 
     @property
     def default_headers(self):
