@@ -245,22 +245,10 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
-        path = GoogleDrivePath(self.folder['name'], path)
-        path.validate_folder()
+        GoogleDrivePath.validate_folder(path)
 
-        try:
-            yield from self.metadata(str(path), raw=True)
+        if path.identifier:
             raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
-        except exceptions.MetadataError as e:
-            if e.code != 404:
-                raise
-
-        if path.parent.is_root:
-            folder_id = self.folder['id']
-        else:
-            parent_path = str(path.parent).rstrip('/')
-            metadata = yield from self.metadata(parent_path, raw=True)
-            folder_id = metadata['id']
 
         resp = yield from self.make_request(
             'POST',
@@ -271,7 +259,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             data=json.dumps({
                 'title': path.name,
                 'parents': [{
-                    'id': folder_id
+                    'id': path.parent.identifier
                 }],
                 'mimeType': 'application/vnd.google-apps.folder'
             }),
