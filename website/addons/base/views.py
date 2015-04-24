@@ -258,12 +258,18 @@ def addon_view_or_download_file_legacy(**kwargs):
     # If provider is OSFstorage, check existence of requested file in the filetree
     # This prevents invalid GUIDs from being created
     if provider == 'osfstorage':
-        file_tree = node.get_addon('osfstorage').file_tree
-        if not file_tree or (file_tree and not file_tree.find_by_path(path)):
-            raise HTTPError(
-                404, data=dict(message_short='File not found',
-                               message_long='You requested a file that does not exist.')
-            )
+        node_settings = node.get_addon('osfstorage')
+        file_tree = node_settings.file_tree
+        error = HTTPError(
+            404, data=dict(message_short='File not found',
+                           message_long='You requested a file that does not exist.')
+        )
+        if not file_tree:
+            raise error
+        else:
+            children_paths = [child.path for child in file_tree.children]
+            if path not in children_paths:
+                raise error
 
     return redirect(
         node.web_url_for(
