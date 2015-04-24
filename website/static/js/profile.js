@@ -618,7 +618,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
 
     
     self.extraFieldsEmpty = ko.computed(function() {
-
         if (urls.crud == "/api/v1/settings/jobs/") {       
             for (var i=0; i<self.contents().length; i++) {
                 if (self.contents()[i].department() == "" && self.contents()[i].title() == "") { 
@@ -633,9 +632,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
                 }
             }
         }
-        
-        return false;
-                
+        return false;           
     });
 
     
@@ -692,8 +689,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
     self.setOriginal = function() {
         self.originalItems = [];
         for (var i=0; i<self.contents().length; i++) {
- //           self.contents()[i].hasBlankInstitution = self.hasBlankInstitution();
-//            self.contents()[i].hasBlankObject = self.hasBlankObject();
             self.contents()[i].setOriginal();
             self.originalItems.push(self.contents()[i].originalValues());
         }
