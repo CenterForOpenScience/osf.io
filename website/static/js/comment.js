@@ -39,6 +39,9 @@ var ABUSE_CATEGORIES = {
     violence: 'Violence or harmful behavior'
 };
 
+var FILES = 'files';
+var PANE = 'pane';
+
 /*
  * Format UTC datetime relative to current datetime, ensuring that time
  * is in the past.
@@ -203,8 +206,6 @@ BaseComment.prototype.getThread = function(thread_id) {
 
 BaseComment.prototype.configureCommentsVisibility = function() {
     var self = this;
-    var FILES = 'files';
-    var PANE = 'pane';
     for (var c in self.comments()) {
         var comment = self.comments()[c];
         if (self.level > 0 && self.loading() === false) {
