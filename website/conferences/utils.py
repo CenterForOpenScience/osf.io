@@ -8,6 +8,7 @@ from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 
+from website import util
 from website import security
 from website import settings
 from website.project import new_node
@@ -97,11 +98,11 @@ def prepare_contributors(admins):
 
 
 def upload_attachment(user, node, attachment):
-    from website.addons.osfstorage import utils as storage_utils
     attachment.seek(0)
     name = attachment.filename or settings.MISSING_FILE_NAME
     content = attachment.read()
-    upload_url = storage_utils.get_waterbutler_upload_url(user, node, path=name)
+    upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user)
+
     requests.put(
         upload_url,
         data=content,

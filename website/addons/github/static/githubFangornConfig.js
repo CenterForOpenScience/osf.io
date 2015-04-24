@@ -49,7 +49,8 @@ function _removeEvent (event, items) {
     if(items.length === 1) {
         var mithrilContentSingle = m('div', [
             m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
-            m('p', 'This action is irreversible.')
+            m('p', 'This action is irreversible.'),
+            parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
         ]);
         var mithrilButtonsSingle = m('div', [
             m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
@@ -141,9 +142,16 @@ function _githubDefineToolbar (item){
                     m('i.fa.fa-upload'),
                     m('span.hidden-xs','Upload')
                 ]);
+            }},
+            { name : 'createFolder', template : function(){
+                return m('.fangorn-toolbar-icon.text-info', {
+                        onclick : function(event) { Fangorn.ButtonEvents.createFolder.call(self, event, item) } 
+                    },[
+                    m('i.fa.fa-plus'),
+                    m('span.hidden-xs','Create Folder')
+                ]);
             }});
         }
-
         if (item.data.addonFullname) {
             buttons.push(
                 { name : 'downloadFile', template : function(){

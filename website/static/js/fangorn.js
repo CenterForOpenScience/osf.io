@@ -524,6 +524,83 @@ function _downloadEvent (event, item, col) {
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
+function createFolder(event, parent, col) {
+    var self = this;
+    var folderName = m.prop('');
+    var errorMessage = m.prop('');
+    var creatingFolder = m.prop(false);
+
+    if (!parent.open) {
+        self.updateFolder(null, parent);
+    }
+
+    function doCreate(event) {
+        event.preventDefault();
+        if (folderName().length < 1) {
+            errorMessage('Please enter a folder name.');
+            redraw();
+            return;
+        }
+        if (folderName().indexOf('/') !== -1) {
+            errorMessage('Folder name contains illegal characters.');
+            redraw();
+            return;
+        }
+
+        errorMessage('');
+        creatingFolder(true);
+        redraw();
+        var path = (parent.data.path || '/') + folderName() + '/';
+
+        m.request({
+            method: 'POST',
+            background: true,
+            url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+        }).then(function(item) {
+            inheritFromParent({data: item}, parent);
+
+            item = self.createItem(item, parent.id);
+            _fangornOrderFolder.call(self, parent);
+            folderName('');
+            self.modal.dismiss();
+            creatingFolder(false);
+            item.notify.update('Created!', 'success', undefined, 1000);
+        }, function(data) {
+            if (data && data.code === 409) {
+                errorMessage(data.message);
+            } else {
+                errorMessage('Folder creation failed.');
+            }
+            creatingFolder(false);
+            redraw();
+        });
+    }
+
+    function redraw() {
+        self.modal.update(m('div', [
+            m('h3.break-word', 'Enter a folder name'),
+            m('input.form-control[autofocus][type=text]', {
+                placeholder: 'Folder Name',
+                onkeyup: m.withAttr('value', folderName),
+                disabled: creatingFolder() ? 'disabled' : '',
+            })
+        ]), (function() {
+            return m('div', [
+                m('span.pull-left.text-danger', errorMessage()),
+                m('div', [
+                    m('button.btn.btn-default.btn-md', {onclick: function(){self.modal.dismiss();}}, 'Cancel'),
+                    ' ',
+                    creatingFolder() ?
+                    m('i.fa.fa-spinner.fa-spin') :
+                    m('button.btn.btn-success.btn-md', {onclick: doCreate.bind(self)}, 'Create')
+                ])
+            ]);
+        })());
+    }
+
+    redraw();
+}
+
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -563,20 +640,56 @@ function _removeEvent (event, items, col) {
         this.options.iconState.generalIcons.deleteMultiple.on = false;
     }
 
+    function doDelete() {
+        var folder = items[0];
+        if (folder.data.permissions.edit) {
+
+            if (folder.children.length > 0) {
+                tb.modal.update(m('div', [
+                        m('h3.break-word', '"' + folder.data.name + '" must be empty to be deleted.')
+                    ]),
+                    m('button.btn.btn-default', {onclick: function(){cancelDelete.call(tb);}}, 'OK')
+                );
+                tb.modal.update(mithrilContent, mithrilButtons);
+            } else {
+                var mithrilContent = m('div', [
+                        m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
+                        m('p', 'This action is irreversible.')
+                    ]);
+                var mithrilButtons = m('div', [
+                        m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+                    ]);
+                tb.modal.update(mithrilContent, mithrilButtons);
+            }
+        } else {
+            folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+        }
+    }
+
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
-        var mithrilContentSingle = m('div', [
-            m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
-            m('p', 'This action is irreversible.')
-        ]);
-        var mithrilButtonsSingle = m('div', [
-            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
-            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
-        ]);
-        // This is already being checked before this step but will keep this edit permission check
-        if(items[0].data.permissions.edit){
-            tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
+        if(items[0].kind !== 'folder'){
+            var mithrilContentSingle = m('div', [
+                m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
+                m('p', 'This action is irreversible.')
+            ]);
+            var mithrilButtonsSingle = m('div', [
+                m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
+            ]);
+            // This is already being checked before this step but will keep this edit permission check
+            if(items[0].data.permissions.edit){
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
+            } 
         }
+        if(items[0].kind === 'folder') {
+            if (!items[0].open) {
+                tb.updateFolder(null, items[0], doDelete);
+            } else {
+                doDelete();        
+            }
+        }           
     } else {
         // Check if all items can be deleted
         var canDelete = true;
@@ -623,6 +736,8 @@ function _removeEvent (event, items, col) {
         }
         tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple); 
     }
+
+
 }
 
 /**
@@ -756,13 +871,32 @@ function _fangornDefineToolbar (item) {
                 m('i.fa.fa-upload'),
                 m('span.hidden-xs','Upload')
             ]);
-        } });
+        }},
+        { name : 'createFolder', template : function(){
+                return m('.fangorn-toolbar-icon.text-info', {
+                        onclick : function(event) { Fangorn.ButtonEvents.createFolder.call(self, event, item); } 
+                    },[
+                    m('i.fa.fa-plus'),
+                    m('span.hidden-xs','Create Folder')
+                ]);
+            }});
+
+        if(item.data.path) {
+            buttons.push({ name : 'deleteFolder', template : function(){
+                return m('.fangorn-toolbar-icon.text-danger', {
+                        onclick : function(event) { _removeEvent.call(self, event, [item]); } 
+                    },[
+                    m('i.fa.fa-trash'),
+                    m('span.hidden-xs','Delete Folder')
+                ]);
+            }});
+        }
     }
     //Download button if this is an item
     if (item.kind === 'file') {
         buttons.push({ name : 'downloadSingle', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
-                    onclick : function(event) { _downloadEvent.call(self, event, item); }
+                    onclick : function(event) { _downloadEvent.call(self, event, [item]); }
                 }, [
                 m('i.fa.fa-download'),
                 m('span.hidden-xs','Download')
@@ -793,8 +927,7 @@ function _fangornDefineToolbar (item) {
                 m('i.fa.fa-font'),
                 m('span','Rename')
             ]);
-        }}
-        )
+        }});
     }
     
     item.icons = buttons;
@@ -1539,7 +1672,8 @@ Fangorn.prototype = {
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
-    _removeEvent: _removeEvent
+    _removeEvent: _removeEvent,
+    createFolder: createFolder,
 };
 
 Fangorn.DefaultColumns = {
