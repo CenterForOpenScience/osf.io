@@ -564,7 +564,7 @@ function createFolder(event, parent, col) {
             folderName('');
             self.modal.dismiss();
             creatingFolder(false);
-            item.notify.update('Created!', 'success', undefined, 1000);
+            item.notify.update('New folder created!', 'success', undefined, 1000);
         }, function(data) {
             if (data && data.code === 409) {
                 errorMessage(data.message);
