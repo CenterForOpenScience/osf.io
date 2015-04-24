@@ -493,8 +493,7 @@ def _update_comments_timestamp_total(node, auth, page):
     from website.addons.wiki.model import NodeWikiPage
     ret = {}
     if page == Comment.FILES:
-        root_targets = node.commented_files.keys()
-        for root_target_id in root_targets:
+        for root_target_id in node.commented_files:
             root_target = Guid.load(root_target_id).referent
             if root_target.commented[0].is_hidden:
                 continue
