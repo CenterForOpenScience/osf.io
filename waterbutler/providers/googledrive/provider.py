@@ -55,16 +55,10 @@ class GoogleDriveProvider(provider.BaseProvider):
     def default_headers(self):
         return {'authorization': 'Bearer {}'.format(self.token)}
 
-    @asyncio.coroutine
-    def copy(self, dest_provider, source_options, dest_options):
-        path, name = os.path.split(dest_options['path'])
-        dest_options['path'] = os.path.join(path, parse.unquote(name))
-        return (yield from super().copy(dest_provider, source_options, dest_options))
-
-    def can_intra_move(self, other):
+    def can_intra_move(self, other, path=None):
         return self == other
 
-    def can_intra_copy(self, other):
+    def can_intra_copy(self, other, path=None):
         return self == other
 
     @asyncio.coroutine
