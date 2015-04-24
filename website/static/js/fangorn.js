@@ -270,35 +270,35 @@ function checkMoveConflicts(tb, item, folder, cb) {
     cb('overwrite');
 }
 
-function onItemDrop(e) {
-    var tb = this;
-    var folder = tb.find($(e.target).attr('data-id'));
-    var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected;
+// function onItemDrop(e) {
+//     var tb = this;
+//     var folder = tb.find($(e.target).attr('data-id'));
+//     var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected;
 
-    if (items.length < 1) return;
-    if (items.indexOf(folder) > -1) return;
-    if (!folder.open) {
-        tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
-    }
+//     if (items.length < 1) return;
+//     if (items.indexOf(folder) > -1) return;
+//     if (!folder.open) {
+//         tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
+//     }
 
-    $.each(items, function(index, item) {
-        checkMoveConflicts(tb, item, folder, moveItem.bind(tb, folder, item));
-    });
-}
+//     $.each(items, function(index, item) {
+//         checkMoveConflicts(tb, item, folder, moveItem.bind(tb, folder, item));
+//     });
+// }
 
-function moveItem(to, from, conflict) {
+function doItemOp(isMove, to, from, conflict) {
     var tb = this;
     tb.modal.dismiss();
     var ogParent = from.parentID;
     if (to.id === ogParent) return;
 
     from.move(to.id);
-    from.data.status = 'move';
+    from.data.status = isMove ? 'move' : 'copy';
     tb.redraw();
 
     $.ajax({
         type: 'POST',
-        url: waterbutler.moveUrl(),
+        url: isMove ? waterbutler.moveUrl() : waterbutler.copyUrl(),
         headers: {
             'Content-Type': 'Application/json'
         },
@@ -313,7 +313,8 @@ function moveItem(to, from, conflict) {
             from.data.status = undefined;
             from.notify.update('Successfully moved.', 'success', 1, 1000);
         }
-        if (xhr.status === 200) {
+
+        if (!isMove && xhr.status === 200) {
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
@@ -335,9 +336,6 @@ function moveItem(to, from, conflict) {
 
         tb.redraw();
     });
-}
-
-function copyItem(to, from) {
 }
 
 /**
@@ -1539,6 +1537,17 @@ function _fangornOver(event, ui) {
  */
 function _dropLogic(event, items, folder) {
     var tb = this;
+
+    if (items.length < 1) return;
+    if (items.indexOf(folder) > -1) return;
+
+    if (!folder.open) {
+        tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
+    }
+
+    $.each(items, function(index, item) {
+        checkMoveConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move', folder, item));
+    });
 }
 
 /**
