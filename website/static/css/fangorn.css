@@ -137,7 +137,7 @@ text-align: center;
 .tb-header-row {
 	margin: 0 0 10px 0;
 	background: #efefef;
-	padding: 8px 0;
+	padding: 6px 0;
 }
 
 .tb-header-input {
@@ -159,13 +159,14 @@ text-align: center;
 .fangorn-toolbar {
 }
 .fangorn-toolbar-icon {
-	padding: 4px 8px;
+  padding: 5px 10px;
   display: inline-block;
-  box-shadow: 0 0 2px #DDD;
+  box-shadow: 0 0 2px #BBB;
   background: #F8F8F8;
   margin-right: 5px;
   cursor: pointer;
   font-size: 13px;
+  border-radius: 2px;
 }
 .fangorn-toolbar-icon .fa {
     font-size: 15px;
