@@ -275,6 +275,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
+    # TODO: Add validator to ensure an email address only exists once across
+    # all User's email lists
     emails = fields.StringField(list=True)
 
     # email verification tokens
