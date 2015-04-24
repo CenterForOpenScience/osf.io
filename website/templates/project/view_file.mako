@@ -101,7 +101,7 @@
                 </td>
                 <td>{{ revision.displayDate }}</td>
                 <td data-bind="if: $parent.userColumn">
-                  <a data-bind="if: revision.extra.user.url"
+                  <a class="word-break-word" data-bind="if: revision.extra.user.url"
                     href="{{ revision.extra.user.url }}">
                     {{ revision.extra.user.name }}
                   </a>
