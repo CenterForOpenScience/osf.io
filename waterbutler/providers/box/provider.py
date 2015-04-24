@@ -67,11 +67,19 @@ class BoxProvider(provider.BaseProvider):
 
         is_folder = path.endswith('/')
 
+        ret = WaterButlerPath('/'.join(names), _ids=ids, folder=is_folder)
+
         if new_name is not None:
+            return (yield from self.revalidate_path(ret, new_name, folder=is_folder))
+
+        return ret
+
+    @asyncio.coroutine
+    def revalidate_path(self, base, path, folder=None):
             #TODO Research the search api endpoint
             resp = yield from self.make_request(
                 'GET',
-                self.build_url('folders', ids[-1], 'items', fields='id,name,type'),
+                self.build_url('folders', base.identifier, 'items', fields='id,name,type'),
                 expects=(200,),
                 throws=exceptions.ProviderError
             )
