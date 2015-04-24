@@ -48,9 +48,9 @@
                 <div data-bind="if: replyNotEmpty" class="form-inline">
                     <a class="btn btn-primary" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
                     <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
-                    <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                    <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                 </div>
-                <div class="comment-error">{{errorMessage}}</div>
+                <div class="text-danger">{{errorMessage}}</div>
             </form>
         </div>
 
