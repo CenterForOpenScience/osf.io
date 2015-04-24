@@ -92,7 +92,20 @@ class DropboxProvider(provider.BaseProvider):
             return resp, False
 
         data = yield from resp.json()
-        return DropboxFileMetadata(data, self.folder).serialized(), True
+
+        if not data['is_dir']:
+            return DropboxFileMetadata(data, self.folder).serialized(), True
+
+        folder = DropboxFolderMetadata(data, self.folder).serialized()
+
+        folder['children'] = []
+        for item in data['contents']:
+            if item['is_dir']:
+                folder['children'].append(DropboxFolderMetadata(item, self.folder).serialized())
+            else:
+                folder['children'].append(DropboxFileMetadata(item, self.folder).serialized())
+
+        return folder, True
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
