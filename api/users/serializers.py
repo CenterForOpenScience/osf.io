@@ -19,6 +19,9 @@ class UserSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'users'
 
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
     def update(self, instance, validated_data):
         # TODO
         pass
