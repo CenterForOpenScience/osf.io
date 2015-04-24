@@ -419,19 +419,10 @@ class OsfStorageFileVersion(StoredObject):
         self.save()
 
 
+@unique_on(['node', 'path', '_path', 'premigration_path'])
 class OsfStorageGuidFile(GuidFile):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-                ('_path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
     _path = fields.StringField(index=True)
+    premigration_path = fields.StringField(index=True)
     path = fields.StringField(required=True, index=True)
 
     # Marker for invalid GUIDs that are associated with a node but not
