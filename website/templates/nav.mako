@@ -97,6 +97,9 @@
                 <li>
                     <a href="/#signUp">Sign Up</a>
                 </li>
+                <li>
+                    <a href="${web_url_for('_forgot_password')}">Forgot Password?</a>
+                </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->
         </div><!-- end navbar-collapse -->
