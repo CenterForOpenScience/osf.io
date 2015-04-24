@@ -26,7 +26,7 @@ def migrate():
     database.osfstorageguidfile.update({
         '_path': {'$ne': None}
     }, {
-        '$rename': {'path': 'premigration'}
+        '$rename': {'path': 'premigration_path'}
     }, multi=True)
 
     logger.info('_path -> path')

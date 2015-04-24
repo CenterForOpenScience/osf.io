@@ -144,7 +144,8 @@ def migrate_logs(node, children, dry=True):
 
 
 def migrate_guids(node_settings, children, dry=True):
-    for guid in model.OsfStorageGuidFile.find(Q('node', 'eq', node_settings.owner)):
+    for guid in model.OsfStorageGuidFile.find(
+            Q('node', 'eq', node_settings.owner) & Q('_has_no_file_tree', 'ne', True)):
         if guid._path is not None:
             logger.warn('File guid {} has already been migrated'.format(guid._id))
             continue
@@ -162,13 +163,13 @@ def migrate_guids(node_settings, children, dry=True):
                     # that are not included in the file_tree for
                     # a node's OsfStorageNodeSettings
                     # Any file Guid whose path contains a '/' should
-                    # be considered invalid, and we skip over those so that
+                    # be considered invalid, and we skip over those and mark them so that
                     # the rest of the migration can occur
-                    if '/' in guid.path:
-                        logger.warning('Skipping OsfStorageGuidFile that has an invalid path {}'.format(guid.path))
-                    else:
-                        raise
-                logger.warning('Already migrated {!r}'.format(guid))
+                    logger.warning('Skipping invalid OsfStorageGuidFile with _id {} and path {}. Marking as invalid...'.format(guid._id, guid.path))
+                    guid._has_no_file_tree = True
+                    guid.save()
+                else:
+                    logger.warning('Already migrated {!r}'.format(guid))
                 continue
             guid.save()
     model.OsfStorageGuidFile._cache.clear()
