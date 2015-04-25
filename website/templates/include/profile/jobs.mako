@@ -1,8 +1,9 @@
 <script id="profileJobs" type="text/html">
 
     <div data-bind="if: mode() === 'edit'">
+<pre>{{ko.toJSON($data)}}</pre>
 
-        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
+        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: true}">
 
             <div data-bind="sortable: {
                     data: contents,
@@ -93,7 +94,7 @@
 
             </div>
 
-            <div>
+            <div data-bind="visible: !institutionsEmpty()">
                 <a class="btn btn-default" data-bind="click: addContent">
                     Add another
                 </a>

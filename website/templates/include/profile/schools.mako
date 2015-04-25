@@ -93,7 +93,7 @@
 
             </div>
 
-            <div>
+            <div  data-bind="visible: !institutionsEmpty()">
                 <a class="btn btn-default" data-bind="click: addContent">
                     Add another
                 </a>
