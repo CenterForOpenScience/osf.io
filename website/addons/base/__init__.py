@@ -8,7 +8,7 @@ from bson import ObjectId
 from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
-
+import math
 
 import furl
 import requests
@@ -54,7 +54,6 @@ STATUS_EXCEPTIONS = {
     410: exceptions.FileDeletedError,
     404: exceptions.FileDoesntExistError
 }
-
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -826,19 +825,10 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 ############
 class StorageAddonBase(object):
 
-    def _get_file_tree(self, node=None, user=None):
-        """
-        Recursively get file metadata
-        """
-        node = node or {
-            'path': self.root_node_path,
-            'name': self.root_node_name,
-            'kind': 'folder',
-        }
+    MAX_ARCHIVE_SIZE = math.pow(1024, 3)  # 1 GB
+    MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
-        if node.get('kind') == 'file':
-            return node
-
+    def _get_fileobj_child_metadata(self, node, user):
         metadata_url = waterbutler_url_for(
             'metadata',
             provider=self.config.short_name,
@@ -848,11 +838,23 @@ class StorageAddonBase(object):
         )
         res = requests.get(metadata_url)
         if res.status_code != 200:
-            # TODO
             pass
+        return res.json().get('data', [])
 
-        node['children'] = [self._get_fil3e_tree(child) for child in res.json().get('data', [])]
+    def _get_file_tree(self, node=None, user=None):
+        """
+        Recursively get file metadata
+        """
+        node = node or {
+            'path': self.root_node_path,
+            'name': self.root_node_name,
+            'kind': 'folder',
+        }
+        if node.get('kind') == 'file':
+            return node
+        node['children'] = [self._get_file_tree(child) for child in self._get_fileobj_child_metadata(node, user)]
         return node
+
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     _meta = {
