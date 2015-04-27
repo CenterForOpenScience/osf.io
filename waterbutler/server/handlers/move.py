@@ -7,7 +7,6 @@ from tornado import web
 
 import waterbutler.core
 from waterbutler import tasks
-from waterbutler.core.streams import RequestStreamReader
 
 from waterbutler.server import utils
 from waterbutler.server import settings
@@ -29,10 +28,10 @@ class MoveHandler(core.BaseCrossProviderHandler):
     def post(self):
         if not self.source_provider.can_intra_move(self.destination_provider):
             resp = yield from tasks.move.adelay({
-                'args': self.json['source'],
+                'path': self.json['source']['path'],
                 'provider': self.source_provider.serialized()
             }, {
-                'args': self.json['destination'],
+                'path': self.json['destination']['path'],
                 'provider': self.destination_provider.serialized()
             },
                 self.callback_url,
@@ -45,8 +44,10 @@ class MoveHandler(core.BaseCrossProviderHandler):
             yield from tasks.backgrounded(
                 self.source_provider.move,
                 self.destination_provider,
-                self.json['source'],
-                self.json['destination']
+                self.json['source']['path'],
+                self.json['destination']['path'],
+                rename=self.json.get('rename'),
+                conflict=self.json.get('conflict', 'replace'),
             )
         )
 
