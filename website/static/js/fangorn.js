@@ -524,81 +524,44 @@ function _downloadEvent (event, item, col) {
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
-function createFolder(event, parent, col) {
-    var self = this;
-    var folderName = m.prop('');
-    var errorMessage = m.prop('');
-    var creatingFolder = m.prop(false);
+function _createFolder(event) {
+    var tb = this;
+    var val = $.trim(tb.select('#createFolderInput').val());
+    var parent = tb.multiselected[0];
+    // if (!parent.open) {
+    //     self.updateFolder(null, parent);
+    // }
 
-    if (!parent.open) {
-        self.updateFolder(null, parent);
+    // event.preventDefault();
+    if (val.length < 1) {
+        tb.select('#createFolderError').text('Please enter a folder name.').show();
+        return;
+    }
+    if (val.indexOf('/') !== -1) {
+        tb.select('#createFolderError').text('Folder name contains illegal characters.').show();
+        return;
     }
 
-    function doCreate(event) {
-        event.preventDefault();
-        if (folderName().length < 1) {
-            errorMessage('Please enter a folder name.');
-            redraw();
-            return;
+    var path = (parent.data.path || '/') + val + '/';
+
+    m.request({
+        method: 'POST',
+        background: true,
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+    }).then(function(item) {
+        inheritFromParent({data: item}, parent);
+        item = tb.createItem(item, parent.id);
+        _fangornOrderFolder.call(tb, parent);
+        item.notify.update('New folder created!', 'success', undefined, 1000);
+        tb.options.iconState.mode = 'bar';
+        tb.select('#createFolderError').text('').hide();
+    }, function(data) {
+        if (data && data.code === 409) {
+            tb.select('#createFolderError').text(data.message).show();
+        } else {
+            tb.select('#createFolderError').text('Folder creation failed.').show();
         }
-        if (folderName().indexOf('/') !== -1) {
-            errorMessage('Folder name contains illegal characters.');
-            redraw();
-            return;
-        }
-
-        errorMessage('');
-        creatingFolder(true);
-        redraw();
-        var path = (parent.data.path || '/') + folderName() + '/';
-
-        m.request({
-            method: 'POST',
-            background: true,
-            url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
-        }).then(function(item) {
-            inheritFromParent({data: item}, parent);
-
-            item = self.createItem(item, parent.id);
-            _fangornOrderFolder.call(self, parent);
-            folderName('');
-            self.modal.dismiss();
-            creatingFolder(false);
-            item.notify.update('New folder created!', 'success', undefined, 1000);
-        }, function(data) {
-            if (data && data.code === 409) {
-                errorMessage(data.message);
-            } else {
-                errorMessage('Folder creation failed.');
-            }
-            creatingFolder(false);
-            redraw();
-        });
-    }
-
-    function redraw() {
-        self.modal.update(m('div', [
-            m('h3.break-word', 'Enter a folder name'),
-            m('input.form-control[autofocus][type=text]', {
-                placeholder: 'Folder Name',
-                onkeyup: m.withAttr('value', folderName),
-                disabled: creatingFolder() ? 'disabled' : '',
-            })
-        ]), (function() {
-            return m('div', [
-                m('span.pull-left.text-danger', errorMessage()),
-                m('div', [
-                    m('button.btn.btn-default.btn-md', {onclick: function(){self.modal.dismiss();}}, 'Cancel'),
-                    ' ',
-                    creatingFolder() ?
-                    m('i.fa.fa-spinner.fa-spin') :
-                    m('button.btn.btn-success.btn-md', {onclick: doCreate.bind(self)}, 'Create')
-                ])
-            ]);
-        })());
-    }
-
-    redraw();
+    });
 }
 
 /**
