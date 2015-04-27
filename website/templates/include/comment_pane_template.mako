@@ -16,9 +16,7 @@
                <span data-bind="if: id().toLowerCase() !== 'home' "> | <span data-bind="text: id"></span> </span>
                 Discussion
             </span>
-            % if not file_name is UNDEFINED:
-                <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
-            % endif
+            <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
         </h4>
 
         % if not node['anonymous']:
