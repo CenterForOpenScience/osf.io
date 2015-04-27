@@ -837,7 +837,10 @@ function _fangornDefineToolbar (item) {
         }},
         { name : 'createFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-info', {
-                        onclick : function(event) { Fangorn.ButtonEvents.createFolder.call(self, event, item); } 
+                        onclick : function(event) { 
+                            self.options.iconState.mode = 'createFolder';
+                            //Fangorn.ButtonEvents.createFolder.call(self, event, item); 
+                        } 
                     },[
                     m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
                     m('span.hidden-xs','Create Folder')
@@ -1666,7 +1669,7 @@ Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
-    createFolder: createFolder,
+    createFolder: _createFolder,
 };
 
 Fangorn.DefaultColumns = {
