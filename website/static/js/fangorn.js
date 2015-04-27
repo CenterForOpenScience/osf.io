@@ -1172,7 +1172,24 @@ function _fangornToolbar () {
                     ])
             ]);  
     }
-
+    if(tb.options.iconState.mode === 'createFolder'){
+        return m('.row.tb-header-row', [
+                m('', [
+                        m('.col-xs-9', [
+                            m('input#createFolderInput.tb-header-input', { placeholder : 'Folder name' }),
+                            m('#createFolderError.text-danger', { style : "display: none"})
+                            ]),
+                        m('.col-xs-3.tb-buttons-col', 
+                            m('.fangorn-toolbar.pull-right', 
+                                [
+                                createFolderButton.call(tb),
+                                toolbarDismissIcon.call(tb)
+                                ]
+                            )
+                        )
+                    ])
+            ]);  
+    }
 } 
 
 /** 
