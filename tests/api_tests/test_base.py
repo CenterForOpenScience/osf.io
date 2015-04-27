@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 
 from website.models import Node
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory
+from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
 
 class TestApiBaseViews(OsfTestCase):
 
@@ -20,6 +20,8 @@ class TestFiltering(OsfTestCase):
         self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True)
         self.project_three = ProjectFactory(title="Three", is_public=True)
         self.private_project = ProjectFactory(title="Private Project", is_public=False)
+        self.folder = FolderFactory()
+        self.dashboard = DashboardFactory()
 
     def tearDown(self):
         OsfTestCase.tearDown(self)
@@ -36,6 +38,8 @@ class TestFiltering(OsfTestCase):
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
         assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
 
     def test_get_one_project_with_exact_filter(self):
         url = "/api/v2/nodes/?filter[title]=Project%20One"
@@ -48,6 +52,8 @@ class TestFiltering(OsfTestCase):
         assert_not_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
         assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
 
     def test_get_some_projects_with_substring(self):
         url = "/api/v2/nodes/?filter[title]=Two"
@@ -60,6 +66,8 @@ class TestFiltering(OsfTestCase):
         assert_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
         assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
 
     def test_get_only_public_projects_with_filter(self):
         url = "/api/v2/nodes/?filter[title]=Project"
@@ -72,6 +80,8 @@ class TestFiltering(OsfTestCase):
         assert_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
         assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
 
     def test_alternate_filtering_field(self):
         url = "/api/v2/nodes/?filter[description]=Three"
@@ -84,6 +94,8 @@ class TestFiltering(OsfTestCase):
         assert_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
         assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
 
     def test_incorrect_filtering_field(self):
         # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
@@ -97,3 +109,5 @@ class TestFiltering(OsfTestCase):
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
         assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
