@@ -238,6 +238,11 @@ def project_before_template(auth, node, **kwargs):
 @must_be_logged_in
 @must_be_valid_project
 def node_fork_page(auth, node, **kwargs):
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
     try:
         fork = node.fork_node(auth)
     except PermissionsError:
