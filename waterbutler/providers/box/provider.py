@@ -51,7 +51,7 @@ class BoxProvider(provider.BaseProvider):
                 raise exceptions.MetadataError('Could not find {}'.format(path), code=404)
 
             new_name = obj_id
-            names, ids = ('',), (self.folders,)
+            names, ids = ('',), (self.folder,)
         else:
             data = yield from response.json()
             names, ids = zip(*[
