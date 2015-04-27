@@ -93,13 +93,13 @@
             <div data-bind="if: discussion().length == 0" style="padding-top: 20px;">
                 % if comment_target == 'total':
                     There are no comments on this project yet. Go to the
-                    <a href="${node['url']}">Overview page,</a> open the comment pane and make a first one!
+                    <a href="${node['url']}">Overview page,</a> open the comment pane and make the first one!
                 % elif comment_target == 'node':
                     There are no comments on the Overview page yet. Go to the
-                    <a href="${node['url']}">Overview page,</a> open the comment pane and make a first one!
+                    <a href="${node['url']}">Overview page,</a> open the comment pane and make the first one!
                 % else:
                     There are no comments on the ${comment_target.title()} page yet. Go to the
-                    <a href="${node['url']}${comment_target}">${comment_target.title()} page,</a> open the comment pane and make a first one!
+                    <a href="${node['url']}${comment_target}">${comment_target.title()} page,</a> open the comment pane and make the first one!
                 % endif
             </div>
 
