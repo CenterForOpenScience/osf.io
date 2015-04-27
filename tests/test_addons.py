@@ -22,6 +22,7 @@ from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
 from website.project.utils import serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
+from website.addons.osfstorage.model import OsfStorageFileRecord
 from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -483,6 +484,18 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         assert_equals(resp.headers['Location'], guid.download_url + '&action=download')
 
+    @mock.patch('website.addons.base.request')
+    def test_public_download_url_includes_view_only(self, mock_request):
+        view_only = 'justworkplease'
+        mock_request.args = {
+            'view_only': view_only
+        }
+
+        path = 'cloudfiles'
+        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+
+        assert_in('view_only={}'.format(view_only), guid.public_download_url)
+
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
@@ -629,6 +642,11 @@ class TestLegacyViews(OsfTestCase):
         self.path = 'mercury.png'
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
+        self.node_addon = self.project.get_addon('osfstorage')
+        file_record, _ = OsfStorageFileRecord.get_or_create(path=self.path,
+                                                            node_settings=self.node_addon)
+        self.node_addon.save()
+        file_record.save()
 
     def test_view_file_redirect(self):
         url = '/{0}/osffiles/{1}/'.format(self.project._id, self.path)
