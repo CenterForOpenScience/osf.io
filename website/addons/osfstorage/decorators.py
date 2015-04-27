@@ -33,6 +33,11 @@ class JSONParser(core.Parser):
         else:
             return core.Missing
 
+    def error_callback(self, err):
+        raise HTTPError(err.status_code, data={
+            'message_long': err.message
+        })
+
 def path_validator(path):
     return (
         path.startswith('/') and
