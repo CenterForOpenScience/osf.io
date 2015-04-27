@@ -99,6 +99,10 @@ def osf_storage_crud_prepare(node_addon, payload):
 @no_auto_transaction
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
+
+    if osf_storage_settings.DISK_SAVING_MODE:
+        raise HTTPError(httplib.METHOD_NOT_ALLOWED)
+
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)
     path = path.split('/')
 
