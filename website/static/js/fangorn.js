@@ -1326,6 +1326,7 @@ function filterRowsNotInParent(rows) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+    tb.options.iconState.mode = 'bar';
     tb.options.iconState.rowIcons = [];
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
