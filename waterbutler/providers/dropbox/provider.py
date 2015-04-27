@@ -64,8 +64,23 @@ class DropboxProvider(provider.BaseProvider):
                 expects=(200, 201),
                 throws=exceptions.IntraCopyError,
             )
+
+        # TODO Refactor into a function
         data = yield from resp.json()
-        return DropboxFileMetadata(data, self.folder).serialized(), resp.status == 201
+
+        if not data['is_dir']:
+            return DropboxFileMetadata(data, self.folder).serialized(), True
+
+        folder = DropboxFolderMetadata(data, self.folder).serialized()
+
+        folder['children'] = []
+        for item in data['contents']:
+            if item['is_dir']:
+                folder['children'].append(DropboxFolderMetadata(item, self.folder).serialized())
+            else:
+                folder['children'].append(DropboxFileMetadata(item, self.folder).serialized())
+
+        return folder, True
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, src_path, dest_path):
