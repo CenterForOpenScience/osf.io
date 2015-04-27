@@ -10,6 +10,7 @@ from framework.archiver.exceptions import (
 
 from website.util import waterbutler_url_for
 from website.addons.base import StorageAddonBase
+from website.addons.osfstorage.model import OsfStorageFileNode
 
 class StatResult(object):
 
@@ -28,7 +29,7 @@ class AggregateStatResult(object):
         self.target_id = target_id
         self.target_name = target_name
         self.targets = {
-            "{0}:{1}".format(item.target_name, item.target_id): item
+            "{0}".format(item.target_id): item
             for item in targets
             if item
         }
@@ -50,8 +51,10 @@ class AggregateStatResult(object):
         return {target.owner for target in self.targets.values() if target.owner}
 
 class Archiver(Task):
+    abstract = True
 
     STORAGE = 'osfstorage'
+    STORAGE_FOLDER_CLASS = OsfStorageFileNode
 
     def _add_archive_log(log):
         pass
@@ -59,17 +62,16 @@ class Archiver(Task):
     def _add_archive_error_log(error):
         pass
 
-    def _archive(self, src, dst, user, *args, **kwargs):
-        try:
-            result = self._stat(src, user)
-            import ipdb; ipdb.set_trace()
-            self._copy(src, dst, user, result)
-        except ArchiverError as e:
-            self._add_archive_error_log(e)
+    def _archive(self, dst_addon, user, stat_result=None):
+        pass
 
     def run(self, src, dst, user=None, *args, **kwargs):
         src.archiving = True
-        self._archive(src, dst, user)
+        try:
+            result = self._stat(src, user)
+            self._archive(src, dst, user, result)
+        except ArchiverError as e:
+            self._add_archive_error_log(e)
 
 class AddonArchiver(Archiver):
 
@@ -85,12 +87,20 @@ class AddonArchiver(Archiver):
             stack = stack + cur.get('children', [])
         return ret
 
-    def _copy_file_tree(self, src, dst, user, stat_result):
-        storage = dst.get_or_add_addon(self.STORAGE)
-        children = stat_result.targets.values()           
+    def _copy_file_tree(self, root, children):
+        for child in children:
+            if isinstance(child, AggregateStatResult):
+                child_node = root.append_folder(child.target_name)
+                self._copy_file_tree(child_node, child.targets)
 
-    def _copy(self, src, dst, user=None, stat_result=None):
-        self._copy_file_tree(src, dst, user, stat_result)
+    def _archive(self, src_addon, dst_addon, user=None, stat_result=None):
+        root = dst_addon.root_node
+        parent = root.append_folder("Archive of {addon}".format(addon=src_addon.config.full_name))
+        self._copy_file_tree(
+            parent,
+            stat_result.targets.values()
+        )
+        return dst_addon
 
     def _get_file_size(self, node_addon, file_metadata, user=None):
         """
@@ -135,8 +145,8 @@ class AddonArchiver(Archiver):
             if not disk_usage:
                 disk_usage = self._get_file_size(node_addon, fileobj_metadata, user)
             result = StatResult(
-                target_id=fileobj_metadata['path'].lstrip('/'),
                 target_name=fileobj_metadata['name'],
+                target_id=fileobj_metadata['path'].lstrip('/'),
                 disk_usage=disk_usage,
                 meta=fileobj_metadata,
             )
@@ -171,7 +181,7 @@ class AddonArchiver(Archiver):
             self._check_for_problems(node_addon, result)
             return result
         except AddonArchiveSizeExceeded as e:
-            result.problems.append("The archive size for this {addon} exceeds the maximum size of {max}".format(
+            result.problems.append("The archive size for this {addon} exceeds the maximum size of {max}MB".format(
                 addon=node_addon.config.full_name,
                 max=node_addon.MAX_ARCHIVE_SIZE,
             ))
@@ -188,12 +198,12 @@ class NodeArchiver(Archiver):
         addon_results = self._stat_addons(node, user)
         return AggregateStatResult(node.title, node._id, addon_results)
 
-    def _copy(self, src, dst, user, stat_result):
-        for key, result in stat_result.targets.iteritems():
-            provider = key.split(':')[0]
+    def _archive(self, src, dst, user, stat_result):
+        for result in stat_result.targets.values():
+            provider = result.target_name
             if provider:
                 src_addon = src.get_addon(provider)
                 dst_addon = dst.get_or_add_addon(provider)
-                AddonArchiver()
-            
-        
+                AddonArchiver()._archive(src_addon, dst_addon, user, result)
+        import ipdb; ipdb.set_trace()
+        return dst
