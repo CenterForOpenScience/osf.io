@@ -135,7 +135,7 @@ class BoxProvider(provider.BaseProvider):
 
         data = yield from resp.json()
 
-        return self._serialize_item(data), dest_path.identifier is None
+        return self._serialize_item(data, dest_path), dest_path.identifier is None
 
     def intra_move(self, dest_provider, src_path, dest_path):
         if dest_path.identifier is not None:
@@ -160,7 +160,7 @@ class BoxProvider(provider.BaseProvider):
 
         data = yield from resp.json()
 
-        return self._serialize_item(data), dest_path.identifier is None
+        return self._serialize_item(data, dest_path), dest_path.identifier is None
 
     @property
     def default_headers(self):
