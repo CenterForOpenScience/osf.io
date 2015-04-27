@@ -39,13 +39,6 @@ class BoxProvider(provider.BaseProvider):
         else:
             files_or_folders = 'files'
 
-        if not obj_id.strip('/'):
-            return (yield from self.revalidate_path(
-                WaterButlerPath('/', _ids=[self.folder]),
-                new_name,
-                folder=is_folder
-            ))
-
         response = yield from self.make_request(
             'get',
             self.build_url(files_or_folders, obj_id, fields='id,name,path_collection'),
@@ -57,8 +50,11 @@ class BoxProvider(provider.BaseProvider):
             if new_name is not None:
                 raise exceptions.MetadataError('Could not find {}'.format(path), code=404)
 
-            new_name = obj_id
-            names, ids = ('',), (self.folder,)
+            return (yield from self.revalidate_path(
+                WaterButlerPath('/', _ids=[self.folder]),
+                obj_id,
+                folder=path.endswith('/')
+            ))
         else:
             data = yield from response.json()
             names, ids = zip(*[
