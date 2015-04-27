@@ -163,18 +163,24 @@ class BaseProvider(metaclass=abc.ABCMeta):
         kwargs = {'rename': rename, 'conflict': conflict, 'handle_naming': handle_naming}
 
         if handle_naming:
-            dest_path = yield from self.handle_naming(*args, **kwargs)
+            dest_path = yield from dest_provider.handle_naming(
+                dest_path,
+                rename or src_path.name,
+                is_dir=src_path.is_dir,
+                conflict=conflict
+            )
             args = (dest_provider, src_path, dest_path)
+            kwargs = {}
 
-        if self.can_intra_copy(dest_path, src_path):
-                return (yield from self._intra_copy())
+        if self.can_intra_copy(dest_provider, src_path):
+                return (yield from self.intra_copy(*args))
 
         if src_path.is_dir:
             return (yield from self._folder_file_op(self.copy, *args, **kwargs))
 
         return (yield from dest_provider.upload(
-            (yield from self.download(**source_options)),
-            **dest_options
+            (yield from self.download(src_path)),
+            dest_path
         ))
 
     @asyncio.coroutine
