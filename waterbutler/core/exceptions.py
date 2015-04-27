@@ -93,7 +93,7 @@ def exception_from_response(resp, error=ProviderError, **kwargs):
 
     try:
         data = yield from resp.read()
-        return error({'response': data.encode('utf-8')}, code=resp.status)
+        return error({'response': data.decode('utf-8')}, code=resp.status)
     except TypeError:
         pass
 
