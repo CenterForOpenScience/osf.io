@@ -139,7 +139,7 @@ function _fangornDataverseTitle(item, col) {
             if (item.data.permissions.edit) {
                 // Default to version in url parameters for file view page
                 var urlParams = $osf.urlParams();
-                if (urlParams.version && urlParams.version != item.data.version) {
+                if (urlParams.version && urlParams.version !== item.data.version) {
                     item.data.version = urlParams.version;
                 }
                 var options = [
@@ -242,7 +242,7 @@ function _canDrop(item) {
     return item.data.provider &&
         item.kind === 'folder' &&
         item.data.permissions.edit &&
-        item.data.version === 'latest'
+        item.data.version === 'latest';
 }
 
 Fangorn.config.dataverse = {

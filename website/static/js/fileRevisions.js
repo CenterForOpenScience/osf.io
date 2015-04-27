@@ -29,10 +29,13 @@ var Revision = function(data, index, file, node) {
             break;
         // Note: Dataverse internal version names are ugly; Substitute our own
         case 'dataverse':
-            self.displayVersion = self.version === 'latest' ? 'Draft' :
-                self.version === 'latest-published' ? 'Published' :
-                self.version.substring(0, 8);
-            break;
+            var displayMap = {
+                'latest': 'Draft',
+                'latest-published': 'Published'
+            };
+
+            self.displayVersion = self.version in displayMap ?
+                displayMap[self.version] : self.version.substring(0, 8);
         default:
             self.displayVersion = self.version.substring(0, 8);
     }
@@ -110,7 +113,7 @@ RevisionsViewModel.prototype.fetch = function() {
         if (self.editable()) {
             self.editable(urlParams.version === 'latest');
         } else {
-            return [];
+            return;
         }
     }
 

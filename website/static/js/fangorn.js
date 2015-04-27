@@ -851,6 +851,7 @@ function setCurrentFileID(tree, nodeID, file) {
             }
         }
     } else if (file.provider === 'dataverse') {
+        // Only highlight file in correct dataset version, since paths persist across versions
         for (var i = 0; i < tree.children.length; i++) {
             var child = tree.children[i];
             var urlParams = $osf.urlParams();

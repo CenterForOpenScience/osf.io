@@ -2,15 +2,11 @@
 
 import urlparse
 
-import itsdangerous
 import pymongo
-from flask import request
 from modularodm import fields
 
-from framework.auth.core import User
+from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
-from framework.sessions.model import Session
-from website import settings
 from website.security import encrypt, decrypt
 from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
@@ -52,13 +48,8 @@ class DataverseFile(GuidFile):
     def enrich(self, save=True):
         super(DataverseFile, self).enrich(save)
 
-        # Get user object from cookie
-        cookie = request.cookies.get(settings.COOKIE_NAME)
-        session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
-        session = Session.load(session_id) or Session(_id=session_id)
-        user = User.load(session.data['auth_user_id'])
-
         # Check permissions
+        user = _get_current_user()
         if not self.node.can_edit(user=user):
             try:
                 # Users without edit permission can only see published files
