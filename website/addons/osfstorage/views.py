@@ -281,6 +281,28 @@ def osf_storage_copy_hook(source, destination, node_addon, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osf_storage_move_hook(source, destination, node_addon, **kwargs):
-    created, copied = model.OsfStorageFileNode.get(source['path'], node_addon).move_to_path(destination['path'])
+    created, moved = model.OsfStorageFileNode.get(source, node_addon).move_to_path(destination)
 
-    return copied.serialized(), httplib.CREATED if created else httplib.OK
+    return moved.serialized(), httplib.CREATED if created else httplib.OK
+
+
+@must_be_signed
+@decorators.handle_odm_errors
+@must_have_addon('osfstorage', 'node')
+def osf_storage_get_lineage(payload, node_addon, **kwargs):
+    path = payload.get('path')
+
+    if not path:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    record = model.OsfStorageFileNode.get(path.strip('/'), node_addon)
+    #TODO Profile
+    list(model.OsfStorageFileNode.find(Q('kind', 'eq', 'folder') & Q('node_settings', 'eq', node_addon)))
+
+    lineage = []
+
+    while record:
+        lineage.append(record.serialized())
+        record = record.parent
+
+    return {'data': lineage}
