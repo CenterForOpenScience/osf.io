@@ -135,7 +135,8 @@ class DropboxProvider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
-        return streams.ResponseStreamReader(resp)
+
+        return streams.ResponseStreamReader(resp, size=json.loads(resp.headers['X-DROPBOX-METADATA'])['bytes'])
 
     @asyncio.coroutine
     def upload(self, stream, path, conflict='replace', **kwargs):

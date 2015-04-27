@@ -55,13 +55,16 @@ class BaseStream(asyncio.StreamReader, metaclass=abc.ABCMeta):
 
 class ResponseStreamReader(BaseStream):
 
-    def __init__(self, response):
+    def __init__(self, response, size=None):
         super().__init__()
+        self._size = size
         self.response = response
         self.content_type = self.response.headers.get('Content-Type', 'application/octet-stream')
 
     @property
     def size(self):
+        if self._size is not None:
+            return str(self._size)
         return self.response.headers.get('Content-Length')
 
     @asyncio.coroutine
