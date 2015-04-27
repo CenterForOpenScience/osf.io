@@ -149,13 +149,9 @@ def s3_get_node_settings(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def s3_bucket_list(auth, node_addon, user_addon, **kwargs):
-    buckets, status_code = get_bucket_drop_down(user_addon)
-    if buckets:
-        return {
-            'buckets': buckets
-        }
-    else:
-        raise HTTPError(status_code)
+    return {
+        'buckets': get_bucket_drop_down(user_addon)
+    }
 
 @must_have_permission('write')
 @must_have_addon('s3', 'node')
