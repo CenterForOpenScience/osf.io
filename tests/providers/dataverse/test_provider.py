@@ -31,9 +31,10 @@ def credentials():
 @pytest.fixture
 def settings():
     return {
+        'host': 'myfakehost.dataverse.org',
         'doi': 'doi:10.5072/FK2/ABCDEF',
         'id': '18',
-        'name': 'A look at wizards'
+        'name': 'A look at wizards',
     }
 
 
@@ -346,10 +347,8 @@ class TestMetadata:
     def test_metadata(self, provider, native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
+        result = yield from provider.metadata(path='/', version='latest')
 
-        result = yield from provider.metadata(path='/', state='draft')
-
-        assert isinstance(result, list)
         assert len(result) == 3
         assert result[0]['provider'] == 'dataverse'
         assert result[0]['kind'] == 'file'
@@ -362,23 +361,17 @@ class TestMetadata:
     def test_metadata_no_files(self, provider, empty_native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
+        result = yield from provider.metadata(path='/', version='latest')
 
-        result = yield from provider.metadata(path='/', state='draft')
-
-        assert isinstance(result, dict)
-        assert result['provider'] == 'dataverse'
-        assert result['kind'] == 'folder'
-        assert result['name'] == 'A look at wizards'
-        assert result['path'] == '/{0}/'.format(provider.doi)
+        assert result == []
 
     @async
     @pytest.mark.aiohttpretty
     def test_metadata_published(self, provider, native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=native_dataset_metadata)
-        result = yield from provider.metadata(path='/', state='published')
+        result = yield from provider.metadata(path='/', version='latest-published')
 
-        assert isinstance(result, list)
         assert len(result) == 3
         assert result[0]['provider'] == 'dataverse'
         assert result[0]['kind'] == 'file'
@@ -391,14 +384,9 @@ class TestMetadata:
     def test_metadata_published_no_files(self, provider, empty_native_dataset_metadata):
         url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
         aiohttpretty.register_json_uri('GET', url, status=200, body=empty_native_dataset_metadata)
+        result = yield from provider.metadata(path='/', version='latest-published')
 
-        result = yield from provider.metadata(path='/', state='published')
-
-        assert isinstance(result, dict)
-        assert result['provider'] == 'dataverse'
-        assert result['kind'] == 'folder'
-        assert result['name'] == 'A look at wizards'
-        assert result['path'] == '/{0}/'.format(provider.doi)
+        assert result == []
 
     @async
     @pytest.mark.aiohttpretty
@@ -407,7 +395,7 @@ class TestMetadata:
         aiohttpretty.register_json_uri('GET', url, status=404)
 
         with pytest.raises(exceptions.MetadataError):
-            yield from provider.metadata(path='/', state='draft')
+            yield from provider.metadata(path='/', version='latest')
 
     @async
     @pytest.mark.aiohttpretty
@@ -421,3 +409,24 @@ class TestMetadata:
 
         assert isinstance(result, list)
         assert len(result) == 6
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_never_published(self, provider, native_dataset_metadata):
+        published_url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=404)
+        draft_url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest'), key=provider.token)
+        aiohttpretty.register_json_uri('GET', draft_url, status=200, body=native_dataset_metadata)
+
+        result = yield from provider.metadata(path='/')
+
+        assert len(result) == 3
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_metadata_never_published_raises_errors(self, provider, native_dataset_metadata):
+        published_url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
+        aiohttpretty.register_json_uri('GET', published_url, status=400)
+
+        with pytest.raises(exceptions.MetadataError):
+            result = yield from provider.metadata(path='/')

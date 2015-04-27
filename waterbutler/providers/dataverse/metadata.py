@@ -14,6 +14,10 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
         super().__init__(raw)
         self.dataset_version = dataset_version
 
+        # Note: If versioning by number is added, this will have to check
+        # all published versions, not just 'latest-published'.
+        self.has_published_version = dataset_version == 'latest-published'
+
     @property
     def file_id(self):
         return str(self.raw['id'])
@@ -39,15 +43,11 @@ class DataverseFileMetadata(BaseDataverseMetadata, metadata.BaseFileMetadata):
         return None
 
     @property
-    def can_delete(self):
-        """Files can be deleted if they are part of the draft dataset"""
-        return self.dataset_version == 'latest' or self.dataset_version == 'draft'
-
-    @property
     def extra(self):
         return {
             'fileId': self.file_id,
-            'canDelete': self.can_delete,
+            'datasetVersion': self.dataset_version,
+            'hasPublishedVersion': self.has_published_version,
         }
 
 
@@ -59,7 +59,7 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
         self.doi = doi
 
         files = self.raw['files']
-        self._entries = [DataverseFileMetadata(f['datafile'], version) for f in files]
+        self.contents = [DataverseFileMetadata(f['datafile'], version) for f in files]
 
     @property
     def name(self):
@@ -69,11 +69,17 @@ class DataverseDatasetMetadata(BaseDataverseMetadata, metadata.BaseFolderMetadat
     def path(self):
         return self.build_path(self.doi)
 
-    @property
-    def entries(self):
-        return self._entries
 
-    def serialized(self):
-        if self._entries:
-            return [e.serialized() for e in self._entries]
-        return super(DataverseDatasetMetadata, self).serialized()
+class DataverseRevision(metadata.BaseFileRevisionMetadata):
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def version(self):
+        return self.raw
+
+    @property
+    def modified(self):
+        return None

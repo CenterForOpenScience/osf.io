@@ -7,24 +7,48 @@ from waterbutler.core import provider
 from waterbutler.core import exceptions
 
 from waterbutler.providers.dataverse import settings
+from waterbutler.providers.dataverse.metadata import DataverseRevision
 from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 
 
 class DataverseProvider(provider.BaseProvider):
-
-    BASE_URL = 'https://{0}'.format(settings.HOSTNAME)
+    """Provider for Dataverse"""
 
     def __init__(self, auth, credentials, settings):
+        """
+        :param dict auth: Not used
+        :param dict credentials: Contains `token`
+        :param dict settings: Contains `host`, `doi`, `id`, and `name` of a dataset. Hosts:
+
+            - 'apitest.dataverse.org': Api Test Server
+            - 'dataverse-demo.iq.harvard.edu': Harvard Demo Server
+            - 'dataverse.harvard.edu': Dataverse Production Server **(NO TEST DATA)**
+            - Other
+        """
         super().__init__(auth, credentials, settings)
+        self.BASE_URL = 'https://{0}'.format(self.settings['host'])
+
         self.token = self.credentials['token']
         self.doi = self.settings['doi']
         self._id = self.settings['id']
         self.name = self.settings['name']
 
     @asyncio.coroutine
-    def download(self, path, **kwargs):
-        # Can download draft or published files
-        metadata = yield from self._get_all_data()
+    def download(self, path, revision=None, **kwargs):
+        """Returns a ResponseWrapper (Stream) for the specified path
+        raises FileNotFoundError if the status from Dataverse is not 200
+
+        :param str path: Path to the file you want to download
+        :param str revision: Used to verify if file is in selected dataset
+
+            - 'latest' to check draft files
+            - 'latest-published' to check published files
+            - None to check all data
+        :param dict \*\*kwargs: Additional arguments that are ignored
+        :rtype: :class:`waterbutler.core.streams.ResponseStreamReader`
+        :raises: :class:`waterbutler.core.exceptions.DownloadError`
+        """
+        metadata = yield from self._get_data(revision)
         self._validate_path(path, metadata)
 
         resp = yield from self.make_request(
@@ -37,6 +61,14 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
+        """Zips the given stream then uploads to Dataverse.
+        This will delete existing draft files with the same name.
+
+        :param waterbutler.core.streams.RequestWrapper stream: The stream to put to Dataverse
+        :param str path: The filename prepended with '/'
+
+        :rtype: dict, bool
+        """
 
         filename = path.strip('/')
 
@@ -91,6 +123,11 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
+        """Deletes the key at the specified path
+
+        :param str path: The path of the key to delete
+        """
+
         # Can only delete files in draft
         metadata = yield from self._get_data('latest')
         self._validate_path(path, metadata)
@@ -104,15 +141,17 @@ class DataverseProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def metadata(self, path, state=None, **kwargs):
+    def metadata(self, path, version=None, **kwargs):
+        """
+        :param str version:
+
+            - 'latest' for draft files
+            - 'latest-published' for published files
+            - None for all data
+        """
 
         # Get appropriate metadata
-        if state == 'draft':
-            dataset_metadata = yield from self._get_data('latest')
-        elif state == 'published':
-            dataset_metadata = yield from self._get_data('latest-published')
-        else:
-            dataset_metadata = yield from self._get_all_data()
+        dataset_metadata = yield from self._get_data(version)
 
         if path == '/':
             return dataset_metadata
@@ -129,15 +168,32 @@ class DataverseProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        raise exceptions.ProviderError({'message': 'Dataverse does not support file revisions.'}, code=405)
+        """Get past versions of the request file. Orders versions based on
+        `_get_all_data()`
+
+        :param str path: The path to a key
+        :rtype list:
+        """
+
+        metadata = yield from self._get_data()
+        return [
+            DataverseRevision(item['extra']['datasetVersion']).serialized()
+            for item in metadata if item['path'] == path
+        ]
 
     @asyncio.coroutine
-    def _get_data(self, version):
-        """
+    def _get_data(self, version=None):
+        """Get list of file metadata for a given dataset version
+
         :param str version:
-            'latest' for draft files
-            'latest-published' for published files
+
+            - 'latest' for draft files
+            - 'latest-published' for published files
+            - None for all data
         """
+
+        if not version:
+            return (yield from self._get_all_data())
 
         url = self.build_url(
             settings.JSON_BASE_URL.format(self._id, version),
@@ -153,23 +209,33 @@ class DataverseProvider(provider.BaseProvider):
         data = yield from resp.json()
         data = data['data']
 
-        return DataverseDatasetMetadata(
+        dataset_metadata = DataverseDatasetMetadata(
             data, self.name, self.doi, version,
-        ).serialized()
+        )
+
+        return [item.serialized() for item in dataset_metadata.contents]
 
     @asyncio.coroutine
     def _get_all_data(self):
-        # Unspecified (file view page), check both sets for metadata
+        """Get list of file metadata for all dataset versions"""
         try:
             published_data = yield from self._get_data('latest-published')
-        except exceptions.MetadataError:
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
             published_data = []
-        published_files = published_data if isinstance(published_data, list) else []
         draft_data = yield from self._get_data('latest')
-        draft_files = draft_data if isinstance(draft_data, list) else []
-        return draft_files + published_files
+
+        # Prefer published to guarantee users get published version by default
+        return published_data + draft_data
 
     def _validate_path(self, path, metadata):
+        """Ensure path is in configured dataset
+
+        :param str path: The path to a file
+        :param list metadata: List of file metadata from _get_data
+        """
+        # Ensure file is in specified dataset
         if path.lstrip('/') not in [item['path'].lstrip('/') for item in metadata]:
             raise exceptions.MetadataError(
                 "Could not retrieve file '{}'".format(path),
