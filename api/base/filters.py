@@ -60,7 +60,7 @@ class ODMFilterMixin(object):
         }
     ]
 
-    def get_comparison_operator(self, key, value):
+    def get_comparison_operator(self, key):
 
         for operator in self.field_comparison_operators:
             if isinstance(self.serializer_class._declared_fields[key], operator['field_type']):
@@ -68,7 +68,7 @@ class ODMFilterMixin(object):
 
         return self.DEFAULT_OPERATOR
 
-    def is_filterable_field(self, key, value):
+    def is_filterable_field(self, key):
         try:
             return key.strip() in self.serializer_class.filterable_fields
         except AttributeError:
@@ -89,8 +89,8 @@ class ODMFilterMixin(object):
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
             query_parts = [
-                Q(self.convert_key(key, value), self.get_comparison_operator(key, value), self.convert_value(key, value))
-                for key, value in fields_dict.items() if self.is_filterable_field(key, value)
+                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value))
+                for key, value in fields_dict.items() if self.is_filterable_field(key=key)
             ]
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
             try:
@@ -102,14 +102,14 @@ class ODMFilterMixin(object):
         return query
 
     # Used so that that queries by _id will work
-    def convert_key(self, key, value):
+    def convert_key(self, key):
         key = key.strip()
         if self.serializer_class._declared_fields[key].source:
             return self.serializer_class._declared_fields[key].source
         return key
 
     # Used to convert string values from query params to Python booleans when necessary
-    def convert_value(self, key, value):
+    def convert_value(self, value):
         value = value.strip()
         if value in self.TRUTHY:
             return True
