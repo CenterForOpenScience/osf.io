@@ -59,7 +59,7 @@
                             % endif
                         % endfor
                         <li>
-                            <a href="${node['url']}discussions/">Comments
+                            <a href="${node['url']}discussions/">Discussions
                                 % if user['unread_comments']['total'] > 0:
                                     <span class="badge">${user['unread_comments']['total']}</span>
                                 % endif
