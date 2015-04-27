@@ -21,7 +21,7 @@ from framework.auth.decorators import must_be_logged_in, must_be_signed
 
 from website import settings
 from website.project import decorators
-from website.addons.base import exceptions
+from website.addons.base import exceptions, notifications
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.project.utils import serialize_node
@@ -212,6 +212,8 @@ def create_waterbutler_log(payload, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
     auth = Auth(user=user)
     node_addon.create_waterbutler_log(auth, osf_action, metadata)
+
+    notifications.file_notify(user, node, action, metadata, provider)
 
     return {'status': 'success'}
 
