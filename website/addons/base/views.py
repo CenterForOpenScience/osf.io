@@ -335,6 +335,11 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     )
 
     ret = serialize_node(node, auth, primary=True)
+
+    # Disable OSF Storage file deletion in DISK_SAVING_MODE
+    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
+        ret['user']['can_edit'] = False
+
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
