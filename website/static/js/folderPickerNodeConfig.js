@@ -212,7 +212,7 @@ var FolderPickerViewModel = oop.defclass({
      * Abstract hook called after updateFromData, before the promise is resolved.
      * - use to validate the VM state after update     
      **/
-    _afterUpdateHook: function() {},
+    afterUpdate: function() {},
     /**
      * Abstract hook where subclasses can capture extra data from the API response
      *
@@ -239,7 +239,7 @@ var FolderPickerViewModel = oop.defclass({
             });
             self.urls(settings.urls);
             self._updateCustomFields(settings);
-            self._afterUpdateHook();
+            self.afterUpdate();
             ret.resolve();
         };
         if (typeof data === 'undefined'){

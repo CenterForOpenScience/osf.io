@@ -74,7 +74,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }
         );
     },
-    _afterUpdateHook: function() {
+    afterUpdate: function() {
         var self = this;
         if (self.nodeHasAuth() && !self.validCredentials()) {
             var message;
