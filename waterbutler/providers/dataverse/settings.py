@@ -5,8 +5,6 @@ except ImportError:
 
 config = settings.get('DATAVERSE_PROVIDER_CONFIG', {})
 
-HOSTNAME = config.get('HOSTNAME', 'apitest.dataverse.org')
-
 EDIT_MEDIA_BASE_URL = config.get('EDIT_MEDIA_BASE_URL', "/dvn/api/data-deposit/v1.1/swordv2/edit-media/")
 DOWN_BASE_URL = config.get('DOWN_BASE_URL', "/api/access/datafile/")
 METADATA_BASE_URL = config.get('METADATA_BASE_URL', "/dvn/api/data-deposit/v1.1/swordv2/statement/study/")
