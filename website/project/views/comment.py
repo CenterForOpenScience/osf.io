@@ -31,55 +31,17 @@ def view_comments_project(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     page = request.args.get('page', None)
+    root_id = node._id if page == Comment.OVERVIEW else None
 
-    OVERVIEW = "overview"
+    if page:
+        _update_comments_timestamp(auth, node, page=page, root_id=root_id)
 
-    if not page:
-        ret = _view_comments_total()
-    elif page == OVERVIEW:
-        ret = _view_comments_overview(auth, node)
-    elif page == Comment.FILES:
-        ret = _view_comments_files(auth, node)
-    elif page == Comment.WIKI:  # Wiki
-        ret = _view_comments_wiki(auth, node)
-    else:
-        raise HTTPError(http.BAD_REQUEST)
+    ret = {
+        'comment_target': page or 'total',
+        'comment_target_id': root_id
+    }
     ret.update(_view_project(node, auth, primary=True, check_files=(not page)))
     return ret
-
-
-def _view_comments_total():
-    return {
-        'comment_target': 'total',
-        'comment_target_id': None
-    }
-
-
-def _view_comments_overview(auth, node):
-    _update_comments_timestamp(auth, node, page='node', root_id=node._id)
-    return {
-        'comment_target': Comment.OVERVIEW,
-        'comment_target_id': node._id
-    }
-
-
-def _view_comments_files(auth, node):
-    _update_comments_timestamp(auth, node, page=Comment.FILES)
-    return {
-        'comment_target': Comment.FILES,
-        'comment_target_id': None
-    }
-
-
-def _view_comments_wiki(auth, node):
-    """
-    Returns information needed to get comments for the discussion total wiki page
-    """
-    _update_comments_timestamp(auth, node, page=Comment.WIKI)
-    return {
-        'comment_target': Comment.WIKI,
-        'comment_target_id': None
-    }
 
 
 @must_be_contributor_or_public
