@@ -325,9 +325,7 @@ class BoxProvider(provider.BaseProvider):
         if not data:
             raise exceptions.NotFoundError(str(path))
 
-        self._assert_child(data['path_collection']['entries'])
-
-        return data if raw else BoxFileMetadata(data, self.folder).serialized()
+        return data if raw else BoxFileMetadata(data, path).serialized()
 
     @asyncio.coroutine
     def _get_folder_meta(self, path, raw=False, folder=False):
@@ -349,16 +347,16 @@ class BoxProvider(provider.BaseProvider):
             return data
 
         return [
-            self._serialize_item(each)
+            self._serialize_item(each, path.child(each['name']))
             for each in data['entries']
         ]
 
-    def _serialize_item(self, item):
+    def _serialize_item(self, item, path):
         if item['type'] == 'folder':
             serializer = BoxFolderMetadata
         else:
             serializer = BoxFileMetadata
-        return serializer(item, self.folder).serialized()
+        return serializer(item, path).serialized()
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
