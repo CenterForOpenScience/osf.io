@@ -1564,7 +1564,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # the cloned node must pass itself to its wiki objects to build the
         # correct URLs to that content.
         registered = original.clone()
-        project_signals.after_create_registration.send(original, registered, auth.user)
+        project_signals.after_create_registration.send(original, dst=registered, user=auth.user)
+
+        # TODO get addon statuses
 
         registered.is_registration = True
         registered.registered_date = when
@@ -1610,7 +1612,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
-        project_signals.after_register_node.send(original, registered)
+        project_signals.after_register_node.send(original, dst=registered, user=auth.user)
         return registered
 
     def remove_tag(self, tag, auth, save=True):

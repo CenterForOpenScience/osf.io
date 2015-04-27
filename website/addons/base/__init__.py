@@ -793,12 +793,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
-    @project_signals.after_create_registration.connect
-    def _after_register(self, original, registered, user):
-        _, message = self.after_register(original, registered, user)
-        if message:
-            status.push_status_message(message)
-
     def after_register(self, node, registration, user, save=True):
         """
 

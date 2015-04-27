@@ -1,6 +1,8 @@
 import abc
 from urllib2 import urlopen
-from celery import Task, TaskSet
+from celery import Task
+from celery.task.sets import TaskSet
+from celery.contrib import rdb
 
 from framework.tasks import app as celery_app
 from framework.archiver.exceptions import (
@@ -8,6 +10,7 @@ from framework.archiver.exceptions import (
     AddonFileSizeExceeded,
     AddonArchiveSizeExceeded,
 )
+
 
 from website.util import waterbutler_url_for
 from website.addons.base import StorageAddonBase
@@ -58,7 +61,7 @@ class ArchiverTaskBase(Task):
     __meta__ = abc.ABCMeta
 
     def bind(self, app):
-        return super(ArchiveTask, self).bind(celery_app)
+        return super(ArchiverTaskBase, self).bind(celery_app)
 
     def _add_archive_log(log):
         pass
@@ -79,9 +82,9 @@ class ArchiveTask(ArchiverTaskBase):
     def run(self, src, dst, user=None, *args, **kwargs):
         src.archiving = True
         try:
-            result = self._stat(src, user)
+            result = StatNodeTask().delay(src, user)
             archive_task = self._archive(src, dst, user, result)
-            archive_task.apply()
+            archive_task.delay()
         except ArchiverError as e:
             self._add_archive_error_log(e)
 
@@ -122,7 +125,7 @@ class StatTask(ArchiverTaskBase):
         pass
 
     def run(self, *args, **kwargs):
-        return self.stat(args, kwargs)
+        return self._stat(args, kwargs)
 
 
 class StatNodeTask(ArchiveTask):
@@ -133,7 +136,7 @@ class StatNodeTask(ArchiveTask):
             for node_addon in node.get_addons()
             if isinstance(node_addon, StorageAddonBase)]
         )
-        return stat_addons_task.apply()
+        return stat_addons_task.delay()
 
     def _stat(self, node, user):
         addon_results = self._stat_addons(node, user)
