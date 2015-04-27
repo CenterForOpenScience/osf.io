@@ -9,8 +9,7 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
-var phantomClient = require('js/phantom/client');
-require('phantomjs');
+
 
 // Knockout components for the onboarder
 require('../onboarder.js');
@@ -103,14 +102,6 @@ $(document).ready(function() {
     });
 
 });
-
-
-//var url = window.location.href;
-//console.log(url);
-//phantomClient.signal();
-
-window.callPhantom({hello : 'world'});
-
 
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

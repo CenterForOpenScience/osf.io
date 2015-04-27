@@ -4,11 +4,12 @@ import logging
 import itertools
 import math
 import httplib as http
-import requests
+
 
 from modularodm import Q
 from flask import request
 
+from framework.static_snapshot import tasks
 from framework import utils
 from framework import sentry
 from framework.auth.core import User
@@ -24,6 +25,7 @@ from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
+from website import settings
 from website.models import Guid
 from website.models import Node
 from website.util import rubeus
@@ -276,6 +278,7 @@ def get_dashboard_nodes(auth):
 
 @must_be_logged_in
 def dashboard(auth):
+
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
@@ -286,12 +289,31 @@ def dashboard(auth):
 
 @must_be_logged_in
 def dashboard_static(auth, **kwargs):
-    url = request.url
-    response = requests.get('http://localhost:3000')
-    print request.url
-    return response
+    url = web_url_for('dashboard', _absolute=True)
+    # url = 'http://65eee95e.ngrok.io/dashboard/'
+    check = web_url_for('handle_get_static_snapshot')
+    print check
+    cookie = request.cookies
+    print cookie, '************'
+    if settings.USE_CELERY:
+        task = tasks.get_static_snapshot.apply_async(args=[url, cookie])
+        print " celery"
+        return {}, 202, {'Location': web_url_for('handle_get_static_snapshot', task_id=task.id)}
+    else:
+        return {}
 
-    # content = os.system("phantomjs /website/static/js/staticSnapshot.js {0}". format(url))
+
+def handle_get_static_snapshot(task_id):
+    task = dashboard_static.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        print "do nothing"
+    if task.state == 'SUCCESS':
+        print "Save to cache"
+    response = {
+        'state': task.state,
+        'content': task.info.content
+    }
+    return response
 
 
 
