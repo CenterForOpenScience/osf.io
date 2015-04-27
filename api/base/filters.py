@@ -79,7 +79,9 @@ class ODMFilterMixin(object):
 
     def get_query_from_request(self):
         query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
-        if not query:
+        if query:
+            query = query & self.get_default_odm_query()
+        else:
             query = self.get_default_odm_query()
         return query
 
@@ -92,7 +94,7 @@ class ODMFilterMixin(object):
                 Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value))
                 for key, value in fields_dict.items() if self.is_filterable_field(key=key)
             ]
-            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
+            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.
             try:
                 query = functools.reduce(intersect, query_parts)
             except TypeError:
