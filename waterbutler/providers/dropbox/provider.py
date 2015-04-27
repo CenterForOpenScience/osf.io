@@ -236,10 +236,10 @@ class DropboxProvider(provider.BaseProvider):
 
         return DropboxFolderMetadata(data, self.folder).serialized()
 
-    def can_intra_copy(self, dest_provider):
+    def can_intra_copy(self, dest_provider, path=None):
         return type(self) == type(dest_provider)
 
-    def can_intra_move(self, dest_provider):
+    def can_intra_move(self, dest_provider, path=None):
         return self == dest_provider
 
     def _build_content_url(self, *segments, **query):
