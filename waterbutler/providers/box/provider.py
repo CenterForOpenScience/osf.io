@@ -244,11 +244,10 @@ class BoxProvider(provider.BaseProvider):
         #from https://developers.box.com/docs/#files-view-versions-of-a-file :
         #Alert: Versions are only tracked for Box users with premium accounts.
         #Few users will have a premium account, return only current if not
-        path = BoxPath(path)
-        curr = yield from self.metadata(str(path), raw=True)
+        curr = yield from self.metadata(path, raw=True)
         response = yield from self.make_request(
             'GET',
-            self.build_url('files', path._id, 'versions'),
+            self.build_url('files', path.identifier, 'versions'),
             expects=(200, 403),
             throws=exceptions.RevisionsError,
         )
