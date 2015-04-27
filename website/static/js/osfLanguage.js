@@ -19,14 +19,14 @@ module.exports = {
             deauthError: 'Could not disconnect the Dataverse Account at this time.',
             deauthSuccess: 'Succesfully disconnected the connected Dataverse Account.',
             authError: 'There was a problem connecting to the Dataverse.',
-            authInvalid: 'Your Dataverse username or password is invalid.',
+            authInvalid: 'Your Dataverse API token is invalid.',
             authSuccess: 'Your Dataverse Account was linked.',
-            studyDeaccessioned: 'This study has already been deaccessioned on the Dataverse ' +
+            datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
                 'and cannot be connected to the OSF.',
-            forbiddenCharacters: 'This study cannot be connected due to forbidden characters ' +
-                'in one or more of the study\'s file names. This issue has been forwarded to our ' +
+            forbiddenCharacters: 'This dataset cannot be connected due to forbidden characters ' +
+                'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
                 'development team.',
-            setStudyError: 'Could not connect to this study.',
+            setDatasetError: 'Could not connect to this dataset.',
             widgetInvalid: 'The credentials associated with this Dataverse Account ' +
                 'appear to be invalid.',
             widgetError: 'There was a problem connecting to the Dataverse.'

@@ -62,7 +62,7 @@ def serialize_settings(node_settings, current_user):
             uid=user_settings.owner._primary_key)
         result.update({
             'ownerName': user_settings.owner.fullname,
-            'dataverseUsername': user_settings.dataverse_username,
+            'apiToken': user_settings.api_token,
         })
         # Add owner's dataverse settings
         connection = client.connect_from_settings(user_settings)
@@ -77,9 +77,9 @@ def serialize_settings(node_settings, current_user):
                 'title': node_settings.dataverse,
                 'alias': node_settings.dataverse_alias
             },
-            'savedStudy': {
-                'title': node_settings.study,
-                'hdl': node_settings.study_hdl
+            'savedDataset': {
+                'title': node_settings.dataset,
+                'doi': node_settings.dataset_doi
             }
         })
     return result
@@ -89,12 +89,13 @@ def serialize_urls(node_settings):
     node = node_settings.owner
     urls = {
         'create': api_url_for('dataverse_set_user_config'),
-        'set': node.api_url_for('set_dataverse_and_study'),
+        'set': node.api_url_for('set_dataverse_and_dataset'),
         'importAuth': node.api_url_for('dataverse_import_user_auth'),
         'deauthorize': node.api_url_for('deauthorize_dataverse'),
-        'getStudies': node.api_url_for('dataverse_get_studies'),
-        'studyPrefix': 'http://dx.doi.org/',
-        'dataversePrefix': 'http://{0}/dvn/dv/'.format(HOST),
+        'getDatasets': node.api_url_for('dataverse_get_datasets'),
+        'datasetPrefix': 'http://dx.doi.org/',
+        'dataversePrefix': 'http://{0}/dataverse/'.format(HOST),
+        'apiToken': 'https://{0}/account/apitoken'.format(HOST),
         'settings': web_url_for('user_addons'),
     }
     return urls
@@ -103,19 +104,17 @@ def serialize_urls(node_settings):
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
 @decorators.must_have_addon('dataverse', 'node')
-def dataverse_get_studies(node_addon, **kwargs):
+def dataverse_get_datasets(node_addon, **kwargs):
     alias = request.json.get('alias')
     user_settings = node_addon.user_settings
 
     connection = client.connect_from_settings(user_settings)
     dataverse = client.get_dataverse(connection, alias)
-    studies, bad_studies = client.get_studies(dataverse)
+    datasets = client.get_datasets(dataverse)
     ret = {
-        'studies': [{'title': study.title, 'hdl': study.doi} for study in studies],
-        'badStudies': [{'hdl': bad_study.doi, 'url': 'http://dx.doi.org/' + bad_study.doi} for bad_study in bad_studies],
+        'datasets': [{'title': dataset.title, 'doi': dataset.doi} for dataset in datasets],
     }
-    code = http.PARTIAL_CONTENT if bad_studies else http.OK
-    return ret, code
+    return ret, http.OK
 
 
 @must_be_logged_in
@@ -129,31 +128,25 @@ def dataverse_set_user_config(auth, **kwargs):
         # TODO: Test me!
         raise HTTPError(http.NOT_ACCEPTABLE)
 
-    # Log in with DATAVERSE
-    username = request.json.get('dataverse_username')
-    password = request.json.get('dataverse_password')
-    connection = client.connect(username, password)
-
-    # Check for valid connection
-    if connection is None:
-        raise HTTPError(http.UNAUTHORIZED)
+    # Log in with Dataverse
+    token = request.json.get('api_token')
+    client.connect_or_401(token)
 
     user_addon = user.get_addon('dataverse')
     if user_addon is None:
         user.add_addon('dataverse')
         user_addon = user.get_addon('dataverse')
 
-    user_addon.dataverse_username = username
-    user_addon.dataverse_password = password
+    user_addon.api_token = token
     user_addon.save()
 
-    return {'username': username}, http.OK
+    return {'token': token}, http.OK
 
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
 @decorators.must_have_addon('dataverse', 'node')
-def set_dataverse_and_study(node_addon, auth, **kwargs):
+def set_dataverse_and_dataset(node_addon, auth, **kwargs):
 
     user_settings = node_addon.user_settings
     user = auth.user
@@ -168,32 +161,33 @@ def set_dataverse_and_study(node_addon, auth, **kwargs):
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     alias = request.json.get('dataverse').get('alias')
-    hdl = request.json.get('study').get('hdl')
+    doi = request.json.get('dataset').get('doi')
 
-    if hdl is None:
+    if doi is None:
         return HTTPError(http.BAD_REQUEST)
 
     connection = client.connect_from_settings(user_settings)
     dataverse = client.get_dataverse(connection, alias)
-    study = client.get_study(dataverse, hdl)
+    dataset = client.get_dataset(dataverse, doi)
 
     node_addon.dataverse_alias = dataverse.alias
     node_addon.dataverse = dataverse.title
 
-    node_addon.study_hdl = study.doi
-    node_addon.study = study.title
+    node_addon.dataset_doi = dataset.doi
+    node_addon.dataset_id = dataset.id
+    node_addon.dataset = dataset.title
 
     node = node_addon.owner
     node.add_log(
-        action='dataverse_study_linked',
+        action='dataverse_dataset_linked',
         params={
             'project': node.parent_id,
             'node': node._primary_key,
-            'study': study.title,
+            'dataset': dataset.title,
         },
         auth=auth,
     )
 
     node_addon.save()
 
-    return {'dataverse': dataverse.title, 'study': study.title}, http.OK
+    return {'dataverse': dataverse.title, 'dataset': dataset.title}, http.OK

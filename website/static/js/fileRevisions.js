@@ -21,10 +21,25 @@ var Revision = function(data, index, file, node) {
         options.branch = urlParams.branch;
     }
     options[self.versionIdentifier] = self.version;
-    // Note: Google Drive version identifiers often begin with the same sequence
-    self.displayVersion = file.provider === 'googledrive' ?
-        self.version.substring(self.version.length - 8) :
-        self.version.substring(0, 8);
+    self.displayVersion = null;
+    switch (file.provider) {
+        // Note: Google Drive version identifiers often begin with the same sequence
+        case 'googledrive':
+            self.displayVersion = self.version.substring(self.version.length - 8);
+            break;
+        // Note: Dataverse internal version names are ugly; Substitute our own
+        case 'dataverse':
+            var displayMap = {
+                'latest': 'Draft',
+                'latest-published': 'Published'
+            };
+
+            self.displayVersion = self.version in displayMap ?
+                displayMap[self.version] : self.version.substring(0, 8);
+        default:
+            self.displayVersion = self.version.substring(0, 8);
+    }
+
 
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
@@ -91,6 +106,17 @@ var RevisionsViewModel = function(node, file, editable) {
 
 RevisionsViewModel.prototype.fetch = function() {
     var self = this;
+
+    // Dataverse Hack: Only latest version is editable;
+    // Users without edit permission should not see revision table
+    if (self.file.provider === 'dataverse') {
+        if (self.editable()) {
+            self.editable(urlParams.version === 'latest');
+        } else {
+            return;
+        }
+    }
+
     var request = $.getJSON(self.urls.revisions);
 
     request.done(function(response) {

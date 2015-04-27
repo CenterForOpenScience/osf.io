@@ -2,7 +2,8 @@ import httplib as http
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from website.addons.dataverse.client import connect_from_settings_or_403
+from website.addons.dataverse.client import connect_from_settings_or_401
+from website.addons.dataverse.settings import HOST
 from website.project import decorators
 from website.util import api_url_for
 
@@ -33,38 +34,29 @@ def dataverse_delete_user(*args, **kwargs):
 
 
 @must_be_logged_in
-def dataverse_user_config_get(auth, **kwargs):
+@decorators.must_have_addon('dataverse', 'user')
+def dataverse_user_config_get(user_addon, auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Dataverse user settings.
     """
-    user_addon = auth.user.get_addon('dataverse')
-
-    connection = None
-    if user_addon:
-        try:
-            connection = connect_from_settings_or_403(user_addon)
-        except HTTPError as error:
-            if error.code == 403:
-                connection = None
-            else:
-                raise
+    try:
+        connection = connect_from_settings_or_401(user_addon)
+    except HTTPError as error:
+        if error.code == 401:
+            connection = None
+        else:
+            raise
 
     urls = {
         'create': api_url_for('dataverse_set_user_config'),
         'delete': api_url_for('dataverse_delete_user'),
+        'apiToken': 'https://{0}/account/apitoken'.format(HOST),
     }
-
-    user_has_auth = False
-    username = ''
-    if user_addon:
-        user_has_auth = user_addon.has_auth
-        username = user_addon.dataverse_username
-
     return {
         'result': {
             'connected': connection is not None,
-            'userHasAuth': user_has_auth,
-            'dataverseUsername': username,
-            'urls': urls,
+            'userHasAuth': user_addon.has_auth,
+            'apiToken': user_addon.api_token,
+            'urls': urls
         },
     }, http.OK

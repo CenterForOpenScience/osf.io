@@ -1,2 +1,1 @@
-HOST = 'dvn-demo.iq.harvard.edu'    # Dataverse test server
-VERIFY_SSL = False
+HOST = 'apitest.dataverse.org'  # Dataverse TEST server
