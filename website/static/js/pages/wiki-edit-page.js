@@ -145,9 +145,13 @@ $(document).ready(function () {
 
 var $comments = $('.comments');
 if ($comments.length) {
-    var userName = window.contextVars.currentUser.name;
-    var canComment = window.contextVars.currentUser.canComment;
-    var hasChildren = window.contextVars.node.hasChildren;
-    var title = window.contextVars.wiki.name;
-    Comment.init('.comment-pane', 'wiki', title, 'pane', userName, canComment, hasChildren);
+    var options = {
+        hostPage: 'wiki',
+        hostName: window.contextVars.wiki.name,
+        mode: 'pane',
+        userName: window.contextVars.currentUser.name,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren
+    };
+    Comment.init('.comment-pane', options);
 }

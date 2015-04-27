@@ -617,10 +617,8 @@ CommentModel.prototype.onSubmitSuccess = function() {
     this.showChildren(true);
 };
 
-/*
-    *
-    */
-var CommentListModel = function(userName, hostPage, hostName, mode, canComment, hasChildren, thread) {
+
+var CommentListModel = function(options) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -629,13 +627,13 @@ var CommentListModel = function(userName, hostPage, hostName, mode, canComment, 
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
-    self.mode = mode;
+    self.mode = options.mode;
     self.MAXLEVEL = MAXLEVEL[self.mode];
 
     self.editors = 0;
-    self.userName = ko.observable(userName);
-    self.canComment = ko.observable(canComment);
-    self.hasChildren = ko.observable(hasChildren);
+    self.userName = ko.observable(options.userName);
+    self.canComment = ko.observable(options.canComment);
+    self.hasChildren = ko.observable(options.hasChildren);
 
     self.discussionByFrequency = ko.observableArray();
     self.discussionByRecency = ko.observableArray();
@@ -649,9 +647,9 @@ var CommentListModel = function(userName, hostPage, hostName, mode, canComment, 
         }
     });
 
-    self.page(hostPage);
-    self.id = ko.observable(hostName);
-    self.rootId = ko.observable(hostName);
+    self.page(options.hostPage);
+    self.id = ko.observable(options.hostName);
+    self.rootId = ko.observable(options.hostName);
 
     self.commented = ko.pureComputed(function(){
         return self.comments().length > 0;
@@ -684,7 +682,7 @@ var CommentListModel = function(userName, hostPage, hostName, mode, canComment, 
         return comments;
     });
 
-    self.fetch(true, thread);
+    self.fetch(true, options.thread);
 
 };
 
@@ -729,10 +727,18 @@ var onOpen = function(hostPage, hostName) {
     return request;
 };
 
-var init = function(selector, hostPage, hostName, mode, userName, canComment, hasChildren, thread_id) {
-
-    new CommentPane(selector, mode, {onOpen: function(){return onOpen(hostPage, hostName)}});
-    var viewModel = new CommentListModel(userName, hostPage, hostName, mode, canComment, hasChildren, thread_id);
+/* options example: {
+ *      hostPage: 'node',
+ *      hostName: Node._id,
+ *      mode: 'page',
+ *      userName: User.fullname,
+ *      canComment: User.canComment,
+ *      hasChildren: Node.hasChildren,
+ *      thread_id: undefined }
+ */
+var init = function(selector, options) {
+    new CommentPane(selector, options.mode, {onOpen: function(){return onOpen(options.hostPage, options.hostName)}});
+    var viewModel = new CommentListModel(options);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');
