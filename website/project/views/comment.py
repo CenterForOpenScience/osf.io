@@ -2,6 +2,7 @@
 import collections
 import httplib as http
 import pytz
+import os
 
 from flask import request
 from modularodm import Q
@@ -21,6 +22,7 @@ from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
 from website.project.views.node import _view_project, n_unread_comments
+from website.addons.figshare.exceptions import FigshareIsDraftError
 
 
 @must_be_contributor_or_public
@@ -224,7 +226,7 @@ def add_comment(**kwargs):
         gravatar_url=auth.user.gravatar_url,
         content=content,
         page_type=get_page_type(page, node),
-        page_title=get_root_target_title(page, comment.root_target).title(),
+        page_title=get_root_target_title(page, comment.root_target),
         provider=get_file_provider(page, comment.root_target),
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
@@ -278,9 +280,11 @@ def get_root_target_title(page, root_target):
     if page == Comment.WIKI:
         return root_target.page_name
     elif page == Comment.FILES:
-        #TODO: handle Attribute error
-        root_target.enrich()
-        return root_target.name
+        try:
+            root_target.enrich()
+        except FigshareIsDraftError:
+            pass
+        return getattr(root_target, 'name', os.path.split(root_target.waterbutler_path)[1])
     else:
         return ''
 
