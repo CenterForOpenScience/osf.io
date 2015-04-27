@@ -40,7 +40,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         return (
             Q('is_public', 'eq', True) &
             Q('is_deleted', 'ne', True) &
-            Q('is_dashboard', 'ne', True)
+            Q('is_folder', 'ne', True)
         )
 
     # overrides ListCreateAPIView
