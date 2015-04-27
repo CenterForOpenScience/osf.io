@@ -83,34 +83,34 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revalidate_path(self, base, path, folder=None):
-            #TODO Research the search api endpoint
-            resp = yield from self.make_request(
-                'GET',
-                self.build_url('folders', base.identifier, 'items', fields='id,name,type'),
-                expects=(200,),
-                throws=exceptions.ProviderError
-            )
+        #TODO Research the search api endpoint
+        resp = yield from self.make_request(
+            'GET',
+            self.build_url('folders', base.identifier, 'items', fields='id,name,type'),
+            expects=(200,),
+            throws=exceptions.ProviderError
+        )
 
-            data = yield from resp.json()
-            lower_name = path.lower()
+        data = yield from resp.json()
+        lower_name = path.lower()
 
-            try:
-                item = next(
-                    x for x in data['entries']
-                    if x['name'].lower() == lower_name
-                    and (
-                        folder is None or
-                        (x['type'] == 'folder') == folder
-                    )
+        try:
+            item = next(
+                x for x in data['entries']
+                if x['name'].lower() == lower_name
+                and (
+                    folder is None or
+                    (x['type'] == 'folder') == folder
                 )
-                _id = item['id']
-                name = item['name']
-                folder = item['type'] == 'folder'
-            except StopIteration:
-                _id = None
-                name = path
+            )
+            _id = item['id']
+            name = item['name']
+            folder = item['type'] == 'folder'
+        except StopIteration:
+            _id = None
+            name = path
 
-            return base.child(name, _id=_id, folder=folder)
+        return base.child(name, _id=_id, folder=folder)
 
     def can_intra_move(self, other, path=None):
         return self == other
