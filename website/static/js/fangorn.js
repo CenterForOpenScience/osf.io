@@ -1231,6 +1231,19 @@ function toolbarDismissIcon (){
     ]);
  }
 
+ function createFolderButton (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-success', { 
+            onclick : function (event) { 
+                console.log('Create event'); 
+                _createFolder.call(tb, event, parent);
+            }
+        }, [
+        m('i.fa.fa-plus'),
+        m('span.hidden-xs', 'Create')
+    ]);
+ }
+
  function _renameEvent () {
     var tb = this;
     // var val = $.trim($('#renameInput').val());
