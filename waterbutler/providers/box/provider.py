@@ -180,13 +180,12 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-        meta = yield from self.metadata(path, raw=True)
         query = {}
-        if revision and revision != meta['id']:
+        if revision and revision != path.identifier:
             query['version'] = revision
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', meta['id'], 'content', **query),
+            self.build_url('files', path.identifier, 'content', **query),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
