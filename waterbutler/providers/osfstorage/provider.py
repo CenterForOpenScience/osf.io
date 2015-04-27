@@ -74,38 +74,44 @@ class OSFStorageProvider(provider.BaseProvider):
             self.move_url,
             data=json.dumps({
                 'auth': self.auth,
-                'source': source_options,
-                'destination': dest_options
+                'source': src_path.identifier,
+                'destination': dest_path.identifier or '/'.join(('', dest_path.parent.identifier.strip('/'), dest_path.name))
             }),
             headers={'Content-Type': 'application/json'},
             expects=(200, 201)
         )
 
         data = yield from resp.json()
+
         if data['kind'] == 'file':
             return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+
         return OsfStorageFolderMetadata(data).serialized(), resp.status == 201
 
-    def intra_copy(self, other, source_options, dest_options):
+    def intra_copy(self, dest_provider, src_path, dest_path):
         resp = yield from self.make_signed_request(
             'POST',
             self.copy_url,
             data=json.dumps({
                 'auth': self.auth,
-                'source': source_options,
-                'destination': dest_options
+                'source': src_path.identifier,
+                'destination': dest_path.identifier or '/'.join(('', dest_path.parent.identifier.strip('/'), dest_path.name))
             }),
             headers={'Content-Type': 'application/json'},
             expects=(200, 201)
         )
 
         data = yield from resp.json()
-        return OsfStorageFileMetadata(data).serialized(), resp.status == 201
 
-    @asyncio.coroutine
-    def copy(self, dest_provider, source_options, dest_options):
-        source_options['is_upload'] = False
-        return (yield from super().copy(dest_provider, source_options, dest_options))
+        if data['kind'] == 'file':
+            return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+
+        return OsfStorageFolderMetadata(data).serialized(), resp.status == 201
+
+    # @asyncio.coroutine
+    # def copy(self, dest_provider, source_options, dest_options):
+    #     source_options['is_upload'] = False
+    #     return (yield from super().copy(dest_provider, source_options, dest_options))
 
     @asyncio.coroutine
     def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
