@@ -9,6 +9,7 @@ from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
 
+
 import furl
 import requests
 from modularodm import Q
@@ -19,13 +20,13 @@ from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 from framework import status
-from framework.archiver import StatResult
 
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
 from website.project import signals as project_signals
+from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
 
@@ -653,7 +654,6 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if node_addon and node_addon.user_settings == self:
                 node_addon.clear_auth()
 
-
 class AddonNodeSettingsBase(AddonSettingsBase):
 
     owner = fields.ForeignField('node', backref='addons')
@@ -701,12 +701,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             name=self.config.short_name,
             **data
         )
-    ############
-    # Archiver #
-    ############
-    def stat(self):
-        # TODO
-        return StatResult(self.config.short_name), None
 
     #############
     # Callbacks #
@@ -827,6 +821,38 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+############
+# Archiver #
+############
+class StorageAddonBase(object):
+
+    def _get_file_tree(self, node=None, user=None):
+        """
+        Recursively get file metadata
+        """
+        node = node or {
+            'path': self.root_node_path,
+            'name': self.root_node_name,
+            'kind': 'folder',
+        }
+
+        if node.get('kind') == 'file':
+            return node
+
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            provider=self.config.short_name,
+            path=node.get('path'),
+            node=self.owner,
+            user=user
+        )
+        res = requests.get(metadata_url)
+        if res.status_code != 200:
+            # TODO
+            pass
+
+        node['children'] = [self._get_fil3e_tree(child) for child in res.json().get('data', [])]
+        return node
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     _meta = {
