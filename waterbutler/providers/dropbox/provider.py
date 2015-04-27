@@ -33,16 +33,14 @@ class DropboxProvider(provider.BaseProvider):
         }
 
     @asyncio.coroutine
-    def intra_copy(self, dest_provider, source_options, dest_options):
-        source_path = DropboxPath(self.folder, source_options['path'])
-        dest_path = DropboxPath(self.folder, dest_options['path'])
+    def intra_copy(self, dest_provider, src_path, dest_path):
         if self == dest_provider:
             resp = yield from self.make_request(
                 'POST',
                 self.build_url('fileops', 'copy'),
                 data={
                     'root': 'auto',
-                    'from_path': source_path.full_path,
+                    'from_path': src_path.full_path,
                     'to_path': dest_path.full_path,
                 },
                 expects=(200, 201),
@@ -51,7 +49,7 @@ class DropboxProvider(provider.BaseProvider):
         else:
             from_ref_resp = yield from self.make_request(
                 'GET',
-                self.build_url('copy_ref', 'auto', source_path.full_path),
+                self.build_url('copy_ref', 'auto', src_path.full_path),
             )
             from_ref_data = yield from from_ref_resp.json()
             resp = yield from self.make_request(
