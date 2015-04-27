@@ -50,11 +50,11 @@ class ODMFilterMixin(object):
     # For the field_comparison_operators, instances can be a class or a tuple of classes
     field_comparison_operators = [
         {
-            'instances': ser.CharField,
+            'field_type': ser.CharField,
             'comparison_operator': 'icontains'
         },
         {
-            'instances': ser.ListField,
+            'field_type': ser.ListField,
             'comparison_operator': 'in'
         }
     ]
@@ -63,7 +63,7 @@ class ODMFilterMixin(object):
         default_operator = 'eq'
 
         for operator in self.field_comparison_operators:
-            if isinstance(self.serializer_class._declared_fields[key], operator['instances']):
+            if isinstance(self.serializer_class._declared_fields[key], operator['field_type']):
                 return operator['comparison_operator']
 
         return default_operator
