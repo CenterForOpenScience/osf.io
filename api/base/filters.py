@@ -39,7 +39,7 @@ class ODMFilterMixin(object):
     Subclasses must define `get_default_odm_query()`.
 
     Serializers that want to restrict which fields are used for filtering need to have a variable called
-    filterable_fields which is a list of strings representing the field names as they appear in the serialization.
+    filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
     """
 
     # TODO Handle simple and complex non-standard fields
