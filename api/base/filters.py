@@ -46,6 +46,7 @@ class ODMFilterMixin(object):
 
     TRUTHY = set(['true', 'True', 1, '1'])
     FALSY = set(['false', 'False', 0, '0'])
+    DEFAULT_OPERATOR = 'eq'
 
     # For the field_comparison_operators, instances can be a class or a tuple of classes
     field_comparison_operators = [
@@ -60,13 +61,12 @@ class ODMFilterMixin(object):
     ]
 
     def get_comparison_operator(self, key, value):
-        default_operator = 'eq'
 
         for operator in self.field_comparison_operators:
             if isinstance(self.serializer_class._declared_fields[key], operator['field_type']):
                 return operator['comparison_operator']
 
-        return default_operator
+        return self.DEFAULT_OPERATOR
 
     def is_filterable_field(self, key, value):
         try:
