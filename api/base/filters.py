@@ -78,11 +78,14 @@ class ODMFilterMixin(object):
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
-        query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
-        if query:
-            query = query & self.get_default_odm_query()
+        param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
+        default_query = self.get_default_odm_query()
+
+        if param_query:
+            query = param_query & default_query
         else:
-            query = self.get_default_odm_query()
+            query = default_query
+
         return query
 
     def query_params_to_odm_query(self, query_params):
