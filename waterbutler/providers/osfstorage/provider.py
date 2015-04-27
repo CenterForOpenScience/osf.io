@@ -62,13 +62,13 @@ class OSFStorageProvider(provider.BaseProvider):
             self.settings['storage'],
         )
 
-    def can_intra_copy(self, other):
+    def can_intra_copy(self, other, path=None):
         return isinstance(other, self.__class__)
 
-    def can_intra_move(self, other):
+    def can_intra_move(self, other, path=None):
         return isinstance(other, self.__class__)
 
-    def intra_move(self, other, source_options, dest_options):
+    def intra_move(self, other, src_path, dest_path):
         resp = yield from self.make_signed_request(
             'POST',
             self.move_url,
