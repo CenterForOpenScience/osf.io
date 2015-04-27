@@ -204,8 +204,11 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 asyncio.async(
                     func(
                         dest_provider,
-                        src_path.child(item['name'], folder=item['kind'] == 'folder'),
-                        dest_path.child(item['name'], folder=item['kind'] == 'folder'),
+                        # TODO figure out a way to cut down on all the requests made here
+                        (yield from self.revalidate_path(src_path, item['name'], folder=item['kind'] == 'folder')),
+                        (yield from dest_provider.revalidate_path(dest_path, item['name'], folder=item['kind'] == 'folder')),
+                        # src_path.child(item['name'], _id=item.get('id'), folder=item['kind'] == 'folder'),
+                        # dest_path.child(item['name'], _id=item.get('id'), folder=item['kind'] == 'folder'),
                         handle_naming=False,
                     )
                 )
