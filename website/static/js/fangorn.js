@@ -319,7 +319,7 @@ function _fangornCanDrop(treebeard, item) {
 function _fangornDragOver(treebeard, event) {
     var dropzoneHoverClass = 'fangorn-dz-hover',
         closestTarget = $(event.target).closest('.tb-row'),
-        itemID =  parseInt(closestTarget.attr('data-id')),
+        itemID = parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
@@ -685,11 +685,11 @@ function reapplyTooltips () {
  * @this Treebeard.controller
  * @private
  */
-function _fangornLazyLoadOnLoad (tree) {
+function _fangornLazyLoadOnLoad (tree, event) {
     tree.children.forEach(function(item) {
         inheritFromParent(item, tree);
     });
-    resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree]);
+    resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree, event]);
     reapplyTooltips();
 
     if (tree.depth > 1) {
@@ -704,9 +704,12 @@ function _fangornLazyLoadOnLoad (tree) {
  * @private
  */
 function _fangornOrderFolder(tree) {
-    var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-    tree.sortChildren(this, sortDirection, 'text', 0);
-    this.redraw();
+    // Checking if this column does in fact have sorting
+    if (this.isSorted[0]) {
+        var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+        tree.sortChildren(this, sortDirection, 'text', 0);
+        this.redraw();        
+    }
 }
 
 /**
@@ -949,6 +952,62 @@ function expandStateLoad(item) {
     reapplyTooltips();
 }
 
+/**
+ * @param tree A Treebeard _item object for the row
+ * @param nodeID Current node._id
+ * @param file window.contextVars.file object
+ */
+function setCurrentFileID(tree, nodeID, file) {
+    var tb = this;
+    if (file.provider === 'figshare') {
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path) {
+                tb.currentFileID = child.id;
+            }
+        }
+    } else if (file.provider === 'dataverse') {
+        // Only highlight file in correct dataset version, since paths persist across versions
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            var urlParams = $osf.urlParams();
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path
+                && child.data.extra.datasetVersion === urlParams.version) {
+                tb.currentFileID = child.id;
+            }
+        }
+    } else if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
+        for (var j = 0; j < tree.children.length; j++) {
+            var child = tree.children[j];
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.name === tb.fangornFolderArray[tb.fangornFolderIndex]) {
+                tb.fangornFolderIndex++;
+                if (child.data.kind === 'folder') {
+                    tb.updateFolder(null, child);
+                    tree = child;
+                }
+                else {
+                    tb.currentFileID = child.id;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Scroll to the Treebeard item corresponding to the given ID
+ * @param fileID id of a Treebeard _item object
+ */
+function scrollToFile(fileID) {
+    var tb = this;
+    if (fileID !== undefined) {
+        var index = tb.returnIndex(fileID);
+        var visibleIndex = tb.visibleIndexes.indexOf(index);
+        if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
+            var scrollTo = visibleIndex * tb.options.rowHeight;
+            this.select('#tb-tbody').scrollTop(scrollTo);
+        }
+    }
+}
 
 /**
  * OSF-specific Treebeard options common to all addons.
@@ -963,7 +1022,7 @@ tbOptions = {
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
     title : function() {
-        if(window.contextVars.uploadInstruction) {
+        if(window.contextVars.diskSavingMode) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
             if (window.File && window.FileReader) {
                 return m('p', {
@@ -1121,7 +1180,11 @@ Fangorn.DefaultColumns = {
 Fangorn.Utils = {
     inheritFromParent: inheritFromParent,
     resolveconfigOption: resolveconfigOption,
-    reapplyTooltips : reapplyTooltips
+    reapplyTooltips : reapplyTooltips,
+    setCurrentFileID: setCurrentFileID,
+    scrollToFile: scrollToFile
 };
+
+Fangorn.DefaultOptions = tbOptions;
 
 module.exports = Fangorn;

@@ -260,6 +260,11 @@ def node_fork_page(**kwargs):
     else:
         node_to_use = project
 
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node_to_use.url
+        )
     try:
         fork = node_to_use.fork_node(auth)
     except PermissionsError:

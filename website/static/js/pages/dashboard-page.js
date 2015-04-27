@@ -51,7 +51,7 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-var ensureUserTimezone = function(savedTimezone, savedLocale) {
+var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
     var clientLocale = window.navigator.userLanguage || window.navigator.language;
 
@@ -62,7 +62,8 @@ var ensureUserTimezone = function(savedTimezone, savedLocale) {
             url,
             {
                 'timezone': clientTimezone,
-                'locale': clientLocale
+                'locale': clientLocale,
+                'id': id
             }
         );
         request.fail(function(xhr, textStatus, error) {
@@ -89,7 +90,7 @@ $(document).ready(function() {
             multiselect : true
         });
 
-        ensureUserTimezone(data.timezone, data.locale);
+        ensureUserTimezone(data.timezone, data.locale, data.id);
     });
     request.fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Failed to populate user dashboard', {

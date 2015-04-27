@@ -326,7 +326,7 @@ def pip_install(req_file):
     """Return the proper 'pip install' command for installing the dependencies
     defined in ``req_file``.
     """
-    cmd = bin_prefix('pip install --upgrade -r {} '.format(req_file))
+    cmd = bin_prefix('pip install --exists-action w --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     return cmd
@@ -450,7 +450,7 @@ def addon_requirements():
                 requirements_file = os.path.join(path, 'requirements.txt')
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
-                cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                cmd = 'pip install --exists-action w --upgrade -r {0}'.format(requirements_file)
                 if WHEELHOUSE_PATH:
                     cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
                 run(bin_prefix(cmd))
@@ -590,7 +590,7 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True)
+    init_app(routes=False, set_backends=True, mfr=False)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
 

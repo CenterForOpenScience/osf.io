@@ -21,6 +21,7 @@ from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
+from website.util import rubeus
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
@@ -242,6 +243,22 @@ def addon_view_or_download_file_legacy(**kwargs):
     if kwargs.get('vid'):
         query_params['version'] = kwargs['vid']
 
+    # If provider is OSFstorage, check existence of requested file in the filetree
+    # This prevents invalid GUIDs from being created
+    if provider == 'osfstorage':
+        node_settings = node.get_addon('osfstorage')
+        file_tree = node_settings.file_tree
+        error = HTTPError(
+            404, data=dict(message_short='File not found',
+                           message_long='You requested a file that does not exist.')
+        )
+        if not file_tree:
+            raise error
+        else:
+            children_paths = [child.path for child in file_tree.children]
+            if path not in children_paths:
+                raise error
+
     return redirect(
         node.web_url_for(
             'addon_view_or_download_file',
@@ -306,6 +323,11 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     )
 
     ret = serialize_node(node, auth, primary=True)
+
+    # Disable OSF Storage file deletion in DISK_SAVING_MODE
+    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
+        ret['user']['can_edit'] = False
+
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
@@ -318,6 +340,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
     })
 
+    ret.update(rubeus.collect_addon_assets(node))
     return ret
 
 

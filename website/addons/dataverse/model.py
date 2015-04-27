@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import os
-import logging
+import urlparse
 
 import pymongo
 from modularodm import fields
 
+from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
-
-from website.addons.base import GuidFile
 from website.security import encrypt, decrypt
-from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
-
-
-logging.getLogger('sword2').setLevel(logging.WARNING)
+from website.addons.base import (
+    AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
+)
+from website.addons.dataverse.client import connect_from_settings_or_401
+from website.addons.dataverse.settings import HOST
 
 
 class DataverseFile(GuidFile):
@@ -31,26 +30,46 @@ class DataverseFile(GuidFile):
     file_id = fields.StringField(required=True, index=True)
 
     @property
-    def file_url(self):
-        return os.path.join('dataverse', 'file', self.file_id)
+    def waterbutler_path(self):
+        return '/' + self.file_id
 
     @property
-    def deep_url(self):
-        if self.node is None:
-            raise ValueError('Node field must be defined.')
-        return os.path.join(
-            self.node.deep_url, self.file_url,
-        )
+    def provider(self):
+        return 'dataverse'
+
+    @property
+    def version_identifier(self):
+        return 'version'
+
+    @property
+    def unique_identifier(self):
+        return self.file_id
+
+    def enrich(self, save=True):
+        super(DataverseFile, self).enrich(save)
+
+        # Check permissions
+        user = _get_current_user()
+        if not self.node.can_edit(user=user):
+            try:
+                # Users without edit permission can only see published files
+                if not self._metadata_cache['extra']['hasPublishedVersion']:
+                    raise exceptions.FileDoesntExistError
+            except (KeyError, IndexError):
+                pass
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
 
+    api_token = fields.StringField()
+
+    # Legacy Fields
     dataverse_username = fields.StringField()
     encrypted_password = fields.StringField()
 
     @property
     def has_auth(self):
-        return bool(self.dataverse_username and self.encrypted_password)
+        return bool(self.api_token)
 
     @property
     def dataverse_password(self):
@@ -76,8 +95,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
         :param bool delete: Indicates if the settings should be deleted.
         """
-        self.dataverse_username = None
-        self.dataverse_password = None
+        self.api_token = None
         for node_settings in self.addondataversenodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
@@ -88,21 +106,44 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
-    study_hdl = fields.StringField()
-    study = fields.StringField()
+    dataset_doi = fields.StringField()
+    _dataset_id = fields.StringField()
+    dataset = fields.StringField()
+
+    # Legacy fields
+    study_hdl = fields.StringField()    # Now dataset_doi
+    study = fields.StringField()        # Now dataset
 
     user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
     )
 
     @property
-    def is_fully_configured(self):
-        return bool(self.has_auth and self.study_hdl is not None)
+    def dataset_id(self):
+        if self._dataset_id is None:
+            connection = connect_from_settings_or_401(self.user_settings)
+            dataverse = connection.get_dataverse(self.dataverse_alias)
+            dataset = dataverse.get_dataset_by_doi(self.dataset_doi)
+            self._dataset_id = dataset.id
+            self.save()
+        return self._dataset_id
+
+    @dataset_id.setter
+    def dataset_id(self, value):
+        self._dataset_id = value
+
+    @property
+    def complete(self):
+        return bool(self.has_auth and self.dataset_doi is not None)
 
     @property
     def has_auth(self):
         """Whether a dataverse account is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    def find_or_create_file_guid(self, path):
+        file_id = path.strip('/') if path else ''
+        return DataverseFile.get_or_create(node=self.owner, file_id=file_id)
 
     def delete(self, save=True):
         self.deauthorize(add_log=False)
@@ -124,8 +165,9 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         """Remove user authorization from this node and log the event."""
         self.dataverse_alias = None
         self.dataverse = None
-        self.study_hdl = None
-        self.study = None
+        self.dataset_doi = None
+        self.dataset_id = None
+        self.dataset = None
         self.user_settings = None
 
         if add_log:
@@ -139,6 +181,43 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
             )
 
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.user_settings.api_token}
+
+    def serialize_waterbutler_settings(self):
+        return {
+            'host': HOST,
+            'doi': self.dataset_doi,
+            'id': self.dataset_id,
+            'name': self.dataset,
+        }
+
+    def create_waterbutler_log(self, auth, action, metadata):
+        path = metadata['path']
+        if 'name' in metadata:
+            name = metadata['name']
+        else:
+            query_string = urlparse.urlparse(metadata['full_path']).query
+            name = urlparse.parse_qs(query_string).get('name')
+
+        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dataverse')
+        self.owner.add_log(
+            'dataverse_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'dataset': self.dataset,
+                'filename': name,
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                },
+            },
+        )
+
     ##### Callback overrides #####
 
     # Note: Registering Dataverse content is disabled for now
@@ -150,7 +229,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             return (
                 u'The contents of Dataverse add-ons cannot be registered at this time; '
-                u'the Dataverse study linked to this {category} will not be included '
+                u'the Dataverse dataset linked to this {category} will not be included '
                 u'as part of this registration.'
             ).format(**locals())
 
