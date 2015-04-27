@@ -382,7 +382,6 @@ li.pointer {
     color: white;
     vertical-align: middle;
     line-height: 50px;
-    cursor: pointer;
     position: relative;
 }
 

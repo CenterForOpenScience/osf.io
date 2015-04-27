@@ -1,6 +1,6 @@
 <div class="scripted comment-pane hidden-xs">
 
-    <div class="cp-handle pull-right" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Discussion Pane">
+    <div class="cp-handle pull-right pointer" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Discussion Pane">
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
