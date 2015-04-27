@@ -43,7 +43,7 @@ class ODMFilterMixin(object):
     """
 
     # TODO Handle simple and complex non-standard fields
-    
+
     TRUTHY = set(['true', 'True', 1, '1'])
     FALSY = set(['false', 'False', 0, '0'])
 
