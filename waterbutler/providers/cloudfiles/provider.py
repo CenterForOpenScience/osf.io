@@ -30,12 +30,6 @@ def ensure_connection(func):
     return wrapped
 
 
-class CloudFilesPath(utils.WaterButlerPath):
-
-    def __init__(self, path, prefix=False, suffix=True):
-        super().__init__(path, prefix=prefix, suffix=suffix)
-
-
 class CloudFilesProvider(provider.BaseProvider):
     """Provider for Rackspace CloudFiles
     """
@@ -52,6 +46,10 @@ class CloudFilesProvider(provider.BaseProvider):
         self.username = self.credentials['username']
         self.container = self.settings['container']
         self.use_public = self.settings.get('use_public', True)
+
+    @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        return WaterButlerPath(path)
 
     @property
     def default_headers(self):
@@ -87,8 +85,6 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype ResponseStreamReader:
         :raises: exceptions.DownloadError
         """
-        path = CloudFilesPath(path)
-
         if accept_url:
             parsed_url = furl.furl(self.sign_url(path, endpoint=self.public_endpoint))
             parsed_url.args['filename'] = kwargs.get('displayName') or path.name
