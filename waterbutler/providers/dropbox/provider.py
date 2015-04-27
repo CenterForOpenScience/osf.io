@@ -6,6 +6,7 @@ from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.dropbox import settings
 from waterbutler.providers.dropbox.metadata import DropboxRevision
@@ -24,7 +25,7 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def validate_path(self, path, **kwargs):
-        return p.WaterButlerPath(path, prepend=self.folder)
+        return WaterButlerPath(path, prepend=self.folder)
 
     @property
     def default_headers(self):
@@ -122,8 +123,6 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-        path = DropboxPath(self.folder, path)
-
         if revision:
             url = self._build_content_url('files', 'auto', path.full_path, rev=revision)
         else:
@@ -140,7 +139,7 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, conflict='replace', **kwargs):
-        path, exists = yield from self.handle_name_conflict(DropboxPath(self.folder, path), conflict=conflict)
+        path, exists = yield from self.handle_name_conflict(path, conflict=conflict)
 
         resp = yield from self.make_request(
             'PUT',
@@ -156,12 +155,6 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        path = DropboxPath(self.folder, path)
-
-        # A metadata call will verify the path specified is actually the
-        # requested file or folder.
-        yield from self.metadata(str(path))
-
         yield from self.make_request(
             'POST',
             self.build_url('fileops', 'delete'),
@@ -172,14 +165,15 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        path = DropboxPath(self.folder, path)
         resp = yield from self.make_request(
             'GET',
             self.build_url('metadata', 'auto', path.full_path),
             expects=(200, ),
             throws=exceptions.MetadataError
         )
+
         data = yield from resp.json()
+
         # Dropbox will match a file or folder by name within the requested path
         if path.is_file and data['is_dir']:
             raise exceptions.MetadataError(
@@ -208,7 +202,6 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        path = DropboxPath(self.folder, path)
         response = yield from self.make_request(
             'GET',
             self.build_url('revisions', 'auto', path.full_path, rev_limit=250),
@@ -228,8 +221,7 @@ class DropboxProvider(provider.BaseProvider):
         """
         :param str path: The path to create a folder at
         """
-        path = DropboxPath(self.folder, path)
-        path.validate_folder()
+        WaterButlerPath.validate_folder(path)
 
         response = yield from self.make_request(
             'POST',
