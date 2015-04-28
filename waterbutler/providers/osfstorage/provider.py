@@ -33,11 +33,13 @@ class OSFStorageProvider(provider.BaseProvider):
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
+        self.root_id = settings.get('rootId')
         self.copy_url = settings.get('copy')
         self.move_url = settings.get('move')
         self.callback_url = settings.get('callback')
         self.metadata_url = settings.get('metadata')
         self.revisions_url = settings.get('revisions')
+        self.lineage_url = settings.get('lineage')
         self.create_folder_url = settings.get('createFolder')
         self.provider_name = settings['storage'].get('provider')
 
