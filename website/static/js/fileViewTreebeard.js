@@ -39,6 +39,7 @@ function FileViewTreebeard(data) {
             var tb = this;
             var path = '';
             tb.fangornFolderIndex = 0;
+            tb.fangornFolderArray = [''];
             if (window.contextVars.file.path && window.contextVars.file.provider !== 'figshare') {
                 if (window.contextVars.file.provider === 'osfstorage' || window.contextVars.file.provider === 'box') {
                     path = decodeURIComponent(window.contextVars.file.extra.fullPath);
@@ -49,8 +50,6 @@ function FileViewTreebeard(data) {
                 if (tb.fangornFolderArray.length > 1) {
                     tb.fangornFolderArray.splice(0, 1);
                 }
-            } else {
-                tb.fangornFolderArray = [''];
             }
             m.render($('#filesSearch').get(0), tb.options.filterTemplate.call(tb));
         },
