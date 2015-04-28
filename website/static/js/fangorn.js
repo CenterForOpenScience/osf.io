@@ -983,7 +983,7 @@ function _fangornResolveRows(item) {
         }
     }
     default_columns.push(
-    toggleTemplate,
+    //toggleTemplate,
     {
         data : 'name',  // Data field name
         folderIcons : true,
@@ -1018,14 +1018,14 @@ function _fangornResolveRows(item) {
 function _fangornColumnTitles () {
     var columns = [];
     columns.push(
-    {   
-        title : '',
-        width: '5%',
-        sort: false
-    },
+    // {   
+    //     title : '',
+    //     width: '5%',
+    //     sort: false
+    // },
     {
         title: 'Name',
-        width : '85%',
+        width : '90%',
         sort : true,
         sortType : 'text'
     }, {
