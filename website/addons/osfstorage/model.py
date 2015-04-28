@@ -32,7 +32,6 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     has_auth = True
     root_node = fields.ForeignField('OsfStorageFileNode')
     file_tree = fields.ForeignField('OsfStorageFileTree')
-    root_node = fields.ForeignField('OsfStorageFileNode')
 
     # Temporary field to mark that a record has been migrated by the
     # migrate_from_oldels scripts
