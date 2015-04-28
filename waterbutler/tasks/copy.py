@@ -10,9 +10,9 @@ def copy(src_bundle, dest_bundle, callback_url, auth):
     src_path, src_provider = src_bundle.pop('path'), utils.make_provider(**src_bundle.pop('provider'))
     dest_path, dest_provider = dest_bundle.pop('path'), utils.make_provider(**dest_bundle.pop('provider'))
 
-    metadata, _ = yield from src_provider.copy(dest_provider, src_path, dest_path)
+    metadata, created = yield from src_provider.copy(dest_provider, src_path, dest_path)
 
-    return (yield from utils.send_signed_request('PUT', callback_url, {
+    yield from utils.send_signed_request('PUT', callback_url, {
         'action': 'copy',
         'source': {
             'path': str(src_path),
@@ -26,4 +26,6 @@ def copy(src_bundle, dest_bundle, callback_url, auth):
         },
         'auth': auth['auth'],
         'time': time.time() + 60
-    }))
+    })
+
+    return metadata, created
