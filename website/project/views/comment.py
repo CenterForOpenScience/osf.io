@@ -205,9 +205,10 @@ def add_comment(**kwargs):
     guid = comment_info.get('target')
     target = resolve_target(node, page, guid)
 
-    content = comment_info.get('content').strip()
-    content = sanitize(content)
-    if not content:
+    content = comment_info.get('content', None)
+    if content:
+        content = sanitize(content.strip())
+    else:
         raise HTTPError(http.BAD_REQUEST)
     if len(content) > settings.COMMENT_MAXLENGTH:
         raise HTTPError(http.BAD_REQUEST)
