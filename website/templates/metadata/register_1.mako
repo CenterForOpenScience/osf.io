@@ -6,6 +6,21 @@
 
         % if not registered:
 
+            <div id="embargo-addon" data-bind="with: $root.embargoAddon, ">
+                <hr />
+
+                <p class="help-block">${language.REGISTRATION_EMBARGO_INFO}</p>
+                <select data-bind="options: registrationOptions, selectedOptions: registrationChoice, event: {change: checkShowEmbargoDatePicker}"></select>
+
+              <div data-bind="visible: showEmbargoDatePicker">
+                    <select class="col-md-3" data-bind="options: dayOptions, value: dayChoice"></select>
+                    <select class="col-md-3" data-bind="options: monthOptions, value: monthChoice"></select>
+                    <select class="col-md-3" data-bind="options: yearOptions, value: yearChoice"></select>
+              </div>
+                <hr />
+##              <div><pre data-bind="text: ko.toJSON($data, null, 2)"></pre></div>
+            </div>
+
             <div id="register-show-submit" data-bind="visible:$root.isLast()">
 
                 <hr />
@@ -20,7 +35,6 @@
                         <input class="form-control" data-bind="value:$root.continueText, valueUpdate: 'afterkeydown'" />
                     </div>
                 </div>
-
             </div>
 
         % endif

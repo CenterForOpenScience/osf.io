@@ -108,6 +108,11 @@ time stamps will always be linked to the original.</p>
 
 </ul>
 '''
+REGISTRATION_EMBARGO_INFO = '''
+<p> GET BRIAN AND SARA TO HELP DEVELOP THIS VERBAGE. NEED TO DISCUSS WHAT AN EMBARGO IS,
+THE PROCESS FOR APPROVING/DISAPPROVING IT, RAMIFICATIONS OF IT, ETC...
+</p>
+'''
 
 BEFORE_REGISTRATION_INFO = '''
 Registration cannot be undone, and the archived content and files cannot be

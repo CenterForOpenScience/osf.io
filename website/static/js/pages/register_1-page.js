@@ -65,6 +65,18 @@ $(document).ready(function() {
 
     $('#registration_template form').on('submit', function() {
 
+        // If embargo is requested, verify its end date, and inform user if date is out of range
+        if (registrationViewModel.embargoAddon.requestingEmbargo()) {
+            if (!registrationViewModel.embargoAddon.isEmbargoEndDateValid()) {
+                registrationViewModel.continueText('');
+                $osf.growl(
+                    'Invalid embargo end date',
+                    'Please double check the date you have chosen is within the parameters specified.',
+                    'warning'
+                );
+                return false;
+            }
+        }
         // Serialize responses
         var serialized = registrationViewModel.serialize(),
             data = serialized.data,
