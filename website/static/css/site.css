@@ -1414,6 +1414,10 @@ dl.activity-log dd {
     cursor: pointer;
 }
 
+.log-folder {
+  font-style: italic;
+}
+
 .log-node-title-link {
     font-weight: bold;
 }
