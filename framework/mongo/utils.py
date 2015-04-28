@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import re
+import httplib as http
 
 import pymongo
 from modularodm.exceptions import ValidationValueError
 
+from framework.exceptions import HTTPError
 
 # MongoDB forbids field names that begin with "$" or contain ".". These
 # utilities map to and from Mongo field names.
@@ -57,3 +59,11 @@ def unique_on(*groups):
         ])
         return cls
     return wrapper
+
+
+def get_or_http_not_found(Model, pk):
+    instance = Model.load(pk)
+    if not instance:
+        raise HTTPError(http.NOT_FOUND)
+    else:
+        return instance
