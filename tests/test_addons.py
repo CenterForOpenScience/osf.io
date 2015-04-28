@@ -22,7 +22,7 @@ from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
 from website.project.utils import serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from website.addons.osfstorage.model import OsfStorageFileRecord
+from website.addons.osfstorage.oldels import OsfStorageFileRecord
 from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
