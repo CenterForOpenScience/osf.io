@@ -636,19 +636,18 @@ function _poResolveIcon(item) {
     var componentIcons = iconmap.componentIcons;
     var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
-        var iconType = icons[type];
+        var icon = icons[type];
         if (type === 'component' || type === 'registeredComponent') {            
-            iconType = componentIcons[category];
+            icon = componentIcons[category];
         }
         if (type === 'registeredComponent') {
-            iconType += ' po-registered';
+            icon.className = icon.className + ' po-registered';
         }
 
-        var template = m('span', { 'class' : iconType});
         if (viewLink) {
-            return m('a', { href : viewLink}, template);
+            return m('a', { href : viewLink}, icon);
         }
-        return template;
+        return icon;
     }
     if (item.data.isSmartFolder) {
         return returnView('smartFolder');
