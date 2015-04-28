@@ -9,6 +9,7 @@ import furl
 from modularodm import fields, Q
 from dateutil.parser import parse as parse_date
 from modularodm.exceptions import NoResultsFound
+from modularodm.storage.base import KeyExistsException
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
