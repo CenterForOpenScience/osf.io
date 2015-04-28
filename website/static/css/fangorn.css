@@ -185,6 +185,8 @@ text-align: center;
 }
 .fangorn-canDelete, .fangorn-noDelete {
 	font-weight: bold;
+	border-bottom: 1px solid #EEE;
+	padding: 5px;
 }
 
 .fg-hover-hide {
