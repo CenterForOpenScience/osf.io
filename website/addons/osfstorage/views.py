@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import httplib
 import logging
 
+from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
 
@@ -99,6 +100,7 @@ def osf_storage_crud_prepare(node_addon, payload):
 
 @must_be_signed
 @no_auto_transaction
+@decorators.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
 def osf_storage_upload_file_hook(node_addon, payload, **kwargs):
     path, user, location, metadata = osf_storage_crud_prepare(node_addon, payload)
@@ -274,7 +276,7 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osf_storage_copy_hook(source, destination, node_addon, **kwargs):
-    created, copied = model.OsfStorageFileNode.get(source['path'], node_addon).copy_to_path(destination['source'])
+    created, copied = model.OsfStorageFileNode.get(source, node_addon).move_to_path(destination)
 
     return copied.serialized(), httplib.CREATED if created else httplib.OK
 
