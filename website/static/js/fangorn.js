@@ -655,20 +655,20 @@ function _fangornActionColumn (item, col) {
     //Download button if this is an item
     if (item.kind === 'file') {
         buttons.push({
-            'name': '',
-            'tooltip': 'Download file',
-            'icon': 'fa fa-download',
-            'css': 'btn btn-info btn-xs',
-            'onclick': _downloadEvent
+            'name' : '',
+            'tooltip' : 'Download file',
+            'icon' : 'fa fa-download',
+            'css' : 'btn btn-info btn-xs',
+            'onclick' : _downloadEvent
         });
         if (item.data.permissions.edit) {
             buttons.push({
-                'name': '',
-                'tooltip': 'Delete',
-                'icon': 'fa fa-times',
-                'css': 'm-l-lg text-danger fg-hover-hide',
-                'style': 'display:none',
-                'onclick': _removeEvent
+                'name' : '',
+                'tooltip' : 'Delete',
+                'icon' : 'fa fa-times',
+                'css' : 'm-l-lg text-danger fg-hover-hide',
+                'style' : 'display:none',
+                'onclick' : _removeEvent
             });
         }
     }
