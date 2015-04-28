@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.33.10 (2015-04-27)
+====================
+
+- Add migrations necessary to support OSF Storage folders.
+- Fixes to DISK_SAVING_MODE.
+
 0.33.0 (2015-04-20)
 ===================
 
