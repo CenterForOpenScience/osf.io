@@ -1,6 +1,6 @@
 <div id="s3Scope" class="scripted" data-addon="${addon_short_name}">
     <h4 class="addon-title">
-        Amazon S3
+        Amazon S3 (<div class="terms-and-conditions"><p>Terms & Conditions</p></div>)
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
@@ -72,10 +72,5 @@
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr.class: messageClass"></p>
-    </div>
-
-    <!-- Terms & Conditions -->
-    <div class="terms-and-conditions">
-        <p>Terms & Conditions</p>
     </div>
 </div>

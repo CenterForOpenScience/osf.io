@@ -1,7 +1,7 @@
 <div id="dataverseScope" class="scripted" data-addon="${addon_short_name}">
 
     <h4 class="addon-title">
-        Dataverse
+        Dataverse (<div class="terms-and-conditions"><p>Terms & Conditions</p></div>)
         <small class="authorized-by">
 
             <span data-bind="if: nodeHasAuth">
@@ -129,11 +129,6 @@
     <!-- Flashed Messages -->
     <div class="help-block">
 
-    </div>
-
-    <!-- Terms & Conditions -->
-    <div class="terms-and-conditions">
-        <p>Terms & Conditions</p>
     </div>
 
     <!-- Submit button for set info -->
