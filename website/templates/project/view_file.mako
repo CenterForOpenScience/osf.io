@@ -75,7 +75,7 @@
             </button>
           </span>
 
-##          <div >
+
           <table class="table" data-bind="if: versioningSupported && revisions().length">
             <thead class="file-version-thread">
               <tr>
@@ -138,7 +138,7 @@
       </div>
     </div>
 
-  </div>
+
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
