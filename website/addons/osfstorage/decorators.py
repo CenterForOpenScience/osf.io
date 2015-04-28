@@ -45,14 +45,11 @@ def path_validator(path):
     )
 
 file_opt_args = {
-    'source': Arg({
-        'cookie': USER_ARG,
-        'path': Arg(str, required=True, validate=path_validator),
+    'auth': Arg({
+        'id': Arg(None, required=True, dest='user', use=User.load, validate=lambda x: x is not None)
     }),
-    'destination': Arg({
-        'cookie': USER_ARG,
-        'path': Arg(str, required=True, validate=path_validator),
-    })
+    'source': Arg(unicode, required=True, validate=path_validator),
+    'destination': Arg(unicode, required=True, validate=path_validator),
 }
 
 waterbutler_crud_args = {
