@@ -260,9 +260,9 @@ function checkConflicts(tb, item, folder, cb) {
                 m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
                 m('p', 'Do you want to replace it?')
             ]), m('', [
-                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: cb.bind(tb, 'keep', undefined)}, 'Keep Both'),
+                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                 m('button.btn.btn-md.btn-default.m-r-sm', {onclick: tb.modal.dismiss.bind(tb)}, 'Cancel'),
-                m('button.btn.btn-md.btn-default', {onclick: cb.bind(tb, 'replace', undefined)},'Replace'),
+                m('button.btn.btn-md.btn-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -286,11 +286,11 @@ function checkConflicts(tb, item, folder, cb) {
 //     });
 // }
 
-function doItemOp(isMove, to, from, conflict, rename) {
+function doItemOp(isMove, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
     var ogParent = from.parentID;
-    if (to.id === ogParent && rename !== from.data.name) return;
+    if (to.id === ogParent && (!rename || rename === from.data.name)) return;
 
     if (isMove) {
         from.move(to.id);
@@ -1558,7 +1558,7 @@ function _dropLogic(event, items, folder) {
     }
 
     $.each(items, function(index, item) {
-        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move', folder, item));
+        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move', folder, item, undefined));
     });
 }
 
