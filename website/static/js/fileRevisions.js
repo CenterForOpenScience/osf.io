@@ -79,8 +79,8 @@ var RevisionsViewModel = function(node, file, editable) {
     self.node = node;
     self.file = file;
     self.path = file.provider !== 'googledrive' ?
-        file.path.split('/') :
-        file.path.split('/').map(decodeURIComponent);
+        (file.extra.fullPath || file.path).split('/') :
+        (file.extra.fullPath || file.path).split('/').map(decodeURIComponent);
 
     // Hack: Set Figshare files to uneditable by default, then update after
     // fetching file metadata after revisions request fails
