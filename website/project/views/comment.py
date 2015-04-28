@@ -79,50 +79,50 @@ def resolve_target(node, page, guid):
     return target.referent
 
 
-def collect_discussion(target, users):
+def collect_discussion(target, comments_dict):
     if not getattr(target, 'commented', None) is None:
         for comment in getattr(target, 'commented', []):
             if not (comment.is_deleted or comment.is_hidden):
-                users[comment.user].append(comment)
-            collect_discussion(comment, users=users)
-    return users
+                comments_dict[comment.user].append(comment)
+            collect_discussion(comment, comments_dict=comments_dict)
+    return comments_dict
 
 
 def comment_discussion(comments, node, anonymous=False, widget=False):
 
-    users = collections.defaultdict(list)
+    comments_dict = collections.defaultdict(list)
     for comment in comments:
         if not (comment.is_deleted or comment.is_hidden):
-            users[comment.user].append(comment)
+            comments_dict[comment.user].append(comment)
         if not widget:
-            collect_discussion(comment, users=users)
+            collect_discussion(comment, comments_dict=comments_dict)
 
     sorted_users_frequency = sorted(
-        users.keys(),
-        key=lambda item: len(users[item]),
+        comments_dict.keys(),
+        key=lambda item: len(comments_dict[item]),
         reverse=True,
     )
 
     def get_recency(item):
-        most_recent = users[item][0].date_created
-        for comment in users[item][1:]:
+        most_recent = comments_dict[item][0].date_created
+        for comment in comments_dict[item][1:]:
             if comment.date_created > most_recent:
                 most_recent = comment.date_created
         return most_recent
 
     sorted_users_recency = sorted(
-        users.keys(),
+        comments_dict.keys(),
         key=lambda item: get_recency(item),
         reverse=True,
     )
 
     return {
         'discussionByFrequency': [
-            serialize_discussion(node, user, len(users[user]), anonymous)
+            serialize_discussion(node, user, len(comments_dict[user]), anonymous)
             for user in sorted_users_frequency
         ],
         'discussionByRecency': [
-            serialize_discussion(node, user, len(users[user]), anonymous)
+            serialize_discussion(node, user, len(comments_dict[user]), anonymous)
             for user in sorted_users_recency
         ]
     }
