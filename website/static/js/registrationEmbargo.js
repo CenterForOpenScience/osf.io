@@ -75,6 +75,12 @@ var RegistrationEmbargoViewModel = function() {
     });
 };
 
+var RegistrationEmbargo = function(selector) {
+    this.viewModel = new RegistrationEmbargoViewModel();
+    $osf.applyBindings(this.viewModel, selector);
+};
+
 module.exports = {
-    viewModel: RegistrationEmbargoViewModel
+    RegistrationEmbargo: RegistrationEmbargo,
+    ViewModel: RegistrationEmbargoViewModel
 };

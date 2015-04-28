@@ -553,7 +553,7 @@ var MetaData = (function() {
         self.npages = self.pages.length;
 
         // embargoAddon viewmodel component
-        self.embargoAddon = new registrationEmbargo.viewModel();
+        self.embargoAddon = new registrationEmbargo.ViewModel();
 
         // Check uniqueness of IDs
         $.each(ids, function(id, count) {
@@ -657,7 +657,7 @@ var MetaData = (function() {
             // Add embargoAddon relevant fields
             $.extend(data, {
                 'registrationChoice': self.embargoAddon.registrationChoice()[0],
-                'embargoEndDate': self.embargoAddon.embargoEndDate()
+                'embargoEndDate': self.embargoAddon.embargoEndDate().toUTCString()
             });
             return {
                 data: data,
