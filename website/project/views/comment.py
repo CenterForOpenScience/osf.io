@@ -161,7 +161,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'author': serialize_discussion(node, comment.user, 1, anonymous),
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
-        'page': comment.page or Comment.OVERVIEW,
+        'page': comment.page,
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
         'rootId': root_id,
         'title': title,
