@@ -37,19 +37,22 @@ class MoveHandler(core.BaseCrossProviderHandler):
                 self.callback_url,
                 self.auth
             )
-            self.set_status(202)
-            return
 
-        metadata, created = (
-            yield from tasks.backgrounded(
-                self.source_provider.move,
-                self.destination_provider,
-                self.json['source']['path'],
-                self.json['destination']['path'],
-                rename=self.json.get('rename'),
-                conflict=self.json.get('conflict', 'replace'),
+            if not resp.ready():
+                self.set_status(202)
+                return
+            metadata, created = resp.result
+        else:
+            metadata, created = (
+                yield from tasks.backgrounded(
+                    self.source_provider.move,
+                    self.destination_provider,
+                    self.json['source']['path'],
+                    self.json['destination']['path'],
+                    rename=self.json.get('rename'),
+                    conflict=self.json.get('conflict', 'replace'),
+                )
             )
-        )
 
         if created:
             self.set_status(201)
