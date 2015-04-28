@@ -17,7 +17,6 @@ from website.models import NodeLog
 
 from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
-from website.addons.osfstorage import settings
 from website.addons.osfstorage.model import OsfStorageFileVersion
 
 

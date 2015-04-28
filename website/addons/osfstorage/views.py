@@ -233,7 +233,6 @@ def osf_storage_root(node_settings, auth, **kwargs):
 def osf_storage_get_revisions(payload, node_addon, **kwargs):
     node = node_addon.owner
     path = payload.get('path')
-    size = payload.get('size')
 
     is_anon = has_anonymous_link(node, Auth(private_key=payload.get('view_only')))
 
