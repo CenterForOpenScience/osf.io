@@ -31,7 +31,7 @@
     <div class="${addon_short_name}-settings" data-bind="visible: showSettings">
         <div class="row">
             <div class="col-md-12">
-                <p class="current-folder">
+                <p class="break-word">
                     <strong>Current Folder:</strong>
                     <a data-bind="ifnot: folderName() === '', attr.href: urls().files">
                         {{folderName}}
@@ -55,7 +55,7 @@
                     <!-- Queued selection -->
                     <div class="${addon_short_name}-confirm-selection" data-bind="visible: currentDisplay() == PICKER && selected()">
                         <form data-bind="submit: submitSettings">
-                            <div class="connect-folder">
+                            <div class="break-word">
                                 <h4 data-bind="if: selected" class="${addon_short_name}-confirm-dlg">
                                     Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                                 </h4>
