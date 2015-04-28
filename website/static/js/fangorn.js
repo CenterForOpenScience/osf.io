@@ -658,6 +658,7 @@ function _removeEvent (event, items, col) {
         var canDelete = true;
         var deleteList = [];
         var noDeleteList = [];
+        var deleteMessage = [m('p', 'This action is irreversible.')];
         var mithrilContentMultiple;
         var mithrilButtonsMultiple;
         items.forEach(function(item, index, arr){
@@ -667,14 +668,22 @@ function _removeEvent (event, items, col) {
             } else {
                 deleteList.push(item);
             }
+            if(item.kind === 'folder') {
+                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'))
+            }
         });
         // If all items can be deleted      
         if(canDelete){
             mithrilContentMultiple = m('div', [
                     m('h3.break-word', 'Delete multiple files?'),
-                    m('p', 'This action is irreversible.'),
-                    deleteList.map(function(item){
-                        return m('.fangorn-canDelete.text-success', item.data.name);
+                    deleteMessage,
+                    deleteList.map(function(n){
+                        if(n.kind === 'folder'){
+                            return m('.fangorn-canDelete.text-success', [
+                                m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
+                                ]);
+                        }
+                        return m('.fangorn-canDelete.text-success', n.data.name);
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
@@ -686,6 +695,11 @@ function _removeEvent (event, items, col) {
                     m('h3.break-word', 'Delete multiple files?'),
                     m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
                     deleteList.map(function(n){
+                        if(n.kind === 'folder'){
+                            return m('.fangorn-canDelete.text-success', [
+                                m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
+                                ]);
+                        }
                         return m('.fangorn-canDelete.text-success', n.data.name);
                     }),
                     noDeleteList.map(function(n){
