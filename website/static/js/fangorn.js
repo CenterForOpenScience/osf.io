@@ -1125,6 +1125,7 @@ function _fangornToolbar () {
     var tb = this;
     var titleContent = tb.options.title();
     var generalButtons = [];
+    var rowMessage = m('i.m-r-sm','Select rows for further actions.');
     var generalIcons = tb.options.iconState.generalIcons;
     if (generalIcons.deleteMultiple.on) { 
         generalButtons.push(generalIcons.deleteMultiple.template.call(tb));
@@ -1135,10 +1136,13 @@ function _fangornToolbar () {
     if (generalIcons.search.on) { 
         generalButtons.push(generalIcons.search.template.call(tb));
     }
+    if(tb.multiselected.length > 0){
+        rowMessage = '';
+    }
     if (tb.options.iconState.mode === 'bar'){                   
         return m('.row.tb-header-row', { 'data-mode' : 'bar'}, [
                 m('.col-xs-12', [   
-                        m('i.m-r-sm','Select rows for further actions.'),
+                        rowMessage,
                         m('.fangorn-toolbar.pull-right', 
                             [   
                                 tb.options.iconState.rowIcons.map(function(icon){
