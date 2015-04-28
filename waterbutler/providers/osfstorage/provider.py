@@ -322,7 +322,9 @@ class OSFStorageProvider(provider.BaseProvider):
         return ret
 
     @asyncio.coroutine
-    def revisions(self, **kwargs):
+    def revisions(self, path, **kwargs):
+        kwargs['path'] = '/' + path.identifier
+
         resp = yield from self.make_signed_request(
             'GET',
             self.revisions_url,
@@ -337,6 +339,8 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, **kwargs):
+        kwargs['path'] = '/' + path.identifier
+
         resp = yield from self.make_signed_request(
             'POST',
             self.create_folder_url,
