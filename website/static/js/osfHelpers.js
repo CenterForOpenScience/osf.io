@@ -7,9 +7,9 @@ var moment = require('moment');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
-require('koHelpers');
+require('./koHelpers');
 
-var GrowlBox = require('./growlBox');
+var GrowlBox = require('js/growlBox');
 
 /**
  * Convenience function to create a GrowlBox
@@ -93,8 +93,8 @@ var errorDefaultLong = 'OSF was unable to resolve your request. If this issue pe
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
 var handleJSONError = function(response) {
-    var title = response.responseJSON.message_short || errorDefaultShort;
-    var message = response.responseJSON.message_long || errorDefaultLong;
+    var title = response.message_short || errorDefaultShort;
+    var message = response.message_long || errorDefaultLong;
 
     $.osf.growl(title, message);
 
@@ -297,14 +297,55 @@ ko.bindingHandlers.tooltip = {
     }
 };
 
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements
+ * Example:
+ * <span data-bind="anchorScroll"></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        var offset;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            var $element = $(element);
+            if(!$item.attr('data-model') && $item.attr('href') !== '#') {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href');
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.height() ) {
+                    offset = $(target).position();
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    offset = $(target).offset();
+                    $(window).scrollTop(offset.top - 100); // This is fixed to 100 because of the fixed navigation menus on the page
+                }
+            }
+        });
+    }
+};
+
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
-  * is bound to the expected element. Also shows the element if it was
-  * previously hidden.
+  * is bound to the expected element. Also shows the element (and child elements) if it was
+  * previously hidden by applying the 'scripted' CSS class.
   *
-  * Takes a ViewModel and a selector (String).
+  * Takes a ViewModel and a selector (string) or a DOM element.
   */
 var applyBindings = function(viewModel, selector) {
+    var elem, cssSelector;
+    var $elem = $(selector);
+    if (typeof(selector.nodeName) === 'string') { // dom element
+        elem = selector;
+        // NOTE: Only works with DOM elements that have an ID
+        cssSelector = '#' + elem.id;
+    } else {
+        elem = $elem[0];
+        cssSelector = selector;
+    }
     var $elem = $(selector);
     if ($elem.length === 0) {
         throw "No elements matching selector '" + selector + "'";  // jshint ignore: line
@@ -316,6 +357,10 @@ var applyBindings = function(viewModel, selector) {
     if ($elem.hasClass('scripted')){
         $elem.show();
     }
+    // Also show any child elements that have the scripted class
+    $(cssSelector + ' .scripted').each(function(elm) {
+        $(this).show();
+    })
     ko.applyBindings(viewModel, $elem[0]);
 };
 

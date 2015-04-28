@@ -5,9 +5,9 @@ import urlparse
 import itertools
 import httplib as http
 
+import pymongo
 from github3 import GitHubError
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+from modularodm import fields
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -28,6 +28,15 @@ hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
 class GithubGuidFile(GuidFile):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(index=True)
 
@@ -60,6 +69,9 @@ class GithubGuidFile(GuidFile):
 
     @property
     def extra(self):
+        if not self._metadata_cache:
+            return {}
+
         return {
             'sha': self._metadata_cache['extra']['fileSha'],
         }
@@ -204,19 +216,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def find_or_create_file_guid(self, path):
-        try:
-            return GithubGuidFile.find_one(
-                Q('path', 'eq', path) &
-                Q('node', 'eq', self.owner)
-            ), False
-        except ModularOdmException:
-            pass
+    @property
+    def complete(self):
+        return self.has_auth and self.repo is not None and self.user is not None
 
-        # Create new
-        new = GithubGuidFile(node=self.owner, path=path)
-        new.save()
-        return new, True
+    def find_or_create_file_guid(self, path):
+        return GithubGuidFile.get_or_create(node=self.owner, path=path)
 
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
@@ -263,13 +268,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     def short_url(self):
         if self.user and self.repo:
             return '/'.join([self.user, self.repo])
-
-    @property
-    def complete(self):
-        return (
-            self.user and self.repo and
-            self.user_settings and self.user_settings.has_auth
-        )
 
     @property
     def is_private(self):
@@ -448,7 +446,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 url=node.api_url + 'github/tarball/'
             )
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:
@@ -461,17 +459,22 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             # Delete OAuth tokens
             self.user_settings = None
             self.save()
-
-            #
-            return (
-                'Because the GitHub add-on for this project was authenticated '
-                'by {user}, authentication information has been deleted. You '
-                'can re-authenticate on the <a href="{url}settings/">'
-                'Settings</a> page.'.format(
-                    user=removed.fullname,
-                    url=node.url,
-                )
+            message = (
+                u'Because the GitHub add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
             )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def after_set_privacy(self, node, permissions):
         """

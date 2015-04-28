@@ -5,6 +5,12 @@ Dropbox in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
+<script type="text/html" id="dropbox_folder_created">
+created folder
+<span class="overflow log-folder">{{ params.path }}</span> in
+Dropbox in {{ nodeType }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
 
 <script type="text/html" id="dropbox_file_updated">
 updated file
@@ -15,14 +21,14 @@ Dropbox in {{ nodeType }}
 
 
 <script type="text/html" id="dropbox_file_removed">
-removed file <span class="overflow">{{ params.path }}</span> from
+removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow">{{ params.path }}</span> from
 Dropbox in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 
 <script type="text/html" id="dropbox_folder_selected">
-linked Dropbox folder <span class="overflow">{{ params.folder }}</span> to {{ nodeType }}
+linked Dropbox folder <span class="overflow">{{ params.folder === '/' ? '/ (Full Dropbox)' : params.folder }}</span> to {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 

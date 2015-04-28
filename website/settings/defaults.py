@@ -30,6 +30,10 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+# May set these to True in local.py for development
+DEV_MODE = False
+DEBUG_MODE = False
+
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
@@ -38,6 +42,7 @@ CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
 BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
 
 DOMAIN = 'http://localhost:5000/'
+OFFLOAD_DOMAIN = 'http://localhost:5001/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
@@ -49,16 +54,12 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
+ELASTIC_INDEX = 'website'
 SHARE_ELASTIC_URI = ELASTIC_URI
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'
-
-# May set these to True in local.py for development
-DEV_MODE = False
-DEBUG_MODE = False
-
 
 # TODO: Remove after migration to OSF Storage
 COPY_GIT_REPOS = False
@@ -115,6 +116,7 @@ SESSION_HISTORY_LENGTH = 5
 SESSION_HISTORY_IGNORE_RULES = [
     lambda url: '/static/' in url,
     lambda url: 'favicon' in url,
+    lambda url: url.startswith('/api/'),
 ]
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
@@ -234,3 +236,16 @@ DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_ADDRS = ['127.0.0.1']
+
+# Test identifier namespaces
+DOI_NAMESPACE = 'doi:10.5072/FK2'
+ARK_NAMESPACE = 'ark:99999/fk4'
+
+EZID_USERNAME = 'changeme'
+EZID_PASSWORD = 'changeme'
+# Format for DOIs and ARKs
+EZID_FORMAT = '{namespace}osf.io/{guid}'
+
+
+SHARE_REGISTRATION_URL = ''
+SHARE_API_DOCS_URL = ''

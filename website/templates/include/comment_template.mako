@@ -99,7 +99,8 @@
                             <span data-bind="if: hasChildren">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>
-                            <span data-bind="text: content, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent, click: edit}"></span>
+                            <span class="overflow"
+                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
                         </div>
 
                         <!--
@@ -127,6 +128,9 @@
 
                         <!-- Action bar -->
                         <div data-bind="ifnot: editing" class="comment-actions pull-right">
+                            <span data-bind="if: canEdit, click: edit">
+                                <i class="fa fa-pencil"></i>
+                            </span>
                             <span data-bind="if: $root.canComment, click: showReply">
                                 <i class="fa fa-reply"></i>
                             </span>
@@ -134,7 +138,7 @@
                                 <i class="fa fa-warning"></i>
                             </span>
                             <span data-bind="if: canEdit, click: startDelete">
-                                <i class="fa-trash-o"></i>
+                                <i class="fa fa-trash-o"></i>
                             </span>
 
                         </div>

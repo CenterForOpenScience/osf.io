@@ -26,6 +26,9 @@ ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
 
+# Shown upon successful email address confirmation
+CONFIRMED_EMAIL = 'Email address confirmation successful.'
+
 # Shown if the user's account is disabled
 DISABLED = '''
 Log-in failed: Deactivated account.
@@ -65,7 +68,9 @@ CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display n
 # ###########
 
 # Shown at error page if an expired/revokes email confirmation link is clicked
-LINK_EXPIRED = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
+EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
+
+INVALID_EMAIL_CONFIRM_TOKEN = 'This confirmation link is invalid. Please <a href="/login/">log in</a> to continue.'
 
 # Node Actions
 
@@ -144,3 +149,6 @@ SUPPORT = "Contact support@osf.io for further assistance."
 # Custom Error Messages w/ support
 STATA_VERSION_ERROR = 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
 BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
+
+#disk saving mode
+DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'

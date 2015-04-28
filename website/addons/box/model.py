@@ -5,10 +5,10 @@ import logging
 from datetime import datetime
 
 import furl
+import pymongo
 import requests
+from modularodm import fields, StoredObject
 from box import CredentialsV2, refresh_v2_token, BoxClientException
-from modularodm import fields, Q, StoredObject
-from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -28,8 +28,15 @@ class BoxFile(GuidFile):
     """A Box file model with a GUID. Created lazily upon viewing a
     file's detail page.
     """
-
-    #: Full path to the file, e.g. 'My Pictures/foo.png'
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
     path = fields.StringField(required=True, index=True)
 
     @property
@@ -50,22 +57,14 @@ class BoxFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
-    @classmethod
-    def get_or_create(cls, node, path):
-        """Get or create a new file record. Return a tuple of the form (obj, created)
-        """
-        try:
-            new = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-            created = False
-        except ModularOdmException:
-            # Create new
-            new = cls(node=node, path=path)
-            new.save()
-            created = True
-        return new, created
+    @property
+    def extra(self):
+        if not self._metadata_cache:
+            return {}
+
+        return {
+            'fullPath': self._metadata_cache['extra']['fullPath'],
+        }
 
 
 class BoxOAuthSettings(StoredObject):
@@ -250,6 +249,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def complete(self):
+        return self.has_auth and self.folder_id is not None
+
     def fetch_folder_name(self):
         self._update_folder_data()
         return self.folder_name
@@ -278,6 +281,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     def set_folder(self, folder_id, auth):
         self.folder_id = str(folder_id)
+        self._update_folder_data()
         self.save()
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
@@ -293,7 +297,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         nodelogger.log(action="node_authorized", save=True)
 
     def find_or_create_file_guid(self, path):
-        return BoxFile.get_or_create(self.owner, path)
+        return BoxFile.get_or_create(node=self.owner, path=path)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
@@ -310,6 +314,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
         self.folder_id = None
+        self._update_folder_data()
         self.user_settings = None
 
         self.save()
@@ -432,21 +437,33 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             clone.save()
         return clone, message
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """If the removed contributor was the user who authorized the Box
         addon, remove the auth credentials from this node.
         Return the message text that will be displayed to the user.
         """
+
         if self.user_settings and self.user_settings.owner == removed:
+
+            # Delete OAuth tokens
             self.user_settings = None
             self.save()
-            name = removed.fullname
-            url = node.web_url_for('node_setting')
-            return (
-                u'Because the Box add-on for this project was authenticated'
-                'by {name}, authentication information has been deleted. You '
-                'can re-authenticate on the <a href="{url}">Settings</a> page'
-            ).format(**locals())
+            message = (
+                u'Because the Box add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
+            )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)

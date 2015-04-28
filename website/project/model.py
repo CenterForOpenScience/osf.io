@@ -42,10 +42,12 @@ from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
 from website.citations.utils import datetime_to_csl
+from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
+
 
 html_parser = HTMLParser()
 
@@ -285,8 +287,8 @@ class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    date = fields.DateTimeField(default=datetime.datetime.utcnow)
-    action = fields.StringField()
+    date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
+    action = fields.StringField(index=True)
     params = fields.DictionaryField()
 
     user = fields.ForeignField('user', backref='created')
@@ -329,6 +331,8 @@ class NodeLog(StoredObject):
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
 
+    FOLDER_CREATED = 'folder_created'
+
     FILE_ADDED = 'file_added'
     FILE_UPDATED = 'file_updated'
     FILE_REMOVED = 'file_removed'
@@ -342,6 +346,8 @@ class NodeLog(StoredObject):
 
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
+
+    EXTERNAL_IDS_ADDED = 'external_ids_added'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -482,6 +488,7 @@ def get_pointer_parent(pointer):
     assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
     return parent_refs[0]
 
+
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
     categories defined in CATEGORY_MAP.
@@ -507,9 +514,8 @@ def validate_user(value):
     return True
 
 
-class Node(GuidStoredObject, AddonModelMixin):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
-    redirect_mode = 'proxy'
     #: Whether this is a pointer or not
     primary = True
 
@@ -545,18 +551,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     _id = fields.StringField(primary=True)
 
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, index=True)
 
     # Privacy
-    is_public = fields.BooleanField(default=False)
+    is_public = fields.BooleanField(default=False, index=True)
 
     # User mappings
     permissions = fields.DictionaryField()
     visible_contributor_ids = fields.StringField(list=True)
 
     # Project Organization
-    is_dashboard = fields.BooleanField(default=False)
-    is_folder = fields.BooleanField(default=False)
+    is_dashboard = fields.BooleanField(default=False, index=True)
+    is_folder = fields.BooleanField(default=False, index=True)
 
     # Expanded: Dictionary field mapping user IDs to expand state of this node:
     # {
@@ -565,21 +571,21 @@ class Node(GuidStoredObject, AddonModelMixin):
     # }
     expanded = fields.DictionaryField(default={}, validate=validate_user)
 
-    is_deleted = fields.BooleanField(default=False)
-    deleted_date = fields.DateTimeField()
+    is_deleted = fields.BooleanField(default=False, index=True)
+    deleted_date = fields.DateTimeField(index=True)
 
-    is_registration = fields.BooleanField(default=False)
-    registered_date = fields.DateTimeField()
+    is_registration = fields.BooleanField(default=False, index=True)
+    registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
 
-    is_fork = fields.BooleanField(default=False)
-    forked_date = fields.DateTimeField()
+    is_fork = fields.BooleanField(default=False, index=True)
+    forked_date = fields.DateTimeField(index=True)
 
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
-    category = fields.StringField(validate=validate_category)
+    category = fields.StringField(validate=validate_category, index=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -602,11 +608,11 @@ class Node(GuidStoredObject, AddonModelMixin):
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
-    forked_from = fields.ForeignField('node', backref='forked')
-    registered_from = fields.ForeignField('node', backref='registrations')
+    forked_from = fields.ForeignField('node', backref='forked', index=True)
+    registered_from = fields.ForeignField('node', backref='registrations', index=True)
 
     # The node (if any) used as a template for this node's creation
-    template_node = fields.ForeignField('node', backref='template_node')
+    template_node = fields.ForeignField('node', backref='template_node', index=True)
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
@@ -700,7 +706,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         return (
             self.is_public or
             (auth.user and self.has_permission(auth.user, 'read')) or
-            auth.private_key in self.private_link_keys_active
+            auth.private_key in self.private_link_keys_active or
+            self.is_admin_parent(auth.user)
         )
 
     def is_expanded(self, user=None):
@@ -1678,25 +1685,25 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+    def web_url_for(self, view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
         # inconsistencies [jmcarp]
         if self.parent_node is None:
             return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _guid=_guid, *args, **kwargs)
+                _offload=_offload, _guid=_guid, *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, _offload=_offload, _guid=_guid, *args, **kwargs)
 
-    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+    def api_url_for(self, view_name, _absolute=False, _offload=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
         # inconsistencies [jmcarp]
         if self.parent_node is None:
             return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                *args, **kwargs)
+                _offload=_offload, *args, **kwargs)
         else:
             return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, _offload=_offload, *args, **kwargs)
 
     @property
     def absolute_url(self):
@@ -1748,6 +1755,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             'type': 'webpage',
             'URL': self.display_absolute_url,
         }
+
+        doi = self.get_identifier_value('doi')
+        if doi:
+            csl['DOI'] = doi
 
         if self.logs:
             csl['issued'] = datetime_to_csl(self.logs[-1].date)
@@ -1942,7 +1953,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # After remove callback
         for addon in self.get_addons():
-            message = addon.after_remove_contributor(self, contributor)
+            message = addon.after_remove_contributor(self, contributor, auth)
             if message:
                 status.push_status_message(message)
 
@@ -2189,7 +2200,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         try:
             contributor.save()
         except ValidationValueError:  # User with same email already exists
-            contributor = get_user(username=email)
+            contributor = get_user(email=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):

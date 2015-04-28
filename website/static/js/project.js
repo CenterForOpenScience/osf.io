@@ -7,8 +7,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
+var $osf = require('./osfHelpers');
 var LogFeed = require('./logFeed.js');
-var $osf = require('osfHelpers');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
@@ -210,7 +210,7 @@ NodeActions.openCloseNode = function(nodeId) {
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
-                new LogFeed($logs, response.logs);
+                new LogFeed('#logs-' + nodeId, response.logs);
                 $logs.addClass('served');
             });
         }

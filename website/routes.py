@@ -11,6 +11,7 @@ from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
+from framework.routing import xml_renderer
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
@@ -135,7 +136,7 @@ def make_url_map(app):
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
             website_views.resolve_guid,
-            OsfWebRenderer('', render_mako_string),
+            notemplate,
         ),
 
         Rule(
@@ -437,10 +438,12 @@ def make_url_map(app):
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),
-        Rule('/login/two-factor/', ['get', 'post'], auth_views.two_factor,
+        Rule('/login/two_factor/', ['get', 'post'], auth_views.two_factor,
              OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-
+        # TODO(hrybacki): combining the get/posts into a single rule is causing a build error and needs debugging
+        Rule('/forgotpassword/', 'get', auth_views._forgot_password,
+             OsfWebRenderer('public/forgot_password.mako')),
         Rule('/forgotpassword/', 'post', auth_views.forgot_password,
              OsfWebRenderer('public/login.mako')),
 
@@ -647,7 +650,10 @@ def make_url_map(app):
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
+        Rule('/share/registration/', 'get', {'register': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
+        Rule('/share/help/', 'get', {'help': settings.SHARE_API_DOCS_URL}, OsfWebRenderer('share_api_docs.mako')),
         Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
+        Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(
@@ -665,8 +671,9 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
+        Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
         Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
+        Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -760,6 +767,13 @@ def make_url_map(app):
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
 
+        Rule(
+            '/ids/<category>/<path:value>/',
+            'get',
+            project_views.register.get_referent_by_identifier,
+            notemplate,
+        ),
+
         # Statistics
         Rule([
             '/project/<pid>/statistics/',
@@ -830,7 +844,13 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
                 '/project/<pid>/files/download/<fid>/version/<vid>/',
                 '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-
+            ],
+            'get',
+            addon_views.addon_view_or_download_file_legacy,
+            OsfWebRenderer('project/view_file.mako'),
+        ),
+        Rule(
+            [
                 # api/v1 Legacy routes for `download_file`
                 '/api/v1/project/<pid>/osffiles/<fid>/',
                 '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',
@@ -1148,6 +1168,26 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'post', project_views.register.node_register_template_page_post, json_renderer),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'get',
+            project_views.register.node_identifiers_get,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'post',
+            project_views.register.node_identifiers_post,
+            json_renderer,
+        ),
 
         # Statistics
         Rule([

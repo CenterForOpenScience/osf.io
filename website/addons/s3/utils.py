@@ -1,10 +1,14 @@
 import re
 from bson import ObjectId
+import httplib as http
 
 from boto.iam import IAMConnection
 from boto.s3.cors import CORSConfiguration
-from boto.exception import BotoServerError
+from boto.exception import BotoServerError, NoAuthHandlerFound
 
+from framework.exceptions import HTTPError
+
+from website.util import web_url_for
 from api import get_bucket_list
 import settings as s3_settings
 
@@ -16,6 +20,7 @@ def adjust_cors(s3wrapper, clobber=False):
     :param S3Wrapper s3wrapper: S3 wrapper instance
     :param bool clobber: Remove all pre-existing rules. Note: if this option
         is set to True, remember to warn or prompt the user first!
+
     """
     rules = s3wrapper.get_cors_rules()
 
@@ -47,8 +52,10 @@ def get_bucket_drop_down(user_settings):
             bucket.name
             for bucket in get_bucket_list(user_settings)
         ]
-    except BotoServerError:
-        return None
+    except NoAuthHandlerFound:
+        raise HTTPError(http.FORBIDDEN)
+    except BotoServerError as e:
+        raise HTTPError(e.status)
 
 
 def create_osf_user(access_key, secret_key, name):
@@ -95,3 +102,23 @@ def remove_osf_user(user_settings):
 def validate_bucket_name(name):
     validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$')
     return bool(validate_name.match(name))
+
+def serialize_urls(node_addon, user):
+
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
+
+    result = {
+        'create_bucket': node.api_url_for('create_new_bucket'),
+        'import_auth': node.api_url_for('s3_node_import_auth'),
+        'create_auth': node.api_url_for('s3_authorize_node'),
+        'deauthorize': node.api_url_for('s3_remove_node_settings'),
+        'bucket_list': node.api_url_for('s3_bucket_list'),
+        'set_bucket': node.api_url_for('s3_node_settings'),
+        'settings': web_url_for('user_addons'),
+        'files': node.web_url_for('collect_file_trees'),
+    }
+    if user_settings:
+        result['owner'] = web_url_for('profile_view_id',
+                                      uid=user_settings.owner._id)
+    return result

@@ -129,7 +129,7 @@ def add_poster_by_email(conference, message):
 
 def _render_conference_node(node, idx):
     storage_settings = node.get_addon('osfstorage')
-    records = storage_settings.file_tree.children if storage_settings.file_tree else []
+    records = storage_settings.root_node.children
     try:
         record = next(
             each for each in records
@@ -197,6 +197,8 @@ def conference_results(meeting):
         'data': json.dumps(data),
         'label': meeting,
         'meeting': conf.to_storage(),
+        # Needed in order to use base.mako namespace
+        'settings': settings,
     }
 
 

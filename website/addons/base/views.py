@@ -7,14 +7,11 @@ import httplib
 import functools
 
 import furl
-import requests
-import itsdangerous
 from flask import request
 from flask import redirect
 from flask import make_response
 
 from framework.auth import Auth
-from framework.sessions import Session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
@@ -24,6 +21,7 @@ from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
+from website.util import rubeus
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
@@ -70,21 +68,8 @@ def check_file_guid(guid):
         return guid_url
     return None
 
-
-def get_user_from_cookie(cookie):
-    if not cookie:
-        return None
-    try:
-        token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
-    except itsdangerous.BadSignature:
-        raise HTTPError(httplib.UNAUTHORIZED)
-    session = Session.load(token)
-    if session is None:
-        raise HTTPError(httplib.UNAUTHORIZED)
-    return User.load(session.data['auth_user_id'])
-
-
 permission_map = {
+    'create_folder': 'write',
     'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
@@ -148,7 +133,10 @@ def get_auth(**kwargs):
 
     view_only = request.args.get('view_only')
 
-    user = get_user_from_cookie(cookie)
+    user = User.from_cookie(cookie)
+
+    if not user:
+        raise HTTPError(httplib.UNAUTHORIZED)
 
     node = Node.load(node_id)
     if not node:
@@ -182,6 +170,7 @@ LOG_ACTION_MAP = {
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
+    'create_folder': NodeLog.FOLDER_CREATED,
 }
 
 
@@ -255,6 +244,22 @@ def addon_view_or_download_file_legacy(**kwargs):
     if kwargs.get('vid'):
         query_params['version'] = kwargs['vid']
 
+    # If provider is OSFstorage, check existence of requested file in the filetree
+    # This prevents invalid GUIDs from being created
+    if provider == 'osfstorage':
+        node_settings = node.get_addon('osfstorage')
+        file_tree = node_settings.file_tree
+        error = HTTPError(
+            404, data=dict(message_short='File not found',
+                           message_long='You requested a file that does not exist.')
+        )
+        if not file_tree:
+            raise error
+        else:
+            children_paths = [child.path for child in file_tree.children]
+            if path not in children_paths:
+                raise error
+
     return redirect(
         node.web_url_for(
             'addon_view_or_download_file',
@@ -294,17 +299,15 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**extras)
 
+    if request.method == 'HEAD':
+        download_url = furl.furl(file_guid.download_url)
+        download_url.args.update(extras)
+        download_url.args['accept_url'] = 'false'
+        return make_response(('', 200, {'Location': download_url.url}))
+
     if action == 'download':
         download_url = furl.furl(file_guid.download_url)
         download_url.args.update(extras)
-        if extras.get('mode') == 'render':
-            # Temp fix for IE, return a redirect to s3 or cloudfiles (one hop)
-            # Or just send back the entire body
-            resp = requests.get(download_url, allow_redirects=False)
-            if resp.status_code == 302:
-                return redirect(resp.headers['Location'])
-            else:
-                return make_response(resp.content)
 
         return redirect(download_url.url)
 
@@ -312,9 +315,20 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = node.api_url_for('addon_render_file', path=file_guid.waterbutler_path.lstrip('/'), provider=file_guid.provider, **extras)
+    render_url = node.api_url_for(
+        'addon_render_file',
+        path=file_guid.waterbutler_path.lstrip('/'),
+        provider=file_guid.provider,
+        render=True,
+        **extras
+    )
 
     ret = serialize_node(node, auth, primary=True)
+
+    # Disable OSF Storage file deletion in DISK_SAVING_MODE
+    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
+        ret['user']['can_edit'] = False
+
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
@@ -327,6 +341,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
     })
 
+    ret.update(rubeus.collect_addon_assets(node))
     return ret
 
 
@@ -337,11 +352,26 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     node_addon = node.get_addon(provider)
 
-    if not path or not node_addon:
+    if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not node_addon:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer attached to the {}.'.format(node.project_or_component)
+        })
+
     if not node_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED)
+        raise HTTPError(httplib.UNAUTHORIZED, {
+            'message_short': 'Unauthorized',
+            'message_long': 'The add-on containing this file is no longer authorized.'
+        })
+
+    if not node_addon.complete:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer configured.'
+        })
 
     if not path.startswith('/'):
         path = '/' + path

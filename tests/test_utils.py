@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import mock
 import unittest
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -7,9 +8,10 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
+from website import settings
 from website.util import paths
 from website.util.mimetype import get_mimetype
-from website.util import web_url_for, api_url_for, is_json_request
+from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for
 
 
 try:
@@ -141,6 +143,37 @@ class TestUrlForHelpers(unittest.TestCase):
         with self.app.test_request_context(content_type='application/json;charset=UTF-8'):
             assert_true(is_json_request())
 
+    def test_waterbutler_url_for(self):
+        with self.app.test_request_context():
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
+
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('provider=provider', url)
+
+    def test_waterbutler_url_for_implicit_cookie(self):
+        with self.app.test_request_context() as context:
+            context.request.cookies = {settings.COOKIE_NAME: 'cookie'}
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
+
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('cookie=cookie', url)
+        assert_in('provider=provider', url)
+
+    def test_waterbutler_url_for_cookie_not_required(self):
+        with self.app.test_request_context():
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
+
+        assert_not_in('cookie', url)
+
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('provider=provider', url)
+
 
 class TestGetMimeTypes(unittest.TestCase):
     def test_get_markdown_mimetype_from_filename(self):
@@ -213,9 +246,9 @@ class TestWebpackFilter(unittest.TestCase):
         self.asset_paths = {'assets': 'assets.07123e.js'}
 
     def test_resolve_asset(self):
-        asset = paths.webpack_asset('assets.js', self.asset_paths)
+        asset = paths.webpack_asset('assets.js', self.asset_paths, debug=False)
         assert_equal(asset, '/static/public/js/assets.07123e.js')
 
-    def test_resolve_asset_not_found(self):
+    def test_resolve_asset_not_found_and_not_in_debug_mode(self):
         with assert_raises(KeyError):
-            paths.webpack_asset('bundle.js', self.asset_paths)
+            paths.webpack_asset('bundle.js', self.asset_paths, debug=False)

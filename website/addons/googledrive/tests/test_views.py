@@ -38,12 +38,12 @@ class TestGoogleDriveAuthViews(OsfTestCase):
     # Class variables(self) are usually used to mark mock variables. Can be removed later.
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.start')
     def test_googledrive_oauth_start(self, mock_auth_client_start):
-        url = api_url_for('googledrive_oauth_start_user', Auth(self.user))
+        url = api_url_for('googledrive_oauth_start_user')
         authorization_url = 'https://fake.domain/'
         state = 'secure state'
         mock_auth_client_start.return_value = (authorization_url, state)
-        res = self.app.post(url)
-        assert_true(res.json['url'], authorization_url)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_true(res.headers['location'], authorization_url)
 
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.userinfo')
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.finish')
@@ -198,12 +198,12 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         self.project.reload()
 
         # Folder was set
-        assert_equal(self.node_settings.folder_path, 'Google Drive/ My Folder')
+        assert_equal(self.node_settings.folder_name, ' My Folder')
         # A log event was created
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'googledrive_folder_selected')
         params = last_log.params
-        assert_equal(params['folder'], 'Google Drive/ My Folder')
+        assert_equal(params['folder'], self.node_settings.folder_path)
 
 
 class TestGoogleDriveHgridViews(OsfTestCase):
@@ -274,7 +274,7 @@ class TestGoogleDriveUtils(OsfTestCase):
         assert_equal(urls['importAuth'], self.project.api_url_for('googledrive_import_user_auth'))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
-        assert_equal(urls['get_folders'], self.project.api_url_for('googledrive_folders'))
+        assert_equal(urls['folders'], self.project.api_url_for('googledrive_folders'))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         self.user_settings.access_token = 'abc123'

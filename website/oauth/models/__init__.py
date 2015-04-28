@@ -5,7 +5,6 @@ import logging
 import datetime
 import httplib as http
 
-import pymongo
 from flask import request
 from modularodm import Q
 from modularodm import fields
@@ -17,6 +16,7 @@ from framework.exceptions import HTTPError
 from framework.exceptions import PermissionsError
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
+from framework.mongo.utils import unique_on
 from framework.sessions import get_session
 
 from website.util import web_url_for
@@ -30,6 +30,7 @@ OAUTH1 = 1
 OAUTH2 = 2
 
 
+@unique_on(['provider', 'provider_id'])
 class ExternalAccount(StoredObject):
     """An account on an external service.
 
@@ -41,15 +42,6 @@ class ExternalAccount(StoredObject):
     The ``provider`` field is a de facto foreign key to an ``ExternalProvider``
     object, as providers are not stored in the database.
     """
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('provider', pymongo.ASCENDING),
-                ('provider_id', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
     _id = fields.StringField(default=lambda: str(ObjectId()), primary=True)
 
     # The OAuth credentials. One or both of these fields should be populated.
@@ -69,6 +61,9 @@ class ExternalAccount(StoredObject):
     # The `name` of the service
     # This lets us query for only accounts on a particular provider
     provider = fields.StringField(required=True)
+    # The proper 'name' of the service
+    # Needed for account serialization
+    provider_name = fields.StringField(required=True)
 
     # The unique, persistent ID on the remote service.
     provider_id = fields.StringField()
@@ -267,6 +262,7 @@ class ExternalProvider(object):
             self.account = ExternalAccount(
                 provider=self.short_name,
                 provider_id=info['provider_id'],
+                provider_name=self.name,
             )
             self.account.save()
         except KeyExistsException:
@@ -277,6 +273,8 @@ class ExternalProvider(object):
             )
             assert self.account is not None
 
+        # ensure that provider_name is correct
+        self.account.provider_name = self.name
         # required
         self.account.oauth_key = info['key']
 

@@ -35,6 +35,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/osfstorage/folders/',
+                '/project/<pid>/node/<nid>/osfstorage/folders/',
+            ],
+            'post',
+            views.osf_storage_create_folder,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/osfstorage/hooks/crud/',
                 '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
             ],

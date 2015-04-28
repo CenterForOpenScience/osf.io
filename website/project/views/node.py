@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+import math
+from itertools import islice
 
 from flask import request
 from modularodm import Q
@@ -258,6 +260,11 @@ def node_fork_page(**kwargs):
     else:
         node_to_use = project
 
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node_to_use.url
+        )
     try:
         fork = node_to_use.fork_node(auth)
     except PermissionsError:
@@ -302,7 +309,11 @@ def node_setting(auth, **kwargs):
     for addon in node.get_addons():
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
-            addon_enabled_settings.append(addon.to_json(auth.user))
+            config = addon.to_json(auth.user)
+            # inject the MakoTemplateLookup into the template context
+            # TODO inject only short_name and render fully client side
+            config['template_lookup'] = addon.config.template_lookup
+            addon_enabled_settings.append(config)
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
@@ -754,6 +765,11 @@ def _view_project(node, auth, primary=False):
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
 
+            'identifiers': {
+                'doi': node.get_identifier_value('doi'),
+                'ark': node.get_identifier_value('ark'),
+            },
+
         },
         'parent_node': {
             'id': parent._primary_key if parent else '',
@@ -763,7 +779,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url': parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
+            'can_view': parent.can_view(auth) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),
@@ -1070,7 +1086,11 @@ def search_node(**kwargs):
     auth = kwargs['auth']
     node = Node.load(request.json.get('nodeId'))
     include_public = request.json.get('includePublic')
+    size = float(request.json.get('size', '5').strip())
+    page = request.json.get('page', 0)
     query = request.json.get('query', '').strip()
+
+    start = (page * size)
     if not query:
         return {'nodes': []}
 
@@ -1091,15 +1111,19 @@ def search_node(**kwargs):
             Q('_id', 'nin', nin)
         )
 
-    # TODO: Parameterize limit; expose pagination
-    cursor = Node.find(odm_query).limit(20)
+    nodes = Node.find(odm_query)
+    count = nodes.count()
+    pages = math.ceil(count / size)
 
     return {
         'nodes': [
             _serialize_node_search(each)
-            for each in cursor
+            for each in islice(nodes, start, start + size)
             if each.contributors
-        ]
+        ],
+        'total': count,
+        'pages': pages,
+        'page': page
     }
 
 

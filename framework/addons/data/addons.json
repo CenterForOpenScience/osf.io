@@ -27,7 +27,7 @@
                 "text": "GitHub content cannot be registered."
             }
         },
-        "Amazon Simple Storage Service": {
+        "Amazon S3": {
             "Permissions": {
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of making an S3 bucket public or private. The OSF does not alter the permissions of linked S3 buckets."
@@ -55,14 +55,14 @@
                 "text": "S3 content cannot be registered."
             }
         },
-        "FigShare": {
+        "figshare": {
             "Permissions": {
                 "status": "partial",
-                "text": " Making an OSF project public or private is independent of making FigShare content public or private. The OSF does not alter the permissions of linked FigShare content."
+                "text": " Making an OSF project public or private is independent of making figshare content public or private. The OSF does not alter the permissions of linked figshare content."
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "FigShare content can be viewed and downloaded via OSF provided it is \"published\" on FigShare."
+                "text": "figshare content can be viewed and downloaded via OSF provided it is \"published\" on figshare."
             },
             "Add / update files": {
                 "status": "partial",
@@ -73,15 +73,15 @@
             },
             "Logs": {
                 "status": "partial",
-                "text": "OSF keeps track of changes you make to your FigShare content through OSF, but not for changes made using FigShare directly."
+                "text": "OSF keeps track of changes you make to your figshare content through OSF, but not for changes made using figshare directly."
             },
             "Forking": {
                 "status": "partial",
-                "text": "Forking a project or component does not copy FigShare authorization unless the user forking the project is the same user who authorized the FigShare add-on in the source project being forked."
+                "text": "Forking a project or component does not copy figshare authorization unless the user forking the project is the same user who authorized the figshare add-on in the source project being forked."
             },
             "Registering": {
                 "status": "none",
-                "text": "FigShare content cannot be registered."
+                "text": "figshare content cannot be registered."
             }
         },
         "Dropbox": {

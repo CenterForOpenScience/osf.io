@@ -29,10 +29,12 @@ def zotero_get_config(auth, node_addon, **kwargs):
     """
 
     provider = ZoteroCitationsProvider()
-    return provider.serializer(
-        node_settings=node_addon,
-        user_settings=auth.user.get_addon('zotero'),
-    ).serialized_node_settings
+    return {
+        'result': provider.serializer(
+            node_settings=node_addon,
+            user_settings=auth.user.get_addon('zotero'),
+        ).serialized_node_settings
+    }
 
 @must_have_permission('write')
 @must_have_addon('zotero', 'node')
@@ -42,14 +44,21 @@ def zotero_set_config(auth, node_addon, **kwargs):
 
     provider = ZoteroCitationsProvider()
     args = request.get_json()
-    #external_account_id = args.get('external_account_id')
     external_list_id = args.get('external_list_id')
+    external_list_name = args.get('external_list_name')
     provider.set_config(
         node_addon,
         auth.user,
         external_list_id,
+        external_list_name,
+        auth,
     )
-    return {}
+    return {
+        'result': provider.serializer(
+            node_settings=node_addon,
+            user_settings=auth.user.get_addon('zotero'),
+        ).serialized_node_settings
+    }
 
 @must_have_permission('write')
 @must_have_addon('zotero', 'node')

@@ -13,9 +13,8 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
-from website.addons.s3.api import S3Wrapper, has_access, does_bucket_exist
-from website.addons.s3.utils import adjust_cors, create_osf_user
-
+from website.addons.s3.api import has_access, does_bucket_exist
+from website.addons.s3.utils import create_osf_user, serialize_urls, get_bucket_drop_down, adjust_cors  # noqa
 
 def add_s3_auth(access_key, secret_key, user_settings):
 
@@ -69,21 +68,21 @@ def s3_authorize_node(auth, node_addon, **kwargs):
     if user_settings is None:
         user.add_addon('s3')
         user_settings = user.get_addon('s3')
-
     if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
         return {'message': 'Incorrect credentials'}, http.BAD_REQUEST
 
     node_addon.authorize(user_settings, save=True)
 
-    return {}
+    return node_addon.to_json(user)
 
 
+@must_be_logged_in
 @must_have_permission('write')
 @must_have_addon('s3', 'node')
 @must_have_addon('s3', 'user')
-def s3_node_import_auth(node_addon, user_addon, **kwargs):
+def s3_node_import_auth(auth, node_addon, user_addon, **kwargs):
     node_addon.authorize(user_addon, save=True)
-    return {}
+    return node_addon.to_json(auth.user)
 
 
 @must_have_permission('write')
@@ -130,15 +129,36 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
             auth=auth,
         )
 
-        adjust_cors(S3Wrapper.from_addon(node_addon))
+        #adjust_cors(S3Wrapper.from_addon(node_addon))
+    return node_addon.to_json(auth.user)
 
+
+@must_be_logged_in
+@must_have_addon('s3', 'node')
+@must_have_permission('write')
+@must_not_be_registration
+def s3_get_node_settings(auth, node_addon, **kwargs):
+    result = node_addon.to_json(auth.user)
+    result['urls'] = serialize_urls(node_addon, auth.user)
+
+    return {'result': result}
+
+@must_be_logged_in
+@must_have_addon('s3', 'node')
+@must_have_addon('s3', 'user')
+@must_have_permission('write')
+@must_not_be_registration
+def s3_bucket_list(auth, node_addon, user_addon, **kwargs):
+    return {
+        'buckets': get_bucket_drop_down(user_addon)
+    }
 
 @must_have_permission('write')
 @must_have_addon('s3', 'node')
 @must_not_be_registration
 def s3_remove_node_settings(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
-    return {}
+    return node_addon.to_json(auth.user)
 
 
 @must_be_logged_in
@@ -152,4 +172,5 @@ def s3_remove_user_settings(user_addon, **kwargs):
             'credentials may no longer be valid.'
         )
         return {'message': 'reload'}, http.BAD_REQUEST
+
     return {}

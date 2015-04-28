@@ -20,17 +20,17 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', doc_type=None):
+def search(query, index=settings.ELASTIC_INDEX, doc_type=None):
     return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
-def update_node(node, index='website'):
-    search_engine.update_node(node)
+def update_node(node, index=settings.ELASTIC_INDEX):
+    search_engine.update_node(node, index=index)
 
 
 @requires_search
-def update_user(user):
-    search_engine.update_user(user)
+def update_user(user, index=settings.ELASTIC_INDEX):
+    search_engine.update_user(user, index=index)
 
 
 @requires_search
@@ -42,8 +42,8 @@ def delete_index(index):
     search_engine.delete_index(index)
 
 @requires_search
-def create_index():
-    search_engine.create_index()
+def create_index(index=settings.ELASTIC_INDEX):
+    search_engine.create_index(index=index)
 
 
 @requires_search
@@ -52,12 +52,15 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
                                               exclude=exclude, current_user=current_user)
     return result
 
-def search_share(query, raw=False):
-    return share_search.search(query, raw=raw)
+def search_share(query, raw=False, index='share'):
+    return share_search.search(query, raw=raw, index=index)
 
-def count_share(query):
-    return share_search.count(query)
+def count_share(query, index='share'):
+    return share_search.count(query, index=index)
 
 def share_stats(query=None):
     query = query or {}
     return share_search.stats(query=query)
+
+def share_providers():
+    return share_search.providers()

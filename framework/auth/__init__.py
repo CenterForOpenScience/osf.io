@@ -27,7 +27,6 @@ __all__ = [
     'login',
     'logout',
     'register_unconfirmed',
-    'register',
 ]
 
 def get_display_name(username):
@@ -117,26 +116,26 @@ def verify_two_factor(user_id, two_factor_code):
     return response
 
 
-def login(username, password):
+def login(email, password):
     """View helper function for logging in a user. Either authenticates a user
     and returns a ``Response`` or raises an ``AuthError``.
 
     :raises: AuthError on a bad login
     :returns: Redirect response to settings page on successful login.
     """
-    username = username.strip().lower()
+    email = email.strip().lower()
     password = password.strip()
-    if username and password:
-        user = get_user(
-            username=username,
-            password=password
-        )
+    if email and password:
+        user = get_user(email=email, password=password)
         if user:
             if not user.is_registered:
                 raise LoginNotAllowedError('User is not registered.')
 
             if not user.is_claimed:
                 raise LoginNotAllowedError('User is not claimed.')
+
+            if user.is_merged:
+                raise LoginNotAllowedError('Cannot log in to a merged user.')
 
             if user.is_disabled:
                 raise LoginDisabledError('User is disabled.')
@@ -158,31 +157,18 @@ def logout():
 
 
 def register_unconfirmed(username, password, fullname):
-    user = get_user(username=username)
+    user = get_user(email=username)
     if not user:
         user = User.create_unconfirmed(username=username,
             password=password,
             fullname=fullname)
         user.save()
     elif not user.is_registered:  # User is in db but not registered
-        user.add_email_verification(username)
+        user.add_unconfirmed_email(username)
         user.set_password(password)
         user.fullname = fullname
         user.update_guessed_names()
         user.save()
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
-    return user
-
-
-def register(username, password, fullname):
-    user = get_user(username=username)
-    if not user:
-        user = User.create_unconfirmed(
-            username=username, password=password, fullname=fullname
-        )
-    user.registered = True
-    user.date_confirmed = user.date_registered
-    user.emails.append(username)
-    user.save()
     return user

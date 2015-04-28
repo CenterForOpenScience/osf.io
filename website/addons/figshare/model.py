@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+import pymongo
+from modularodm import fields
+
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
@@ -17,13 +18,25 @@ from . import settings as figshare_settings
 
 class FigShareGuidFile(GuidFile):
 
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('article_id', pymongo.ASCENDING),
+                ('file_id', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
+
     article_id = fields.StringField(index=True)
     file_id = fields.StringField(index=True)
 
     @property
     def waterbutler_path(self):
-        if self.node.get_addon('figshare').figshare_type == 'project':
+        if getattr(self.node.get_addon('figshare'), 'figshare_type', None) == 'project':
             return '/{}/{}'.format(self.article_id, self.file_id)
+
         return '/' + str(self.file_id)
 
     @property
@@ -99,28 +112,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         else:
             _, file_id = split_path
             article_id = self.figshare_id
-
-        try:
-            return FigShareGuidFile.find_one(
-                Q('node', 'eq', self.owner) &
-                Q('file_id', 'eq', file_id) &
-                Q('article_id', 'eq', article_id)
-            ), False
-        except ModularOdmException:
-            pass
-        # Create new
-        new = FigShareGuidFile(
+        return FigShareGuidFile.get_or_create(
             node=self.owner,
             file_id=file_id,
-            article_id=article_id
-        )
-        new.save()
-        return new, True
-
-    @property
-    def embed_url(self):
-        return 'http://wl.figshare.com/articles/{fid}/embed?show_title=1'.format(
-            fid=self.figshare_id,
+            article_id=article_id,
         )
 
     @property
@@ -135,11 +130,15 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     @property
+    def complete(self):
+        return self.has_auth and self.figshare_id is not None
+
+    @property
     def linked_content(self):
         return {
             'id': self.figshare_id,
             'type': self.figshare_type,
-            'title': self.figshare_title,
+            'name': self.figshare_title,
         }
 
     def authorize(self, user_settings, save=False):
@@ -230,9 +229,9 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         if fields.get('id'):
             updated = updated or (fields['id'] != self.figshare_id)
             self.figshare_id = fields['id']
-        if fields.get('title'):
-            updated = updated or (fields['title'] != self.figshare_title)
-            self.figshare_title = fields['title']
+        if fields.get('name'):
+            updated = updated or (fields['name'] != self.figshare_title)
+            self.figshare_title = fields['name']
         if fields.get('type'):
             updated = updated or (fields['type'] != self.figshare_type)
             self.figshare_type = fields['type']
@@ -332,7 +331,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 user=removed.fullname,
             )
 
-    def after_remove_contributor(self, node, removed):
+    def after_remove_contributor(self, node, removed, auth=None):
         """
 
         :param Node node:
@@ -346,11 +345,22 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             self.user_settings = None
             self.save()
 
-            return messages.AFTER_REMOVE_CONTRIBUTOR.format(
-                user=removed.fullname,
-                url=node.url,
-                category=node.project_or_component
+            message = (
+                u'Because the FigShare add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
             )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                ).format(url=url)
+            #
+            return message
 
     def before_fork(self, node, user):
         """

@@ -17,7 +17,7 @@ from website.util import rubeus, api_url_for
 import website.app
 from website.util.rubeus import sort_by_name
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID, \
-    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
+    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 
 
 app = website.app.init_app(
@@ -58,7 +58,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon Simple Storage Service: {0}'.format(
+            'name': 'Amazon S3: {0}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
@@ -134,7 +134,7 @@ class TestRubeus(OsfTestCase):
             'addon': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon Simple Storage Service: {0}'.format(
+            'name': 'Amazon S3: {0}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
@@ -171,7 +171,7 @@ class TestRubeus(OsfTestCase):
             'provider': 's3',
             'addonFullname': node_settings.config.full_name,
             'iconUrl': node_settings.config.icon_url,
-            'name': 'Amazon Simple Storage Service: {0}'.format(
+            'name': 'Amazon S3: {0}'.format(
                 node_settings.bucket
             ),
             'kind': 'folder',
