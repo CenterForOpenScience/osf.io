@@ -20,7 +20,8 @@ var moment = require('moment');
 var Raven = require('raven-js');    
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
-
+var Legend = require('js/components/legend.js');
+var nodeCategories = JSON.parse(require('raw!js/nodeCategories.json'));
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
@@ -45,8 +46,16 @@ if(multiItemDetailTemplateSourceNoAction) {
     var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
 }
 
-
 var $detailDiv = $('.project-details');
+
+var projectOrganizerCategories = $.extend({}, {
+    folder: 'Folder',
+    smartFolder: 'Smart Folder',
+    project: 'Project',
+    registration:  'Registration', 
+    link:  'Link'
+}, nodeCategories);
+
 
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
@@ -636,18 +645,22 @@ function _poResolveIcon(item) {
     var componentIcons = iconmap.componentIcons;
     var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
-        var icon = icons[type];
+        var iconType = icons[type];
         if (type === 'component' || type === 'registeredComponent') {            
-            icon = componentIcons[category];
+            iconType = componentIcons[category];
         }
         if (type === 'registeredComponent') {
-            icon.className = icon.className + ' po-registered';
+            iconType += ' po-icon-registered';
         }
+        else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
 
         if (viewLink) {
-            return m('a', { href : viewLink}, icon);
+            return m('a', { href : viewLink}, template);
         }
-        return icon;
+        return template;
     }
     if (item.data.isSmartFolder) {
         return returnView('smartFolder');
@@ -1266,7 +1279,6 @@ function ProjectOrganizer(options) {
     this.grid = null; // Set by _initGrid
     this.init();
 }
-
 /**
  * Project organizer prototype object with init functions set to Treebeard.
  * @type {{constructor: ProjectOrganizer, init: Function, _initGrid: Function}}
@@ -1279,6 +1291,40 @@ ProjectOrganizer.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
+    },
+    legend: function(node) {        
+        var self = this;
+        var showLegend = function() {
+            var keys = Object.keys(projectOrganizerCategories);
+            var legend = new Legend(keys.map(function(key) {
+                return {
+                    icon: iconmap.componentIcons[key] || iconmap.projectIcons[key],
+                    label: nodeCategories[key] || projectOrganizerCategories[key]
+                };
+            }), {
+                width: 5,
+                extra: m('span', ['*lighter icons denote registrations (e.g. ', 
+                                  m('span', {
+                                      className: iconmap.componentIcons.data + ' po-icon'
+                                  }),
+                                  ' becomes  ',
+                                  m('span', {
+                                      className: iconmap.componentIcons.data + ' po-icon-registered'
+                                  }),
+                                  ' )'
+                                 ])
+            });
+            self.grid.tbController.modal.update(legend);
+            self.grid.tbController.modal.show();
+        };
+        node.onclick = showLegend;
+        return m.render(
+            node,
+            m('span', {
+                className: iconmap.info,
+                click: showLegend
+            })
+        );
     }
 };
 
