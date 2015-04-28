@@ -10,7 +10,7 @@ from framework.auth import Auth
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
-from framework.mongo import get_or_http_not_found
+from framework.mongo.utils import get_or_http_not_found
 
 from website.models import Node
 
