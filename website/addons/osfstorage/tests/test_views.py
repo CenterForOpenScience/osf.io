@@ -326,7 +326,6 @@ class TestGetRevisions(StorageTestCase):
         self.record.save()
 
     def get_revisions(self, path=None, **kwargs):
-
         return self.app.get(
             self.project.api_url_for(
                 'osf_storage_get_revisions',

@@ -87,8 +87,6 @@
               </tr>
             </thead>
 
-
-
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
@@ -100,7 +98,6 @@
                   </span>
                 </td>
                 <td>{{ revision.displayDate }}</td>
-
                 <td data-bind="if: $parent.userColumn">
                   <a data-bind="if: revision.extra.user.url"
                     href="{{ revision.extra.user.url }}">
@@ -123,9 +120,7 @@
                 </td>
               </tr>
             </tbody>
-
           </table>
-
 
           <div data-bind="ifnot: versioningSupported">
             <hr>
@@ -137,7 +132,6 @@
         </div>
       </div>
     </div>
-
 
 
 <%def name="javascript_bottom()">
