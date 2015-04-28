@@ -147,6 +147,9 @@ class BaseCrossProviderHandler(BaseHandler):
         self.source_provider = yield from self.make_provider(**self.json['source'])
         self.destination_provider = yield from self.make_provider(**self.json['destination'])
 
+        self.json['source']['path'] = yield from self.source_provider.validate_path(self.json['source']['path'])
+        self.json['destination']['path'] = yield from self.destination_provider.validate_path(self.json['destination']['path'])
+
     @asyncio.coroutine
     def make_provider(self, provider, **kwargs):
         payload = yield from get_identity(
@@ -179,8 +182,8 @@ class BaseCrossProviderHandler(BaseHandler):
         return (yield from utils.send_signed_request('PUT', self.callback_url, {
             'action': action,
             'source': {
-                'path': self.json['source']['path'],
-                'name': os.path.split(self.json['source']['path'])[1],
+                'path': str(self.json['source']['path']),
+                'name': self.json['source']['path'].name,
                 'provider': self.source_provider.NAME,
             },
             'destination': {

@@ -76,7 +76,7 @@ class CRUDHandler(core.BaseProviderHandler):
         elif headers.get('content-disposition'):
             disposition = headers['content-disposition']
         else:
-            disposition = utils.make_disposition(os.path.split(self.arguments['path'])[-1])
+            disposition = utils.make_disposition(self.arguments['path'].name)
 
         self.set_header('Content-Disposition', disposition)
 
@@ -90,8 +90,9 @@ class CRUDHandler(core.BaseProviderHandler):
     @utils.coroutine
     def post(self):
         """Create a folder"""
-        self.set_status(201)
         metadata = yield from self.provider.create_folder(**self.arguments)
+
+        self.set_status(201)
         self.write(metadata)
 
         self._send_hook(
