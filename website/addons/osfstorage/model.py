@@ -421,10 +421,6 @@ class OsfStorageGuidFile(GuidFile):
         return new, True
 
     @property
-    def provider(self):
-        return 'osfstorage'
-
-    @property
     def waterbutler_path(self):
         return self.path
 
