@@ -63,7 +63,7 @@ class BoxFile(GuidFile):
             return {}
 
         return {
-            'fullPath': self._metadata_cache['extra']['fullPath'],
+            'fullPath': self._metadata_cache['fullPath'],
         }
 
 
