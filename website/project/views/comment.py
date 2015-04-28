@@ -324,9 +324,6 @@ def list_comments(auth, **kwargs):
         target = resolve_target(node, page, guid)
         comments = getattr(target, 'commented', [])
 
-    if is_list:
-        discussions = comment_discussion(comments, node, anonymous=anonymous, widget=is_widget)
-
     n_unread = 0
     if node.is_contributor(auth.user):
         if auth.user.comments_viewed_timestamp is None:
@@ -342,7 +339,9 @@ def list_comments(auth, **kwargs):
         'nUnread': n_unread
     }
     if is_list:
+        discussions = comment_discussion(comments, node, anonymous=anonymous, widget=is_widget)
         ret.update(discussions)
+
     return ret
 
 
