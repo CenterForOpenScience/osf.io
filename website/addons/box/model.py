@@ -50,6 +50,31 @@ class Box(ExternalProvider):
     callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     default_scopes = ['root_readwrite']
 
+    @must_be_logged_in
+    def box_oauth_start(self, auth, **kwargs):
+        user = auth.user
+        # Store the node ID on the session in order to get the correct redirect URL
+        # upon finishing the flow
+        nid = kwargs.get('nid') or kwargs.get('pid')
+
+        node = Node.load(nid)
+
+        if node and not node.is_contributor(user):
+            raise HTTPError(http.FORBIDDEN)
+
+        csrf_token = security.random_string(10)
+        session.data['box_oauth_state'] = csrf_token
+
+        if nid:
+            session.data['box_auth_nid'] = nid
+
+        # If user has already authorized box, flash error message
+        if user.has_addon('box') and user.get_addon('box').has_auth:
+            flash('You have already authorized Box for this account', 'warning')
+            return redirect(web_url_for('user_addons'))
+
+        return redirect(self.get_auth_flow(csrf_token))
+
     def get_auth_flow(self, csrf_token):
         url = furl.furl(settings.BOX_OAUTH_AUTH_ENDPOINT)
 
@@ -61,6 +86,48 @@ class Box(ExternalProvider):
         }
 
         return url.url
+
+    @must_be_logged_in
+    def handle_callback(self, *args, **kwargs):
+        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
+        record to the user and saves the user's access token and account info.
+        """
+        auth = kwargs.get('auth')
+        user = auth.user
+        node = Node.load(session.data.pop('box_auth_nid', None))
+
+        # Handle request cancellations from Box's API
+        if request.args.get('error'):
+            flash('Box authorization request cancelled.')
+            if node:
+                return redirect(node.web_url_for('node_setting'))
+            return redirect(web_url_for('user_addons'))
+
+        result = self.finish_auth()
+
+        # If result is a redirect response, follow the redirect
+        if isinstance(result, BaseResponse):
+            return result
+
+        client = BoxClient(CredentialsV2(
+            result['access_token'],
+            result['refresh_token'],
+            settings.BOX_KEY,
+            settings.BOX_SECRET,
+        ))
+
+        about = client.get_user_info()
+
+        # Make sure user has box enabled
+        user.add_addon('box')
+        user.save()
+
+        return {
+            'provider_id': about['id'],
+            'oauth_key': result['access_token'],
+            'refresh_token': result['refresh_token'],
+            'expires_at': datetime.utcfromtimestamp(time.time() + 3600),
+        }
 
     def finish_auth(self):
         """View helper for finishing the Box Oauth2 flow. Returns the
@@ -95,100 +162,6 @@ class Box(ExternalProvider):
                 msg=request.args['error_description'])
 
         return result
-
-    @must_be_logged_in
-    def box_oauth_start(self, auth, **kwargs):
-        user = auth.user
-        # Store the node ID on the session in order to get the correct redirect URL
-        # upon finishing the flow
-        nid = kwargs.get('nid') or kwargs.get('pid')
-
-        node = Node.load(nid)
-
-        if node and not node.is_contributor(user):
-            raise HTTPError(http.FORBIDDEN)
-
-        csrf_token = security.random_string(10)
-        session.data['box_oauth_state'] = csrf_token
-
-        if nid:
-            session.data['box_auth_nid'] = nid
-
-        # If user has already authorized box, flash error message
-        if user.has_addon('box') and user.get_addon('box').has_auth:
-            flash('You have already authorized Box for this account', 'warning')
-            return redirect(web_url_for('user_addons'))
-
-        return redirect(self.get_auth_flow(csrf_token))
-
-    @must_be_logged_in
-    def handle_callback(self, *args, **kwargs):
-        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
-        record to the user and saves the user's access token and account info.
-        """
-        auth = kwargs.get('auth')
-        user = auth.user
-        node = Node.load(session.data.pop('box_auth_nid', None))
-
-        # Handle request cancellations from Box's API
-        if request.args.get('error'):
-            flash('Box authorization request cancelled.')
-            if node:
-                return redirect(node.web_url_for('node_setting'))
-            return redirect(web_url_for('user_addons'))
-
-        result = self.finish_auth()
-
-        # If result is a redirect response, follow the redirect
-        if isinstance(result, BaseResponse):
-            return result
-
-        client = BoxClient(CredentialsV2(
-            result['access_token'],
-            result['refresh_token'],
-            settings.BOX_KEY,
-            settings.BOX_SECRET,
-        ))
-
-        about = client.get_user_info()
-        #oauth_settings = BoxOAuthSettings.load(about['id'])
-#
-        #if not oauth_settings:
-        #    oauth_settings = BoxOAuthSettings(user_id=about['id'], username=about['name'])
-        #    oauth_settings.save()
-#
-        #oauth_settings.refresh_token = result['refresh_token']
-        #oauth_settings.access_token = result['access_token']
-        #oauth_settings.expires_at = datetime.utcfromtimestamp(time.time() + 3600)
-
-        vals = {}
-
-        vals['provider_id'] = about['id']
-        vals['oauth_key'] = result['access_token']
-        vals['refresh_token'] = result['refresh_token']
-        vals['expires_at'] = datetime.utcfromtimestamp(time.time() + 3600)
-
-        # Make sure user has box enabled
-        user.add_addon('box')
-        user.save()
-
-        user_settings = user.get_addon('box')
-        #user_settings.oauth_settings = oauth_settings
-#
-        #user_settings.save()
-#
-        #flash('Successfully authorized Box', 'success')
-#
-        #if node:
-        #    # Automatically use newly-created auth
-        #    if node.has_addon('box'):
-        #        node_addon = node.get_addon('box')
-        #        node_addon.set_user_auth(user_settings)
-        #        node_addon.save()
-        #    redirect(node.web_url_for('node_setting'))
-        #redirect(web_url_for('user_addons'))
-
-        return vals
 
     @must_be_logged_in
     @must_have_addon('box', 'user')
@@ -261,180 +234,11 @@ class BoxFile(GuidFile):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
 
-class BoxOAuthSettings(StoredObject):
-    """
-    this model address the problem if we have two osf user link
-    to the same box user and their access token conflicts issue
-    """
-    name = 'Box'
-
-    # Box user id, for example, "4974056"
-    user_id = fields.StringField(primary=True, required=True)
-    # Box user name this is the user's login
-    username = fields.StringField()
-    access_token = fields.StringField()
-    refresh_token = fields.StringField()
-    expires_at = fields.DateTimeField()
-
-    @property
-    def get_client(self):
-        if self._needs_refresh():
-            self.refresh_access_token()
-
-        return BoxClient(
-            self.get_credentialsv2()
-        )
-
-    def fetch_access_token(self):
-        self.refresh_access_token()
-        return self.access_token
-
-    def get_credentialsv2(self):
-        return CredentialsV2(
-            self.access_token,
-            self.refresh_token,
-            settings.BOX_KEY,
-            settings.BOX_SECRET
-        )
-
-    def refresh_access_token(self, force=False):
-        # Ensure that most recent tokens are loaded from the database. Needed
-        # in case another concurrent request has already changed the tokens.
-        if self._is_loaded:
-            try:
-                self.reload()
-            except:
-                pass
-        if self._needs_refresh() or force:
-            token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
-
-            self.access_token = token['access_token']
-            self.refresh_token = token.get('refresh_token', self.refresh_token)
-            self.expires_at = datetime.utcfromtimestamp(time.time() + token['expires_in'])
-            self.save()
-
-    def revoke_access_token(self):
-        # if there is only one osf user linked to this box user oauth, revoke the token,
-        # otherwise, disconnect the osf user from the boxoauthsettings
-        if len(self.boxusersettings__accessed) <= 1:
-            url = furl.furl('https://www.box.com/api/oauth2/revoke/')
-            url.args = {
-                'token': self.access_token,
-                'client_id': settings.BOX_KEY,
-                'client_secret': settings.BOX_SECRET,
-            }
-            # no need to fail, revoke is opportunistic
-            requests.post(url.url)
-
-            # remove the object as its the last instance.
-            BoxOAuthSettings.remove_one(self)
-
-    def _needs_refresh(self):
-        if self.expires_at is None:
-            return False
-        return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
-
-
 class BoxUserSettings(AddonOAuthUserSettingsBase):
-    """Stores user-specific box information, including the Oauth access
-    token.
+    """Stores user-specific box information
     """
     oauth_provider = Box
-    oauth_grants = fields.DictionaryField()
-    oauth_settings = fields.ForeignField(
-        'boxoauthsettings', backref='accessed'
-    )
-
     serializer = BoxSerializer
-
-    @property
-    def user_id(self):
-        if self.oauth_settings:
-            return self.oauth_settings.user_id
-        return None
-
-    @user_id.setter
-    def user_id(self, val):
-        self.oauth_settings.user_id = val
-
-    @property
-    def username(self):
-        if self.oauth_settings:
-            return self.oauth_settings.username
-        return None
-
-    @username.setter
-    def username(self, val):
-        self.oauth_settings.name = val
-
-    @property
-    def access_token(self):
-        if self.oauth_settings:
-            return self.oauth_settings.access_token
-        return None
-
-    @access_token.setter
-    def access_token(self, val):
-        self.oauth_settings.access_token = val
-
-    @property
-    def refresh_token(self):
-        if self.oauth_settings:
-            return self.oauth_settings.refresh_token
-        return None
-
-    @refresh_token.setter
-    def refresh_token(self, val):
-        self.oauth_settings.refresh_token = val
-
-    @property
-    def expires_at(self):
-        if self.oauth_settings:
-            return self.oauth_settings.expires_at
-        return None
-
-    @expires_at.setter
-    def expires_at(self, val):
-        self.oauth_settings.expires_at = val
-
-    @property
-    def has_auth(self):
-        if self.oauth_settings:
-            return self.oauth_settings.access_token is not None
-        return False
-
-    def fetch_access_token(self):
-        if self.oauth_settings:
-            return self.oauth_settings.fetch_access_token()
-        return None
-
-    def delete(self, save=True):
-        self.clear()
-        super(BoxUserSettings, self).delete(save)
-
-    def clear(self):
-        """Clear settings and deauthorize any associated nodes."""
-        if self.oauth_settings:
-            self.oauth_settings.revoke_access_token()
-            self.oauth_settings = None
-            self.save()
-
-        for node_settings in self.boxnodesettings__authorized:
-            node_settings.deauthorize(Auth(self.owner))
-            node_settings.save()
-
-    def get_credentialsv2(self):
-        if not self.has_auth:
-            return None
-        return self.oauth_settings.get_credentialsv2()
-
-    def save(self, *args, **kwargs):
-        if self.oauth_settings:
-            self.oauth_settings.save()
-        return super(BoxUserSettings, self).save(*args, **kwargs)
-
-    def __repr__(self):
-        return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
 class BoxNodeSettings(AddonOAuthNodeSettingsBase):
@@ -471,7 +275,10 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
 
     @property
     def complete(self):
-        return self.has_auth and self.folder_id is not None
+        return bool(self.has_auth and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+        ))
 
     def fetch_folder_name(self):
         self._update_folder_data()

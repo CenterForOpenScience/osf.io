@@ -2,7 +2,7 @@ from website.addons.base.serializer import OAuthAddonSerializer
 
 from website.util import api_url_for, web_url_for
 
-from box.client import BoxClientException
+from box.client import BoxClient, BoxClientException
 
 
 class BoxSerializer(OAuthAddonSerializer):
@@ -86,7 +86,7 @@ class BoxSerializer(OAuthAddonSerializer):
 
         if user_settings:
             try:
-                client = client or user_settings.oauth_settings.get_client
+                client = client or BoxClient(user_settings.external_accounts[0].oauth_key)
                 client.get_user_info()
             except BoxClientException:
                 valid_credentials = False

@@ -7,7 +7,6 @@ MODELS = [
     model.BoxFile,
     model.BoxUserSettings,
     model.BoxNodeSettings,
-    model.BoxOAuthSettings,
 ]
 
 USER_SETTINGS_MODEL = model.BoxUserSettings

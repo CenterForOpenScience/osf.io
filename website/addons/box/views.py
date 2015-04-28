@@ -4,7 +4,7 @@ import os
 import httplib as http
 
 from flask import request
-from box.client import BoxClientException
+from box.client import BoxClient, BoxClientException
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
@@ -17,6 +17,7 @@ from website.project.decorators import (
 )
 
 from website.addons.box.serializer import BoxSerializer
+
 
 @must_be_logged_in
 def box_get_user_settings(auth):
@@ -127,12 +128,12 @@ def box_folder_list(node_addon, **kwargs):
             'kind': 'folder',
             'name': '/ (Full Box)',
             'urls': {
-                'folders': node.api_url_for('box_list_folders', folderId=0),
+                'folders': node.api_url_for('box_folder_list', folderId=0),
             }
         }]
 
     try:
-        client = node_addon.user_addon.oauth_settings.get_client  # get_node_client(node)
+        client = BoxClient(node_addon.user_addon.external_accounts[0].oauth_key)  # get_node_client(node)
     except BoxClientException:
         raise HTTPError(http.FORBIDDEN)
 
@@ -162,7 +163,7 @@ def box_folder_list(node_addon, **kwargs):
             'name': item['name'],
             'path': os.path.join(folder_path, item['name']),
             'urls': {
-                'folders': node.api_url_for('box_list_folders', folderId=item['id']),
+                'folders': node.api_url_for('box_folder_list', folderId=item['id']),
             }
         }
         for item in metadata['item_collection']['entries']
