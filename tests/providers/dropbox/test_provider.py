@@ -203,6 +203,68 @@ class TestMetadata:
             yield from provider.metadata(str(path))
 
 
+class TestCreateFolder:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_already_exists(self, provider):
+        path = DropboxPath(provider.folder, '/newfolder/')
+        url = provider.build_url('fileops', 'create_folder')
+
+        aiohttpretty.register_json_uri('POST', url, status=403, body={
+            'error': 'because a file or folder already exists at path'
+        })
+
+        with pytest.raises(exceptions.FolderNamingConflict) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 409
+        assert e.value.message == 'Cannot create folder "newfolder" because a file or folder already exists at path "/newfolder/"'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_forbidden(self, provider):
+        path = DropboxPath(provider.folder, '/newfolder/')
+        url = provider.build_url('fileops', 'create_folder')
+
+        aiohttpretty.register_json_uri('POST', url, status=403, body={
+            'error': 'because I hate you'
+        })
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 403
+        assert e.value.data['error'] == 'because I hate you'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_raises_on_errors(self, provider):
+        path = DropboxPath(provider.folder, '/newfolder/')
+        url = provider.build_url('fileops', 'create_folder')
+
+        aiohttpretty.register_json_uri('POST', url, status=418, body={})
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 418
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_returns_metadata(self, provider, file_metadata):
+        file_metadata['path'] = '/newfolder'
+        path = DropboxPath(provider.folder, '/newfolder/')
+        url = provider.build_url('fileops', 'create_folder')
+
+        aiohttpretty.register_json_uri('POST', url, status=200, body=file_metadata)
+
+        resp = yield from provider.create_folder(str(path))
+
+        assert resp['kind'] == 'folder'
+        assert resp['name'] == 'newfolder'
+
+
 class TestOperations:
 
     def test_can_intra_copy(self, provider):

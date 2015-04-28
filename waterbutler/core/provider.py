@@ -189,3 +189,12 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     def revisions(self, **kwargs):
         return []
+
+    def create_folder(self, *args, **kwargs):
+        """Create a folder in the current provider
+        returns True if the folder was created; False if it already existed
+
+        :rtype FolderMetadata:
+        :raises: waterbutler.ProviderError
+        """
+        raise exceptions.ProviderError({'message': 'Folder creation not supported.'}, code=405)

@@ -1,6 +1,7 @@
 import os
 import asyncio
 import hashlib
+from urllib import parse
 
 import xmltodict
 
@@ -100,7 +101,7 @@ class S3Provider(provider.BaseProvider):
         key = self.bucket.new_key(path.path)
 
         if kwargs.get('displayName'):
-            response_headers = {'response-content-disposition': 'attachment; filename={}'.format(kwargs['displayName'])}
+            response_headers = {'response-content-disposition': 'attachment; filename*=UTF-8\'\'{}'.format(parse.quote(kwargs['displayName']))}
         else:
             response_headers = {'response-content-disposition': 'attachment'}
 
@@ -215,6 +216,32 @@ class S3Provider(provider.BaseProvider):
         return (yield from self._metadata_file(path))
 
     @asyncio.coroutine
+    def create_folder(self, path, **kwargs):
+        """
+        :param str path: The path to create a folder at
+        """
+        path = S3Path(path)
+        path.validate_folder()
+
+        try:
+            yield from self.metadata(str(path))
+            raise exceptions.FolderNamingConflict(str(path))
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
+
+        yield from self.make_request(
+            'PUT',
+            self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'PUT'),
+            expects=(200, 201),
+            throws=exceptions.CreateFolderError
+        )
+
+        return S3FolderMetadata({
+            'Prefix': path.path
+        }).serialized()
+
+    @asyncio.coroutine
     def _metadata_file(self, path):
         url = self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD')
         resp = yield from self.make_request(
@@ -235,12 +262,21 @@ class S3Provider(provider.BaseProvider):
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
+
         contents = yield from resp.read_and_close()
 
         parsed = xmltodict.parse(contents)['ListBucketResult']
 
         contents = parsed.get('Contents', [])
         prefixes = parsed.get('CommonPrefixes', [])
+
+        if not contents and not prefixes:
+            yield from self.make_request(
+                'HEAD',
+                self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD'),
+                expects=(200, ),
+                throws=exceptions.MetadataError,
+            )
 
         if isinstance(contents, dict):
             contents = [contents]

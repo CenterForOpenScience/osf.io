@@ -264,7 +264,7 @@ class TestCRUD:
     @async
     @pytest.mark.aiohttpretty
     def test_download_no_name(self, provider):
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidPathError):
             yield from provider.download('')
         with pytest.raises(exceptions.DownloadError):
             yield from provider.download('/')
@@ -354,7 +354,7 @@ class TestMetadata:
     @async
     @pytest.mark.aiohttpretty
     def test_must_have_slash(self, provider, just_a_folder_metadata):
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidPathError):
             yield from provider.metadata('')
 
     @async
@@ -404,6 +404,77 @@ class TestMetadata:
         assert created
         assert aiohttpretty.has_call(method='PUT', uri=url)
         assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
+
+
+class TestCreateFolder:
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_raise_409(self, provider, just_a_folder_metadata):
+        path = S3Path('/alreadyexists/')
+        url = provider.bucket.generate_url(100, 'GET')
+        aiohttpretty.register_uri('GET', url, body=just_a_folder_metadata, headers={'Content-Type': 'application/xml'})
+
+        with pytest.raises(exceptions.FolderNamingConflict) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 409
+        assert e.value.message == 'Cannot create folder "alreadyexists" because a file or folder already exists at path "/alreadyexists/"'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_must_start_with_slash(self, provider):
+        path = S3Path('/alreadyexists')
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 400
+        assert e.value.message == 'Path must be a directory'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_errors_out(self, provider):
+        path = S3Path('/alreadyexists/')
+        url = provider.bucket.generate_url(100, 'GET')
+        create_url = provider.bucket.new_key(path.path).generate_url(100, 'PUT')
+
+        aiohttpretty.register_uri('GET', url, status=404)
+        aiohttpretty.register_uri('PUT', create_url, status=403)
+
+        with pytest.raises(exceptions.CreateFolderError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 403
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_errors_out_metadata(self, provider):
+        path = S3Path('/alreadyexists/')
+        url = provider.bucket.generate_url(100, 'GET')
+
+        aiohttpretty.register_uri('GET', url, status=403)
+
+        with pytest.raises(exceptions.MetadataError) as e:
+            yield from provider.create_folder(str(path))
+
+        assert e.value.code == 403
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_creates(self, provider):
+        path = S3Path('/doesntalreadyexists/')
+        url = provider.bucket.generate_url(100, 'GET')
+        create_url = provider.bucket.new_key(path.path).generate_url(100, 'PUT')
+
+        aiohttpretty.register_uri('GET', url, status=404)
+        aiohttpretty.register_uri('PUT', create_url, status=200)
+
+        resp = yield from provider.create_folder(str(path))
+
+        assert resp['kind'] == 'folder'
+        assert resp['name'] == 'doesntalreadyexists'
+        assert resp['path'] == '/doesntalreadyexists/'
 
 
 class TestOperations:
