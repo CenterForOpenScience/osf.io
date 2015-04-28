@@ -1303,7 +1303,7 @@ ProjectOrganizer.prototype = {
                 };
             }), {
                 width: 5,
-                extra: m('span', ['*lighter icons denote registrations (e.g. ', 
+                extra: m('span', ['*lighter color denotes a registrations (e.g. ', 
                                   m('span', {
                                       className: iconmap.componentIcons.data + ' po-icon'
                                   }),
