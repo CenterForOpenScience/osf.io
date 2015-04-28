@@ -192,7 +192,7 @@
         </div>
 
         <!-- Discussions -->
-        <div id="comments-widget-container" class="addon-widget-container">
+        <div id="commentsWidgetContainer" class="addon-widget-container">
             <div class="addon-widget-header clearfix">
                 <h4>Recent discussions</h4>
                 <div class="pull-right">

@@ -334,7 +334,7 @@ li.pointer {
     overflow-x: hidden;
 }
 
-#comments-widget-container .comment-container {
+#commentsWidgetContainer .comment-container {
     border: none !important;
 }
 
