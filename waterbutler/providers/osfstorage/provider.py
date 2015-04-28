@@ -47,6 +47,48 @@ class OSFStorageProvider(provider.BaseProvider):
         self.archive_settings = settings.get('archive')
         self.archive_credentials = credentials.get('archive')
 
+    @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        if path == '/':
+            return WaterButlerPath('/', _ids=[self.root_id], folder=True)
+
+        try:
+            path, name = path.strip('/').split('/')
+        except ValueError:
+            path, name = path, None
+
+        resp = yield from self.make_signed_request(
+            'GET',
+            self.lineage_url,
+            params={'path': path},
+            expects=(200, 404)
+        )
+
+        if resp.status == 404:
+            return WaterButlerPath(path, _ids=[self.root_id, None], folder=True)
+
+        data = yield from resp.json()
+
+        names, ids = zip(*[(x['name'], x['path']) for x in reversed(data['data'])])
+        if name is not None:
+            ids += (None, )
+            names += (name, )
+
+        return WaterButlerPath('/'.join(names), _ids=ids, folder='folder' == data['data'][0]['kind'])
+
+    def revalidate_path(self, base, path, folder=False):
+        assert base.is_dir
+
+        try:
+            data = next(
+                x for x in
+                x['kind'] == ('folder' if folder else 'file')
+            )
+
+            return base.child(data['name'], data['path'].strip('/'), folder=folder)
+        except StopIteration:
+            raise Exception  # TODO
+
     def make_provider(self, settings):
         """Requests on different files may need to use different providers,
         instances, e.g. when different files lives in different containers
