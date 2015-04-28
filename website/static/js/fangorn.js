@@ -1136,6 +1136,7 @@ function _fangornToolbar () {
     if (generalIcons.search.on) { 
         generalButtons.push(generalIcons.search.template.call(tb));
     }
+    generalButtons.push(generalIcons.info.template.call(tb));
     if(tb.multiselected.length > 0){
         rowMessage = '';
     }
@@ -1222,6 +1223,27 @@ function toolbarDismissIcon (){
         }, [
         m('i.fa.fa-search'),
         m('span.hidden-xs', 'Search')
+    ]);
+ }
+  function infoIcon (){
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-info', { 
+            onclick : function () { 
+                var mithrilContent = m('div', [
+                        m('h3.break-word', 'How to Use the File Browser'),
+                        m('p', 'Select Multiple Files: Use command or shift keys to select multiple files.'),
+                        m('p', 'Go to Files: Double click a file name to go to the file.'),
+                        m('p', 'Open Files in New Tab: Command + click a file name to open it in a new tab.'),
+
+                    ]);
+                var mithrilButtons = m('div', [
+                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Close'),
+                    ]);
+                tb.modal.update(mithrilContent, mithrilButtons);
+
+            }
+        }, [
+        m('i.fa.fa-info')
     ]);
  }
  function cancelUploadsIcon (){
@@ -1622,6 +1644,7 @@ tbOptions = {
         mode : 'bar',
         generalIcons : {
             search : { on : true, template : searchIcon },
+            info : { on : true, template : infoIcon },
             cancelUploads : { on : false, template : cancelUploadsIcon },
             deleteMultiple : { on : false, template :  deleteMultipleIcon }           
         },
