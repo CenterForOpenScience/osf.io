@@ -482,7 +482,7 @@ function createFolder(event, parent, col) {
             return;
         }
         if ($.trim(folderName()) < 1) {
-            errorMessage('Please enter at least one non-whitespace character.');
+            errorMessage('Folder name cannot be empty.');
             redraw();
             return;
         }
