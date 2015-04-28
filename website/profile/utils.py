@@ -8,18 +8,14 @@ from modularodm import Q
 
 def get_projects(user):
     '''Return a list of user's projects, excluding registrations and folders.'''
-    return [
-        node
-        for node in user.node__contributed.find(
-            (
-                Q('category', 'eq', 'project') &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False) &
-                Q('is_folder', 'eq', False)
-            )
+    return list(user.node__contributed.find(
+        (
+            Q('category', 'eq', 'project') &
+            Q('is_registration', 'eq', False) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_folder', 'eq', False)
         )
-    ]
-
+    ))
 
 def get_public_projects(user):
     '''Return a list of a user's public projects.'''

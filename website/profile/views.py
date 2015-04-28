@@ -39,32 +39,30 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes([
-        node
-        for node in user.node__contributed.find(
+    return _render_nodes(
+        list(user.node__contributed.find(
             (
                 Q('category', 'eq', 'project') &
                 Q('is_public', 'eq', True) &
                 Q('is_registration', 'eq', False) &
                 Q('is_deleted', 'eq', False)
             )
-        )
-    ])
+        ))
+    )
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes([
-        node
-        for node in user.node__contributed.find(
+    return _render_nodes(
+        list(user.node__contributed.find(
             (
                 Q('category', 'ne', 'project') &
                 Q('is_public', 'eq', True) &
                 Q('is_registration', 'eq', False) &
                 Q('is_deleted', 'eq', False)
             )
-        )
-    ])
+        ))
+    )
 
 
 @must_be_logged_in
