@@ -325,7 +325,7 @@ class TestGetRevisions(StorageTestCase):
         self.record.versions = [factories.FileVersionFactory() for __ in range(15)]
         self.record.save()
 
-    def get_revisions(self, path=None, page=None, size=None, **kwargs):
+    def get_revisions(self, path=None, **kwargs):
 
         return self.app.get(
             self.project.api_url_for(
