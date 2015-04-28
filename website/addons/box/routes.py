@@ -17,21 +17,21 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/box/config/',
-                '/project/<pid>/node/<nid>/box/config/'
+                '/project/<pid>/box/settings/',
+                '/project/<pid>/node/<nid>/box/settings/'
             ],
             'get',
             views.box_get_config,
-            json_renderer
+            json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/box/config/',
-                '/project/<pid>/node/<nid>/box/config/'
+                '/project/<pid>/box/settings/',
+                '/project/<pid>/node/<nid>/box/settings/'
             ],
             'put',
             views.box_set_config,
-            json_renderer
+            json_renderer,
         ),
         Rule(
             [
@@ -40,16 +40,16 @@ api_routes = {
             ],
             'put',
             views.box_add_user_auth,
-            json_renderer
+            json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/box/config/',
-                '/project/<pid>/node/<nid>/box/config/'
+                '/project/<pid>/box/user_auth/',
+                '/project/<pid>/node/<nid>/box/user_auth/'
             ],
             'delete',
             views.box_remove_user_auth,
-            json_renderer
+            json_renderer,
         ),
         Rule(
             [
@@ -58,7 +58,7 @@ api_routes = {
             ],
             'get',
             views.box_get_share_emails,
-            json_renderer
+            json_renderer,
         ),
         Rule(
             [
@@ -67,7 +67,7 @@ api_routes = {
             ],
             'get',
             views.box_folder_list,
-            json_renderer
+            json_renderer,
         ),
     ],
     'prefix': '/api/v1'
