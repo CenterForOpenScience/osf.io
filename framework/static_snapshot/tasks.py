@@ -12,12 +12,15 @@ def get_static_snapshot(self, url, cookie):
     params = {
         'url': url
     }
-    response = requests.get('http://localhost:3000', params=params, cookies=cookie)
+    print " Check if debugging works"
     content = {}
+    response = requests.get('http://localhost:3000', params=params, cookies=cookie)
     if response.status_code == 200:
-        rdb.set_trace()
+        print " in success", '****************'
+        content = response.text
         self.update_state(state='SUCCESS',
-                          meta={'content': content})
+                          meta={'content': response.text})
     else:
+        print " in pending", '*********************'
         self.update_state(state='PENDING', meta={'content': content})
     return {'content': content}

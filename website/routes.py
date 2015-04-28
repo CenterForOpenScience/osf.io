@@ -162,7 +162,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
-        Rule('/dashboard/handle_get_static_snapshot', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/handle_get_static_snapshot', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
 
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
@@ -236,7 +236,7 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.dashboard_static, OsfWebRenderer('staticSnapshot.mako')),
+        Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
 
     ], prefix='/api/v1')
 

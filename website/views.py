@@ -14,6 +14,7 @@ from framework import utils
 from framework import sentry
 from framework.auth.core import User
 from framework.flask import redirect  # VOL-aware redirect
+from framework.sessions import session
 from framework.routing import proxy_url
 from framework.exceptions import HTTPError
 from framework.auth.forms import SignInForm
@@ -283,39 +284,52 @@ def dashboard(auth):
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
     print "****"
-    return {'addons_enabled': user.get_addon_names(),
-            'dashboard_id': dashboard_id,
-            }
+    rv = {'addons_enabled': user.get_addon_names(),
+          'dashboard_id': dashboard_id,
+    }
 
-@must_be_logged_in
-def dashboard_static(auth, **kwargs):
-    url = web_url_for('dashboard', _absolute=True)
-    # url = 'http://65eee95e.ngrok.io/dashboard/'
-    check = web_url_for('handle_get_static_snapshot')
-    print check
-    cookie = request.cookies
-    print cookie, '************'
-    if settings.USE_CELERY:
+    if permissions.CELERY_FLAG:  # TODO: Make use of cache
+        # Celery task should run only once
+        url = web_url_for('dashboard', _absolute=True)
+        cookie = request.cookies
         task = tasks.get_static_snapshot.apply_async(args=[url, cookie])
         print " celery"
-        return {}, 202, {'Location': web_url_for('handle_get_static_snapshot', task_id=task.id)}
-    else:
-        return {}
+        session.data['task_id'] = task.id
+        permissions.CELERY_FLAG = False
+    return rv
+
+# @must_be_logged_in
+# def dashboard_static(auth, **kwargs):
+#     url = web_url_for('dashboard', _absolute=True)
+#     # url = 'http://65eee95e.ngrok.io/dashboard/'
+#     cookie = request.cookies
+#     print cookie, '************'
+#     if settings.USE_CELERY:
+#         # task = tasks.get_static_snapshot(url, cookie)
+#         task = tasks.get_static_snapshot.apply_async(args=[url, cookie])
+#         check = web_url_for('handle_get_static_snapshot', _absolute=True,  task_id=task.id)
+#         print check
+#         # return {}, 202, {'Location': web_url_for('handle_get_static_snapshot', task_id=task.id)}
+#         return redirect(check)
+#     else:
+#         return {}
 
 
-def handle_get_static_snapshot(task_id):
-    task = dashboard_static.AsyncResult(task_id)
+def handle_get_static_snapshot(**kwargs):
+    print "in handler"
+    task_id = session.data.get('task_id')
+    task = tasks.get_static_snapshot.AsyncResult(task_id)
+    print task
+    response = {}
     if task.state == 'PENDING':
         print "do nothing"
     if task.state == 'SUCCESS':
         print "Save to cache"
-    response = {
-        'state': task.state,
-        'content': task.info.content
-    }
+        response = {
+            'state': task.state,
+            'content': task.info['content']
+        }
     return response
-
-
 
 
 def paginate(items, total, page, size):
