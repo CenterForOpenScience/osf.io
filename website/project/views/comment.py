@@ -346,11 +346,7 @@ def list_comments(auth, **kwargs):
 
 
 def list_total_comments_widget(node, auth):
-    comments_keys = Comment.find(Q('node', 'eq', node)).get_keys()
-    comments = []
-    for cid in comments_keys:
-        cmt = Comment.load(cid)
-        comments.append(cmt)
+    comments = list(Comment.find(Q('node', 'eq', node)))
     comments.sort(
         key=lambda item: item.date_created,
         reverse=False
@@ -360,15 +356,14 @@ def list_total_comments_widget(node, auth):
 
 def list_total_comments(node, auth, page):
     if page == 'total':
-        comments_keys = Comment.find(Q('node', 'eq', node)).get_keys()
+        comments = list(Comment.find(Q('node', 'eq', node)))
     else:
-        comments_keys = Comment.find(Q('node', 'eq', node) &
-                                Q('page', 'eq', page)).get_keys()
-    comments = []
-    for cid in comments_keys:
-        cmt = Comment.load(cid)
-        if not isinstance(cmt.target, Comment):
-            comments.append(cmt)
+        comments = list(Comment.find(Q('node', 'eq', node) &
+                                Q('page', 'eq', page)))
+
+    for comment in comments:
+        if not isinstance(comment.target, Comment):
+            comments.append(comment)
     comments = sorted(
         comments,
         key=lambda item: item.date_created,
@@ -465,9 +460,8 @@ def _update_comments_timestamp_total(node, auth, page):
                 continue
             ret = _update_comments_timestamp(auth, node, page, root_target._id)
     elif page == Comment.WIKI:
-        root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
-        for root_target in root_targets:
-            wiki_page = NodeWikiPage.load(root_target)
+        root_targets = list(NodeWikiPage.find(Q('node', 'eq', node)))
+        for wiki_page in root_targets:
             if hasattr(wiki_page, 'commented'):
                 ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
     return ret

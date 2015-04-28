@@ -905,10 +905,9 @@ def n_unread_total_node(user, node):
 
 def n_unread_total_wiki(user, node):
     from website.addons.wiki.model import NodeWikiPage
-    root_targets = NodeWikiPage.find(Q('node', 'eq', node)).get_keys()
+    root_targets = list(NodeWikiPage.find(Q('node', 'eq', node)))
     n_unread = 0
-    for root_target in root_targets:
-        wiki_page = NodeWikiPage.load(root_target)
+    for wiki_page in root_targets:
         if hasattr(wiki_page, 'commented'):
             root_id = wiki_page.page_name
             n_unread += n_unread_comments(node, user, 'wiki', root_id)
@@ -926,7 +925,7 @@ def n_unread_total_files(user, node, check=False):
     else:
         file_timestamps = dict()
         user.comments_viewed_timestamp[node._id]['files'] = file_timestamps
-        for file_id in node.commented_files.keys():
+        for file_id in node.commented_files:
             file_timestamps[file_id] = default_timestamp
             n_unread += n_unread_comments(node, user, 'files', file_id, check)
         user.save()
