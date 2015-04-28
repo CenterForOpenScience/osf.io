@@ -44,3 +44,21 @@ class StorageTestCase(OsfTestCase):
         # Refresh records from database; necessary for comparing dates
         self.project.reload()
         self.user.reload()
+
+
+def recursively_create_file(settings, path):
+    path = path.split('/')
+    final = path.pop(-1)
+    current = settings.root_node
+    for subpath in path:
+        current = current.append_folder(subpath)
+    return current.append_file(final)
+
+
+def recursively_create_folder(settings, path):
+    path = path.split('/')
+    final = path.pop(-1)
+    current = settings.root_node
+    for subpath in path:
+        current = current.append_folder(subpath)
+    return current.append_file(final)

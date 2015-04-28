@@ -19,6 +19,7 @@ var ViewModel = function(url, selector) {
     self.userHasAuth = ko.observable(false);
     self.userIsOwner = ko.observable(false);
     self.ownerName = ko.observable('');
+    self.validCredentials = ko.observable(true);
 
     self.urls = ko.observable({});
     self.loadedSettings = ko.observable(false);
@@ -40,7 +41,7 @@ var ViewModel = function(url, selector) {
     self.showSelect = ko.observable(false);
 
     self.showSettings = ko.pureComputed(function() {
-        return self.nodeHasAuth();
+        return self.nodeHasAuth() && self.validCredentials();
     });
     self.disableSettings = ko.pureComputed(function() {
         return !(self.userHasAuth() && self.userIsOwner());
@@ -278,7 +279,7 @@ ViewModel.prototype.fetchBucketList = function() {
             ret.resolve(response.buckets);
         })
         .fail(function(xhr, status, error) {
-            var message = 'Could not retrieve list of S3 buckets at' +
+            var message = 'Could not retrieve list of S3 buckets at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.changeMessage(message, 'text-warning');
@@ -301,9 +302,25 @@ ViewModel.prototype.updateFromData = function(data) {
         self.userHasAuth(settings.user_has_auth);
         self.userIsOwner(settings.user_is_owner);
         self.ownerName(settings.owner);
-        self.currentBucket(settings.has_bucket ? settings.bucket : 'None');
+        self.validCredentials(settings.valid_credentials);
+        self.currentBucket(settings.has_bucket ? settings.bucket : null);
         if (settings.urls) {
             self.urls(settings.urls);
+        }
+        if (self.nodeHasAuth() && !self.validCredentials()) {
+            var message = '';
+            if(self.userIsOwner()) {
+                message = 'Could not retrieve S3 settings at ' +
+                    'this time. The S3 credentials may no longer be valid.' +
+                    ' Try deauthorizing and reauthorizing S3 on your <a href="' +
+                    self.urls().settings + '">account settings page</a>.';
+            }
+            else {
+                message = 'Could not retrieve S3 settings at ' +
+                    'this time. The S3 addon credentials may no longer be valid.' +
+                    ' Contact ' + self.ownerName() + ' to verify.';                    
+            }
+            self.changeMessage(message, 'text-danger');
         }
         ret.resolve(settings);
     };
