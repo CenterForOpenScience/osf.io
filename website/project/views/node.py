@@ -916,8 +916,8 @@ def n_unread_total_wiki(user, node):
 
 def n_unread_total_files(user, node, check=False):
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, dict())
-    view_timestamp = view_timestamp.get('files', default_timestamp)
+    node_timestamps = user.comments_viewed_timestamp.get(node._id, dict())
+    view_timestamp = node_timestamps.get('files', default_timestamp)
     n_unread = 0
     if isinstance(view_timestamp, dict):
         for file_id in node.commented_files.keys():
