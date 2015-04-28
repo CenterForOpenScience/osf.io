@@ -112,7 +112,7 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
 
     sorted_users_recency = sorted(
         comments_dict.keys(),
-        key=lambda item: get_recency(item),
+        key=get_recency,
         reverse=True,
     )
 
