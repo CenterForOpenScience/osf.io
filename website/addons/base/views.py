@@ -136,9 +136,6 @@ def get_auth(**kwargs):
 
     user = User.from_cookie(cookie)
 
-    if not user:
-        raise HTTPError(httplib.UNAUTHORIZED)
-
     node = Node.load(node_id)
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
