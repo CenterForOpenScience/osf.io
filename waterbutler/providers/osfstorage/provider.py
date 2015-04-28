@@ -242,9 +242,9 @@ class OSFStorageProvider(provider.BaseProvider):
         return OsfStorageFileMetadata(metadata).serialized(), created
 
     @asyncio.coroutine
-    def delete(self, **kwargs):
+    def delete(self, path, **kwargs):
         kwargs['auth'] = self.auth
-        kwargs['path'] = OSFPath(kwargs['path']).path[1:]
+        kwargs['path'] = '/' + path.identifier
 
         yield from self.make_signed_request(
             'DELETE',
