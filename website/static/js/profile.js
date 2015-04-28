@@ -33,10 +33,6 @@ var cleanByRule = function(rule) {
 
 var noop = function() {};
 
-
-
-
-
 var SerializeMixin = function() {};
 
 /** Serialize to a JS Object. */

@@ -81,7 +81,7 @@ def validate_year(item):
 
 
 validate_url = URLValidator()
-def validate_profileWebsites(profileWebsites):
+def validate_profile_websites(profileWebsites):
     if not profileWebsites:
         return
     for profileWebsite in profileWebsites:
@@ -96,7 +96,7 @@ def validate_profileWebsites(profileWebsites):
                 
 
 def validate_social(value):
-    validate_profileWebsites(value.get('profileWebsites'))
+    validate_profile_websites(value.get('profileWebsites'))
     
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
