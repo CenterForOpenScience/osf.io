@@ -319,7 +319,7 @@ function _fangornCanDrop(treebeard, item) {
 function _fangornDragOver(treebeard, event) {
     var dropzoneHoverClass = 'fangorn-dz-hover',
         closestTarget = $(event.target).closest('.tb-row'),
-        itemID =  parseInt(closestTarget.attr('data-id')),
+        itemID = parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
@@ -850,6 +850,16 @@ function setCurrentFileID(tree, nodeID, file) {
                 tb.currentFileID = child.id;
             }
         }
+    } else if (file.provider === 'dataverse') {
+        // Only highlight file in correct dataset version, since paths persist across versions
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            var urlParams = $osf.urlParams();
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path
+                && child.data.extra.datasetVersion === urlParams.version) {
+                tb.currentFileID = child.id;
+            }
+        }
     } else if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
         for (var j = 0; j < tree.children.length; j++) {
             var child = tree.children[j];
@@ -896,7 +906,7 @@ tbOptions = {
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
     title : function() {
-        if(window.contextVars.uploadInstruction) {
+        if(window.contextVars.diskSavingMode) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
             if (window.File && window.FileReader) {
                 return m('p', {

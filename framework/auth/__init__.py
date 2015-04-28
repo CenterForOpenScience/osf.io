@@ -27,7 +27,6 @@ __all__ = [
     'login',
     'logout',
     'register_unconfirmed',
-    'register',
 ]
 
 def get_display_name(username):
