@@ -200,7 +200,7 @@ def main(nworkers, worker_id, dry=True):
     else:
         logger.info('Running in dry mode, changes NOT will be made')
 
-    to_migrate = oldels.OsfStorageNodeSettings.find(Q('_migrated_from_old_models', 'ne', True))
+    to_migrate = model.OsfStorageNodeSettings.find(Q('_migrated_from_old_models', 'ne', True))
     if to_migrate.count() == 0:
         logger.info('No nodes to migrate; exiting...')
         return
