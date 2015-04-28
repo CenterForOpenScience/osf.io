@@ -7,7 +7,6 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
-import pymongo
 import warnings
 
 import pytz
@@ -31,7 +30,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key
+from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -284,17 +283,8 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
+@unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
-
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('params.node', pymongo.ASCENDING),
-                ('_id', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -523,7 +513,8 @@ def validate_user(value):
     return True
 
 class NodeUpdateError(Exception):
-    def __init__(self, key, reason):
+    def __init__(self, reason, key, *args, **kwargs):
+        super(NodeUpdateError, self).__init__(*args, **kwargs)
         self.key = key
         self.reason = reason
 
@@ -956,9 +947,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 try:
                     setattr(self, key, value)
                 except AttributeError:
-                    raise NodeUpdateError(key=key, reason="Invalid value for attribute '{0}'".format(key))
+                    raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                 except warnings.Warning:
-                    raise NodeUpdateError(key=key, reason="Attribute '{0}' doesn't exist on the Node class".format(key))
+                    raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
         if save:
             return self.save()
         else:
