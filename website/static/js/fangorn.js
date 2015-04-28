@@ -654,7 +654,6 @@ function _fangornActionColumn (item, col) {
         buttons.push(_hiddenButtonSpacer('fa fa-upload'));
     }
 
-
     //Download button if this is an item
     if (item.kind === 'file') {
         buttons.push({
@@ -667,15 +666,6 @@ function _fangornActionColumn (item, col) {
     } else {
         buttons.push(_hiddenButtonSpacer('fa fa-download'));
     }
-
-    //Can always get a notification from anything.
-    buttons.push({
-        name: '',
-        icon: 'fa fa-bell-slash-o',
-        'tooltip': 'Notify',
-        css: 'fangorn-clickable btn btn-default btn-xs',
-        onclick: _uploadEvent
-    });
 
     //Hover delete button if item is a file and user has permission to edit
     if (item.kind === 'file' && item.data.permissions.edit) {

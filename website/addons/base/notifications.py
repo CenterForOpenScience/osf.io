@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
 from furl import furl
 from datetime import datetime
 
@@ -29,6 +28,5 @@ def file_notify(user, node, event, metadata, provider):
         timestamp=timestamp,
         message=message,
         gravatar_url=user.gravatar_url,
-        url=f_url.url)
-
-
+        url=f_url.url
+    )
