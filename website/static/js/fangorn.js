@@ -611,8 +611,8 @@ function _removeEvent (event, items, col) {
                         m('p', 'This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
-                        m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete(folder); }  }, 'OK')
+                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'OK')
                     ]);
                 tb.modal.update(mithrilContent, mithrilButtons);
         } else {
