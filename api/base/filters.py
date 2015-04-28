@@ -39,36 +39,36 @@ class ODMFilterMixin(object):
     Subclasses must define `get_default_odm_query()`.
 
     Serializers that want to restrict which fields are used for filtering need to have a variable called
-    filterable_fields which is a list of strings representing the field names as they appear in the serialization.
+    filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
     """
 
     # TODO Handle simple and complex non-standard fields
 
     TRUTHY = set(['true', 'True', 1, '1'])
     FALSY = set(['false', 'False', 0, '0'])
+    DEFAULT_OPERATOR = 'eq'
 
     # For the field_comparison_operators, instances can be a class or a tuple of classes
     field_comparison_operators = [
         {
-            'instances': ser.CharField,
+            'field_type': ser.CharField,
             'comparison_operator': 'icontains'
         },
         {
-            'instances': ser.ListField,
+            'field_type': ser.ListField,
             'comparison_operator': 'in'
         }
     ]
 
-    def get_comparison_operator(self, key, value):
-        default_operator = 'eq'
+    def get_comparison_operator(self, key):
 
         for operator in self.field_comparison_operators:
-            if isinstance(self.serializer_class._declared_fields[key], operator['instances']):
+            if isinstance(self.serializer_class._declared_fields[key], operator['field_type']):
                 return operator['comparison_operator']
 
-        return default_operator
+        return self.DEFAULT_OPERATOR
 
-    def is_filterable_field(self, key, value):
+    def is_filterable_field(self, key):
         try:
             return key.strip() in self.serializer_class.filterable_fields
         except AttributeError:
@@ -89,8 +89,8 @@ class ODMFilterMixin(object):
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
             query_parts = [
-                Q(self.convert_key(key, value), self.get_comparison_operator(key, value), self.convert_value(key, value))
-                for key, value in fields_dict.items() if self.is_filterable_field(key, value)
+                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value))
+                for key, value in fields_dict.items() if self.is_filterable_field(key=key)
             ]
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
             try:
@@ -102,14 +102,14 @@ class ODMFilterMixin(object):
         return query
 
     # Used so that that queries by _id will work
-    def convert_key(self, key, value):
+    def convert_key(self, key):
         key = key.strip()
         if self.serializer_class._declared_fields[key].source:
             return self.serializer_class._declared_fields[key].source
         return key
 
     # Used to convert string values from query params to Python booleans when necessary
-    def convert_value(self, key, value):
+    def convert_value(self, value):
         value = value.strip()
         if value in self.TRUTHY:
             return True
