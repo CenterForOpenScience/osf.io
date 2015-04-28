@@ -1,5 +1,4 @@
 import mock
-from urllib import quote
 
 from modularodm import Q
 
@@ -13,7 +12,6 @@ from website.addons.osfstorage import utils
 from website.addons.osfstorage import oldels
 
 from scripts.osfstorage import migrate_from_oldels as migration
-from scripts.osfstorage import finish_oldel_migration as finishm
 
 
 class TestMigrateOldels(OsfTestCase):
@@ -60,10 +58,7 @@ class TestMigrateOldels(OsfTestCase):
         migration.migrate_node_settings(self.node_settings, dry=False)
         migration.migrate_children(self.node_settings, dry=False)
 
-        children = list(model.OsfStorageFileNode.find(
-            Q('parent', 'eq', self.node_settings.root_node) &
-            Q('node_settings', 'eq', self.node_settings)
-        ))
+        children = self.node_settings.root_node.children
 
         assert not self.node_settings._dirty
         assert self.node_settings.root_node is not None
@@ -96,25 +91,6 @@ class TestMigrateOldels(OsfTestCase):
             paths.remove(guid._path)
         assert len(paths) == 0
 
-        finishm.migrate()
-
-        paths = [x.path for x in model.OsfStorageFileNode.find(Q('kind', 'eq', 'file') & Q('node_settings', 'eq', self.node_settings))]
-        assert len(guids) == 10
-        for guid in guids:
-            paths.remove(guid.path)
-        assert len(paths) == 0
-
-        finishm.unmigrate()
-
-        old_paths = [x.path for x in self.node_settings.file_tree.children]
-        paths = [x.path for x in model.OsfStorageFileNode.find(Q('kind', 'eq', 'file') & Q('node_settings', 'eq', self.node_settings))]
-        assert len(guids) == 10
-        for guid in guids:
-            old_paths.remove(guid.path)
-            paths.remove(guid._path)
-        assert len(paths) == 0
-        assert len(old_paths) == 0
-
     def test_migrate_logs(self):
         names = []
         for num in range(10):
@@ -139,26 +115,6 @@ class TestMigrateOldels(OsfTestCase):
                 assert node._id in log.params['_urls']['view']
                 assert node._id in log.params['_urls']['download']
 
-        finishm.migrate()
-
-        for log in self.project.logs:
-            if log.action.startswith('osf_storage_file'):
-                log.reload()
-                path = log.params['path']
-                node = self.node_settings.root_node.find_child_by_name(path.strip('/'))
-                assert node._id in log.params['urls']['view']
-                assert node._id in log.params['urls']['download']
-
-        finishm.unmigrate()
-
-        for log in self.project.logs:
-            if log.action.startswith('osf_storage_file'):
-                log.reload()
-                path = log.params['path'].lstrip('/')
-                node = oldels.OsfStorageFileRecord.find_by_path(path, self.node_settings)
-                assert quote(node.path) in log.params['urls']['view']
-                assert quote(node.path) in log.params['urls']['download']
-
     @mock.patch('framework.analytics.session')
     def test_migrate_download_counts(self, mock_session):
         names = []
@@ -173,9 +129,6 @@ class TestMigrateOldels(OsfTestCase):
                     'object': '{}{}'.format(index, _id),
                 })
                 utils.update_analytics(self.project, fobj.path, _id + 1)
-                self.project.logs[-1].params['path'] = 'notnone'
-                self.project.logs[-1].save()
-
             assert len(fobj.versions) == index
             assert fobj.get_download_count() == index
 
@@ -184,16 +137,8 @@ class TestMigrateOldels(OsfTestCase):
         migration.migrate_node_settings(self.node_settings, dry=False)
         migration.migrate_children(self.node_settings, dry=False)
 
-        children = model.OsfStorageFileNode.find(Q('kind', 'eq', 'file') & Q('node_settings', 'eq', self.node_settings))
-
-        for index, child in enumerate(children):
+        for index, child in enumerate(self.node_settings.root_node.children):
             assert len(child.versions) == index
             assert child.get_download_count() == index
             for _id in range(index):
                 assert child.get_download_count(_id) == 1
-
-        for index, child in enumerate(self.node_settings.file_tree.children):
-            assert len(child.versions) == index
-            assert child.get_download_count() == index
-            for _id in range(index):
-                assert child.get_download_count(_id + 1) == 1

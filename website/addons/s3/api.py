@@ -2,13 +2,14 @@ from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
 from boto.s3.cors import CORSConfiguration
 
+from boto.exception import S3ResponseError
 
 def has_access(access_key, secret_key):
     try:
         c = S3Connection(access_key, secret_key)
         c.get_all_buckets()
         return True
-    except Exception:
+    except S3ResponseError:
         return False
 
 

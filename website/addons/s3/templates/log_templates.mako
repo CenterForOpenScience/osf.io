@@ -7,6 +7,13 @@ bucket
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="s3_folder_created">
+created folder
+<span class="overflow log-folder">{{ params.path }}</span> in
+bucket {{ params.bucket }} in {{ nodeType }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
 <script type="text/html" id="s3_file_updated">
 updated file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> in
@@ -17,7 +24,7 @@ bucket
 </script>
 
 <script type="text/html" id="s3_file_removed">
-removed file <span class="overflow" data-bind="text: params.path"></span> from
+removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow" data-bind="text: params.path"></span> from
 bucket
 <span data-bind="text: params.bucket"></span> in
 <span data-bind="text: nodeType"></span>
