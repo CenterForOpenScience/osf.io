@@ -35,6 +35,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/osfstorage/lineage/',
+                '/project/<pid>/node/<nid>/osfstorage/lineage/',
+            ],
+            'get',
+            views.osf_storage_get_lineage,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/osfstorage/folders/',
                 '/project/<pid>/node/<nid>/osfstorage/folders/',
             ],
