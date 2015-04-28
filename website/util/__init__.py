@@ -4,6 +4,8 @@ import re
 import logging
 import urlparse
 
+import furl
+
 from flask import request, url_for
 
 from website import settings
@@ -18,6 +20,13 @@ guid_url_node_pattern = re.compile('^/project/[a-zA-Z0-9]{5,}/node(?=/[a-zA-Z0-9
 guid_url_project_pattern = re.compile('^/project(?=/[a-zA-Z0-9]{5,})')
 guid_url_profile_pattern = re.compile('^/profile(?=/[a-zA-Z0-9]{5,})')
 
+waterbutler_action_map = {
+    'upload': 'file',
+    'delete': 'file',
+    'download': 'file',
+    'metadata': 'data',
+    'create_folder': 'file',
+}
 
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
@@ -70,13 +79,32 @@ def is_json_request():
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
 
-# from http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
-def _camel_to_snake(key):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', key)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-def js_to_python(obj):
-    ret = {}
-    for key, value in obj.iteritems():
-        ret[_camel_to_snake(key)] = value
-    return ret
+def waterbutler_url_for(route, provider, path, node, user=None, **query):
+    """Reverse URL lookup for WaterButler routes
+    :param str route: The action to preform, upload, download, delete...
+    :param str provider: The name of the requested provider
+    :param str path: The path of the requested file or folder
+    :param Node node: The node being accessed
+    :param User user: The user whos cookie will be used or None
+    :param dict **query: Addition query parameters to be appended
+    """
+    url = furl.furl(settings.WATERBUTLER_URL)
+    url.path.segments.append(waterbutler_action_map[route])
+
+    url.args.update({
+        'path': path,
+        'nid': node._id,
+        'provider': provider,
+    })
+
+    if user:
+        url.args['cookie'] = user.get_or_create_cookie()
+    elif settings.COOKIE_NAME in request.cookies:
+        url.args['cookie'] = request.cookies[settings.COOKIE_NAME]
+
+    if 'view_only' in request.args:
+        url.args['view_only'] = request.args['view_only']
+
+    url.args.update(query)
+    return url.url

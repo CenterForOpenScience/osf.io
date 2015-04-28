@@ -332,6 +332,8 @@ class NodeLog(StoredObject):
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
 
+    FOLDER_CREATED = 'folder_created'
+
     FILE_ADDED = 'file_added'
     FILE_UPDATED = 'file_updated'
     FILE_REMOVED = 'file_removed'
