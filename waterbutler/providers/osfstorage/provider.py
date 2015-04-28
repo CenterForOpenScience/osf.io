@@ -84,12 +84,14 @@ class OSFStorageProvider(provider.BaseProvider):
         try:
             data = next(
                 x for x in
+                (yield from self.metadata(base))
+                if x['name'] == path and
                 x['kind'] == ('folder' if folder else 'file')
             )
 
-            return base.child(data['name'], data['path'].strip('/'), folder=folder)
+            return base.child(data['name'], _id=data['path'].strip('/'), folder=folder)
         except StopIteration:
-            raise Exception  # TODO
+            return base.child(path, folder=folder)
 
     def make_provider(self, settings):
         """Requests on different files may need to use different providers,
