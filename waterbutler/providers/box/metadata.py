@@ -83,19 +83,6 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
             'fullPath': self.full_path
         }
 
-    @property
-    def materialized_path(self):
-        if 'path_collection' not in self.raw:
-            return None
-
-        path = []
-        for entry in reversed(self.raw['path_collection']['entries']):
-            if self.folder == entry['id']:
-                break
-            path.append(entry['name'])
-
-        return '/' + os.path.join('/'.join(reversed(path)), self.name)
-
 
 class BoxRevision(metadata.BaseFileRevisionMetadata):
 
