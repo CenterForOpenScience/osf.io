@@ -606,15 +606,6 @@ function _removeEvent (event, items, col) {
     function doDelete() {
         var folder = items[0];
         if (folder.data.permissions.edit) {
-
-            if (folder.children.length > 0) {
-                tb.modal.update(m('div', [
-                        m('h3.break-word', '"' + folder.data.name + '" must be empty to be deleted.')
-                    ]),
-                    m('button.btn.btn-default', {onclick: function(){cancelDelete.call(tb);}}, 'OK')
-                );
-                tb.modal.update(mithrilContent, mithrilButtons);
-            } else {
                 var mithrilContent = m('div', [
                         m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
                         m('p', 'This action is irreversible.')
@@ -624,7 +615,6 @@ function _removeEvent (event, items, col) {
                         m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete(folder); }  }, 'OK')
                     ]);
                 tb.modal.update(mithrilContent, mithrilButtons);
-            }
         } else {
             folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
         }
