@@ -647,13 +647,11 @@ function _fangornActionColumn (item, col) {
             name: '',
             icon: 'fa fa-upload',
             'tooltip' : 'Upload files',
+
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
         });
-    } else {
-        buttons.push(_hiddenButtonSpacer('fa fa-upload'));
     }
-
     //Download button if this is an item
     if (item.kind === 'file') {
         buttons.push({
@@ -663,44 +661,24 @@ function _fangornActionColumn (item, col) {
             'css': 'btn btn-info btn-xs',
             'onclick': _downloadEvent
         });
-    } else {
-        buttons.push(_hiddenButtonSpacer('fa fa-download'));
+        if (item.data.permissions.edit) {
+            buttons.push({
+                'name': '',
+                'tooltip': 'Delete',
+                'icon': 'fa fa-times',
+                'css': 'm-l-lg text-danger fg-hover-hide',
+                'style': 'display:none',
+                'onclick': _removeEvent
+            });
+        }
     }
-
-    //Hover delete button if item is a file and user has permission to edit
-    if (item.kind === 'file' && item.data.permissions.edit) {
-        buttons.push({
-            'name' : '',
-            'tooltip' : 'Delete',
-            'icon' : 'fa fa-times',
-            'css' : 'm-l-lg text-danger fg-hover-hide',
-            'style' : 'display:none',
-            'onclick' : _removeEvent
-        });
-    }
-
     // Build the template for icons
     return buttons.map(function (btn) {
-        if(btn.tooltip === '') {
-            return m('span[style="visibility: hidden"]', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css},
-            [ m('span', { 'class' : btn.icon}) ])
-            ]);
-        }
         return m('span', { 'data-col' : item.id }, [ m('i',
             { 'class' : btn.css, 'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom', style : btn.style, 'onclick' : function(event) { btn.onclick.call(self, event, item, col); } },
             [ m('span', { 'class' : btn.icon}, btn.name) ])
             ]);
     });
-}
-
-function _hiddenButtonSpacer (icon) {
-    return {
-        name: '',
-        icon: icon,
-        'tooltip': '',
-        css: 'fangorn-clickable btn btn-default btn-xs'
-    }
 }
 
 /**
