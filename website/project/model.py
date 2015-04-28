@@ -1244,12 +1244,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return ret
 
     def get_descendants_recursive(self, include=lambda n: True):
-        descedants = list(self.nodes) + [
-            item
-            for node in self.nodes
-            for item in node.get_descendants_recursive(include)
-        ]
-        return [d for d in descedants if include(d)]
+        for node in self.nodes:
+            yield node
+            for descedant in node.get_descendants_recursive(include):
+                yield descedant
 
     def get_descendants_iterative(self, include=lambda n: True):
         ret = []
