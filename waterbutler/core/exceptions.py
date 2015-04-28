@@ -1,3 +1,4 @@
+import os
 import http
 import json
 import asyncio
@@ -27,6 +28,8 @@ class ProviderError(Exception):
 class CopyError(ProviderError):
     pass
 
+class CreateFolderError(ProviderError):
+    pass
 
 class DeleteError(ProviderError):
     pass
@@ -59,6 +62,15 @@ class MetadataError(ProviderError):
 class RevisionsError(ProviderError):
     pass
 
+class FolderNamingConflict(ProviderError):
+    def __init__(self, path, name=None):
+        super().__init__(
+            'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+                path=path,
+                name=name or os.path.split(path.strip('/'))[1]
+            ), code=409
+        )
+
 
 class NotFoundError(ProviderError):
     def __init__(self, path):
@@ -66,6 +78,10 @@ class NotFoundError(ProviderError):
             'Could not retrieve file or directory {}'.format(path),
             code=http.client.NOT_FOUND,
         )
+
+class InvalidPathError(ProviderError):
+    def __init__(self, message):
+        super().__init__(message, code=http.client.BAD_REQUEST)
 
 
 @asyncio.coroutine

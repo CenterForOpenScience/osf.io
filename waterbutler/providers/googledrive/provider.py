@@ -121,7 +121,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
-        metadata = yield from self.metadata(str(path), raw=True)
+        metadata = yield from self.metadata(str(path), raw=True, get_folder=True)
         yield from self.make_request(
             'DELETE',
             self.build_url('files', metadata['id']),
@@ -139,7 +139,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         return ' and '.join(queries)
 
     @asyncio.coroutine
-    def metadata(self, path, original_path=None, folder_id=None, raw=False, **kwargs):
+    def metadata(self, path, original_path=None, folder_id=None, raw=False, get_folder=False, **kwargs):
         path = GoogleDrivePath(self.folder['name'], path)
         original_path = original_path or path
         folder_id = folder_id or self.folder['id']
@@ -163,9 +163,19 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         if not path.is_leaf:
             child_id = data['items'][0]['id']
-            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, raw=raw, **kwargs))
+            return (yield from self.metadata(str(child), original_path=original_path, folder_id=child_id, raw=raw, get_folder=get_folder, **kwargs))
 
         if path.is_dir:
+            if get_folder:
+                resp = yield from self.make_request(
+                    'GET',
+                    self.build_url('files', folder_id),
+                    expects=(200, ),
+                    throws=exceptions.MetadataError,
+                )
+                data = yield from resp.json()
+                return self._serialize_item(original_path, data, raw=raw)
+
             return [
                 self._serialize_item(original_path, item, raw=raw)
                 for item in data['items']
@@ -215,6 +225,44 @@ class GoogleDriveProvider(provider.BaseProvider):
             'modifiedDate': metadata['modifiedDate'],
             'id': data['etag'] + settings.DRIVE_IGNORE_VERSION,
         }).serialized()]
+
+    @asyncio.coroutine
+    def create_folder(self, path, **kwargs):
+        path = GoogleDrivePath(self.folder['name'], path)
+        path.validate_folder()
+
+        try:
+            yield from self.metadata(str(path), raw=True)
+            raise exceptions.FolderNamingConflict(str(path))
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
+
+        if path.parent.is_root:
+            folder_id = self.folder['id']
+        else:
+            parent_path = str(path.parent).rstrip('/')
+            metadata = yield from self.metadata(parent_path, raw=True)
+            folder_id = metadata['id']
+
+        resp = yield from self.make_request(
+            'POST',
+            self.build_url('files'),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'title': path.name,
+                'parents': [{
+                    'id': folder_id
+                }],
+                'mimeType': 'application/vnd.google-apps.folder'
+            }),
+            expects=(200, ),
+            throws=exceptions.CreateFolderError,
+        )
+
+        return GoogleDriveFolderMetadata((yield from resp.json()), path.parent).serialized()
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
