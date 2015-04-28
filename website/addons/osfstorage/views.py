@@ -266,20 +266,6 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
     if not child:
         raise HTTPError(httplib.BAD_REQUEST)
 
-# <<<<<<< HEAD
-#     try:
-#         size = int(size)
-#     except (TypeError, ValueError):
-#         size = len(record.versions)
-#
-#     if size > len(record.versions):
-#         size = len(record.versions)
-#
-#     indices, versions, more = record.get_versions(
-#         page=page,
-#         size=size
-#     )
-# =======
     if split:
         parent = model.OsfStorageFileNode.get(split[0], node_addon)
     else:
