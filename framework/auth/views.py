@@ -92,6 +92,7 @@ def forgot_password():
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
 
+
 def _forgot_password(*args, **kwargs):
 
     return forgot_password(*args, **kwargs)
@@ -104,13 +105,15 @@ def _forgot_password(*args, **kwargs):
 @collect_auth
 def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
-    login form passsed; else send forgot password email.
+    login form passed; else send forgot password email.
 
     """
+    has_user = False
     if auth.logged_in:
         if not request.args.get('logout'):
-            return redirect('/dashboard/')
-        logout()
+            has_user = True
+        else:
+            logout()
     direct_call = registration_form or forgot_password_form
     if request.method == 'POST' and not direct_call:
         form = SignInForm(request.form)
@@ -128,6 +131,9 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
             except exceptions.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
         forms.push_errors_to_status(form.errors)
+
+    if has_user:
+        return redirect('/dashboard/')
 
     if kwargs.get('first', False):
         status.push_status_message('You may now log in')
