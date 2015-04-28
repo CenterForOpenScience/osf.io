@@ -964,6 +964,16 @@ function setCurrentFileID(tree, nodeID, file) {
                 tb.currentFileID = child.id;
             }
         }
+    } else if (file.provider === 'dataverse') {
+        // Only highlight file in correct dataset version, since paths persist across versions
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            var urlParams = $osf.urlParams();
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path
+                && child.data.extra.datasetVersion === urlParams.version) {
+                tb.currentFileID = child.id;
+            }
+        }
     } else if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
         for (var j = 0; j < tree.children.length; j++) {
             var child = tree.children[j];
