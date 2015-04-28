@@ -77,13 +77,13 @@ describe('s3NodeConfigViewModel', () => {
                                 assert.equal(vm.ownerName(), expected.owner);
                                 assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
                                 assert.equal(vm.userHasAuth(), expected.user_has_auth);
-                                assert.equal(vm.currentBucket(), (expected.bucket === null) ? 'None' : '');
+                                assert.equal(vm.currentBucket(), (expected.bucket === null) ? null : '');
                                 assert.deepEqual(vm.urls(), expected.urls);
                                 done();
                             });
                     });
                     describe('... and after updating computed values work as expected', () => {
-                        it('shows settings if Node has auth', (done) => {
+                        it('shows settings if Node has auth and credentials are valid', (done) => {
                             var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
                             vm.updateFromData()
                                 .always(function() {
@@ -148,7 +148,8 @@ describe('s3NodeConfigViewModel', () => {
                     user_has_auth: false,
                     user_is_owner: false,
                     owner: null,
-                    bucket: null
+                    bucket: null,
+                    valid_credentials: false
                 }),
                 data: {
                     showSettings: false,
@@ -167,7 +168,7 @@ describe('s3NodeConfigViewModel', () => {
                     user_is_owner: false,
                     owner: faker.name.findName(),
                     bucket: null,
-                    allowSelectBucket: false
+                    valid_credentials: true
                 }),
                 data: {
                     showSettings: true,
@@ -185,7 +186,8 @@ describe('s3NodeConfigViewModel', () => {
                     user_has_auth: true,
                     user_is_owner: true,
                     owner: faker.name.findName(),
-                    bucket: null
+                    bucket: null,
+                    valid_credentials: true
                 }),
                 data: {
                     showSettings: false,
@@ -203,7 +205,8 @@ describe('s3NodeConfigViewModel', () => {
                     user_has_auth: true,
                     user_is_owner: true,
                     owner: faker.name.findName(),
-                    bucket: null
+                    bucket: null,
+                    valid_credentials: true
                 }),
                 data: {
                     showSettings: true,
@@ -286,14 +289,16 @@ describe('s3NodeConfigViewModel', () => {
         var deleteEndpoint = makeSettingsEndpoint({
             user_has_auth: true,
             user_is_owner: true,
-            node_has_auth: false
+            node_has_auth: false,
+            valid_credentials: true
         });
         deleteEndpoint.method = 'DELETE';
         deleteEndpoint.response = deleteEndpoint.response.result;
         var importEndpoint = makeSettingsEndpoint({
             node_has_auth: true,
             user_has_auth: true,
-            user_is_owner: true
+            user_is_owner: true,
+            valid_credentials: true
         });
         importEndpoint.method = 'POST';
         importEndpoint.url = URLS.import_auth;
@@ -301,7 +306,8 @@ describe('s3NodeConfigViewModel', () => {
         var createEndpoint = makeSettingsEndpoint({
             node_has_auth: true,
             user_has_auth: true,
-            user_is_owner: true
+            user_is_owner: true,
+            valid_credentials: true
         });
         createEndpoint.method = 'POST';
         createEndpoint.url = URLS.create_auth;
@@ -310,7 +316,8 @@ describe('s3NodeConfigViewModel', () => {
             makeSettingsEndpoint({
                 user_has_auth: true,
                 user_is_owner: true,
-                node_has_auth: true
+                node_has_auth: true,
+                valid_credentials: true                    
             }),
             deleteEndpoint,
             importEndpoint,
@@ -325,7 +332,7 @@ describe('s3NodeConfigViewModel', () => {
         });
 
         describe('#_deauthorizeNodeConfirm', () => {
-            it('makes a delete request to the server and updates settings on success', (done) => {
+            it('makes a DELETE request to the server and updates settings on success', (done) => {
                 var expected = endpoints[1].response;
                 var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
                 vm.updateFromData()

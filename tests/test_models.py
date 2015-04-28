@@ -7,14 +7,17 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytz
 import datetime
 import urlparse
+import itsdangerous
 from dateutil import parser
 
+from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
@@ -367,6 +370,21 @@ class TestUser(OsfTestCase):
         token = u.get_confirmation_token('foo@bar.com', force=True)
         assert_equal(token, '54321')
 
+    # Some old users will not have an 'expired' key in their email_verifications.
+    # Assume the token in expired
+    def test_get_confirmation_token_if_email_verification_doesnt_have_expiration(self):
+        u = UserFactory()
+
+        email = fake.email()
+        u.add_unconfirmed_email(email)
+        # manually remove 'expiration' key
+        token = u.get_confirmation_token(email)
+        del u.email_verifications[token]['expiration']
+        u.save()
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token(email)
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
@@ -687,7 +705,7 @@ class TestUser(OsfTestCase):
     def test_display_full_name_unregistered(self):
         name = fake.name()
         u = UnregUserFactory()
-        project =ProjectFactory()
+        project = ProjectFactory()
         project.add_unregistered_contributor(fullname=name, email=u.username,
             auth=Auth(project.creator))
         project.save()
@@ -717,6 +735,58 @@ class TestUser(OsfTestCase):
 
         assert_equal(self.user.n_projects_in_common(user2), 1)
         assert_equal(self.user.n_projects_in_common(user3), 0)
+
+    def test_user_get_cookie(self):
+        user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
+        session = Session(data={
+            'auth_user_id': user._id,
+            'auth_user_username': user.username,
+            'auth_user_fullname': user.fullname,
+        })
+        session.save()
+
+        assert_equal(signer.unsign(user.get_or_create_cookie(super_secret_key)), session._id)
+
+    def test_user_get_cookie_no_session(self):
+        user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+
+        cookie = user.get_or_create_cookie(super_secret_key)
+
+        session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
+
+        assert_equal(session._id, signer.unsign(cookie))
+        assert_equal(session.data['auth_user_id'], user._id)
+        assert_equal(session.data['auth_user_username'], user.username)
+        assert_equal(session.data['auth_user_fullname'], user.fullname)
+
+    def test_get_user_by_cookie(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        assert_equal(user, User.from_cookie(cookie))
+
+    def test_get_user_by_cookie_returns_none(self):
+        assert_equal(None, User.from_cookie(''))
+
+    def test_get_user_by_cookie_bad_cookie(self):
+        assert_equal(None, User.from_cookie('foobar'))
+
+    def test_get_user_by_cookie_no_session(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        Session.remove()
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+        assert_equal(None, User.from_cookie(cookie))
 
 
 class TestUserParse(unittest.TestCase):

@@ -7,13 +7,11 @@ import httplib
 import functools
 
 import furl
-import itsdangerous
 from flask import request
 from flask import redirect
 from flask import make_response
 
 from framework.auth import Auth
-from framework.sessions import Session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
@@ -70,21 +68,8 @@ def check_file_guid(guid):
         return guid_url
     return None
 
-
-def get_user_from_cookie(cookie):
-    if not cookie:
-        return None
-    try:
-        token = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
-    except itsdangerous.BadSignature:
-        raise HTTPError(httplib.UNAUTHORIZED)
-    session = Session.load(token)
-    if session is None:
-        raise HTTPError(httplib.UNAUTHORIZED)
-    return User.load(session.data['auth_user_id'])
-
-
 permission_map = {
+    'create_folder': 'write',
     'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
@@ -148,7 +133,10 @@ def get_auth(**kwargs):
 
     view_only = request.args.get('view_only')
 
-    user = get_user_from_cookie(cookie)
+    user = User.from_cookie(cookie)
+
+    if not user:
+        raise HTTPError(httplib.UNAUTHORIZED)
 
     node = Node.load(node_id)
     if not node:
@@ -182,6 +170,7 @@ LOG_ACTION_MAP = {
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
+    'create_folder': NodeLog.FOLDER_CREATED,
 }
 
 
@@ -255,6 +244,22 @@ def addon_view_or_download_file_legacy(**kwargs):
     if kwargs.get('vid'):
         query_params['version'] = kwargs['vid']
 
+    # If provider is OSFstorage, check existence of requested file in the filetree
+    # This prevents invalid GUIDs from being created
+    if provider == 'osfstorage':
+        node_settings = node.get_addon('osfstorage')
+        file_tree = node_settings.file_tree
+        error = HTTPError(
+            404, data=dict(message_short='File not found',
+                           message_long='You requested a file that does not exist.')
+        )
+        if not file_tree:
+            raise error
+        else:
+            children_paths = [child.path for child in file_tree.children]
+            if path not in children_paths:
+                raise error
+
     return redirect(
         node.web_url_for(
             'addon_view_or_download_file',
@@ -319,6 +324,11 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     )
 
     ret = serialize_node(node, auth, primary=True)
+
+    # Disable OSF Storage file deletion in DISK_SAVING_MODE
+    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
+        ret['user']['can_edit'] = False
+
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
