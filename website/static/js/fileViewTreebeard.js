@@ -37,10 +37,15 @@ function FileViewTreebeard(data) {
         },
         ondataload: function () {
             var tb = this;
+            var path = '';
             tb.fangornFolderIndex = 0;
             if (window.contextVars.file.path && window.contextVars.file.provider !== 'figshare') {
-                window.contextVars.file.path = decodeURIComponent(window.contextVars.file.path);
-                tb.fangornFolderArray = window.contextVars.file.path.split("/");
+                if (window.contextVars.file.provider === 'osfstorage' || window.contextVars.file.provider === 'box') {
+                    path = decodeURIComponent(window.contextVars.file.extra.fullPath);
+                } else {
+                    path = decodeURIComponent(window.contextVars.file.path);
+                }
+                tb.fangornFolderArray = path.split("/");
                 if (tb.fangornFolderArray.length > 1) {
                     tb.fangornFolderArray.splice(0, 1);
                 }
