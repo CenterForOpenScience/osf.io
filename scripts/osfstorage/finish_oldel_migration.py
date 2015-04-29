@@ -43,7 +43,7 @@ def migrate():
     database.nodelog.update({
         'params._path': {'$ne': None}
     }, {
-        '$rename': {'params.path': 'premigration_path'}
+        '$rename': {'params.path': 'params.premigration_path'}
     }, multi=True)
 
     logger.info('params._path -> params.path')
