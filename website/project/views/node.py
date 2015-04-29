@@ -860,10 +860,8 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
         if not exists:
             return 0
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    if isinstance(view_timestamp, dict):
-        view_timestamp = view_timestamp.get(page, default_timestamp)
-    if not page == 'node' and isinstance(view_timestamp, dict):
+    view_timestamp = user.get_node_comment_timestamp(node, page)
+    if not page == 'node' and view_timestamp:
         view_timestamp = view_timestamp.get(root_id, default_timestamp)
     return Comment.find(Q('node', 'eq', node) &
                         Q('user', 'ne', user) &
@@ -887,13 +885,7 @@ def n_unread_total(node, user, page, check=False):
 
 
 def n_unread_total_node(user, node):
-    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, dict())
-    view_timestamp = view_timestamp.get('node', None)
-    if not view_timestamp:
-        user.comments_viewed_timestamp[node._id] = dict()
-        user.comments_viewed_timestamp[node._id]['node'] = default_timestamp
-        view_timestamp = default_timestamp
+    view_timestamp = user.get_node_comment_timestamp(node, 'node')
     return Comment.find(Q('node', 'eq', node) &
                         Q('user', 'ne', user) &
                         Q('date_created', 'gt', view_timestamp) &
@@ -916,15 +908,14 @@ def n_unread_total_wiki(user, node):
 
 def n_unread_total_files(user, node, check=False):
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    node_timestamps = user.comments_viewed_timestamp.get(node._id, dict())
-    view_timestamp = node_timestamps.get('files', default_timestamp)
+    file_timestamps = user.get_node_comment_timestamp(node, 'files')
     n_unread = 0
-    if isinstance(view_timestamp, dict):
-        for file_id in node.commented_files.keys():
+    if file_timestamps:
+        for file_id in node.commented_files:
             n_unread += n_unread_comments(node, user, 'files', file_id, check)
     else:
-        file_timestamps = dict()
-        user.comments_viewed_timestamp[node._id]['files'] = file_timestamps
+        user.comments_viewed_timestamp[node._id]['files'] = dict()
+        file_timestamps = user.comments_viewed_timestamp[node._id]['files']
         for file_id in node.commented_files:
             file_timestamps[file_id] = default_timestamp
             n_unread += n_unread_comments(node, user, 'files', file_id, check)

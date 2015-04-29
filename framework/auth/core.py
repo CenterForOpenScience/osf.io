@@ -1124,6 +1124,19 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
+    def get_node_comment_timestamps(self, node, page):
+        """ Returns the timestamp for when comments were last viewed on a node or
+            a dictionary of timestamps for when comments were last viewed on files or
+            wiki pages.
+        """
+        default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
+        node_timestamps = self.comments_viewed_timestamp.get(node._id, dict())
+        if page == 'node':
+            page_timestamps = node_timestamps.get(page, default_timestamp)
+        else:
+            page_timestamps = node_timestamps.get(page, dict())
+        return page_timestamps
+
 
 def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
