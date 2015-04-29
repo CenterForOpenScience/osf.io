@@ -346,15 +346,16 @@ def list_total_comments(node, auth, page):
         comments = list(Comment.find(Q('node', 'eq', node) &
                                 Q('page', 'eq', page)))
 
+    root_comments = []
     for comment in comments:
         if not isinstance(comment.target, Comment):
-            comments.append(comment)
-    comments = sorted(
-        comments,
+            root_comments.append(comment)
+    root_comments = sorted(
+        root_comments,
         key=lambda item: item.date_created,
         reverse=False,
     )
-    return comments
+    return root_comments
 
 
 @must_be_logged_in
