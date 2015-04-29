@@ -47,17 +47,6 @@ describe('signIn', () => {
                 assert.isFalse(vm.username.isValid());
             });
 
-            it('password under 6 chars is invalid', () => {
-                vm.username(validUsername);
-                vm.password(tooShortPassword);
-                assert.isFalse(vm.password.isValid());
-            });
-
-            it('password over 35 chars is invalid', () => {
-                vm.username(validUsername);
-                vm.password(tooLongPassword);
-                assert.isFalse(vm.password.isValid());
-            });
 
             describe('submit', () => {
                 var growlSpy;
@@ -68,19 +57,6 @@ describe('signIn', () => {
 
                 afterEach(() => {
                     growlSpy.restore();
-                });
-
-                it('growl called if password too short', () => {
-                    vm.username(validUsername);
-                    vm.password(tooShortPassword);
-                    vm.submit();
-                    assert.isTrue(growlSpy.calledOnce);
-                });
-                it('growl called if password too long', () => {
-                    vm.username(validUsername);
-                    vm.password(tooLongPassword);
-                    vm.submit();
-                    assert.isTrue(growlSpy.calledOnce);
                 });
                 it('growl called if invalid username', () => {
                     vm.username(invalidUsername);
