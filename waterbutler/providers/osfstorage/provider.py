@@ -115,13 +115,18 @@ class OSFStorageProvider(provider.BaseProvider):
         return isinstance(other, self.__class__)
 
     def intra_move(self, other, src_path, dest_path):
+        if dest_path.identifier:
+            path = ('', dest_path.identifier,)
+        else:
+            path = ('', dest_path.parent.identifier.strip('/'), dest_path.name)
+
         resp = yield from self.make_signed_request(
             'POST',
             self.move_url,
             data=json.dumps({
                 'auth': self.auth,
                 'source': src_path.identifier,
-                'destination': dest_path.identifier or '/'.join(('', dest_path.parent.identifier.strip('/'), dest_path.name))
+                'destination': '/'.join(path)
             }),
             headers={'Content-Type': 'application/json'},
             expects=(200, 201)
