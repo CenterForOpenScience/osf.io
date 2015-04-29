@@ -861,7 +861,7 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
             return 0
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.get_node_comment_timestamps(node, page)
-    if not page == 'node' and view_timestamp:
+    if not page == 'node' and isinstance(view_timestamp, dict):
         view_timestamp = view_timestamp.get(root_id, default_timestamp)
     return Comment.find(Q('node', 'eq', node) &
                         Q('user', 'ne', user) &
