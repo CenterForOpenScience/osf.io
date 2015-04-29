@@ -10,6 +10,7 @@ if (window.contextVars.comment) {
 }
 
 var options = {
+    nodeId : window.contextVars.node.id,
     hostPage: window.contextVars.commentTarget,
     hostName: window.contextVars.commentTargetId,
     mode: 'page',

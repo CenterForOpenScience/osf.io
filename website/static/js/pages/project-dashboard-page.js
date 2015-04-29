@@ -39,6 +39,7 @@ var $comments = $('.comments');
 if ($comments.length) {
 
     var options = {
+        nodeId : window.contextVars.node.id,
         hostName: window.contextVars.node.id,
         userName: window.contextVars.currentUser.name,
         canComment: window.contextVars.currentUser.canComment,

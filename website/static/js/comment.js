@@ -18,8 +18,6 @@ var markdown = require('js/markdown');
 var waterbutler = require('./waterbutler');
 
 var nodeApiUrl = window.contextVars.node.urls.api;
-var nodeId = window.contextVars.node.id;
-var nodeUrl = '/' + nodeId + '/';
 
 // Maximum length for comments, in characters
 var FIGSHARE = 'figshare';
@@ -152,7 +150,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.fetch = function(isCommentList, thread) {
+BaseComment.prototype.fetch = function(isCommentList, nodeId, thread) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
@@ -181,7 +179,7 @@ BaseComment.prototype.fetch = function(isCommentList, thread) {
             }
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
-            self.configureCommentsVisibility();
+            self.configureCommentsVisibility(nodeId);
             self._loaded = true;
         }
     );
@@ -204,7 +202,7 @@ BaseComment.prototype.getThread = function(thread_id) {
     return deferred.promise();
 };
 
-BaseComment.prototype.configureCommentsVisibility = function() {
+BaseComment.prototype.configureCommentsVisibility = function(nodeId) {
     var self = this;
     for (var c in self.comments()) {
         var comment = self.comments()[c];
@@ -220,11 +218,11 @@ BaseComment.prototype.configureCommentsVisibility = function() {
             comment.loading(false);
             continue;
         }
-        comment.checkFileExistsAndConfigure();
+        comment.checkFileExistsAndConfigure(nodeId);
     }
 };
 
-BaseComment.prototype.checkFileExistsAndConfigure = function() {
+BaseComment.prototype.checkFileExistsAndConfigure = function(nodeId) {
     var self = this;
     var url  = waterbutler.buildMetadataUrl(self.title(), self.provider(), nodeId, {}); // waterbutler url
     var request = $.ajax({
@@ -264,6 +262,7 @@ BaseComment.prototype.decrementUserFromDiscussion = function(discussions) {
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
+    var nodeUrl = '/' + self.$root.nodeId() + '/';
     if (!self.replyContent()) {
         self.replyErrorMessage('Please enter a comment');
         return;
@@ -429,6 +428,8 @@ var CommentModel = function(data, $parent, $root) {
         return decodeURIComponent(cleaned);
     });
 
+    self.nodeUrl = '/' + self.$root.nodeId() + '/';
+
     self.rootUrl = ko.pureComputed(function(){
         var url = 'discussions';
         if (self.page() === 'node') {
@@ -441,16 +442,16 @@ var CommentModel = function(data, $parent, $root) {
 
     self.parentUrl = ko.pureComputed(function(){
         if (self.targetId() === self.rootId()) {
-            return nodeUrl + self.rootUrl();
+            return self.nodeUrl + self.rootUrl();
         }
         return '/' + self.targetId();
     });
 
     self.targetUrl = ko.pureComputed(function(){
         if (self.page() === 'node') {
-            return nodeUrl;
+            return self.nodeUrl;
         } else if (self.page() === 'wiki') {
-            return nodeUrl + self.page() + '/' + self.rootId();
+            return self.nodeUrl + self.page() + '/' + self.rootId();
         } else if (self.page() === 'files') {
             return '/' + self.rootId() + '/';
         }
@@ -650,6 +651,7 @@ var CommentListModel = function(options) {
     self.page(options.hostPage);
     self.id = ko.observable(options.hostName);
     self.rootId = ko.observable(options.hostName);
+    self.nodeId = ko.observable(options.nodeId);
 
     self.commented = ko.pureComputed(function(){
         return self.comments().length > 0;
@@ -682,7 +684,7 @@ var CommentListModel = function(options) {
         return comments;
     });
 
-    self.fetch(true, options.thread);
+    self.fetch(true, options.nodeId, options.thread);
 
 };
 
@@ -728,6 +730,7 @@ var onOpen = function(hostPage, hostName) {
 };
 
 /* options example: {
+ *      nodeId: Node._id,
  *      hostPage: 'node',
  *      hostName: Node._id,
  *      mode: 'page',

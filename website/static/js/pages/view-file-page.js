@@ -20,6 +20,7 @@ var Comment = require('js/comment');
 var $comments = $('.comments');
 if ($comments.length) {
     var options = {
+        nodeId: window.contextVars.node.id,
         hostPage: 'files',
         hostName: window.contextVars.file.id,
         mode: 'pane',

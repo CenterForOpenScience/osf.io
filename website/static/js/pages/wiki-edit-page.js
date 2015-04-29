@@ -146,6 +146,7 @@ $(document).ready(function () {
 var $comments = $('.comments');
 if ($comments.length) {
     var options = {
+        nodeId: window.contextVars.node.id,
         hostPage: 'wiki',
         hostName: window.contextVars.wiki.name,
         mode: 'pane',
