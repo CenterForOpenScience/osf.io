@@ -691,7 +691,7 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);        
         } else {
@@ -711,7 +711,7 @@ function _removeEvent (event, items, col) {
                     })
                 ]);            
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
                 ]);    
         }
@@ -1250,6 +1250,14 @@ function _fangornToolbar () {
             ]);  
     }
 } 
+
+
+function _fangornResetToolbar () {
+    var tb = this;
+    tb.options.iconState.mode === 'bar';
+    tb.options.iconState = _defaultIconState(); 
+    m.redraw(); 
+}
 
 /** 
  * Toolbar icon templates 
