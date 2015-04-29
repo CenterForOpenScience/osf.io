@@ -1672,6 +1672,7 @@ tbOptions = {
                 return;
             }
             tb.clearMultiselect();
+            _fangornResetToolbar.call(tb);
         })
 
         $(window).on('beforeunload', function() {
