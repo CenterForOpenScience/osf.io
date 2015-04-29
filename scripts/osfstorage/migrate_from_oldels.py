@@ -106,14 +106,6 @@ def migrate_file(node, old, parent, dry=True):
         new = None
     return new
 
-def find_unmigrated_nodes():
-    #
-    logs = NodeLog.find(Q('date', 'gt', dt.datetime(year=2015, month=4, day=26)) &
-                        Q('date', 'lt', dt.datetime(year=2015, month=4, day=29)) &
-                        Q('action', 'in', list(LOG_ACTIONS)))
-    nodes = set(sum([(each.params['node'], each.params['project']) for each in logs], tuple()))
-    return [node for node in nodes if node is not None]
-
 def migrate_logs(node, children, dry=True):
     for log in NodeLog.find(Q('params.node', 'eq', node._id)):
         if log.action not in LOG_ACTIONS:
