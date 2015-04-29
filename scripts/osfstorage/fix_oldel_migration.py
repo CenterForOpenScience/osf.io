@@ -27,13 +27,18 @@ def find_unmigrated_nodes():
 
 
 def main(dry=True):
-    count = 0
+    count, failed = 0, 0
     for node in find_unmigrated_nodes():
-        count += 1
         addon = node.get_addon('osfstorage')
-        with TokuTransaction():
-            migrate_from_oldels.migrate_children(addon, dry=dry)
+        try:
+            with TokuTransaction():
+                migrate_from_oldels.migrate_children(addon, dry=dry)
+            count += 1
+        except Exception as error:
+            logger.error('Could not migrate file tree from {}'.format(addon.owner._id))
+            logger.exception(error)
     logger.info('Migrated {} nodes'.format(count))
+    logger.error('Failed to migrate {} nodes'.format(failed))
 
 
 if __name__ == '__main__':
