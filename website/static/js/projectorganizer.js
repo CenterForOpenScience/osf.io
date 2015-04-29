@@ -256,9 +256,11 @@ function _poResolveRows(item) {
         css : css,
         custom : _poTitleColumn
     }, {
+        data : 'contributors',
         filter : false,
         custom : _poContributors
     }, {
+        data : 'dateModified',
         filter : false,
         custom : _poModified
     }];
@@ -275,7 +277,8 @@ function _poColumnTitles() {
     columns.push({
         title: 'Name',
         width : '50%',
-        sort : false
+        sort : true,
+        sortType : 'text'
     }, {
         title : 'Contributors',
         width : '25%',
@@ -1218,6 +1221,7 @@ function _poToolbar (){
 function _poDefineToolbar (item){
     var tb = this; 
     var buttons = [];
+    if(!item.data.urls) { return; }
     var url = item.data.urls.fetch;
     var theItem = item.data;
     var theParentNode = item.parent();
@@ -1386,6 +1390,7 @@ var tbOptions = {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
     },
+    sortDepth : 1,
     dragOptions : {},
     dropOptions : {},
     dragEvents : {
