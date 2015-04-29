@@ -16,6 +16,7 @@ from utils import create_mock_wrapper
 from faker import Faker
 fake = Faker()
 
+
 class MockS3Bucket(object):
 
     def __init__(self, **kwargs):
@@ -48,20 +49,23 @@ class TestS3ViewsConfig(OsfTestCase):
         self.node_settings.save()
         self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
 
+    @mock.patch('website.addons.s3.api.has_access')
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
     @mock.patch('website.addons.s3.views.config.adjust_cors')
-    def test_s3_settings_no_bucket(self, mock_cors, mock_does_bucket_exist):
+    def test_s3_settings_no_bucket(self, mock_cors, mock_does_bucket_exist, mock_has_access):
+        mock_has_access.return_value = True
         mock_does_bucket_exist.return_value = False
         mock_cors.return_value = True
         url = self.project.api_url + 's3/settings/'
         rv = self.app.post_json(url, {}, expect_errors=True, auth=self.user.auth)
         assert_true('trouble' in rv.body)
 
+    @mock.patch('website.addons.s3.api.has_access')
     @mock.patch('website.addons.s3.views.config.does_bucket_exist')
     @mock.patch('website.addons.s3.views.config.adjust_cors')
     @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
-    def test_s3_set_bucket(self, mock_cors, mock_exist, mock_dropdown):
-
+    def test_s3_set_bucket(self, mock_cors, mock_exist, mock_dropdown, mock_has_access):
+        mock_has_access.return_value = True
         mock_cors.return_value = True
         mock_exist.return_value = True
         mock_dropdown.return_value = ['mybucket']
@@ -86,7 +90,7 @@ class TestS3ViewsConfig(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-
+        
     def test_s3_set_bucket_no_auth(self):
 
         user = AuthUserFactory()
@@ -185,14 +189,16 @@ class TestS3ViewsConfig(OsfTestCase):
         rv = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
 
+    @mock.patch('website.addons.s3.api.has_access')
     @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     @mock.patch('website.addons.s3.views.config.has_access')
     @mock.patch('website.addons.s3.views.config.create_osf_user')
-    def test_node_settings_no_user_settings(self, mock_user, mock_access, mock_dropdown):
+    def test_node_settings_no_user_settings(self, mock_user, mock_access, mock_dropdown, mock_is_valid):
         self.node_settings.user_settings = None
         self.node_settings.save()
         url = self.node_url + 's3/authorize/'
 
+        mock_is_valid.return_value = True
         mock_access.return_value = True
         mock_user.return_value = (
             'osf-user-12345',
@@ -206,16 +212,6 @@ class TestS3ViewsConfig(OsfTestCase):
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'scout')
 
-    @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
-    def test_node_settings_no_user_settings_ui(self, mock_dropdown):
-        mock_dropdown.return_value = ['mybucket']
-        self.node_settings.user_settings.access_key = None
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = self.project.url + 'settings/'
-        rv = self.app.get(url, auth=self.user.auth)
-        assert_true('<label for="s3Addon">Access Key</label>' in rv.body)
-
     @mock.patch('website.addons.s3.utils.get_bucket_list')
     def test_s3_bucket_list(self, mock_bucket_list):
         fake_buckets = [
@@ -228,7 +224,10 @@ class TestS3ViewsConfig(OsfTestCase):
 
         assert_equals(ret.json, {'buckets': [bucket.name for bucket in fake_buckets]})
 
-    def test_s3_remove_node_settings_owner(self):
+    @mock.patch('website.addons.s3.api.has_access')
+    def test_s3_remove_node_settings_owner(self, mock_has_access):
+        mock_has_access.return_value = True
+
         url = self.node_settings.owner.api_url_for('s3_remove_node_settings')
         ret = self.app.delete(url, auth=self.user.auth)
 
@@ -241,7 +240,10 @@ class TestS3ViewsConfig(OsfTestCase):
 
         assert_equal(ret.status_code, 401)
 
-    def test_s3_get_node_settings_owner(self):
+    @mock.patch('website.addons.s3.api.has_access')
+    def test_s3_get_node_settings_owner(self, mock_has_access):
+        mock_has_access.return_value = True
+        
         url = self.node_settings.owner.api_url_for('s3_get_node_settings')
         res = self.app.get(url, auth=self.user.auth)
 
@@ -274,8 +276,10 @@ class TestS3ViewsConfig(OsfTestCase):
 
         assert_equal(ret.status_code, 403)
 
+    @mock.patch('website.addons.s3.api.has_access')
     @mock.patch('website.addons.s3.views.config.add_s3_auth')
-    def test_s3_authorize_node_valid(self, mock_add):
+    def test_s3_authorize_node_valid(self, mock_add, mock_has_access):
+        mock_has_access.return_value = True
         mock_add.return_value = True
         url = self.project.api_url_for('s3_authorize_node')
         cred = {
@@ -348,7 +352,9 @@ class TestS3ViewsConfig(OsfTestCase):
         assert_equal(res.json['message'], 'Incorrect credentials')
         assert_equal(res.status_code, 400)
 
-    def test_s3_node_import_auth_authorized(self):
+    @mock.patch('website.addons.s3.api.has_access')
+    def test_s3_node_import_auth_authorized(self, mock_has_access):
+        mock_has_access.return_value = True
         url = self.project.api_url_for('s3_node_import_auth')
         self.node_settings.deauthorize(auth=None, save=True)
         res = self.app.post(url, auth=self.user.auth)
@@ -402,6 +408,7 @@ class TestCreateBucket(OsfTestCase):
         assert_true(validate_bucket_name('can-have-dashes'))
         assert_true(validate_bucket_name('kinda.name.spaced'))
 
+    
     @mock.patch('website.addons.s3.views.crud.create_bucket')
     @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_create_bucket_pass(self, mock_make, mock_dropdown):

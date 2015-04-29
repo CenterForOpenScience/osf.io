@@ -22,6 +22,13 @@ var NavbarControl = require('js/navbarControl');
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
 
+// Polyfill for String.prototype.endsWith
+if (String.prototype.endsWith == undefined) {
+    String.prototype.endsWith = function(suffix) {
+        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+}
+
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler
 // can be used
 // $osf.applyBindings({}, '#navbarScope');

@@ -306,14 +306,14 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_true(res.json[0]['permissions']['edit'])
         assert_true(res.json[0]['hasPublishedFiles'])
-        assert_equal(res.json[0]['state'], 'published')
+        assert_equal(res.json[0]['version'], 'latest-published')
 
         # Non-contributor gets published version, no options
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
         assert_false(res.json[0]['permissions']['edit'])
         assert_true(res.json[0]['hasPublishedFiles'])
-        assert_equal(res.json[0]['state'], 'published')
+        assert_equal(res.json[0]['version'], 'latest-published')
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
@@ -331,7 +331,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_true(res.json[0]['permissions']['edit'])
         assert_false(res.json[0]['hasPublishedFiles'])
-        assert_equal(res.json[0]['state'], 'draft')
+        assert_equal(res.json[0]['version'], 'latest')
 
         # Non-contributor gets nothing
         user2 = AuthUserFactory()
