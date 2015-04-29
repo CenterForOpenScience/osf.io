@@ -1,9 +1,8 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import math
 import logging
-import progressbar
+import datetime as dt
 
 from pymongo.errors import DuplicateKeyError
 
@@ -24,7 +23,7 @@ from website.addons.osfstorage import oldels
 logger = logging.getLogger(__name__)
 
 
-LOG_ACTIONS = set([
+LOG_ACTIONS = [
     'osf_storage_file_added',
     'osf_storage_file_updated',
     'osf_storage_file_removed',
@@ -33,7 +32,7 @@ LOG_ACTIONS = set([
     'file_updated',
     'file_removed',
     'file_restored',
-])
+]
 
 
 def migrate_download_counts(node, children, dry=True):
@@ -107,6 +106,13 @@ def migrate_file(node, old, parent, dry=True):
         new = None
     return new
 
+def find_unmigrated_nodes():
+    #
+    logs = NodeLog.find(Q('date', 'gt', dt.datetime(year=2015, month=4, day=26)) &
+                        Q('date', 'lt', dt.datetime(year=2015, month=4, day=29)) &
+                        Q('action', 'in', list(LOG_ACTIONS)))
+    nodes = set(sum([(each.params['node'], each.params['project']) for each in logs], tuple()))
+    return [node for node in nodes if node is not None]
 
 def migrate_logs(node, children, dry=True):
     for log in NodeLog.find(Q('params.node', 'eq', node._id)):
