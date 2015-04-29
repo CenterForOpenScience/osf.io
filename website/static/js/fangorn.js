@@ -38,6 +38,20 @@ $.extend(EXTENSION_MAP, {
     gsheet: 'xlsx'
 });
 
+var _defaultIconState = function (){
+    return {
+        mode : 'bar',
+        generalIcons : {
+            search : { on : true, template : searchIcon },
+            info : { on : true, template : infoIcon },
+            cancelUploads : { on : false, template : cancelUploadsIcon },
+            deleteMultiple : { on : false, template :  deleteMultipleIcon }           
+        },
+        rowIcons : [{}]
+
+    };
+};
+
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
 var getExtensionIconClass = function(name) {
@@ -1740,17 +1754,7 @@ tbOptions = {
     },
     headerTemplate : _fangornToolbar,
     // Not treebeard options, specific to Fangorn
-    iconState : {
-        mode : 'bar',
-        generalIcons : {
-            search : { on : true, template : searchIcon },
-            info : { on : true, template : infoIcon },
-            cancelUploads : { on : false, template : cancelUploadsIcon },
-            deleteMultiple : { on : false, template :  deleteMultipleIcon }           
-        },
-        rowIcons : [{}]
-
-    },
+    iconState : _defaultIconState(),
     defineToolbar : _fangornDefineToolbar,
     onselectrow : function(row) {
         console.log(row);
