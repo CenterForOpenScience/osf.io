@@ -1830,7 +1830,8 @@ Fangorn.Utils = {
     reapplyTooltips : reapplyTooltips,
     setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile,
-    defineToolbar : _fangornDefineToolbar
+    defineToolbar : _fangornDefineToolbar,
+    resetToolbar : _fangornResetToolbar
 
 };
 
