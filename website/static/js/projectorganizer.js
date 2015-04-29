@@ -1226,7 +1226,7 @@ function _poDefineToolbar (item){
     var theItem = item.data;
     var theParentNode = item.parent();
     var theParentNodeID = theParentNode.data.node_id;
-    $('[data-toggle="tooltip"]').tooltip('destroy');
+    $('.fangorn-toolbar-icon').tooltip('destroy');
 
     if (!item.data.isSmartFolder) {
         if (url !== null) {
