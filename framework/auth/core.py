@@ -1131,6 +1131,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
         node_timestamps = self.comments_viewed_timestamp.get(node._id, dict())
+        if not node_timestamps:
+            self.comments_viewed_timestamp[node._id] = dict()
         if page == 'node':
             page_timestamps = node_timestamps.get(page, default_timestamp)
         else:
