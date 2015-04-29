@@ -137,7 +137,7 @@ function _githubDefineToolbar (item){
         if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'uploadFiles', template : function(){
                 return m('.fangorn-toolbar-icon.text-success', {
-                        onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(self, event, item); } 
                     },[
                     m('i.fa.fa-upload'),
                     m('span.hidden-xs','Upload')
