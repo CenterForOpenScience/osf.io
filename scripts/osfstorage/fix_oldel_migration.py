@@ -10,6 +10,7 @@ from website.models import Node
 from website.app import init_app
 from framework.transactions.context import TokuTransaction
 from framework.mongo import database
+from scripts import utils as scripts_utils
 
 from . import migrate_from_oldels
 
@@ -44,5 +45,7 @@ def main(dry=True):
 
 if __name__ == '__main__':
     dry = 'dry' in sys.argv
-    init_app(mfr=False, set_backends=True)
+    if not dry:
+        scripts_utils.add_file_logger(logger, __file__)
+    init_app(routes=False, mfr=False, set_backends=True)
     main(dry=dry)
