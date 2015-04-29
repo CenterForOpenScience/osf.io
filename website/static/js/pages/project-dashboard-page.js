@@ -57,7 +57,7 @@ if ($comments.length) {
     });
 
     Comment.init('.comment-pane', commentPaneOptions);
-    Comment.init('#comments-widget-container', commentWidgetOptions);
+    Comment.init('#commentsWidgetContainer', commentWidgetOptions);
 }
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
