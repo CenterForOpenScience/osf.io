@@ -9,6 +9,9 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
+from framework.sessions import session
+from framework.static_snapshot import tasks
+from framework.static_snapshot.decorators import gets_project_static_snapshot
 from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -386,6 +389,7 @@ def configure_comments(**kwargs):
 # View Project
 ##############################################################################
 
+@gets_project_static_snapshot
 @must_be_valid_project
 @must_be_contributor_or_public
 def view_project(**kwargs):
@@ -402,6 +406,26 @@ def view_project(**kwargs):
     ))
     ret.update(rubeus.collect_addon_assets(node))
     return ret
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def handle_get_static_snapshot(**kwargs):
+    print "in handler"
+    import pdb; pdb.set_trace()
+    page = 'project'
+    task_id = session.data[page]['task_id']
+    task = tasks.get_static_snapshot.AsyncResult(task_id)
+    print task
+    response = {}
+    if task.state == 'PENDING':
+        print "do nothing"
+    if task.state == 'SUCCESS':
+        print "Save to cache"
+        response = {
+            'state': task.state,
+            'content': task.info['content']
+        }
+    return response
 
 
 # Expand/Collapse

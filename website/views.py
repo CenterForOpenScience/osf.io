@@ -25,6 +25,7 @@ from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.static_snapshot.decorators import gets_dashoard_static_snapshot
 
 from website import settings
 from website.models import Guid
@@ -276,27 +277,24 @@ def get_dashboard_nodes(auth):
         response_nodes = nodes
     return _render_nodes(response_nodes, auth)
 
-
 @must_be_logged_in
-def dashboard(auth):
-
-    user = auth.user
-    dashboard_folder = find_dashboard(user)
-    dashboard_id = dashboard_folder._id
-    print "****"
-    rv = {'addons_enabled': user.get_addon_names(),
-          'dashboard_id': dashboard_id,
-    }
-
-    if permissions.CELERY_FLAG:  # TODO: Make use of cache
-        # Celery task should run only once
-        url = web_url_for('dashboard', _absolute=True)
-        cookie = request.cookies
-        task = tasks.get_static_snapshot.apply_async(args=[url, cookie])
-        print " celery"
-        session.data['task_id'] = task.id
-        permissions.CELERY_FLAG = False
-    return rv
+def handle_get_static_snapshot(**kwargs):
+    print "in handler"
+    import pdb; pdb.set_trace()
+    page = 'dashboard'
+    task_id = session.data[page]['task_id']
+    task = tasks.get_static_snapshot.AsyncResult(task_id)
+    print task
+    response = {}
+    if task.state == 'PENDING':
+        print "do nothing"
+    if task.state == 'SUCCESS':
+        print "Save to cache"
+        response = {
+            'state': task.state,
+            'content': task.info['content']
+        }
+    return response
 
 # @must_be_logged_in
 # def dashboard_static(auth, **kwargs):
@@ -314,22 +312,18 @@ def dashboard(auth):
 #     else:
 #         return {}
 
+@gets_dashoard_static_snapshot
+@must_be_logged_in
+def dashboard(auth):
 
-def handle_get_static_snapshot(**kwargs):
-    print "in handler"
-    task_id = session.data.get('task_id')
-    task = tasks.get_static_snapshot.AsyncResult(task_id)
-    print task
-    response = {}
-    if task.state == 'PENDING':
-        print "do nothing"
-    if task.state == 'SUCCESS':
-        print "Save to cache"
-        response = {
-            'state': task.state,
-            'content': task.info['content']
-        }
-    return response
+    user = auth.user
+    dashboard_folder = find_dashboard(user)
+    dashboard_id = dashboard_folder._id
+    print "****"
+    rv = {'addons_enabled': user.get_addon_names(),
+          'dashboard_id': dashboard_id,
+    }
+    return rv
 
 
 def paginate(items, total, page, size):

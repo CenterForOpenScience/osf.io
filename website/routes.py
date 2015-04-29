@@ -162,7 +162,6 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
-        # Rule('/dashboard/handle_get_static_snapshot', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
 
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
@@ -237,6 +236,13 @@ def make_url_map(app):
         ),
 
         Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
+        # Rule('/dashboard/<_escaped_fragment_>', 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
 
     ], prefix='/api/v1')
 
@@ -695,6 +701,11 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
+
+        Rule([
+            '/api/vi/project/<pid>/<_escaped_fragment_>',
+            '/api/v1/project/<pid>/node/<nid>/<_escaped_fragment_>',
+        ], 'get', website_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
 
         # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node,
