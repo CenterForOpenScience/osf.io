@@ -42,7 +42,7 @@ body {
 .gs-sidebar .nav a,
 .gs-sidebar .nav a:hover,
 .gs-sidebar .nav a:focus {
-    padding: 0;
+    
     text-decoration: none;
     background-color: transparent;
 }
@@ -51,6 +51,7 @@ body {
     font-size: 12px;
     padding: 4px 0 4px 15px;
     opacity: 0.8;
+    font-weight: bold;
 }/* nested navs */
 .gs-sidebar .nav .nav {
     display: none;
@@ -106,19 +107,11 @@ body {
 }
 
 /* headers */
-.gs-header {
-    display: block;
-    font-family: 'Patua One', cursive;
-    font-size: 24px;
-    padding-bottom: 20px;
-    padding-top: 20px;
-}
-
 #conferenceViewTable td {
     vertical-align: middle;
 }
 
-/*CSS Johanna added for front page*/
+/*CSS added for front page*/
 
 /* Knockout Validation Styles */
 
