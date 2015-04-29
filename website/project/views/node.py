@@ -907,20 +907,21 @@ def n_unread_total_wiki(user, node):
 
 
 def n_unread_total_files(user, node, check=False):
-    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     file_timestamps = user.get_node_comment_timestamp(node, 'files')
     n_unread = 0
-    if file_timestamps:
-        for file_id in node.commented_files:
-            n_unread += n_unread_comments(node, user, 'files', file_id, check)
-    else:
-        user.comments_viewed_timestamp[node._id]['files'] = dict()
-        file_timestamps = user.comments_viewed_timestamp[node._id]['files']
-        for file_id in node.commented_files:
-            file_timestamps[file_id] = default_timestamp
-            n_unread += n_unread_comments(node, user, 'files', file_id, check)
-        user.save()
+    if not file_timestamps:
+        set_default_file_comment_timestamps(user, node)
+    for file_id in node.commented_files:
+        n_unread += n_unread_comments(node, user, 'files', file_id, check)
     return n_unread
+
+
+def set_default_file_comment_timestamps(user, node):
+    user.comments_viewed_timestamp[node._id]['files'] = dict()
+    file_timestamps = user.comments_viewed_timestamp[node._id]['files']
+    for file_id in node.commented_files:
+        file_timestamps[file_id] = datetime(1970, 1, 1, 12, 0, 0)
+    user.save()
 
 
 def check_file_exists(node, file_id):
