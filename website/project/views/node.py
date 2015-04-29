@@ -860,7 +860,7 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
         if not exists:
             return 0
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.get_node_comment_timestamp(node, page)
+    view_timestamp = user.get_node_comment_timestamps(node, page)
     if not page == 'node' and view_timestamp:
         view_timestamp = view_timestamp.get(root_id, default_timestamp)
     return Comment.find(Q('node', 'eq', node) &
@@ -885,7 +885,7 @@ def n_unread_total(node, user, page, check=False):
 
 
 def n_unread_total_node(user, node):
-    view_timestamp = user.get_node_comment_timestamp(node, 'node')
+    view_timestamp = user.get_node_comment_timestamps(node, 'node')
     return Comment.find(Q('node', 'eq', node) &
                         Q('user', 'ne', user) &
                         Q('date_created', 'gt', view_timestamp) &
@@ -907,7 +907,7 @@ def n_unread_total_wiki(user, node):
 
 
 def n_unread_total_files(user, node, check=False):
-    file_timestamps = user.get_node_comment_timestamp(node, 'files')
+    file_timestamps = user.get_node_comment_timestamps(node, 'files')
     n_unread = 0
     if not file_timestamps:
         set_default_file_comment_timestamps(user, node)
