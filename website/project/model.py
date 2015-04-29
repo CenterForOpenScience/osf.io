@@ -643,6 +643,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'with _id {self._id!r}>').format(self=self)
 
     @property
+    def is_archiving(self):
+        return self.archiving or False
+
+    @property
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]
