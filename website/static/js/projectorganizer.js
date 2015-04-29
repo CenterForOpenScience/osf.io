@@ -1327,7 +1327,7 @@ function _poDefineToolbar (item){
                     'data-toggle' : 'tooltip',
                     'title':  'Deletes a collection.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) {  
+                    onclick : function(event) {
                         _deleteFolder.call(tb, item, theItem);
                     }
                 }, [
@@ -1345,25 +1345,32 @@ function _poDefineToolbar (item){
 function _deleteFolder (item) {
     var tb = this;
     var theItem = item.data;
-    bootbox.confirm({
-        title: 'Delete this folder?',
-        message: 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
-            'inside this one. You will not delete any projects in this Collection.',
-        callback: function (result) {
-            if (result !== null && result) {
-                var url = '/api/v1/folder/' + theItem.node_id,
-                    deleteAction = $.ajax({
-                        type: 'DELETE',
-                        url: url,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    });
-                deleteAction.done(function () {
-                    tb.updateFolder(null, item.parent());
-                });
-            }
-        }
-    });
+    
+    function runDeleteFolder (){
+        var url = '/api/v1/folder/' + theItem.node_id;
+        var deleteAction = $.ajax({
+                type: 'DELETE',
+                url: url,
+                contentType: 'application/json',
+                dataType: 'json'
+            });
+        deleteAction.done(function () {
+            tb.updateFolder(null, item.parent());
+            tb.modal.dismiss();
+            tb.select('.tb-row').first().trigger('click');
+        });
+    }
+
+    var mithrilContent = m('div', [
+            m('h3.break-word', 'Delete "' + theItem.name + '"?'),
+            m('p', 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
+            'inside this one. You will not delete any projects in this Collection.')
+        ]);
+    var mithrilButtons = m('div', [
+            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteFolder(); }  }, 'Delete')
+        ]);
+    tb.modal.update(mithrilContent, mithrilButtons);
 }
 
 //
@@ -1402,7 +1409,7 @@ var tbOptions = {
     },
     onload : function () {
         var tb = this,
-            rowDiv = $('.tb-row');
+            rowDiv = tb.select('.tb-row');
         _poLoadOpenChildren.call(tb);
        rowDiv.first().trigger('click');
 
