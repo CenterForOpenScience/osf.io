@@ -47,6 +47,7 @@ function _removeEvent (event, items) {
 
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
+        var parent = items[0].parent();
         var mithrilContentSingle = m('div', [
             m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
             m('p', 'This action is irreversible.'),
