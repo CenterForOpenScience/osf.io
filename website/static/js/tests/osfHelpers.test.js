@@ -25,7 +25,7 @@ describe('osfHelpers', () => {
 
     describe('handleJSONError', () => {
         var response = {
-            {message_short: 'Oh no!', message_long: 'Something went wrong'}
+            message_short: 'Oh no!', message_long: 'Something went wrong'
         };
         it('uses the response body if available', () => {
             var stub = new sinon.stub($osf, 'growl');
@@ -48,8 +48,15 @@ describe('osfHelpers', () => {
     });
 
     describe('block', () => {
+        var stub;
+        beforeEach(() => {
+            stub = new sinon.stub($, 'blockUI');
+        });
+        afterEach(() => {
+            $.blockUI.restore();
+        });
+
         it('calls $.blockUI with correct arguments', () => {
-            var stub = new sinon.stub($, 'blockUI');
             $osf.block();
             assert.calledOnce(stub);
             assert.calledWith(stub, {
@@ -63,6 +70,23 @@ describe('osfHelpers', () => {
                     color: '#fff'
                 },
                 message: 'Please wait'
+            });
+        });
+        it('calls $.blockUI with the passed message if provided', () => {
+            var msg = 'Some custom message';
+            $osf.block(msg);
+            assert.calledOnce(stub);
+            assert.calledWith(stub, {
+                css: {
+                    border: 'none',
+                    padding: '15px',
+                    backgroundColor: '#000',
+                    '-webkit-border-radius': '10px',
+                    '-moz-border-radius': '10px',
+                    opacity: 0.5,
+                    color: '#fff'
+                },
+                message: msg
             });
         });
     });
