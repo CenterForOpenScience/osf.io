@@ -1280,7 +1280,7 @@ class TestNode(OsfTestCase):
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
         assert_equal(node.category_display, 'Hypothesis')
-        node2 = NodeFactory(category='methods_and_measures')
+        node2 = NodeFactory(category='methods and measures')
         assert_equal(node2.category_display, 'Methods and Measures')
 
     def test_api_url_for(self):

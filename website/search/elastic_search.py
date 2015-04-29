@@ -204,7 +204,7 @@ def load_parent(parent_id):
 def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
 
-    component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
+    component_categories = Node.CATEGORY_MAP.keys()
     category = 'component' if node.category in component_categories else node.category
 
     if category == 'project':

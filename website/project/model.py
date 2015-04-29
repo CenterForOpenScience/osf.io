@@ -546,7 +546,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('', 'Uncategorized'),
         ('project', 'Project'),
         ('hypothesis', 'Hypothesis'),
-        ('methods_and_measures', 'Methods and Measures'),
+        ('methods and measures', 'Methods and Measures'),
         ('procedure', 'Procedure'),
         ('instrumentation', 'Instrumentation'),
         ('data', 'Data'),
