@@ -171,8 +171,8 @@ class OSFStorageProvider(provider.BaseProvider):
         return (yield from self.make_request(method, url, data=data, params=params, **kwargs))
 
     @asyncio.coroutine
-    def download(self, **kwargs):
-        kwargs['path'] = OSFPath(kwargs['path']).path[1:]
+    def download(self, path, **kwargs):
+        kwargs['path'] = path.identifier
 
         # osf storage metadata will return a virtual path within the provider
         resp = yield from self.make_signed_request(
@@ -188,7 +188,7 @@ class OSFStorageProvider(provider.BaseProvider):
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
         name = data['data'].pop('name')
-        data['data']['path'] = '/' + data['data']['path']
+        data['data']['path'] = yield from provider.validate_path('/' + data['data']['path'])
         download_kwargs = {}
         download_kwargs.update(kwargs)
         download_kwargs.update(data['data'])
