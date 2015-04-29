@@ -8,7 +8,8 @@ import logging
 import sys
 
 from modularodm import Q
-from website.models import NodeLog
+from website.models import NodeLog, Node
+from website.app import init_app
 from framework.transactions.context import TokuTransaction
 
 from . import migrate_from_oldels
@@ -19,17 +20,21 @@ def find_unmigrated_nodes():
     logs = NodeLog.find(Q('date', 'gt', dt.datetime(year=2015, month=4, day=26)) &
                         Q('date', 'lt', dt.datetime(year=2015, month=4, day=29)) &
                         Q('action', 'in', list(migrate_from_oldels.LOG_ACTIONS)))
-    nodes = set(sum([(each.params['node'], each.params['project']) for each in logs], tuple()))
-    return [node for node in nodes if node is not None]
+    node_ids = set(sum([(each.params['node'], each.params['project']) for each in logs], tuple()))
+    return (Node.load(node_id) for node_id in node_ids if node_id is not None)
 
 
 def main(dry=True):
+    count = 0
     for node in find_unmigrated_nodes():
+        count += 1
         addon = node.get_addon('osfstorage')
         with TokuTransaction():
             migrate_from_oldels.migrate_children(addon, dry=dry)
+    logger.info('Migrated {} nodes'.format(count))
 
 
 if __name__ == '__main__':
     dry = 'dry' in sys.argv
+    init_app(mfr=False, set_backends=True)
     main(dry=dry)
