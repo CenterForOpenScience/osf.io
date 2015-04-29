@@ -17,7 +17,6 @@ from website.models import NodeLog
 
 from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
-from website.addons.osfstorage import settings
 from website.addons.osfstorage.model import OsfStorageFileVersion
 
 
@@ -174,7 +173,7 @@ class OsfStorageFileRecord(BaseFileObject):
                 raise errors.VersionNotFoundError
             return None
 
-    def get_versions(self, page, size=settings.REVISIONS_PAGE_SIZE):
+    def get_versions(self, page, size):
         start = len(self.versions) - (page * size)
         stop = max(0, start - size)
         indices = range(start, stop, -1)
