@@ -1375,14 +1375,39 @@ function filterRowsNotInParent(rows) {
         // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
         tb.select('#tb-tbody').removeClass('unselectable');
         tb.options.iconState.generalIcons.deleteMultiple.on = false;
-    } else {
+    } else if (tb.multiselected.length > 1) {
         if(tb.multiselected[0].data.provider !== 'github') {
             tb.options.iconState.generalIcons.deleteMultiple.on = true;
         }
             tb.select('#tb-tbody').addClass('unselectable');
     }
     tb.redraw();
+     if(tb.pressedKey === 'toggle') {
+        tb.pressedKey = undefined;
+    }
 }   
+
+/**
+ * Runs before multiselect handle in Treebeard does its logic to set special cases. 
+ * @this Treebeard.controller
+ * @param {Object} event jQuery click event. 
+ * @param {Object} row A Treebeard _item object. 
+ * @private
+ */
+
+function _fangornBeforeMultiselect (event, row) {
+    var tb = this;
+    if( !tb.pressedKey && $(event.target).parents('.tb-col-0').length > 0 ) {
+        tb.pressedKey = 'toggle';
+        // if already toggled take it out of multiselect
+        if($(event.target).parents('.tb-row').first().hasClass('fangorn-selected')) {
+            tb.removeMultiselected(row.id);
+        } else {
+        // otherwise add to multiselect.
+            tb.multiselected.push(row);            
+        }
+    }
+}
 
 
 /* MOVE */ 
@@ -1633,6 +1658,7 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
+    onbeforemultiselect : _fangornBeforeMultiselect,
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
