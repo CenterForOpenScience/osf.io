@@ -35,6 +35,7 @@ def main(dry=True):
                 migrate_from_oldels.migrate_children(addon, dry=dry)
             count += 1
         except Exception as error:
+            failed += 1
             logger.error('Could not migrate file tree from {}'.format(addon.owner._id))
             logger.exception(error)
     logger.info('Migrated {} nodes'.format(count))
