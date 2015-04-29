@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 def migrate():
     logger.info('migrating osfstorageguidfiles')
 
+    ### OsfStorageGuidFile ###
     try:
         database.osfstorageguidfile.drop_index(
             [
@@ -31,17 +32,18 @@ def migrate():
 
     logger.info('_path -> path')
     database.osfstorageguidfile.update({
-        'params._path': {'$ne': None}
+        '_path': {'$ne': None}
     }, {
         '$rename': {'_path': 'path'}
     }, multi=True)
 
+    ### NodeLogs ###
     logger.info('migrating nodelogs')
     logger.info('params.path -> params.premigration_path')
     database.nodelog.update({
         'params._path': {'$ne': None}
     }, {
-        '$rename': {'path': 'premigration_path'}
+        '$rename': {'params.path': 'premigration_path'}
     }, multi=True)
 
     logger.info('params._path -> params.path')
