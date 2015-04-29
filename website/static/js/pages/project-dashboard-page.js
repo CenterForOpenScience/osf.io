@@ -66,7 +66,7 @@ $(document).ready(function() {
             columnTitles : function(){
                 return [
                     {
-                        title : 'Select',
+                        title : '',
                         width: '10%',
                         sort: false
                     },
