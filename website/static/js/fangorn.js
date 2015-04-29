@@ -604,9 +604,11 @@ function _removeEvent (event, items, col) {
             // delete view
             tb.deleteNode(item.parentID, item.id);
             tb.modal.dismiss();
+            _fangornResetToolbar.call(tb);
         })
         .fail(function(data){
             tb.modal.dismiss();
+            _fangornResetToolbar.call(tb);
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
