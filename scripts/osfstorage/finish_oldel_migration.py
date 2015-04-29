@@ -2,6 +2,7 @@ import logging
 
 from framework.mongo import database
 import pymongo
+from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 
@@ -117,6 +118,8 @@ if __name__ == '__main__':
     init_app(set_backends=True, routes=False)
 
     if 'reverse' in sys.argv:
-        unmigrate()
+        with TokuTransaction():
+            unmigrate()
     else:
-        migrate()
+        with TokuTransaction():
+            migrate()
