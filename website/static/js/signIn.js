@@ -19,19 +19,13 @@ var SignInViewModel = oop.extend(formViewModel.FormViewModel, {
             required: true,
             email: true
         });
-        self.password = ko.observable('').extend({
-            required: true,
-            minLength: 6,
-            maxLength: 35
-        });
+        // Allow server to validate password
+        self.password = ko.observable('');
     },
     isValid: function() {
         var validationError = new formViewModel.ValidationError();
         if (!this.username.isValid()) {
             validationError.messages.push('Please enter a valid email address.');
-        }
-        if (!this.password.isValid()) {
-            validationError.messages.push('Your password must be more than six but fewer than 36 characters.');
         }
         if (validationError.messages.length > 0) {
             throw validationError;

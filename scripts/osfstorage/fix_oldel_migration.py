@@ -24,7 +24,12 @@ def find_unmigrated_nodes():
         {'params.path': {'$regex': '^(?!/)'}}
     ]})
     node_ids = set(sum([(each['params']['node'], each['params']['project']) for each in logs], tuple()))
-    return (Node.load(node_id) for node_id in node_ids if node_id is not None)
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        if not node:
+            logger.warn('Skipping invalid node id: {}'.format(node_id))
+            continue
+        yield node
 
 
 def main(dry=True):
