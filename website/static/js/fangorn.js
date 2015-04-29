@@ -764,11 +764,14 @@ function _fangornLazyLoadError (item) {
  * @private
  */
 function reapplyTooltips () {
-    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    $('[data-toggle="tooltip"]').tooltip({container: 'body', 'animation' : false});
     $(".title-text [data-toggle=tooltip]").hover(function(event){
-        var mousePosition = event.pageX - 20;
-        $('.tooltip').css('left', mousePosition + 'px');
+        var mousePosition = event.pageX - 400;
+        $('.tooltip').css('margin-left', mousePosition + 'px');
     });
+    // $(".title-text [data-toggle=tooltip]").mouseout(function(event){
+    //     $('.tooltip').remove();
+    // });    
 }
 
 /**
@@ -828,6 +831,8 @@ function _fangornUploadMethod(item) {
 function _fangornDefineToolbar (item) {
     var self = this,
         buttons = [];
+    $('.fangorn-toolbar-icon').tooltip('destroy');
+
     // Upload button if this is a folder
     // If File and FileRead are not defined dropzone is not supported and neither is uploads
     if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
@@ -916,6 +921,8 @@ function _fangornDefineToolbar (item) {
     // }
     
     item.icons = buttons;
+        $('.fangorn-toolbar-icon').tooltip();
+
 }
 
 /**
@@ -1087,7 +1094,7 @@ function expandStateLoad(item) {
             }
         }
     }
-    reapplyTooltips();
+        $('.fangorn-toolbar-icon').tooltip();
 }
 
 /**
@@ -1256,7 +1263,10 @@ function toolbarDismissIcon (){
  }
   function infoIcon (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', { 
+    return m('.fangorn-toolbar-icon.text-info', {
+            'data-toggle' : 'tooltip',
+            'title':  'Learn more about how to use the file browser.',
+            'data-placement' : 'bottom', 
             onclick : function () { 
                 var mithrilContent = m('div', [
                         m('h3.break-word', 'How to Use the File Browser'),
@@ -1409,9 +1419,10 @@ function filterRowsNotInParent(rows) {
             tb.select('#tb-tbody').addClass('unselectable');
     }
     tb.redraw();
-     if(tb.pressedKey === 'toggle') {
+    if(tb.pressedKey === 'toggle') {
         tb.pressedKey = undefined;
     }
+    reapplyTooltips();
 }   
 
 /**
@@ -1634,6 +1645,12 @@ tbOptions = {
         $(document).on('click', '.fangorn-dismiss', function() {
             tb.redraw();
         });
+        tb.select('#tb-tbody').on('click', function(event){
+            if(event.target !== this) {
+                return;
+            }
+            tb.clearMultiselect();
+        })
 
         $(window).on('beforeunload', function() {
             if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
