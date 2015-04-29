@@ -227,6 +227,30 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     }
 });
 
+
+var DeactivateAccountViewModel = oop.defclass({
+    submit: function () {
+        bootbox.alert({
+            title: 'Deactivate Account',
+            message: '<p>Account deactivation must be performed by an administrator.<p>' +
+                '<p>To request deactivation, please email OSF Support at <a href="contact@osf.io">contact@osf.io</a></p>'
+        });
+    }
+});
+
+
+var ExportAccountViewModel = oop.defclass({
+    submit: function () {
+        bootbox.alert({
+            title: 'Export Account',
+            message: '<p>Account export must be performed by an administrator.<p>' +
+                '<p>To request an export of your account data, please email OSF Support at <a href="contact@osf.io">contact@osf.io</a></p>'
+        });
+    }
+});
+
 module.exports = {
-    UserProfileViewModel: UserProfileViewModel
+    UserProfileViewModel: UserProfileViewModel,
+    DeactivateAccountViewModel: DeactivateAccountViewModel,
+    ExportAccountViewModel: ExportAccountViewModel
 };
