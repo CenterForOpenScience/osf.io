@@ -108,15 +108,16 @@ class NodePointersSerializer(JSONAPISerializer):
 class NodeFilesSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
-    name = ser.CharField(source='display_name')
-    folder = ser.CharField()
-
+    # name = ser.CharField(source='display_name')
+    # folder = ser.CharField()
+    path = '/'
+    provider = ''
 
     class Meta:
         type_ = 'files'
 
     links = LinksField({
-        'get': WaterbutlerLink(''),
+        'get': WaterbutlerLink(route='get', kwargs={'node_id': '<node_id>'}),
     })
 
     def create(self, validated_data):

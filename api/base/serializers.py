@@ -1,8 +1,11 @@
 import re
+import furl
 
 from rest_framework import serializers as ser
-
 from api.base.utils import absolute_reverse
+from website import settings
+from website.models import User
+from website.util import waterbutler_action_map
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
@@ -14,14 +17,14 @@ def _rapply(d, func, *args, **kwargs):
     else:
         return func(d, *args, **kwargs)
 
-def _url_val(val, obj, **kwargs):
+def _url_val(val, obj, context, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
     elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
-        return val.resolve_url(obj, **kwargs)
+        return val.resolve_url(obj, context, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's an attribute
         return getattr(obj, val)
     else:
@@ -58,7 +61,7 @@ class LinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj)
+        ret = _rapply(self.links, _url_val, context=self.context, obj=obj)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         return ret
@@ -113,15 +116,46 @@ class WaterbutlerLink(object):
     """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
     """
 
-    def __init__(self, endpoint, args=None, kwargs=None, **kw):
+    def __init__(self, args=None, kwargs=None, **kw):
         # self.endpoint = endpoint
         self.kwargs = kwargs or {}
         self.args = args or tuple()
         self.reverse_kwargs = kw
 
-    # TODO Build this or use the function from the Folder PR
-    def resolve_url(self, obj):
-        return "TBD"
+    def resolve_url(self, obj, context):
+        """Reverse URL lookup for WaterButler routes
+        :param str route: The action to preform, upload, download, delete...
+        :param str provider: The name of the requested provider
+        :param str path: The path of the requested file or folder
+        :param Node node: The node being accessed
+        :param User user: The user whose cookie will be used or None
+        :param dict **query: Addition query parameters to be appended
+        """
+
+        url = furl.furl(settings.WATERBUTLER_URL)
+        route = 'metadata'
+        url.path.segments.append(waterbutler_action_map[route])
+        provider = obj.config.short_name
+        query = {}
+        req = context['request']
+        user = req.user
+
+        url.args.update({
+            'path': '/',
+            'nid': obj.owner._id,
+            'provider': provider,
+        })
+
+        if user:
+            url.args['cookie'] = user.get_or_create_cookie()
+        elif settings.COOKIE_NAME in req.cookies:
+            url.args['cookie'] = req.session.get(settings.COOKIE_NAME)
+
+        if 'view_only' in req.parser_context['args']:
+            url.args['view_only'] = req.parser_context['args']['view_only']
+
+        url.args.update(query)
+        return url.url
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
@@ -131,6 +165,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return [
             self.child.to_representation(item, envelope=None) for item in data
         ]
+
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also

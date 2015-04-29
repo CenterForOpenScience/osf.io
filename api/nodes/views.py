@@ -120,3 +120,8 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         addons = self.get_node().get_addons()
         files = [addon for addon in addons if addon.config.has_hgrid_files]
         return files
+
+    def get_current_user(self):
+        request = self.context['request']
+        user = request.user
+        return user

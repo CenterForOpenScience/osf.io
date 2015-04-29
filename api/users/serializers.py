@@ -2,6 +2,7 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
+
 class UserSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
