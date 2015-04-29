@@ -17,7 +17,6 @@ var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
 var waterbutler = require('./waterbutler');
 
-var nodeApiUrl = window.contextVars.node.urls.api;
 
 // Maximum length for comments, in characters
 var FIGSHARE = 'figshare';
@@ -160,7 +159,7 @@ BaseComment.prototype.fetch = function(isCommentList, nodeId, thread) {
         return self.getThread(thread);
     }
     $.getJSON(
-        nodeApiUrl + 'comments/',
+        self.$root.nodeApiUrl + 'comments/',
         {
             page: self.page(),
             target: self.id(),
@@ -192,7 +191,7 @@ BaseComment.prototype.getThread = function(thread_id) {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    var request = $.getJSON(nodeApiUrl + 'comment/' + thread_id + '/');
+    var request = $.getJSON(self.$root.nodeApiUrl + 'comment/' + thread_id + '/');
     request.done(function(response){
         self.comments([new CommentModel(response.comment, self, self.$root)]);
         deferred.resolve(self.comments());
@@ -273,7 +272,7 @@ BaseComment.prototype.submitReply = function() {
     }
     self.submittingReply(true);
     osfHelpers.postJSON(
-        nodeApiUrl + 'comment/',
+        self.$root.nodeApiUrl + 'comment/',
         {
             page: self.page(),
             target: self.id(),
@@ -498,7 +497,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
         return;
     }
     osfHelpers.putJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/',
+        self.$root.nodeApiUrl + 'comment/' + self.id() + '/',
         {content: self.content()}
     ).done(function(response) {
         self.content(response.content);
@@ -528,7 +527,7 @@ CommentModel.prototype.cancelAbuse = function() {
 CommentModel.prototype.submitAbuse = function() {
     var self = this;
     osfHelpers.postJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/report/',
+        self.$root.nodeApiUrl + 'comment/' + self.id() + '/report/',
         {
             category: self.abuseCategory(),
             text: self.abuseText()
@@ -548,7 +547,7 @@ CommentModel.prototype.submitDelete = function() {
     var self = this;
     $.ajax({
         type: 'DELETE',
-        url: nodeApiUrl + 'comment/' + self.id() + '/',
+        url: self.$root.nodeApiUrl + 'comment/' + self.id() + '/',
     }).done(function() {
         self.isDeleted(true);
         self.deleting(false);
@@ -568,7 +567,7 @@ CommentModel.prototype.startUndelete = function() {
 CommentModel.prototype.submitUndelete = function() {
     var self = this;
     osfHelpers.putJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/undelete/',
+        self.$root.nodeApiUrl + 'comment/' + self.id() + '/undelete/',
         {}
     ).done(function() {
         self.isDeleted(false);
@@ -588,7 +587,7 @@ CommentModel.prototype.startUnreportAbuse = function() {
 CommentModel.prototype.submitUnreportAbuse = function() {
     var self = this;
     osfHelpers.postJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/unreport/',
+        self.$root.nodeApiUrl + 'comment/' + self.id() + '/unreport/',
         {}
     ).done(function() {
         self.isAbuse(false);
@@ -652,6 +651,7 @@ var CommentListModel = function(options) {
     self.id = ko.observable(options.hostName);
     self.rootId = ko.observable(options.hostName);
     self.nodeId = ko.observable(options.nodeId);
+    self.nodeApiUrl = options.nodeApiUrl;
 
     self.commented = ko.pureComputed(function(){
         return self.comments().length > 0;
@@ -710,8 +710,8 @@ CommentListModel.prototype.initListeners = function() {
     });
 };
 
-var timestampUrl = nodeApiUrl + 'comments/timestamps/';
-var onOpen = function(hostPage, hostName) {
+var onOpen = function(hostPage, hostName, nodeApiUrl) {
+    var timestampUrl = nodeApiUrl + 'comments/timestamps/';
     var request = osfHelpers.putJSON(
         timestampUrl,
         {
@@ -721,7 +721,7 @@ var onOpen = function(hostPage, hostName) {
     );    
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
-            url: window.contextVars.node.urls.api + 'comments/timestamps/',
+            url: nodeApiUrl + 'comments/timestamps/',
             textStatus: textStatus,
             errorThrown: errorThrown
         });
@@ -731,6 +731,7 @@ var onOpen = function(hostPage, hostName) {
 
 /* options example: {
  *      nodeId: Node._id,
+ *      nodeApiUrl: Node.api_url,
  *      hostPage: 'node',
  *      hostName: Node._id,
  *      mode: 'page',
@@ -740,7 +741,7 @@ var onOpen = function(hostPage, hostName) {
  *      thread_id: undefined }
  */
 var init = function(selector, options) {
-    new CommentPane(selector, options.mode, {onOpen: function(){return onOpen(options.hostPage, options.hostName)}});
+    new CommentPane(selector, options.mode, {onOpen: function(){return onOpen(options.hostPage, options.hostName, options.nodeApiUrl)}});
     var viewModel = new CommentListModel(options);
     var $elm = $(selector);
     if (!$elm.length) {

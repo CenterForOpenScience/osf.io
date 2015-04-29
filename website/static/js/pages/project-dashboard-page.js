@@ -40,6 +40,7 @@ if ($comments.length) {
 
     var options = {
         nodeId : window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
         hostName: window.contextVars.node.id,
         userName: window.contextVars.currentUser.name,
         canComment: window.contextVars.currentUser.canComment,

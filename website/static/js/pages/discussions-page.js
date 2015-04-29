@@ -11,6 +11,7 @@ if (window.contextVars.comment) {
 
 var options = {
     nodeId : window.contextVars.node.id,
+    nodeApiUrl: window.contextVars.node.urls.api,
     hostPage: window.contextVars.commentTarget,
     hostName: window.contextVars.commentTargetId,
     mode: 'page',
