@@ -19,6 +19,7 @@ from scripts import utils as scripts_utils
 from website.app import init_app
 from website.project.model import NodeLog
 from website.addons.osfstorage import model
+from website.addons.osfstorage import oldels
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ def migrate_node_settings(node_settings, dry=True):
 
 
 def migrate_file(node, old, parent, dry=True):
-    assert isinstance(old, model.OsfStorageFileRecord)
+    assert isinstance(old, oldels.OsfStorageFileRecord)
     if not dry:
         try:
             new = parent.append_file(old.name)

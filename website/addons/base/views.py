@@ -10,6 +10,7 @@ import furl
 from flask import request
 from flask import redirect
 from flask import make_response
+from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.sentry import log_exception
@@ -135,9 +136,6 @@ def get_auth(**kwargs):
 
     user = User.from_cookie(cookie)
 
-    if not user:
-        raise HTTPError(httplib.UNAUTHORIZED)
-
     node = Node.load(node_id)
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
@@ -248,17 +246,16 @@ def addon_view_or_download_file_legacy(**kwargs):
     # This prevents invalid GUIDs from being created
     if provider == 'osfstorage':
         node_settings = node.get_addon('osfstorage')
-        file_tree = node_settings.file_tree
-        error = HTTPError(
-            404, data=dict(message_short='File not found',
-                           message_long='You requested a file that does not exist.')
-        )
-        if not file_tree:
-            raise error
-        else:
-            children_paths = [child.path for child in file_tree.children]
-            if path not in children_paths:
-                raise error
+
+        try:
+            path = node_settings.root_node.find_child_by_name(path)._id
+        except NoResultsFound:
+            raise HTTPError(
+                404, data=dict(
+                    message_short='File not found',
+                    message_long='You requested a file that does not exist.'
+                )
+            )
 
     return redirect(
         node.web_url_for(
