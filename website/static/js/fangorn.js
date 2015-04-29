@@ -833,6 +833,9 @@ function _fangornDefineToolbar (item) {
     if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
         buttons.push({ name : 'uploadFiles', template : function(){
             return m('.fangorn-toolbar-icon.text-success', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Select files to upload from your computer.',
+                    'data-placement' : 'bottom',
                     onclick : function(event) { _uploadEvent.call(self, event, item); } 
                 },[
                 m('i.fa.fa-upload'),
@@ -841,6 +844,9 @@ function _fangornDefineToolbar (item) {
         }},
         { name : 'createFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-info', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Create a new folder inside curently selected folder.',
+                    'data-placement' : 'bottom',
                         onclick : function(event) { 
                             self.options.iconState.mode = 'createFolder';
                             //Fangorn.ButtonEvents.createFolder.call(self, event, item); 
@@ -853,6 +859,9 @@ function _fangornDefineToolbar (item) {
         if(item.data.path) {
             buttons.push({ name : 'deleteFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-danger', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Delete this folder and all its contents.',
+                    'data-placement' : 'bottom',
                         onclick : function(event) { _removeEvent.call(self, event, [item]); } 
                     },[
                     m('i.fa.fa-trash'),
@@ -865,6 +874,9 @@ function _fangornDefineToolbar (item) {
     if (item.kind === 'file') {
         buttons.push({ name : 'downloadSingle', template : function(){
             return m('.fangorn-toolbar-icon.text-primary', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Download this file to your computer.',
+                    'data-placement' : 'bottom',
                     onclick : function(event) { _downloadEvent.call(self, event, [item]); }
                 }, [
                 m('i.fa.fa-download'),
@@ -874,6 +886,9 @@ function _fangornDefineToolbar (item) {
         if (item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'deleteSingle', template : function(){
                 return m('.fangorn-toolbar-icon.text-danger', {
+                    'data-toggle' : 'tooltip',
+                    'title':  'Permanently delete this file.',
+                    'data-placement' : 'bottom',
                         onclick : function(event) { _removeEvent.call(self, event, [item]); } 
                     }, [
                     m('i.fa.fa-times'),
@@ -1230,6 +1245,9 @@ function toolbarDismissIcon (){
  function searchIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', { 
+            'data-toggle' : 'tooltip',
+            'title':  'Switch to search view.',
+            'data-placement' : 'bottom',
             onclick : function () { tb.options.iconState.mode = 'search'; }
         }, [
         m('i.fa.fa-search'),
@@ -1260,6 +1278,10 @@ function toolbarDismissIcon (){
  function cancelUploadsIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-warning', { 
+            'data-toggle' : 'tooltip',
+            'title':  'Cancel currently pending downloads.',
+            'data-placement' : 'bottom',
+
             onclick : function () {cancelUploads.call(tb); }
         }, [
         m('i.fa.fa-times-circle'),
@@ -1269,6 +1291,9 @@ function toolbarDismissIcon (){
  function deleteMultipleIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-danger', { 
+            'data-toggle' : 'tooltip',
+            'title':  'Delete all of the currently selected items.',
+            'data-placement' : 'bottom',
             onclick : function (event) { 
                     var configOption = resolveconfigOption.call(tb, tb.multiselected[0], 'removeEvent', [event, tb.multiselected]); // jshint ignore:line
                 if(!configOption){ _removeEvent.call(tb, null, tb.multiselected); } 
@@ -1283,6 +1308,9 @@ function toolbarDismissIcon (){
  function renameButton (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', { 
+            'data-toggle' : 'tooltip',
+            'title':  'Rename the currently selected file or folder',
+            'data-placement' : 'bottom',
             onclick : function () { 
                 _renameEvent.call(tb);
             }
