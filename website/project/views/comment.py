@@ -9,13 +9,11 @@ from modularodm import Q
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from framework.auth.utils import privacy_info_handle
 from framework.forms.utils import sanitize
 
 from website import settings
 from website.notifications.emails import notify
 from website.notifications.constants import PROVIDERS
-from website.filters import gravatar
 from website.models import Guid, Comment
 from website.addons.base import GuidFile
 from website.project.decorators import must_be_contributor_or_public
@@ -23,6 +21,8 @@ from datetime import datetime
 from website.project.model import has_anonymous_link
 from website.project.views.node import _view_project, n_unread_comments
 from website.addons.figshare.exceptions import FigshareIsDraftError
+from website.profile.utils import serialize_user
+
 
 
 @must_be_contributor_or_public
@@ -118,29 +118,13 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
 
     return {
         'discussionByFrequency': [
-            serialize_discussion(node, user, len(comments_dict[user]), anonymous)
+            serialize_user(user, node=node, n_comments=len(comments_dict[user]), anonymous=anonymous)
             for user in sorted_users_frequency
         ],
         'discussionByRecency': [
-            serialize_discussion(node, user, len(comments_dict[user]), anonymous)
+            serialize_user(user, node=node, n_comments=len(comments_dict[user]), anonymous=anonymous)
             for user in sorted_users_recency
         ]
-    }
-
-
-def serialize_discussion(node, user, num, anonymous=False):
-    return {
-        'id': privacy_info_handle(user._id, anonymous),
-        'url': privacy_info_handle(user.url, anonymous),
-        'fullname': privacy_info_handle(user.fullname, anonymous, name=True),
-        'isContributor': node.is_contributor(user),
-        'gravatarUrl': privacy_info_handle(
-            gravatar(
-                user, use_ssl=True, size=settings.GRAVATAR_SIZE_DISCUSSION,
-            ),
-            anonymous
-        ),
-        'numOfComments': num
     }
 
 
@@ -158,7 +142,7 @@ def serialize_comment(comment, auth, anonymous=False):
         title = ''
     return {
         'id': comment._id,
-        'author': serialize_discussion(node, comment.user, 1, anonymous),
+        'author': serialize_user(comment.user, node=node, n_comments=1, anonymous=anonymous),
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
         'page': comment.page,

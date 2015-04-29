@@ -85,7 +85,7 @@
                     <a data-bind="click: showFrequent">most frequently commented users</a>
                     <span class="pull-right" data-bind="foreach: {data: discussion, afterAdd: setupToolTips}">
                         <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
-                            <img data-bind="attr: {src: gravatarUrl}"/>
+                            <img data-bind="attr: {src: gravatar_url}"/>
                         </a>
                     </span>
                 </div>
