@@ -78,9 +78,14 @@ class ODMFilterMixin(object):
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
-        query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
-        if not query:
-            query = self.get_default_odm_query()
+        param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
+        default_query = self.get_default_odm_query()
+
+        if param_query:
+            query = param_query & default_query
+        else:
+            query = default_query
+
         return query
 
     def query_params_to_odm_query(self, query_params):
@@ -92,7 +97,7 @@ class ODMFilterMixin(object):
                 Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value))
                 for key, value in fields_dict.items() if self.is_filterable_field(key=key)
             ]
-            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
+            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.
             try:
                 query = functools.reduce(intersect, query_parts)
             except TypeError:
