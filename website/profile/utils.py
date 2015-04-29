@@ -52,20 +52,22 @@ def serialize_user(user, node=None, admin=False, full=False, n_comments=None, an
         'active': user.is_active,
     }
     if node is not None:
+        is_contributor = node.is_contributor(user)
         ret.update({
-            'isContributor': node.is_contributor(user)
+                'isContributor': is_contributor
         })
-        if admin:
-            flags = {
-                'visible': False,
-                'permission': 'read',
-            }
-        else:
-            flags = {
-                'visible': user._id in node.visible_contributor_ids,
-                'permission': reduce_permissions(node.get_permissions(user)),
-            }
-        ret.update(flags)
+        if is_contributor:
+            if admin:
+                flags = {
+                    'visible': False,
+                    'permission': 'read',
+                }
+            else:
+                flags = {
+                    'visible': user._id in node.visible_contributor_ids,
+                    'permission': reduce_permissions(node.get_permissions(user)),
+                }
+            ret.update(flags)
     if user.is_registered:
         ret.update({
             'url': privacy_info_handle(user.url, anonymous),
