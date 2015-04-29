@@ -343,8 +343,8 @@ class OSFStorageProvider(provider.BaseProvider):
         ]
 
     @asyncio.coroutine
-    def create_folder(self, **kwargs):
-        kwargs['path'] = '/' + path.identifier
+    def create_folder(self, path, **kwargs):
+        kwargs['path'] = os.path.join('', path.parent.identifier, path.name)
 
         resp = yield from self.make_signed_request(
             'POST',
