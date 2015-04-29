@@ -3,24 +3,26 @@
 of migrate_from_oldels will have logs that were unmigrated because the _migrated_from_old_models
 flag was set during the first migration.
 """
-import datetime as dt
 import logging
 import sys
 
-from modularodm import Q
-from website.models import NodeLog, Node
+from website.models import Node
 from website.app import init_app
 from framework.transactions.context import TokuTransaction
+from framework.mongo import database
 
 from . import migrate_from_oldels
 
 logger = logging.getLogger(__name__)
 
 def find_unmigrated_nodes():
-    logs = NodeLog.find(Q('date', 'gt', dt.datetime(year=2015, month=4, day=26)) &
-                        Q('date', 'lt', dt.datetime(year=2015, month=4, day=29)) &
-                        Q('action', 'in', list(migrate_from_oldels.LOG_ACTIONS)))
-    node_ids = set(sum([(each.params['node'], each.params['project']) for each in logs], tuple()))
+    logs = database.nodelog.find({'$and': [
+        {
+            'action': {'$in': list(migrate_from_oldels.LOG_ACTIONS)},
+        },
+        {'params.path': {'$regex': '^(?!/)'}}
+    ]})
+    node_ids = set(sum([(each['params']['node'], each['params']['project']) for each in logs], tuple()))
     return (Node.load(node_id) for node_id in node_ids if node_id is not None)
 
 
