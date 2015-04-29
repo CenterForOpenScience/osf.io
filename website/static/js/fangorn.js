@@ -1296,7 +1296,6 @@ function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-success', { 
             onclick : function (event) { 
-                console.log('Create event'); 
                 _createFolder.call(tb, event, parent);
             }
         }, [
@@ -1539,7 +1538,6 @@ function _dragLogic(event, items, ui) {
         default:
             dragGhost.css('cursor', 'default');
     }
-    console.log(copyMode);
     return copyMode;
 
 }
