@@ -390,6 +390,37 @@ var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
 };
 
+/**
++ * Resize table to match thead and tbody column
++ */
+
+var tableResize = function(selector, checker) {
+    // Change the selector if needed
+    var $table = $(selector);
+    var $bodyCells = $table.find('tbody tr:first').children();
+    var colWidth;
+
+    // Adjust the width of thead cells when window resizes
+    $(window).resize(function() {
+        // Get the tbody columns width array
+        colWidth = $bodyCells.map(function() {
+            return $(this).width();
+        }).get();
+        // Set the width of thead columns
+        $table.find('thead tr').children().each(function(i, v) {
+            if(i === 0 && $(v).width() > colWidth[i]){
+                $($bodyCells[i]).width($(v).width());
+            }
+            if(checker && i === checker) {
+                $(v).width(colWidth[i] + colWidth[i + 1]);
+            }else{
+                $(v).width(colWidth[i]);
+            }
+        });
+    }).resize(); // Trigger resize handler
+};
+
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -409,5 +440,6 @@ module.exports = window.$.osf = {
     FormattableDate: FormattableDate,
     throttle: throttle,
     debounce: debounce,
-    htmlEscape: htmlEscape
+    htmlEscape: htmlEscape,
+    tableResize: tableResize
 };
