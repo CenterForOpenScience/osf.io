@@ -138,7 +138,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         if handle_naming:
             dest_path = yield from dest_provider.handle_naming(
                 dest_path,
-                rename or src_path.name,
+                rename or (dest_path.name if dest_path.is_file else src_path.name),
                 is_dir=src_path.is_dir,
                 conflict=conflict
             )
@@ -165,7 +165,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         if handle_naming:
             dest_path = yield from dest_provider.handle_naming(
                 dest_path,
-                rename or src_path.name,
+                rename or (dest_path.name if dest_path.is_file else src_path.name),
                 is_dir=src_path.is_dir,
                 conflict=conflict
             )
@@ -233,6 +233,8 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
     @asyncio.coroutine
     def handle_naming(self, path, rename, is_dir=False, conflict='replace'):
+        if not is_dir and not path.is_dir:
+            path = path.parent
         dest_path, _ = yield from self.handle_name_conflict(
             (yield from self.revalidate_path(
                 path, rename, folder=is_dir
