@@ -1467,6 +1467,9 @@ function filterRowsNotInParent(rows) {
 
 function _fangornBeforeMultiselect (event, row) {
     var tb = this;
+    if(!event){
+        return;
+    }
     if( !tb.pressedKey && $(event.target).parents('.tb-col-0').length > 0 ) {
         tb.pressedKey = 'toggle';
         // if already toggled take it out of multiselect
@@ -1788,6 +1791,11 @@ tbOptions = {
         drop : _fangornDrop,
         over : _fangornOver
     },
+    onafterselectwitharrow : function(row, direction) {
+        var tb = this;
+        var item = tb.find(row.id);
+        _fangornMultiselect.call(tb,null,item);
+    }
 };
 
 /**
