@@ -38,10 +38,10 @@ def backgrounded(func, *args, **kwargs):
     if asyncio.iscoroutinefunction(func):
         func = __coroutine_unwrapper(func)
 
-    return loop.run_in_executor(
+    return (yield from loop.run_in_executor(
         None,
         functools.partial(func, *args, **kwargs)
-    )
+    ))
 
 def backgroundify(func):
     @asyncio.coroutine
