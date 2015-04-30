@@ -406,7 +406,7 @@ class TestCommentViews(OsfTestCase):
         comment = res.json['comments'][0]
         author = comment['author']
         assert_in('A user', author['fullname'])
-        assert_false(author['gravatarUrl'])
+        assert_false(author['gravatar_url'])
         assert_false(author['url'])
         assert_false(author['id'])
 
