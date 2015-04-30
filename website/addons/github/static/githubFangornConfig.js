@@ -116,7 +116,7 @@ function _removeEvent (event, items) {
 
 // Define Fangorn Button Actions
 function _githubDefineToolbar (item){
-    var self = this;
+    var tb = this;
     var buttons = [];
 
     function _downloadEvent (event, item, col) {
@@ -140,7 +140,7 @@ function _githubDefineToolbar (item){
         if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'uploadFiles', template : function(){
                 return m('.fangorn-toolbar-icon.text-success', {
-                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(self, event, item); } 
+                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(tb, event, item); } 
                     },[
                     m('i.fa.fa-upload'),
                     m('span.hidden-xs','Upload')
@@ -178,7 +178,7 @@ function _githubDefineToolbar (item){
                         return m('.fangorn-toolbar-icon.text-info', 
                             [ 
                                m('span.hidden-xs','Branch :'),
-                               m('select[name=branch-selector].no-border', { onchange: function(ev) { changeBranch.call(self, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
+                               m('select[name=branch-selector].no-border', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
                             ]
                         );
                     }
@@ -189,7 +189,7 @@ function _githubDefineToolbar (item){
         buttons.push(
                 { name : 'downloadFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { _downloadEvent.call(self, event, item); } 
+                            onclick : function(event) { _downloadEvent.call(tb, event, item); } 
                         },[
                         m('i.fa.fa-download'),
                         m('span.hidden-xs','Download')
@@ -201,7 +201,7 @@ function _githubDefineToolbar (item){
             buttons.push(
                 { name : 'deleteFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-danger', {
-                            onclick : function(event) { _removeEvent.call(self, event, [item]); } 
+                            onclick : function(event) { _removeEvent.call(tb, event, [item]); } 
                         },[
                         m('i.fa.fa-times'),
                         m('span.hidden-xs','Delete')
