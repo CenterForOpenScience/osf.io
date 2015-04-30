@@ -84,7 +84,7 @@ class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     node_id = ser.CharField(source='node._id')
-    title = ser.CharField(source='node.title')
+    title = ser.CharField(read_only=True, source='node.title')
 
     class Meta:
         type_ = 'pointers'
