@@ -481,6 +481,11 @@ function createFolder(event, parent, col) {
             redraw();
             return;
         }
+        if ($.trim(folderName()) < 1) {
+            errorMessage('Folder name cannot be empty.');
+            redraw();
+            return;
+        }
         if (folderName().indexOf('/') !== -1) {
             errorMessage('Folder name contains illegal characters.');
             redraw();
