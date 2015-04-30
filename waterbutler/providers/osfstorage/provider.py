@@ -118,19 +118,18 @@ class OSFStorageProvider(provider.BaseProvider):
     def can_intra_move(self, other, path=None):
         return isinstance(other, self.__class__)
 
-    def intra_move(self, other, src_path, dest_path):
-        if dest_path.identifier:
-            path = ('', dest_path.identifier,)
-        else:
-            path = ('', dest_path.parent.identifier.strip('/'), dest_path.name)
-
+    def intra_move(self, dest_provider, src_path, dest_path):
         resp = yield from self.make_signed_request(
             'POST',
-            self.move_url,
+            self.build_url('hooks', 'move'),
             data=json.dumps({
-                'auth': self.auth,
+                'user': self.auth['id'],
                 'source': src_path.identifier,
-                'destination': '/'.join(path)
+                'destination': {
+                    'name': dest_path.name,
+                    'node': dest_provider.nid,
+                    'parent': dest_path.parent.identifier
+                }
             }),
             headers={'Content-Type': 'application/json'},
             expects=(200, 201)
@@ -146,11 +145,15 @@ class OSFStorageProvider(provider.BaseProvider):
     def intra_copy(self, dest_provider, src_path, dest_path):
         resp = yield from self.make_signed_request(
             'POST',
-            self.copy_url,
+            self.build_url('hooks', 'copy'),
             data=json.dumps({
-                'auth': self.auth,
+                'user': self.auth['id'],
                 'source': src_path.identifier,
-                'destination': dest_path.identifier or '/'.join(('', dest_path.parent.identifier.strip('/'), dest_path.name))
+                'destination': {
+                    'name': dest_path.name,
+                    'node': dest_provider.nid,
+                    'parent': dest_path.parent.identifier
+                }
             }),
             headers={'Content-Type': 'application/json'},
             expects=(200, 201)
