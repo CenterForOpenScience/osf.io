@@ -543,7 +543,6 @@ def togglewatch_post(auth, node, **kwargs):
         'watched': user.is_watching(node)
     }
 
-@must_be_logged_in
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission(ADMIN)
@@ -553,7 +552,7 @@ def update_node(auth, node, **kwargs):
             'updated_fields': {
                 key: getattr(node, key)
                 for key in
-                node.update(js_to_python(request.json))
+                node.update(js_to_python(request.json()))
             }
         }
     except NodeUpdateError as e:
