@@ -1269,7 +1269,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             stack = list(node.nodes) + stack
         return ret
 
-    def get_aggregate_logs_set(self, auth):
+    def get_aggregate_logs_queryset(self, auth):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
