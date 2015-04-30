@@ -79,15 +79,13 @@ def resolve_target(node, page, guid):
     return target.referent
 
 
-def collect_discussion(target, comments=None):
-    if not comments:
-        comments = []
+def update_discussion(target, comments_dict):
     if not getattr(target, 'commented', None) is None:
         for comment in getattr(target, 'commented', []):
             if not (comment.is_deleted or comment.is_hidden):
-                comments.append(comment)
-            collect_discussion(comment, comments=comments)
-    return comments
+                comments_dict[comment.user].append(comment)
+            update_discussion(comment, comments_dict=comments_dict)
+    return comments_dict
 
 
 def comment_discussion(comments, node, anonymous=False, widget=False):
@@ -97,7 +95,7 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
         if not (comment.is_deleted or comment.is_hidden):
             comments_dict[comment.user].append(comment)
         if not widget:
-            comments_dict[comment.user].extend(collect_discussion(comment))
+            update_discussion(comment, comments_dict=comments_dict)
 
     sorted_users_frequency = sorted(
         comments_dict.keys(),
