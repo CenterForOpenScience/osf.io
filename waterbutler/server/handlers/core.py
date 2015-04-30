@@ -7,6 +7,7 @@ import aiohttp
 import tornado.web
 from raven.contrib.tornado import SentryMixin
 
+from waterbutler import tasks
 from waterbutler.core import utils
 from waterbutler.core import signing
 from waterbutler.core import exceptions
@@ -85,6 +86,10 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
                     'code': exc.code,
                     'message': exc.message
                 })
+
+        elif issubclass(etype, tasks.WaitTimeOutError):
+            # TODO
+            self.set_status(202)
         else:
             self.finish({
                 'code': status_code,
