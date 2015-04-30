@@ -19,7 +19,6 @@ from website import language
 
 from website.util import paths
 from website.util import rubeus
-from website.util import js_to_python
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -552,7 +551,7 @@ def update_node(auth, node, **kwargs):
             'updated_fields': {
                 key: getattr(node, key)
                 for key in
-                node.update(js_to_python(request.json()))
+                node.update(request.json())
             }
         }
     except NodeUpdateError as e:

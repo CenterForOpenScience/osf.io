@@ -108,14 +108,3 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
 
     url.args.update(query)
     return url.url
-
-# from http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
-def _camel_to_snake(key):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', key)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
-def js_to_python(obj):
-    ret = {}
-    for key, value in obj.iteritems():
-        ret[_camel_to_snake(key)] = value
-    return ret
