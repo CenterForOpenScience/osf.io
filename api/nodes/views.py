@@ -38,7 +38,6 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
-            Q('is_public', 'eq', True) &
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True)
         )
