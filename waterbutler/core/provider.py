@@ -195,8 +195,9 @@ class BaseProvider(metaclass=abc.ABCMeta):
             if e.code != 409:
                 raise
             created = False
-
             #TODO
+
+        dest_path = yield from dest_provider.revalidate_path(dest_path.parent, dest_path.name, folder=dest_path.is_dir)
 
         futures = []
         for item in (yield from self.metadata(src_path)):
