@@ -35,13 +35,15 @@ class MoveHandler(core.BaseCrossProviderHandler):
                 'provider': self.destination_provider.serialized()
             },
                 self.callback_url,
-                self.auth
+                self.auth,
+                rename=self.json.get('rename'),
+                conflict=self.json.get('conflict', 'replace'),
             )
 
-            if not resp.ready():
-                self.set_status(202)
-                return
-            metadata, created = resp.result
+            metadata, created = yield from tasks.wait_on_celery(resp)
+
+            # if not resp.ready():
+            # metadata, created = resp.result
         else:
             metadata, created = (
                 yield from tasks.backgrounded(

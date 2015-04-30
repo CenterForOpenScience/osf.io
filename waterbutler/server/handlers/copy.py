@@ -27,7 +27,9 @@ class CopyHandler(core.BaseCrossProviderHandler):
                 'provider': self.destination_provider.serialized()
             },
                 self.callback_url,
-                self.auth
+                self.auth,
+                rename=self.json.get('rename'),
+                conflict=self.json.get('conflict', 'replace'),
             )
 
             if not resp.ready():
