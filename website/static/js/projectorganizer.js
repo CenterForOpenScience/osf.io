@@ -1302,8 +1302,7 @@ ProjectOrganizer.prototype = {
                     label: nodeCategories[key] || projectOrganizerCategories[key]
                 };
             }), {
-                width: 5,
-                extra: m('span', ['*lighter color denotes a registrations (e.g. ', 
+                footer: m('span', ['*lighter color denotes a registration (e.g. ', 
                                   m('span', {
                                       className: iconmap.componentIcons.data + ' po-icon'
                                   }),

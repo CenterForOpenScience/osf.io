@@ -1,9 +1,9 @@
-.legend-table {
-    white-space: nowrap;
-}
-table.legend-table tr, table.legend-table td {
-    padding: 5px;
+.legend-grid-item {
+    width: auto;
+    padding-left: 5px;
+    padding-right: 3px;
     border-left: 1px solid #EEEEEE;
-    border-right: 1px solid #EEEEEE;
+    line-break: strict;
+    display: inline-block;
 }
 
