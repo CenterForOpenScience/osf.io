@@ -100,7 +100,6 @@ edited description of <span data-bind="text: nodeType"></span> <a class="log-nod
 </script>
 
 <script type="text/html" id="updated_fields">
-  <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
   updated the <span data-bind="listing: params.updated_fields"></span>  of <span data-bind="text: nodeType"></span>
   <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
