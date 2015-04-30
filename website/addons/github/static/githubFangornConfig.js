@@ -30,10 +30,12 @@ function _removeEvent (event, items) {
         .done(function(data) {
             // delete view
             tb.deleteNode(item.parentID, item.id);
+            Fangorn.Utils.resetToolbar.call(tb);
             tb.modal.dismiss();
         })
         .fail(function(data){
             tb.modal.dismiss();
+            Fangorn.Utils.resetToolbar.call(tb);
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
@@ -47,6 +49,7 @@ function _removeEvent (event, items) {
 
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
+        var parent = items[0].parent();
         var mithrilContentSingle = m('div', [
             m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
             m('p', 'This action is irreversible.'),
@@ -137,7 +140,7 @@ function _githubDefineToolbar (item){
         if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'uploadFiles', template : function(){
                 return m('.fangorn-toolbar-icon.text-success', {
-                        onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(self, event, item); } 
                     },[
                     m('i.fa.fa-upload'),
                     m('span.hidden-xs','Upload')

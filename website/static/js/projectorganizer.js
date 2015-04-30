@@ -256,9 +256,11 @@ function _poResolveRows(item) {
         css : css,
         custom : _poTitleColumn
     }, {
+        data : 'contributors',
         filter : false,
         custom : _poContributors
     }, {
+        data : 'dateModified',
         filter : false,
         custom : _poModified
     }];
@@ -275,7 +277,8 @@ function _poColumnTitles() {
     columns.push({
         title: 'Name',
         width : '50%',
-        sort : false
+        sort : true,
+        sortType : 'text'
     }, {
         title : 'Contributors',
         width : '25%',
@@ -562,6 +565,8 @@ function filterRowsNotInParent(rows) {
             currentItem = rows[i];
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
+            } else {
+                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, function() { $(this).css('background-color', ''); });
             }
         }
     }
@@ -1216,11 +1221,12 @@ function _poToolbar (){
 function _poDefineToolbar (item){
     var tb = this; 
     var buttons = [];
+    if(!item.data.urls) { return; }
     var url = item.data.urls.fetch;
     var theItem = item.data;
     var theParentNode = item.parent();
     var theParentNodeID = theParentNode.data.node_id;
-    $('[data-toggle="tooltip"]').tooltip('destroy');
+    $('.fangorn-toolbar-icon').tooltip('destroy');
 
     if (!item.data.isSmartFolder) {
         if (url !== null) {
@@ -1321,7 +1327,7 @@ function _poDefineToolbar (item){
                     'data-toggle' : 'tooltip',
                     'title':  'Deletes a collection.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) {  
+                    onclick : function(event) {
                         _deleteFolder.call(tb, item, theItem);
                     }
                 }, [
@@ -1339,25 +1345,32 @@ function _poDefineToolbar (item){
 function _deleteFolder (item) {
     var tb = this;
     var theItem = item.data;
-    bootbox.confirm({
-        title: 'Delete this folder?',
-        message: 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
-            'inside this one. You will not delete any projects in this Collection.',
-        callback: function (result) {
-            if (result !== null && result) {
-                var url = '/api/v1/folder/' + theItem.node_id,
-                    deleteAction = $.ajax({
-                        type: 'DELETE',
-                        url: url,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    });
-                deleteAction.done(function () {
-                    tb.updateFolder(null, item.parent());
-                });
-            }
-        }
-    });
+    
+    function runDeleteFolder (){
+        var url = '/api/v1/folder/' + theItem.node_id;
+        var deleteAction = $.ajax({
+                type: 'DELETE',
+                url: url,
+                contentType: 'application/json',
+                dataType: 'json'
+            });
+        deleteAction.done(function () {
+            tb.updateFolder(null, item.parent());
+            tb.modal.dismiss();
+            tb.select('.tb-row').first().trigger('click');
+        });
+    }
+
+    var mithrilContent = m('div', [
+            m('h3.break-word', 'Delete "' + theItem.name + '"?'),
+            m('p', 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
+            'inside this one. You will not delete any projects in this Collection.')
+        ]);
+    var mithrilButtons = m('div', [
+            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteFolder(); }  }, 'Delete')
+        ]);
+    tb.modal.update(mithrilContent, mithrilButtons);
 }
 
 //
@@ -1384,6 +1397,7 @@ var tbOptions = {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
     },
+    sortDepth : 1,
     dragOptions : {},
     dropOptions : {},
     dragEvents : {
@@ -1395,7 +1409,7 @@ var tbOptions = {
     },
     onload : function () {
         var tb = this,
-            rowDiv = $('.tb-row');
+            rowDiv = tb.select('.tb-row');
         _poLoadOpenChildren.call(tb);
        rowDiv.first().trigger('click');
 

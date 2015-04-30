@@ -32,5 +32,9 @@ ${parent.javascript_bottom()}
 <script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
 <script type="text/javascript">
     window.contextVars = window.contextVars || {};
+    <% import json %>
+    % if 'write' in user['permissions'] and not node['is_registration']:
+        window.contextVars.diskSavingMode = !${json.dumps(disk_saving_mode)};
+    % endif
 </script>
 </%def>

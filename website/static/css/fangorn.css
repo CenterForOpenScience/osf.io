@@ -67,10 +67,10 @@ text-align: center;
 	cursor: default;
 }
 .tb-th {
-	line-height: 14px;
-	background: url('/static/img/hgrid/header-columns-bg.gif');
+	line-height: 23px;
 	padding: 3px 0px 7px 5px;
-	font-size: 13px
+	font-size: 14px;
+	border-left: none;
 }
 
 .tb-td {
@@ -81,12 +81,17 @@ text-align: center;
 	font-size: 10px;
 	width: 15px;
 }
+.tb-row {
+	border-bottom: 1px solid #f5f5f5;
+}
 .tb-row-titles {
-	height: 25px;
+	height: 35px;
+	background: #f5f5f5;
+	border: 1px solid #eee;
 }
 #tb-tbody {
-	border-top : none;
-	border: 1px solid #EBEBEB;
+	border: 1px solid #eee;
+	border-top: none;
 }
 .tb-row .icon-remove {
 	cursor : pointer;
@@ -185,6 +190,8 @@ text-align: center;
 }
 .fangorn-canDelete, .fangorn-noDelete {
 	font-weight: bold;
+	border-bottom: 1px solid #EEE;
+	padding: 5px;
 }
 
 .fg-hover-hide {

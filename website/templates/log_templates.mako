@@ -173,7 +173,7 @@ invisible on <span data-bind="text: nodeType"></span>
 <script type="text/html" id="external_ids_added">
 created external identifiers
 <a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'doi:' + params.identifiers.doi"></a> and
-<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'ark:' + params.identifiers.ark"></a> and
+<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'ark:' + params.identifiers.ark"></a>
 on <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>

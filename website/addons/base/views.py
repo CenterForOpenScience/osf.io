@@ -10,6 +10,7 @@ import furl
 from flask import request
 from flask import redirect
 from flask import make_response
+from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.sentry import log_exception
@@ -134,9 +135,6 @@ def get_auth(**kwargs):
     view_only = request.args.get('view_only')
 
     user = User.from_cookie(cookie)
-
-    if not user:
-        raise HTTPError(httplib.UNAUTHORIZED)
 
     node = Node.load(node_id)
     if not node:
@@ -271,6 +269,21 @@ def addon_view_or_download_file_legacy(**kwargs):
     if kwargs.get('vid'):
         query_params['version'] = kwargs['vid']
 
+    # If provider is OSFstorage, check existence of requested file in the filetree
+    # This prevents invalid GUIDs from being created
+    if provider == 'osfstorage':
+        node_settings = node.get_addon('osfstorage')
+
+        try:
+            path = node_settings.root_node.find_child_by_name(path)._id
+        except NoResultsFound:
+            raise HTTPError(
+                404, data=dict(
+                    message_short='File not found',
+                    message_long='You requested a file that does not exist.'
+                )
+            )
+
     return redirect(
         node.web_url_for(
             'addon_view_or_download_file',
@@ -335,6 +348,11 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     )
 
     ret = serialize_node(node, auth, primary=True)
+
+    # Disable OSF Storage file deletion in DISK_SAVING_MODE
+    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
+        ret['user']['can_edit'] = False
+
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
