@@ -79,7 +79,20 @@ def waterbutler_opt_hook(func):
     @functools.wraps(func)
     def wrapped(payload, *args, **kwargs):
         kwargs.update(JSONParser(payload).parse(file_opt_args))
+        destination = kwargs['destination']
+        kwargs.update({
+            'source': model.OsfStorageFileNode.get(
+                kwargs['source'],
+                kwargs['node_addon']
+            ),
+            'destination': model.OsfStorageFileNode.get_folder(
+                destination['parent'],
+                destination['node'].get_addon('osfstorage')
+            ),
+            'name': destination['name'],
+        })
         return func(*args, **kwargs)
+    wrapped.undecorated = func  # For testing
     return wrapped
 
 

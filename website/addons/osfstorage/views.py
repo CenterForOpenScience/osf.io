@@ -123,17 +123,14 @@ def osf_storage_create_folder(payload, node_addon, **kwargs):
 
 
 @decorators.waterbutler_opt_hook
-def osf_storage_copy_hook(source, destination, node_addon, **kwargs):
-    created, copied = model.OsfStorageFileNode.get(source, node_addon).move_to_path(destination)
-
-    return copied.serialized(), httplib.CREATED if created else httplib.OK
+def osf_storage_copy_hook(source, destination, name=None, **kwargs):
+    return source.copy_under(destination, name=name).serialized(), httplib.CREATED
 
 
 @decorators.waterbutler_opt_hook
-def osf_storage_move_hook(source, destination, node_addon, **kwargs):
-    created, moved = model.OsfStorageFileNode.get(source, node_addon).move_to_path(destination)
+def osf_storage_move_hook(source, destination, name=None, **kwargs):
+    return source.move_under(destination, name=name).serialized(), httplib.OK
 
-    return moved.serialized(), httplib.CREATED if created else httplib.OK
 
 @must_be_signed
 @decorators.handle_odm_errors

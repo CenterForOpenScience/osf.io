@@ -355,45 +355,17 @@ class OsfStorageFileNode(StoredObject):
             data['fullPath'] = self.materialized_path()
         return data
 
-    def copy_to_path(self, path, dest_node_addon=None, auth=None, log=True):
-        try:
-            dest_path, new_name = path.strip('/').split('/')
-        except ValueError:
-            dest_path, new_name = path, self.name
+    def copy_under(self, destination_parent, name=None):
+        return utils.copy_files(self, destination_parent.node_settings, destination_parent)
 
-        if not dest_path.strip('/'):
-            dest_node = self.node_settings.root_node
-        else:
-            dest_node = self.__class__.get(dest_path, dest_node_addon or self.node_settings)
+    def move_under(self, destination_parent, name=None):
+        self.name = name or self.name
+        self.parent = destination_parent
+        self.node_settings = destination_parent.node_settings
 
-        # try:
-        #     new_node = dest_node.find_child_by_name(new_name, kind=self.kind)
-        #     new_node.versions = self.versions
-        # except NoResultsFound:
-        new_node = self.clone()
-
-        new_node.name = new_name
-        new_node.parent = dest_node
-
-        new_node.save()
-
-        return True, new_node
-
-    def move_to_path(self, path, dest_node_addon=None, auth=None, log=True):
-        try:
-            dest_path, new_name = path.strip('/').split('/')
-        except ValueError:
-            dest_path, new_name = path, self.name
-
-        if not dest_path.strip('/'):
-            dest_node = self.node_settings.root_node
-        else:
-            dest_node = self.__class__.get(dest_path, dest_node_addon or self.node_settings)
-
-        self.name = new_name
-        self.parent = dest_node
         self.save()
-        return False, self
+
+        return self
 
     def __repr__(self):
         return '<{}(name={!r}, node_settings={!r})>'.format(
