@@ -25,8 +25,8 @@ from website.addons.base import init_addon
 from website.project.model import ensure_schemas, Node
 
 def build_js_config_files(settings):
-    with open(os.path.join(settings.STATIC_FOLDER, 'js', 'built', 'nodeCategories.json'), 'wb') as fp:
-        fp.write(dumps(Node.CATEGORY_MAP))
+    with open(os.path.join(settings.STATIC_FOLDER, 'public', 'js', 'nodeCategories.js'), 'wb') as fp:
+        fp.write("window.contextVars.nodeCategories = {0}".format(dumps(Node.CATEGORY_MAP)))
         fp.close()
 
 def init_addons(settings, routes=True):
