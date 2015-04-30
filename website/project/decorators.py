@@ -10,11 +10,11 @@ from framework.auth import Auth
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
-from framework.mongo.utils import get_or_http_not_found
+from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
 
-_load_node_or_fail = lambda pk: get_or_http_not_found(Node, pk)
+_load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.

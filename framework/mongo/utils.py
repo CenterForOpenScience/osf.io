@@ -61,8 +61,10 @@ def unique_on(*groups):
     return wrapper
 
 
-def get_or_http_not_found(Model, pk):
+def get_or_http_error(Model, pk):
     instance = Model.load(pk)
+    if getattr(instance, 'is_deleted', False):
+        raise HTTPError(http.GONE)
     if not instance:
         raise HTTPError(http.NOT_FOUND)
     else:
