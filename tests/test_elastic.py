@@ -23,9 +23,9 @@ class SearchTestCase(OsfTestCase):
         super(SearchTestCase, self).tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-
     def setUp(self):
         super(SearchTestCase, self).setUp()
+        search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
 
@@ -181,7 +181,7 @@ class TestProject(SearchTestCase):
 
 @requires_search
 class TestPublicNodes(SearchTestCase):
-
+    
     def setUp(self):
         super(TestPublicNodes, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
@@ -216,7 +216,6 @@ class TestPublicNodes(SearchTestCase):
         self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
-
         self.registration.set_privacy('private')
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
