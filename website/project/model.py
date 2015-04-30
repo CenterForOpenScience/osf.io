@@ -555,6 +555,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('other', 'Other'),
     ])
 
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+    ]
+
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, index=True)
@@ -945,6 +951,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def update(self, fields, save=True):
         for key, value in fields.iteritems():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
             with warnings.catch_warnings():
                 try:
                     setattr(self, key, value)
