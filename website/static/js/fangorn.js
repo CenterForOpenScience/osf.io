@@ -845,7 +845,7 @@ function _fangornUploadMethod(item) {
  * @private
  */
 function _fangornDefineToolbar (item) {
-    var self = this,
+    var tb = this,
         buttons = [];
     $('.fangorn-toolbar-icon').tooltip('destroy');
 
@@ -857,7 +857,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Select files to upload from your computer.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) { _uploadEvent.call(self, event, item); } 
+                    onclick : function(event) { _uploadEvent.call(tb, event, item); } 
                 },[
                 m('i.fa.fa-upload'),
                 m('span.hidden-xs','Upload')
@@ -883,7 +883,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Delete this folder and all its contents.',
                     'data-placement' : 'bottom',
-                        onclick : function(event) { _removeEvent.call(self, event, [item]); } 
+                        onclick : function(event) { _removeEvent.call(tb, event, [item]); } 
                     },[
                     m('i.fa.fa-trash'),
                     m('span.hidden-xs','Delete Folder')
@@ -898,7 +898,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Download this file to your computer.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) { _downloadEvent.call(self, event, [item]); }
+                    onclick : function(event) { _downloadEvent.call(tb, event, [item]); }
                 }, [
                 m('i.fa.fa-download'),
                 m('span.hidden-xs','Download')
@@ -910,7 +910,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Permanently delete this file.',
                     'data-placement' : 'bottom',
-                        onclick : function(event) { _removeEvent.call(self, event, [item]); } 
+                        onclick : function(event) { _removeEvent.call(tb, event, [item]); } 
                     }, [
                     m('i.fa.fa-times'),
                     m('span.hidden-xs','Delete')
