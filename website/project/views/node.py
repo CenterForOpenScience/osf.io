@@ -551,7 +551,7 @@ def update_node(auth, node, **kwargs):
             'updated_fields': {
                 key: getattr(node, key)
                 for key in
-                node.update(request.json())
+                node.update(request.get_json(), auth=auth)
             }
         }
     except NodeUpdateError as e:

@@ -332,6 +332,8 @@ class NodeLog(StoredObject):
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
 
+    UPDATED_FIELDS = 'updated_fields'
+
     FOLDER_CREATED = 'folder_created'
 
     FILE_ADDED = 'file_added'
@@ -417,7 +419,6 @@ class NodeLog(StoredObject):
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
-
 
 class Tag(StoredObject):
 
@@ -949,7 +950,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.can_edit(auth)
 
-    def update(self, fields, save=True):
+    def update(self, fields, auth=None, save=True):
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
@@ -961,9 +962,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 except warnings.Warning:
                     raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
         if save:
-            return self.save()
+            updated = self.save()
         else:
-            return []
+            updated = []
+        self.add_log(NodeLog.UPDATED_FIELDS,
+                     params={
+                         'node': self._id,
+                         'updated_fields': list(updated)
+                     },
+                     auth=auth)
+        return updated
 
     def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)

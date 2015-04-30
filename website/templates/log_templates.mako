@@ -99,6 +99,12 @@ created fork from <span data-bind="text: nodeType"></span>
 edited description of <span data-bind="text: nodeType"></span> <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="updated_fields">
+  <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+  updated the <span data-bind="listing: params.updated_fields"></span>  of <span data-bind="text: nodeType"></span>
+  <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
 <script type="text/html" id="pointer_created">
 created a link to <span data-bind="text: params.pointer.category"></span>
 <a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>

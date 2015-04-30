@@ -13,6 +13,41 @@ require('knockout.punches');
 var $osf = require('./osfHelpers');
 
 ko.punches.enableAll();  // Enable knockout punches
+
+ko.bindingHandlers.listing = {
+    init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+    },
+    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        var value = valueAccessor();
+        var valueUnwrapped = ko.unwrap(value);
+        if (!Array.isArray(valueUnwrapped)) {
+            valueUnwrapped = [valueUnwrapped];
+        }
+        var index = 1;
+        var list = ko.utils.arrayMap(valueUnwrapped, function(item) {
+            var ret;
+            if (index === 1){
+                ret = '';
+            }
+            else if (index === 2){
+                if (valueUnwrapped.length === 2) {
+                    ret = ' and ';
+                }
+                else {
+                    ret = ', ';
+                }
+            }
+            else {
+                ret = ', and ';
+            }
+            ret += item;
+            index++;
+            return ret;
+        }).join('');
+        $(element).html(list);
+    }
+};
+
 /**
   * Log model.
   */

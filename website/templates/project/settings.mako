@@ -64,7 +64,7 @@
                                        click: cancelUpdateCategory"
                             class="btn btn-default">Cancel</button>                
                   </p>
-                  <span data-bind="css: messageClass, text: message"></span>
+                  <span data-bind="css: messageClass, html: message"></span>
                 </div>
                 <hr />
                 <div class="panel-body">
