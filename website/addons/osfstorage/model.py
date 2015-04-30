@@ -77,45 +77,15 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return clone, None
 
     def serialize_waterbutler_settings(self):
-        ret = {
+        return dict(settings.WATERBUTLER_SETTINGS, **{
+            'nid': self.owner._id,
             'rootId': self.root_node._id,
-            'copy': self.owner.api_url_for(
-                'osf_storage_copy_hook',
+            'baseUrl': self.owner.api_url_for(
+                'osf_storage_get_metadata',
                 _absolute=True,
                 _offload=True
-            ),
-            'move': self.owner.api_url_for(
-                'osf_storage_move_hook',
-                _absolute=True,
-                _offload=True
-            ),
-            'callback': self.owner.api_url_for(
-                'osf_storage_update_metadata_hook',
-                _absolute=True,
-                _offload=True
-            ),
-            'metadata': self.owner.api_url_for(
-                'osf_storage_get_metadata_hook',
-                _absolute=True,
-                _offload=True
-            ),
-            'revisions': self.owner.api_url_for(
-                'osf_storage_get_revisions',
-                _absolute=True,
-                _offload=True
-            ),
-            'lineage': self.owner.api_url_for(
-                'osf_storage_get_lineage',
-                _absolute=True,
-                _offload=True
-            ),
-            'createFolder': self.owner.api_url_for(
-                'osf_storage_create_folder',
-                _absolute=True,
-            ),
-        }
-        ret.update(settings.WATERBUTLER_SETTINGS)
-        return ret
+            )
+        })
 
     def serialize_waterbutler_credentials(self):
         return settings.WATERBUTLER_CREDENTIALS
