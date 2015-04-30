@@ -13,20 +13,51 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/files/',
-                '/project/<pid>/node/<nid>/osfstorage/files/',
-                '/project/<pid>/osfstorage/files/<path:path>/',
-                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/',
+                '/project/<pid>/osfstorage/hook/',
+                '/project/<pid>/node/<nid>/osfstorage/hook/',
             ],
-            'get',
-            views.osf_storage_get_metadata_hook,
+            'put',
+            views.osf_storage_update_metadata,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/osfstorage/revisions/',
-                '/project/<pid>/node/<nid>/osfstorage/revisions/',
+                '/project/<pid>/osfstorage/',
+                '/project/<pid>/node/<nid>/osfstorage/',
+                '/project/<pid>/osfstorage/<fid>/',
+                '/project/<pid>/node/<nid>/osfstorage/<fid>/',
+            ],
+            'get',
+            views.osf_storage_get_metadata,
+            json_renderer,
+        ),
+
+
+        Rule(
+            [
+                '/project/<pid>/osfstorage/<fid>/',
+                '/project/<pid>/node/<nid>/osfstorage/<fid>/',
+            ],
+            'delete',
+            views.osf_storage_delete,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/osfstorage/<fid>/download/',
+                '/project/<pid>/node/<nid>/osfstorage/<fid>/download/',
+            ],
+            'get',
+            views.osf_storage_download,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/osfstorage/<fid>/revisions/',
+                '/project/<pid>/node/<nid>/osfstorage/<fid>/revisions/',
             ],
             'get',
             views.osf_storage_get_revisions,
@@ -35,8 +66,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/lineage/',
-                '/project/<pid>/node/<nid>/osfstorage/lineage/',
+                '/project/<pid>/osfstorage/<fid>/lineage/',
+                '/project/<pid>/node/<nid>/osfstorage/<fid>/lineage/',
             ],
             'get',
             views.osf_storage_get_lineage,
@@ -45,42 +76,24 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/folders/',
-                '/project/<pid>/node/<nid>/osfstorage/folders/',
+                '/project/<pid>/osfstorage/<fid>/children/',
+                '/project/<pid>/node/<nid>/osfstorage/<fid>/children/',
             ],
             'post',
-            views.osf_storage_create_folder,
+            views.osf_storage_create_child,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/osfstorage/hooks/crud/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
+                '/project/<pid>/osfstorage/<fid>/children/',
+                '/project/<pid>/node/<nid>/osfstorage/<fid>/children/',
             ],
             'get',
-            views.osf_storage_download_file_hook,
+            views.osf_storage_get_children,
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/osfstorage/hooks/crud/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
-            ],
-            'put',
-            views.osf_storage_update_metadata_hook,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/osfstorage/hooks/crud/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
-            ],
-            'delete',
-            views.osf_storage_crud_hook_delete,
-            json_renderer,
-        ),
         Rule(
             [
                 '/project/<pid>/osfstorage/hooks/move/',
@@ -97,15 +110,6 @@ api_routes = {
             ],
             'post',
             views.osf_storage_copy_hook,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/osfstorage/hooks/crud/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/crud/',
-            ],
-            'post',
-            views.osf_storage_upload_file_hook,
             json_renderer,
         ),
     ],

@@ -121,6 +121,8 @@ class OsfStorageFileNode(StoredObject):
     def create_child_by_path(cls, path, node_settings):
         """Attempts to create a child node from a path formatted as
         /parentid/child_name
+        or
+        /parentid/child_name/
         returns created, child_node
         """
         try:
