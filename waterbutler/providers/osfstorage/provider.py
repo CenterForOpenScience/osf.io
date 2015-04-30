@@ -38,14 +38,6 @@ class OSFStorageProvider(provider.BaseProvider):
         self.nid = settings['nid']
         self.root_id = settings['rootId']
         self.BASE_URL = settings['baseUrl']
-        # BASE_URL = settings.BASE_URL
-        # self.copy_url = settings.get('copy')
-        # self.move_url = settings.get('move')
-        # self.callback_url = settings.get('callback')
-        # self.metadata_url = settings.get('metadata')
-        # self.revisions_url = settings.get('revisions')
-        # self.lineage_url = settings.get('lineage')
-        # self.create_folder_url = settings.get('createFolder')
         self.provider_name = settings['storage'].get('provider')
 
         self.parity_settings = settings.get('parity')
