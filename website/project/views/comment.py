@@ -112,12 +112,10 @@ def serialize_comments(record, auth, anonymous=False):
 def get_comment(cid, auth, owner=False):
     comment = Comment.load(cid)
     if comment is None:
-        raise HTTPError(http.BAD_REQUEST)
-
+        raise HTTPError(http.NOT_FOUND)
     if owner:
         if auth.user != comment.user:
             raise HTTPError(http.FORBIDDEN)
-
     return comment
 
 
