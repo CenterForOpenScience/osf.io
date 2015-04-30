@@ -198,6 +198,9 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def metadata(self, path, raw=False, **kwargs):
+        if path.identifier is None:
+            raise exceptions.MetadataError('{} not found'.format(str(path)), code=404)
+
         if path.is_dir:
             return (yield from self._folder_metadata(path, raw=raw))
 
