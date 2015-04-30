@@ -192,7 +192,7 @@ def add_comment(**kwargs):
     content = comment_info.get('content', None)
     if content:
         content = sanitize(content.strip())
-    else:
+    if not content:
         raise HTTPError(http.BAD_REQUEST)
     if len(content) > settings.COMMENT_MAXLENGTH:
         raise HTTPError(http.BAD_REQUEST)
