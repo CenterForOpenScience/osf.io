@@ -1281,7 +1281,9 @@ function toolbarDismissIcon (){
             'data-placement' : 'bottom',
             onclick : function () {
                 tb.options.iconState.mode = 'search';
+                tb.filterText('');
                 m.redraw(true);
+
             }
         }, [
         m('i.fa.fa-search'),
