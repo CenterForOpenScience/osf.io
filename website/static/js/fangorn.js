@@ -869,8 +869,8 @@ function _fangornDefineToolbar (item) {
                     'title':  'Create a new folder inside curently selected folder.',
                     'data-placement' : 'bottom',
                         onclick : function(event) { 
-                            self.options.iconState.mode = 'createFolder';
-                            //Fangorn.ButtonEvents.createFolder.call(self, event, item); 
+                            tb.options.iconState.mode = 'createFolder';
+                            m.redraw(true);
                         } 
                     },[
                     m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
@@ -927,7 +927,7 @@ function _fangornDefineToolbar (item) {
     //                 'title':  'Change the name of the Collection or project',
     //                 'data-placement' : 'bottom',
     //                 onclick : function(event) {  
-    //                     self.options.iconState.mode = 'rename';
+    //                     tb.options.iconState.mode = 'rename';
     //                 }
     //             }, [
     //             m('i.fa.fa-font'),
@@ -937,7 +937,7 @@ function _fangornDefineToolbar (item) {
     // }
     
     item.icons = buttons;
-        $('.fangorn-toolbar-icon').tooltip();
+    $('.fangorn-toolbar-icon').tooltip();
 
 }
 
@@ -1279,7 +1279,10 @@ function toolbarDismissIcon (){
             'data-toggle' : 'tooltip',
             'title':  'Switch to search view.',
             'data-placement' : 'bottom',
-            onclick : function () { tb.options.iconState.mode = 'search'; }
+            onclick : function () { 
+                tb.options.iconState.mode = 'search';
+                m.redraw(true);
+            }
         }, [
         m('i.fa.fa-search'),
         m('span.hidden-xs', 'Search')
