@@ -1281,7 +1281,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids)
+        query = Q('params.node', 'in', ids)
         return NodeLog.find(query).sort('-_id')
 
     @property
