@@ -20,7 +20,7 @@ var moment = require('moment');
 var Raven = require('raven-js');    
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
-var Legend = require('js/components/legend.js');
+var legendView = require('js/components/legend').view;
 var nodeCategories = JSON.parse(require('raw!js/nodeCategories.json'));
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
@@ -1296,24 +1296,34 @@ ProjectOrganizer.prototype = {
         var self = this;
         var showLegend = function() {
             var keys = Object.keys(projectOrganizerCategories);
-            var legend = new Legend(keys.map(function(key) {
+            var data = keys.map(function(key) {
                 return {
                     icon: iconmap.componentIcons[key] || iconmap.projectIcons[key],
                     label: nodeCategories[key] || projectOrganizerCategories[key]
                 };
-            }), {
-                footer: m('span', ['*lighter color denotes a registration (e.g. ', 
-                                  m('span', {
-                                      className: iconmap.componentIcons.data + ' po-icon'
-                                  }),
-                                  ' becomes  ',
-                                  m('span', {
-                                      className: iconmap.componentIcons.data + ' po-icon-registered'
-                                  }),
-                                  ' )'
-                                 ])
             });
-            self.grid.tbController.modal.update(legend);
+            var repr = function(item) {
+                return [
+                    m('span', {
+                        className: item.icon
+                    }), 
+                    '  ',
+                    item.label
+                ];
+            };
+            var opts = {
+                footer: m('span', ['*lighter color denotes a registration (e.g. ', 
+                                   m('span', {
+                                       className: iconmap.componentIcons.data + ' po-icon'
+                                   }),
+                                   ' becomes  ',
+                                   m('span', {
+                                       className: iconmap.componentIcons.data + ' po-icon-registered'
+                                   }),
+                                   ' )'
+                                  ])
+            };
+            self.grid.tbController.modal.update(legendView(data, repr, opts));
             self.grid.tbController.modal.show();
         };
         node.onclick = showLegend;
