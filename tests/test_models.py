@@ -1580,26 +1580,33 @@ class TestNode(OsfTestCase):
         assert_equal(self.node.is_expanded(user=self.user), True)
 
     def test_collapse_sets_false_with_user(self):
-        self.node.expand(user=self.user)
+        self.node.expand(user=self.uoser)
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
+class TestNodeTraversals(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeTraversals, self).setUp()
+        self.viewer = AuthUserFactory()
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.root = ProjectFactory(creator=self.user)
+
     def test_next_descendants(self):
-        viewer = AuthUserFactory()
         
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.next_descendants(
-            Auth(viewer),
+        descendants = self.root.next_descendants(
+            Auth(self.viewer),
             condition=lambda auth, node: node.is_contributor(auth.user)
         )
         assert_equal(len(descendants), 2)  # two immediate children
@@ -1607,77 +1614,65 @@ class TestNode(OsfTestCase):
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
         
     def test_get_descendants_recursive(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.get_descendants_recursive()
+        descendants = self.root.get_descendants_recursive()
         ids = {d._id for d in descendants}
         assert_false({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids))
 
     def test_get_descendants_recursive_filtered(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.get_descendants_recursive(
-            lambda n: n.is_contributor(viewer)
+        descendants = self.root.get_descendants_recursive(
+            lambda n: n.is_contributor(self.viewer)
         )
         ids = {d._id for d in descendants}
         assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
 
     def test_get_descendants_iterative(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.get_descendants_iterative()
+        descendants = self.root.get_descendants_iterative()
         ids = {d._id for d in descendants}
         assert_false({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids))
 
     def test_get_descendants_iterative_filtered(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.get_descendants_iterative(
-            lambda n: n.is_contributor(viewer)
+        descendants = self.root.get_descendants_iterative(
+            lambda n: n.is_contributor(self.viewer)
         )
         ids = {d._id for d in descendants}
         assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
