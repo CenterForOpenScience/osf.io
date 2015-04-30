@@ -1580,7 +1580,7 @@ class TestNode(OsfTestCase):
         assert_equal(self.node.is_expanded(user=self.user), True)
 
     def test_collapse_sets_false_with_user(self):
-        self.node.expand(user=self.uoser)
+        self.node.expand(user=self.user)
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
@@ -1694,7 +1694,7 @@ class TestRemoveNode(OsfTestCase):
         assert_true(self.project.is_deleted)
         # parent node should have a log of the event
         assert_equal(
-            self.parent_project.get_aggregate_logs_set(self.consolidate_auth)[0].action,
+            self.parent_project.get_aggregate_logs_queryset(self.consolidate_auth)[0].action,
             'node_removed'
         )
 
