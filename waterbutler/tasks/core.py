@@ -3,6 +3,7 @@ import functools
 
 from waterbutler.tasks import app
 from waterbutler.tasks import settings
+from waterbutler.tasks import exceptions
 
 
 def ensure_event_loop():
@@ -62,7 +63,8 @@ def celery_task(func, *args, **kwargs):
     return task
 
 
-@backgroundify
+#TODO run entire task in background
+@asyncio.coroutine
 def wait_on_celery(result, interval=None, timeout=None):
     timeout = timeout or settings.WAIT_TIMEOUT
     interval = interval or settings.WAIT_INTERVAL
@@ -70,7 +72,8 @@ def wait_on_celery(result, interval=None, timeout=None):
     waited = 0
 
     while waited < timeout:
-        if result.read():
+        if (yield from backgrounded(result.ready)):
+            return (yield from backgrounded(lambda: result.result))
             return result.result
         waited += interval
         yield from asyncio.sleep(interval)
