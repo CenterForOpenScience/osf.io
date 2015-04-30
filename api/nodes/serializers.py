@@ -105,13 +105,18 @@ class NodePointersSerializer(JSONAPISerializer):
         type_ = 'pointers'
 
     links = LinksField({
-        'html': 'absolute_url',
+        'html': 'get_absolute_url',
     })
 
-    def create(self, validated_data):
-        # TODO
-        pass
+    def get_absolute_url(self, obj):
+        pointer_node = Node.load(obj.node._id)
+        return pointer_node.absolute_url
 
-    def update(self, instance, validated_data):
-        # TODO
-        pass
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
+        node = self.context['view'].get_node()
+        pointer_node = Node.load(validated_data['node']['_id'])
+        pointer = node.add_pointer(pointer_node, auth, save=True)
+        return pointer
