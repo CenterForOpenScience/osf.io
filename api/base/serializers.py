@@ -14,14 +14,14 @@ def _rapply(d, func, *args, **kwargs):
     else:
         return func(d, *args, **kwargs)
 
-def _url_val(val, obj, **kwargs):
+def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
-    elif isinstance(val, basestring):  # if a string is passed, it's an attribute
-        return getattr(obj, val)
+    elif isinstance(val, basestring):  # if a string is passed, it's a function of the serializer
+        return getattr(serializer, val)(obj)
     else:
         return val
 
@@ -35,13 +35,16 @@ class LinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', pk='<pk>')
+                'related': Link('nodes:node-children', pk='<pk>'),
+                'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', pk='<pk>')
+                'related': Link('nodes:node-contributors', pk='<pk>'),
+                'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', pk='<pk>')
+                'related': Link('nodes:node-registrations', pk='<pk>'),
+                'count': 'get_registration_count'
             },
         })
     """
@@ -56,7 +59,7 @@ class LinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj)
+        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         return ret

@@ -18,18 +18,21 @@ class NodeSerializer(JSONAPISerializer):
     tags = ser.SerializerMethodField()
 
     links = LinksField({
-        'html': 'absolute_url',
+        'html': 'get_absolute_url',
         'children': {
-            'related': Link('nodes:node-children', kwargs={'pk': '<pk>'})
+            'related': Link('nodes:node-children', kwargs={'pk': '<pk>'}),
+            'count': 'get_node_count'
         },
         'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'})
+            'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'}),
+            'count': 'get_contrib_count'
         },
         'pointers': {
             'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'})
         },
         'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'})
+            'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'}),
+            'count': 'get_registration_count'
         },
     })
     properties = ser.SerializerMethodField()
@@ -38,6 +41,18 @@ class NodeSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'nodes'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_url
+
+    def get_node_count(self, obj):
+        return len(obj.nodes)
+
+    def get_contrib_count(self, obj):
+        return len(obj.contributors)
+
+    def get_registration_count(self, obj):
+        return len(obj.node__registrations)
 
     @staticmethod
     def get_properties(obj):
