@@ -10,6 +10,7 @@ from waterbutler.core import signing
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import backup
@@ -28,19 +29,23 @@ class OSFPath(utils.WaterButlerPath):
 
 
 class OSFStorageProvider(provider.BaseProvider):
-    NAME = 'osfstorage'
     __version__ = '0.0.1'
+
+    NAME = 'osfstorage'
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
-        self.root_id = settings.get('rootId')
-        self.copy_url = settings.get('copy')
-        self.move_url = settings.get('move')
-        self.callback_url = settings.get('callback')
-        self.metadata_url = settings.get('metadata')
-        self.revisions_url = settings.get('revisions')
-        self.lineage_url = settings.get('lineage')
-        self.create_folder_url = settings.get('createFolder')
+        self.nid = settings['nid']
+        self.root_id = settings['rootId']
+        self.BASE_URL = settings['baseUrl']
+        # BASE_URL = settings.BASE_URL
+        # self.copy_url = settings.get('copy')
+        # self.move_url = settings.get('move')
+        # self.callback_url = settings.get('callback')
+        # self.metadata_url = settings.get('metadata')
+        # self.revisions_url = settings.get('revisions')
+        # self.lineage_url = settings.get('lineage')
+        # self.create_folder_url = settings.get('createFolder')
         self.provider_name = settings['storage'].get('provider')
 
         self.parity_settings = settings.get('parity')
@@ -61,8 +66,7 @@ class OSFStorageProvider(provider.BaseProvider):
 
         resp = yield from self.make_signed_request(
             'GET',
-            self.lineage_url,
-            params={'path': path},
+            self.build_url(path, 'lineage'),
             expects=(200, 404)
         )
 
@@ -159,36 +163,26 @@ class OSFStorageProvider(provider.BaseProvider):
 
         return OsfStorageFolderMetadata(data).serialized(), resp.status == 201
 
-    # @asyncio.coroutine
-    # def copy(self, dest_provider, source_options, dest_options):
-    #     source_options['is_upload'] = False
-    #     return (yield from super().copy(dest_provider, source_options, dest_options))
-
     @asyncio.coroutine
     def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
         signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
         if method.upper() in QUERY_METHODS:
-            signed = signing.sign_data(signer, params, ttl=ttl)
+            signed = signing.sign_data(signer, params or {}, ttl=ttl)
             params = signed
         else:
-            signed = signing.sign_data(signer, json.loads(data), ttl=ttl)
+            signed = signing.sign_data(signer, json.loads(data or {}), ttl=ttl)
             data = json.dumps(signed)
-        return (yield from self.make_request(method, url, data=data, params=params, **kwargs))
+        return (yield from self.make_request(method, url + '/', data=data, params=params, **kwargs))
 
     @asyncio.coroutine
-    def download(self, path, **kwargs):
-        kwargs['path'] = path.identifier
-
+    def download(self, path, version=None, **kwargs):
         # osf storage metadata will return a virtual path within the provider
         resp = yield from self.make_signed_request(
             'GET',
-            self.callback_url,
-            params=kwargs,
+            self.build_url(path.identifier, 'download', version=version),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
-
-        kwargs.pop('version', None)
 
         data = yield from resp.json()
         provider = self.make_provider(data['settings'])
@@ -205,45 +199,42 @@ class OSFStorageProvider(provider.BaseProvider):
         self._create_paths()
 
         pending_name = str(uuid.uuid4())
-        pending_path = os.path.join(settings.FILE_PATH_PENDING, pending_name)
-
-        pending_name = OSFPath('/' + pending_name).path
+        provider = self.make_provider(self.settings)
+        local_pending_path = os.path.join(settings.FILE_PATH_PENDING, pending_name)
+        remote_pending_path = yield from provider.validate_path('/' + pending_name)
 
         stream.add_writer('md5', streams.HashStreamWriter(hashlib.md5))
         stream.add_writer('sha1', streams.HashStreamWriter(hashlib.sha1))
         stream.add_writer('sha256', streams.HashStreamWriter(hashlib.sha256))
 
-        with open(pending_path, 'wb') as file_pointer:
+        with open(local_pending_path, 'wb') as file_pointer:
             stream.add_writer('file', file_pointer)
-            provider = self.make_provider(self.settings)
-            yield from provider.upload(stream, pending_name, check_created=False, fetch_metadata=False, **kwargs)
+            yield from provider.upload(stream, remote_pending_path, check_created=False, fetch_metadata=False, **kwargs)
 
         complete_name = stream.writers['sha256'].hexdigest
-        complete_path = os.path.join(settings.FILE_PATH_COMPLETE, complete_name)
-
-        complete_name = OSFPath('/' + complete_name).path
+        local_complete_path = os.path.join(settings.FILE_PATH_COMPLETE, complete_name)
+        remote_complete_path = yield from provider.validate_path('/' + complete_name)
 
         try:
-            metadata = yield from provider.metadata(complete_name)
-        except exceptions.ProviderError:
-            metadata = yield from provider.move(
-                provider,
-                {'path': pending_name},
-                {'path': complete_name},
-            )
+            metadata = yield from provider.metadata(remote_complete_path)
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
+            metadata, _ = yield from provider.move(provider, remote_pending_path, remote_complete_path)
         else:
-            yield from provider.delete(pending_name)
+            yield from provider.delete(remote_pending_path)
 
         # Due to cross volume movement in unix we leverage shutil.move which properly handles this case.
         # http://bytes.com/topic/python/answers/41652-errno-18-invalid-cross-device-link-using-os-rename#post157964
-        shutil.move(pending_path, complete_path)
+        shutil.move(local_pending_path, local_complete_path)
 
         response = yield from self.make_signed_request(
             'POST',
-            self.callback_url,
+            self.build_url(path.parent.identifier, 'children'),
             expects=(200, 201),
             data=json.dumps({
-                'auth': self.auth,
+                'name': path.name,
+                'user': self.auth['id'],
                 'settings': self.settings['storage'],
                 'metadata': metadata,
                 'hashes': {
@@ -257,8 +248,6 @@ class OSFStorageProvider(provider.BaseProvider):
                     'address': None,
                     'version': self.__version__,
                 },
-                'path': path,
-                'is_upload': kwargs.get('is_upload', True)
             }),
             headers={'Content-Type': 'application/json'},
         )
@@ -269,19 +258,19 @@ class OSFStorageProvider(provider.BaseProvider):
         if settings.RUN_TASKS:
             version_id = data['version']
             parity.main(
-                complete_path,
+                local_complete_path,
                 self.parity_credentials,
                 self.parity_settings,
             )
             backup.main(
-                complete_path,
+                local_complete_path,
                 version_id,
                 self.callback_url,
                 self.archive_credentials,
                 self.archive_settings,
             )
 
-        _, name = os.path.split(path)
+        name = path.name
 
         metadata.update({
             'name': name,
@@ -294,46 +283,30 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        kwargs['auth'] = self.auth
-        kwargs['path'] = '/' + path.identifier
+        if path.identifier is None:
+            raise exceptions.MetadataError('{} not found'.format(str(path)), code=404)
 
         yield from self.make_signed_request(
             'DELETE',
-            self.callback_url,
-            params=kwargs,
+            self.build_url(path.identifier),
+            params={'user': self.auth['id']},
             expects=(200, )
         )
 
     @asyncio.coroutine
-    def metadata(self, **kwargs):
-        resp = yield from self.make_signed_request(
-            'GET',
-            self.metadata_url,
-            params=kwargs,
-            expects=(200, )
-        )
-        resp_json = yield from resp.json()
+    def metadata(self, path, **kwargs):
+        if path.identifier is None:
+            raise exceptions.MetadataError('{} not found'.format(str(path)), code=404)
 
-        if isinstance(resp_json, dict):
-            return OsfStorageFileMetadata(resp_json).serialized()
-
-        ret = []
-        for item in resp_json:
-            if item['kind'] == 'folder':
-                ret.append(OsfStorageFolderMetadata(item).serialized())
-            else:
-                ret.append(OsfStorageFileMetadata(item).serialized())
-
-        return ret
+        if not path.is_dir:
+            return (yield from self._item_metadata(path))
+        return (yield from self._children_metadata(path))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        kwargs['path'] = '/' + path.identifier
-
         resp = yield from self.make_signed_request(
             'GET',
-            self.revisions_url,
-            params=kwargs,
+            self.build_url(path.parent.identifier, 'revisions'),
             expects=(200, )
         )
 
@@ -344,12 +317,14 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
-        kwargs['path'] = os.path.join('', path.parent.identifier, path.name, '')
-
         resp = yield from self.make_signed_request(
             'POST',
-            self.create_folder_url,
-            data=json.dumps(kwargs),
+            self.build_url(path.parent.identifier, 'children'),
+            data=json.dumps({
+                'kind': 'folder',
+                'name': path.name,
+                'user': self.auth['id'],
+            }),
             headers={'Content-Type': 'application/json'},
             expects=(201, )
         )
@@ -357,6 +332,33 @@ class OSFStorageProvider(provider.BaseProvider):
         return OsfStorageFolderMetadata(
             (yield from resp.json())
         ).serialized()
+
+    @asyncio.coroutine
+    def _item_metadata(self, path):
+        resp = yield from self.make_signed_request(
+            'GET',
+            self.build_url(path.identifier),
+            expects=(200, )
+        )
+
+        return OsfStorageFileMetadata((yield from resp.json())).serialized()
+
+    @asyncio.coroutine
+    def _children_metadata(self, path):
+        resp = yield from self.make_signed_request(
+            'GET',
+            self.build_url(path.identifier, 'children'),
+            expects=(200, )
+        )
+        resp_json = yield from resp.json()
+
+        ret = []
+        for item in resp_json:
+            if item['kind'] == 'folder':
+                ret.append(OsfStorageFolderMetadata(item).serialized())
+            else:
+                ret.append(OsfStorageFileMetadata(item).serialized())
+        return ret
 
     def _create_paths(self):
         try:
