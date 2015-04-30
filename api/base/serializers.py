@@ -7,6 +7,7 @@ from website import settings
 from website.models import User
 from website.util import waterbutler_action_map
 
+
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
     if isinstance(d, dict):
@@ -17,18 +18,22 @@ def _rapply(d, func, *args, **kwargs):
     else:
         return func(d, *args, **kwargs)
 
-def _url_val(val, obj, context, **kwargs):
+
+def _url_val(val, obj, context, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
+    elif isinstance(val, basestring):  # if a string is passed, it's a function of the serializer
+        return getattr(serializer, val)(obj)
     elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
         return val.resolve_url(obj, context, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's an attribute
-        return getattr(obj, val)
+        return getattr(serializer, val)(obj)
     else:
         return val
+
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
@@ -40,13 +45,16 @@ class LinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', pk='<pk>')
+                'related': Link('nodes:node-children', pk='<pk>'),
+                'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', pk='<pk>')
+                'related': Link('nodes:node-contributors', pk='<pk>'),
+                'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', pk='<pk>')
+                'related': Link('nodes:node-registrations', pk='<pk>'),
+                'count': 'get_registration_count'
             },
         })
     """
@@ -61,18 +69,21 @@ class LinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, context=self.context, obj=obj)
+        ret = _rapply(self.links, _url_val, obj=obj, context=self.context, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         return ret
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
+
+
 def _tpl(val):
     """Return value within ``< >`` if possible, else return ``None``."""
     match = _tpl_pattern.match(val)
     if match:
         return match.groups()[0]
     return None
+
 
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
@@ -88,6 +99,7 @@ def _get_attr_from_tpl(attr_tpl, obj):
                 ))
     else:
         return attr_tpl
+
 
 # TODO: Make this a Field that is usable on its own?
 class Link(object):
@@ -124,12 +136,6 @@ class WaterbutlerLink(object):
 
     def resolve_url(self, obj, context):
         """Reverse URL lookup for WaterButler routes
-        :param str route: The action to preform, upload, download, delete...
-        :param str provider: The name of the requested provider
-        :param str path: The path of the requested file or folder
-        :param Node node: The node being accessed
-        :param User user: The user whose cookie will be used or None
-        :param dict **query: Addition query parameters to be appended
         """
 
         url = furl.furl(settings.WATERBUTLER_URL)
