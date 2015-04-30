@@ -32,10 +32,8 @@ class CopyHandler(core.BaseCrossProviderHandler):
                 conflict=self.json.get('conflict', 'replace'),
             )
 
-            if not resp.ready():
-                self.set_status(202)
-                return
-            metadata, created = resp.result
+            metadata, created = yield from tasks.wait_on_celery(resp)
+
         else:
             metadata, created = (
                 yield from tasks.backgrounded(

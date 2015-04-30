@@ -42,8 +42,6 @@ class MoveHandler(core.BaseCrossProviderHandler):
 
             metadata, created = yield from tasks.wait_on_celery(resp)
 
-            # if not resp.ready():
-            # metadata, created = resp.result
         else:
             metadata, created = (
                 yield from tasks.backgrounded(
