@@ -21,5 +21,5 @@ module.exports = {
         registration:  'project-organizer-icon-reg-project',
         link:  'project-organizer-icon-pointer'
     },
-    info: 'fa fa-question'
+    info: 'fa fa-info-circle'
 };
