@@ -345,6 +345,7 @@ class OsfStorageFileNode(StoredObject):
         """Build Treebeard JSON for folder or file.
         """
         data = {
+            'id': self._id,
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
