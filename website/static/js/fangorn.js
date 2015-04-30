@@ -1429,8 +1429,11 @@ function filterRowsNotInParent(rows) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+    // if on search bring back the bar and reset filter and redo icons.
     tb.options.iconState.mode = 'bar';
+    tb.resetFilter();
     tb.options.iconState.rowIcons = [];
+
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = row.icons;
