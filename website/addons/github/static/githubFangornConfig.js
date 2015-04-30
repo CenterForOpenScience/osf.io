@@ -78,7 +78,7 @@ function _removeEvent (event, items) {
                 deleteList.push(item);
             }
         });
-        // If all items can be deleted      
+        // If all items can be deleted
         if(canDelete){
             mithrilContentMultiple = m('div', [
                     m('h3.break-word', 'Delete multiple files?'),
@@ -90,7 +90,7 @@ function _removeEvent (event, items) {
             mithrilButtonsMultiple =  m('div', [
                     m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
-                ]);        
+                ]);
         } else {
             mithrilContentMultiple = m('div', [
                     m('h3.break-word', 'Delete multiple files?'),
@@ -101,16 +101,16 @@ function _removeEvent (event, items) {
                     noDeleteList.map(function(n){
                         return m('.fangorn-noDelete.text-warning', n.data.name);
                     })
-                ]);            
+                ]);
             mithrilButtonsMultiple =  m('div', [
                     m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
-                ]);    
+                ]);
         }
-        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple); 
+        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple);
     }
 
-    return true; // Let fangorn know this config option was used. 
+    return true; // Let fangorn know this config option was used.
 }
 
 
@@ -140,7 +140,7 @@ function _githubDefineToolbar (item){
         if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'uploadFiles', template : function(){
                 return m('.fangorn-toolbar-icon.text-success', {
-                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(tb, event, item); } 
+                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(tb, event, item); }
                     },[
                     m('i.fa.fa-upload'),
                     m('span.hidden-xs','Upload')
@@ -148,11 +148,11 @@ function _githubDefineToolbar (item){
             }},
             { name : 'createFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-info', {
-                        onclick : function(event) { 
-                            // Fangorn.ButtonEvents.createFolder.call(tb, event, item) 
+                        onclick : function(event) {
+                            // Fangorn.ButtonEvents.createFolder.call(tb, event, item)
                             tb.options.iconState.mode = 'createFolder';
                             m.redraw(true);
-                        } 
+                        }
                     },[
                     m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
                     m('span.hidden-xs','Create Folder')
@@ -163,7 +163,7 @@ function _githubDefineToolbar (item){
             buttons.push(
                 { name : 'downloadFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { window.location = item.data.urls.zip; } 
+                            onclick : function(event) { window.location = item.data.urls.zip; }
                         },[
                         m('i.fa.fa-download'),
                         m('span.hidden-xs','Download')
@@ -171,7 +171,7 @@ function _githubDefineToolbar (item){
                 }},
                 { name : 'gotoRepo', template : function(){
                     return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { window.open(item.data.urls.repo, '_blank');} 
+                            onclick : function(event) { window.open(item.data.urls.repo, '_blank');}
                         },[
                         m('i.fa.fa-external-link'),
                         m('span.hidden-xs','Open')
@@ -179,8 +179,8 @@ function _githubDefineToolbar (item){
                 }},
                 {
                     name : 'changeBranch', template : function(){
-                        return m('.fangorn-toolbar-icon.text-info', 
-                            [ 
+                        return m('.fangorn-toolbar-icon.text-info',
+                            [
                                m('span.hidden-xs','Branch :'),
                                m('select[name=branch-selector].no-border', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
                             ]
@@ -193,7 +193,7 @@ function _githubDefineToolbar (item){
         buttons.push(
                 { name : 'downloadFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { _downloadEvent.call(tb, event, item); } 
+                            onclick : function(event) { _downloadEvent.call(tb, event, item); }
                         },[
                         m('i.fa.fa-download'),
                         m('span.hidden-xs','Download')
@@ -205,7 +205,7 @@ function _githubDefineToolbar (item){
             buttons.push(
                 { name : 'deleteFile', template : function(){
                     return m('.fangorn-toolbar-icon.text-danger', {
-                            onclick : function(event) { _removeEvent.call(tb, event, [item]); } 
+                            onclick : function(event) { _removeEvent.call(tb, event, [item]); }
                         },[
                         m('i.fa.fa-times'),
                         m('span.hidden-xs','Delete')
@@ -215,7 +215,7 @@ function _githubDefineToolbar (item){
         }
     }
     item.icons = buttons;
-    return true; // Tell fangorn this function is used. 
+    return true; // Tell fangorn this function is used.
 }
 
 function changeBranch(item, ref){
@@ -277,8 +277,8 @@ function _fangornColumns (item) {
     }
 
     var columns = [];
-    
-    if(tb.options.placement !== 'fileview'){  // File view page structure is slightly different. 
+
+    if(tb.options.placement !== 'fileview'){  // File view page structure is slightly different.
         columns.push({
             data : null,
             folderIcons: false,
@@ -289,7 +289,7 @@ function _fangornColumns (item) {
                 }
                 return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
             }
-        });        
+        });
     }
 
 
