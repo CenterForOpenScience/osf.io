@@ -1793,7 +1793,7 @@ tbOptions = {
         return undefined;
     },
     showFilter : true,     // Gives the option to filter by showing the filter box.
-    allowMove : false,       // Turn moving on or off.
+    allowMove : true,       // Turn moving on or off.
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
     sortButtonSelector : {
