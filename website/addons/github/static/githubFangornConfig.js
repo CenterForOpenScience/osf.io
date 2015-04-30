@@ -21,7 +21,7 @@ function _removeEvent (event, items) {
     }
 
     function runDelete (item) {
-        $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
+        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');;
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
@@ -57,7 +57,7 @@ function _removeEvent (event, items) {
         ]);
         var mithrilButtonsSingle = m('div', [
             m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
-            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
+            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
         ]);
         // This is already being checked before this step but will keep this edit permission check
         if(items[0].data.permissions.edit){
