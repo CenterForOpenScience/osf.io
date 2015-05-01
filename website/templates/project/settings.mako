@@ -53,6 +53,24 @@
                 <div class="panel-heading">
                     <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                 </div>
+                <div id="nodeCategorySettings" class="panel-body">
+                  <h5>
+                    Category: <select data-bind="options: categories,
+                                                 optionsValue: 'value',
+                                                 optionsText: 'label',
+                                                 value: selectedCategory"></select>
+                  </h5>
+                  <p>
+                    <button data-bind="css: {disabled: !dirty()}, 
+                                       click: updateCategory" 
+                            class="btn btn-primary">Change</button>
+                    <button data-bind="css: {disabled: !dirty()},
+                                       click: cancelUpdateCategory"
+                            class="btn btn-default">Cancel</button>                
+                  </p>
+                  <span data-bind="css: messageClass, html: message"></span>
+                </div>
+                <hr />
                 <div class="panel-body">
                     <div class="help-block">
                         A project cannot be deleted if it has any components within it.
@@ -252,6 +270,7 @@
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.nodeType = '${node['node_type']}';
+      window.contextVars.nodeCategories = ${json.dumps(categories)};
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>

@@ -27,25 +27,20 @@ class TestValidProject(OsfTestCase):
         self.node = NodeFactory(project=self.project)
         self.retraction = RetractionFactory()
 
-    def test_populates_kwargs_project(self):
-        res = valid_project_helper(pid=self.project._id)
-        assert_equal(res['project'], self.project)
-        assert_is_none(res['node'])
-
     def test_populates_kwargs_node(self):
+        res = valid_project_helper(pid=self.project._id)
+        assert_equal(res['node'], self.project)
+        assert_is_none(res['parent'])
+
+    def test_populates_kwargs_node_and_parent(self):
         res = valid_project_helper(pid=self.project._id, nid=self.node._id)
-        assert_equal(res['project'], self.project)
+        assert_equal(res['parent'], self.project)
         assert_equal(res['node'], self.node)
 
     def test_project_not_found(self):
         with assert_raises(HTTPError) as exc_info:
             valid_project_helper(pid='fakepid')
         assert_equal(exc_info.exception.code, 404)
-
-    def test_project_category_mismatch(self):
-        with assert_raises(HTTPError) as exc_info:
-            valid_project_helper(pid=self.node._id)
-        assert_equal(exc_info.exception.code, 400)
 
     def test_project_deleted(self):
         self.project.is_deleted = True
@@ -72,4 +67,4 @@ class TestValidProject(OsfTestCase):
         self.retraction.state = 'retracted'
         self.retraction.save()
         res = as_factory_allow_retractions(pid=self.project._id)
-        assert_equal(res['project'], self.project)
+        assert_equal(res['node'], self.project)

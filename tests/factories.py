@@ -158,7 +158,7 @@ class DashboardFactory(FolderFactory):
 
 class NodeFactory(AbstractNodeFactory):
     category = 'hypothesis'
-    project = SubFactory(ProjectFactory)
+    parent = SubFactory(ProjectFactory)
 
 
 class RegistrationFactory(AbstractNodeFactory):

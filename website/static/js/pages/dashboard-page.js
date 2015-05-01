@@ -11,11 +11,10 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
 // Knockout components for the onboarder
-require('../onboarder.js');
-var $osf = require('../osfHelpers');
+require('js/onboarder.js');
+var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
-var projectOrganizer = require('..//projectorganizer');
-var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
+var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
@@ -24,13 +23,12 @@ var request = $.getJSON(url, function(response) {
     var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
         return $.inArray(node.permissions, ['write', 'admin']) !== -1;
     });
-    // Filter out components and nodes for which user is not admin
-    var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
-        return node.category === 'project' && node.permissions === 'admin';
-    });
+
+    // If we need to change what nodes can be registered, filter here
+    var registrationSelection = uploadSelection;
 
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-    $osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+    $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
     $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
 
     function ProjectCreateViewModel() {
@@ -83,14 +81,15 @@ $(document).ready(function() {
         url:  '/api/v1/dashboard/'
     });
     request.done(function(data) {
-        new ProjectOrganizer({
+        var po = new ProjectOrganizer({
             placement : 'dashboard',
             divID: 'project-grid',
             filesData: data.data,
             multiselect : true
         });
+        po.legend($('#projectOrganizerInfo')[0]);
 
-        ensureUserTimezone(data.timezone, data.locale, data._id);
+        ensureUserTimezone(data.timezone, data.locale, data.id);
     });
     request.fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Failed to populate user dashboard', {

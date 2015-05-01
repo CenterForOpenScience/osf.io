@@ -25,7 +25,8 @@ describe('osfHelpers', () => {
 
     describe('handleJSONError', () => {
         var response = {
-            {message_short: 'Oh no!', message_long: 'Something went wrong'}
+            message_short: 'Oh no!', 
+            message_long: 'Something went wrong'
         };
         it('uses the response body if available', () => {
             var stub = new sinon.stub($osf, 'growl');
