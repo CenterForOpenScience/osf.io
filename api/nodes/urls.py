@@ -12,4 +12,5 @@ urlpatterns = [
     url(r'^(?P<pk>\w+)/children/$', views.NodeChildrenList.as_view(), name='node-children'),
     url(r'^(?P<pk>\w+)/pointers/$', views.NodePointersList.as_view(), name='node-pointers'),
     url(r'^(?P<pk>\w+)/files/$', views.NodeFilesList.as_view(), name='node-files'),
+    url(r'^(?P<pk>\w+)/pointers/(?P<pointer_id>\w+)', views.NodePointerDetail.as_view(), name='node-pointer-detail'),
 ]
