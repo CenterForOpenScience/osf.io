@@ -149,3 +149,4 @@ DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
 PENDING_RETRACTION = Mail('pending_retraction', subject='A registration you administer is pending retraction.')
+PENDING_EMBARGO = Mail('pending_embargo', subject='A registration you administer has a pending embargoed registration.')

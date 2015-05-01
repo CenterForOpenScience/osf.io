@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
 import httplib as http
 
@@ -28,8 +29,9 @@ from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
-from website.models import MetaSchema
-from website.models import NodeLog
+from website.models import (
+    Embargo, MetaSchema, NodeLog,
+)
 from website import language, mails
 
 from website.identifiers.client import EzidClient
@@ -358,6 +360,33 @@ def project_before_register(auth, **kwargs):
     return {'prompts': prompts}
 
 
+def _send_embargo_email(node, user, approval_token, disapproval_token, embargo_end_date):
+    """ Sends Approve/Disapprove email for embargo of a public registration to user
+        :param node: Node being embargoed
+        :param user: Admin user to be emailed
+        :param embargo_end_date: End date for the proposed embargo
+        :param approval_token: token `user` needs to approve embargo
+        :param disapproval_token: token `user` needs to disapprove embargo
+    """
+
+    registration_link = node.web_url_for('view_project', _absolute=True)
+    approval_link = node.web_url_for('node_registration_embargo_approve', token=approval_token, _absolute=True)
+    disapproval_link = node.web_url_for('node_registration_embargo_disapprove', token=disapproval_token, _absolute=True)
+    approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+
+    mails.send_mail(
+        user.username,
+        mails.PENDING_EMBARGO,
+        'plain',
+        user=user,
+        approval_link=approval_link,
+        disapproval_link=disapproval_link,
+        registration_link=registration_link,
+        embargo_end_date=embargo_end_date,
+        approval_time_span=approval_time_span
+    )
+
+
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
@@ -375,9 +404,39 @@ def node_register_template_page_post(auth, **kwargs):
     schema = MetaSchema.find(
         Q('name', 'eq', template)
     ).sort('-schema_version')[0]
+
+    # Create the registration
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+
+    if data['registrationChoice'] == 'Make registration public immediately':
+        register.is_public = True
+        register.save()
+    elif data['registrationChoice'] == 'Enter registration into embargo':
+        # Sanitize embargo end date
+        embargo_end_date = datetime.datetime.strptime(
+            data['embargoEndDate'],
+            "%a, %d %b %Y %H:%M:%S %Z"
+        ).date()  # TODO(hryabcki) clean this up
+
+        # Initiate embargo
+        try:
+            register.embargo_registration(auth.user, embargo_end_date)
+            register.save()
+        except ValidationValueError:
+            raise HTTPError(http.BAD_REQUEST)
+
+        # Email admins for approval/disapproval
+        admins = [contrib for contrib in register.contributors if register.has_permission(contrib, 'admin')]
+        for admin in admins:
+            _send_embargo_email(
+                register,
+                admin,
+                register.embargo.approval_state[admin._id]['approval_token'],
+                register.embargo.approval_state[admin._id]['disapproval_token'],
+                embargo_end_date
+            )
 
     return {
         'status': 'success',

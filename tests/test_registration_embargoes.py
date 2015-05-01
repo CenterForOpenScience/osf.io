@@ -1,19 +1,24 @@
 """Tests related to embargoes of registrations"""
 
 import datetime
+import json
 import unittest
 
 from nose.tools import *  #noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, EmbargoFactory, RegistrationFactory, UserFactory,
+    ProjectFactory,
 )
 
 from framework.exceptions import PermissionsError
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
     InvalidEmbargoDisapprovalToken, InvalidEmbargoApprovalToken, NodeStateError,
 )
+from website.models import Node
+from website.project.model import ensure_schemas
 
 
 class RegistrationEmbargoModelsTestCase(OsfTestCase):
@@ -181,10 +186,39 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_false(self.registration.pending_embargo)
         assert_false(self.registration.is_embargoed)
 
+    def test_cancelling_embargo_deletes_parent_registration(self):
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10))
+        )
+        self.registration.save()
+        disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
+        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        assert_equal(self.registration.embargo.state, 'cancelled')
+        assert_true(self.registration.is_deleted)
 
-class RegistrationEmbargoViewsTestCase(OsfTestCase):
+    # Embargo property tests
+    def test_new_registration_is_pending_registration(self):
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10))
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_registration)
+
+    def test_existing_registration_is_not_pending_registration(self):
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        self.registration.save()
+        assert_false(self.registration.pending_registration)
+
+
+class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
-        super(RegistrationEmbargoViewsTestCase, self).setUp()
+        super(RegistrationEmbargoApprovalDisapprovalViewsTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.registration = RegistrationFactory(creator=self.user)
 
@@ -329,6 +363,82 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_false(self.registration.pending_embargo)
         assert_equal(res.status_code, 302)
 
-    # node_registration_embargo_post tests
 
-    # node_registration_embargo_get tests
+class RegistrationEmbargoViewsTestCase(OsfTestCase):
+    def setUp(self):
+        super(RegistrationEmbargoViewsTestCase, self).setUp()
+        ensure_schemas()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user)
+
+        current_month = datetime.datetime.now().strftime("%B")
+        current_year = datetime.datetime.now().strftime("%Y")
+
+        self.valid_make_public_payload = json.dumps({
+            u'embargoEndDate': u'Fri, 01, {month} {year} 00:00:00 GMT'.format(
+                month=current_month,
+                year=current_year
+            ),
+            u'registrationChoice': 'Make registration public immediately',
+            u'summary': unicode(fake.sentence())
+        })
+        self.valid_embargo_payload = json.dumps({
+            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+                month=current_month,
+                year=str(int(current_year)+1)
+            ),
+            u'registrationChoice': 'Enter registration into embargo',
+            u'summary': unicode(fake.sentence())
+        })
+        self.invalid_embargo_date_payload = json.dumps({
+            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+                month=current_month,
+                year=str(int(current_year)-1)
+            ),
+            u'registrationChoice': 'Enter registration into embargo',
+            u'summary': unicode(fake.sentence())
+        })
+
+    def test_POST_register_make_public_immediately_creates_public_registration(self):
+        res = self.app.post(
+            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.valid_make_public_payload,
+            content_type='application/json',
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 201)
+        registration_id = res.json['result'].strip('/')
+        registration = Node.find_one(Q('_id', 'eq', registration_id))
+
+        assert_true(registration.is_registration)
+        assert_true(registration.is_public)
+
+    def test_POST_register_embargo_is_not_public(self):
+        res = self.app.post(
+            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.valid_embargo_payload,
+            content_type='application/json',
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 201)
+        registration_id = res.json['result'].strip('/')
+        registration = Node.find_one(Q('_id', 'eq', registration_id))
+
+        assert_true(registration.is_registration)
+        assert_false(registration.is_public)
+        assert_true(registration.pending_registration)
+        assert_is_not_none(registration.embargo)
+
+    def test_POST_invalid_embargo_end_date_raises_400(self):
+        res = self.app.post(
+            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.invalid_embargo_date_payload,
+            content_type='application/json',
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
