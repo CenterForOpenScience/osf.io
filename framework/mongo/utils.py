@@ -65,11 +65,11 @@ def get_or_http_error(Model, pk):
     instance = Model.load(pk)
     if getattr(instance, 'is_deleted', False):
         raise HTTPError(http.GONE, data=dict(
-            message_log="This resource has been deleted"
+            message_long="This resource has been deleted"
         ))
     if not instance:
         raise HTTPError(http.NOT_FOUND, data=dict(
-            message_log="No resource with that primary key could be found"
+            message_long="No resource with that primary key could be found"
         ))
     else:
         return instance
