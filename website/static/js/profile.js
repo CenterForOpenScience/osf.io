@@ -40,11 +40,14 @@ var SerializeMixin = function() {};
 SerializeMixin.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
     
+    function removeBlankValues(value) {
+      return value != "";
+    }
     // Remove blank websites from profileWebsites array before save
     if (serializedData.urls.crud = "/api/v1/settings/social/") {
-        var profileWebsites = serializedData.trackedProperties[0];
+        var profileWebsites = serializedData.profileWebsites;
         if (profileWebsites.length > 1) {
-            serializedData.profileWebsites = $.grep(profileWebsites,function(n){ return(n) });
+            serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
         }
     }        
 
@@ -487,36 +490,6 @@ var extendLink = function(obs, $parent, label, baseUrl) {
     return obs;
 };
 
-var extendProfileWebsite = function(obs, $parent, label, baseUrl) {
-    
-    obs.url = ko.computed(function($data, event) {
-        // Prevent click from submitting form
-        event && event.preventDefault();
-        if (obs()) {
-            return baseUrl ? baseUrl + obs() : obs();
-        }
-        return '';
-    });
-
-
-    return obs;
-};
-
-
-function ProfileWebsite() {
-    return extendProfileWebsite(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-        ko.observable().extend({
-            trimmed: true,
-                url: true,
-            ensureHttp: true
-        }),
-        self, 'Profile Website'
-    );    
-}
-
-
 var SocialViewModel = function(urls, modes) {
     var self = this;
     BaseViewModel.call(self, urls, modes);
@@ -525,14 +498,29 @@ var SocialViewModel = function(urls, modes) {
 
     self.addons = ko.observableArray();
   
-    self.profileWebsites = ko.observableArray([new ProfileWebsite]); // Initially a single item with a blank first entry    
+    self.profileWebsites = ko.observableArray(); // Initially a single item with a blank first entry  
+                
+    self.hasProfileWebsites = ko.computed(function() {
+        if (self.profileWebsites())      
+        for (var i=0; i<self.profileWebsites().length; i++) {
+            if (self.profileWebsites()[i]) {
+                return true;
+            }
+        }
 
+        return false;
+    });
+    
     self.hasMultiple = ko.computed(function() {
+        if (self.profileWebsites())
         return self.profileWebsites().length > 1;
+        else return false
     });
     
     self.canRemove = ko.computed(function () {
+        if (self.profileWebsites())
         return self.profileWebsites().length > 1;
+        else return false
     });
     
     self.orcid = extendLink(
@@ -585,17 +573,19 @@ var SocialViewModel = function(urls, modes) {
 
     self.addWebsite = function(profileWebsite) {
         var nextItemIndex = self.profileWebsites().length;
-        this.profileWebsites.push(new ProfileWebsite);
- 
-    }    
+        this.profileWebsites.push(ko.observable().extend({
+            trimmed: true,
+            url: true,
+            trimmedhttp: true
+            }));
+    }
     
     self.removeWebsite = function(profileWebsite) {
         var idx = self.profileWebsites.indexOf(profileWebsite);
+        console.log("in removeWebsite, idx is " + idx);
         self.profileWebsites.splice(idx, 1);
     }
 
-
-        
     self.values = ko.computed(function() {
         return [
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
@@ -607,45 +597,21 @@ var SocialViewModel = function(urls, modes) {
             {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()}
         ];
     });
-    
- 
-   self.hasProfileWebsites = ko.computed(function() {
-        var profileWebsites = self.profileWebsites();
-               
-        for (var i=0; i<self.profileWebsites().length; i++) {
-            if (profileWebsites[i]) {
-                return true;
+        
+    self.profileWebsiteEmpty = ko.computed(function() {
+        if (self.profileWebsites())
+            for (var i=0; i < self.profileWebsites().length; i++) {
+                if (ko.toJS(self.profileWebsites()[i]) == "") {
+                    return true;
+                }
             }
-        }
-
         return false;
     });
     
-    
-//    self.hasBlankProfileWebsite = ko.computed(function() {
-//
-//            for (var i=0; i < self.profileWebsites().length; i++) {
-//                console.log("profileWebsite[i] = " + ko.toJS(self.profileWebsites()[i]));
-//                if (ko.toJS(self.profileWebsites()[i]) == "") {
-//                    return true;
-//                    console.log("profileWebsite is " + self.profileWebsites()[i]);
-//
-//                }
-//            }
-//
-//        return false;
-//    });
-    
     self.hasValues = ko.computed(function() {
         var values = self.values();
-        var profileWebsites = self.profileWebsites();
-        
-        //inserted profileWebsites hook because hasValues is top level conditional in social.mako view portion of template
-        for (var i=0; i<self.profileWebsites().length; i++) {
-            if (profileWebsites[i]) {
-                return true;
-            }
-        }
+        if (self.hasProfileWebsites())
+            return true;
         for (var i=0; i<self.values().length; i++) {
             if (values[i].value) {
                 return true;
@@ -659,6 +625,41 @@ var SocialViewModel = function(urls, modes) {
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
+SocialViewModel.prototype.serialize = function() {
+    var serializedData = ko.toJS(this);
+    
+    function removeBlankValues(value) {
+      return value != "";
+    }
+    var profileWebsites = serializedData.profileWebsites;
+    if (profileWebsites.length > 1) {
+        serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
+    }     
+    return serializedData;
+};
+
+SocialViewModel.prototype.unserialize = function(data) {
+    var self = this, websiteValue = [];
+    var websiteValue;
+    $.each(data || {}, function(key, value) {
+         if (ko.isObservable(self[key]) && key == "profileWebsites") {
+            for (var i = 0; i < value.length; i++) {
+                websiteValue[i] = ko.observable(value[i]).extend({
+                        trimmed: true,
+                        url: true,
+                        trimmedhttp: true
+                });                 
+            }
+            self[key](websiteValue);
+        }  
+        else if (ko.isObservable(self[key])) {
+            self[key](value);
+            // Ensure that validation errors are displayed
+            self[key].notifySubscribers();
+        }
+    });
+    return self;
+};
 
 
 var ListViewModel = function(ContentModel, urls, modes) {
@@ -859,7 +860,6 @@ var Names = function(selector, urls, modes) {
 var Social = function(selector, urls, modes) {
     this.viewModel = new SocialViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
-    //BH Console Message
     window.social = this.viewModel;
 };
 

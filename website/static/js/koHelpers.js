@@ -59,6 +59,31 @@ addExtender('trimmed', function(value) {
     return $.trim(value);
 });
 
+addExtender('trimmedhttp', function(value) {
+ //   console.log("trimmedhttp value is " + value);
+    value = $.trim(value);
+    if (!value || value.search(/^https?:\/\//i) === 0) {
+        return value;
+    }
+    return 'http://' + value;
+});
+
+addExtender('trimmedWebArray', function(values) {
+    if (values) {
+    for (var i = 0; i < values.length; i++) {   
+        console.log("trimmedhttp value is " + values[i] + "and values.length is " + values.length);
+        var value = values[i];
+        var value = $.trim(value);
+        if (!value || value.search(/^https?:\/\//i) === 0) {
+            values[i] = value;
+        }
+        values[i] = 'http://' + value;
+        return values;
+    }
+    }
+    else return values;
+});
+
 var sanitize = function(value) {
     return value.replace(/<\/?[^>]+>/g, '');
 };

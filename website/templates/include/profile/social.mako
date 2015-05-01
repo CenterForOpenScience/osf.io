@@ -3,7 +3,7 @@
     <div data-bind="if: mode() === 'edit'">
         <form role="form" data-bind="submit: submit">
 
-          <div data-bind="sortable: {
+    <div data-bind="sortable: {
                     data: profileWebsites,
                     options: {
                         handle: '.sort-handle',
@@ -39,7 +39,7 @@
 
             </div>
 
-            <div class="padded">
+            <div class="padded" data-bind="visible: !profileWebsiteEmpty()">
                 <a class="btn btn-default" data-bind="click: addWebsite">
                     Add another
                 </a>
