@@ -4,10 +4,11 @@ import asyncio
 
 import furl
 
+from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
-from waterbutler.core import utils
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.github import settings
 from waterbutler.providers.github.metadata import GitHubRevision
@@ -20,15 +21,21 @@ from waterbutler.providers.github.metadata import GitHubFolderTreeMetadata
 GIT_EMPTY_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 
 
-class GitHubPath(utils.WaterButlerPath):
-
-    def __init__(self, path, prefix=False, suffix=False):
-        super().__init__(path, prefix=prefix, suffix=suffix)
-
-
 class GitHubProvider(provider.BaseProvider):
     NAME = 'github'
     BASE_URL = settings.BASE_URL
+
+    @staticmethod
+    def is_sha(ref):
+        # sha1 is always 40 characters in length
+        try:
+            if len(ref) != 40:
+                return False
+            # sha1 is always base 16 (hex)
+            int(ref, 16)
+        except (TypeError, ValueError, ):
+            return False
+        return True
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
@@ -37,6 +44,22 @@ class GitHubProvider(provider.BaseProvider):
         self.token = self.credentials['token']
         self.owner = self.settings['owner']
         self.repo = self.settings['repo']
+
+    @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        if not getattr(self, '_repo', None):
+            self._repo = yield from self._fetch_repo()
+            self.default_branch = self._repo['default_branch']
+
+        path = WaterButlerPath(path)
+        path.parts[-1]._id = next(
+            (kwargs[key] for key in
+            ('fileSha', 'ref', 'branch')
+            if key in kwargs),
+            self.default_branch
+        )
+
+        return path
 
     @property
     def default_headers(self):
@@ -68,13 +91,11 @@ class GitHubProvider(provider.BaseProvider):
         :param str fileSha: The sha of file to be downloaded if specifed path will be ignored
         :param dict kwargs: Ignored
         '''
-        # fileSha is camelCased as it is a query parameter set via javascript
-        # Its left in kwargs because it is  A) options and B) ugly to have camelCase variables in python
-        file_sha = kwargs.get('fileSha')
+        file_sha = path.identifier
 
-        if not file_sha:
+        if not GitHubProvider.is_sha(file_sha):
             data = yield from self.metadata(path)
-            file_sha = data['extra']['sha']
+            file_sha = data['extra']['fileSha']
 
         resp = yield from self.make_request(
             'GET',
@@ -91,9 +112,8 @@ class GitHubProvider(provider.BaseProvider):
         assert self.name is not None
         assert self.email is not None
 
-        path = GitHubPath(path)
-        exists = yield from self.exists(str(path), ref=branch)
-        latest_sha = yield from self._get_latest_sha(ref=branch)
+        exists = yield from self.exists(path, ref=path.identifier)
+        latest_sha = yield from self._get_latest_sha(ref=path.identifier)
 
         blob = yield from self._create_blob(stream)
 
@@ -143,7 +163,6 @@ class GitHubProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        path = GitHubPath(path)
         if path.is_dir:
             return (yield from self._metadata_folder(path, ref=ref, recursive=recursive, **kwargs))
         else:
@@ -151,11 +170,9 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, sha=None, **kwargs):
-        path = GitHubPath(path)
-
         resp = yield from self.make_request(
             'GET',
-            self.build_repo_url('commits', path=path.path, sha=sha),
+            self.build_repo_url('commits', path=path.path, sha=path.identifier),
             expects=(200, ),
             throws=exceptions.RevisionsError
         )
@@ -167,14 +184,13 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, branch=None, message=None, **kwargs):
-        path = GitHubPath(path)
-        path.validate_folder()
+        WaterButlerPath.validate_folder(path)
 
         assert self.name is not None
         assert self.email is not None
         message = message or settings.UPLOAD_FILE_MESSAGE
 
-        keep_path = os.path.join(path.path, '.gitkeep')
+        keep_path = path.child('.gitkeep')
 
         data = {
             'path': keep_path,
@@ -183,12 +199,12 @@ class GitHubProvider(provider.BaseProvider):
             'committer': self.committer,
         }
 
-        if branch is not None:
-            data['branch'] = branch
+        if path.identifier and not GitHubProvider.is_sha(path.identifier):
+            data['branch'] = path.identifier
 
         resp = yield from self.make_request(
             'PUT',
-            self.build_repo_url('contents', keep_path),
+            self.build_repo_url('contents', keep_path.path),
             data=json.dumps(data),
             expects=(201, 422),
             throws=exceptions.CreateFolderError
@@ -429,41 +445,12 @@ class GitHubProvider(provider.BaseProvider):
         return True
 
     @asyncio.coroutine
-    def _metadata_folder(self, path, ref=None, recursive=False, **kwargs):
-        parent_path = path.parent
-
+    def _metadata_folder(self, path, recursive=False, **kwargs):
         # if we have a sha or recursive lookup specified we'll need to perform
         # the operation using the git/trees api which requires a sha.
-        if self._is_sha(ref) or recursive:
-            if self._is_sha(ref):
-                tree_sha = ref
-            elif parent_path.is_root:
-                if not ref:
-                    repo = yield from self._fetch_repo()
-                    ref = repo['default_branch']
-                branch_data = yield from self._fetch_branch(ref)
-                tree_sha = branch_data['commit']['commit']['tree']['sha']
-            else:
-                data = yield from self._fetch_contents(parent_path, ref=ref)
-                try:
-                    tree_sha = next(x for x in data if x['path'] == path.path)['sha']
-                except StopIteration:
-                    raise exceptions.MetadataError(
-                        'Could not find folder \'{0}\''.format(path),
-                        code=404,
-                    )
 
-            data = yield from self._fetch_tree(tree_sha, recursive=recursive)
-
-            ret = []
-            for item in data['tree']:
-                if item['type'] == 'tree':
-                    ret.append(GitHubFolderTreeMetadata(item, folder=path.path).serialized())
-                else:
-                    ret.append(GitHubFileTreeMetadata(item, folder=path.path).serialized())
-            return ret
-        else:
-            data = yield from self._fetch_contents(path, ref=ref)
+        if not (self._is_sha(path.identifier) or recursive):
+            data = yield from self._fetch_contents(path, ref=path.identifier)
 
             ret = []
             for item in data:
@@ -472,6 +459,32 @@ class GitHubProvider(provider.BaseProvider):
                 else:
                     ret.append(GitHubFileContentMetadata(item).serialized())
             return ret
+
+        #TODO?
+        if self._is_sha(ref):
+            tree_sha = ref
+        elif path.parent.is_root:
+            branch_data = yield from self._fetch_branch(self.identifier)
+            tree_sha = branch_data['commit']['commit']['tree']['sha']
+        else:
+            data = yield from self._fetch_contents(parent_path, ref=ref)
+            try:
+                tree_sha = next(x for x in data if x['path'] == path.path)['sha']
+            except StopIteration:
+                raise exceptions.MetadataError(
+                    'Could not find folder \'{0}\''.format(path),
+                    code=404,
+                )
+
+        data = yield from self._fetch_tree(tree_sha, recursive=recursive)
+
+        ret = []
+        for item in data['tree']:
+            if item['type'] == 'tree':
+                ret.append(GitHubFolderTreeMetadata(item, folder=path.path).serialized())
+            else:
+                ret.append(GitHubFileTreeMetadata(item, folder=path.path).serialized())
+        return ret
 
     @asyncio.coroutine
     def _metadata_file(self, path, ref=None, **kwargs):
