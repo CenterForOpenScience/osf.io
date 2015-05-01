@@ -22,6 +22,8 @@ var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
 var legendView = require('js/components/legend').view;
 
+var nodeCategories = require('json!built/nodeCategories.json');
+
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
 var copyMode = null;
@@ -46,8 +48,6 @@ if(multiItemDetailTemplateSourceNoAction) {
 }
 
 var $detailDiv = $('.project-details');
-
-var nodeCategories = window.contextVars.nodeCategories;
 
 var projectOrganizerCategories = $.extend({}, {
     folder: 'Folder',
