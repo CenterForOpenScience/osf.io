@@ -11,15 +11,15 @@ from tests.base import fake
 from tests import factories
 
 
-class UserTestCase(base.OsfTestCase):
+class TestUser(base.OsfTestCase):
     def setUp(self):
-        super(UserTestCase, self).setUp()
+        super(TestUser, self).setUp()
         self.user = factories.AuthUserFactory()
 
     def tearDown(self):
         models.Node.remove()
         models.User.remove()
-        super(UserTestCase, self).tearDown()
+        super(TestUser, self).tearDown()
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
     def test_add_unconfirmed_email_when_email_verifications_is_None(self):
@@ -105,7 +105,7 @@ class UserTestCase(base.OsfTestCase):
         assert_equal(e.exception.message, "Can't remove primary email")
 
 
-class UserMergingTestCase(base.OsfTestCase):
+class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
         'unmergeable': {
             'user_settings': factories.MockAddonUserSettings,
@@ -118,7 +118,7 @@ class UserMergingTestCase(base.OsfTestCase):
     }
 
     def setUp(self):
-        super(UserMergingTestCase, self).setUp()
+        super(TestUserMerging, self).setUp()
         self.user = factories.UserFactory()
 
     def _add_unconfirmed_user(self):
