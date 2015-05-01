@@ -1264,8 +1264,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def get_descendants_recursive(self, include=lambda n: True):
         for node in self.nodes:
             yield node
-            for descedant in node.get_descendants_recursive(include):
-                yield descedant
+            for descendant in node.get_descendants_recursive(include):
+                yield descendant
 
     def get_aggregate_logs_queryset(self, auth):
         ids = [self._id] + [n._id
