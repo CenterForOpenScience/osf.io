@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import urlparse
 
 import pymongo
 from modularodm import fields
 
+from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
 from website.security import encrypt, decrypt
 from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
 from website.addons.dataverse.client import connect_from_settings_or_401
-
-logging.getLogger('sword2').setLevel(logging.WARNING)
+from website.addons.dataverse.settings import HOST
 
 
 class DataverseFile(GuidFile):
@@ -40,11 +39,24 @@ class DataverseFile(GuidFile):
 
     @property
     def version_identifier(self):
-        return 'state'
+        return 'version'
 
     @property
     def unique_identifier(self):
         return self.file_id
+
+    def enrich(self, save=True):
+        super(DataverseFile, self).enrich(save)
+
+        # Check permissions
+        user = _get_current_user()
+        if not self.node.can_edit(user=user):
+            try:
+                # Users without edit permission can only see published files
+                if not self._metadata_cache['extra']['hasPublishedVersion']:
+                    raise exceptions.FileDoesntExistError
+            except (KeyError, IndexError):
+                pass
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
@@ -176,6 +188,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     def serialize_waterbutler_settings(self):
         return {
+            'host': HOST,
             'doi': self.dataset_doi,
             'id': self.dataset_id,
             'name': self.dataset,
