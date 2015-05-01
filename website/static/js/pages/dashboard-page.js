@@ -24,9 +24,8 @@ var request = $.getJSON(url, function(response) {
         return $.inArray(node.permissions, ['write', 'admin']) !== -1;
     });
 
-    var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
-        return node.category === 'project';
-    });
+    // If we need to change what nodes can be registered, filter here
+    var registrationSelection = uploadSelection;
 
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
     $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
