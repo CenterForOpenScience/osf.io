@@ -859,7 +859,13 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
                 '/project/<pid>/files/download/<fid>/version/<vid>/',
                 '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-
+            ],
+            'get',
+            addon_views.addon_view_or_download_file_legacy,
+            OsfWebRenderer('project/view_file.mako'),
+        ),
+        Rule(
+            [
                 # api/v1 Legacy routes for `download_file`
                 '/api/v1/project/<pid>/osffiles/<fid>/',
                 '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',
@@ -1076,6 +1082,17 @@ def make_url_map(app):
         Rule([
             '/project/new/<nid>/',
         ], 'post', project_views.node.project_new_from_template, json_renderer),
+
+        # Update
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'put',
+            project_views.node.update_node,
+            json_renderer,
+        ),
 
         # Remove
         Rule(

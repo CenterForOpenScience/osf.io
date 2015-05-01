@@ -6,9 +6,10 @@ var $ = require('jquery');
 
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
+var $osf = require('js/osfHelpers');
 
-function changeState(grid, item, state) {
-    item.data.state = state;
+function changeState(grid, item, version) {
+    item.data.version = version;
     grid.updateFolder(null, item);
 }
 
@@ -56,7 +57,7 @@ function _fangornActionColumn (item, col) {
                 ];
                 self.modal.update(modalContent, modalActions);
                 item.data.hasPublishedFiles = item.children.length > 0;
-                item.data.state = item.data.hasPublishedFiles ? 'published' : 'draft';
+                item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
             }).fail(function(xhr, status, error) {
                 var statusCode = xhr.responseJSON.code;
                 var message;
@@ -87,7 +88,7 @@ function _fangornActionColumn (item, col) {
         }
     }
 
-    if (item.kind === 'folder' && item.data.addonFullname && item.data.state === 'draft' && item.data.permissions.edit) {
+    if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
         buttons.push(
             {
                 'name' : '',
@@ -112,7 +113,7 @@ function _fangornActionColumn (item, col) {
             css : 'btn btn-info btn-xs',
             onclick: _downloadEvent
         });
-        if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
+        if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
             buttons.push({
                 name: '',
                 tooltip : 'Delete',
@@ -136,9 +137,14 @@ function _fangornDataverseTitle(item, col) {
         var contents = [m('dataverse-name', item.data.name + ' ')];
         if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
+                // Default to version in url parameters for file view page
+                var urlParams = $osf.urlParams();
+                if (urlParams.version && urlParams.version !== item.data.version) {
+                    item.data.version = urlParams.version;
+                }
                 var options = [
-                    m('option', {selected: item.data.state === 'published', value: 'published'}, 'Published'),
-                    m('option', {selected: item.data.state === 'draft', value: 'draft'}, 'Draft')
+                    m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
+                    m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
                 ];
                 contents.push(
                     m('span', [
@@ -170,6 +176,7 @@ function _fangornDataverseTitle(item, col) {
                         .segment('files')
                         .segment(item.data.provider)
                         .segment(item.data.extra.fileId)
+                        .query({version: item.data.extra.datasetVersion})
                         .toString();
                 },
                 'data-toggle': 'tooltip',
@@ -228,14 +235,14 @@ function _fangornDeleteUrl(item) {
 }
 
 function _fangornLazyLoad(item) {
-    return waterbutler.buildTreeBeardMetadata(item, {state: item.data.state});
+    return waterbutler.buildTreeBeardMetadata(item, {version: item.data.version});
 }
 
 function _canDrop(item) {
     return item.data.provider &&
         item.kind === 'folder' &&
         item.data.permissions.edit &&
-        item.data.state === 'draft'
+        item.data.version === 'latest';
 }
 
 Fangorn.config.dataverse = {

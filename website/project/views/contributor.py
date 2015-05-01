@@ -34,9 +34,7 @@ from website.project.decorators import (must_have_permission, must_be_valid_proj
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
-def get_node_contributors_abbrev(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-
+def get_node_contributors_abbrev(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
 
     max_count = kwargs.get('max_count', 3)
@@ -81,7 +79,7 @@ def get_node_contributors_abbrev(auth, **kwargs):
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
-def get_contributors(auth, **kwargs):
+def get_contributors(auth, node, **kwargs):
 
     # Can set limit to only receive a specified number of contributors in a call to this route
     if request.args.get('limit'):
@@ -93,8 +91,6 @@ def get_contributors(auth, **kwargs):
             ))
     else:
         limit = None
-
-    node = kwargs['node'] or kwargs['project']
 
     anonymous = has_anonymous_link(node, auth)
 
@@ -121,9 +117,8 @@ def get_contributors(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
-def get_contributors_from_parent(auth, **kwargs):
+def get_contributors_from_parent(auth, node, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
     parent = node.parent_node
 
     if not parent:
@@ -142,8 +137,7 @@ def get_contributors_from_parent(auth, **kwargs):
 
 
 @must_be_contributor_or_public
-def get_most_in_common_contributors(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def get_most_in_common_contributors(auth, node, **kwargs):
     node_contrib_ids = set(node.contributors._to_primary_keys())
     try:
         n_contribs = int(request.args.get('max', None))
@@ -172,8 +166,7 @@ def get_most_in_common_contributors(auth, **kwargs):
 
 
 @must_be_contributor_or_public
-def get_recently_added_contributors(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def get_recently_added_contributors(auth, node, **kwargs):
 
     max_results = request.args.get('max')
     if max_results:
@@ -203,9 +196,7 @@ def get_recently_added_contributors(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_before_remove_contributor(auth, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
+def project_before_remove_contributor(auth, node, **kwargs):
 
     contributor = User.load(request.json.get('id'))
 
@@ -230,8 +221,7 @@ def project_before_remove_contributor(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_removecontributor(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def project_removecontributor(auth, node, **kwargs):
 
     contributor = User.load(request.json['id'])
     if contributor is None:
@@ -329,11 +319,9 @@ def finalize_invitation(node, contributor, auth):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_contributors_post(**kwargs):
+def project_contributors_post(auth, node, **kwargs):
     """ Add contributors to a node. """
 
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     user_dicts = request.json.get('users')
     node_ids = request.json.get('node_ids')
 
@@ -365,7 +353,7 @@ def project_contributors_post(**kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_manage_contributors(auth, **kwargs):
+def project_manage_contributors(auth, node, **kwargs):
     """Reorder and remove contributors.
 
     :param Auth auth: Consolidated authorization
@@ -376,8 +364,6 @@ def project_manage_contributors(auth, **kwargs):
         or if no admin users would remain after changes were applied
 
     """
-    node = kwargs['node'] or kwargs['project']
-
     contributors = request.json.get('contributors')
 
     # Update permissions and order
@@ -521,14 +507,13 @@ def verify_claim_token(user, token, pid):
 
 @collect_auth
 @must_be_valid_project
-def claim_user_registered(auth, **kwargs):
+def claim_user_registered(auth, node, **kwargs):
     """View that prompts user to enter their password in order to claim
     contributorship on a project.
 
     A user must be logged in.
     """
     current_user = auth.user
-    node = kwargs['node'] or kwargs['project']
 
     sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
     if not current_user:
@@ -651,11 +636,10 @@ def claim_user_form(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def invite_contributor_post(**kwargs):
+def invite_contributor_post(node, **kwargs):
     """API view for inviting an unregistered user.
     Expects JSON arguments with 'fullname' (required) and email (not required).
     """
-    node = kwargs['node'] or kwargs['project']
     fullname = request.json.get('fullname').strip()
     email = request.json.get('email')
     if email:
@@ -683,13 +667,12 @@ def invite_contributor_post(**kwargs):
 
 
 @must_be_contributor_or_public
-def claim_user_post(**kwargs):
+def claim_user_post(node, **kwargs):
     """View for claiming a user from the X-editable form on a project page.
     """
     reqdata = request.json
     # Unreg user
     user = User.load(reqdata['pk'])
-    node = kwargs['node'] or kwargs['project']
     unclaimed_data = user.get_unclaimed_record(node._primary_key)
     # Submitted through X-editable
     if 'value' in reqdata:  # Submitted email address
