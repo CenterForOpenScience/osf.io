@@ -8,6 +8,7 @@ from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.filesystem import settings
 from waterbutler.providers.filesystem.metadata import FileSystemFileMetadata
