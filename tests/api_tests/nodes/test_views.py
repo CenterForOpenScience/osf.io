@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
+from framework.auth.core import Auth
 from website.models import Node
 from website.util import api_v2_url_for
 from tests.base import OsfTestCase, fake
@@ -175,3 +176,66 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.private_project._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
+
+
+class TestNodePointersList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory.build()
+        self.user.set_password('password')
+        self.user.save()
+        self.auth = (self.user.username, 'password')
+        self.project = ProjectFactory()
+        self.pointer_project = ProjectFactory()
+        self.project.add_pointer(self.pointer_project, auth=Auth(self.user))
+
+    def test_returns_200(self):
+        url = api_v2_url_for('nodes:node-pointers', kwargs=dict(pk=self.project._id))
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_returns_node_pointers(self):
+        url = api_v2_url_for('nodes:node-pointers', kwargs=dict(pk=self.project._id))
+        res = self.app.get(url, auth=self.auth)
+        res_json = res.json['data']
+        assert_equal(len(res_json), 1)
+        assert_in(res_json[0]['node_id'], self.pointer_project._id)
+
+    def test_creates_node_pointer(self):
+        project = ProjectFactory()
+        url = api_v2_url_for('nodes:node-pointers', kwargs=dict(pk=self.project._id))
+        payload = {'node_id': project._id}
+        res = self.app.post(url, payload, auth=self.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['node_id'], project._id)
+
+
+class TestNodePointerDetail(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory.build()
+        self.user.set_password('password')
+        self.user.save()
+        self.auth = (self.user.username, 'password')
+        self.project = ProjectFactory()
+        self.pointer_project = ProjectFactory()
+        self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
+
+    def test_returns_200(self):
+        url = api_v2_url_for('nodes:node-pointer-detail', kwargs=dict(pk=self.project._id, pointer_id=self.pointer._id))
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_returns_node_pointer(self):
+        url = api_v2_url_for('nodes:node-pointer-detail', kwargs=dict(pk=self.project._id, pointer_id=self.pointer._id))
+        res = self.app.get(url, auth=self.auth)
+        res_json = res.json['data']
+        assert_equal(res_json['node_id'], self.pointer_project._id)
+
+    def test_deletes_node_pointer(self):
+        url = api_v2_url_for('nodes:node-pointer-detail', kwargs=dict(pk=self.project._id, pointer_id=self.pointer._id))
+        res = self.app.delete(url, auth=self.auth)
+        assert_equal(res.status_code, 204)
+        assert_equal(len(self.project.nodes_pointer), 0)
