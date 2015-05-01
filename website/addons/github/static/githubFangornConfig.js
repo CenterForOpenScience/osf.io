@@ -257,9 +257,6 @@ function _fangornGithubTitle(item, col)  {
                             .search({branch: item.data.branch})
                             .toString();
                     },
-                    'data-toggle': 'tooltip',
-                    title: 'View file',
-                    'data-placement': 'bottom'
                 }, item.data.name)]);
         } else {
             return m('span', item.data.name);

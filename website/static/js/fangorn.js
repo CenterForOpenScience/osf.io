@@ -781,13 +781,6 @@ function _fangornLazyLoadError (item) {
  */
 function reapplyTooltips () {
     $('[data-toggle="tooltip"]').tooltip({container: 'body', 'animation' : false});
-    $(".title-text [data-toggle=tooltip]").hover(function(event){
-        var mousePosition = event.pageX - 400;
-        $('.tooltip').css('margin-left', mousePosition + 'px');
-    });
-    // $(".title-text [data-toggle=tooltip]").mouseout(function(event){
-    //     $('.tooltip').remove();
-    // });
 }
 
 /**
@@ -957,7 +950,6 @@ function _fangornTitleColumn(item, col) {
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 window.location = redir.toString() + '/';
             },
-            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'bottom'
         }, item.data.name);
     }
     return m('span', item.data.name);
