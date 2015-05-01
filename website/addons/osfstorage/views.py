@@ -4,7 +4,6 @@ import httplib
 import logging
 
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
 
 from framework.auth import Auth
@@ -19,7 +18,6 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.project.model import has_anonymous_link
 
-from website.models import Node
 from website.models import NodeLog
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
