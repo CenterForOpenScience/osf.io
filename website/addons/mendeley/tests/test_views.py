@@ -44,7 +44,7 @@ class MockNode(object):
 
 class MockFolder(object):
     def __init__(self, **kwargs):
-        for k,v in kwargs.iteritems():
+        for k, v in kwargs.iteritems():
             setattr(self, k, v)
 
 class MendeleyViewsTestCase(OsfTestCase):
@@ -210,12 +210,9 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
         self.node_addon.set_target_folder('ROOT-ID', 'ROOT', auth=Auth(user=self.user))
-        res = views.mendeley_widget(node_addon=self.node_addon,
-                                    project=self.project,
-                                    node=self.node,
-                                    nid=self.node_addon._id,
-                                    pid=self.project._id,
-                                    auth=self.user.auth)
+        url = self.project.api_url_for('mendeley_widget')
+        res = self.app.get(url, auth=self.user.auth).json
+
         assert_true(res['complete'])
         assert_equal(res['list_id'], 'ROOT-ID')
 
@@ -223,12 +220,9 @@ class MendeleyViewsTestCase(OsfTestCase):
         # JSON: tell the widget when it hasn't been configured
         assert_false(self.node_addon.complete)
         assert_equal(self.node_addon.mendeley_list_id, None)
-        res = views.mendeley_widget(node_addon=self.node_addon,
-                                    project=self.project,
-                                    node=self.node,
-                                    nid=self.node_addon._id,
-                                    pid=self.project._id,
-                                    auth=self.user.auth)
+        url = self.project.api_url_for('mendeley_widget')
+        res = self.app.get(url, auth=self.user.auth).json
+
         assert_false(res['complete'])
         assert_is_none(res['list_id'])
 

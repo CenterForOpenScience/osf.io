@@ -350,6 +350,8 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --addons
         inv requirements --release
     """
+    if addons:
+        addon_requirements()
     req_file = None
     # "release" takes precedence
     if release:
@@ -359,8 +361,6 @@ def requirements(addons=False, release=False, dev=False):
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
-    if addons:
-        addon_requirements()
 
 
 @task
