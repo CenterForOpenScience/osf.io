@@ -9,7 +9,7 @@ from django.utils.http import urlencode
 from website import settings
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
-    """Like django's `reverse`, except returns an absolute URL."""
+    """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
     relative_url = reverse(view_name, kwargs=kwargs)
 
     if query_kwargs:
