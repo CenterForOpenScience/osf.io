@@ -951,6 +951,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.can_edit(auth)
 
     def update(self, fields, auth=None, save=True):
+        if self.is_registration:
+            raise NodeUpdateError(reason="Registered content cannot be updated")
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
