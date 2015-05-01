@@ -8,7 +8,8 @@ require('select2');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 
-var $osf = require('./osfHelpers');
+var $osf = require('js/osfHelpers');
+var nodeCategories = require('json!built/nodeCategories.json');
 
 var CREATE_URL = '/api/v1/project/new/';
 
@@ -20,15 +21,30 @@ var CREATE_URL = '/api/v1/project/new/';
     * Params:
     *  - data: Data to populate the template selection input
     */
-function ProjectCreatorViewModel(params) {
+function ProjectCreatorViewModel(params) {   
     var self = this;
     self.params = params || {};
     self.minSearchLength = 2;
     self.title = ko.observable('');
     self.description = ko.observable();
+
+    self.category = ko.observable('project');
+    self.NOCATEGORY = '------';
+    self.categoryMap = nodeCategories;
+    self.categories = [self.NOCATEGORY].concat(Object.keys(nodeCategories));
+
     self.errorMessage = ko.observable('');
 
     self.hasFocus = params.hasFocus;
+
+    self.usingTemplate = ko.observable(false);
+
+    $('#createNodeTemplates').on('change', function() {
+        self.usingTemplate(Boolean($('#createNodeTemplates').val()));
+        if (self.usingTemplate()) {
+            self.category(self.NOCATEGORY);
+        }
+    });
 
     self.submitForm = function () {
         if (self.title().trim() === '') {
@@ -59,10 +75,15 @@ function ProjectCreatorViewModel(params) {
     };
 
     self.serialize = function() {
+        var category = self.category();
+        if (category === self.NOCATEGORY) {
+            category = null;
+        }
         return {
             title: self.title(),
+            category: category,
             description: self.description(),
-            template: $('#templates').val()
+            template: $('#createNodeTemplates').val()
         };
     };
     /**
@@ -160,7 +181,7 @@ function ProjectCreatorViewModel(params) {
     };
 
     self.templates = self.loadNodes(params.data);
-    $('#templates').select2({
+    $('#createNodeTemplates').select2({
         allowClear: true,
         placeholder: 'Select a project to use as a template',
         query: self.query

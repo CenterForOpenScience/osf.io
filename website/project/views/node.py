@@ -77,10 +77,12 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = strip_html(request.json.get('title'))
-    template = request.json.get('template')
-    description = strip_html(request.json.get('description'))
+    data = request.get_json()
+    title = strip_html(data.get('title'))
     title = title.strip()
+    category = data.get('category', 'project')
+    template = data.get('template')
+    description = strip_html(data.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -101,7 +103,7 @@ def project_new_post(auth, **kwargs):
             })
 
     else:
-        project = new_node('project', title, user, description)
+        project = new_node(category, title, user, description)
 
     return {
         'projectUrl': project.url

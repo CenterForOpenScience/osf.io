@@ -138,6 +138,17 @@
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
             <br />
+            
+            <label>Category </label>
+            <br />
+            <select class="input-lg"
+                    data-bind="css: {disabled: usingTemplate},
+                               value: category,
+                               options: categories,
+                               optionsText: function(val) { return categoryMap[val] || '--None--' }">
+            </select>
+            <br />
+            <br />
 
             <label>Description (Optional)</label>
             <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
@@ -145,7 +156,7 @@
             <br />
             <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
-            <input type="hidden" id="templates" class="select2-container" style="width: 100%">
+            <input type="hidden" id="createNodeTemplates" class="select2-container" style="width: 100%">
         </div>
     </div>
     <br />
