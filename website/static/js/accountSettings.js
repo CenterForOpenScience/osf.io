@@ -229,23 +229,56 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
 
 
 var DeactivateAccountViewModel = oop.defclass({
+    urls: {
+        'update': '/api/v1/profile/deactivate/'
+    },
     submit: function () {
-        bootbox.alert({
-            title: 'Deactivate Account',
-            message: '<p>Account deactivation must be performed by an administrator.<p>' +
-                '<p>To request deactivation, please email OSF Support at <a href="contact@osf.io">contact@osf.io</a></p>'
-        });
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'Deactivation request submitted.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Deactivation request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account deactivation', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
     }
 });
 
 
 var ExportAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
+    urls: {
+        'update': '/api/v1/profile/export/'
+    },
     submit: function () {
-        bootbox.alert({
-            title: 'Export Account',
-            message: '<p>Account export must be performed by an administrator.<p>' +
-                '<p>To request an export of your account data, please email OSF Support at <a href="contact@osf.io">contact@osf.io</a></p>'
-        });
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'Export request submitted.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Export request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account export', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
     }
 });
 

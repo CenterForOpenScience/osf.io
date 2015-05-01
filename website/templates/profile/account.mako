@@ -106,7 +106,7 @@
                     <div class="panel-heading"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
                         <p>Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.</p>
-                        <a class="btn btn-default" data-bind="click: submit">Export</a>
+                        <a class="btn btn-default" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
                     </div>
                 </div>
                 <div id="deactivateAccount" class="panel panel-default">
@@ -114,7 +114,7 @@
                     <div class="panel-body">
                         <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
                         <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>
-                        <a class="btn btn-danger" data-bind="click: submit">Deactivate</a>
+                        <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Deactivation</a>
                     </div>
                 </div>
             </div>
