@@ -3,6 +3,8 @@ import datetime
 import mock
 import pytz
 from babel import dates, Locale
+from jsonschema import validate
+from schema import Schema, And, Use, Optional, Or
 
 from mako.lookup import Template
 from modularodm import Q
@@ -268,6 +270,78 @@ class TestRemoveNodeSignal(OsfTestCase):
                 NotificationSubscription.find_one(Q('owner', 'eq', project))
 
 
+def list_or_dict(data):
+    """Generator only returns lists or dicts from list or dict"""
+    if isinstance(data, dict):
+        for key in data:
+            if isinstance(data[key], dict) or isinstance(data[key], list):
+                yield data[key]
+    elif isinstance(data, list):
+        for item in data:
+            if isinstance(item, dict) or isinstance(item, list):
+                yield item
+
+
+def has(data, sub_data):
+    """
+    Recursive approach to look for a subset of data in data.
+    WARNING: Don't use on huge structures
+    :param data: Data structure
+    :param sub_data: subset being checked for
+    :return: True or False
+    """
+    try:
+        (item for item in data if item == sub_data).next()
+        return True
+    except StopIteration:
+        lists_and_dicts = list_or_dict(data)
+        for item in lists_and_dicts:
+            if has(item, sub_data):
+                return True
+    return False
+
+
+def subscription_schema(project, structure, level=0):
+    """
+    builds a schema from a list of nodes and events
+    :param project: validation type
+    :param structure: list of nodes (another list) and events
+    :return: schema
+    """
+    event_schema = {
+        'event': {
+            'title': And(Use(str, error="event_title{} not a string".format(level)),
+                         Use(lambda s: s in constants.NOTIFICATION_TYPES,
+                             error="event_title{} not in list".format(level))),
+            'description': And(Use(str, error="event_desc{} not a string".format(level)),
+                               Use(lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
+                                   error="event_desc{} not in list".format(level))),
+            'notificationType': And(str, Or('adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)),
+            'parent_notification_type': Or(None, And(str, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES))
+        },
+        'kind': 'event',
+        'children': And(list, lambda l: len(l) == 0)
+    }
+
+    sub_list = []
+    for item in list_or_dict(structure):
+        sub_list.append(subscription_schema(project, item, level=level+1))
+    sub_list.append(event_schema)
+
+    node_schema = {
+        'node': {
+            'id': Use(type(project._id), error="node_id{}".format(level)),
+            'title': Use(type(project.title), error="node_title{}".format(level)),
+            'url': Use(type(project.url), error="node_{}".format(level))
+        },
+        'kind': And(str, Use(lambda s: s in ('node', 'folder'), error="kind didn't match node or folder{}".format(level))),
+        'children': sub_list
+    }
+    if level == 0:
+        return Schema([node_schema])
+    return node_schema
+
+
 class TestNotificationUtils(OsfTestCase):
     def setUp(self):
         super(TestNotificationUtils, self).setUp()
@@ -446,7 +520,33 @@ class TestNotificationUtils(OsfTestCase):
                 ]
             }
         ]
-        assert_equal(data, expected)
+        expected_new = [['event'], 'event']
+        schema = subscription_schema(self.project, expected_new)
+        print schema
+        print schema.validate(expected)
+
+        parent_event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
+            },
+            'kind': 'event',
+            'children': []
+        }
+        child_event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': 'email_transactional'
+            },
+            'kind': 'event',
+            'children': []
+        }
+        assert has(data, parent_event)
+        assert has(data, child_event)
 
     def test_format_data_node_settings(self):
         data = utils.format_data(self.user, [self.node._id])
