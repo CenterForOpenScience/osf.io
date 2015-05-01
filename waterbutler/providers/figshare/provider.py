@@ -10,6 +10,7 @@ from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.figshare import metadata
 from waterbutler.providers.figshare import utils as figshare_utils
@@ -103,10 +104,25 @@ class FigshareProjectProvider(BaseFigshareProvider):
         self.project_id = self.settings['project_id']
 
     @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        split = path.rstrip('/').split('/')[1:]
+        wbpath = WaterButlerPath('/', _ids=(self.settings['project_id'], ), folder=True)
+
+        if split:
+            article = yield from self._assert_contains_article(split.pop(0))
+            wbpath = wbpath.child(article['title'], article['id'], folder=True)
+
+        if split:
+            provider = yield from self._make_article_provider(article, check_parent=False)
+            return (yield from provider.validate_path('/'.join([''] + split), parent=wbpath))
+
+        return wbpath
+
+    @asyncio.coroutine
     def _assert_contains_article(self, article_id):
         articles_json = yield from self._list_articles()
         try:
-            next(
+            return next(
                 each for each in articles_json
                 if each['id'] == int(article_id)
             )
@@ -146,7 +162,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
     @asyncio.coroutine
     def _get_article_metadata(self, article_id):
         provider = yield from self._make_article_provider(article_id, check_parent=False)
-        return (yield from provider.metadata(''))
+        return (yield from provider.about(self.project_id))
 
     @asyncio.coroutine
     def _project_metadata_contents(self):
@@ -203,13 +219,11 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        figshare_path = FigshareProjectPath(path)
-        if figshare_path.article_id:
-            provider = yield from self._make_article_provider(figshare_path.article_id)
-            return (yield from provider.metadata(str(figshare_path.child), **kwargs))
-        if figshare_path.is_dir:
+        if path.is_root:
             return (yield from self._project_metadata_contents())
-        return (yield from self._get_project_metadata())
+
+        provider = yield from self._make_article_provider(path.identifier)
+        return (yield from provider.metadata(path, **kwargs))
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
@@ -222,6 +236,31 @@ class FigshareArticleProvider(BaseFigshareProvider):
         super().__init__(auth, credentials, settings)
         self.article_id = self.settings['article_id']
         self.child = child
+
+    @asyncio.coroutine
+    def validate_path(self, path, parent=None, **kwargs):
+        split = path.rstrip('/').split('/')[1:]
+        article_json = yield from self._get_article_json()
+
+        if parent:
+            wbpath = parent.child(article_json['title'], _id=self.article_id)
+        else:
+            wbpath = WaterButlerPath('/', _ids=(self.settings['article_id'], ), folder=True)
+
+        if split:
+            fid = int(split.pop(0))
+            try:
+                wbpath = wbpath.child(**next(
+                    {
+                        '_id': x['id'],
+                        'name': x['title'],
+                    } for x in x
+                    if x['id'] == fid
+                ))
+            except StopIteration:
+                pass
+
+        return wbpath
 
     @asyncio.coroutine
     def _get_article_json(self):
@@ -270,6 +309,10 @@ class FigshareArticleProvider(BaseFigshareProvider):
             if defined_type:
                 item = item['files'][0]
         return metadata_class(item, **metadata_kwargs).serialized()
+
+    @asyncio.coroutine
+    def about(self, parent):
+        return self._serialize_item((yield from self._get_article_json()), parent)
 
     @asyncio.coroutine
     def download(self, path, **kwargs):
@@ -322,18 +365,16 @@ class FigshareArticleProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
-        figshare_path = FigshareArticlePath(path)
         article_json = yield from self._get_article_json()
-        if figshare_path.file_id:
-            file_json = figshare_utils.file_or_error(article_json, figshare_path.file_id)
-            return metadata.FigshareFileMetadata(file_json, parent=article_json, child=self.child).serialized()
-        if figshare_path.is_dir:
-            serialized = [
+
+        if path.is_root or path.identifier == int(self.article_id):
+            return [x for x in [
                 self._serialize_item(item, parent=article_json)
                 for item in article_json['files']
-            ]
-            return [each for each in serialized if each]
-        return self._serialize_item(article_json, parent=article_json)
+            ] if x]
+
+        file_json = figshare_utils.file_or_error(article_json, path.identifier)
+        return self._serialize_item(file_json, parent=article_json)
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
