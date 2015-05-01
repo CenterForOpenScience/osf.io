@@ -12,8 +12,8 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
     node = node_addon.owner
     user_settings = node_addon.user_settings
 
-    default_state = 'published'
-    state = 'published' if not node.can_edit(auth) else default_state
+    default_version = 'latest-published'
+    version = 'latest-published' if not node.can_edit(auth) else default_version
 
     # Quit if no dataset linked
     if not node_addon.complete:
@@ -33,7 +33,7 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
     # Produce draft version or quit if no published version is available
     if not published_files:
         if can_edit:
-            state = 'draft'
+            version = 'latest'
         else:
             return []
 
@@ -57,7 +57,7 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
         dataverse=dataverse.title,
         hasPublishedFiles=bool(published_files),
         dataverseIsPublished=dataverse.is_published,
-        state=state,
+        version=version,
     )]
 
 

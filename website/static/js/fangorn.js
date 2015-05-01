@@ -481,6 +481,11 @@ function createFolder(event, parent, col) {
             redraw();
             return;
         }
+        if ($.trim(folderName()) < 1) {
+            errorMessage('Folder name cannot be empty.');
+            redraw();
+            return;
+        }
         if (folderName().indexOf('/') !== -1) {
             errorMessage('Folder name contains illegal characters.');
             redraw();
@@ -961,6 +966,16 @@ function setCurrentFileID(tree, nodeID, file) {
         for (var i = 0; i < tree.children.length; i++) {
             var child = tree.children[i];
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path) {
+                tb.currentFileID = child.id;
+            }
+        }
+    } else if (file.provider === 'dataverse') {
+        // Only highlight file in correct dataset version, since paths persist across versions
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            var urlParams = $osf.urlParams();
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path
+                && child.data.extra.datasetVersion === urlParams.version) {
                 tb.currentFileID = child.id;
             }
         }

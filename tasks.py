@@ -590,7 +590,7 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True)
+    init_app(routes=False, set_backends=True, mfr=False)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
 
