@@ -640,7 +640,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if node_id not in self.oauth_grants:
                 self.oauth_grants[node_id] = data
             else:
-                for ext_acct, meta in user_settings.oauth_grants[node_id]:
+                node_grants = user_settings.oauth_grants[node_id].iteritems()
+                for ext_acct, meta in node_grants:
                     if ext_acct not in self.oauth_grants[node_id]:
                         self.oauth_grants[node_id][ext_acct] = meta
                     else:
