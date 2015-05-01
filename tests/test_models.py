@@ -784,7 +784,7 @@ class TestUser(OsfTestCase):
         cookie = user.get_or_create_cookie()
         session = Session.find_one(Q('data.auth_user_id', 'eq', user._id))
         del session.data['auth_user_id']
-        assert_equal(session.save(), ['data'])
+        assert_in('data', session.save())
 
         assert_equal(None, User.from_cookie(cookie))
 
