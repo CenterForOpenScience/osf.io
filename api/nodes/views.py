@@ -1,7 +1,8 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 
-from website.models import Node
+from framework.auth.core import Auth
+from website.models import Node, Pointer
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer
@@ -28,7 +29,6 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Return a list of nodes. By default, a GET
     will return a list of public nodes, sorted by date_modified.
     """
-    # TODO: Allow unauthenticated requests (list public projects, e.g.)
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
@@ -106,8 +106,35 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
         return self.get_node().nodes
 
 
-class NodePointersList(generics.ListAPIView, NodeMixin):
+class NodePointersList(generics.ListCreateAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
     serializer_class = NodePointersSerializer
 
     def get_queryset(self):
         return self.get_node().nodes_pointer
+
+
+class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = NodePointersSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        pointer_lookup_url_kwarg = 'pointer_id'
+        pointer = get_object_or_404(Pointer, self.kwargs[pointer_lookup_url_kwarg])
+        return pointer
+
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_node()
+        pointer = self.get_object()
+        node.rm_pointer(pointer, auth)
+        node.save()
