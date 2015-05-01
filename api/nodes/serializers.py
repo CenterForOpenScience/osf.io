@@ -21,18 +21,19 @@ class NodeSerializer(JSONAPISerializer):
         'html': 'get_absolute_url',
         'children': {
             'related': Link('nodes:node-children', kwargs={'pk': '<pk>'}),
-            'count': 'get_node_count'
+            'count': 'get_node_count',
         },
         'contributors': {
             'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'}),
-            'count': 'get_contrib_count'
+            'count': 'get_contrib_count',
         },
         'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'})
+            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'}),
+            'count': 'get_pointers_count',
         },
         'registrations': {
             'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'}),
-            'count': 'get_registration_count'
+            'count': 'get_registration_count',
         },
         'files': {
             'related': Link('nodes:node-files', kwargs={'pk': '<pk>'})
@@ -56,6 +57,9 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_registration_count(self, obj):
         return len(obj.node__registrations)
+
+    def get_pointers_count(self, obj):
+        return len(obj.nodes_pointer)
 
     @staticmethod
     def get_properties(obj):
@@ -123,6 +127,9 @@ class NodePointersSerializer(JSONAPISerializer):
         pointer_node = Node.load(validated_data['node']['_id'])
         pointer = node.add_pointer(pointer_node, auth, save=True)
         return pointer
+
+    def update(self, instance, validated_data):
+        pass
 
 
 class NodeFilesSerializer(JSONAPISerializer):
