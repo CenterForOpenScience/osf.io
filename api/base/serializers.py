@@ -1,11 +1,8 @@
 import re
-import furl
 
 from rest_framework import serializers as ser
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, waterbutler_url_for
 from website import settings
-from website.models import User
-from website.util import waterbutler_action_map
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -19,18 +16,16 @@ def _rapply(d, func, *args, **kwargs):
         return func(d, *args, **kwargs)
 
 
-def _url_val(val, obj, context, serializer, **kwargs):
+def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
-    elif isinstance(val, basestring):  # if a string is passed, it's a function of the serializer
-        return getattr(serializer, val)(obj)
-    elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
-        return val.resolve_url(obj, context, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's an attribute
         return getattr(serializer, val)(obj)
+    elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
+        return val.resolve_url(obj, **kwargs)
     else:
         return val
 
@@ -69,7 +64,7 @@ class LinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj, context=self.context, serializer=self.parent)
+        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         return ret
@@ -91,6 +86,8 @@ def _get_attr_from_tpl(attr_tpl, obj):
         attribute_value = getattr(obj, attr_name, ser.empty)
         if attribute_value is not ser.empty:
             return attribute_value
+        elif attr_name in obj:
+            return obj[attr_name]
         else:
             raise AttributeError(
                 '{attr_name!r} is not a valid '
@@ -107,19 +104,23 @@ class Link(object):
     URLs given an endpoint name and attributed enclosed in `<>`.
     """
 
-    def __init__(self, endpoint, args=None, kwargs=None, **kw):
+    def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
         self.endpoint = endpoint
         self.kwargs = kwargs or {}
         self.args = args or tuple()
         self.reverse_kwargs = kw
+        self.query_kwargs = query_kwargs or {}
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
+        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
+
         return absolute_reverse(
             self.endpoint,
             args=arg_values,
             kwargs=kwarg_values,
+            query_kwargs=query_kwarg_values,
             **self.reverse_kwargs
         )
 
@@ -134,34 +135,11 @@ class WaterbutlerLink(object):
         self.args = args or tuple()
         self.reverse_kwargs = kw
 
-    def resolve_url(self, obj, context):
+    def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
 
-        url = furl.furl(settings.WATERBUTLER_URL)
-        route = 'metadata'
-        url.path.segments.append(waterbutler_action_map[route])
-        provider = obj.config.short_name
-        query = {}
-        req = context['request']
-        user = req.user
-
-        url.args.update({
-            'path': '/',
-            'nid': obj.owner._id,
-            'provider': provider,
-        })
-
-        if user:
-            url.args['cookie'] = user.get_or_create_cookie()
-        elif settings.COOKIE_NAME in req.cookies:
-            url.args['cookie'] = req.session.get(settings.COOKIE_NAME)
-
-        if 'view_only' in req.parser_context['args']:
-            url.args['view_only'] = req.parser_context['args']['view_only']
-
-        url.args.update(query)
-        return url.url
+        return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
