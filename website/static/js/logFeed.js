@@ -14,9 +14,15 @@ var $osf = require('./osfHelpers');
 
 ko.punches.enableAll();  // Enable knockout punches
 
+
+/* A binding handler to convert lists into formatted lists, e.g.:
+ * [dog] -> dog
+ * [dog, cat] -> dog and cat
+ * [dog, cat, fish] -> dog, cat, and fish
+ *
+ * This handler should not be used for user inputs.
+ */
 ko.bindingHandlers.listing = {
-    init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-    },
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
         var value = valueAccessor();
         var valueUnwrapped = ko.unwrap(value);
