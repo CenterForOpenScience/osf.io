@@ -3,7 +3,7 @@
 // Douglas Crockford's protoypical inheritance pattern.
 require('js/objectCreateShim'); // IE8 compat
 
-var noop = function() {};
+
 /**
  * Usage:
  *
@@ -18,7 +18,7 @@ var noop = function() {};
  *  });
  */
 function defclass(prototype) {
-    var constructor = prototype.hasOwnProperty('constructor') ? prototype.constructor : noop;
+    var constructor = prototype.hasOwnProperty('constructor') ? prototype.constructor : function() {};
     constructor.prototype = prototype;
     return constructor;
 }
