@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
-import os
 import logging
 import itertools
 import math
 import httplib as http
 
-
 from modularodm import Q
 from flask import request
 
-from framework.static_snapshot import tasks
 from framework import utils
 from framework import sentry
 from framework.auth.core import User
 from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions import session
 from framework.routing import proxy_url
 from framework.exceptions import HTTPError
 from framework.auth.forms import SignInForm
@@ -25,9 +21,7 @@ from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
-from framework.static_snapshot.decorators import gets_dashoard_static_snapshot
-
-from website import settings
+from website.static_snapshot.decorators import gets_static_snapshot
 from website.models import Guid
 from website.models import Node
 from website.util import rubeus
@@ -37,6 +31,7 @@ from website.util import permissions
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
+
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +96,7 @@ def _render_nodes(nodes, auth=None):
     }
     return ret
 
-
+@gets_static_snapshot('index')
 @collect_auth
 def index(auth):
     """Redirect to dashboard if user is logged in, else show homepage.
@@ -277,24 +272,7 @@ def get_dashboard_nodes(auth):
         response_nodes = nodes
     return _render_nodes(response_nodes, auth)
 
-@must_be_logged_in
-def handle_get_static_snapshot(**kwargs):
-    print "in handler"
-    import pdb; pdb.set_trace()
-    page = 'dashboard'
-    task_id = session.data[page]['task_id']
-    task = tasks.get_static_snapshot.AsyncResult(task_id)
-    print task
-    response = {}
-    if task.state == 'PENDING':
-        print "do nothing"
-    if task.state == 'SUCCESS':
-        print "Save to cache"
-        response = {
-            'state': task.state,
-            'content': task.info['content']
-        }
-    return response
+
 
 # @must_be_logged_in
 # def dashboard_static(auth, **kwargs):
@@ -312,7 +290,6 @@ def handle_get_static_snapshot(**kwargs):
 #     else:
 #         return {}
 
-@gets_dashoard_static_snapshot
 @must_be_logged_in
 def dashboard(auth):
 
@@ -449,3 +426,5 @@ def resolve_guid(guid, suffix=None):
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
+
+

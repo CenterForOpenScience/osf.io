@@ -10,16 +10,14 @@ from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.sessions import session
-from framework.static_snapshot import tasks
-from framework.static_snapshot.decorators import gets_project_static_snapshot
+from website.static_snapshot.decorators import gets_static_snapshot
 from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo
-
 from website import language
-
+from website.static_snapshot import tasks
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
@@ -40,6 +38,7 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
+
 
 logger = logging.getLogger(__name__)
 
@@ -389,7 +388,7 @@ def configure_comments(**kwargs):
 # View Project
 ##############################################################################
 
-@gets_project_static_snapshot
+@gets_static_snapshot('project')
 @must_be_valid_project
 @must_be_contributor_or_public
 def view_project(**kwargs):

@@ -26,6 +26,7 @@ from website import language
 from website import security
 from website.models import User
 from website.util import web_url_for
+from website.static_snapshot.decorators import gets_static_snapshot
 
 
 @collect_auth
@@ -240,7 +241,6 @@ def send_confirm_email(user, email):
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
         user=user,
         confirmation_url=confirmation_url)
-
 
 def register_user(**kwargs):
     """Register new user account.
