@@ -1645,38 +1645,7 @@ class TestNodeTraversals(OsfTestCase):
         ids = {d._id for d in descendants}
         assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
 
-    def test_get_descendants_iterative(self):
-        comp1 = ProjectFactory(creator=self.user, parent=self.root)
-        comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=self.root)
-        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = self.root.get_descendants_iterative()
-        ids = {d._id for d in descendants}
-        assert_false({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids))
-
-    def test_get_descendants_iterative_filtered(self):
-        comp1 = ProjectFactory(creator=self.user, parent=self.root)
-        comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=self.root)
-        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp2b = ProjectFactory(creator=self.user, parent=comp2)
-
-        descendants = self.root.get_descendants_iterative(
-            lambda n: n.is_contributor(self.viewer)
-        )
-        ids = {d._id for d in descendants}
-        assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
-        
 class TestRemoveNode(OsfTestCase):
 
     def setUp(self):
