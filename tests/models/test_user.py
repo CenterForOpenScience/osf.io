@@ -162,6 +162,51 @@ class UserMergingTestCase(base.OsfTestCase):
 
         assert_false(self.user.can_be_merged)
 
+    def test_merge_unconfirmed_into_unmergeable(self):
+        self.user.add_addon('unmergeable')
+        self.user.save()
+        # sanity check
+        assert_false(self.user.can_be_merged)
+
+        unconf = factories.UnconfirmedUserFactory()
+        # make sure this doesn't raise an exception
+        self.user.merge_user(unconf)
+
+        unreg = factories.UnregUserFactory()
+        # make sure this doesn't raise an exception
+        self.user.merge_user(unreg)
+
+    def test_merge_unmergeable_into_mergeable(self):
+        # These states should never happen in the current codebase...
+        #   but that's why we have tests.
+        unconfirmed = factories.UnconfirmedUserFactory()
+        unconfirmed.add_addon('unmergeable')
+
+        with assert_raises(exceptions.MergeConflictError):
+            self.user.merge_user(unconfirmed)
+
+        unregistered = factories.UnregUserFactory()
+        unregistered.add_addon('unmergeable')
+
+        with assert_raises(exceptions.MergeConflictError):
+            self.user.merge_user(unregistered)
+
+    def test_merge_unmergeabled_into_unmergeable(self):
+        self.user.add_addon('unmergeable')
+        # These states should never happen in the current codebase...
+        #   but that's why we have tests.
+        unconfirmed = factories.UnconfirmedUserFactory()
+        unconfirmed.add_addon('unmergeable')
+
+        with assert_raises(exceptions.MergeConflictError):
+            self.user.merge_user(unconfirmed)
+
+        unregistered = factories.UnregUserFactory()
+        unregistered.add_addon('unmergeable')
+
+        with assert_raises(exceptions.MergeConflictError):
+            self.user.merge_user(unregistered)
+
     def test_merge(self):
         other_user = factories.UserFactory()
         other_user.save()

@@ -777,9 +777,6 @@ class User(GuidStoredObject, AddonModelMixin):
         except NoResultsFound:
             user_to_merge = None
 
-        if user_to_merge and not user_to_merge.can_be_merged:
-            raise exceptions.MergeConflictError()
-
         if user_to_merge and merge:
             self.merge_user(user_to_merge)
         elif user_to_merge:
@@ -1074,9 +1071,13 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :param user: A User object to be merged.
         """
-
+        # Fail if the other user has conflicts.
         if not user.can_be_merged:
-            raise ValueError("User cannot be merged")
+            raise exceptions.MergeConflictError("Users cannot be merged")
+
+        # Fail if this user has conflicts, unless the other is unconfirmed.
+        if (not self.can_be_merged) and user.is_confirmed:
+            raise exceptions.MergeConflictError("Users cannot be merged")
 
         # Move over the other user's attributes
 
