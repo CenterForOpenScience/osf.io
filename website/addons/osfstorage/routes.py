@@ -13,16 +13,6 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/hook/',
-                '/project/<pid>/node/<nid>/osfstorage/hook/',
-            ],
-            'put',
-            views.osf_storage_update_metadata,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/osfstorage/',
                 '/project/<pid>/node/<nid>/osfstorage/',
                 '/project/<pid>/osfstorage/<fid>/',
@@ -96,6 +86,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/osfstorage/hooks/metadata/',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/metadata/',
+            ],
+            'put',
+            views.osf_storage_update_metadata,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/osfstorage/hooks/move/',
                 '/project/<pid>/node/<nid>/osfstorage/hooks/move',
             ],
@@ -103,10 +103,11 @@ api_routes = {
             views.osf_storage_move_hook,
             json_renderer,
         ),
+
         Rule(
             [
-                '/project/<pid>/osfstorage/hooks/move/',
-                '/project/<pid>/node/<nid>/osfstorage/hooks/move/',
+                '/project/<pid>/osfstorage/hooks/copy/',
+                '/project/<pid>/node/<nid>/osfstorage/hooks/copy/',
             ],
             'post',
             views.osf_storage_copy_hook,
