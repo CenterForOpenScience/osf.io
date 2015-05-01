@@ -572,6 +572,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_meta = fields.DictionaryField()
 
     archiving = fields.BooleanField(default=False)
+    archive_task_id = fields.StringField()
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -1568,7 +1569,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # the cloned node must pass itself to its wiki objects to build the
         # correct URLs to that content.
         registered = original.clone()
-        project_signals.after_create_registration.send(original, dst=registered, user=auth.user)
 
         # TODO get addon statuses
 
@@ -1589,6 +1589,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.piwik_site_id = None
 
         registered.save()
+        project_signals.after_create_registration.send(original, dst=registered, user=auth.user)
 
         registered.nodes = []
 
