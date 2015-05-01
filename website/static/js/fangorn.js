@@ -52,6 +52,9 @@ var _defaultIconState = function (){
     };
 };
 
+// Cross browser key codes for the Command key
+var commandKeys = [224, 17, 91, 93];
+
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
 var getExtensionIconClass = function(name) {
@@ -943,12 +946,18 @@ function _fangornDefineToolbar (item) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
+    var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span',{
             ondblclick: function() {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-                window.location = redir.toString() + '/';
+                var fileurl  = redir.toString() + '/';
+                if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+                    window.open(fileurl, '_blank');
+                } else {
+                    window.open(fileurl, '_self');
+                }
             },
         }, item.data.name);
     }
