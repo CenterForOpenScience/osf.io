@@ -8,6 +8,8 @@ var URI = require('URIjs');
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
 
+// Cross browser key codes for the Command key
+var commandKeys = [224, 17, 91, 93];
 
 function _uploadUrl(item, file) {
     return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
@@ -250,12 +252,17 @@ function _fangornGithubTitle(item, col)  {
                 m('github-name', {
                     ondblclick: function() {
                         var redir = new URI(item.data.nodeUrl);
-                        window.location = new URI(item.data.nodeUrl)
+                        var fileurl = new URI(item.data.nodeUrl)
                             .segment('files')
                             .segment(item.data.provider)
                             .segment(item.data.path.substring(1))
                             .search({branch: item.data.branch})
                             .toString();
+                            if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+                                window.open(fileurl, '_blank');
+                            } else {
+                                window.open(fileurl, '_self');
+                            }
                     },
                 }, item.data.name)]);
         } else {
