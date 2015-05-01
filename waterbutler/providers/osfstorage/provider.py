@@ -67,7 +67,7 @@ class OSFStorageProvider(provider.BaseProvider):
 
         data = yield from resp.json()
 
-        names, ids = zip(*[(x['name'], x['path']) for x in reversed(data['data'])])
+        names, ids = zip(*[(x['name'], x['id']) for x in reversed(data['data'])])
         if name is not None:
             ids += (None, )
             names += (name, )
