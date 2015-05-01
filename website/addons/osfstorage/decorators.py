@@ -10,6 +10,7 @@ from modularodm.storage.base import KeyExistsException
 from framework.auth.decorators import must_be_signed
 
 from website.models import User
+from website.models import Node
 from website.addons.osfstorage import model
 from framework.exceptions import HTTPError
 from website.addons.osfstorage import utils
@@ -45,11 +46,13 @@ def path_validator(path):
     )
 
 file_opt_args = {
-    'auth': Arg({
-        'id': Arg(None, required=True, dest='user', use=User.load, validate=lambda x: x is not None)
-    }),
-    'source': Arg(unicode, required=True, validate=path_validator),
-    'destination': Arg(unicode, required=True, validate=path_validator),
+    'user': Arg(None, required=True, use=User.load, validate=lambda x: x is not None),
+    'source': Arg(unicode, required=True),
+    'destination': Arg({
+        'name': Arg(unicode, required=True, validate=lambda x: '/' not in x),
+        'parent': Arg(unicode, required=True, validate=lambda x: '/' not in x),
+        'node': Arg(None, required=True, dest='node', use=Node.load, validate=lambda x: x is not None),
+    })
 }
 
 waterbutler_crud_args = {
