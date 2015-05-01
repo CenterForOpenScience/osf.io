@@ -5,7 +5,7 @@ require('css/projectorganizer.css');
 module.exports = {
     componentIcons: {
         hypothesis: 'fa fa-lightbulb-o',
-        methods_and_measures: 'fa fa-pencil',
+        'methods and measures': 'fa fa-pencil',
         procedure: 'fa fa-cogs',
         instrumentation: 'fa fa-flask',
         data: 'fa fa-database',
