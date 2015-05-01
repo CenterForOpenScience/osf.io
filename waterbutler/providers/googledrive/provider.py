@@ -146,33 +146,25 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, conflict='replace', **kwargs):
-        path = path.split('/')
-        name = '/' + parse.quote(path.pop(-1), safe='')
+        assert path.is_file
 
-        parent_id = yield from self._materialized_path_to_id(
-            GoogleDrivePath(
-                self.folder['name'],
-                ('/'.join(path) or '/')
-            )
-        )
+        # path, exists = yield from self.handle_name_conflict(
+        #     GoogleDrivePath(self.folder['name'], name),
+        #     raw=True,
+        #     conflict=conflict,
+        #     parent_id=parent_id,
+        # )
 
-        path, exists = yield from self.handle_name_conflict(
-            GoogleDrivePath(self.folder['name'], name),
-            raw=True,
-            conflict=conflict,
-            parent_id=parent_id,
-        )
-
-        if exists:
-            segments = (exists['id'], )
+        if path.identifier:
+            segments = (path.identifier, )
         else:
             segments = ()
 
-        upload_metadata = self._build_upload_metadata(parent_id, path.name)
-        upload_id = yield from self._start_resumable_upload(not exists, segments, stream.size, upload_metadata)
+        upload_metadata = self._build_upload_metadata(path.parent.identifier, path.name)
+        upload_id = yield from self._start_resumable_upload(not path.identifier, segments, stream.size, upload_metadata)
         data = yield from self._finish_resumable_upload(segments, stream, upload_id)
 
-        return GoogleDriveFileMetadata(data, path.parent).serialized(), not exists
+        return GoogleDriveFileMetadata(data, path.parent).serialized(), path.identifier is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -323,19 +315,21 @@ class GoogleDriveProvider(provider.BaseProvider):
         return item_id
 
     @asyncio.coroutine
-    def _resolve_path_to_ids(self, path):
-        ret = [{
+    def _resolve_path_to_ids(self, path, start_at=None):
+        ret = start_at or [{
             'title': '',
             'mimeType': 'folder',
             'id': self.folder['id'],
         }]
-        item_id = self.folder['id']
+        item_id = ret[0]['id']
         parts = [parse.unquote(x) for x in path.strip('/').split('/')]
 
         while parts:
+            current_part = parts.pop(0)
+
             resp = yield from self.make_request(
                 'GET',
-                self.build_url('files', item_id, 'children', q='title = "{}"'.format(parts.pop(0)), fields='items(id)'),
+                self.build_url('files', item_id, 'children', q='title = "{}"'.format(current_part.replace('"', '\\"')), fields='items(id)'),
                 expects=(200, ),
                 throws=exceptions.MetadataError,
             )
@@ -343,7 +337,13 @@ class GoogleDriveProvider(provider.BaseProvider):
             try:
                 item_id = (yield from resp.json())['items'][0]['id']
             except (KeyError, IndexError):
-                raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
+                if parts:
+                    raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
+                return ret + [{
+                    'id': None,
+                    'title': current_part,
+                    'mimeType': 'folder' if path.endswith('/') else '',
+                }]
 
             resp = yield from self.make_request(
                 'GET',
@@ -385,6 +385,7 @@ class GoogleDriveProvider(provider.BaseProvider):
                 except exceptions.MetadataError:
                     pass
 
+        # TODO Custom exception here
         raise exceptions.MetadataError('ID is out of scope')
 
     @asyncio.coroutine
