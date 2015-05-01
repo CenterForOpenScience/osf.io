@@ -71,16 +71,11 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a
-                        % if is_project:
-                            class="btn btn-default"
-                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
-                            data-target="#duplicateModal" data-toggle="modal"
-                        % else:
-                            class="btn btn-default disabled"
-                        % endif
-                            href="#">
-                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                        <a class="btn btn-default"
+                           data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                           data-target="#duplicateModal" data-toggle="modal"
+                           href="#">
+                          <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
