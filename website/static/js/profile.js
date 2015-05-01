@@ -343,7 +343,6 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     if (this.hasValidProperty() && this.isValid()) {
-        
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -553,7 +552,6 @@ var SocialViewModel = function(urls, modes) {
     );
 
     self.trackedProperties = [
-//        self.personal,
         self.profileWebsites,
         self.orcid,
         self.researcherId,
@@ -582,7 +580,6 @@ var SocialViewModel = function(urls, modes) {
     
     self.removeWebsite = function(profileWebsite) {
         var idx = self.profileWebsites.indexOf(profileWebsite);
-        console.log("in removeWebsite, idx is " + idx);
         self.profileWebsites.splice(idx, 1);
     }
 
