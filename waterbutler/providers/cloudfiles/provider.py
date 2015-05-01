@@ -60,9 +60,7 @@ class CloudFilesProvider(provider.BaseProvider):
 
     @ensure_connection
     @asyncio.coroutine
-    def intra_copy(self, dest_provider, source_options, dest_options):
-        source_path = CloudFilesPath(source_options['path'])
-        dest_path = CloudFilesPath(dest_options['path'])
+    def intra_copy(self, dest_provider, source_path, dest_path):
         url = dest_provider.build_url(dest_path.path)
         yield from self.make_request(
             'PUT',
@@ -73,7 +71,7 @@ class CloudFilesProvider(provider.BaseProvider):
             expects=(201, ),
             throws=exceptions.IntraCopyError,
         )
-        return (yield from dest_provider.metadata(str(dest_path)))
+        return (yield from dest_provider.metadata(dest_path))
 
     @ensure_connection
     @asyncio.coroutine
