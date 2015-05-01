@@ -38,20 +38,7 @@ var SerializeMixin = function() {};
 
 /** Serialize to a JS Object. */
 SerializeMixin.prototype.serialize = function() {
-    var serializedData = ko.toJS(this);
-    
-    function removeBlankValues(value) {
-      return value != "";
-    }
-    // Remove blank websites from profileWebsites array before save
-    if (serializedData.urls.crud = "/api/v1/settings/social/") {
-        var profileWebsites = serializedData.profileWebsites;
-        if (profileWebsites.length > 1) {
-            serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
-        }
-    }        
-
-    return serializedData;
+   return ko.toJS(this);
 };
 
 SerializeMixin.prototype.unserialize = function(data) {
@@ -280,11 +267,11 @@ BaseViewModel.prototype.handleSuccess = function() {
 BaseViewModel.prototype.handleError = function(response) {    
     var defaultMsg = 'Could not update settings';
     var msg;
-    if (typeof response.responseJSON != "undefined") {
-        msg = response.responseJSON.message_long
+    if (response.responseJSON === undefined) {
+        msg = defaultMsg;
     }
     else {
-        msg = defaultMsg;
+        msg = response.responseJSON.message_long        
     }
      this.changeMessage(
          msg,
@@ -497,7 +484,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.addons = ko.observableArray();
   
-    self.profileWebsites = ko.observableArray(); // Initially a single item with a blank first entry  
+    self.profileWebsites = ko.observableArray();
                 
     self.hasProfileWebsites = ko.computed(function() {
         if (self.profileWebsites())      
@@ -506,13 +493,13 @@ var SocialViewModel = function(urls, modes) {
                 return true;
             }
         }
-
         return false;
     });
     
     self.hasMultiple = ko.computed(function() {
-        if (self.profileWebsites())
-        return self.profileWebsites().length > 1;
+        if (self.profileWebsites()) {
+            return self.profileWebsites().length > 1;
+        }
         else return false
     });
     

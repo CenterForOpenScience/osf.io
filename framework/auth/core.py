@@ -84,15 +84,15 @@ def validate_year(item):
 
 
 validate_url = URLValidator()
-def validate_profile_websites(profileWebsites):
-    if not profileWebsites:
+def validate_profile_websites(profile_websites):
+    if not profile_websites:
         return
-    for profileWebsite in profileWebsites:
-        if profileWebsite:
-            if not profileWebsite.startswith("http://"):
-                profileWebsite = "http://" + profileWebsite
+    for profile_website in profile_websites:
+        if profile_website:
+            if not profile_website.startswith("http://"):
+                profile_website = "http://" + profile_website
             try:
-                validate_url(profileWebsite)
+                validate_url(profile_website)
             except ValidationError:
                 # Reraise with a better message
                 raise ValidationError('Invalid personal URL.')
@@ -215,7 +215,7 @@ class User(GuidStoredObject, AddonModelMixin):
         'github': u'http://github.com/{}',
         'scholar': u'http://scholar.google.com/citation?user={}',
         'twitter': u'http://twitter.com/{}',
-        'profileWebsites': u'[{}]',
+        'profileWebsites': [],
         'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',

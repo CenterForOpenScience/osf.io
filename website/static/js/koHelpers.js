@@ -44,6 +44,16 @@ var makeRegexValidator = function(regex, message, match) {
     };
 };
 
+var cleanURL = function(url) {
+    url = $.trim(url);
+    if (!value || value.search(/^https?:\/\//i) === 0) {
+        return url;
+    }
+    return 'http://' + url;
+
+    }
+
+
 addExtender('cleanup', function(value, cleaner) {
     return !!value ? cleaner(value) : '';
 });
@@ -59,28 +69,19 @@ addExtender('trimmed', function(value) {
     return $.trim(value);
 });
 
-addExtender('trimmedhttp', function(value) {
- //   console.log("trimmedhttp value is " + value);
-    value = $.trim(value);
-    if (!value || value.search(/^https?:\/\//i) === 0) {
-        return value;
-    }
-    return 'http://' + value;
+addExtender('trimmedURL', function(value) {
+    return cleanURL(value);
+
 });
 
-addExtender('trimmedWebArray', function(values) {
+addExtender('trimmedURLArray', function(values) {
     if (values) {
     for (var i = 0; i < values.length; i++) {   
-        console.log("trimmedhttp value is " + values[i] + "and values.length is " + values.length);
-        var value = values[i];
-        var value = $.trim(value);
-        if (!value || value.search(/^https?:\/\//i) === 0) {
-            values[i] = value;
+        values[i] = cleanURL(values[i]);
         }
-        values[i] = 'http://' + value;
         return values;
     }
-    }
+
     else return values;
 });
 
