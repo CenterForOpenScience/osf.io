@@ -46,8 +46,6 @@ def _inject_nodes(kwargs):
 def must_be_valid_project(func=None, retractions_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
 
-    print 'placeholder'
-
     # TODO: Check private link
     def must_be_valid_project_inner(func):
 
