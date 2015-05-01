@@ -74,7 +74,7 @@ INVALID_EMAIL_CONFIRM_TOKEN = 'This confirmation link is invalid. Please <a href
 
 CANNOT_MERGE_ACCOUNTS_SHORT = 'Cannot Merge Accounts'
 
-CANNOT_MERGE_ACCOUNTS_LONG = 'Accounts cannot be merged due to a conflict.'
+CANNOT_MERGE_ACCOUNTS_LONG = 'Accounts cannot be merged due to a possible conflict with add-ons, you will want to deactivate any add-ons authorized on your to-be-merged account and try again.'
 
 MERGE_COMPLETE = 'Accounts successfully merged.'
 
