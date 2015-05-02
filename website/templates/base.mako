@@ -151,6 +151,7 @@
                 cookieName: '${cookie_name}'
             });
         </script>
+        <script src="/static/public/js/nodeCategories.js"></script>
 
 
         % if piwik_host:

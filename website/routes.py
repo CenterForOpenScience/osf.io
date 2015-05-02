@@ -1068,6 +1068,17 @@ def make_url_map(app):
             '/project/new/<nid>/',
         ], 'post', project_views.node.project_new_from_template, json_renderer),
 
+        # Update
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'put',
+            project_views.node.update_node,
+            json_renderer,
+        ),
+
         # Remove
         Rule(
             [
