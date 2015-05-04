@@ -44,5 +44,5 @@
         </p>
     </div>
 % else:
-  <div class="help-block">This user has no public ${pluralized_node_type}</div>.
+  <div class="help-block">This user has no public ${pluralized_node_type}.</div>
 % endif
