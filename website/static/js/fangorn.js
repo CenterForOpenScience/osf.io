@@ -934,7 +934,6 @@ function _fangornDefineToolbar (item) {
 
     item.icons = buttons;
     $('.fangorn-toolbar-icon').tooltip();
-
 }
 
 /**
@@ -985,25 +984,8 @@ function _fangornResolveRows(item) {
         _fangornDefineToolbar.call(this, item);
     }
 
-
-    // Column that does the toggles :
-    var toggleTemplate = {
-        data : null,
-        folderIcons: false,
-        filter : false,
-        custom : function(){
-            if(this.isMultiselected(item.id)) {
-                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
-            }
-            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
-        }
-    };
     if(item.data.tmpID){
         return [
-        {
-            data : '',  // Data field name
-            custom : function(){ return m('span', ''); }
-        },
         {
             data : '',  // Data field name
             css : 't-a-c',
@@ -1023,7 +1005,6 @@ function _fangornResolveRows(item) {
         }
     }
     default_columns.push(
-    toggleTemplate,
     {
         data : 'name',  // Data field name
         folderIcons : true,
@@ -1059,13 +1040,8 @@ function _fangornColumnTitles () {
     var columns = [];
     columns.push(
     {
-        title : '',
-        width: '5%',
-        sort: false
-    },
-    {
         title: 'Name',
-        width : '85%',
+        width : '90%',
         sort : true,
         sortType : 'text'
     }, {
