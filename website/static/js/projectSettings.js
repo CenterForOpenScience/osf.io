@@ -129,6 +129,8 @@ function randomScientist() {
     return scientists[Math.floor(Math.random() * scientists.length)];
 }
 
+var nodeApiUrl = window.contextVars.node.urls.api;
+
 
 // Request the first 5 contributors, for display in the deletion modal
 var contribs = [];
