@@ -17,10 +17,12 @@ var m = require('mithril');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
-var Raven = require('raven-js');    
+var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
 var legendView = require('js/components/legend').view;
+
+var nodeCategories = require('json!built/nodeCategories.json');
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
@@ -47,13 +49,11 @@ if(multiItemDetailTemplateSourceNoAction) {
 
 var $detailDiv = $('.project-details');
 
-var nodeCategories = window.contextVars.nodeCategories;
-
 var projectOrganizerCategories = $.extend({}, {
     folder: 'Folder',
     smartFolder: 'Smart Folder',
     project: 'Project',
-    registration:  'Registration', 
+    registration:  'Registration',
     link:  'Link'
 }, nodeCategories);
 
@@ -647,7 +647,7 @@ function _poResolveIcon(item) {
     var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
         var iconType = icons[type];
-        if (type === 'component' || type === 'registeredComponent') {            
+        if (type === 'component' || type === 'registeredComponent') {
             iconType = componentIcons[category];
         }
         if (type === 'registeredComponent') {
@@ -874,7 +874,7 @@ function filterRowsNotInParent(rows) {
         originalRow = this.find(this.multiselected[0].id),
         originalParent,
         currentItem;
-    if (typeof originalRow !== "undefined") {
+    if (typeof originalRow !== 'undefined') {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
@@ -1116,8 +1116,8 @@ function dropLogic(event, items, folder) {
                 if (copyMode === 'copy' || copyMode === 'move') {
                     deleteMultiplePointersFromFolder.call(tb, itemsNotToMove, itemParent);
                     if (itemsToMove.length > 0) {
-                        var url = postInfo[copyMode]['url'],
-                            postData = JSON.stringify(postInfo[copyMode]['json']),
+                        var url = postInfo[copyMode].url,
+                            postData = JSON.stringify(postInfo[copyMode].json),
                             outerFolder = whichIsContainer.call(tb, itemParent, folder),
                             postAction = $.ajax({
                                 type: 'POST',
@@ -1293,7 +1293,7 @@ ProjectOrganizer.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     },
-    legend: function(node) {        
+    legend: function(domNode) {
         var self = this;
         var showLegend = function() {
             var keys = Object.keys(projectOrganizerCategories);
@@ -1307,13 +1307,13 @@ ProjectOrganizer.prototype = {
                 return [
                     m('span', {
                         className: item.icon
-                    }), 
+                    }),
                     '  ',
                     item.label
                 ];
             };
             var opts = {
-                footer: m('span', ['*lighter color denotes a registration (e.g. ', 
+                footer: m('span', ['*lighter color denotes a registration (e.g. ',
                                    m('span', {
                                        className: iconmap.componentIcons.data + ' po-icon'
                                    }),
@@ -1327,9 +1327,9 @@ ProjectOrganizer.prototype = {
             self.grid.tbController.modal.update(legendView(data, repr, opts));
             self.grid.tbController.modal.show();
         };
-        node.onclick = showLegend;
+        domNode.onclick = showLegend;
         return m.render(
-            node,
+            domNode,
             m('span', {
                 className: iconmap.info,
                 click: showLegend

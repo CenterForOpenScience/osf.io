@@ -11,7 +11,7 @@ module.exports = {
         data: 'fa fa-database',
         analysis: 'fa fa-bar-chart',
         communication: 'fa fa-comment',
-        other: 'fa fa-question',
+        other: 'fa fa-th-large',
         '': 'fa fa-circle-thin'
     },
     projectIcons: {
