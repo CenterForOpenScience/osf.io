@@ -91,6 +91,14 @@
     <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
 % endif
 
+% if node['is_registration'] and node['pending_embargo']:
+    <div class="alert alert-info">This ${node['node_type']} is currently pending entering into an embargoed state.</div>
+% endif
+
+% if node['is_registration'] and node['is_embargoed']:
+    <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, xxx, passes or an admin manually makes it public.</div>
+% endif
+
 % if node['anonymous'] and user['is_contributor']:
     <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="alert-link" href="${node['redirect_url']}">here</a>.</div>
 % endif

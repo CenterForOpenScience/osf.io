@@ -540,6 +540,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_fork',
         'is_registration',
         'retraction',
+        'embargo',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
