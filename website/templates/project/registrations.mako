@@ -14,26 +14,26 @@
             "uri": "${node["api_url"]}get_registrations/",
             "replace": true
             }'></div>
-    % elif node['node_type'] != 'project':
-          %if user['is_admin_parent']:
-              To register this component, you must <a href="${parent_node['url']}registrations"><b>register its parent project</b></a> (<a href="${parent_node['url']}">${parent_node['title']}</a>).
-          %else:
-              There have been no registrations of the parent project (<a href="${parent_node['url']}">${parent_node['title']}</a>).
-          %endif
+    ## Uncomment to disable registering Components
+    ##% elif node['node_type'] != 'project':
+    ##      %if user['is_admin_parent']:
+    ##          To register this component, you must <a href="${parent_node['url']}registrations"><b>register its parent project</b></a> (<a href="${parent_node['url']}">${parent_node['title']}</a>).
+    ##      %else:
+    ##          There have been no registrations of the parent project (<a href="${parent_node['url']}">${parent_node['title']}</a>).
+    ##      %endif
     % else:
         There have been no registrations of this ${node['node_type']}.
         For a list of the most viewed and most recent public registrations on the
-        Open Science Framework, click <a href="/explore/activity/">here</a>.
+        Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
 
     % endif
 
   </div>
   <div class="col-sm-3">
     <div>
-      % if 'admin' in user['permissions'] and node['node_type'] == 'project' and not disk_saving_mode:
-      <a href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
-    % endif
-  </div>
-
+        % if 'admin' in user['permissions'] and not disk_saving_mode:
+          <a href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
+        % endif
+    </div>
   </div>
 </div>

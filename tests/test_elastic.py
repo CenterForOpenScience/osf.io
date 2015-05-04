@@ -1,4 +1,3 @@
-
 import unittest
 from nose.tools import *  # PEP8 asserts
 
@@ -24,9 +23,9 @@ class SearchTestCase(OsfTestCase):
         super(SearchTestCase, self).tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-
     def setUp(self):
         super(SearchTestCase, self).setUp()
+        search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
 
@@ -182,7 +181,7 @@ class TestProject(SearchTestCase):
 
 @requires_search
 class TestPublicNodes(SearchTestCase):
-
+    
     def setUp(self):
         super(TestPublicNodes, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
@@ -194,7 +193,7 @@ class TestPublicNodes(SearchTestCase):
             is_public=True,
         )
         self.component = NodeFactory(
-            project=self.project,
+            parent=self.project,
             title=self.title,
             creator=self.user,
             is_public=True
@@ -217,13 +216,12 @@ class TestPublicNodes(SearchTestCase):
         self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
-
         self.registration.set_privacy('private')
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
     def test_public_parent_title(self):
-        self.project.set_title('hello &amp; world',self.consolidate_auth)
+        self.project.set_title('hello &amp; world', self.consolidate_auth)
         self.project.save()
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
@@ -377,14 +375,6 @@ class TestPublicNodes(SearchTestCase):
         assert len(docs) == 3
         for doc in docs:
             assert doc['key'] in tags
-
-    def test_count_aggregation(self):
-        docs = query("*")['counts']
-        assert_equal(docs['total'], 4)
-        assert_equal(docs['project'], 1)
-        assert_equal(docs['component'], 1)
-        assert_equal(docs['registration'], 1)
-
 
 
 @requires_search

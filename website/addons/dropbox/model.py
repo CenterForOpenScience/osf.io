@@ -189,7 +189,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': cleaned_path,
+                'path': metadata['path'],
                 'folder': self.folder,
                 'urls': {
                     'view': url,

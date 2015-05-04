@@ -341,6 +341,8 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --addons
         inv requirements --release
     """
+    if addons:
+        addon_requirements()
     req_file = None
     # "release" takes precedence
     if release:
@@ -350,8 +352,6 @@ def requirements(addons=False, release=False, dev=False):
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
-    if addons:
-        addon_requirements()
 
 
 @task
@@ -590,7 +590,7 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True)
+    init_app(routes=False, set_backends=True, mfr=False)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
 

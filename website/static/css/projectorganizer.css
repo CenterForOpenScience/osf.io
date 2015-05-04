@@ -387,25 +387,12 @@ h3.category {
     margin-right: 4px;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.po-icon-registered {
+    color: #D4D4D4;
+}
+.po-icon {
+    color: #5E5E5E;
+}
+.po-modal {
+    width: auto;
+}
