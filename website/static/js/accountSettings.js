@@ -238,7 +238,7 @@ var DeactivateAccountViewModel = oop.defclass({
     submit: function () {
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
-            $osf.growl('Success', 'Deactivation request submitted.', 'success');
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
