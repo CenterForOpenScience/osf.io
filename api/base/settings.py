@@ -41,13 +41,14 @@ INSTALLED_APPS = (
 
     # 3rd party
     'rest_framework',
+    'rest_framework_swagger',
 )
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_RENDERER_CLASSES': (
-        'api.base.renderers.JSONAPIRenderer',
         'rest_framework.renderers.JSONRenderer',
+        'api.base.renderers.JSONAPIRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
