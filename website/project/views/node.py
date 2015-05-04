@@ -746,11 +746,14 @@ def _view_project(node, auth, primary=False):
             },
         },
         'parent_node': {
+            'exists': parent is not None,
             'id': parent._primary_key if parent else '',
             'title': parent.title if parent else '',
+            'category': parent.category_display if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
             'absolute_url': parent.absolute_url if parent else '',
+            'registrations_url': parent.web_url_for('node_registrations') if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': parent.can_view(auth) if parent else False
@@ -778,7 +781,6 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': Node.CATEGORY_MAP,
     }
     return data
 
