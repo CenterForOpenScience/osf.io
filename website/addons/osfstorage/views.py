@@ -85,11 +85,12 @@ def osf_storage_get_revisions(payload, node_addon, **kwargs):
 
     record = model.OsfStorageFileNode.get(path.strip('/'), node_addon)
 
+    # Return revisions in descending order
     return {
-        'revisions': list(reversed([
-            utils.serialize_revision(node, record, version, idx, anon=is_anon)
+        'revisions': [
+            utils.serialize_revision(node, record, version, index=len(record.versions) - idx - 1, anon=is_anon)
             for idx, version in enumerate(reversed(record.versions))
-        ]))
+        ]
     }
 
 

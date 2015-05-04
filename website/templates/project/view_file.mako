@@ -80,16 +80,17 @@
 
 
           <table class="table" data-bind="if: versioningSupported && revisions().length">
-            <thead>
+            <thead class="file-version-thread">
               <tr>
-                <th>Version ID</th>
+                <th width="10%">Version ID</th>
                 <th>Date</th>
                 <th data-bind="if: userColumn">User</th>
                 <th colspan="2">Download</th>
+                <th></th>
               </tr>
             </thead>
 
-            <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
+            <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
                   <a href="{{ revision.osfViewUrl }}" data-bind="if: revision !== $parent.currentVersion()">
@@ -135,7 +136,6 @@
       </div>
     </div>
 
-  </div>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}

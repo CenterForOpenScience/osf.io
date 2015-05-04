@@ -431,7 +431,7 @@ class OsfStorageFileVersion(StoredObject):
         self.save()
 
 
-@unique_on(['node', 'path', '_path', 'premigration_path'])
+@unique_on(['node', 'path'])
 class OsfStorageGuidFile(GuidFile):
     """A reference back to a OsfStorageFileNode
 

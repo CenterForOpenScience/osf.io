@@ -173,13 +173,13 @@ class OsfStorageFileRecord(BaseFileObject):
                 raise errors.VersionNotFoundError
             return None
 
-    # def get_versions(self, page, size=settings.REVISIONS_PAGE_SIZE):
-    #     start = len(self.versions) - (page * size)
-    #     stop = max(0, start - size)
-    #     indices = range(start, stop, -1)
-    #     versions = [self.versions[idx - 1] for idx in indices]
-    #     more = stop > 0
-    #     return indices, versions, more
+    def get_versions(self, page, size):
+        start = len(self.versions) - (page * size)
+        stop = max(0, start - size)
+        indices = range(start, stop, -1)
+        versions = [self.versions[idx - 1] for idx in indices]
+        more = stop > 0
+        return indices, versions, more
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()

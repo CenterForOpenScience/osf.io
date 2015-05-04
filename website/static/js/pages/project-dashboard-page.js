@@ -66,11 +66,6 @@ $(document).ready(function() {
             columnTitles : function(){
                 return [
                     {
-                        title : '',
-                        width: '10%',
-                        sort: false
-                    },
-                    {
                     title: 'Name',
                     width : '90%',
                     sort : true,
@@ -80,14 +75,6 @@ $(document).ready(function() {
             },
             resolveRows : function(item){
                 var defaultColumns = [
-                {
-                    data : null,
-                    folderIcons: false,
-                    filter : false,
-                    custom : function(){
-                        return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
-                    }
-                },
                 {
                     data: 'name',
                     folderIcons: true,

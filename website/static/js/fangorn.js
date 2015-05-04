@@ -67,6 +67,9 @@ var _defaultIconState = function (){
     };
 };
 
+// Cross browser key codes for the Command key
+var commandKeys = [224, 17, 91, 93];
+
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
 var getExtensionIconClass = function(name) {
@@ -701,7 +704,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
+        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);
@@ -737,7 +740,7 @@ function _removeEvent (event, items, col) {
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'OK')
+                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'Delete')
                     ]);
                 tb.modal.update(mithrilContent, mithrilButtons);
         } else {
@@ -754,7 +757,7 @@ function _removeEvent (event, items, col) {
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
+                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
@@ -890,13 +893,6 @@ function _fangornLazyLoadError (item) {
  */
 function reapplyTooltips () {
     $('[data-toggle="tooltip"]').tooltip({container: 'body', 'animation' : false});
-    $(".title-text [data-toggle=tooltip]").hover(function(event){
-        var mousePosition = event.pageX - 400;
-        $('.tooltip').css('margin-left', mousePosition + 'px');
-    });
-    // $(".title-text [data-toggle=tooltip]").mouseout(function(event){
-    //     $('.tooltip').remove();
-    // });
 }
 
 /**
@@ -954,7 +950,7 @@ function _fangornUploadMethod(item) {
  * @private
  */
 function _fangornDefineToolbar (item) {
-    var self = this,
+    var tb = this,
         buttons = [];
     $('.fangorn-toolbar-icon').tooltip('destroy');
 
@@ -966,7 +962,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Select files to upload from your computer.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) { _uploadEvent.call(self, event, item); }
+                    onclick : function(event) { _uploadEvent.call(tb, event, item); }
                 },[
                 m('i.fa.fa-upload'),
                 m('span.hidden-xs','Upload')
@@ -978,8 +974,8 @@ function _fangornDefineToolbar (item) {
                     'title':  'Create a new folder inside curently selected folder.',
                     'data-placement' : 'bottom',
                         onclick : function(event) {
-                            self.options.iconState.mode = 'createFolder';
-                            Fangorn.ButtonEvents.createFolder.call(self, event, item);
+                            tb.options.iconState.mode = 'createFolder';
+                            m.redraw(true);
                         }
                     },[
                     m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
@@ -992,7 +988,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Delete this folder and all its contents.',
                     'data-placement' : 'bottom',
-                        onclick : function(event) { _removeEvent.call(self, event, [item]); }
+                        onclick : function(event) { _removeEvent.call(tb, event, [item]); }
                     },[
                     m('i.fa.fa-trash'),
                     m('span.hidden-xs','Delete Folder')
@@ -1007,7 +1003,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Download this file to your computer.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) { _downloadEvent.call(self, event, [item]); }
+                    onclick : function(event) { _downloadEvent.call(tb, event, [item]); }
                 }, [
                 m('i.fa.fa-download'),
                 m('span.hidden-xs','Download')
@@ -1019,7 +1015,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Permanently delete this file.',
                     'data-placement' : 'bottom',
-                        onclick : function(event) { _removeEvent.call(self, event, [item]); }
+                        onclick : function(event) { _removeEvent.call(tb, event, [item]); }
                     }, [
                     m('i.fa.fa-times'),
                     m('span.hidden-xs','Delete')
@@ -1057,14 +1053,19 @@ function _fangornDefineToolbar (item) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
+    var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span',{
             ondblclick: function() {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-                window.location = redir.toString() + '/';
+                var fileurl  = redir.toString() + '/';
+                if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+                    window.open(fileurl, '_blank');
+                } else {
+                    window.open(fileurl, '_self');
+                }
             },
-            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'bottom'
         }, item.data.name);
     }
     return m('span', item.data.name);
@@ -1091,25 +1092,8 @@ function _fangornResolveRows(item) {
         _fangornDefineToolbar.call(this, item);
     }
 
-
-    // Column that does the toggles :
-    var toggleTemplate = {
-        data : null,
-        folderIcons: false,
-        filter : false,
-        custom : function(){
-            if(this.isMultiselected(item.id)) {
-                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
-            }
-            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
-        }
-    };
     if(item.data.tmpID){
         return [
-        {
-            data : '',  // Data field name
-            custom : function(){ return m('span', ''); }
-        },
         {
             data : '',  // Data field name
             css : 't-a-c',
@@ -1145,7 +1129,6 @@ function _fangornResolveRows(item) {
         }
     }
     default_columns.push(
-    toggleTemplate,
     {
         data : 'name',  // Data field name
         folderIcons : true,
@@ -1181,13 +1164,8 @@ function _fangornColumnTitles () {
     var columns = [];
     columns.push(
     {
-        title : '',
-        width: '5%',
-        sort: false
-    },
-    {
         title: 'Name',
-        width : '85%',
+        width : '90%',
         sort : true,
         sortType : 'text'
     }, {
@@ -1402,7 +1380,12 @@ function toolbarDismissIcon (){
             'data-toggle' : 'tooltip',
             'title':  'Switch to search view.',
             'data-placement' : 'bottom',
-            onclick : function () { tb.options.iconState.mode = 'search'; }
+            onclick : function () {
+                tb.options.iconState.mode = 'search';
+                tb.filterText('');
+                m.redraw(true);
+
+            }
         }, [
         m('i.fa.fa-search'),
         m('span.hidden-xs', 'Search')
@@ -1508,6 +1491,7 @@ function toolbarDismissIcon (){
     //     tb.updateFolder(null, tb.find(1));
     //     // Also update every
     // }).fail($osf.handleJSONError);
+    // tb.options.iconState.mode = 'bar';
 }
 
 
@@ -1552,8 +1536,11 @@ function filterRowsNotInParent(rows) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+    // if on search bring back the bar and reset filter and redo icons.
     tb.options.iconState.mode = 'bar';
+    tb.resetFilter();
     tb.options.iconState.rowIcons = [];
+
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = row.icons;
@@ -1574,29 +1561,6 @@ function filterRowsNotInParent(rows) {
     }
     reapplyTooltips();
 }
-
-/**
- * Runs before multiselect handle in Treebeard does its logic to set special cases.
- * @this Treebeard.controller
- * @param {Object} event jQuery click event.
- * @param {Object} row A Treebeard _item object.
- * @private
- */
-
-function _fangornBeforeMultiselect (event, row) {
-    var tb = this;
-    if( !tb.pressedKey && $(event.target).parents('.tb-col-0').length > 0 ) {
-        tb.pressedKey = 'toggle';
-        // if already toggled take it out of multiselect
-        if($(event.target).parents('.tb-row').first().hasClass('fangorn-selected')) {
-            tb.removeMultiselected(row.id);
-        } else {
-        // otherwise add to multiselect.
-            tb.multiselected.push(row);
-        }
-    }
-}
-
 
 /* MOVE */
 // copyMode can be 'copy', 'move', 'forbidden', or null.
@@ -1863,7 +1827,6 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
-    onbeforemultiselect : _fangornBeforeMultiselect,
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
@@ -1917,6 +1880,11 @@ tbOptions = {
         drop : _fangornDrop,
         over : _fangornOver
     },
+    onafterselectwitharrow : function(row, direction) {
+        var tb = this;
+        var item = tb.find(row.id);
+        _fangornMultiselect.call(tb,null,item);
+    }
 };
 
 /**
