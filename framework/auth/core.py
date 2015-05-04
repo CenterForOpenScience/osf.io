@@ -455,7 +455,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if user_session is None:
             return None
 
-        return cls.load(user_session.data['auth_user_id'])
+        return cls.load(user_session.data.get('auth_user_id'))
 
     def get_or_create_cookie(self, secret=None):
         """Find the cookie for the given user
