@@ -583,8 +583,9 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @param message Error message returned
  * @private
  */
-var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
-function _fangornDropzoneError(tb, file, message) {
+var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
+    'or the file folder has been deleted.';
+function _fangornDropzoneError(treebeard, file, message) {
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;

@@ -370,23 +370,12 @@ h3.category {
     background: #B8ECC0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.po-icon-registered {
+    color: #D4D4D4;
+}
+.po-icon {
+    color: #5E5E5E;
+}
+.po-modal {
+    width: auto;
+}

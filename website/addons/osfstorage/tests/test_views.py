@@ -2,13 +2,12 @@
 from __future__ import unicode_literals
 
 import os
-import mock
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
-    recursively_create_file, recursively_create_folder
+    recursively_create_file,
 )
 from website.addons.osfstorage.tests import factories
 
@@ -342,15 +341,15 @@ class TestGetRevisions(StorageTestCase):
 
     def test_get_revisions(self):
         res = self.get_revisions()
-        expected = reversed([
+        expected = [
             utils.serialize_revision(
                 self.project,
                 self.record,
                 version,
-                idx
+                index=len(self.record.versions) - 1 - idx
             )
             for idx, version in enumerate(reversed(self.record.versions))
-        ])
+        ]
 
         assert_equal(len(res.json['revisions']), 15)
         assert_equal(res.json['revisions'], [x for x in expected])
