@@ -9,7 +9,7 @@ var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
 
 var NodeCategorySettings = oop.extend(
-    ChangeMessageMixin, 
+    ChangeMessageMixin,
     {
         constructor: function(category, categories, updateUrl) {
             this.super.constructor.call(this);
@@ -22,7 +22,7 @@ var NodeCategorySettings = oop.extend(
             self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
 
             self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instatiate NodeCategorySettings view model without an update URL';
-            
+
             self.MESSAGE_SUCCESS_CLASS = 'text-success';
             self.MESSAGE_ERROR_CLASS = 'text-danger';
 
@@ -129,6 +129,7 @@ function randomScientist() {
     return scientists[Math.floor(Math.random() * scientists.length)];
 }
 
+// TODO: Pass this in as an argument rather than relying on global contextVars
 var nodeApiUrl = window.contextVars.node.urls.api;
 
 
@@ -143,6 +144,7 @@ var request = $.ajax({
     dataType: 'json'
 });
 request.done(function(response) {
+    // TODO: Remove reliance on contextVars
     var currentUserName = window.contextVars.currentUser.fullname;
     contribs = response.contributors.filter(function(contrib) {
         return contrib.shortname !== currentUserName;
