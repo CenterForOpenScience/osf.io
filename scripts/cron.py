@@ -86,6 +86,9 @@ def main(dry_run=True):
     retractions = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/retract_registrations.sh')))
     retractions.hour.on(0)  # 12 a.m.
 
+    embargoes = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/embargo_registrations.sh')))
+    embargoes.hours.on(0)   # 12 a.m.
+
     schedule_osf_storage(cron)
     schedule_glacier(cron)
 
