@@ -604,6 +604,7 @@ def component_remove(**kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
@@ -642,6 +643,7 @@ def delete_folder(auth, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
