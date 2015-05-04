@@ -743,7 +743,7 @@ def request_export(auth):
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
-    return ''
+    return {'message': 'Sent account export request'}
 
 
 @must_be_logged_in
@@ -753,4 +753,4 @@ def request_deactivation(auth):
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
-    return ''
+    return {'message': 'Sent account deactivation request'}

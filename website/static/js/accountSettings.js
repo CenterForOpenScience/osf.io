@@ -229,6 +229,9 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
 
 
 var DeactivateAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
     urls: {
         'update': '/api/v1/profile/deactivate/'
     },
