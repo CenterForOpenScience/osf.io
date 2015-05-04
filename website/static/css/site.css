@@ -87,7 +87,7 @@ body {
     position: fixed;
     top: 70px;
 }
-.gs-sidebar.affix-bottom {
+.affix-bottom {
     position: relative;
 }
 
@@ -980,6 +980,8 @@ h1.unavailable {
     margin-top: -100px;
     padding-top: 100px;
     display: block;
+  z-index: -1;
+  position: relative;    
 }
 
 .anchor {
@@ -2649,4 +2651,10 @@ span#profileFullname{
 }
 .m-xl {
     margin: 50px;
+}
+
+@media (max-width: 768px) {
+    .affix {
+        position: relative;
+    }
 }
