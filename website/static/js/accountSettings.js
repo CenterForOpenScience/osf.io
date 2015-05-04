@@ -267,7 +267,7 @@ var ExportAccountViewModel = oop.defclass({
     submit: function () {
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
-            $osf.growl('Success', 'Export request submitted.', 'success');
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
