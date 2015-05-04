@@ -1055,8 +1055,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         children.
         :return: The `Node` instance created.
         """
-
-        import ipdb; ipdb.set_trace()
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
