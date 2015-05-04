@@ -555,7 +555,7 @@ class TestComponents(OsfTestCase):
         self.component = NodeFactory(
             category='hypothesis',
             creator=self.user,
-            project=self.project,
+            parent=self.project,
         )
         self.component.save()
         self.component.set_privacy('public', self.consolidate_auth)
@@ -567,9 +567,9 @@ class TestComponents(OsfTestCase):
         res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
         assert_in('Add Component', res)
 
-    def test_cannot_create_component_from_a_component(self):
+    def test_can_create_component_from_a_component(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        assert_not_in('Add Component', res)
+        assert_in('Add Component', res)
 
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
@@ -625,16 +625,16 @@ class TestComponents(OsfTestCase):
         ).maybe_follow()
         assert_not_in('Configure commenting', res)
 
-    def test_components_shouldnt_have_component_list(self):
+    def test_components_should_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
-        assert_not_in('Components', res)
+        assert_in('Components', res)
 
-    def test_do_not_show_registration_button(self):
+    def test_does_show_registration_button(self):
         # No registrations on the component
         url = self.component.web_url_for('node_registrations')
         res = self.app.get(url, auth=self.user.auth)
         # New registration button is hidden
-        assert_not_in('New Registration', res)
+        assert_in('New Registration', res)
 
 
 class TestPrivateLinkView(OsfTestCase):
@@ -873,7 +873,7 @@ class TestShortUrls(OsfTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)
