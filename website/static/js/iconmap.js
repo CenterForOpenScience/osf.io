@@ -15,13 +15,13 @@ module.exports = {
         '': 'fa fa-circle-o-notch'
     },
     projectIcons: {
-        folder: 'fa-cubes',
-        smartFolder: 'fa-certificate',
-        project: 'fa-cube',
-        registration:  'fa-th-list text-muted',
-        component:  'fa-th-large',
-        registeredComponent:  'fa-th-large text-muted',
-        link:  'fa-link'
+        folder: 'fa fa-cubes',
+        smartFolder: 'fa fa-certificate',
+        project: 'fa fa-cube',
+        registration:  'fa fa-th-list text-muted',
+        component:  'fa fa-th-large',
+        registeredComponent:  'fa fa-th-large text-muted',
+        link:  'fa fa-link'
     },
     info: 'fa fa-info-circle'
 };
