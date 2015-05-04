@@ -217,20 +217,6 @@ function _fangornColumns(item) {
         selectClass = 'fangorn-hover';
     }
     var columns = [];
-    if (tb.options.placement === 'fileview') {
-        columns.push({
-            data : null,
-            folderIcons: false,
-            filter : false,
-            custom : function(){
-                if(this.isMultiselected(item.id)) {
-                    return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
-                }
-                return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
-            }
-        });
-    }
-
     columns.push({
         data : 'name',
         folderIcons : true,
