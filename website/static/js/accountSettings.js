@@ -235,7 +235,7 @@ var DeactivateAccountViewModel = oop.defclass({
     urls: {
         'update': '/api/v1/profile/deactivate/'
     },
-    submit: function () {
+    _requestDeactivation: function() {
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
             $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
@@ -253,6 +253,19 @@ var DeactivateAccountViewModel = oop.defclass({
             });
         }.bind(this));
         return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account deactivation?',
+            message: 'Are you sure you want to request account deactivation? An OSF administrator will review your request. If accepted, you ' +
+                     'will <strong>NOT</strong> be able to reactivate your account.',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestDeactivation();
+                }
+            }
+        });
     }
 });
 
@@ -264,7 +277,7 @@ var ExportAccountViewModel = oop.defclass({
     urls: {
         'update': '/api/v1/profile/export/'
     },
-    submit: function () {
+    _requestExport: function() {
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
             $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');
@@ -282,6 +295,18 @@ var ExportAccountViewModel = oop.defclass({
             });
         }.bind(this));
         return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account export?',
+            message: 'Are you sure you want to request account export?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestExport();
+                }
+            }
+        });
     }
 });
 
