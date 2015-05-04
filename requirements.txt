@@ -40,4 +40,3 @@ requests==2.5.3
 requests-oauthlib>=0.4.1
 raven==5.1.1
 webcolors==1.4
-uritemplate.py==0.3.0
