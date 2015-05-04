@@ -72,10 +72,7 @@ class DataverseProvider(provider.BaseProvider):
 
         filename = path.strip('/')
 
-        stream = streams.ZipStreamReader(
-            filename=filename,
-            file_stream=stream,
-        )
+        stream = streams.ZipStreamReader((filename, stream))
 
         # Write stream to disk (Necessary to find zip file size)
         f = tempfile.TemporaryFile()
