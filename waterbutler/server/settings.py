@@ -22,8 +22,10 @@ CORS_ALLOW_ORIGIN = config.get('CORS_ALLOW_ORIGIN', '*')
 CHUNK_SIZE = config.get('CHUNK_SIZE', 65536)  # 64KB
 MAX_BUFFER_SIZE = config.get('MAX_BUFFER_SIZE', 1024 * 1024 * 100)  # 100MB
 
-IDENTITY_METHOD = config.get('IDENTITY_METHOD', 'rest')
-IDENTITY_API_URL = config.get('IDENTITY_API_URL', 'http://127.0.0.1:5001/api/v1/files/auth/')
+AUTH_HANDLERS = config.get('AUTH_HANDLERS', [
+    'viewonly',
+    'rest',
+])
 
 HMAC_ALGORITHM = getattr(hashlib, config.get('HMAC_ALGORITHM', 'sha256'))
 HMAC_SECRET = config.get('HMAC_SECRET', 'changeme').encode('utf-8')

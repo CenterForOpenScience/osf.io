@@ -10,7 +10,7 @@ from waterbutler.core import utils
 from waterbutler.core import signing
 from waterbutler.core import exceptions
 from waterbutler.server import settings
-from waterbutler.server.identity import get_identity
+from waterbutler.server.auth import AuthHandler
 
 
 CORS_ACCEPT_HEADERS = [
@@ -43,7 +43,7 @@ def list_or_value(value):
 
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
-
+auth_handler = AuthHandler(settings.AUTH_HANDLERS)
 
 class BaseHandler(tornado.web.RequestHandler, SentryMixin):
 
@@ -74,7 +74,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         except KeyError:
             return
 
-        self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
+        self.payload = yield from auth_handler.fetch(self)
 
         self.provider = utils.make_provider(
             self.arguments['provider'],

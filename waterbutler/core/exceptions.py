@@ -7,6 +7,24 @@ import asyncio
 DEFAULT_ERROR_MSG = 'An error occurred while making a {response.method} request to {response.url}'
 
 
+class AuthError(Exception):
+    """The WaterButler related errors raised
+    from a :class:`waterbutler.core.auth` should
+    inherit from AuthError
+    """
+
+    def __init__(self, message, code=500, log_message=None):
+        super().__init__(code)
+        self.code = code
+        self.log_message = log_message
+        if isinstance(message, dict):
+            self.data = message
+            self.message = json.dumps(message)
+        else:
+            self.data = None
+            self.message = message
+
+
 class ProviderError(Exception):
     """The WaterButler related errors raised
     from a :class:`waterbutler.core.provider` should
