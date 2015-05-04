@@ -249,3 +249,5 @@ EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
+
+SPAM_ASSASSIN = False
