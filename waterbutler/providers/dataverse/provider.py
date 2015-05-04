@@ -5,6 +5,7 @@ import tempfile
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.dataverse import settings
 from waterbutler.providers.dataverse.metadata import DataverseRevision
@@ -13,6 +14,8 @@ from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 
 class DataverseProvider(provider.BaseProvider):
     """Provider for Dataverse"""
+
+    NAME = 'dataverse'
 
     def __init__(self, auth, credentials, settings):
         """
