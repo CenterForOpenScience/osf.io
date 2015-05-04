@@ -13,7 +13,7 @@ from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo
+from framework.mongo.utils import from_mongo, get_or_http_error
 
 from website import language
 
@@ -156,11 +156,15 @@ def folder_new_post(auth, node, **kwargs):
         'projectUrl': '/dashboard/',
     }, http.CREATED
 
-@must_be_valid_project
+
 @collect_auth
-def add_folder(auth, node, **kwargs):
+def add_folder(auth, **kwargs):
+    data = request.get_json()
+    node_id = data.get('node_id')
+    node = get_or_http_error(Node, node_id)
+
     user = auth.user
-    title = strip_html(request.json.get('title'))
+    title = strip_html(data.get('title'))
     if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
 
