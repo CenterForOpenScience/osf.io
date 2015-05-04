@@ -489,13 +489,23 @@ class TestCreateFolder:
     def test_already_exists(self, provider):
         path = BoxPath('/50 shades of nope/')
         url = provider.build_url('folders')
-        aiohttpretty.register_json_uri('POST', url, status=409)
+        data_url = provider.build_url('folders', provider.folder)
 
-        with pytest.raises(exceptions.CreateFolderError) as e:
+        aiohttpretty.register_json_uri('POST', url, status=409)
+        aiohttpretty.register_json_uri('GET', data_url, body={
+            'id': provider.folder,
+            'type': 'folder',
+            'name': 'All Files',
+            'path_collection': {
+                'entries': []
+            }
+        })
+
+        with pytest.raises(exceptions.FolderNamingConflict) as e:
             yield from provider.create_folder(str(path))
 
         assert e.value.code == 409
-        assert e.value.message == 'Folder "/{}/50 shades of nope/" already exists.'.format(provider.folder)
+        assert e.value.message == 'Cannot create folder "50 shades of nope" because a file or folder already exists at path "/50 shades of nope"'
 
     @async
     @pytest.mark.aiohttpretty

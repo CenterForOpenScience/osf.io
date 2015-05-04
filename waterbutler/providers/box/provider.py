@@ -284,7 +284,8 @@ class BoxProvider(provider.BaseProvider):
 
         # Catch 409s to avoid race conditions
         if resp.status == 409:
-            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+            data = yield from self.metadata(str(path.parent), folder=True)
+            raise exceptions.FolderNamingConflict(os.path.join(data['extra']['fullPath'], path.name))
 
         return BoxFolderMetadata(
             (yield from resp.json()),
@@ -346,6 +347,9 @@ class BoxProvider(provider.BaseProvider):
 
         if raw:
             return data
+
+        if folder:
+            return self._serialize_item(data)
 
         return [
             self._serialize_item(each, path.child(each['name']))

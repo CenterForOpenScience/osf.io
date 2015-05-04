@@ -206,15 +206,15 @@ class GitHubProvider(provider.BaseProvider):
             'PUT',
             self.build_repo_url('contents', keep_path.path),
             data=json.dumps(data),
-            expects=(201, 422),
+            expects=(201, 422, 409),
             throws=exceptions.CreateFolderError
         )
 
         data = yield from resp.json()
 
-        if resp.status == 422:
-            if data.get('message') == 'Invalid request.\n\n"sha" wasn\'t supplied.':
-                raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+        if resp.status in (422, 409):
+            if resp.status == 409 or data.get('message') == 'Invalid request.\n\n"sha" wasn\'t supplied.':
+                raise exceptions.FolderNamingConflict(str(path))
             raise exceptions.CreateFolderError(data, code=resp.status)
 
         data['content']['name'] = path.name

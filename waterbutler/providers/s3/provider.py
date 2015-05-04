@@ -208,7 +208,7 @@ class S3Provider(provider.BaseProvider):
         WaterButlerPath.validate_folder(path)
 
         if (yield from self.exists(path)):
-            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+            raise exceptions.FolderNamingConflict(str(path))
 
         yield from self.make_request(
             'PUT',

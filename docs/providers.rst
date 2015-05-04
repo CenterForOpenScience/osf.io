@@ -7,6 +7,7 @@ Providers
    provider.s3
    provider.box
    provider.cloudfiles
+   provider.dataverse
    provider.dropbox
    provider.figshare
    provider.filesystem

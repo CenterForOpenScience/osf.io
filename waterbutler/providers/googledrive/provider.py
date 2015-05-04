@@ -225,7 +225,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         GoogleDrivePath.validate_folder(path)
 
         if path.identifier:
-            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+            raise exceptions.FolderNamingConflict(str(path))
 
         resp = yield from self.make_request(
             'POST',

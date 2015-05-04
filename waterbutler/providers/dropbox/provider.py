@@ -240,7 +240,7 @@ class DropboxProvider(provider.BaseProvider):
 
         if response.status == 403:
             if 'because a file or folder already exists at path' in data.get('error'):
-                raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+                raise exceptions.FolderNamingConflict(str(path))
             raise exceptions.CreateFolderError(data, code=403)
 
         return DropboxFolderMetadata(data, self.folder).serialized()

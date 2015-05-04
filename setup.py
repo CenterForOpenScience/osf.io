@@ -43,6 +43,7 @@ setup(
             'github = waterbutler.providers.github:GitHubProvider',
             'osfstorage = waterbutler.providers.osfstorage:OSFStorageProvider',
             's3 = waterbutler.providers.s3:S3Provider',
+            'dataverse = waterbutler.providers.dataverse:DataverseProvider',
             'box = waterbutler.providers.box:BoxProvider',
             'googledrive = waterbutler.providers.googledrive:GoogleDriveProvider',
         ],
