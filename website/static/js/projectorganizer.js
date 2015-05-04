@@ -17,7 +17,7 @@ var m = require('mithril');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
-var Raven = require('raven-js');    
+var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
 var legendView = require('js/components/legend').view;
@@ -53,7 +53,7 @@ var projectOrganizerCategories = $.extend({}, {
     folder: 'Folder',
     smartFolder: 'Smart Folder',
     project: 'Project',
-    registration:  'Registration', 
+    registration:  'Registration',
     link:  'Link'
 }, nodeCategories);
 
@@ -647,7 +647,7 @@ function _poResolveIcon(item) {
     var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
         var iconType = icons[type];
-        if (type === 'component' || type === 'registeredComponent') {            
+        if (type === 'component' || type === 'registeredComponent') {
             iconType = componentIcons[category];
         }
         if (type === 'registeredComponent') {
@@ -1293,7 +1293,7 @@ ProjectOrganizer.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     },
-    legend: function(node) {        
+    legend: function(domNode) {
         var self = this;
         var showLegend = function() {
             var keys = Object.keys(projectOrganizerCategories);
@@ -1307,13 +1307,13 @@ ProjectOrganizer.prototype = {
                 return [
                     m('span', {
                         className: item.icon
-                    }), 
+                    }),
                     '  ',
                     item.label
                 ];
             };
             var opts = {
-                footer: m('span', ['*lighter color denotes a registration (e.g. ', 
+                footer: m('span', ['*lighter color denotes a registration (e.g. ',
                                    m('span', {
                                        className: iconmap.componentIcons.data + ' po-icon'
                                    }),
@@ -1327,9 +1327,9 @@ ProjectOrganizer.prototype = {
             self.grid.tbController.modal.update(legendView(data, repr, opts));
             self.grid.tbController.modal.show();
         };
-        node.onclick = showLegend;
+        domNode.onclick = showLegend;
         return m.render(
-            node,
+            domNode,
             m('span', {
                 className: iconmap.info,
                 click: showLegend
