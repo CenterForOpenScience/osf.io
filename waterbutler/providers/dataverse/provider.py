@@ -33,6 +33,34 @@ class DataverseProvider(provider.BaseProvider):
         self._id = self.settings['id']
         self.name = self.settings['name']
 
+        self._metadata_cache = {}
+
+    @asyncio.coroutine
+    def validate_path(self, path, revision=None, **kwargs):
+        """Ensure path is in configured dataset
+
+        :param str path: The path to a file
+        :param list metadata: List of file metadata from _get_data
+        """
+        if path == '/':
+            return WaterButlerPath('/')
+
+        path = path.strip('/')
+
+        for item in (yield from self._maybe_fetch_metadata(revision=revision)):
+            if path == item['path'].strip('/'):
+                return WaterButlerPath('/' + item['name'], _ids=item['path'].strip('/'))
+        return WaterButlerPath('/' + path)
+
+    @asyncio.coroutine
+    def _maybe_fetch_metadata(self, version=None, refresh=False):
+        if refresh or self._metadata_cache.get(version) is None:
+            for v in ((version, ) or ('latest', 'latest-published')):
+                self._metadata_cache[v] = yield from self._get_data(v)
+        if version:
+            return self._metadata_cache[version]
+        return sum(self._metadata_cache.values(), [])
+
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
