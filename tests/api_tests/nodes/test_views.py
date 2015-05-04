@@ -81,10 +81,19 @@ class TestNodeFiltering(OsfTestCase):
 
     def setUp(self):
         OsfTestCase.setUp(self)
+        self.user_one = UserFactory.build()
+        self.user_one.set_password('justapoorboy')
+        self.user_one.save()
+        self.auth_one = (self.user_one.username, 'justapoorboy')
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.save()
+        self.auth_two = (self.user_two.username, 'justapoorboy')
         self.project_one = ProjectFactory(title="Project One", is_public=True)
         self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True)
         self.project_three = ProjectFactory(title="Three", is_public=True)
-        self.private_project = ProjectFactory(title="Private Project", is_public=False)
+        self.private_project_user_one = ProjectFactory(title="Private Project", is_public=False, auth=self.auth_one)
+        self.private_project_user_two = ProjectFactory(title="Private Project", is_public=False, auth=self.auth_two)
         self.folder = FolderFactory()
         self.dashboard = DashboardFactory()
 
@@ -92,7 +101,22 @@ class TestNodeFiltering(OsfTestCase):
         OsfTestCase.tearDown(self)
         Node.remove()
 
-    def test_get_all_projects_with_no_filter(self):
+    def test_get_all_projects_with_no_filter_logged_in(self):
+        url = "/api/v2/nodes/"
+
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_in(self.project_three._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
+
+    def test_get_all_projects_with_no_filter_not_logged_in(self):
         url = "/api/v2/nodes/"
 
         res = self.app.get(url)
@@ -102,11 +126,27 @@ class TestNodeFiltering(OsfTestCase):
         assert_in(self.project_one._id, ids)
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
-        assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_get_one_project_with_exact_filter(self):
+    def test_get_one_project_with_exact_filter_logged_in(self):
+        url = "/api/v2/nodes/?filter[title]=Project%20One"
+
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
+
+    def test_get_one_project_with_exact_filter_not_logged_in(self):
         url = "/api/v2/nodes/?filter[title]=Project%20One"
 
         res = self.app.get(url)
@@ -116,25 +156,57 @@ class TestNodeFiltering(OsfTestCase):
         assert_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_get_some_projects_with_substring(self):
+    def test_get_some_projects_with_substring_logged_in(self):
         url = "/api/v2/nodes/?filter[title]=Two"
 
-        res = self.app.get(url)
+        res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
         assert_not_in(self.project_one._id, ids)
         assert_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_get_only_public_projects_with_filter(self):
+    def test_get_some_projects_with_substring_not_logged_in(self):
+        url = "/api/v2/nodes/?filter[title]=Two"
+
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
+
+    def test_get_only_public_or_my_projects_with_filter_logged_in(self):
+        url = "/api/v2/nodes/?filter[title]=Project"
+
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
+
+    def test_get_only_public_projects_with_filter_not_logged_in(self):
         url = "/api/v2/nodes/?filter[title]=Project"
 
         res = self.app.get(url)
@@ -144,11 +216,27 @@ class TestNodeFiltering(OsfTestCase):
         assert_in(self.project_one._id, ids)
         assert_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_alternate_filtering_field(self):
+    def test_alternate_filtering_field_logged_in(self):
+        url = "/api/v2/nodes/?filter[description]=Three"
+
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
+
+    def test_alternate_filtering_field_not_logged_in(self):
         url = "/api/v2/nodes/?filter[description]=Three"
 
         res = self.app.get(url)
@@ -158,11 +246,28 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.project_one._id, ids)
         assert_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_incorrect_filtering_field(self):
+    def test_incorrect_filtering_field_logged_in(self):
+        # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
+        url = "/api/v2/nodes/?filter[notafield]=bogus"
+
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_in(self.project_three._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.dashboard._id, ids)
+
+    def test_incorrect_filtering_field_not_logged_in(self):
         # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
         url = "/api/v2/nodes/?filter[notafield]=bogus"
 
@@ -173,7 +278,8 @@ class TestNodeFiltering(OsfTestCase):
         assert_in(self.project_one._id, ids)
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
-        assert_not_in(self.private_project._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
