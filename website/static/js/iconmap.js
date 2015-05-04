@@ -12,14 +12,16 @@ module.exports = {
         analysis: 'fa fa-bar-chart',
         communication: 'fa fa-comment',
         other: 'fa fa-th-large',
-        '': 'fa fa-circle-thin'
+        '': 'fa fa-circle-o-notch'
     },
     projectIcons: {
-        folder: 'project-organizer-icon-folder',
-        smartFolder: 'project-organizer-icon-smart-folder',
-        project: 'project-organizer-icon-project',
-        registration:  'project-organizer-icon-reg-project',
-        link:  'project-organizer-icon-pointer'
+        folder: 'fa fa-cubes',
+        smartFolder: 'fa fa-certificate',
+        project: 'fa fa-cube',
+        registration:  'fa fa-th-list text-muted',
+        component:  'fa fa-th-large',
+        registeredComponent:  'fa fa-th-large text-muted',
+        link:  'fa fa-link'
     },
     info: 'fa fa-info-circle'
 };
