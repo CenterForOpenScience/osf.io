@@ -2,6 +2,23 @@
 Changelog
 *********
 
+0.34.0 (2015-04-28)
+===================
+
+- Add ability to create folders to storage addons.
+
+Migrations
+----------
+
+- scripts/osfstorage/migrate_from_oldels.py
+- scripts/osfstorage/finish_oldel_migration.py
+
+0.33.10 (2015-04-27)
+====================
+
+- Add migrations necessary to support OSF Storage folders.
+- Fixes to DISK_SAVING_MODE.
+
 0.33.0 (2015-04-20)
 ===================
 

@@ -1,8 +1,9 @@
 import re
 
 from rest_framework import serializers as ser
+from api.base.utils import absolute_reverse, waterbutler_url_for
+from website import settings
 
-from api.base.utils import absolute_reverse
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
@@ -14,16 +15,20 @@ def _rapply(d, func, *args, **kwargs):
     else:
         return func(d, *args, **kwargs)
 
+
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
-    elif isinstance(val, basestring):  # if a string is passed, it's a function of the serializer
+    elif isinstance(val, basestring):  # if a string is passed, it's an attribute
         return getattr(serializer, val)(obj)
+    elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
+        return val.resolve_url(obj, **kwargs)
     else:
         return val
+
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
@@ -65,6 +70,8 @@ class LinksField(ser.Field):
         return ret
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
+
+
 def _tpl(val):
     """Return value within ``< >`` if possible, else return ``None``."""
     match = _tpl_pattern.match(val)
@@ -72,12 +79,15 @@ def _tpl(val):
         return match.groups()[0]
     return None
 
+
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
         attribute_value = getattr(obj, attr_name, ser.empty)
         if attribute_value is not ser.empty:
             return attribute_value
+        elif attr_name in obj:
+            return obj[attr_name]
         else:
             raise AttributeError(
                 '{attr_name!r} is not a valid '
@@ -87,27 +97,49 @@ def _get_attr_from_tpl(attr_tpl, obj):
     else:
         return attr_tpl
 
+
 # TODO: Make this a Field that is usable on its own?
 class Link(object):
     """Link object to use in conjunction with Links field. Does reverse lookup of
     URLs given an endpoint name and attributed enclosed in `<>`.
     """
 
-    def __init__(self, endpoint, args=None, kwargs=None, **kw):
+    def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
         self.endpoint = endpoint
+        self.kwargs = kwargs or {}
+        self.args = args or tuple()
+        self.reverse_kwargs = kw
+        self.query_kwargs = query_kwargs or {}
+
+    def resolve_url(self, obj):
+        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
+        arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
+        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
+
+        return absolute_reverse(
+            self.endpoint,
+            args=arg_values,
+            kwargs=kwarg_values,
+            query_kwargs=query_kwarg_values,
+            **self.reverse_kwargs
+        )
+
+
+class WaterbutlerLink(object):
+    """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
+    """
+
+    def __init__(self, args=None, kwargs=None, **kw):
+        # self.endpoint = endpoint
         self.kwargs = kwargs or {}
         self.args = args or tuple()
         self.reverse_kwargs = kw
 
     def resolve_url(self, obj):
-        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
-        arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
-        return absolute_reverse(
-            self.endpoint,
-            args=arg_values,
-            kwargs=kwarg_values,
-            **self.reverse_kwargs
-        )
+        """Reverse URL lookup for WaterButler routes
+        """
+
+        return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
@@ -117,6 +149,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return [
             self.child.to_representation(item, envelope=None) for item in data
         ]
+
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also

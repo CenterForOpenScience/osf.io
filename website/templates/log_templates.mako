@@ -99,6 +99,11 @@ created fork from <span data-bind="text: nodeType"></span>
 edited description of <span data-bind="text: nodeType"></span> <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="updated_fields">
+  updated the <span data-bind="listing: params.updated_fields"></span>  of <span data-bind="text: nodeType"></span>
+  <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
 <script type="text/html" id="pointer_created">
 created a link to <span data-bind="text: params.pointer.category"></span>
 <a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
@@ -161,7 +166,7 @@ invisible on <span data-bind="text: nodeType"></span>
 <script type="text/html" id="external_ids_added">
 created external identifiers
 <a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'doi:' + params.identifiers.doi"></a> and
-<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'ark:' + params.identifiers.ark"></a> and
+<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'ark:' + params.identifiers.ark"></a>
 on <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>

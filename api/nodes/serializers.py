@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
 
@@ -21,18 +21,22 @@ class NodeSerializer(JSONAPISerializer):
         'html': 'get_absolute_url',
         'children': {
             'related': Link('nodes:node-children', kwargs={'pk': '<pk>'}),
-            'count': 'get_node_count'
+            'count': 'get_node_count',
         },
         'contributors': {
             'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'}),
-            'count': 'get_contrib_count'
+            'count': 'get_contrib_count',
         },
         'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'})
+            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'}),
+            'count': 'get_pointers_count',
         },
         'registrations': {
             'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'}),
-            'count': 'get_registration_count'
+            'count': 'get_registration_count',
+        },
+        'files': {
+            'related': Link('nodes:node-files', kwargs={'pk': '<pk>'})
         },
     })
     properties = ser.SerializerMethodField()
@@ -53,6 +57,9 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_registration_count(self, obj):
         return len(obj.node__registrations)
+
+    def get_pointers_count(self, obj):
+        return len(obj.nodes_pointer)
 
     @staticmethod
     def get_properties(obj):
@@ -120,3 +127,34 @@ class NodePointersSerializer(JSONAPISerializer):
         pointer_node = Node.load(validated_data['node']['_id'])
         pointer = node.add_pointer(pointer_node, auth, save=True)
         return pointer
+
+    def update(self, instance, validated_data):
+        pass
+
+
+class NodeFilesSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    provider = ser.CharField(read_only=True)
+    path = ser.CharField(read_only=True)
+    item_type = ser.CharField(read_only=True)
+    name = ser.CharField(read_only=True)
+    valid_self_link_methods = ser.ListField(read_only=True)
+    metadata = ser.DictField(read_only=True)
+
+    class Meta:
+        type_ = 'files'
+
+    links = LinksField({
+        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
+        'related': Link('nodes:node-files', kwargs={'pk': '<node_id>'},
+                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+    })
+
+    def create(self, validated_data):
+        # TODO
+        pass
+
+    def update(self, instance, validated_data):
+        # TODO
+        pass
