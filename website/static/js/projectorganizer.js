@@ -874,7 +874,7 @@ function filterRowsNotInParent(rows) {
         originalRow = this.find(this.multiselected[0].id),
         originalParent,
         currentItem;
-    if (typeof originalRow !== "undefined") {
+    if (typeof originalRow !== 'undefined') {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
@@ -1116,8 +1116,8 @@ function dropLogic(event, items, folder) {
                 if (copyMode === 'copy' || copyMode === 'move') {
                     deleteMultiplePointersFromFolder.call(tb, itemsNotToMove, itemParent);
                     if (itemsToMove.length > 0) {
-                        var url = postInfo[copyMode]['url'],
-                            postData = JSON.stringify(postInfo[copyMode]['json']),
+                        var url = postInfo[copyMode].url,
+                            postData = JSON.stringify(postInfo[copyMode].json),
                             outerFolder = whichIsContainer.call(tb, itemParent, folder),
                             postAction = $.ajax({
                                 type: 'POST',
