@@ -81,6 +81,14 @@ MIDDLEWARE_CLASSES = (
 
 )
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True
+    }]
+
+
 ROOT_URLCONF = 'api.base.urls'
 WSGI_APPLICATION = 'api.base.wsgi.application'
 
