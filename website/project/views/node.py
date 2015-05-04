@@ -781,6 +781,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
+        'node_categories': Node.CATEGORY_MAP,
     }
     return data
 

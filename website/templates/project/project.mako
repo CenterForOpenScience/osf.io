@@ -134,9 +134,8 @@
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
                   <!-- /ko -->
                 </span>
-                % if parent_node['id']:
-                    <br />Category: <span class="node-category">${node['category']}</span>
-                % elif node['description'] or 'write' in user['permissions']:
+                <br />Category: <span class="node-category">${node['category']}</span>
+                % if node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
             </div>

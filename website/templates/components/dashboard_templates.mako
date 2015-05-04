@@ -141,8 +141,7 @@
             
             <label>Category </label>
             <select class="form-control"
-                    data-bind="css: {disabled: usingTemplate},
-                               value: category,
+                    data-bind="value: category,
                                options: categories,
                                optionsText: function(val) { return categoryMap[val]}">
             </select>
