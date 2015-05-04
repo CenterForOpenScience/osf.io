@@ -103,12 +103,12 @@ function _dataverseDefineToolbar (item) {
                     m('span.hidden-xs','Upload')
                 ]);
             }},
-            { name : 'dataverseRelease', template : function(){
-                return m('.fangorn-toolbar-icon.text-primary', {
-                        onclick : function(event) { dataverseRelease.call(tb, event, item) }
+            { name : 'publishFiles', template : function(){
+                return m('.fangorn-toolbar-icon.text-success', {
+                        onclick : function(event) { dataversePublish.call(tb, event, item); }
                     },[
                     m('i.fa.fa-globe'),
-                    m('span.hidden-xs','Release Study')
+                    m('span.hidden-xs','Publish')
                 ]);
             }}
         );
@@ -120,14 +120,6 @@ function _dataverseDefineToolbar (item) {
                     },[
                     m('i.fa.fa-upload'),
                     m('span.hidden-xs','Upload')
-                ]);
-            }},
-            { name : 'uploadFiles', template : function(){
-                return m('.fangorn-toolbar-icon.text-success', {
-                        onclick : function(event) { dataversePublish.call(tb, event, item); }
-                    },[
-                    m('i.fa.fa-upload'),
-                    m('span.hidden-xs','Publish')
                 ]);
             }}
         );
