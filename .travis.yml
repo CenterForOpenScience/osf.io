@@ -73,7 +73,7 @@ install:
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
-    - pip uninstall uritemplate.py
+    - pip uninstall uritemplate.py --yes
     - pip install uritemplate.py==0.3.0
     - travis_retry invoke assets --dev
 
