@@ -412,7 +412,8 @@ class JSONStream(MultiStream):
                 value = StringStream(value)
             streams.extend([StringStream('"{}":"'.format(key)), value, StringStream('",')])
         super().__init__(*(streams[:-1] + [StringStream('"}')]))
-=======
+
+
 class ZipStreamReader(MultiStream):
 
     def __init__(self, filename, file_stream):
