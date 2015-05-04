@@ -140,14 +140,12 @@
             <br />
             
             <label>Category </label>
-            <br />
-            <select class="input-lg"
+            <select class="form-control"
                     data-bind="css: {disabled: usingTemplate},
                                value: category,
                                options: categories,
-                               optionsText: function(val) { return categoryMap[val] || '--None--' }">
+                               optionsText: function(val) { return categoryMap[val]}">
             </select>
-            <br />
             <br />
 
             <label>Description (Optional)</label>

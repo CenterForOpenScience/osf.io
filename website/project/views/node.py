@@ -90,7 +90,9 @@ def project_new_post(auth, **kwargs):
     if template:
         original_node = Node.load(template)
         changes = {
-            'title': title
+            'title': title,
+            'category': category,
+            'template_node': original_node,
         }
 
         if description:
@@ -99,8 +101,9 @@ def project_new_post(auth, **kwargs):
         project = original_node.use_as_template(
             auth=auth,
             changes={
-                template: changes
-            })
+                template: changes,
+            }
+        )
 
     else:
         project = new_node(category, title, user, description)

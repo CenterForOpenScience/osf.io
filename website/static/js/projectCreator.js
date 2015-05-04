@@ -29,22 +29,14 @@ function ProjectCreatorViewModel(params) {
     self.description = ko.observable();
 
     self.category = ko.observable('project');
-    self.NOCATEGORY = '------';
     self.categoryMap = nodeCategories;
-    self.categories = [self.NOCATEGORY].concat(Object.keys(nodeCategories));
+    self.categories = Object.keys(nodeCategories);
 
     self.errorMessage = ko.observable('');
 
     self.hasFocus = params.hasFocus;
 
     self.usingTemplate = ko.observable(false);
-
-    $('#createNodeTemplates').on('change', function() {
-        self.usingTemplate(Boolean($('#createNodeTemplates').val()));
-        if (self.usingTemplate()) {
-            self.category(self.NOCATEGORY);
-        }
-    });
 
     self.submitForm = function () {
         if (self.title().trim() === '') {
@@ -76,9 +68,6 @@ function ProjectCreatorViewModel(params) {
 
     self.serialize = function() {
         var category = self.category();
-        if (category === self.NOCATEGORY) {
-            category = null;
-        }
         return {
             title: self.title(),
             category: category,
