@@ -53,39 +53,21 @@ function ViewModel(url) {
        return self.host() ? 'https://' + self.host() + '/account/apitoken' : undefined;
     });
 
-    // Update above observables with data from the server
-    $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        var data = response.result;
-        self.urls(data.urls);
-        self.hosts(data.hosts);
-        self.loaded(true);
-    }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(language.userSettingsError, 'text-warning');
-        Raven.captureMessage('Could not GET Dataverse settings', {
-            url: url,
-            textStatus: textStatus,
-            error: error
-        });
-    });
-
-
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
 
     /** Reset all fields from Dataverse host selection modal */
     self.clearModal = function() {
+        self.message('');
+        self.messageClass('text-info');
         self.apiToken(undefined);
         self.selectedHost(undefined);
         self.customHost(undefined);
     };
 
     self.updateAccounts = function() {
-        var url = '/api/v1/settings/dataverse/accounts/';  // TODO
+        var url = self.urls().accounts;
         var request = $.get(url);
         request.done(function(data) {
             self.accounts($.map(data.accounts, function(account) {
@@ -107,7 +89,7 @@ function ViewModel(url) {
 
     /** Send POST request to authorize Dataverse */
     self.sendAuth = function() {
-        url = '/api/v1/settings/addons/dataverse/'; // TODO: self.urls().create,
+        var url = self.urls().create;
         return osfHelpers.postJSON(
             url,
             ko.toJS({
@@ -180,8 +162,25 @@ function ViewModel(url) {
         }
     };
 
-    // Get account information
-    self.updateAccounts();
+    // Update observables with data from the server
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        var data = response.result;
+        self.urls(data.urls);
+        self.hosts(data.hosts);
+        self.loaded(true);
+        self.updateAccounts();
+    }).fail(function(xhr, textStatus, error) {
+        self.changeMessage(language.userSettingsError, 'text-warning');
+        Raven.captureMessage('Could not GET Dataverse settings', {
+            url: url,
+            textStatus: textStatus,
+            error: error
+        });
+    });
 }
 
 function DataverseUserConfig(selector, url) {

@@ -33,11 +33,11 @@ def dataverse_add_external_account(auth, **kwargs):
     user = auth.user
     provider = DataverseProvider()
 
-    host = request.json.get('host')
+    host = request.json.get('host').rstrip('/')
     api_token = request.json.get('api_token')
 
-    # TODO: Verify/format host
-    # TODO: Authenticate against server
+    # Verify that credentials are valid
+    client.connect_or_401(api_token, host)
 
     # Note: `DataverseSerializer` expects display_name to be a URL
     try:

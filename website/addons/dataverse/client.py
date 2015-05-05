@@ -16,20 +16,26 @@ def _connect(token, host=settings.HOST):
 
 def connect_from_settings(user_settings):
     try:
-        return _connect(user_settings.api_token) if user_settings else None
+        return _connect(
+            user_settings.api_token,
+            # user_settings.host,
+        ) if user_settings else None
     except UnauthorizedError:
         return None
 
 
-def connect_or_401(token):
+def connect_or_401(token, host):
     try:
-        return _connect(token)
+        return _connect(token, host)
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
 
 
 def connect_from_settings_or_401(user_settings):
-    return connect_or_401(user_settings.api_token) if user_settings else None
+    return connect_or_401(
+        user_settings.api_token,
+        # user_settings.host,
+    ) if user_settings else None
 
 
 def get_files(dataset, published=False):
