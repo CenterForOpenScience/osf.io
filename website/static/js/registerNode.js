@@ -9,13 +9,13 @@ var bootbox = require('bootbox');
 var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
     if (parentUrl) {
         return 'You are about to register the ' + category + ' <b>' + title +
-            '"</b> and everything that is inside it. This will not register' +
+            '</b> and everything that is inside it. This will not register' +
             ' your larger project "' + parentTitle + '" and its other components.' +
             ' If you want to register the parent project, please go <a href="' +
             parentUrl + '">here.</a>';
     } else {
         return 'You are about to register the project <b>' + title +
-            '"</b> and everything that is inside it. If you would prefer to register ' +
+            '</b> and everything that is inside it. If you would prefer to register ' +
             'just a particular component of "' + title + '", please click back ' +
             'and navigate to that component and then initiate registration.';
     }
