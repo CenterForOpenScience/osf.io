@@ -132,6 +132,9 @@ FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
 PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
 
+REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
+REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
+
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
     subject='Project created on Open Science Framework',

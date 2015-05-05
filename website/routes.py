@@ -551,6 +551,20 @@ def make_url_map(app):
              project_views.contributor.claim_user_post, json_renderer),
 
         Rule(
+            '/profile/export/',
+            'post',
+            profile_views.request_export,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/deactivate/',
+            'post',
+            profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
             [
                 '/profile/gravatar/',
                 '/users/gravatar/',

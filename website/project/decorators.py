@@ -23,11 +23,13 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of parent and node
 
     """
-    node = None
-    parent = None
+    node = kwargs.get('node') or kwargs.get('project')
+    parent = kwargs.get('parent')
+    if node:
+        return parent, node
 
-    pid = kwargs.get('project') or kwargs.get('pid')
-    nid = kwargs.get('node') or kwargs.get('nid')
+    pid = kwargs.get('pid')
+    nid = kwargs.get('nid')
     if pid and nid:
         node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
@@ -37,7 +39,6 @@ def _kwargs_to_nodes(kwargs):
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
         raise HTTPError(http.NOT_FOUND)
-
     return parent, node
 
 def _inject_nodes(kwargs):
