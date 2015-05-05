@@ -41,7 +41,6 @@ var projectOrganizerCategories = $.extend({}, {
     folder: 'Collections',
     smartFolder: 'Smart Collections',
     project: 'Project',
-    registration:  'Registration',
     link:  'Link'
 }, nodeCategories);
 
@@ -326,13 +325,17 @@ function _poToggleCheck(item) {
 function _poResolveIcon(item) {
     var icons = iconmap.projectIcons;
     var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
     var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
         var iconType = icons[type];
         if (type === 'component' || type === 'registeredComponent') {
             iconType = componentIcons[category];
         }
-        if (type === 'registeredComponent') {
+        else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
             iconType += ' po-icon-registered';
         } else {
             iconType += ' po-icon';
@@ -344,19 +347,19 @@ function _poResolveIcon(item) {
         return template;
     }
     if (item.data.isSmartFolder) {
-        return returnView('smartFolder');
+        return returnView('smartCollection');
     }
     if (item.data.isFolder) {
-        return returnView('folder');
+        return returnView('collection');
     }
-    if (item.data.isPointer && !item.parent().data.isFolder){
+    if (item.data.isPointer && !item.parent().data.isFolder) {
         return returnView('link');
     }
     if (item.data.isProject) {
         if (item.data.isRegistration) {
-            return returnView('registration');
+            return returnView('registeredProject', item.data.category);
         }
-        return returnView('project');
+        return returnView('project', item.data.category);
     }
 
     if (item.data.isComponent) {
@@ -369,7 +372,7 @@ function _poResolveIcon(item) {
     if (item.data.isPointer) {
         return returnView('link');
     }
-    return returnView('folder');
+    return returnView('collection');
 }
 
 /**

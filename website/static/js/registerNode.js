@@ -9,7 +9,7 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl) {
     return 'You are about to Register the component "' + title +
         '" and everything that is inside it. This will not register' +
         ' your larger project "' + parentTitle + '" and its other components.' +
-        ' If you want to register the parent project, please go <a href="' +
+        ' If you want to register the entire project, please go <a href="' +
         parentUrl + '">here.</a>';
 };
 

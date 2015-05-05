@@ -1,6 +1,4 @@
-// TODO Remove when @caneruguz's updates are in
-require('css/projectorganizer.css');
-///////////////////////////////////////////////
+require('css/iconmap.css');
 
 module.exports = {
     componentIcons: {
@@ -15,13 +13,15 @@ module.exports = {
         '': 'fa fa-circle-o-notch'
     },
     projectIcons: {
-        folder: 'fa fa-cubes',
-        smartFolder: 'fa fa-certificate',
+        collection: 'fa fa-cubes',
+        smartCollection: 'fa fa-certificate',
         project: 'fa fa-cube',
         registration:  'fa fa-th-list text-muted',
         component:  'fa fa-th-large',
         registeredComponent:  'fa fa-th-large text-muted',
         link:  'fa fa-link'
     },
-    info: 'fa fa-info-circle'
+    info: 'fa fa-info-circle',
+    smaller: 'iconmap-smaller',
+    clickable: 'iconmap-clickable'
 };
