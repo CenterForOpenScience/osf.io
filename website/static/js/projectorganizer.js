@@ -1136,23 +1136,48 @@ function addProjectButton() {
     ]);
 }
 
+function showLegend() {
+    var tb = this;
+    var keys = Object.keys(projectOrganizerCategories);
+    var data = keys.map(function (key) {
+        return {
+            icon: iconmap.componentIcons[key] || iconmap.projectIcons[key],
+            label: nodeCategories[key] || projectOrganizerCategories[key]
+        };
+    });
+    var repr = function (item) {
+        return [
+            m('span', {
+                className: item.icon
+            }),
+            '  ',
+            item.label
+        ];
+    };
+    var opts = {
+        footer: m('span', ['*lighter color denotes a registration (e.g. ',
+            m('span', {
+                className: iconmap.componentIcons.data + ' po-icon'
+            }),
+            ' becomes  ',
+            m('span', {
+                className: iconmap.componentIcons.data + ' po-icon-registered'
+            }),
+            ' )'
+            ])
+    };
+    tb.modal.update(legendView(data, repr, opts));
+    tb.modal.show();
+}
+
 function infoIcon() {
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', {
         'data-toggle' : 'tooltip',
-        'title':  'Learn more about how to use the file browser.',
+        'title':  'Icon legend',
         'data-placement' : 'bottom',
         onclick : function () {
-            var mithrilContent = m('div', [
-                m('h3.break-word', 'How to Use the File Browser'),
-                m('p', 'Select Multiple Files: Use command or shift keys to select multiple files.'),
-                m('p', 'Go to Files: Double click a file name to go to the file.'),
-                m('p', 'Open Files in New Tab: Command + click a file name to open it in a new tab.')
-            ]);
-            var mithrilButtons = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function () { tb.modal.dismiss(); } }, 'Close')
-            ]);
-            tb.modal.update(mithrilContent, mithrilButtons);
+            showLegend.call(tb);
         }
     }, [
         m('i.fa.fa-info')
@@ -1517,49 +1542,6 @@ ProjectOrganizer.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
-    legend: function (domNode) {
-        var self = this;
-        var showLegend = function () {
-            var keys = Object.keys(projectOrganizerCategories);
-            var data = keys.map(function (key) {
-                return {
-                    icon: iconmap.componentIcons[key] || iconmap.projectIcons[key],
-                    label: nodeCategories[key] || projectOrganizerCategories[key]
-                };
-            });
-            var repr = function (item) {
-                return [
-                    m('span', {
-                        className: item.icon
-                    }),
-                    '  ',
-                    item.label
-                ];
-            };
-            var opts = {
-                footer: m('span', ['*lighter color denotes a registration (e.g. ',
-                    m('span', {
-                        className: iconmap.componentIcons.data + ' po-icon'
-                    }),
-                    ' becomes  ',
-                    m('span', {
-                        className: iconmap.componentIcons.data + ' po-icon-registered'
-                    }),
-                    ' )'
-                    ])
-            };
-            self.grid.tbController.modal.update(legendView(data, repr, opts));
-            self.grid.tbController.modal.show();
-        };
-        domNode.onclick = showLegend;
-        return m.render(
-            domNode,
-            m('span', {
-                className: iconmap.info + ' smaller',
-                click: showLegend
-            })
-        );
     }
 };
 

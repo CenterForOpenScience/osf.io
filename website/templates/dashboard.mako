@@ -8,7 +8,7 @@
 <div class="row">
     <div class="col-sm-7">
         <div>
-          <h3>Projects &nbsp;&nbsp;<span id="projectOrganizerInfo"></span></h3>
+          <h3>Projects </h3>
             <hr />
         </div><!-- end div -->
 
