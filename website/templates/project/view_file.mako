@@ -63,6 +63,15 @@
             <!-- /ko -->
           </ol>
 
+            <div class="tb-row" style="margin-bottom: 10px">
+                <label style="margin-top: 7px; margin-right: 2px">Subscription:</label>
+                <select class="form-control" style="width: 140px; float: right;">
+                    <option>None</option>
+                    <option>Emails</option>
+                    <option>Email Digest</option>
+                </select>
+            </div>
+
           <span data-bind="if: currentVersion">
             <a class="btn btn-success btn-md file-download" href="{{ currentVersion().osfDownloadUrl }}" data-bind="click: currentVersion().download">
               Download <i class="fa fa-download"></i>

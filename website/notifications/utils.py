@@ -101,14 +101,9 @@ def check_project_subscriptions_are_all_none(user, node):
 
 def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
-    user_subscriptions = []
     for notification_type in constants.NOTIFICATION_TYPES:
-        if getattr(user, notification_type, []):
-            for subscription in getattr(user, notification_type, []):
-                if subscription:
-                    user_subscriptions.append(subscription)
-
-    return user_subscriptions
+        for subscription in getattr(user, notification_type, []):
+            yield subscription
 
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
@@ -121,12 +116,9 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    node_subscriptions = []
     for s in user_subscriptions:
         if s.owner == node:
-            node_subscriptions.append(s)
-
-    return node_subscriptions
+            yield s
 
 
 def format_data(user, node_ids):
@@ -155,6 +147,8 @@ def format_data(user, node_ids):
 
         if can_read:
             node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
+            for node_sub in node_subscriptions:
+                print node_sub
             for subscription in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
                 children.append(serialize_event(user, subscription, constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, node))
 

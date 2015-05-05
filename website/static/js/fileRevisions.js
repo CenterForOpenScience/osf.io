@@ -71,6 +71,21 @@ var RevisionsViewModel = function(node, file, editable) {
     var fileExtra = file.extra || {};
     var revisionsOptions = {};
 
+    self.subList = [
+        {value: 'email_transactional', text: 'Emails'},
+        {value: 'email_digest', text: 'Email Digest'},
+        {value: 'none', text: 'None'}
+    ];
+    self.getSub = function(sub) {
+        if(sub === 'email_transactional') {
+            return self.subList[0];
+        } else if (sub === 'email_digest') {
+            return self.subList[1];
+        } else {
+            return 'None'
+        }
+    };
+
     if (urlParams.branch !== undefined) {
         fileExtra.branch = urlParams.branch;
         revisionsOptions.sha = urlParams.branch;
@@ -97,11 +112,27 @@ var RevisionsViewModel = function(node, file, editable) {
     self.revisions = ko.observableArray([]);
     self.versioningSupported = ko.observable(true);
 
-    self.userColumn = ko.computed(function() {
+    self.userColumn = ko.computed(function () {
         return self.revisions()[0] &&
             self.revisions()[0].extra &&
             self.revisions()[0].extra.user;
     });
+
+    var notificationsURL = self.node.urls.api + 'subscriptions/';
+    console.log(notificationsURL);
+    console.log(self.file);
+
+    self.subscription = ko.observable(
+        $.ajax({
+            url: notificationsURL,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (response) {
+            console.log(response)
+        }).fail(function (xhr, status, error) {
+            return 'none'
+        })
+    );
 };
 
 RevisionsViewModel.prototype.fetch = function() {
