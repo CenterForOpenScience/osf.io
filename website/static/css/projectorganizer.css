@@ -396,3 +396,6 @@ h3.category {
 .po-modal {
     width: auto;
 }
+.smaller {
+    font-size: 75%;
+}

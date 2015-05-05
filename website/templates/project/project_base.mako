@@ -47,6 +47,18 @@
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
     var absoluteUrl = '${node['display_absolute_url']}';
+    <%             
+       parent_exists = parent_node['exists']
+       parent_title = ''
+       parent_registration_url = ''
+       if parent_exists:
+           parent_title = "Private {0}".format(parent_node['category'])
+           parent_registration_url = ''
+       if parent_node['can_view'] or parent_node['is_contributor']:
+           parent_title = parent_node['title']
+           parent_registration_url = parent_node['registrations_url']            
+    %>
+    
     // Mako variables accessible globally
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
@@ -70,7 +82,10 @@
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)},
             anonymous: ${json.dumps(node['anonymous'])},
-            category: '${node['category_short']}'
+            category: '${node['category_short']}',
+            parentTitle: '${parent_title}',    
+            parentRegisterUrl: '${parent_registration_url}',             
+            parentExists: ${'true' if parent_exists else 'false'}
         }
     });
 

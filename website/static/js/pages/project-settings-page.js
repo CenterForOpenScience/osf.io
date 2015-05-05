@@ -30,22 +30,21 @@ $.ajax({
     });
 });
 
-// Reusable function to fix affix widths to columns.  
-function fixAffixWidth(parent) {
-    parent = parent || 'body';
-    $(parent + ' .affix').each(function (){
+// Reusable function to fix affix widths to columns.
+function fixAffixWidth() {
+    $('.affix, .affix-top, .affix-bottom').each(function (){
         var el = $(this);
-        var colsize = el.parent('div[class^="col-"]').width();
-        el.width(colsize);
+        var colsize = el.parent('.affix-parent').width();
+        el.outerWidth(colsize);
     });
 }
 
 $(document).ready(function() {
 
-    // Apply KO bindings for Node Category Settings   
+    // Apply KO bindings for Node Category Settings
     var categories = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
-    for (var i = 0; i < keys.length; i++) {        
+    for (var i = 0; i < keys.length; i++) {
         categories.push({
             label: window.contextVars.nodeCategories[keys[i]],
             value: keys[i]
