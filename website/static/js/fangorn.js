@@ -1186,7 +1186,7 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'search'){
         return m('.row.tb-header-row', { 'data-mode' : 'search'},  [
-                m('', [
+            m('#searchRow', { config : function () { $('#searchRow input').focus(); }}, [
                         m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
                         m('.col-xs-1',
                             m('.fangorn-toolbar.pull-right',
@@ -1198,7 +1198,7 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'rename'){
         return m('.row.tb-header-row', [
-                m('', [
+            m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
                         m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
                         m('.col-xs-3.tb-buttons-col',
                             m('.fangorn-toolbar.pull-right',
@@ -1213,7 +1213,7 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'createFolder'){
         return m('.row.tb-header-row', [
-                m('', [
+            m('#folderRow', { config : function () { $('#folderRow input').focus(); }}, [
                         m('.col-xs-9', [
                             m('input#createFolderInput.tb-header-input', { placeholder : 'Folder name' }),
                             m('#createFolderError.text-danger', { style : "display: none"})
