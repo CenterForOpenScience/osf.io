@@ -8,7 +8,6 @@ var RegistrationEmbargoViewModel = function() {
     var TWO_DAYS_FROM_TODAY_TIMESTAMP = new Date().getTime() + (2 * 24 * 60 * 60 * 1000);
     var ONE_YEAR_FROM_TODAY_TIMESTAMP = new Date().getTime() + (365 * 24 * 60 * 60 * 1000);
 
-    self.registrationChoice = ko.observable();
     self.dayChoice = ko.observable();
     self.monthChoice = ko.observable();
     self.yearChoice = ko.observable();
@@ -17,6 +16,8 @@ var RegistrationEmbargoViewModel = function() {
         'Make registration public immediately',
         'Enter registration into embargo'
     ]);
+    self.registrationChoice = ko.observable(self.registrationOptions()[0]);
+
     self.dayOptions = ko.computed(function() {
         var num_of_days;
 
