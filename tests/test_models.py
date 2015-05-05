@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import mock
@@ -1621,7 +1622,7 @@ class TestNodeTraversals(OsfTestCase):
         assert_equal(len(descendants), 2)  # two immediate children
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
-        
+
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
@@ -1652,8 +1653,17 @@ class TestNodeTraversals(OsfTestCase):
             lambda n: n.is_contributor(self.viewer)
         )
         ids = {d._id for d in descendants}
-        assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
+        nids = {node._id for node in [comp1a, comp2, comp2a]}
+        assert_false(ids.difference(nids))
 
+    def test_get_descendants_recursive_cyclic(self):
+        point1 = ProjectFactory(creator=self.user, parent=self.root)
+        point2 = ProjectFactory(creator=self.user, parent=self.root)
+        point1.add_pointer(point2, auth=self.consolidate_auth)
+        point2.add_pointer(point1, auth=self.consolidate_auth)
+        
+        descendants = point1.get_descendants_recursive()
+        assert_equal(len(descendants), 1)
 
 class TestRemoveNode(OsfTestCase):
 

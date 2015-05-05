@@ -135,6 +135,8 @@
                   <!-- /ko -->
                 </span>
                 <br />Category: <span class="node-category">${node['category']}</span>
+                &nbsp;
+                <span data-bind="css: icon"></span>
                 % if node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
@@ -281,28 +283,12 @@
                       "pluralized_node_type": "components"
                     }
                   }'></div>
-            </div>
+            </div><!-- end containment -->
         % else:
           <p>No components have been added to this project.</p>
         % endif
-    </div><!-- end addon-widget-header -- >
-</div>
-  </div>
-  <div class="addon-widget-body">
-    % if node['children']:
-    <div id="containment">
-      <div mod-meta='{
-           "tpl": "util/render_nodes.mako",
-           "uri": "${node["api_url"]}get_children/",
-           "replace": true,
-           "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
-           }'></div>
-    </div>
-    % else:
-    <p>No components have been added to this project.</p>
-    % endif
-  </div>
-</div>
+    </div><!-- end addon-widget-body -->
+</div><!-- end components -->
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>

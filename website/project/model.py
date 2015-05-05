@@ -958,6 +958,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 continue
             with warnings.catch_warnings():
                 try:
+                    '''
+                    This is in place because historically projects and components
+                    live on different ElasticSearch indexes, and at the time of Node.save
+                    there is no reliable way to check what the old Node.category
+                    value was. When the cateogory changes it is possible to have duplicate/dead
+                    search entries, so always delete the ES doc on categoryt change
+
+                    TODO: consolidate Node indexes into a single index, refactor search
+                    '''
+                    if key == 'category':
+                        self.delete_search_entry()
+                    ###############
                     setattr(self, key, value)
                 except AttributeError:
                     raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
@@ -1264,9 +1276,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def get_descendants_recursive(self, include=lambda n: True):
         for node in self.nodes:
-            yield node
-            for descendant in node.get_descendants_recursive(include):
-                yield descendant
+            if include(node):
+                yield node
+            if not isinstance(node, Pointer):
+                for descendant in node.get_descendants_recursive(include):
+                    if descendant.primary and include(descendant):
+                        yield descendant
 
     def get_aggregate_logs_queryset(self, auth):
         ids = [self._id] + [n._id
@@ -1454,6 +1469,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
