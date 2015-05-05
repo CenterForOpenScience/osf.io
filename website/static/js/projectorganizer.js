@@ -452,11 +452,11 @@ function _poLoadOpenChildren() {
  */
 // TODO : Cleanup
 function _poMultiselect(event, tree) {
-    $('.tb-header-row .twitter-typeahead').remove();
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
         pointerIds;
+    _toolbarDismissEvent.call(tb);
     tb.options.iconState.rowIcons = [];
     if (!tb.filterOn) {
         tb.options.iconState.mode = 'bar';
@@ -902,6 +902,7 @@ function _toolbarDismissEvent() {
     tb.options.iconState.mode = 'bar';
     tb.resetFilter();
     tb.filterText('');
+    m.redraw();
 }
 
 function toolbarDismissIcon() {
