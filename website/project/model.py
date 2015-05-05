@@ -958,6 +958,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 continue
             with warnings.catch_warnings():
                 try:
+                    # TODO don't special case
+                    if key == 'category':
+                        self.delete_search_entry()
                     setattr(self, key, value)
                 except AttributeError:
                     raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
@@ -1457,6 +1460,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
