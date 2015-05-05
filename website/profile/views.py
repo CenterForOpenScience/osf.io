@@ -734,3 +734,23 @@ def unserialize_schools(auth, **kwargs):
     verify_user_match(auth, **kwargs)
     unserialize_contents('schools', unserialize_school, auth)
     # TODO: Add return value
+
+
+@must_be_logged_in
+def request_export(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_EXPORT,
+        user=auth.user,
+    )
+    return {'message': 'Sent account export request'}
+
+
+@must_be_logged_in
+def request_deactivation(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_DEACTIVATION,
+        user=auth.user,
+    )
+    return {'message': 'Sent account deactivation request'}

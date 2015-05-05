@@ -1062,7 +1062,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         children.
         :return: The `Node` instance created.
         """
-
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node

@@ -13,7 +13,7 @@ from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo
+from framework.mongo.utils import from_mongo, get_or_http_error
 
 from website import language
 
@@ -77,10 +77,12 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = strip_html(request.json.get('title'))
-    template = request.json.get('template')
-    description = strip_html(request.json.get('description'))
+    data = request.get_json()
+    title = strip_html(data.get('title'))
     title = title.strip()
+    category = data.get('category', 'project')
+    template = data.get('template')
+    description = strip_html(data.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -88,7 +90,9 @@ def project_new_post(auth, **kwargs):
     if template:
         original_node = Node.load(template)
         changes = {
-            'title': title
+            'title': title,
+            'category': category,
+            'template_node': original_node,
         }
 
         if description:
@@ -97,11 +101,12 @@ def project_new_post(auth, **kwargs):
         project = original_node.use_as_template(
             auth=auth,
             changes={
-                template: changes
-            })
+                template: changes,
+            }
+        )
 
     else:
-        project = new_node('project', title, user, description)
+        project = new_node(category, title, user, description)
 
     return {
         'projectUrl': project.url
@@ -154,11 +159,15 @@ def folder_new_post(auth, node, **kwargs):
         'projectUrl': '/dashboard/',
     }, http.CREATED
 
-@must_be_valid_project
+
 @collect_auth
-def add_folder(auth, node, **kwargs):
+def add_folder(auth, **kwargs):
+    data = request.get_json()
+    node_id = data.get('node_id')
+    node = get_or_http_error(Node, node_id)
+
     user = auth.user
-    title = strip_html(request.json.get('title'))
+    title = strip_html(data.get('title'))
     if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -574,6 +583,7 @@ def component_remove(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
@@ -611,6 +621,7 @@ def delete_folder(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
@@ -737,11 +748,14 @@ def _view_project(node, auth, primary=False):
             },
         },
         'parent_node': {
+            'exists': parent is not None,
             'id': parent._primary_key if parent else '',
             'title': parent.title if parent else '',
+            'category': parent.category_display if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
             'absolute_url': parent.absolute_url if parent else '',
+            'registrations_url': parent.web_url_for('node_registrations') if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': parent.can_view(auth) if parent else False
