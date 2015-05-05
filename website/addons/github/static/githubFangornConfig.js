@@ -2,9 +2,10 @@
 /**
  * Github FileBrowser configuration module.
  */
-var m = require('mithril');
-var URI = require('URIjs');
 
+var m = require('mithril');
+var $ = require('jquery');
+var URI = require('URIjs');
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
 
@@ -23,7 +24,7 @@ function _removeEvent (event, items) {
     }
 
     function runDelete (item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');;
+        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
