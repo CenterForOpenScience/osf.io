@@ -6,7 +6,7 @@ import unittest
 import re
 import mock
 
-from nose.tools import *  # noqa (PEP8 asserts)
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.mongo.utils import to_mongo_key
 
@@ -1382,6 +1382,40 @@ class TestForgotAndResetPasswordViews(OsfTestCase):
         # make sure the form is on the page
         assert_true(res.forms['resetPasswordForm'])
 
+
+class TestAUserProfile(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+
+        self.user = AuthUserFactory()
+        self.me = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.me, is_public=True, title=fake.bs())
+        self.component = NodeFactory(creator=self.me, project=self.project, is_public=True, title=fake.bs())
+
+    # regression test for https://github.com/CenterForOpenScience/osf.io/issues/2623
+    def test_has_public_projects_and_components(self):
+        # I go to my own profile
+        url = web_url_for('profile_view_id', uid=self.me._primary_key)
+        # I see the title of both my project and component
+        res = self.app.get(url, auth=self.me.auth)
+        assert_in(self.component.title, res)
+        assert_in(self.project.title, res)
+
+        # Another user can also see my public project and component
+        url = web_url_for('profile_view_id', uid=self.me._primary_key)
+        # I see the title of both my project and component
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in(self.component.title, res)
+        assert_in(self.project.title, res)
+
+    def test_user_no_public_projects_or_components(self):
+        # I go to other user's profile
+        url = web_url_for('profile_view_id', uid=self.user._primary_key)
+        # User has no public components/projects
+        res = self.app.get(url, auth=self.me.auth)
+        assert_in('This user has no public projects', res)
+        assert_in('This user has no public components', res)
 
 if __name__ == '__main__':
     unittest.main()
