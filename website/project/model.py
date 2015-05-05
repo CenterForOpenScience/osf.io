@@ -1450,7 +1450,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'parent_node': self.parent_node,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
