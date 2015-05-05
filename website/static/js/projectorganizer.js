@@ -921,7 +921,10 @@ function searchButton() {
         'data-toggle' : 'tooltip',
         'title':  'Switch to search panel to filter rows below.',
         'data-placement' : 'bottom',
-        onclick : function () { tb.options.iconState.mode = 'search'; }
+        onclick : function () {
+            tb.options.iconState.mode = 'search';
+            tb.clearMultiselect();
+        }
     }, [
         m('i.fa.fa-search'),
         m('span.hidden-xs', 'Search')
