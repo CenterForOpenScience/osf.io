@@ -2794,7 +2794,9 @@ class Embargo(StoredObject):
 
     @property
     def is_embargoed(self):
-        return self.state == 'active'
+        if self.state == 'active':
+            return self.end_date.strftime("%A, %b. %d, %Y")
+        return False
 
     @property
     def pending_embargo(self):

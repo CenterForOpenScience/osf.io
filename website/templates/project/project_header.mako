@@ -96,7 +96,7 @@
 % endif
 
 % if node['is_registration'] and node['is_embargoed']:
-    <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, xxx, passes or an admin manually makes it public.</div>
+    <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['is_embargoed'] }, passes or an admin manually makes it public.</div>
 % endif
 
 % if node['anonymous'] and user['is_contributor']:
