@@ -39,10 +39,17 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return (
+        base_query = (
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True)
         )
+        user = self.request.user
+        permission_query = Q('is_public', 'eq', True)
+        if not user.is_anonymous():
+            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+
+        query = base_query & permission_query
+        return query
 
     # overrides ListCreateAPIView
     def get_queryset(self):
