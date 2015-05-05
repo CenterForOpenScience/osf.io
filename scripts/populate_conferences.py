@@ -92,7 +92,7 @@ MEETING_DATA = {
     'spsp2015': {
         'name': 'Society for Personality and Social Psychology 2015',
         'info_url': None,
-        'logo_url': 'http://spspmeeting.org/CMSPages/SPSPimages/spsp2015banner.jpg',
+        'logo_url': None,
         'active': True,
         'admins': [
             'meetings@spsp.org',

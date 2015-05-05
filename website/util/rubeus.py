@@ -328,6 +328,7 @@ class NodeProjectCollector(object):
             #TODO Remove the replace when mako html safe comes around
             'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
             'kind': FOLDER,
+            'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
                 'edit': can_edit,

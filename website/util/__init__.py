@@ -28,7 +28,6 @@ waterbutler_action_map = {
     'create_folder': 'file',
 }
 
-
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
     urls into guid urls. Ex: `<nid>/wiki/home`.

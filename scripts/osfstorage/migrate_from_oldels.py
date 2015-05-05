@@ -1,9 +1,8 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import math
 import logging
-import progressbar
+import datetime as dt
 
 from pymongo.errors import DuplicateKeyError
 
@@ -24,7 +23,7 @@ from website.addons.osfstorage import oldels
 logger = logging.getLogger(__name__)
 
 
-LOG_ACTIONS = set([
+LOG_ACTIONS = [
     'osf_storage_file_added',
     'osf_storage_file_updated',
     'osf_storage_file_removed',
@@ -33,7 +32,7 @@ LOG_ACTIONS = set([
     'file_updated',
     'file_removed',
     'file_restored',
-])
+]
 
 
 def migrate_download_counts(node, children, dry=True):
@@ -106,7 +105,6 @@ def migrate_file(node, old, parent, dry=True):
     else:
         new = None
     return new
-
 
 def migrate_logs(node, children, dry=True):
     for log in NodeLog.find(Q('params.node', 'eq', node._id)):
@@ -200,7 +198,7 @@ def main(nworkers, worker_id, dry=True):
     else:
         logger.info('Running in dry mode, changes NOT will be made')
 
-    to_migrate = oldels.OsfStorageNodeSettings.find(Q('_migrated_from_old_models', 'ne', True))
+    to_migrate = model.OsfStorageNodeSettings.find(Q('_migrated_from_old_models', 'ne', True))
     if to_migrate.count() == 0:
         logger.info('No nodes to migrate; exiting...')
         return
