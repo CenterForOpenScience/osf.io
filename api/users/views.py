@@ -63,7 +63,11 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user(check_permissions=False)
-        return Q('contributors', 'eq', user)
+        return (
+            Q('contributors', 'eq', user) &
+            Q('is_folder', 'ne', True) &
+            Q('is_deleted', 'ne', True)
+        )
 
     # overrides ListAPIView
     def get_queryset(self):

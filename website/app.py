@@ -3,7 +3,7 @@
 import os
 import importlib
 from collections import OrderedDict
-from json import dumps
+import json
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
@@ -27,9 +27,8 @@ from website.addons.base import init_addon
 from website.project.model import ensure_schemas, Node
 
 def build_js_config_files(settings):
-    with open(os.path.join(settings.STATIC_FOLDER, 'public', 'js', 'nodeCategories.js'), 'wb') as fp:
-        fp.write("window.contextVars.nodeCategories = {0}".format(dumps(Node.CATEGORY_MAP)))
-        fp.close()
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(Node.CATEGORY_MAP, fp)
 
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.

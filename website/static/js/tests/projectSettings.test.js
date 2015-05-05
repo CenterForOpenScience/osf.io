@@ -7,7 +7,7 @@ var faker = require('faker');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 
-/* 
+/*
  * Dear sloria,
  *
  * I'm sorry for injecting globals. Please forgive me.
@@ -15,7 +15,13 @@ var Raven = require('raven-js');
  * Yours truly,
  * samchrisinger
  */
-window.nodeApiUrl = faker.internet.ip();
+window.contextVars = {
+    node: {
+        urls: {
+            api: faker.internet.ip()
+        }
+    }
+};
 
 var ProjectSettings = require('js/projectSettings.js');
 
@@ -27,7 +33,7 @@ describe('NodeCategorySettings', () => {
     for (var i = 0; i < 10; i++) {
         categories.push(faker.internet.domainWord());
     }
-    var updateUrl = faker.internet.ip();    
+    var updateUrl = faker.internet.ip();
     var vm = new NodeCategorySettings(category, categories, updateUrl);
     describe('#constructor', function() {
         it('throws an error if no updateUrl is passed', () => {
@@ -46,7 +52,7 @@ describe('NodeCategorySettings', () => {
     describe('#updateSuccess', () => {
         var changeMessageSpy;
         before(() => {
-            changeMessageSpy = sinon.spy(vm, 'changeMessage');            
+            changeMessageSpy = sinon.spy(vm, 'changeMessage');
         });
         after(() => {
             vm.changeMessage.restore();
@@ -57,13 +63,13 @@ describe('NodeCategorySettings', () => {
             assert.calledWith(changeMessageSpy, vm.UPDATE_SUCCESS_MESSAGE, vm.MESSAGE_SUCCESS_CLASS);
             assert.equal(newcategory, vm.category());
             assert.isFalse(vm.dirty());
-        });       
+        });
     });
     describe('#updateError', () => {
         var changeMessageSpy;
         var ravenStub;
         before(() => {
-            changeMessageSpy = sinon.spy(vm, 'changeMessage');            
+            changeMessageSpy = sinon.spy(vm, 'changeMessage');
             ravenStub = sinon.stub(Raven, 'captureMessage');
         });
         after(() => {
@@ -81,20 +87,20 @@ describe('NodeCategorySettings', () => {
             });
         });
     });
-    describe('#updateCategory', () => {        
+    describe('#updateCategory', () => {
         var server;
         var serverSpy = sinon.spy();
-        var updateSuccessSpy = sinon.spy(vm, 'updateSuccess');        
+        var updateSuccessSpy = sinon.spy(vm, 'updateSuccess');
         before(() => {
             server = sinon.fakeServer.create();
-            server.respondWith(        
+            server.respondWith(
                 'PUT',
                 updateUrl,
                 function(xhr) {
                     serverSpy();
                     var response = {
                         'updated_fields': JSON.parse(xhr.requestBody)
-                    };                    
+                    };
                     xhr.respond(
                         200,
                         {'Content-Type': 'application/json'},
@@ -105,7 +111,7 @@ describe('NodeCategorySettings', () => {
         });
         after(() => {
             server.restore();
-        });       
+        });
         it('sends a put to the updateUrl with the selected category, and updates the category on success', (done) => {
             var newcategory = categories[0];
             vm.selectedCategory(newcategory);

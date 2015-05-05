@@ -9,7 +9,7 @@
     <header class="subhead" id="overview">
         <div class="row">
             <div class="col-sm-6 col-md-7 cite-container">
-                % if parent_node['id']:
+                % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
                             <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
@@ -134,9 +134,8 @@
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
                   <!-- /ko -->
                 </span>
-                % if parent_node['id']:
-                    <br />Category: <span class="node-category">${node['category']}</span>
-                % elif node['description'] or 'write' in user['permissions']:
+                <br />Category: <span class="node-category">${node['category']}</span>
+                % if node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
             </div>

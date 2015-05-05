@@ -2,7 +2,6 @@ import re
 
 from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse, waterbutler_url_for
-from website import settings
 
 
 def _rapply(d, func, *args, **kwargs):
