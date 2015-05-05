@@ -1236,6 +1236,7 @@ function _fangornResetToolbar () {
     var tb = this;
     tb.options.iconState.mode === 'bar';
     tb.options.iconState = _defaultIconState();
+    tb.resetFilter();
     m.redraw();
 }
 
@@ -1409,10 +1410,7 @@ function filterRowsNotInParent(rows) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
-    // if on search bring back the bar and reset filter and redo icons.
-    tb.options.iconState.mode = 'bar';
-    tb.resetFilter();
-    tb.options.iconState.rowIcons = [];
+    _fangornResetToolbar.call(tb);
 
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
