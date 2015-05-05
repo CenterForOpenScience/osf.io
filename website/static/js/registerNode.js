@@ -5,6 +5,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 
+
 var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
     if (parentUrl) {
         return 'You are about to <b><i>register the ' + category + ' "' + title +
