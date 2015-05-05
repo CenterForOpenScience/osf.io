@@ -1213,7 +1213,7 @@ function _poToolbar() {
     }
     if (tb.options.iconState.mode === 'search') {
         return m('.row.tb-header-row', [
-            m('', [
+            m('#searchRow', { config : function () { $('#searchRow input').focus(); }}, [
                 m('.col-xs-11', tb.options.filterTemplate.call(tb)),
                 m('.col-xs-1.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right',
@@ -1225,7 +1225,7 @@ function _poToolbar() {
     }
     if (tb.options.iconState.mode === 'addFolder') {
         return m('.row.tb-header-row', [
-            m('', [
+            m('#collRow', { config : function () { $('#collRow input').focus(); }}, [
                 m('.col-xs-9', m('input#addNewFolder.tb-header-input', { 'placeholder' : 'Collection name'})),
                 m('.col-xs-3.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right',
@@ -1240,7 +1240,7 @@ function _poToolbar() {
     }
     if (tb.options.iconState.mode === 'rename') {
         return m('.row.tb-header-row', [
-            m('', [
+            m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
                 m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
                 m('.col-xs-3.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right',
@@ -1255,9 +1255,9 @@ function _poToolbar() {
     }
     if (tb.options.iconState.mode === 'addProject') {
         return m('.row.tb-header-row', [
-            m('', [
+            m('#projRow', { config : function () { $('#projRow input').focus(); }}, [
                 m('.col-xs-9', [
-                    m('input#addprojectInput.tb-header-input', { config : function(){ applyTypeahead.call(tb);}, type : 'text', placeholder : 'Name of the project to find'}),
+                    m('input#addprojectInput.tb-header-input', { config : function () { applyTypeahead.call(tb);}, type : 'text', placeholder : 'Name of the project to find'}),
                     m('#add-link-warning.text-warning.p-sm')
                 ]
                     ),
