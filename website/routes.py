@@ -163,7 +163,6 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
-        # Rule('/dashboard/<_escaped_fragment_>', 'get', seo_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
@@ -235,9 +234,6 @@ def make_url_map(app):
             addon_views.get_addon_user_config,
             json_renderer,
         ),
-
-        # Rule('/dashboard/<_escaped_fragment_>', 'get', seo_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
-        # Rule('/<_escaped_fragment_>', 'get', seo_views.handle_get_static_snapshot, OsfWebRenderer('staticSnapshot.mako')),
 
     ], prefix='/api/v1')
 
@@ -711,12 +707,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
-
-        # Rule([
-        #     '/project/<pid>/<_escaped_fragment_>/',
-        #     '/project/<pid>/node/<nid>/<_escaped_fragment_>/',
-        # ], 'get', seo_views.handle_get_static_snapshot, json_renderer),
-
         # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node,
              OsfWebRenderer('', render_mako_string)),
@@ -821,15 +811,7 @@ def make_url_map(app):
             OsfWebRenderer('project/files.mako'),
             view_kwargs={'mode': 'page'},
         ),
-        # Rule(
-        #     [
-        #         '/project/<pid>/files/<_escaped_fragment_>/',
-        #         '/project/<pid>/node/<nid>/files/<_escaped_fragment_>/',
-        #     ],
-        #     'get',
-        #     seo_views.handle_get_static_snapshot,
-        #     OsfWebRenderer('staticSnapshot.mako')
-        # ),
+
         Rule(
             [
                 '/project/<pid>/files/<provider>/<path:path>/',

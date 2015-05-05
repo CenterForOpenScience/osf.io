@@ -26,7 +26,6 @@ from website import language
 from website import security
 from website.models import User
 from website.util import web_url_for
-from website.static_snapshot.decorators import gets_static_snapshot
 
 
 @collect_auth

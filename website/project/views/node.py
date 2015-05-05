@@ -9,7 +9,6 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from website.static_snapshot.decorators import cache
-from framework.render.tasks import ensure_path
 from framework import status
 from website.static_snapshot.decorators import gets_static_snapshot
 from website.static_snapshot.views import get_static_snapshot
@@ -20,7 +19,6 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo, get_or_http_error
 
 from website import language
-from website.static_snapshot import tasks
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError

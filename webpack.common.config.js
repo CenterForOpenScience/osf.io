@@ -173,9 +173,5 @@ module.exports = {
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'}
         ]
-    },
-    node: {
-        net: "empty",
-        tls: "empty"
     }
 };

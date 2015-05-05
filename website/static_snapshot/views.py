@@ -1,12 +1,9 @@
 import os
 
 from flask import request
-from flask import render_template
 from framework.render.tasks import ensure_path
-from framework.flask import redirect
 from website.static_snapshot import tasks
-from website.models import Node
-from website.util import web_url_for
+
 
 
 def get_static_snapshot(cache):
@@ -16,10 +13,6 @@ def get_static_snapshot(cache):
     response = {}
     task_id = cache.get('task_id')
     task = tasks.get_static_snapshot.AsyncResult(task_id)
-    # page_name = cache.get('page_name')
-    print task
-    # import pdb; pdb.set_trace()
-    print request.url
     if task.id:
 
         if task.state == 'PENDING':
@@ -46,18 +39,3 @@ def get_static_snapshot(cache):
         print "No task Id"
 
     return response
-
-
-def get_url(node, page):
-    """
-    Helper function that distinguishes googlebot requests from the regular requests
-    """
-    urls = {
-        'files': node.web_url_for('collect_file_trees'),
-        'wiki': node.web_url_for('project_wiki_home'),
-        'statistics': node.web_url_for('project_statistics'),
-        'forks': node.web_url_for('node_forks'),
-        'registrations': node.web_url_for('node_registrations'),
-    }
-
-    return urls[page]

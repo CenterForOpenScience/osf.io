@@ -1,6 +1,5 @@
 import logging
 import requests
-from celery.contrib import rdb
 
 from framework.tasks import app
 

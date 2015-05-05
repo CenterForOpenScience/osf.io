@@ -238,17 +238,16 @@ def dashboard(auth):
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
-    print "****"
-    rv = {'addons_enabled': user.get_addon_names(),
-          'dashboard_id': dashboard_id,
-    }
-    return rv
+    return {'addons_enabled': user.get_addon_names(),
+            'dashboard_id': dashboard_id,
+            }
 
 
 def paginate(items, total, page, size):
     start = page * size
     paginated_items = itertools.islice(items, start, start + size)
     pages = math.ceil(total / float(size))
+
     return paginated_items, pages
 
 
@@ -326,7 +325,7 @@ def _build_guid_url(base, suffix=None):
     ])
     return u'/{0}/'.format(url)
 
-# @gets_static_snapshot('file-detail')
+
 def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
     routing table, and return the return value of the view function without
@@ -368,5 +367,3 @@ def resolve_guid(guid, suffix=None):
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
-
-
