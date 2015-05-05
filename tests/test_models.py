@@ -1604,7 +1604,7 @@ class TestNodeTraversals(OsfTestCase):
         self.root = ProjectFactory(creator=self.user)
 
     def test_next_descendants(self):
-        
+
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
@@ -1661,7 +1661,7 @@ class TestNodeTraversals(OsfTestCase):
         point2 = ProjectFactory(creator=self.user, parent=self.root)
         point1.add_pointer(point2, auth=self.consolidate_auth)
         point2.add_pointer(point1, auth=self.consolidate_auth)
-        
+
         descendants = point1.get_descendants_recursive()
         assert_equal(len(descendants), 1)
 
@@ -2453,6 +2453,19 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_equal(self.project.description, 'new description')
         latest_log = self.project.logs[-1]
+        assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
+        assert_equal(latest_log.params['description_original'], old_desc)
+        assert_equal(latest_log.params['description_new'], 'new description')
+
+    def test_set_description_on_node(self):
+        node = NodeFactory(project=self.project)
+
+        old_desc = node.description
+        node.set_description(
+            'new description', auth=self.consolidate_auth)
+        node.save()
+        assert_equal(node.description, 'new description')
+        latest_log = node.logs[-1]
         assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
         assert_equal(latest_log.params['description_original'], old_desc)
         assert_equal(latest_log.params['description_new'], 'new description')
