@@ -29,7 +29,7 @@
     %if parent_node['exists'] and parent_node['can_view']:
         <br />
         <br />
-        To register the parent project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
+        To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
     %endif 
 
   </div>
