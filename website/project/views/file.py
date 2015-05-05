@@ -17,23 +17,19 @@ from website.static_snapshot.decorators import gets_static_snapshot
 
 @gets_static_snapshot('files')
 @must_be_contributor_or_public
-def collect_file_trees(**kwargs):
+def collect_file_trees(auth, node, **kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
     format data as appropriate.
     """
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     serialized = _view_project(node, auth, primary=True)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized
 
 @must_be_contributor_or_public
-def grid_data(**kwargs):
+def grid_data(auth, node, **kwargs):
     """View that returns the formatted data for rubeus.js/hgrid
     """
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     data = request.args.to_dict()
     return {'data': rubeus.to_hgrid(node, auth, **data)}
 

@@ -88,7 +88,7 @@ class TestMigrateOldels(OsfTestCase):
         paths = [x.path for x in model.OsfStorageFileNode.find(Q('kind', 'eq', 'file') & Q('node_settings', 'eq', self.node_settings))]
         assert len(guids) == 10
         for guid in guids:
-            paths.remove(guid.path)
+            paths.remove(guid._path)
         assert len(paths) == 0
 
     def test_migrate_logs(self):
@@ -110,10 +110,10 @@ class TestMigrateOldels(OsfTestCase):
 
         for log in self.project.logs:
             if log.action.startswith('osf_storage_file'):
-                path = log.params['path']
+                path = log.params['_path']
                 node = self.node_settings.root_node.find_child_by_name(path.strip('/'))
-                assert node._id in log.params['urls']['view']
-                assert node._id in log.params['urls']['download']
+                assert node._id in log.params['_urls']['view']
+                assert node._id in log.params['_urls']['download']
 
     @mock.patch('framework.analytics.session')
     def test_migrate_download_counts(self, mock_session):

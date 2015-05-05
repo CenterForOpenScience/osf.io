@@ -154,7 +154,6 @@
             });
         </script>
 
-
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
             <script type="text/javascript">

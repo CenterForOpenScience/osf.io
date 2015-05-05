@@ -398,7 +398,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @param message Error message returned
  * @private
  */
-var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
+var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
+    'or the file folder has been deleted.';
 function _fangornDropzoneError(treebeard, file, message) {
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
@@ -478,6 +479,11 @@ function createFolder(event, parent, col) {
         event.preventDefault();
         if (folderName().length < 1) {
             errorMessage('Please enter a folder name.');
+            redraw();
+            return;
+        }
+        if ($.trim(folderName()) < 1) {
+            errorMessage('Folder name cannot be empty.');
             redraw();
             return;
         }
