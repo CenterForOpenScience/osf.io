@@ -127,7 +127,7 @@ class CRUDHandler(core.BaseProviderHandler):
         self._send_hook(
             'delete',
             {
-                'path': self.arguments['path'],
-                'full_path': self.arguments.get('full_path'),
+                'path': str(self.arguments['path']),
+                'materialized': str(self.arguments['path'])
             }
         )
