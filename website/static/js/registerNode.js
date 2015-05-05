@@ -20,8 +20,6 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl) {
     }
 };
 
-
-
 $(document).ready(function() {
     $('#registerNode').click(function(event) {
         var node = window.contextVars.node;
