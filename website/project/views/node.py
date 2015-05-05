@@ -593,7 +593,8 @@ def component_remove(auth, node, **kwargs):
         node.project_or_component.capitalize()
     )
     status.push_status_message(message)
-    if node.node__parent:
+    parent = node.parent_node
+    if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
     else:
         redirect_url = '/dashboard/'
