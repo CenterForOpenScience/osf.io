@@ -1,7 +1,10 @@
 import os
+import logging
 
 from framework.render.tasks import ensure_path
 from website.static_snapshot import tasks
+
+logger = logging.getLogger(__name__)
 
 
 def get_static_snapshot(cache):
@@ -14,10 +17,10 @@ def get_static_snapshot(cache):
     if task.id:
 
         if task.state == 'PENDING':
-            print "Waiting for a response from celery task"
+            logger.debug('Waiting for response from Phantom Server')
 
         elif task.state == 'SUCCESS':
-            print "Save to cache"
+            logger.debug('Static snapshot received. Caching the response in website/seocache')
             path = task.result['path']
             ensure_path(path)
             current_page = cache.get('current_page')
@@ -28,12 +31,14 @@ def get_static_snapshot(cache):
             cache.clear()
             response = {'content': task.result['content']}
         else:
-            print " Invalid Celery task"
+            logger.warn('Invalid Celery task')
+
     elif cache.get('cached_content'):
-        print "Already cached/ Not valid request"
+        logger.debug('Cached Already')
         response = {'content': cache.get('cached_content')}
         cache.clear()
+
     else:
-        print "No task Id"
+        logger.warn('No celery task id found')
 
     return response

@@ -14,9 +14,9 @@ def get_path(page_name, id=None, category=None):
     """
 
     if page_name == 'index':
-        path = os.path.join(settings.SEO_CACHE, page_name)
+        path = os.path.join(settings.SEO_CACHE_PATH, page_name)
     else:
-        path = os.path.join(settings.SEO_CACHE, category, id, page_name)
+        path = os.path.join(settings.SEO_CACHE_PATH, category, id, page_name)
 
     return {
         'path': path.replace(page_name, '', 1),

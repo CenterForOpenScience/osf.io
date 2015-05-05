@@ -11,44 +11,29 @@ app.get('/', function (req, res) {
 
     phantom.create(function(ph){
 
-           // Adding cookies to authorize the user/node
-//           ph.addCookie('osf', req.query.cookie, 'localhost', function (added) {
-//                console.log('cookies added?', added);
-//           });
+       ph.createPage(function (page) {
 
-           ph.createPage(function (page) {
+           page.open(url, function (status) {
+               if (status == 'success') {
+                   console.log("Success");
 
-               page.open(url, function (status) {
-                   if (status == 'success') {
-                       console.log("Success");
-
-//                       page.getCookies(function(cookie){
-//                           console.log(cookie);
-//                       });
-
-                       page.evaluate(
-                           function () {
-                               return document.documentElement.outerHTML;
-                           },
-                           function (content) {
+                   page.evaluate(
+                       function () {
+                           return document.documentElement.outerHTML;
+                       },
+                       function (content) {
 //                             console.log(content);
-                               res.send(content);
-                               console.log('RESPONSE SEND');
-                               ph.exit();
-                           });
-                   }
-                   else {
-                       console.log("Status Failed");
-                       ph.exit();
-                   }
-               })
-
-           });
-////       }
-//        else{
-//            console.log("Cookies not added");
-//            ph.exit();
-//        }
+                           res.send(content);
+                           console.log('RESPONSE SEND');
+                           ph.exit();
+                       });
+               }
+               else {
+                   console.log("Status Failed");
+                   ph.exit();
+               }
+           })
+       });
     });
 
 });

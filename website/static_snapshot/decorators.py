@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import functools
+import logging
 
 from flask import request
 from werkzeug.contrib.cache import SimpleCache
@@ -10,6 +11,7 @@ from website.models import Node
 
 
 cache = SimpleCache()
+logger = logging.getLogger(__name__)
 
 
 def gets_static_snapshot(page_name):
@@ -28,23 +30,21 @@ def gets_static_snapshot(page_name):
             # Do not allow phantom or API calls to run this task
             if not ('Phantom' in request.user_agent.string
                     or 'api/v1' in request.url):
+
                 if cache.get(page_name) == 'pending':
-                    print "Pending"  # TODO(kush): Handle this gracefully
+                    logger.warn('SEO Background task in progress')
 
                 else:
-                    print request.url
-                    print page_name
                     id = ''
                     category = ''
                     # Only public projects
                     if kwargs.get('pid') or kwargs.get('nid'):
-                        # kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
                         node = Node.load(kwargs.get('pid', kwargs.get('nid')))
                         if node.is_public:
                             id = kwargs.get('pid') or kwargs.get('nid')
                             category = 'node'
                         else:
-                            print "Private Project"
+                            logger.warn('Private Projects are not exposed for SEO')
                             return func(*args, **kwargs)
 
                     if kwargs.get('uid'):
@@ -52,15 +52,16 @@ def gets_static_snapshot(page_name):
                         category = 'user'
 
                     path = get_path(page_name, id, category)
-                    print path['full_path']
                     if not os.path.exists(path['full_path']):
                         task = tasks.get_static_snapshot.apply_async(args=[request.url, path['path']])
+
                         # Retrieve these cache values in snapshot handler
                         cache.set(page_name, 'pending')
                         cache.set('task_id', task.id)
                         cache.set('current_page', page_name)
+
                     else:
-                        print "Already Cached"
+                        # Retrieving from cache, if already available
                         with open(path['full_path'], 'r') as fp:
                             file_content = fp.read().decode('utf-8')
                             cache.set('cached_content', file_content)
