@@ -1,9 +1,7 @@
 import os
 
-from flask import request
 from framework.render.tasks import ensure_path
 from website.static_snapshot import tasks
-
 
 
 def get_static_snapshot(cache):

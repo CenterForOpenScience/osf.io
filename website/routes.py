@@ -34,7 +34,6 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
-from website.static_snapshot import views as seo_views
 
 
 def get_globals():

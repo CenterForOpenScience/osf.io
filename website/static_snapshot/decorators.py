@@ -70,4 +70,3 @@ def gets_static_snapshot(page_name):
         return wrapped
 
     return wrapper
-
