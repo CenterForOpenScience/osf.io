@@ -59,7 +59,11 @@ website/static/robots.local.txt
 ##############
 
 api/static/rest_framework
-
+api/static/rest_framework_swagger/images
+api/static/rest_framework_swagger/lib
+api/static/rest_framework_swagger/swagger-ui.js
+api/static/rest_framework_swagger/swagger-ui.min.js
+api/static/rest_framework_swagger/o2c.html
 
 # Local settings files
 local.py
