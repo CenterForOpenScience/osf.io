@@ -790,3 +790,10 @@ def update_citation_styles():
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
     print("Parsed {} styles".format(total))
+
+@task(aliases=['phantom'])
+def phantom_server():
+    """Starts express server to run phantomJS
+    """
+    phantom_server_path = os.path.join(settings.STATIC_FOLDER, 'js', 'phantomServer', 'app.js')
+    run('node {0}'.format(phantom_server_path), echo=True)
