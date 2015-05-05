@@ -44,12 +44,12 @@ var makeRegexValidator = function(regex, message, match) {
     };
 };
 
-var cleanURL = function(url) {
-    url = $.trim(url);
+var cleanURL = function(value) {
+    value = $.trim(value);
     if (!value || value.search(/^https?:\/\//i) === 0) {
-        return url;
+        return value;
     }
-    return 'http://' + url;
+    return 'http://' + value;
 
     }
 

@@ -556,20 +556,6 @@ var SocialViewModel = function(urls, modes) {
     });
     self.hasValidProperty(true);
 
-    self.addWebsite = function(profileWebsite) {
-        var nextItemIndex = self.profileWebsites().length;
-        this.profileWebsites.push(ko.observable().extend({
-            trimmed: true,
-            url: true,
-            trimmedhttp: true
-            }));
-    }
-    
-    self.removeWebsite = function(profileWebsite) {
-        var idx = self.profileWebsites.indexOf(profileWebsite);
-        self.profileWebsites.splice(idx, 1);
-    }
-
     self.values = ko.computed(function() {
         return [
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
@@ -604,6 +590,17 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
+    self.addWebsite = function(profileWebsite) {
+        this.profileWebsites.push(ko.observable().extend({
+            trimmedURL: true
+            }));
+    }
+    
+    self.removeWebsite = function(profileWebsite) {
+        var idx = self.profileWebsites.indexOf(profileWebsite);
+        self.profileWebsites.splice(idx, 1);
+    }
+
     self.fetch();
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
@@ -611,11 +608,12 @@ $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.proto
 
 SocialViewModel.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
+    var profileWebsites = serializedData.profileWebsites;
     
     function removeBlankValues(value) {
-      return value != "";
+        return value != "";
     }
-    var profileWebsites = serializedData.profileWebsites;
+    
     if (profileWebsites.length > 1) {
         serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
     }     
@@ -629,9 +627,7 @@ SocialViewModel.prototype.unserialize = function(data) {
          if (ko.isObservable(self[key]) && key == "profileWebsites") {
             for (var i = 0; i < value.length; i++) {
                 websiteValue[i] = ko.observable(value[i]).extend({
-                        trimmed: true,
-                        url: true,
-                        trimmedhttp: true
+                        trimmedURL: true
                 });                 
             }
             self[key](websiteValue);
@@ -644,7 +640,6 @@ SocialViewModel.prototype.unserialize = function(data) {
     });
     return self;
 };
-
 
 var ListViewModel = function(ContentModel, urls, modes) {
     var self = this;
