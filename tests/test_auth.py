@@ -163,7 +163,7 @@ decoratorapp = Flask('decorators')
 
 @must_be_contributor
 def view_that_needs_contributor(**kwargs):
-    return kwargs['project'] or kwargs['node']
+    return kwargs.get('node') or kwargs.get('parent')
 
 
 class AuthAppTestCase(OsfTestCase):
@@ -216,17 +216,17 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
 
     def test_must_be_contributor_parent_admin(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         res = view_that_needs_contributor(
             pid=self.project._id,
             nid=node._id,
             user=self.project.creator,
         )
-        assert_equal(res, self.project)
+        assert_equal(res, node)
 
     def test_must_be_contributor_parent_write(self):
         user = UserFactory()
-        node = NodeFactory(project=self.project, creator=user)
+        node = NodeFactory(parent=self.project, creator=user)
         self.project.set_permissions(self.project.creator, ['read', 'write'])
         self.project.save()
         with assert_raises(HTTPError) as exc_info:
@@ -269,7 +269,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         project = ProjectFactory()
         project.add_permission(project.creator, 'dance')
         mock_from_kwargs.return_value = Auth(user=project.creator)
-        mock_to_nodes.return_value = (project, None)
+        mock_to_nodes.return_value = (None, project)
         thriller(node=project)
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
@@ -277,7 +277,7 @@ class TestPermissionDecorators(AuthAppTestCase):
     def test_must_have_permission_false(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
         mock_from_kwargs.return_value = Auth(user=project.creator)
-        mock_to_nodes.return_value = (project, None)
+        mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
         assert_equal(ctx.exception.code, http.FORBIDDEN)
@@ -287,7 +287,7 @@ class TestPermissionDecorators(AuthAppTestCase):
     def test_must_have_permission_not_logged_in(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
         mock_from_kwargs.return_value = Auth()
-        mock_to_nodes.return_value = (project, None)
+        mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
         assert_equal(ctx.exception.code, http.UNAUTHORIZED)
@@ -305,7 +305,7 @@ class TestMustHaveAddonDecorator(AuthAppTestCase):
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     def test_must_have_addon_node_true(self, mock_kwargs_to_nodes):
-        mock_kwargs_to_nodes.return_value = (self.project, None)
+        mock_kwargs_to_nodes.return_value = (None, self.project)
         self.project.add_addon('github', auth=None)
         decorated = must_have_addon('github', 'node')(needs_addon_view)
         res = decorated()
@@ -313,7 +313,7 @@ class TestMustHaveAddonDecorator(AuthAppTestCase):
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     def test_must_have_addon_node_false(self, mock_kwargs_to_nodes):
-        mock_kwargs_to_nodes.return_value = (self.project, None)
+        mock_kwargs_to_nodes.return_value = (None, self.project)
         self.project.delete_addon('github', auth=None)
         decorated = must_have_addon('github', 'node')(needs_addon_view)
         with assert_raises(HTTPError):
@@ -349,7 +349,7 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
 
         # Mock
         mock_get_current_user.return_value = Auth(self.project.creator)
-        mock_kwargs_to_nodes.return_value = (self.project, None)
+        mock_kwargs_to_nodes.return_value = (None, self.project)
 
         # Setup
         self.project.add_addon('github', auth=None)

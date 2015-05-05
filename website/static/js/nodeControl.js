@@ -12,8 +12,9 @@ require('bootstrap-editable');
 require('knockout.punches');
 ko.punches.enableAll();
 
-var osfHelpers = require('./osfHelpers');
-var NodeActions = require('./project.js');
+var osfHelpers = require('js/osfHelpers');
+var NodeActions = require('js/project.js');
+var iconmap = require('js/iconmap')
 
 // Modal language
 var MESSAGES = {
@@ -138,6 +139,18 @@ var ProjectViewModel = function(data) {
     self.canBeOrganized = ko.pureComputed(function() {
         return !!(self.user.username && (self.nodeIsPublic || self.user.is_contributor));
     });
+
+    // Add icon to title
+    var icon = '';
+    var category = data.node.category_short;
+    if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+        icon = iconmap.componentIcons[category];        
+    }
+    else {
+        icon = iconmap.projectIcons[category];
+    }
+    icon = $('<span>').addClass(icon);
+    $('#nodeTitleEditable').parent().prepend(icon);
 
     // Editable Title and Description
     if (self.userCanEdit) {

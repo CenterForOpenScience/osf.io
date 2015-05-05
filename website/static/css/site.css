@@ -42,7 +42,7 @@ body {
 .gs-sidebar .nav a,
 .gs-sidebar .nav a:hover,
 .gs-sidebar .nav a:focus {
-    padding: 0;
+    
     text-decoration: none;
     background-color: transparent;
 }
@@ -51,6 +51,7 @@ body {
     font-size: 12px;
     padding: 4px 0 4px 15px;
     opacity: 0.8;
+    font-weight: bold;
 }/* nested navs */
 .gs-sidebar .nav .nav {
     display: none;
@@ -86,7 +87,7 @@ body {
     position: fixed;
     top: 70px;
 }
-.gs-sidebar.affix-bottom {
+.affix-bottom {
     position: relative;
 }
 
@@ -106,19 +107,11 @@ body {
 }
 
 /* headers */
-.gs-header {
-    display: block;
-    font-family: 'Patua One', cursive;
-    font-size: 24px;
-    padding-bottom: 20px;
-    padding-top: 20px;
-}
-
 #conferenceViewTable td {
     vertical-align: middle;
 }
 
-/*CSS Johanna added for front page*/
+/*CSS added for front page*/
 
 /* Knockout Validation Styles */
 
@@ -987,6 +980,8 @@ h1.unavailable {
     margin-top: -100px;
     padding-top: 100px;
     display: block;
+  z-index: -1;
+  position: relative;    
 }
 
 .anchor {
@@ -1414,6 +1409,10 @@ dl.activity-log dd {
     cursor: pointer;
 }
 
+.log-folder {
+  font-style: italic;
+}
+
 .log-node-title-link {
     font-weight: bold;
 }
@@ -1487,6 +1486,20 @@ dl.activity-log dd {
 
 #privateLinkTable .btn-group .btn-mini{
     padding:5px;
+}
+
+/*#fileRevisions{*/
+    /*margin-bottom: 625px;*/
+/*}*/
+thead.file-version-thread{
+    display: inline-block;
+}
+
+tbody.file-version{
+    max-height: 580px;
+    overflow-y: auto;
+    display: inline-block;
+    /*position: absolute;*/
 }
 
 /** The project and wiki name editable inputs should be larger
@@ -2638,4 +2651,10 @@ span#profileFullname{
 }
 .m-xl {
     margin: 50px;
+}
+
+@media (max-width: 768px) {
+    .affix {
+        position: relative;
+    }
 }

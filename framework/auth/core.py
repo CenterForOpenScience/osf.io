@@ -7,6 +7,8 @@ import datetime as dt
 
 import bson
 import pytz
+import itsdangerous
+
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
@@ -19,6 +21,7 @@ from framework.sessions import session
 from framework.auth import exceptions, utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
+from framework.sessions.model import Session
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -455,6 +458,55 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_claimed = True
         user.date_confirmed = user.date_registered
         return user
+
+    @classmethod
+    def from_cookie(cls, cookie, secret=None):
+        """Attempt to load a user from their signed cookie
+        :returns: None if a user cannot be loaded else User
+        """
+        if not cookie:
+            return None
+
+        secret = secret or settings.SECRET_KEY
+
+        try:
+            token = itsdangerous.Signer(secret).unsign(cookie)
+        except itsdangerous.BadSignature:
+            return None
+
+        user_session = Session.load(token)
+
+        if user_session is None:
+            return None
+
+        return cls.load(user_session.data.get('auth_user_id'))
+
+    def get_or_create_cookie(self, secret=None):
+        """Find the cookie for the given user
+        Create a new session if no cookie is found
+
+        :param str secret: The key to sign the cookie with
+        :returns: The signed cookie
+        """
+        secret = secret or settings.SECRET_KEY
+        sessions = Session.find(
+            Q('data.auth_user_id', 'eq', self._id)
+        ).sort(
+            '-date_modified'
+        ).limit(1)
+
+        if sessions.count() > 0:
+            user_session = sessions[0]
+        else:
+            user_session = Session(data={
+                'auth_user_id': self._id,
+                'auth_user_username': self.username,
+                'auth_user_fullname': self.fullname,
+            })
+            user_session.save()
+
+        signer = itsdangerous.Signer(secret)
+        return signer.sign(user_session._id)
 
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
