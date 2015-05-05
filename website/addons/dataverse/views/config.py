@@ -2,6 +2,8 @@
 
 import httplib as http
 from flask import request
+from modularodm import Q
+from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -11,7 +13,56 @@ from website.util.sanitize import assert_clean
 from website.util import api_url_for, web_url_for
 
 from website.addons.dataverse import client
+from website.addons.dataverse.model import DataverseProvider
 from website.addons.dataverse.settings import HOST
+from website.addons.dataverse.serializer import DataverseSerializer
+from website.oauth.models import ExternalAccount
+
+
+@must_be_logged_in
+def dataverse_get_user_accounts(auth):
+    """ Returns the list of all of the current user's authorized Dataverse accounts """
+
+    return DataverseSerializer(
+        user_settings=auth.user.get_addon('dataverse')
+    ).serialized_user_settings
+
+
+@must_be_logged_in
+def dataverse_add_external_account(auth, **kwargs):
+    user = auth.user
+    provider = DataverseProvider()
+
+    host = request.json.get('host')
+    api_token = request.json.get('api_token')
+
+    # TODO: Verify/format host
+    # TODO: Authenticate against server
+
+    # Note: `DataverseSerializer` expects display_name to be a URL
+    try:
+        provider.account = ExternalAccount(
+            provider=provider.short_name,
+            provider_name=provider.name,
+            display_name=host,       # no username; show host
+            oauth_key=host,          # hijacked; now host
+            oauth_secret=api_token,  # hijacked; now api_token
+            provider_id=api_token,   # THIS IS BAD
+        )
+        provider.account.save()
+    except KeyExistsException:
+        # ... or get the old one
+        provider.account = ExternalAccount.find_one(
+            Q('provider', 'eq', provider.short_name) &
+            Q('provider_id', 'eq', api_token)
+        )
+        assert provider.account is not None
+
+    if provider.account not in user.external_accounts:
+        user.external_accounts.append(provider.account)
+        user.save()
+
+    return {}
 
 
 @must_be_logged_in

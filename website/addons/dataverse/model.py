@@ -7,12 +7,34 @@ from modularodm import fields
 
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
-from website.security import encrypt, decrypt
 from website.addons.base import (
-    AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
+    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile, exceptions,
 )
 from website.addons.dataverse.client import connect_from_settings_or_401
-from website.addons.dataverse.settings import HOST
+from website.addons.dataverse.settings import HOST, DEFAULT_HOSTS
+from website.addons.dataverse import serializer
+
+
+class DataverseProvider(object):
+    """An alternative to `ExternalProvider` not tied to OAuth"""
+
+    name = 'Dataverse'
+    short_name = 'dataverse'
+
+    # List of possible Dataverse installations
+    default_hosts = DEFAULT_HOSTS
+
+    def __init__(self):
+        super(DataverseProvider, self).__init__()
+
+        # provide an unauthenticated session by default
+        self.account = None
+
+    def __repr__(self):
+        return '<{name}: {status}>'.format(
+            name=self.__class__.__name__,
+            status=self.account.provider_id if self.account else 'anonymous'
+        )
 
 
 class DataverseFile(GuidFile):
@@ -59,50 +81,21 @@ class DataverseFile(GuidFile):
                 pass
 
 
-class AddonDataverseUserSettings(AddonUserSettingsBase):
+class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
 
-    api_token = fields.StringField()
+    oauth_provider = DataverseProvider
+    serializer = serializer.DataverseSerializer
 
     # Legacy Fields
+    api_token = fields.StringField()
     dataverse_username = fields.StringField()
     encrypted_password = fields.StringField()
 
-    @property
-    def has_auth(self):
-        return bool(self.api_token)
 
-    @property
-    def dataverse_password(self):
-        if self.encrypted_password is None:
-            return None
+class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
 
-        return decrypt(self.encrypted_password)
-
-    @dataverse_password.setter
-    def dataverse_password(self, value):
-        if value is None:
-            self.encrypted_password = None
-            return
-
-        self.encrypted_password = encrypt(value)
-
-    def delete(self, save=True):
-        self.clear()
-        super(AddonDataverseUserSettings, self).delete(save)
-
-    def clear(self):
-        """Clear settings and deauthorize any associated nodes.
-
-        :param bool delete: Indicates if the settings should be deleted.
-        """
-        self.api_token = None
-        for node_settings in self.addondataversenodesettings__authorized:
-            node_settings.deauthorize(Auth(self.owner))
-            node_settings.save()
-        return self
-
-
-class AddonDataverseNodeSettings(AddonNodeSettingsBase):
+    oauth_provider = DataverseProvider
+    serializer = serializer.DataverseSerializer
 
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
@@ -118,6 +111,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         'addondataverseusersettings', backref='authorized'
     )
 
+    # Legacy settings objects won't have IDs
     @property
     def dataset_id(self):
         if self._dataset_id is None:

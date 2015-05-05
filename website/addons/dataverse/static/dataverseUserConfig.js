@@ -12,24 +12,45 @@ var bootbox = require('bootbox');
 
 var language = require('js/osfLanguage').Addons.dataverse;
 var osfHelpers = require('js/osfHelpers');
+var addonSettings = require('js/addonSettings');
+
+var ConnectedProject = addonSettings.ConnectedProject; // TODO
+var ExternalAccount = addonSettings.ExternalAccount;
+
+var modal = $('#dataverseInputCredentials');
+
 
 function ViewModel(url) {
     var self = this;
-    self.userHasAuth = ko.observable(false);
+    var otherString = 'Other (Please Specify)';
+
+    self.properName = 'Dataverse';
     self.apiToken = ko.observable();
-    self.connected = ko.observable();
     self.urls = ko.observable({});
+    self.hosts = ko.observableArray([]);
+    self.selectedHost = ko.observable();    // Host specified in select element
+    self.customHost = ko.observable();      // Host specified in input element
     // Whether the initial data has been loaded
     self.loaded = ko.observable(false);
+    self.accounts = ko.observableArray();
 
-    self.showDeleteAuth = ko.computed(function() {
-        return self.loaded() && self.userHasAuth();
+    // Designated host, specified from select or input element
+    self.host = ko.pureComputed(function() {
+        return self.useCustomHost() ? self.customHost() : self.selectedHost();
     });
-    self.showInputCredentials = ko.computed(function() {
-        return self.loaded() && (!self.userHasAuth() || !self.connected());
+    // Hosts visible in select element. Includes presets and "Other" option
+    self.visibleHosts = ko.pureComputed(function() {
+        return self.hosts().concat([otherString]);
     });
-    self.credentialsChanged = ko.computed(function() {
-        return self.userHasAuth() && !self.connected();
+    // Whether to use select element or input element for host designation
+    self.useCustomHost = ko.pureComputed(function() {
+        return self.selectedHost() === otherString;
+    });
+    self.showApiTokenInput = ko.pureComputed(function() {
+        return typeof self.selectedHost() !== 'undefined';
+    });
+    self.tokenUrl = ko.pureComputed(function() {
+       return self.host() ? 'https://' + self.host() + '/account/apitoken' : undefined;
     });
 
     // Update above observables with data from the server
@@ -39,11 +60,9 @@ function ViewModel(url) {
         dataType: 'json'
     }).done(function(response) {
         var data = response.result;
-        self.userHasAuth(data.userHasAuth);
         self.urls(data.urls);
+        self.hosts(data.hosts);
         self.loaded(true);
-        self.apiToken(data.apiToken);
-        self.connected(data.connected);
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(language.userSettingsError, 'text-warning');
         Raven.captureMessage('Could not GET Dataverse settings', {
@@ -53,62 +72,99 @@ function ViewModel(url) {
         });
     });
 
+
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
 
+    /** Reset all fields from Dataverse host selection modal */
+    self.clearModal = function() {
+        self.apiToken(undefined);
+        self.selectedHost(undefined);
+        self.customHost(undefined);
+    };
+
+    self.updateAccounts = function() {
+        var url = '/api/v1/settings/dataverse/accounts/';  // TODO
+        var request = $.get(url);
+        request.done(function(data) {
+            self.accounts($.map(data.accounts, function(account) {
+                var externalAccount =  new ExternalAccount(account);
+                externalAccount.dataverseHost = account.host;
+                externalAccount.dataverseUrl = account.host_url;
+                return externalAccount;
+            }));
+        });
+        request.fail(function(xhr, status, error) {
+            Raven.captureMessage('Error while updating addon account', {
+                url: url,
+                status: status,
+                error: error
+            });
+        });
+        return request;
+    };
+
     /** Send POST request to authorize Dataverse */
     self.sendAuth = function() {
+        url = '/api/v1/settings/addons/dataverse/'; // TODO: self.urls().create,
         return osfHelpers.postJSON(
-            self.urls().create,
-            ko.toJS({api_token: self.apiToken})
+            url,
+            ko.toJS({
+                host: self.host,
+                api_token: self.apiToken
+            })
         ).done(function() {
-            // User now has auth
-            self.userHasAuth(true);
-            self.connected(true);
-            self.changeMessage(language.authSuccess, 'text-info', 5000);
+            self.clearModal();
+            modal.modal('hide');
+            self.updateAccounts();
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with Dataverse', {
-                url: self.urls().create,
+                url: url,
                 textStatus: textStatus,
                 error: error
             });
         });
     };
 
-    /** Pop up confirm dialog for deleting user's credentials. */
-    self.deleteKey = function() {
+    // TODO: Should next two methods be inherited from js/addonSettings?
+    self.askDisconnect = function(account) {
+        var self = this;
         bootbox.confirm({
-            title: 'Delete Dataverse Token?',
-            message: language.confirmUserDeauth,
-            callback: function(confirmed) {
-                if (confirmed) {
-                    sendDeauth();
+            title: 'Delete account?',
+            message: '<p class="overflow">' +
+                'Are you sure you want to delete account <strong>' +
+                account.name + '</strong>?' +
+                '</p>',
+            callback: function (confirm) {
+                if (confirm) {
+                    self.disconnectAccount(account);
                 }
             }
         });
     };
 
-    /** Send DELETE request to deauthorize Dataverse */
-    function sendDeauth() {
-        return $.ajax({
-            url: self.urls().delete,
+    self.disconnectAccount = function(account) {
+        var self = this;
+        var url = '/api/v1/oauth/accounts/' + account.id + '/';
+        var request = $.ajax({
+            url: url,
             type: 'DELETE'
-        }).done(function() {
-            // Page must be refreshed to remove the list of authorized nodes
-            location.reload();
-
-            // KO logic. Uncomment if page ever doesn't need refreshing
-            // self.userHasAuth(false);
-            // self.connected(false);
-            // self.apiToken('');
-            // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
-        }).fail(function() {
-            self.changeMessage(language.deauthError, 'text-danger');
         });
-    }
+        request.done(function(data) {
+            self.updateAccounts();
+        });
+        request.fail(function(xhr, status, error) {
+            Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
+                url: url,
+                status: status,
+                error: error
+            });
+        });
+        return request;
+    };
 
     /** Change the flashed status message */
     self.changeMessage = function(text, css, timeout) {
@@ -123,6 +179,9 @@ function ViewModel(url) {
             }, timeout);
         }
     };
+
+    // Get account information
+    self.updateAccounts();
 }
 
 function DataverseUserConfig(selector, url) {

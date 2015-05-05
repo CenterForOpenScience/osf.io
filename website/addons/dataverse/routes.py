@@ -54,6 +54,19 @@ settings_routes = {
 
 api_routes = {
     'rules': [
+        # TODO: Prune unused routes
+        Rule(
+            '/settings/dataverse/accounts/',
+            'get',
+            views.config.dataverse_get_user_accounts,
+            json_renderer,
+        ),
+        Rule(
+            '/settings/addons/dataverse/',
+            'post',
+            views.config.dataverse_add_external_account,
+            json_renderer,
+        ),
         Rule(
             ['/project/<pid>/dataverse/config/get-datasets/',
             '/project/<pid>/node/<nid>/dataverse/config/get-datasets/'],

@@ -3,7 +3,7 @@ import httplib as http
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from website.addons.dataverse.client import connect_from_settings_or_401
-from website.addons.dataverse.settings import HOST
+from website.addons.dataverse.settings import HOST, DEFAULT_HOSTS
 from website.project import decorators
 from website.util import api_url_for
 
@@ -57,6 +57,7 @@ def dataverse_user_config_get(user_addon, auth, **kwargs):
             'connected': connection is not None,
             'userHasAuth': user_addon.has_auth,
             'apiToken': user_addon.api_token,
-            'urls': urls
+            'urls': urls,
+            'hosts': DEFAULT_HOSTS,
         },
     }, http.OK
