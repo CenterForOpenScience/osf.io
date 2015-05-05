@@ -92,8 +92,8 @@ class TestNodeFiltering(OsfTestCase):
         self.project_one = ProjectFactory(title="Project One", is_public=True)
         self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True)
         self.project_three = ProjectFactory(title="Three", is_public=True)
-        self.private_project_user_one = ProjectFactory(title="Private Project", is_public=False, auth=self.auth_one)
-        self.private_project_user_two = ProjectFactory(title="Private Project", is_public=False, auth=self.auth_two)
+        self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
+        self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
         self.folder = FolderFactory()
         self.dashboard = DashboardFactory()
 
