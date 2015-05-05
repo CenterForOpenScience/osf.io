@@ -283,11 +283,14 @@
               % if node['children']:
                   <div id="containment">
                       <div mod-meta='{
-                              "tpl": "util/render_nodes.mako",
-                              "uri": "${node["api_url"]}get_children/",
-                              "replace": true,
-                      "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
-                          }'></div>
+                          "tpl": "util/render_nodes.mako",
+                          "uri": "${node["api_url"]}get_children/",
+                          "replace": true,
+                          "kwargs": {
+                            "sortable" : ${'true' if not node['is_registration'] else 'false'},
+                            "pluralized_node_type": "components"
+                          }
+                        }'></div>
                   </div>
               % else:
                 <p>No components have been added to this project.</p>
