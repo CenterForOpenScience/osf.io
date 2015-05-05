@@ -1234,8 +1234,10 @@ function _fangornToolbar () {
 
 function _fangornResetToolbar () {
     var tb = this;
-    tb.options.iconState.mode === 'bar';
-    tb.options.iconState = _defaultIconState();
+    if (tb.options.iconState.mode === 'search') {
+        tb.options.iconState = _defaultIconState();
+    }
+    tb.options.iconState.mode = 'bar';
     tb.resetFilter();
     m.redraw();
 }
@@ -1248,8 +1250,7 @@ function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
             onclick : function () {
-                tb.options.iconState.mode = 'bar'; tb.resetFilter();
-                tb.options.iconState = _defaultIconState();
+                _fangornResetToolbar.call(tb);
             }
         },
         m('i.fa.fa-times')
@@ -1652,6 +1653,12 @@ tbOptions = {
                 _resizeHeight.call(tb);
             })
         }
+        $(window).on('keydown', function(event){
+            if (event.keyCode === 27) {
+                _fangornResetToolbar.call(tb);
+            }
+
+        });
 
     },
     createcheck : function (item, parent) {
