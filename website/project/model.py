@@ -960,7 +960,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             with warnings.catch_warnings():
                 try:
                     values[key] = {
-                        'old':  value
+                        'old': value
                     }
                     setattr(self, key, value)
                 except AttributeError:
