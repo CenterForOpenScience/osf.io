@@ -156,10 +156,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     )
 
     def get_valid_self_link_methods(self, user, root_folder=False):
-        valid_methods = {
-                'file': [],
-                'folder': [],
-            }
+        valid_methods = {'file': [], 'folder': [], }
         if user is None:
             return valid_methods
 
@@ -175,28 +172,29 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
         return valid_methods
 
-    def get_file_item(self, item, valid_file_methods, node_id, cookie, obj_args):
-        file= {
-                    'valid_self_link_methods': valid_file_methods[item['kind']],
-                    'provider': item['provider'],
-                    'path': item['path'],
-                    'name': item['name'],
-                    'node_id': node_id,
-                    'cookie': cookie,
-                    'args': obj_args,
-                    'waterbutler_type': 'file',
-                    'item_type': item['kind'],
-                }
-        if file['item_type'] == 'folder':
-            file['metadata'] = {}
+    @staticmethod
+    def get_file_item(item, valid_file_methods, node_id, cookie, obj_args):
+        file_item = {
+            'valid_self_link_methods': valid_file_methods[item['kind']],
+            'provider': item['provider'],
+            'path': item['path'],
+            'name': item['name'],
+            'node_id': node_id,
+            'cookie': cookie,
+            'args': obj_args,
+            'waterbutler_type': 'file',
+            'item_type': item['kind'],
+        }
+        if file_item['item_type'] == 'folder':
+            file_item['metadata'] = {}
         else:
-            file['metadata'] = {
+            file_item['metadata'] = {
                 'content_type': item['contentType'],
                 'modified': item['modified'],
                 'size': item['size'],
                 'extra': item['extra'],
             }
-        return file
+        return file_item
 
     def get_queryset(self):
         query_params = self.request.query_params
