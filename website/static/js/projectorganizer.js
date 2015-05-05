@@ -18,9 +18,11 @@ var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
+var $osf = require('js/osfHelpers');
+var iconmap = require('js/iconmap');
+var legendView = require('js/components/legend').view;
 
-
-var $osf = require('./osfHelpers');
+var nodeCategories = require('json!built/nodeCategories.json');
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
@@ -33,7 +35,16 @@ var projectOrganizer = {};
     var linkID;
 
 // Cross browser key codes for the Command key
-var commandKeys = [224, 17, 91, 93]; 
+var commandKeys = [224, 17, 91, 93];
+
+var projectOrganizerCategories = $.extend({}, {
+    folder: 'Folder',
+    smartFolder: 'Smart Folder',
+    project: 'Project',
+    registration:  'Registration',
+    link:  'Link'
+}, nodeCategories);
+
 
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
@@ -45,7 +56,7 @@ projectOrganizer.publicProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
+        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -69,7 +80,7 @@ projectOrganizer.myProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
+        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -314,19 +325,21 @@ function _poToggleCheck(item) {
  * @private
  */
 function _poResolveIcon(item) {
-    var viewLink,
-        icons = {
-            folder : 'fa-cubes',
-            smartFolder : 'fa-certificate',
-            project : 'fa-cube',
-            registration :  'fa-th-list text-muted',
-            component :  'fa-th-large',
-            registeredComponent :  'fa-th-large text-muted',
-            link :  'fa-link'
-        };
-    viewLink = item.data.urls.fetch;
-    function returnView(type) {
-        var template = m('.fa', { 'class' : icons[type]});
+    var icons = iconmap.projectIcons;
+    var componentIcons = iconmap.componentIcons;
+    var viewLink = item.data.urls.fetch;
+    function returnView(type, category) {
+        var iconType = icons[type];
+        if (type === 'component' || type === 'registeredComponent') {
+            iconType = componentIcons[category];
+        }
+        if (type === 'registeredComponent') {
+            iconType += ' po-icon-registered';
+        }
+        else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
         if (viewLink) {
             return m('a', { href : viewLink}, template);
         }
@@ -351,9 +364,9 @@ function _poResolveIcon(item) {
 
     if (item.data.isComponent) {
         if (item.data.isRegistration) {
-            return returnView('registeredComponent');
+            return returnView('registeredComponent', item.data.category);
         }else {
-            return returnView('component');
+            return returnView('component', item.data.category);
         }
     }
 
@@ -559,7 +572,7 @@ function filterRowsNotInParent(rows) {
         originalRow = this.find(this.multiselected[0].id),
         originalParent,
         currentItem;
-    if (typeof originalRow !== "undefined") {
+    if (typeof originalRow !== 'undefined') {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
@@ -802,8 +815,8 @@ function dropLogic(event, items, folder) {
                 if (copyMode === 'copy' || copyMode === 'move') {
                     deleteMultiplePointersFromFolder.call(tb, itemsNotToMove, itemParent);
                     if (itemsToMove.length > 0) {
-                        var url = postInfo[copyMode]['url'],
-                            postData = JSON.stringify(postInfo[copyMode]['json']),
+                        var url = postInfo[copyMode].url,
+                            postData = JSON.stringify(postInfo[copyMode].json),
                             outerFolder = whichIsContainer.call(tb, itemParent, folder),
                             postAction = $.ajax({
                                 type: 'POST',
@@ -905,7 +918,7 @@ function toolbarDismissIcon (){
         m('i.fa.fa-times')
     );
 }
- function searchButton (){
+ function searchButton () {
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', { 
             'data-toggle' : 'tooltip',
@@ -1479,7 +1492,6 @@ function ProjectOrganizer(options) {
     this.grid = null; // Set by _initGrid
     this.init();
 }
-
 /**
  * Project organizer prototype object with init functions set to Treebeard.
  * @type {{constructor: ProjectOrganizer, init: Function, _initGrid: Function}}
@@ -1492,6 +1504,49 @@ ProjectOrganizer.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
+    },
+    legend: function(domNode) {
+        var self = this;
+        var showLegend = function() {
+            var keys = Object.keys(projectOrganizerCategories);
+            var data = keys.map(function(key) {
+                return {
+                    icon: iconmap.componentIcons[key] || iconmap.projectIcons[key],
+                    label: nodeCategories[key] || projectOrganizerCategories[key]
+                };
+            });
+            var repr = function(item) {
+                return [
+                    m('span', {
+                        className: item.icon
+                    }),
+                    '  ',
+                    item.label
+                ];
+            };
+            var opts = {
+                footer: m('span', ['*lighter color denotes a registration (e.g. ',
+                                   m('span', {
+                                       className: iconmap.componentIcons.data + ' po-icon'
+                                   }),
+                                   ' becomes  ',
+                                   m('span', {
+                                       className: iconmap.componentIcons.data + ' po-icon-registered'
+                                   }),
+                                   ' )'
+                                  ])
+            };
+            self.grid.tbController.modal.update(legendView(data, repr, opts));
+            self.grid.tbController.modal.show();
+        };
+        domNode.onclick = showLegend;
+        return m.render(
+            domNode,
+            m('span', {
+                className: iconmap.info + ' smaller',
+                click: showLegend
+            })
+        );
     }
 };
 

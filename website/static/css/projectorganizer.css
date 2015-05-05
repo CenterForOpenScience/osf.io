@@ -365,28 +365,18 @@ h3.category {
     vertical-align: bottom;
     margin-right: 4px;
 }
-
 .tb-h-success {
     background: #B8ECC0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.po-icon-registered {
+    color: #D4D4D4;
+}
+.po-icon {
+    color: #5E5E5E;
+}
+.po-modal {
+    width: auto;
+}
+.smaller {
+    font-size: 75%;
+}
