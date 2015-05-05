@@ -36,7 +36,7 @@
                     <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
                 %endif
 
-                % if node['is_registration'] and node['is_public'] and 'admin' in user['permissions']:
+                % if node['is_registration'] and (node['is_public'] or node['is_embargoed']) and 'admin' in user['permissions']:
                     <li><a href="#retractRegistrationAnchor">Retract Public Registration</a></li>
                 % endif
             </ul>
@@ -221,12 +221,12 @@
             </div>
          % endif
 
-        % if node['is_registration'] and node['is_public'] and 'admin' in user['permissions']:
+        % if node['is_registration'] and (node['is_public'] or node['is_embargoed']) and 'admin' in user['permissions']:
             <div class="panel panel-osf">
                 <span id="retractRegistrationAnchor" class="anchor"></span>
 
                 <div class="panel-heading">
-                    <h3 class="panel-title">Retract Public Retraction</h3>
+                    <h3 class="panel-title">Retract Retraction</h3>
                 </div>
 
                 <div class="panel-body">
