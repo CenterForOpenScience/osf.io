@@ -135,6 +135,8 @@
                   <!-- /ko -->
                 </span>
                 <br />Category: <span class="node-category">${node['category']}</span>
+                &nbsp;
+                <span data-bind="css: icon"></span>
                 % if node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
