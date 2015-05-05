@@ -81,8 +81,7 @@ ${next.body()}
             anonymous: ${json.dumps(node['anonymous'])},
             category: '${node['category_short']}',
             parentTitle: '${parent_title}',    
-            parentRegisterUrl: '${parent_registration_url}',             
-            parentExists: ${'true' if parent_exists else 'false'}
+            parentRegisterUrl: '${parent_registration_url}',
         }
     });
 

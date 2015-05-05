@@ -5,16 +5,16 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 
-var preRegisterMessage =  function(title, parentTitle, parentUrl) {
+var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
     if (parentUrl) {
-        return 'You are about to Register the component "' + title +
-            '" and everything that is inside it. This will not register' +
+        return 'You are about to <b><i>register the ' + category + ' "' + title +
+            '"</i></b> and everything that is inside it. This will not register' +
             ' your larger project "' + parentTitle + '" and its other components.' +
             ' If you want to register the parent project, please go <a href="' +
             parentUrl + '">here.</a>';
     } else {
-        return 'You are about to Register the project "' + title +
-            '" and everything that is inside it. If you would prefer to register ' +
+        return 'You are about to <b><i>register the project "' + title +
+            '"</i></b> and everything that is inside it. If you would prefer to register ' +
             'just a particular component of "' + title + '", please click back ' +
             'and navigate to that component and then initiate registration.';
     }
@@ -29,10 +29,20 @@ $(document).ready(function() {
         var title = node.title;
         var parentTitle = node.parentTitle;
         var parentRegisterUrl = node.parentRegisterUrl;
+        var category = node.category;
+        var bootboxTitle = 'Register Project';
+        if (node.category !== 'project'){
+            category = 'component';
+            bootboxTitle = 'Register Component';
+        }
 
-        bootbox.confirm(preRegisterMessage(title, parentTitle, parentRegisterUrl), function (result) {
-            if (result) {
+        bootbox.confirm({
+            title: bootboxTitle,
+            message: preRegisterMessage(title, parentTitle, parentRegisterUrl, category),
+            callback: function (comfirmed) {
+
                 window.location.href = target;
+
             }
         });
     });
