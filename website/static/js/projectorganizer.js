@@ -53,7 +53,6 @@ var projectOrganizerCategories = $.extend({}, {
     folder: 'Folder',
     smartFolder: 'Smart Folder',
     project: 'Project',
-    registration:  'Registration',
     link:  'Link'
 }, nodeCategories);
 
@@ -644,13 +643,17 @@ function _poToggleCheck(item) {
 function _poResolveIcon(item) {
     var icons = iconmap.projectIcons;
     var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
     var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
         var iconType = icons[type];
         if (type === 'component' || type === 'registeredComponent') {
             iconType = componentIcons[category];
         }
-        if (type === 'registeredComponent') {
+        else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
             iconType += ' po-icon-registered';
         }
         else {
@@ -674,7 +677,7 @@ function _poResolveIcon(item) {
     }
     if (item.data.isProject) {
         if (item.data.isRegistration) {
-            return returnView('registration');
+            return returnView('registeredProject', item.data.category);
         } else {
             return returnView('project');
         }
