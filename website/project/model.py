@@ -958,9 +958,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 continue
             with warnings.catch_warnings():
                 try:
-                    # TODO don't special case
+                    '''
+                    This is in place because historically projects and components
+                    live on different ElasticSearch indexes, and at the time of Node.save
+                    there is no reliable way to check what the old Node.category
+                    value was. When the cateogory changes it is possible to have duplicate/dead
+                    search entries, so always delete the ES doc on categoryt change
+
+                    TODO: consolidate Node indexes into a single index, refactor search
+                    '''
                     if key == 'category':
                         self.delete_search_entry()
+                    ###############
                     setattr(self, key, value)
                 except AttributeError:
                     raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
