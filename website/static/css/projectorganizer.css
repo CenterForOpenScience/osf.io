@@ -374,6 +374,12 @@ h3.category {
 .po-icon {
     color: #5E5E5E;
 }
+.fangorn-selected .po-icon-registered {
+    color: #CCCCCC;
+}
+.fangorn-selected .po-icon {
+    color: #FFFFFF;
+}
 .po-modal {
     width: auto;
 }
