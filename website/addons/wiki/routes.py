@@ -6,6 +6,7 @@ import os
 
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
+from website.static_snapshot import views as seo_views
 
 from . import views
 
@@ -36,6 +37,11 @@ page_routes = {
             '/project/<pid>/wiki/',
             '/project/<pid>/node/<nid>/wiki/',
         ], 'get', views.project_wiki_home, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+
+        # Rule([
+        #     '/project/<pid>/wiki/<_escaped_element_>',
+        #     '/project/<pid>/node/<nid>/wiki/<_escaped_element_>',
+        # ], 'get', seo_views.handle_get_static_snapshot, json_renderer),
 
         # View (Id) | GET
         Rule([

@@ -3,14 +3,18 @@ import logging
 import httplib as http
 import math
 from itertools import islice
+import os
 
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationValueError
 
+from website.static_snapshot.decorators import cache
+from framework.render.tasks import ensure_path
 from framework import status
 from framework.sessions import session
 from website.static_snapshot.decorators import gets_static_snapshot
+from website.static_snapshot.views import get_static_snapshot
 from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -278,6 +282,7 @@ def node_fork_page(**kwargs):
     return fork.url
 
 
+@gets_static_snapshot('registrations')
 @must_be_valid_project
 @must_be_contributor_or_public  # returns user, project
 def node_registrations(**kwargs):
@@ -286,6 +291,7 @@ def node_registrations(**kwargs):
     return _view_project(node_to_use, auth, primary=True)
 
 
+@gets_static_snapshot('forks')
 @must_be_valid_project
 @must_be_contributor_or_public  # returns user, project
 def node_forks(**kwargs):
@@ -395,16 +401,24 @@ def view_project(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     primary = '/api/v1' not in request.path
-    ret = _view_project(node, auth, primary=primary)
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    # Collect the URIs to the static assets for addons that have widgets
-    ret['addon_widget_js'] = list(collect_addon_js(
-        node,
-        filename='widget-cfg.js',
-        config_entry='widget'
-    ))
-    ret.update(rubeus.collect_addon_assets(node))
-    return ret
+    if request.args.get('_'):
+        """
+        Since this view function is called from all the pages for a public project,
+        Google Bot request handler function is called here.
+        """
+        get_static_snapshot(cache)
+
+    else:
+        ret = _view_project(node, auth, primary=primary)
+        ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+        # Collect the URIs to the static assets for addons that have widgets
+        ret['addon_widget_js'] = list(collect_addon_js(
+            node,
+            filename='widget-cfg.js',
+            config_entry='widget'
+        ))
+        ret.update(rubeus.collect_addon_assets(node))
+        return ret
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -489,7 +503,7 @@ def project_reorder_components(project, **kwargs):
 
 ##############################################################################
 
-
+@gets_static_snapshot('statistics')
 @must_be_valid_project
 @must_be_contributor_or_public  # returns user, project
 def project_statistics(**kwargs):

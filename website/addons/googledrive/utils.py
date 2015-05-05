@@ -64,6 +64,7 @@ class GoogleDriveNodeLogger(object):
 
 def serialize_urls(node_settings):
     node = node_settings.owner
+    print node.web_url_for('collect_file_trees')
     return {
         'files': node.web_url_for('collect_file_trees'),
         'config': node.api_url_for('googledrive_config_put'),

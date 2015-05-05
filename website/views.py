@@ -22,6 +22,8 @@ from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from website.static_snapshot.decorators import gets_static_snapshot
+from website.static_snapshot.decorators import cache
+from website.static_snapshot.views import get_static_snapshot
 from website.models import Guid
 from website.models import Node
 from website.util import rubeus
@@ -273,22 +275,15 @@ def get_dashboard_nodes(auth):
     return _render_nodes(response_nodes, auth)
 
 
+def homepage_snapshot():
+    """
+    Placeholder for calling googlebot crawler call for home page
+    :return: None
+    """
+    if request.args.get('_'):
+        get_static_snapshot(cache)
+    return None
 
-# @must_be_logged_in
-# def dashboard_static(auth, **kwargs):
-#     url = web_url_for('dashboard', _absolute=True)
-#     # url = 'http://65eee95e.ngrok.io/dashboard/'
-#     cookie = request.cookies
-#     print cookie, '************'
-#     if settings.USE_CELERY:
-#         # task = tasks.get_static_snapshot(url, cookie)
-#         task = tasks.get_static_snapshot.apply_async(args=[url, cookie])
-#         check = web_url_for('handle_get_static_snapshot', _absolute=True,  task_id=task.id)
-#         print check
-#         # return {}, 202, {'Location': web_url_for('handle_get_static_snapshot', task_id=task.id)}
-#         return redirect(check)
-#     else:
-#         return {}
 
 @must_be_logged_in
 def dashboard(auth):
@@ -384,7 +379,7 @@ def _build_guid_url(base, suffix=None):
     ])
     return u'/{0}/'.format(url)
 
-
+# @gets_static_snapshot('file-detail')
 def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
     routing table, and return the return value of the view function without
