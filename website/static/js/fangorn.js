@@ -1247,7 +1247,10 @@ function _fangornResetToolbar () {
 function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
-            onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
+            onclick : function () {
+                tb.options.iconState.mode = 'bar'; tb.resetFilter();
+                tb.options.iconState = _defaultIconState();
+            }
         },
         m('i.fa.fa-times')
     );
