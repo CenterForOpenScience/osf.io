@@ -1262,7 +1262,7 @@ function toolbarDismissIcon (){
                 tb.options.iconState.mode = 'search';
                 tb.filterText('');
                 m.redraw(true);
-
+                tb.clearMultiselect();
             }
         }, [
         m('i.fa.fa-search'),
