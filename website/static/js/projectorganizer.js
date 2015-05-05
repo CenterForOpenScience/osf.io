@@ -1136,6 +1136,29 @@ function addProjectButton() {
     ]);
 }
 
+function infoIcon() {
+    var tb = this;
+    return m('.fangorn-toolbar-icon.text-info', {
+        'data-toggle' : 'tooltip',
+        'title':  'Learn more about how to use the file browser.',
+        'data-placement' : 'bottom',
+        onclick : function () {
+            var mithrilContent = m('div', [
+                m('h3.break-word', 'How to Use the File Browser'),
+                m('p', 'Select Multiple Files: Use command or shift keys to select multiple files.'),
+                m('p', 'Go to Files: Double click a file name to go to the file.'),
+                m('p', 'Open Files in New Tab: Command + click a file name to open it in a new tab.')
+            ]);
+            var mithrilButtons = m('div', [
+                m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function () { tb.modal.dismiss(); } }, 'Close')
+            ]);
+            tb.modal.update(mithrilContent, mithrilButtons);
+        }
+    }, [
+        m('i.fa.fa-info')
+    ]);
+}
+
 function _poToolbar() {
     var tb = this;
     var generalButtons = [];
@@ -1143,6 +1166,9 @@ function _poToolbar() {
     if (generalIcons.search.on) {
         generalButtons.push(generalIcons.search.template.call(tb));
     }
+
+    generalButtons.push(generalIcons.info.template.call(tb));
+
     if (tb.options.iconState.mode === 'bar') {
         return m('.row.tb-header-row', [
             m('.col-xs-12.tb-buttons-col', [
@@ -1458,7 +1484,8 @@ var tbOptions = {
     iconState : {
         mode : 'bar',
         generalIcons : {
-            search : { on : true, template : searchButton }
+            search : { on : true, template : searchButton },
+            info : { on : true, template : infoIcon }
         },
         rowIcons : [{}]
     },
