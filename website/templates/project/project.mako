@@ -260,15 +260,33 @@
 
 <%def name="children()">
 <div class="components addon-widget-container">
-  <div class="addon-widget-header clearfix">
-    <h4>Components </h4>
-    <div class="pull-right">
-      % if 'write' in user['permissions'] and not node['is_registration']:
-      <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-      <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-      % endif
-      
-    </div>
+    <div class="addon-widget-header clearfix">
+        <h4>Components </h4>
+        <div class="pull-right">
+            % if 'write' in user['permissions'] and not node['is_registration']:
+                <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+            % endif
+        </div>
+    </div><!-- end addon-widget-header -->
+    <div class="addon-widget-body">
+        % if node['children']:
+            <div id="containment">
+                <div mod-meta='{
+                    "tpl": "util/render_nodes.mako",
+                    "uri": "${node["api_url"]}get_children/",
+                    "replace": true,
+                    "kwargs": {
+                      "sortable" : ${'true' if not node['is_registration'] else 'false'},
+                      "pluralized_node_type": "components"
+                    }
+                  }'></div>
+            </div>
+        % else:
+          <p>No components have been added to this project.</p>
+        % endif
+    </div><!-- end addon-widget-header -- >
+</div>
   </div>
   <div class="addon-widget-body">
     % if node['children']:
@@ -282,7 +300,7 @@
     </div>
     % else:
     <p>No components have been added to this project.</p>
-    % endif    
+    % endif
   </div>
 </div>
 
