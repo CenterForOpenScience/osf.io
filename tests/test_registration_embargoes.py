@@ -197,6 +197,18 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_equal(self.registration.embargo.state, 'cancelled')
         assert_true(self.registration.is_deleted)
 
+    def test_cancelling_embargo_for_existing_registration_does_not_delete_registration(self):
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        self.registration.save()
+        disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
+        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        assert_equal(self.registration.embargo.state, 'cancelled')
+        assert_false(self.registration.is_deleted)
+
     # Embargo property tests
     def test_new_registration_is_pending_registration(self):
         self.registration.embargo_registration(

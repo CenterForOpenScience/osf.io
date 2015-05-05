@@ -52,6 +52,55 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
+    def test_retraction_of_registration_pending_embargo_cancels_embargo(self):
+        self.registration.is_public = True
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+        assert_true(self.registration.pending_retraction)
+
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_false(self.registration.pending_retraction)
+        assert_true(self.registration.is_retracted)
+        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_embargoed)
+        assert_equal(self.registration.embargo.state, 'cancelled')
+
+    def test_retraction_of_registration_in_active_embargo_cancels_embargo(self):
+        self.registration.is_public = True
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+
+        embargo_approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
+        self.registration.embargo.approve_embargo(self.user, embargo_approval_token)
+        assert_false(self.registration.pending_embargo)
+        assert_true(self.registration.is_embargoed)
+
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+        assert_true(self.registration.pending_retraction)
+
+        retraction_approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, retraction_approval_token)
+        assert_false(self.registration.pending_retraction)
+        assert_true(self.registration.is_retracted)
+        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_embargoed)
+        assert_equal(self.registration.embargo.state, 'cancelled')
+
     def test_two_approvals_with_two_admins_retracts(self):
         self.admin2 = UserFactory()
         self.registration.contributors.append(self.admin2)

@@ -2762,6 +2762,11 @@ class Retraction(StoredObject):
 
             if num_of_approvals == len(self.approval_state.keys()):
                 self.state = 'retracted'
+                # Remove any embargoes associated with the registration
+                parent_registration = Node.find_one(Q('retraction', 'eq', self))
+                if parent_registration.is_embargoed or parent_registration.pending_embargo:
+                    parent_registration.embargo.state = 'cancelled'
+                    parent_registration.embargo.save()
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
 
@@ -2795,7 +2800,7 @@ class Embargo(StoredObject):
     @property
     def is_embargoed(self):
         if self.state == 'active':
-            return self.end_date.strftime("%A, %b. %d, %Y")
+            return self.end_date.strftime("%A, %b. %d, %Y")  # e.g. 'Friday, Jan. 01, 2016'
         return False
 
     @property
@@ -2816,9 +2821,11 @@ class Embargo(StoredObject):
             if self.approval_state[user._id]['disapproval_token'] != token:
                 raise InvalidEmbargoDisapprovalToken
             self.state = 'cancelled'
-            parent_registration = Node.find_one(Q('embargo', 'eq', self))
-            parent_registration.is_deleted = True
-            parent_registration.save()
+            # Delete parent registration if it was created at the time the embargo was initiated
+            if not self.for_existing_registration:
+                parent_registration = Node.find_one(Q('embargo', 'eq', self))
+                parent_registration.is_deleted = True
+                parent_registration.save()
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
 
