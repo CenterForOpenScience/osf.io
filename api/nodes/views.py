@@ -28,8 +28,15 @@ class NodeMixin(object):
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
-    """Return a list of nodes. By default, a GET
-    will return a list of public nodes, sorted by date_modified.
+    """Return a list of nodes.
+
+    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
+    is that a project is the top-level node, and components are children of the project. There is also a category field
+    that includes the option of project. The categorization essentially determines which icon is displayed by the
+    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
+    project, and children nodes may have a category of project.
+
+    By default, a GET will return a list of public nodes, sorted by date_modified.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -58,6 +65,13 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
+        """
+        Create a node.
+        """
+        """
+        :param serializer:
+        :return:
+        """
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
@@ -82,7 +96,13 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
 
 
 class NodeContributorsList(generics.ListAPIView, NodeMixin):
-    """Return the contributors (users) fora node."""
+    """ Return a list of contributors.
+
+    Contributors are users who can make changes to the node or, in the case of private nodes,
+    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
+    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
+    are included in citations, while non-bibliographic contributors are not included in citations.
+    """
 
     permission_classes = (
         ContributorOrPublic,
@@ -96,6 +116,7 @@ class NodeContributorsList(generics.ListAPIView, NodeMixin):
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
+    """Registrations  """
     permissions_classes = (
         ContributorOrPublic,
     )
