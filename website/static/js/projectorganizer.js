@@ -1331,7 +1331,7 @@ ProjectOrganizer.prototype = {
         return m.render(
             domNode,
             m('span', {
-                className: iconmap.info + ' smaller',
+                className: [iconmap.info, iconmap.smaller, iconmap.clickable].join(' '),
                 click: showLegend
             })
         );
