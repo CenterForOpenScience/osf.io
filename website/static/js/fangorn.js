@@ -38,7 +38,7 @@ $.extend(EXTENSION_MAP, {
     gsheet: 'xlsx'
 });
 
-var _defaultIconState = function (){
+var _defaultIconState = function () {
     return {
         mode : 'bar',
         generalIcons : {
@@ -335,8 +335,10 @@ function _fangornSending(treebeard, file, xhr, formData) {
         _send.call(xhr, file);
     };
     var filesArr = treebeard.dropzone.getQueuedFiles();
-    if (filesArr.length  > 1) {
+    if (filesArr.length  > 0) {
         treebeard.options.iconState.generalIcons.cancelUploads.on = true;
+    } else {
+        treebeard.options.iconState.generalIcons.cancelUploads.on = false;
     }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
