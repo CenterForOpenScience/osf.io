@@ -3856,7 +3856,7 @@ class TestProjectCreation(OsfTestCase):
         assert_equal(res.status_code, 201)
         node = res.json['new_node']
         assert_true(node)
-        assert_true(node['title'], 'Im a real title')
+        assert_equal(node['title'], 'Im a real title')
 
     def test_description_works(self):
         payload = {

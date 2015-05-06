@@ -112,7 +112,7 @@ def project_new_post(auth, **kwargs):
 
     return {
         'projectUrl': project.url,
-        'new_node': new_project['node'] if new_project else None
+        'newNode': new_project['node'] if new_project else None
     }, http.CREATED
 
 

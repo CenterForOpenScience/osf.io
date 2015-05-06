@@ -93,7 +93,7 @@
 
                 <!-- Dropzone -->
                 <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box pull-left"></div>
-`
+
                 <!-- File queue display -->
                 <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
                     <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
@@ -113,32 +113,31 @@
                 <osf-project-search
                 params="data: data,
                         onSubmit: startUpload,
-                        onClear: clearMessages,
-                        onSelected: clearMessages,
-                        submitText: 'Upload'">
+                        onClear: showCreateAndUpload,
+                        onSelected: hideCreateAndUpload,
+                        submitText: 'Upload',
+                        ">
                 </osf-project-search>
             </div>
         </div><!-- end row -->
-        <form data-bind="submit: submitCreateNewUpload">
+        <form data-bind="submit: submitCreateAndUpload, visible:createAndUpload">
             <div class="row">
                 <div class="col-md-12">
-                    <h4> "OR" Upload in a New Project</h4>
+                    <h4> "OR" Upload to a New Project</h4>
                     <input class="form-control"
                         type="text" name="title"
                         maxlength="200"
-                        data-bind="value: createNewUpload"
-                        placeholder="Enter a Project Name"
+                        data-bind="value: newProjectName"
+                        placeholder="Enter a Project name"
                     >
                 </div>
             </div>
             <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
             <div class="row">
-                    <div class="col-md-12">
-                        <br>
-##                            <span data-bind="visible: showSubmit()">
-                                <button  class="btn btn-primary pull-right" type="submit">Create</button>
-##                            </span>
-                    </div>
+                <div class="col-md-12">
+                    <br>
+                    <button  class="btn btn-primary pull-right" type="submit">Create</button>
+                </div>
             </div>
         </form>
     </div>
@@ -160,9 +159,7 @@
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
             <br />
-<<<<<<< HEAD
-=======
-            
+
             <label>Category </label>
             <select class="form-control"
                     data-bind="value: category,
@@ -171,7 +168,7 @@
             </select>
             <br />
 
->>>>>>> 5ab32cb84b9c0c89fe91497a7c9ece8f95f86621
+
             <label>Description (Optional)</label>
             <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
                 ></textarea>

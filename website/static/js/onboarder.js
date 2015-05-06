@@ -189,6 +189,7 @@ function ProjectSearchViewModel(params) {
 
     /* Computeds */
     self.hasSelectedProject = ko.computed(function() {
+
         return self.selectedProject() !== null;
     });
     self.hasSelectedComponent = ko.computed(function() {
@@ -218,11 +219,14 @@ function ProjectSearchViewModel(params) {
         return self.selectedProject() ? self.selectedProject().urls.children : null;
     });
 
+
+
     /* Functions */
     self.onSubmit = function() {
         var func = params.onSubmit || noop;
         func(self.selectedProject(), self.selectedComponent(), self.projectInput(), self.componentInput());
     };
+
     self.onSelectedProject = function(selected) {
         self.selectedProject(selected);
         self.projectInput(selected.name);
@@ -417,9 +421,10 @@ function OBUploaderViewModel(params) {
     self.enableUpload = ko.observable(true);
     self.filename = ko.observable('');
     self.iconSrc = ko.observable('');
-    self.createNewUpload = ko.observable(null);
+    self.newProjectName = ko.observable(null);
     self.uploadCount = ko.observable(1);
     self.disableComponents = ko.observable(false);
+    self.createAndUpload = ko.observable(true);
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
@@ -458,6 +463,17 @@ function OBUploaderViewModel(params) {
         self.message('');
         self.messageClass('text-info');
     };
+
+    self.showCreateAndUpload = function () {
+        self.clearMessages();
+        self.createAndUpload(true);
+    }
+
+    self.hideCreateAndUpload = function(selected) {
+        self.clearMessages();
+        self.createAndUpload(false);
+    };
+
     self.clearDropzone = function () {
         if (self.dropzone.getUploadingFiles().length) {
             self.changeMessage('Upload canceled.', 'text-info');
@@ -577,21 +593,16 @@ function OBUploaderViewModel(params) {
     };
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
 
-
-//    self.showSubmit = ko.computed(function(){
-//        return self.createNewUpload()!== null;
-//    });
-
-    self.submitCreateNewUpload = function () {
-        if (self.createNewUpload().trim() === '') {
-            self.changeMessage('Project Name is required', 'text-danger');
+    self.submitCreateAndUpload = function () {
+        if (self.newProjectName().trim() === '') {
+            self.changeMessage('Project name is required', 'text-danger');
             return false;
         }
         else {
             $osf.postJSON(
                 CREATE_URL,
                 {
-                    title: self.createNewUpload()
+                    title: self.newProjectName()
                 }
             ).done(
                 self.createSuccess
@@ -603,7 +614,7 @@ function OBUploaderViewModel(params) {
     };
 
     self.createSuccess = function (response) {
-        var node = serializeNode(response.new_node);
+        var node = serializeNode(response.newNode);
         self.startUpload(node, self.selectedComponent, node.title, '');
         if ((self.dropzone.getUploadingFiles().length) && (!self.dropzone.getQueuedFiles().length))
             window.location = response.projectUrl;
