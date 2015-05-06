@@ -331,6 +331,7 @@ class ExternalProvider(object):
                 values['expires_at'] = datetime.datetime.fromtimestamp(
                     float(expires_at)
                 )
+
             return values
 
     @abc.abstractmethod
