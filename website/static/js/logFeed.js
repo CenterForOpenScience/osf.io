@@ -159,9 +159,9 @@ var createLogs = function(logData){
             userURL: item.user.url,
             apiKey: item.api_key,
             params: item.params,
-            nodeTitle: item.node.title,            
+            nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,
-            nodePath: item.node.path            
+            nodePath: item.node.path
         });
     });
     return mappedLogs;
