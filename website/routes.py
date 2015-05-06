@@ -379,10 +379,7 @@ def make_url_map(app):
         ),
 
     ], prefix='/api/v1')
-
-  ### Spam_Admin ###
-
-
+    ### Spam_Admin ###
     #web
     process_rules(app, [
 
@@ -402,10 +399,7 @@ def make_url_map(app):
             OsfWebRenderer('spam_admin_projects.mako'),
         ),
 
-
     ], prefix='/spam_admin'),
-
-
     #api
     process_rules(app, [
         Rule(
@@ -418,13 +412,13 @@ def make_url_map(app):
             json_renderer,
         ),
         Rule(
-                '/mark_comment_as_spam/',
+            '/mark_comment_as_spam/',
             'post',
             spam_admin_views.mark_comment_as_spam,
             json_renderer,
         ),
         Rule(
-                '/mark_comment_as_ham/',
+            '/mark_comment_as_ham/',
             'post',
             spam_admin_views.mark_comment_as_ham,
             json_renderer,
@@ -439,20 +433,19 @@ def make_url_map(app):
             json_renderer,
         ),
         Rule(
-                '/mark_project_as_spam/',
+            '/mark_project_as_spam/',
             'post',
             spam_admin_views.mark_project_as_spam,
             json_renderer,
         ),
         Rule(
-                '/mark_project_as_ham/',
+            '/mark_project_as_ham/',
             'post',
             spam_admin_views.mark_project_as_ham,
             json_renderer,
         ),
 
     ], prefix='/api/v1/spam_admin'),
-
 
     ### Forms ###
 
@@ -475,7 +468,6 @@ def make_url_map(app):
     ### Auth ###
 
     # Web
-
     process_rules(app, [
 
         Rule(

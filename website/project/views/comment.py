@@ -148,7 +148,6 @@ def add_comment(auth, node, **kwargs):
     )
     comment.save()
 
-
     if is_spam(comment):
         comment.mark_as_possible_spam(save=True)
 
