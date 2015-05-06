@@ -86,7 +86,7 @@
                 <th></th>
               </tr>
             </thead>
-
+            <div></div>
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
