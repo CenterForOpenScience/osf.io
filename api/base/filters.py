@@ -32,7 +32,41 @@ def intersect(x, y):
     return x & y
 
 
-class ODMFilterMixin(object):
+class FilterMixin(object):
+    """ View mixin with helper functions for filtering. """
+
+    TRUTHY = set(['true', 'True', 1, '1'])
+    FALSY = set(['false', 'False', 0, '0'])
+    DEFAULT_OPERATOR = 'eq'
+
+    def is_filterable_field(self, key):
+        try:
+            return key.strip() in self.serializer_class.filterable_fields
+        except AttributeError:
+            return key.strip() in self.serializer_class._declared_fields
+
+    # Used so that that queries by _id will work
+    def convert_key(self, key):
+        key = key.strip()
+        if self.serializer_class._declared_fields[key].source:
+            return self.serializer_class._declared_fields[key].source
+        return key
+
+    # Used to convert string values from query params to Python booleans when necessary
+    def convert_value(self, value):
+        value = value.strip()
+        if value in self.TRUTHY:
+            return True
+        elif value in self.FALSY:
+            return False
+        # Convert me to current user's pk
+        elif value == 'me' and not self.request.user.is_anonymous():
+            return self.request.user.pk
+        else:
+            return value
+
+
+class ODMFilterMixin(FilterMixin):
     """View mixin that adds a get_query_from_request method which converts query params
     of the form `filter[field_name]=value` into an ODM Query object.
 
@@ -43,10 +77,6 @@ class ODMFilterMixin(object):
     """
 
     # TODO Handle simple and complex non-standard fields
-
-    TRUTHY = set(['true', 'True', 1, '1'])
-    FALSY = set(['false', 'False', 0, '0'])
-    DEFAULT_OPERATOR = 'eq'
 
     # For the field_comparison_operators, instances can be a class or a tuple of classes
     field_comparison_operators = [
@@ -67,12 +97,6 @@ class ODMFilterMixin(object):
                 return operator['comparison_operator']
 
         return self.DEFAULT_OPERATOR
-
-    def is_filterable_field(self, key):
-        try:
-            return key.strip() in self.serializer_class.filterable_fields
-        except AttributeError:
-            return key.strip() in self.serializer_class._declared_fields
 
     def get_default_odm_query(self):
         raise NotImplementedError('Must define get_default_odm_query')
@@ -106,28 +130,8 @@ class ODMFilterMixin(object):
             query = None
         return query
 
-    # Used so that that queries by _id will work
-    def convert_key(self, key):
-        key = key.strip()
-        if self.serializer_class._declared_fields[key].source:
-            return self.serializer_class._declared_fields[key].source
-        return key
 
-    # Used to convert string values from query params to Python booleans when necessary
-    def convert_value(self, value):
-        value = value.strip()
-        if value in self.TRUTHY:
-            return True
-        elif value in self.FALSY:
-            return False
-        # Convert me to current user's pk
-        elif value == 'me' and not self.request.user.is_anonymous():
-            return self.request.user.pk
-        else:
-            return value
-
-
-class SerializerFilterMixin(object):
+class SerializerFilterMixin(FilterMixin):
     """View mixin that adds a get_queryset_from_request method which uses query params
     of the form `filter[field_name]=value` to filter a list of objects.
 
@@ -136,16 +140,6 @@ class SerializerFilterMixin(object):
     Serializers that want to restrict which fields are used for filtering need to have a variable called
     filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
     """
-
-    TRUTHY = set(['true', 'True', 1, '1'])
-    FALSY = set(['false', 'False', 0, '0'])
-    DEFAULT_OPERATOR = 'eq'
-
-    def is_filterable_field(self, key):
-        try:
-            return key.strip() in self.serializer_class.filterable_fields
-        except AttributeError:
-            return key.strip() in self.serializer_class._declared_fields
 
     def get_default_queryset(self):
         raise NotImplementedError('Must define get_default_queryset')
@@ -175,23 +169,3 @@ class SerializerFilterMixin(object):
             'bibliographic': serializer.get_bibliographic
         }
         return [item for item in default_queryset if serializer_function[key](item) == self.convert_value(value)]
-
-    # Used so that that queries by _id will work
-    def convert_key(self, key):
-        key = key.strip()
-        if self.serializer_class._declared_fields[key].source:
-            return self.serializer_class._declared_fields[key].source
-        return key
-
-    # Used to convert string values from query params to Python booleans when necessary
-    def convert_value(self, value):
-        value = value.strip()
-        if value in self.TRUTHY:
-            return True
-        elif value in self.FALSY:
-            return False
-        # Convert me to current user's pk
-        elif value == 'me' and not self.request.user.is_anonymous():
-            return self.request.user.pk
-        else:
-            return value
