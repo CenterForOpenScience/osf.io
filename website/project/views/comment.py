@@ -18,7 +18,7 @@ from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
-
+from website.spam_admin.utils import is_spam
 
 def resolve_target(node, guid):
 
@@ -148,6 +148,10 @@ def add_comment(auth, node, **kwargs):
     )
     comment.save()
 
+
+    if is_spam(comment):
+        comment.mark_as_possible_spam(save=True)
+
     context = dict(
         gravatar_url=auth.user.gravatar_url,
         content=content,
@@ -233,6 +237,8 @@ def edit_comment(auth, **kwargs):
         auth=auth,
         save=True
     )
+    if is_spam(comment):
+        comment.mark_as_possible_spam(save=True)
 
     return serialize_comment(comment, auth)
 

@@ -88,7 +88,7 @@ function setPermissions(permissions, nodeType) {
             message: message,
             callback: function(result) {
                 if (result) {
-                    console.log(result);//don't do jack.
+                    console.log(result);
                 }
             }
         });

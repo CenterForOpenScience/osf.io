@@ -93,6 +93,7 @@ def is_spam(comment):
 
         return False
     except:
+
         return False
 ######################################## PROJECTS ######################################################
 def serialize_projects(projects, amount):

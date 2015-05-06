@@ -14,7 +14,7 @@ from tests.factories import (
     ProjectFactory, AuthUserFactory
 
 )
-from website.spam_admin.spam_admin_settings import SPAM_ASSASSIN_URL
+from website.spam_admin.spam_admin_settings import SPAM_ASSASSIN_URL,SPAM_ASSASSIN_TEACHING_URL
 import httpretty
 from website.spam_admin.utils import train_spam, _project_is_spam
 from website.project.model import Node
@@ -41,6 +41,10 @@ class TestCommentSpamAdmin(OsfTestCase):
 
 
 
+
+
+
+
     def _configure_project(self, project, comment_level):
 
         project.comment_level = comment_level
@@ -59,7 +63,6 @@ class TestCommentSpamAdmin(OsfTestCase):
             body=request_callback
         )
 
-
         content = content if content is not None else 'hammer to fall'
         url = project.api_url + 'comment/'
         ret = self.app.post_json(
@@ -72,6 +75,7 @@ class TestCommentSpamAdmin(OsfTestCase):
             },
             **kwargs
         )
+
 
         return Comment.load(ret.json['comment']['id'])
 
@@ -93,6 +97,7 @@ class TestCommentSpamAdmin(OsfTestCase):
             assert_equal(comment.spam_status , Comment.POSSIBLE_SPAM)
         else:
             assert_equal(comment.spam_status , Comment.UNKNOWN)
+
     @httpretty.activate
     def test_comment_added_is_not_spam(self):
         comment = self._add_comment(
@@ -104,8 +109,15 @@ class TestCommentSpamAdmin(OsfTestCase):
 
         assert_equal(len(self.project.commented), 1)
         assert_equal(comment.spam_status , Comment.UNKNOWN)
+
     @httpretty.activate
     def test_train_spam_comment(self):
+
+        httpretty.register_uri(
+            httpretty.POST, SPAM_ASSASSIN_TEACHING_URL,
+            body=lambda r,u,h: (200,h,"Learned")
+        )
+
         comment = self._add_comment(
             self.project,content=self.GTUBE, auth=self.project.creator.auth,
         )
@@ -116,8 +128,15 @@ class TestCommentSpamAdmin(OsfTestCase):
             assert_true(train_spam(comment, is_spam=True))
         else:
             assert_false(train_spam(comment, is_spam=True))
+
+
     @httpretty.activate
     def test_train_ham_comment(self):
+
+        httpretty.register_uri(
+            httpretty.POST, SPAM_ASSASSIN_TEACHING_URL,
+            body=lambda r,u,h: (200,h,"Learned")
+        )
         comment = self._add_comment(
             self.project, auth=self.project.creator.auth,
         )
@@ -257,7 +276,7 @@ class TestCommentSpamAdmin(OsfTestCase):
             auth=self.spam_admin.auth
         )
 
-        print(ret)
+
         assert_equal(len(ret.json['comments']),3)
         assert_true(ret.json['total']>=5)
 
