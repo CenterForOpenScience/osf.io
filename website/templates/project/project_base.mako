@@ -82,6 +82,7 @@ ${next.body()}
             category: '${node['category_short']}',
             parentTitle: '${parent_title}',
             parentRegisterUrl: '${parent_registration_url}',
+            parentExists: ${'true' if parent_exists else 'false'}    
         }
     });
 
