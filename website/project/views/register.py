@@ -29,9 +29,7 @@ from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
-from website.models import (
-    Embargo, MetaSchema, NodeLog,
-)
+from website.models import MetaSchema, NodeLog
 from website import language, mails
 
 from website.identifiers.client import EzidClient

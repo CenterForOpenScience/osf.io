@@ -481,12 +481,11 @@ class TestProjectViews(OsfTestCase):
     def test_register_template_with_embargo_creates_embargo(self):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
-        import datetime
         self.app.post_json(
             url,
             {
                 'registrationChoice': 'Enter registration into embargo',
-                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(datetime.date.today().year+1))
+                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
             },
             auth=self.auth)
 
