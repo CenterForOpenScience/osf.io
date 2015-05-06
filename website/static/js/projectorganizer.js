@@ -742,7 +742,11 @@ function expandStateLoad(item) {
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
     }
-    if (item.children.length > 0 && item.depth > 0) {
+    if (item.data.isPointer) {
+        item.data.expand = false;
+    }
+
+    if ((!item.data.isPointer) && (item.children.length > 0 && item.depth > 0)) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.expand) {
                 tb.updateFolder(null, item.children[i]);
