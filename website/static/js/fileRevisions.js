@@ -133,6 +133,8 @@ RevisionsViewModel.prototype.fetch = function() {
             self.currentVersion(self.revisions()[0]);
         }
 
+        // Use tableResize to make table rows size correctly when there is a scrollbar
+        // for versions. We skip this step for Dataverse, which doesn't have file versions
         if (self.file.provider !== 'dataverse') {
             $osf.tableResize('#fileRevisions', 4);
         }
