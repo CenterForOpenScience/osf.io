@@ -601,6 +601,10 @@ var SocialViewModel = function(urls, modes) {
         self.profileWebsites.splice(idx, 1);
     }
 
+
+    if (self.profileWebsites().length == 0) {
+        self.addWebsite();
+    }
     self.fetch();
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
