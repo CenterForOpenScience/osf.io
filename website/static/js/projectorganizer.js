@@ -358,8 +358,9 @@ function _poResolveIcon(item) {
     if (item.data.isProject) {
         if (item.data.isRegistration) {
             return returnView('registeredProject', item.data.category);
+        } else {
+            return returnView('project', item.data.category);
         }
-        return returnView('project', item.data.category);
     }
 
     if (item.data.isComponent) {
