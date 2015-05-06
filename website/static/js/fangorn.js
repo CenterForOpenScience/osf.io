@@ -594,7 +594,7 @@ function _fangornDropzoneError(treebeard, file, message) {
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
-    var parent = file.treebeardParent || tb.dropzoneItemCache;
+    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache;
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
     var item;
     var child;
@@ -605,12 +605,11 @@ function _fangornDropzoneError(treebeard, file, message) {
             continue;
         }
         if (child.data.tmpID === file.tmpID) {
-            item = child;
-            tb.deleteNode(parent.id, item.id);
+            child.removeSelf();
         }
     }
     $osf.growl('Error', msgText);
-    tb.options.uploadInProgress = false;
+    treebeardParent.options.uploadInProgress = false;
 }
 
 /**
