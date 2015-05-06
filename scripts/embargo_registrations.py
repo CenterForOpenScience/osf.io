@@ -1,4 +1,7 @@
-"""Activates embargoes of registrations with pending embargoes that are more than 48 hours old."""
+"""Run nightly, this script will activate any pending embargoes that have
+elapsed the pending approval time and make public and registrations whose
+embargo end dates have been passed.
+"""
 
 import datetime
 import logging
@@ -22,10 +25,23 @@ def main(dry_run=True):
             embargo.state = 'active'
             embargo.save()
 
+    active_embargoes = models.Embargo.find(Q('state', 'eq', 'active'))
+    for embargo in active_embargoes:
+        if have_passed_embargo_end_date(embargo):
+            parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
+            parent_registration.set_privacy('public')
+            embargo.state = 'completed'
+            embargo.save()
+
 
 def should_be_embaroged(embargo):
-    """Returns true if embargo was initiated more than 48 hours prior"""
+    """Returns true if embargo was initiated more than 48 hours prior."""
     return (datetime.datetime.utcnow() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME
+
+
+def have_passed_embargo_end_date(embargo):
+    """Returns true if embargo end date is earlier than now."""
+    return embargo.end_date < datetime.datetime.utcnow()
 
 
 if __name__ == '__main__':
