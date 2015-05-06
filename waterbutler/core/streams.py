@@ -62,15 +62,17 @@ class ResponseStreamReader(BaseStream):
 
     def __init__(self, response, size=None):
         super().__init__()
-        self._size = size
+        if 'Content-Length' in response.headers:
+            self._size = int(response.headers['Content-Length'])
+        else:
+            self._size = int(size)
+
         self.response = response
         self.content_type = self.response.headers.get('Content-Type', 'application/octet-stream')
 
     @property
     def size(self):
-        if self._size is not None:
-            return str(self._size)
-        return self.response.headers.get('Content-Length')
+        return self._size
 
     @asyncio.coroutine
     def _read(self, size):
@@ -85,7 +87,7 @@ class RequestStreamReader(BaseStream):
 
     @property
     def size(self):
-        return self.request.headers.get('Content-Length')
+        return int(self.request.headers.get('Content-Length'))
 
     @asyncio.coroutine
     def _read(self, size):
@@ -198,19 +200,22 @@ class MultiStream(asyncio.StreamReader):
     Originally written by @jmcarp
     """
     def __init__(self, *streams):
+        self._size = 0
         self.stream = []
         self._streams = []
+
         self.add_streams(*streams)
 
     @property
     def size(self):
-        return str(sum([int(x.size) for x in self._streams]) + int(self.stream.size))
+        return self._size
 
     @property
     def streams(self):
         return self._streams
 
     def add_streams(self, *streams):
+        self._size += sum(x.size for x in streams)
         self._streams.extend(streams)
 
         if not self.stream:
