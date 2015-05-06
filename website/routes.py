@@ -34,7 +34,7 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
-
+from website.spam_admin import views as spam_admin_views
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -379,6 +379,80 @@ def make_url_map(app):
         ),
 
     ], prefix='/api/v1')
+
+  ### Spam_Admin ###
+
+
+    #web
+    process_rules(app, [
+
+        Rule(
+            '/comments/',
+            'get',
+            spam_admin_views.init_spam_admin_comments_page,
+            OsfWebRenderer('spam_admin_comments.mako'),
+        ),
+        Rule(
+            [
+                '/',
+                '/projects/'
+            ],
+            'get',
+            spam_admin_views.init_spam_admin_page,
+            OsfWebRenderer('spam_admin_projects.mako'),
+        ),
+
+
+    ], prefix='/spam_admin'),
+
+
+    #api
+    process_rules(app, [
+        Rule(
+            [
+                '/list_comments/',
+                '/list_comments/<amount>/',
+            ],
+            'get',
+            spam_admin_views.list_comment_page,
+            json_renderer,
+        ),
+        Rule(
+                '/mark_comment_as_spam/',
+            'post',
+            spam_admin_views.mark_comment_as_spam,
+            json_renderer,
+        ),
+        Rule(
+                '/mark_comment_as_ham/',
+            'post',
+            spam_admin_views.mark_comment_as_ham,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/list_projects/',
+                '/list_projects/<amount>/',
+            ],
+            'get',
+            spam_admin_views.list_projects_page,
+            json_renderer,
+        ),
+        Rule(
+                '/mark_project_as_spam/',
+            'post',
+            spam_admin_views.mark_project_as_spam,
+            json_renderer,
+        ),
+        Rule(
+                '/mark_project_as_ham/',
+            'post',
+            spam_admin_views.mark_project_as_ham,
+            json_renderer,
+        ),
+
+    ], prefix='/api/v1/spam_admin'),
+
 
     ### Forms ###
 
