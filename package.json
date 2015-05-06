@@ -45,7 +45,7 @@
     "raw-loader": "^0.5.1",
     "share": "~0.7.3",
     "style-loader": "^0.8.3",
-    "treebeard": "git://github.com/caneruguz/treebeard.git#c02daf3051faed0121a4616a5fa2d680e5d87632",
+    "treebeard": "git://github.com/caneruguz/treebeard.git#e189d34b9e809c19b6329c8b36a460783abdd67f",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
