@@ -343,8 +343,8 @@ def create_index(index=INDEX):
 
 
 @requires_search
-def delete_doc(elastic_document_id, node, index=INDEX):
-    category = 'registration' if node.is_registration else node.project_or_component
+def delete_doc(elastic_document_id, node, index=INDEX, category=None):
+    category = category or 'registration' if node.is_registration else node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
