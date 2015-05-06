@@ -154,7 +154,7 @@ def get_all_projects_smart_folder(auth, **kwargs):
     ).sort('-title')
 
     keys = nodes.get_keys()
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
@@ -169,7 +169,7 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     ).sort('-title')
 
     keys = nodes.get_keys()
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):

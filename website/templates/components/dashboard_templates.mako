@@ -1,6 +1,5 @@
 ## A reuseable OSF project typeahead search widget. Uses the custom projectSearch binding handler.
-
-<template id="osf-project-search" xmlns="http://www.w3.org/1999/html">
+<template id="osf-project-search">
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         <!-- Project search typeahead -->
@@ -159,19 +158,19 @@
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
             <br />
-
-            <label>Category </label>
-            <select class="form-control"
-                    data-bind="value: category,
-                               options: categories,
-                               optionsText: function(val) { return categoryMap[val]}">
-            </select>
-            <br />
-
+            
+##            <label>Category </label>
+##            <select class="form-control"
+##                    data-bind="value: category,
+##                               options: categories,
+##                               optionsText: function(val) { return categoryMap[val]}">
+##            </select>
+##            <br />
 
             <label>Description (Optional)</label>
             <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
                 ></textarea>
+            <br />
             <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
             <input type="hidden" id="createNodeTemplates" class="select2-container" style="width: 100%">
