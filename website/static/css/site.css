@@ -1492,13 +1492,13 @@ dl.activity-log dd {
     /*margin-bottom: 625px;*/
 /*}*/
 thead.file-version-thread{
-    display: inline-block;
+    display: block;
 }
 
 tbody.file-version{
     max-height: 580px;
     overflow-y: auto;
-    display: inline-block;
+    display: block;
     /*position: absolute;*/
 }
 
