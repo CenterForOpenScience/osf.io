@@ -131,7 +131,7 @@ class ODMFilterMixin(FilterMixin):
         return query
 
 
-class SerializerFilterMixin(FilterMixin):
+class ListFilterMixin(FilterMixin):
     """View mixin that adds a get_queryset_from_request method which uses query params
     of the form `filter[field_name]=value` to filter a list of objects.
 

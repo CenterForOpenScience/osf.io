@@ -6,7 +6,7 @@ from modularodm import Q
 from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from api.base.filters import ODMFilterMixin, SerializerFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
@@ -81,7 +81,7 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
         return {'request': self.request}
 
 
-class NodeContributorsList(generics.ListAPIView, SerializerFilterMixin, NodeMixin):
+class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """Return the contributors (users) for a node."""
 
     permission_classes = (
