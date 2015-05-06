@@ -181,12 +181,12 @@ function saveExpandState(item, callback) {
     var collapseUrl,
         postAction,
         expandUrl;
-    if (!item.apiURL) {
+    if (!item.urls.api) {
         return;
     }
     if (item.expand) {
         // turn to false
-        collapseUrl = item.apiURL + 'collapse/';
+        collapseUrl = item.urls.api + 'collapse/';
         postAction = $osf.postJSON(collapseUrl, {});
         postAction.done(function () {
             item.expand = false;
@@ -196,7 +196,7 @@ function saveExpandState(item, callback) {
         }).fail($osf.handleJSONError);
     } else {
         // turn to true
-        expandUrl = item.apiURL + 'expand/';
+        expandUrl = item.urls.api + 'expand/';
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
             item.expand = false;
@@ -316,7 +316,7 @@ function _showProjectDetails(event, item, col) {
             }
         });
         $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
-            var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
+            var getChildrenURL = theItem.urls.api + 'get_folder_pointers/',
                 children;
             $.getJSON(getChildrenURL, function (data) {
                 children = data;
@@ -446,7 +446,7 @@ function _showProjectDetails(event, item, col) {
             }
         });
         $('#rename-node-button' + theItem.node_id).click(function () {
-            var url = theItem.apiURL + 'edit/',
+            var url = theItem.urls.api + 'edit/',
                 postAction,
                 postData = {
                     name: 'title',
@@ -564,14 +564,16 @@ function _poModified(item) {
 function _poResolveRows(item) {
     var css = '',
         draggable = false,
+        disabled = false,
         default_columns;
     if (item.data.permissions) {
         draggable = item.data.permissions.movable || item.data.permissions.copyable;
+        disabled = (!item.data.permissions.view);
     }
     if (draggable) {
         css = 'po-draggable';
     }
-    item.css = '';
+    item.css = disabled ? 'disabled po-private' : '';
     default_columns = [{
         data : 'name',  // Data field name
         folderIcons : true,
@@ -629,8 +631,9 @@ function _poToggleCheck(item) {
     if (item.data.permissions.view) {
         return true;
     }
-    item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
-    return false;
+    //item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
+    //    return false;
+    return true;
 }
 
 /**
@@ -666,6 +669,9 @@ function _poResolveIcon(item) {
         }
         return template;
     }
+    if (!item.data.permissions.view) {
+        return m('i', {className: iconmap.projectIcons.private});
+    }
     if (item.data.isSmartFolder) {
         return returnView('smartFolder');
     }
@@ -682,7 +688,6 @@ function _poResolveIcon(item) {
             return returnView('project', item.data.category);
         }
     }
-
     if (item.data.isComponent) {
         if (item.data.isRegistration) {
             return returnView('registeredComponent', item.data.category);
@@ -708,9 +713,15 @@ function _poResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus'),
         togglePlus = m('i.fa.fa-plus'),
         childrenCount = item.data.childrenCount || item.children.length;
+    var userCanAccess = item.data.permissions.view;
     if (item.kind === 'folder' && childrenCount > 0 && item.depth > 1) {
         if (item.open) {
-            return toggleMinus;
+            if (userCanAccess) {
+                return toggleMinus;
+            }
+            else {
+                return m('');
+            }
         }
         return togglePlus;
     }
@@ -729,6 +740,20 @@ function _poResolveLazyLoad(item) {
     return '/api/v1/dashboard/' + item.data.node_id;
 }
 
+
+function expandChildren(item) {   
+    item.load = true;
+    item.open = true;
+    for(var i = 0 ; i < item.children.length; i++) {
+        var child = item.children[i];
+        if(child.children.length) {
+            child.load = true;
+            child.open = true;            
+            expandChildren(child);
+        }
+    }   
+}
+
 /**
  * Hook to run after lazyloading has successfully loaded
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -736,12 +761,19 @@ function _poResolveLazyLoad(item) {
  * @private
  */
 function expandStateLoad(item) {
-    var tb = this,
-        i;
+    var tb = this;
+    var i;
     if(item.children.length === 0 && item.data.childrenCount > 0){
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
     }
+    if(item.children.filter(function(child) {
+        return child.children.length;
+    }).length) {
+        expandChildren(item);
+        tb.redraw();
+    }
+
     if (item.children.length > 0 && item.depth > 0) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.expand) {
@@ -751,7 +783,7 @@ function expandStateLoad(item) {
                 triggerClickOnItem.call(tb, item.children[i], true);
             }
         }
-    }
+    }    
     _cleanupMithril();
 }
 
@@ -1081,7 +1113,7 @@ function dropLogic(event, items, folder) {
         getAction;
     if (typeof folder !== 'undefined' && !folder.data.isSmartFolder && folder !== null && folder.data.isFolder) {
         theFolderNodeID = folder.data.node_id;
-        getChildrenURL = folder.data.apiURL + 'get_folder_pointers/';
+        getChildrenURL = folder.data.urls.api + 'get_folder_pointers/';
         sampleItem = items[0];
         itemParent = sampleItem.parent();
         itemParentNodeID = itemParent.data.node_id;
@@ -1241,8 +1273,6 @@ var tbOptions = {
         $('.gridWrapper').on('mouseout', function(){
             rowDiv.removeClass('po-hover');
         });
-
-
     },
     createcheck : function (item, parent) {
         return true;

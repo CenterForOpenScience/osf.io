@@ -24,13 +24,16 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
-from website.util import rubeus
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
+from website.util.serializers import ProjectOrganizerSerializer
+from website.util import projectorganizer as po_utils
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
+from website.settings import ALL_MY_PROJECTS_NAME
+from website.settings import ALL_MY_REGISTRATIONS_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +80,7 @@ def _render_node(node, auth=None):
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
+        'path': node.path_above(auth)
     }
 
 
@@ -121,55 +125,38 @@ def find_dashboard(user):
 
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
+    serializer = ProjectOrganizerSerializer(auth)
     user = auth.user
+    data = []
+    noop = lambda x: x
+    serialize = serializer.serialize
     if nid is None:
         node = find_dashboard(user)
-        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
-        return_value = {'data': dashboard_projects}
+        data = [node]
     elif nid == ALL_MY_PROJECTS_ID:
         return_value = {'data': get_all_projects_smart_folder(**kwargs)}
     elif nid == ALL_MY_REGISTRATIONS_ID:
-        return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
+        data = po_utils.get_all_registrations_smart_folder(auth)
     else:
+        serialize = noop
         node = Node.load(nid)
-        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
-        return_value = {'data': dashboard_projects}
+        if not node:
+            raise HTTPError(http.BAD_REQUEST)
+        if node.is_dashboard:
+            projects_count = len(po_utils.get_all_projects_smart_folder(auth))
+            registrations_count = len(po_utils.get_all_registrations_smart_folder(auth))
+            data = [
+                serializer.make_smart_folder(ALL_MY_REGISTRATIONS_NAME, ALL_MY_REGISTRATIONS_ID, registrations_count),
+                serializer.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, projects_count),
+            ] + [serializer.serialize(n) for n in po_utils.get_dashboard_nodes(node, auth)]
+        else:
+            data = serializer.serialize(node)['children']
 
+    return_value = {'data': [serialize(item) for item in data]}
     return_value['timezone'] = user.timezone
     return_value['locale'] = user.locale
     return_value['id'] = user._id
     return return_value
-
-
-@must_be_logged_in
-def get_all_projects_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-
-    contributed = user.node__contributed
-    nodes = contributed.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
-    ).sort('-title')
-
-    keys = nodes.get_keys()
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
-
-@must_be_logged_in
-def get_all_registrations_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-    contributed = user.node__contributed
-
-    nodes = contributed.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False)
-    ).sort('-title')
-
-    keys = nodes.get_keys()
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):
