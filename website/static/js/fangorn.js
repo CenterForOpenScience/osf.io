@@ -1306,7 +1306,6 @@ function toolbarDismissIcon (){
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
-
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Close'),
@@ -1779,7 +1778,8 @@ tbOptions = {
         var tb = this;
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
-    }
+    },
+    hScroll : 400
 };
 
 /**
