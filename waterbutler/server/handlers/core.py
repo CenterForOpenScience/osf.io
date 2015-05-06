@@ -128,8 +128,6 @@ class BaseProviderHandler(BaseHandler):
 
     @utils.async_retry(retries=5, backoff=5)
     def _send_hook(self, action, metadata):
-        #TODO handle better
-        metadata['materialized'] = str(self.path)
         return (yield from utils.send_signed_request('PUT', self.payload['callback_url'], {
             'action': action,
             'metadata': metadata,
@@ -192,9 +190,8 @@ class BaseCrossProviderHandler(BaseHandler):
                 'provider': self.source_provider.NAME,
             },
             'destination': {
-                'path': data['path'],
                 'name': data['name'],
-                'fullPath': data['fullPath'],
+                'path': data['materialized'],
                 'provider': self.destination_provider.NAME,
             },
             'auth': self.auth['auth'],
