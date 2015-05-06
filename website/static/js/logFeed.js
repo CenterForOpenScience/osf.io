@@ -25,12 +25,18 @@ ko.punches.enableAll();  // Enable knockout punches
 ko.bindingHandlers.listing = {
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
         var value = valueAccessor();
-        var valueUnwrapped = ko.unwrap(value);
-        if (!Array.isArray(valueUnwrapped)) {
-            valueUnwrapped = [valueUnwrapped];
+        var valueUnwrapped = ko.unwrap(value);       
+        var map = valueUnwrapped.map || function(item) {return item;};
+        var data = valueUnwrapped.data || [];
+        var keys = [];
+        if (!Array.isArray(data)) {
+            keys = Object.keys(data);
+        }
+        else {
+            keys = data;
         }
         var index = 1;
-        var list = ko.utils.arrayMap(valueUnwrapped, function(item) {
+        var list = ko.utils.arrayMap(keys, function(key) {
             var ret;
             if (index === 1){
                 ret = '';
@@ -46,7 +52,7 @@ ko.bindingHandlers.listing = {
             else {
                 ret = ', and ';
             }
-            ret += item;
+            ret += map(key, data[key]);
             index++;
             return ret;
         }).join('');
