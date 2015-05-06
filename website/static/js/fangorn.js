@@ -1166,6 +1166,16 @@ function _fangornToolbar () {
     var titleContent = tb.options.title();
     var generalButtons = [];
     var rowMessage = m('i.m-r-sm','Select rows for further actions.');
+    var rowButtons = function(){
+        if(tb.multiselected.length > 1) {
+            return '';
+        }
+        return tb.options.iconState.rowIcons.map(function(icon){
+            if(icon.template){
+                return icon.template.call(tb);
+            }
+        });
+    }
     var generalIcons = tb.options.iconState.generalIcons;
     if (generalIcons.deleteMultiple.on) {
         generalButtons.push(generalIcons.deleteMultiple.template.call(tb));
@@ -1186,11 +1196,7 @@ function _fangornToolbar () {
                         rowMessage,
                         m('.fangorn-toolbar.pull-right',
                             [
-                                tb.options.iconState.rowIcons.map(function(icon){
-                                    if(icon.template){
-                                        return icon.template.call(tb);
-                                    }
-                                }),
+                                rowButtons(),
                                 generalButtons
                             ]
                         )
