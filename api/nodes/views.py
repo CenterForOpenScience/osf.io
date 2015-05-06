@@ -92,7 +92,7 @@ class NodeContributorsList(generics.ListAPIView, NodeMixin):
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_node().visible_contributors
+        return self.get_node().contributors
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
