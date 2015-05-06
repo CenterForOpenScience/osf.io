@@ -30,7 +30,8 @@ CORS_EXPOSE_HEADERS = [
 ]
 
 HTTP_REASONS = {
-    461: 'Unavailable For Legal Reasons'
+    422: 'Unprocessable Entity',
+    461: 'Unavailable For Legal Reasons',
 }
 
 
