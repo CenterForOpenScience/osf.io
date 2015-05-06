@@ -16,12 +16,12 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             This method determines the output of the REST API
         """
         return {
-            'provider': self.provider,
+            'extra': self.extra,
             'kind': self.kind,
             'name': self.name,
             'path': self.path,
-            'fullPath': self.full_path,
-            'extra': self.extra,
+            'provider': self.provider,
+            'materialized': self.materialized_path,
         }
 
     def build_path(self, path):
@@ -64,7 +64,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         pass
 
     @property
-    def full_path(self):
+    def materialized_path(self):
         """The "pretty" variant of path
         this path can be displayed to the enduser
 
