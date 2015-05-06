@@ -216,7 +216,7 @@ class Comment(GuidStoredObject):
             self.save()
 
 
-     def mark_as_possible_spam(self,save=False):
+    def mark_as_possible_spam(self,save=False):
         if self.spam_status == self.UNKNOWN:
             self.spam_status = self.POSSIBLE_SPAM
         if save:
