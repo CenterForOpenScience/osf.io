@@ -2746,7 +2746,7 @@ span#profileFullname{
   line-height: 20px;
 }
 .text-white {
-  color: #FFF;
+    color: #FFF;
 }
 
 @media (max-width: 768px) {

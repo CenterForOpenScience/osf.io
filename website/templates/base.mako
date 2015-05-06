@@ -151,8 +151,6 @@
                 cookieName: '${cookie_name}'
             });
         </script>
-        <script src="/static/public/js/nodeCategories.js"></script>
-
 
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>

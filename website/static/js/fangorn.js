@@ -53,7 +53,7 @@ $.extend(EXTENSION_MAP, {
     gsheet: 'xlsx'
 });
 
-var _defaultIconState = function (){
+var _defaultIconState = function () {
     return {
         mode : 'bar',
         generalIcons : {
@@ -443,8 +443,10 @@ function _fangornSending(treebeard, file, xhr, formData) {
         _send.call(xhr, file);
     };
     var filesArr = treebeard.dropzone.getQueuedFiles();
-    if (filesArr.length  > 1) {
+    if (filesArr.length  > 0) {
         treebeard.options.iconState.generalIcons.cancelUploads.on = true;
+    } else {
+        treebeard.options.iconState.generalIcons.cancelUploads.on = false;
     }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
@@ -506,7 +508,7 @@ function _fangornDragOver(treebeard, event) {
         closestTarget = $(event.target).closest('.tb-row'),
         itemID = parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
-    $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
         if (_fangornCanDrop(treebeard, item)) {
             closestTarget.addClass(dropzoneHoverClass);
@@ -514,6 +516,17 @@ function _fangornDragOver(treebeard, event) {
     }
 }
 
+/**
+ * Runs when Dropzone's drop event hook is run.
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @param event DOM event object
+ * @this Dropzone
+ * @private
+ */
+function _fangornDropzoneDrop(treebeard, event) {
+    var dropzoneHoverClass = 'fangorn-dz-hover';
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass);
+}
 /**
  * Runs when Dropzone's complete hook is run after upload is completed.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -654,9 +667,9 @@ function _createFolder(event) {
     var tb = this;
     var val = $.trim(tb.select('#createFolderInput').val());
     var parent = tb.multiselected[0];
-    // if (!parent.open) {
-    //     self.updateFolder(null, parent);
-    // }
+    if (!parent.open) {
+         tb.updateFolder(null, parent);
+    }
 
     // event.preventDefault();
     if (val.length < 1) {
@@ -673,7 +686,7 @@ function _createFolder(event) {
     m.request({
         method: 'POST',
         background: true,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent);
         item = tb.createItem(item, parent.id);
@@ -786,7 +799,7 @@ function _removeEvent (event, items, col) {
             } else {
                 deleteList.push(item);
             }
-            if(item.kind === 'folder') {
+            if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'))
             }
         });
@@ -797,11 +810,11 @@ function _removeEvent (event, items, col) {
                     deleteMessage,
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
-                            return m('.fangorn-canDelete.text-success', [
+                            return m('.fangorn-canDelete.text-success.break-word', [
                                 m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success', n.data.name);
+                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
@@ -814,14 +827,14 @@ function _removeEvent (event, items, col) {
                     m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
-                            return m('.fangorn-canDelete.text-success', [
+                            return m('.fangorn-canDelete.text-success.break-word', [
                                 m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success', n.data.name);
+                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                     }),
                     noDeleteList.map(function(n){
-                        return m('.fangorn-noDelete.text-warning', n.data.name);
+                        return m('.fangorn-noDelete.text-warning.break-word', n.data.name);
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
@@ -1271,6 +1284,16 @@ function _fangornToolbar () {
     var titleContent = tb.options.title();
     var generalButtons = [];
     var rowMessage = m('i.m-r-sm','Select rows for further actions.');
+    var rowButtons = function(){
+        if(tb.multiselected.length > 1) {
+            return '';
+        }
+        return tb.options.iconState.rowIcons.map(function(icon){
+            if(icon.template){
+                return icon.template.call(tb);
+            }
+        });
+    }
     var generalIcons = tb.options.iconState.generalIcons;
     if (generalIcons.deleteMultiple.on) {
         generalButtons.push(generalIcons.deleteMultiple.template.call(tb));
@@ -1291,11 +1314,7 @@ function _fangornToolbar () {
                         rowMessage,
                         m('.fangorn-toolbar.pull-right',
                             [
-                                tb.options.iconState.rowIcons.map(function(icon){
-                                    if(icon.template){
-                                        return icon.template.call(tb);
-                                    }
-                                }),
+                                rowButtons(),
                                 generalButtons
                             ]
                         )
@@ -1304,7 +1323,7 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'search'){
         return m('.row.tb-header-row', { 'data-mode' : 'search'},  [
-                m('', [
+            m('#searchRow', { config : function () { $('#searchRow input').focus(); }}, [
                         m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
                         m('.col-xs-1',
                             m('.fangorn-toolbar.pull-right',
@@ -1316,7 +1335,7 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'rename'){
         return m('.row.tb-header-row', [
-                m('', [
+            m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
                         m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
                         m('.col-xs-3.tb-buttons-col',
                             m('.fangorn-toolbar.pull-right',
@@ -1331,7 +1350,9 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'createFolder'){
         return m('.row.tb-header-row', [
-                m('', [
+            m('#folderRow', { config : function () {
+                $('#folderRow input').focus();
+            }}, [
                         m('.col-xs-9', [
                             m('input#createFolderInput.tb-header-input', { placeholder : 'Folder name' }),
                             m('#createFolderError.text-danger', { style : "display: none"})
@@ -1352,8 +1373,11 @@ function _fangornToolbar () {
 
 function _fangornResetToolbar () {
     var tb = this;
-    tb.options.iconState.mode === 'bar';
-    tb.options.iconState = _defaultIconState();
+    if (tb.options.iconState.mode === 'search') {
+        tb.options.iconState = _defaultIconState();
+    }
+    tb.options.iconState.mode = 'bar';
+    tb.resetFilter();
     m.redraw();
 }
 
@@ -1364,7 +1388,9 @@ function _fangornResetToolbar () {
 function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
-            onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
+            onclick : function () {
+                _fangornResetToolbar.call(tb);
+            }
         },
         m('i.fa.fa-times')
     );
@@ -1379,7 +1405,7 @@ function toolbarDismissIcon (){
                 tb.options.iconState.mode = 'search';
                 tb.filterText('');
                 m.redraw(true);
-
+                tb.clearMultiselect();
             }
         }, [
         m('i.fa.fa-search'),
@@ -1394,11 +1420,10 @@ function toolbarDismissIcon (){
             'data-placement' : 'bottom',
             onclick : function () {
                 var mithrilContent = m('div', [
-                        m('h3.break-word', 'How to Use the File Browser'),
-                        m('p', 'Select Multiple Files: Use command or shift keys to select multiple files.'),
-                        m('p', 'Go to Files: Double click a file name to go to the file.'),
-                        m('p', 'Open Files in New Tab: Command + click a file name to open it in a new tab.'),
-
+                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
+                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Close'),
@@ -1441,7 +1466,7 @@ function toolbarDismissIcon (){
 
  function renameButton (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', {
+    return m('#renameButton.fangorn-toolbar-icon.text-info', {
             'data-toggle' : 'tooltip',
             'title':  'Rename the currently selected file or folder',
             'data-placement' : 'bottom',
@@ -1456,7 +1481,7 @@ function toolbarDismissIcon (){
 
  function createFolderButton (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-success', {
+    return m('#createFolderButton.fangorn-toolbar-icon.text-success', {
             onclick : function (event) {
                 _createFolder.call(tb, event, parent);
             }
@@ -1531,10 +1556,7 @@ function filterRowsNotInParent(rows) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
-    // if on search bring back the bar and reset filter and redo icons.
-    tb.options.iconState.mode = 'bar';
-    tb.resetFilter();
-    tb.options.iconState.rowIcons = [];
+    _fangornResetToolbar.call(tb);
 
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
@@ -1791,7 +1813,16 @@ tbOptions = {
                 _resizeHeight.call(tb);
             })
         }
-
+        $(window).on('keydown', function(event){
+            if (event.keyCode === 27) {
+                _fangornResetToolbar.call(tb);
+            }
+        });
+        $(document).on('keypress', '#createFolderInput', function () {
+            if (tb.pressedKey === 13) {
+                _createFolder.call(tb);
+            }
+        });
     },
     createcheck : function (item, parent) {
         return true;
@@ -1857,7 +1888,8 @@ tbOptions = {
         success : _fangornDropzoneSuccess,
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
-        addedfile : _fangornAddedFile
+        addedfile : _fangornAddedFile,
+        drop : _fangornDropzoneDrop
     },
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
@@ -1886,7 +1918,8 @@ tbOptions = {
         var tb = this;
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
-    }
+    },
+    hScroll : 400
 };
 
 /**

@@ -57,14 +57,14 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return OsfStorageGuidFile.get_or_create(self.owner, path)
 
     def after_fork(self, node, fork, user, save=True):
-        clone, message = super(OsfStorageNodeSettings, self).after_fork(
-            node=node, fork=fork, user=user, save=False
-        )
+        clone = self.clone()
+        clone.owner = fork
         clone.save()
+
         clone.root_node = utils.copy_files(self.root_node, clone)
         clone.save()
 
-        return clone, message
+        return clone, None
 
     def after_register(self, node, registration, user, save=True):
         clone = self.clone()

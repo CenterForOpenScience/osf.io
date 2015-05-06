@@ -35,7 +35,7 @@
           });
     % endif
     </script>
-% elif user['is_profile']:
+% elif user.get('is_profile', False):
     <div class="help-block">
       You have no public ${pluralized_node_type}.
         <p>
@@ -43,6 +43,8 @@
             <a href="https://osf.io/getting-started/#privacy" target="_blank">public</a>.
         </p>
     </div>
+% elif profile is not UNDEFINED:  # On profile page and user has no public projects/components
+    <div class="help-block">This user has no public ${pluralized_node_type}.</div>
 % else:
-  <div class="help-block">This user has no public ${pluralized_node_type}</div>.
+    <div class="help-block">No ${pluralized_node_type} to display.</div>
 % endif

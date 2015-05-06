@@ -2,9 +2,10 @@
 /**
  * Github FileBrowser configuration module.
  */
-var m = require('mithril');
-var URI = require('URIjs');
 
+var m = require('mithril');
+var $ = require('jquery');
+var URI = require('URIjs');
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
 
@@ -117,27 +118,24 @@ function _uploadUrl(item, file) {
 
 
 // Define Fangorn Button Actions
-function _githubDefineToolbar (item){
+function _githubDefineToolbar(item) {
     var tb = this;
     var buttons = [];
 
-    function _downloadEvent (event, item, col) {
+    function _downloadEvent(event, item, col) {
         event.stopPropagation();
         window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
     }
-
     // Download Zip File
     if (item.kind === 'folder') {
-    var branchArray = [];
-    if (item.data.branches) {
-        item.data.branch = item.data.branch || item.data.defaultBranch;
-        for (var i = 0; i < item.data.branches.length; i++) {
-            var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
-            branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
+        var branchArray = [];
+        if (item.data.branches) {
+            item.data.branch = item.data.branch || item.data.defaultBranch;
+            for (var i = 0; i < item.data.branches.length; i++) {
+                var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
+                branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
+            }
         }
-    }
-
-
         // If File and FileRead are not defined dropzone is not supported and neither is uploads
         if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
             buttons.push({ name : 'uploadFiles', template : function(){
@@ -151,7 +149,6 @@ function _githubDefineToolbar (item){
             { name : 'createFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-info', {
                         onclick : function(event) {
-                            // Fangorn.ButtonEvents.createFolder.call(tb, event, item)
                             tb.options.iconState.mode = 'createFolder';
                             m.redraw(true);
                         }
