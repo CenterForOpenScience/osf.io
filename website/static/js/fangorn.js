@@ -1102,8 +1102,7 @@ function _fangornResolveRows(item) {
         {
             data : '',  // Data field name
             custom : function(){ return '';}
-        }
-        ];
+        }];
     }
     if(item.data.status) {
         return [{
@@ -1115,10 +1114,6 @@ function _fangornResolveRows(item) {
         {
             data : '',
             custom : function(){ return m('span.text-muted', STATE_MAP[item.data.status].display); }
-        },
-        {
-            data : '',
-            custom : function(){ return m('span', ''); }
         }];
     }
 
