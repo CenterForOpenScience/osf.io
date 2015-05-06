@@ -470,7 +470,7 @@ class TestCRUD:
         url = provider.build_repo_url('git', 'blobs', ref)
         aiohttpretty.register_uri('GET', url, body=b'delicious')
         result = yield from provider.download('', fileSha=ref)
-        content = yield from result.response.read()
+        content = yield from result.read()
         assert content == b'delicious'
 
     @async
@@ -480,7 +480,7 @@ class TestCRUD:
         url = provider.build_repo_url('contents', path.path)
         aiohttpretty.register_uri('GET', url, body=b'delicious')
         result = yield from provider.download(str(path))
-        content = yield from result.response.read()
+        content = yield from result.read()
         assert content == b'delicious'
 
     @async
@@ -491,7 +491,7 @@ class TestCRUD:
         url = provider.build_repo_url('contents', path.path, ref=ref)
         aiohttpretty.register_uri('GET', url, body=b'delicious')
         result = yield from provider.download(str(path), ref=ref)
-        content = yield from result.response.read()
+        content = yield from result.read()
         assert content == b'delicious'
 
     @async

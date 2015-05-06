@@ -340,7 +340,7 @@ class TestCRUD:
         url = connected_provider.sign_url(path)
         aiohttpretty.register_uri('GET', url, body=body)
         result = yield from connected_provider.download(str(path))
-        content = yield from result.response.read()
+        content = yield from result.read()
         assert content == body
 
     @async

@@ -82,7 +82,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', list_file_url, body=fixtures.list_file)
         aiohttpretty.register_uri('GET', download_file_url, body=body)
         result = yield from provider.download(path)
-        content = yield from result.response.read()
+        content = yield from result.read()
         assert content == body
 
     @async
@@ -100,7 +100,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', revision_url, body=item)
         aiohttpretty.register_uri('GET', download_file_url, body=body)
         result = yield from provider.download(path, revision=revision)
-        content = yield from result.response.read()
+        content = yield from result.read()
         assert content == body
 
     @async
@@ -117,7 +117,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', revisions_url, body={'items': [{'id': 'foo'}]})
         aiohttpretty.register_uri('GET', download_file_url, body=body)
         result = yield from provider.download(path)
-        content = yield from result.response.read()
+        content = yield from result.read()
         assert content == body
 
     @async

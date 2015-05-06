@@ -247,7 +247,7 @@ class TestCRUD:
         aiohttpretty.register_uri('GET', url, body=b'delicious')
 
         result = yield from provider.download(str(path))
-        content = yield from result.response.read()
+        content = yield from result.read()
 
         assert content == b'delicious'
 

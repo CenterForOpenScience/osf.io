@@ -119,7 +119,7 @@ class TestCRUD:
         url = provider._build_content_url('files', 'auto', path.full_path)
         aiohttpretty.register_uri('GET', url, body=b'better')
         result = yield from provider.download(str(path))
-        content = yield from result.response.read()
+        content = yield from result.read()
 
         assert content == b'better'
 

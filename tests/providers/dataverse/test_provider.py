@@ -231,7 +231,7 @@ class TestCRUD:
         aiohttpretty.register_json_uri('GET', published_url, status=200, body=native_dataset_metadata)
 
         result = yield from provider.download(str(path))
-        content = yield from result.response.read()
+        content = yield from result.read()
 
         assert content == b'better'
 
