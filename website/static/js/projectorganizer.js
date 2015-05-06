@@ -1,4 +1,4 @@
-**
+/**
  * Handles Project Organizer on dashboard page of OSF.
  * For Treebeard and _item API's check: https://github.com/caneruguz/treebeard/wiki
  */
