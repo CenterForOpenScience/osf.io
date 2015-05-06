@@ -702,11 +702,11 @@ function _removeEvent (event, items, col) {
                     deleteMessage,
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
-                            return m('.fangorn-canDelete.text-success', [
+                            return m('.fangorn-canDelete.text-success.break-word', [
                                 m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success', n.data.name);
+                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
@@ -719,14 +719,14 @@ function _removeEvent (event, items, col) {
                     m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
-                            return m('.fangorn-canDelete.text-success', [
+                            return m('.fangorn-canDelete.text-success.break-word', [
                                 m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success', n.data.name);
+                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                     }),
                     noDeleteList.map(function(n){
-                        return m('.fangorn-noDelete.text-warning', n.data.name);
+                        return m('.fangorn-noDelete.text-warning.break-word', n.data.name);
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
