@@ -679,7 +679,7 @@ function _poResolveIcon(item) {
         if (item.data.isRegistration) {
             return returnView('registeredProject', item.data.category);
         } else {
-            return returnView('project');
+            return returnView('project', item.data.category);
         }
     }
 
