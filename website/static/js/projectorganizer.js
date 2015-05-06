@@ -67,7 +67,7 @@ projectOrganizer.publicProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -91,7 +91,7 @@ projectOrganizer.myProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
