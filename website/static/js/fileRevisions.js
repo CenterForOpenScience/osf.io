@@ -133,7 +133,9 @@ RevisionsViewModel.prototype.fetch = function() {
             self.currentVersion(self.revisions()[0]);
         }
 
-        $osf.tableResize('#fileRevisions', 4);
+        if (self.file.provider !== 'dataverse') {
+            $osf.tableResize('#fileRevisions', 4);
+        }
     });
 
     request.fail(function(response) {
