@@ -1498,8 +1498,7 @@ thead.file-version-thread{
 tbody.file-version{
     max-height: 580px;
     overflow-y: auto;
-    display: block;
-    /*position: absolute;*/
+    display: inline-block;
 }
 
 /** The project and wiki name editable inputs should be larger
