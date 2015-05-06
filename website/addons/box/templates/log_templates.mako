@@ -21,7 +21,7 @@ Box in {{ nodeType }}
 
 
 <script type="text/html" id="box_file_removed">
-removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow">'{{ params.name }}'</span> from
+removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow">{{ params.name }}</span> from
 Box in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

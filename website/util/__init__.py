@@ -25,9 +25,8 @@ waterbutler_action_map = {
     'delete': 'file',
     'download': 'file',
     'metadata': 'data',
-    'create_folder': 'folders',
+    'create_folder': 'file',
 }
-
 
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`

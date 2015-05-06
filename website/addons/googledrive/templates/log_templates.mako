@@ -7,7 +7,7 @@ Google Drive in {{ nodeType }}
 
 <script type="text/html" id="googledrive_folder_created">
 created folder
-<span class="overflow">{{ decodeURIComponent(params.path) }}</span> in
+<span class="overflow log-folder">{{ decodeURIComponent(params.path) }}</span> in
 Google Drive in {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -28,7 +28,7 @@ Google Drive in {{ nodeType }}
 
 
 <script type="text/html" id="googledrive_folder_selected">
-linked Google Drive folder /<span class="overflow">{{ params.folder === '/' ? '(Full Google Drive)' : params.folder}}</span> to {{ nodeType }}
+linked Google Drive folder /<span class="overflow">{{ params.folder === '/' ? '(Full Google Drive)' : decodeURIComponent(params.folder) }}</span> to {{ nodeType }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 

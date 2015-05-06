@@ -20,6 +20,7 @@ from framework.mongo.utils import unique_on
 from framework.sessions import get_session
 
 from website.util import web_url_for
+from requests.exceptions import HTTPError as RequestsHTTPError
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from website.oauth.utils import PROVIDER_LOOKUP
 
@@ -248,7 +249,7 @@ class ExternalProvider(object):
                     client_secret=self.client_secret,
                     code=request.args.get('code'),
                 )
-            except MissingTokenError:
+            except (MissingTokenError, RequestsHTTPError):
                 raise HTTPError(http.SERVICE_UNAVAILABLE)
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)

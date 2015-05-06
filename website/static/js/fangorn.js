@@ -398,7 +398,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @param message Error message returned
  * @private
  */
-var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
+var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
+    'or the file folder has been deleted.';
 function _fangornDropzoneError(treebeard, file, message) {
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
@@ -481,6 +482,11 @@ function createFolder(event, parent, col) {
             redraw();
             return;
         }
+        if ($.trim(folderName()) < 1) {
+            errorMessage('Folder name cannot be empty.');
+            redraw();
+            return;
+        }
         if (folderName().indexOf('/') !== -1) {
             errorMessage('Folder name contains illegal characters.');
             redraw();
@@ -519,13 +525,11 @@ function createFolder(event, parent, col) {
     function redraw() {
         self.modal.update(m('div', [
             m('h3.break-word', 'Enter a folder name'),
-            m('form', {onsubmit: doCreate}, [
-                m('input.form-control[autofocus][type=text]', {
-                    placeholder: 'Folder Name',
-                    onchange: m.withAttr('value', folderName),
-                    disabled: creatingFolder() ? 'disabled' : '',
-                })
-            ])
+            m('input.form-control[autofocus][type=text]', {
+                placeholder: 'Folder Name',
+                onkeyup: m.withAttr('value', folderName),
+                disabled: creatingFolder() ? 'disabled' : '',
+            })
         ]), (function() {
             return m('div', [
                 m('span.pull-left.text-danger', errorMessage()),
