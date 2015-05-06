@@ -80,7 +80,7 @@
             <thead class="file-version-thread">
               <tr>
                 <th width="10%">Version ID</th>
-                <th>Date</th>
+                <th data-bind="if: hasDate">Date</th>
                 <th data-bind="if: userColumn">User</th>
                 <th colspan="2">Download</th>
                 <th></th>
@@ -97,7 +97,7 @@
                     {{ revision.displayVersion }}
                   </span>
                 </td>
-                <td>{{ revision.displayDate }}</td>
+                <td data-bind="if: $parent.hasDate">{{ revision.displayDate }}</td>
                 <td data-bind="if: $parent.userColumn">
                   <a data-bind="if: revision.extra.user.url"
                     href="{{ revision.extra.user.url }}">
