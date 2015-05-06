@@ -1646,6 +1646,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.piwik_site_id = None
 
         registered.save()
+        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         # After register callback
         for addon in original.get_addons():

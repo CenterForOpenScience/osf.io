@@ -196,6 +196,8 @@ def osf_storage_get_metadata_hook(node_addon, payload, **kwargs):
     else:
         fileobj = model.OsfStorageFileNode.get(path.strip('/'), node_addon)
 
+    if not fileobj:
+        raise HTTPError(httplib.NOT_FOUND)
     if fileobj.is_deleted:
         raise HTTPError(httplib.GONE)
 
