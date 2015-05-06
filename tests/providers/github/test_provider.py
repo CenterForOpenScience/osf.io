@@ -390,6 +390,26 @@ def content_repo_metadata_root():
         }
     ]
 
+@pytest.fixture
+def content_repo_metadata_folder():
+    return [
+        {
+            'path': 'level1/child.txt',
+            'type': 'file',
+            'html_url': 'https://github.com/icereval/test/blob/master/level1/child.txt',
+            'git_url': 'https://api.github.com/repos/icereval/test/git/blobs/1935c84e2c8da577ea92b8b4346d1d2bb92ed96e',
+            'url': 'https://api.github.com/repos/icereval/test/contents/level1/child.txt?ref=master',
+            'sha': '1935c84e2c8da577ea92b8b4346d1d2bb92ed96e',
+            '_links': {
+                'git': 'https://api.github.com/repos/icereval/test/git/blobs/1935c84e2c8da577ea92b8b4346d1d2bb92ed96e',
+                'self': 'https://api.github.com/repos/icereval/test/contents/level1/child.txt?ref=master',
+                'html': 'https://github.com/icereval/test/blob/master/level1/child.txt'
+            },
+            'name': 'child.txt',
+            'size': 0,
+            'download_url': 'https://raw.githubusercontent.com/icereval/test/master/level1/child.txt'
+        },
+    ]
 
 @pytest.fixture
 def repo_tree_metadata_root():
@@ -417,6 +437,47 @@ def repo_tree_metadata_root():
                 'path': 'test.rst',
                 'mode': '100644',
                 'sha': 'ca39bcbf849231525ce9e775935fcb18ed477b5a'
+            }
+        ],
+        'url': 'https://api.github.com/repos/icereval/test/git/trees/cd83e4a08261a54f1c4630fbb1de34d1e48f0c8a',
+        'truncated': False,
+        'sha': 'cd83e4a08261a54f1c4630fbb1de34d1e48f0c8a'
+    }
+
+@pytest.fixture
+def repo_tree_metadata_root_recursive():
+    return {
+        'tree': [
+            {
+                'url': 'https://api.github.com/repos/icereval/test/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391',
+                'size': 0,
+                'type': 'blob',
+                'path': 'file.txt',
+                'mode': '100644',
+                'sha': 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'
+            },
+            {
+                'type': 'tree',
+                'url': 'https://api.github.com/repos/icereval/test/git/trees/05353097666f449344b7f69036c70a52dc504088',
+                'path': 'level1',
+                'mode': '040000',
+                'sha': '05353097666f449344b7f69036c70a52dc504088'
+            },
+            {
+                'url': 'https://api.github.com/repos/icereval/test/git/blobs/ca39bcbf849231525ce9e775935fcb18ed477b5a',
+                'size': 190,
+                'type': 'blob',
+                'path': 'test.rst',
+                'mode': '100644',
+                'sha': 'ca39bcbf849231525ce9e775935fcb18ed477b5a'
+            },
+            {
+                'url': 'https://api.github.com/repos/icereval/test/git/blobs/1935c84e2c8da577ea92b8b4346d1d2bb92ed96e',
+                'size': 0,
+                'type': 'blob',
+                'path': 'level1/child.txt',
+                'mode': '100644',
+                'sha': '1935c84e2c8da577ea92b8b4346d1d2bb92ed96e'
             }
         ],
         'url': 'https://api.github.com/repos/icereval/test/git/trees/cd83e4a08261a54f1c4630fbb1de34d1e48f0c8a',
@@ -584,6 +645,83 @@ class TestCRUD:
     #
     #     assert aiohttpretty.has_call(method='DELETE', uri=url, data=json.dumps(expected_data))
 
+
+class TestZip:
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_folder_root(self,
+                                  provider,
+                                  content_repo_metadata_root,
+                                  content_repo_metadata_folder,
+                                  repo_metadata,
+                                  branch_metadata,
+                                  repo_tree_metadata_root_recursive):
+        root_path = GitHubPath('/')
+        url = provider.build_repo_url('contents', str(root_path))
+        aiohttpretty.register_json_uri(
+            'GET',
+            url,
+            body=content_repo_metadata_root
+        )
+
+        aiohttpretty.register_json_uri(
+            'GET',
+            provider.build_repo_url('contents', str(GitHubPath('/level1/'))),
+            body=content_repo_metadata_folder,
+        )
+        aiohttpretty.register_json_uri(
+            'GET',
+            provider.build_repo_url(),
+            body=repo_metadata,
+        )
+        aiohttpretty.register_json_uri(
+            'GET',
+            provider.build_repo_url('branches', 'master'),
+            body=branch_metadata,
+        )
+        aiohttpretty.register_json_uri(
+            'GET',
+            provider.build_repo_url(
+                'git',
+                'trees',
+                '{}?recursive=1'.format(
+                    branch_metadata['commit']['commit']['tree']['sha']
+                ),
+            ).replace('%3F', '?'),
+            body=repo_tree_metadata_root_recursive,
+        )
+
+        aiohttpretty.register_uri(
+            'GET',
+            provider.build_repo_url('contents', '/file.txt'),
+            body=b'text',
+            headers={'Content-Length': len(b'text')},
+        )
+        aiohttpretty.register_uri(
+            'GET',
+            provider.build_repo_url('contents', '/test.rst'),
+            body=b'rest',
+            headers={'Content-Length': len(b'rest')}
+        )
+        aiohttpretty.register_uri(
+            'GET',
+            provider.build_repo_url('contents', '/level1/child.txt'),
+            body=b'child',
+            headers={'Content-Length': len(b'child')}
+        )
+
+        result = yield from provider.zip(str(root_path))
+        content = yield from result.read()
+
+        import zipfile
+        import io
+        zip = zipfile.ZipFile(io.BytesIO(content))
+
+        assert zip.testzip() is None
+
+        assert zip.open('file.txt').read() == b'text'
+        assert zip.open('test.rst').read() == b'rest'
+        assert zip.open('level1/child.txt').read() == b'child'
 
 class TestMetadata:
 

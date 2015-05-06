@@ -62,6 +62,7 @@ class ZipLocalFile(MultiStream):
     """
     def __init__(self, file_tuple):
         filename, stream = file_tuple
+        filename = filename.strip('/')
         # Build a ZipInfo instance to use for the file's header and footer
         self.zinfo = zipfile.ZipInfo(
             filename=filename,
