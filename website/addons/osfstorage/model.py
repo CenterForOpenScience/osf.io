@@ -17,7 +17,7 @@ from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
 from website.models import NodeLog
-from website.addons.base import AddonNodeSettingsBase, GuidFile
+from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
 
 from website.addons.osfstorage import logs
 from website.addons.osfstorage import utils
@@ -28,12 +28,15 @@ from website.addons.osfstorage import settings
 logger = logging.getLogger(__name__)
 
 
-class OsfStorageNodeSettings(AddonNodeSettingsBase):
+class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     complete = True
     has_auth = True
 
     root_node = fields.ForeignField('OsfStorageFileNode')
     file_tree = fields.ForeignField('OsfStorageFileTree')
+
+    root_node_path = '/'
+    root_node_name = ''
 
     # Temporary field to mark that a record has been migrated by the
     # migrate_from_oldels scripts

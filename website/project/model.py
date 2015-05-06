@@ -10,7 +10,6 @@ from collections import OrderedDict
 import warnings
 
 import pytz
-import blinker
 from flask import request
 from HTMLParser import HTMLParser
 
@@ -48,6 +47,7 @@ from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.project import signals as project_signals
 
 html_parser = HTMLParser()
 
@@ -71,13 +71,6 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
-
-
-signals = blinker.Namespace()
-contributor_added = signals.signal('contributor-added')
-unreg_contributor_added = signals.signal('unreg-contributor-added')
-write_permissions_revoked = signals.signal('write-permissions-revoked')
-
 
 class MetaSchema(StoredObject):
 
@@ -597,6 +590,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
 
+    archiving = fields.BooleanField(default=False)
+    archive_task_id = fields.StringField()
+
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
@@ -660,6 +656,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
                 'with _id {self._id!r}>').format(self=self)
+
+    @property
+    def is_archiving(self):
+        return self.archiving or False
 
     @property
     def category_display(self):
@@ -1716,6 +1716,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
+        project_signals.after_register_node.send(original, dst=registered, user=auth.user)
         return registered
 
     def remove_tag(self, tag, auth, save=True):
@@ -2175,7 +2176,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         with TokuTransaction():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
-                write_permissions_revoked.send(self)
+                project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
@@ -2227,7 +2228,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            contributor_added.send(self, contributor=contributor, auth=auth)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
             return True
         else:
             return False

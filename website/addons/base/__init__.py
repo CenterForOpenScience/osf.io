@@ -8,6 +8,7 @@ from bson import ObjectId
 from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
+import math
 
 import furl
 import requests
@@ -18,11 +19,14 @@ from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
+from framework import status
 
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
+from website.project import signals as project_signals
+from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
 
@@ -50,7 +54,6 @@ STATUS_EXCEPTIONS = {
     410: exceptions.FileDeletedError,
     404: exceptions.FileDoesntExistError
 }
-
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -650,7 +653,6 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if node_addon and node_addon.user_settings == self:
                 node_addon.clear_auth()
 
-
 class AddonNodeSettingsBase(AddonSettingsBase):
 
     owner = fields.ForeignField('node', backref='addons')
@@ -727,7 +729,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_make_public(self, node):
-
         """
 
         :param Node node:
@@ -812,6 +813,41 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         """
         pass
+
+############
+# Archiver #
+############
+class StorageAddonBase(object):
+
+    MAX_ARCHIVE_SIZE = math.pow(1024, 3)  # 1 GB
+    MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
+
+    def _get_fileobj_child_metadata(self, node, user):
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            provider=self.config.short_name,
+            path=node.get('path'),
+            node=self.owner,
+            user=user
+        )
+        res = requests.get(metadata_url)
+        if res.status_code != 200:
+            pass
+        return res.json().get('data', [])
+
+    def _get_file_tree(self, node=None, user=None):
+        """
+        Recursively get file metadata
+        """
+        node = node or {
+            'path': self.root_node_path,
+            'name': self.root_node_name,
+            'kind': 'folder',
+        }
+        if node.get('kind') == 'file':
+            return node
+        node['children'] = [self._get_file_tree(child) for child in self._get_fileobj_child_metadata(node, user)]
+        return node
 
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):

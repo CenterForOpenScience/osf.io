@@ -108,6 +108,8 @@ class DropboxUserSettings(AddonUserSettingsBase):
 
 class DropboxNodeSettings(AddonNodeSettingsBase):
 
+    _guid_file_class = DropboxFile
+
     user_settings = fields.ForeignField(
         'dropboxusersettings', backref='authorized'
     )
