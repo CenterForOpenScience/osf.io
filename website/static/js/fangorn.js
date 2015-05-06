@@ -1302,10 +1302,10 @@ function toolbarDismissIcon (){
             'data-placement' : 'bottom',
             onclick : function () {
                 var mithrilContent = m('div', [
-                        m('h3.break-word', 'How to Use the File Browser'),
-                        m('p', 'Select Multiple Files: Use command or shift keys to select multiple files.'),
-                        m('p', 'Go to Files: Double click a file name to go to the file.'),
-                        m('p', 'Open Files in New Tab: Command + click a file name to open it in a new tab.'),
+                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
+                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
 
                     ]);
                 var mithrilButtons = m('div', [
