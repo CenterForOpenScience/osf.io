@@ -2294,6 +2294,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         """
         if permissions == 'public' and not self.is_public:
+            if self.is_registration and (self.is_embargoed or self.pending_embargo):
+                self.embargo.state = 'cancelled'
+                self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration:
