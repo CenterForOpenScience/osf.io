@@ -102,3 +102,7 @@
 </script>
 <script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>
 </%def>
+
+<%def name="footer()">
+    <%include file="footer.mako" args="placement='settingsPage'"/>
+</%def>
