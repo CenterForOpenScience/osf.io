@@ -36,10 +36,11 @@ class UserSerializer(JSONAPISerializer):
 
 
 class ContributorSerializer(UserSerializer):
-    is_bibliographic = ser.SerializerMethodField()
 
-    def get_is_bibliographic(self, obj):
+    filterable_fields = frozenset(['bibliographic'])
+
+    bibliographic = ser.SerializerMethodField()
+
+    def get_bibliographic(self, obj):
         node = self.context['view'].get_node()
         return obj._id in node.visible_contributor_ids
-
-    # TODO: Add filtering
