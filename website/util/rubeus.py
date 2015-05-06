@@ -268,7 +268,7 @@ class NodeProjectCollector(object):
 
     def _serialize_node(self, node, visited=None, parent_is_folder=False):
         """Returns the rubeus representation of a node folder for the project organizer.
-        """        
+        """
         visited = visited or []
         visited.append(node.resolve()._id)
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
