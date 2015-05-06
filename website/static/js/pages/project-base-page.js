@@ -13,7 +13,6 @@ require('js/registerNode');
 
 var node = window.contextVars.node;
 
-
 new pointers.PointerDisplay('#showLinks');
 
 if (!window.contextVars.currentUser.isContributor) {
@@ -25,11 +24,11 @@ if (node.isPublic && node.piwikSiteID) {
 }
 
 // Used for clearing backward/forward cache issues
-$(window).unload(function(){
+$(window).unload(function () {
     return 'Unload';
 });
-$(document).ready(function() {
-    $.getJSON(node.urls.api, function(data) {    
+$(document).ready(function () {
+    $.getJSON(node.urls.api, function (data) {
         $('body').trigger('nodeLoad', data);
     });
-})
+});
