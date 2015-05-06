@@ -2658,3 +2658,8 @@ span#profileFullname{
         position: relative;
     }
 }
+
+.alternate-copyright {
+    background: #F5F5F5;
+    border-top: 1px solid #EEE;
+}
