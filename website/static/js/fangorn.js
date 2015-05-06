@@ -578,7 +578,7 @@ function _createFolder(event) {
     m.request({
         method: 'POST',
         background: true,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent);
         item = tb.createItem(item, parent.id);
@@ -691,7 +691,7 @@ function _removeEvent (event, items, col) {
             } else {
                 deleteList.push(item);
             }
-            if(item.kind === 'folder') {
+            if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'))
             }
         });
@@ -1232,7 +1232,9 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'createFolder'){
         return m('.row.tb-header-row', [
-            m('#folderRow', { config : function () { $('#folderRow input').focus(); }}, [
+            m('#folderRow', { config : function () {
+                $('#folderRow input').focus();
+            }}, [
                         m('.col-xs-9', [
                             m('input#createFolderInput.tb-header-input', { placeholder : 'Folder name' }),
                             m('#createFolderError.text-danger', { style : "display: none"})
@@ -1348,7 +1350,7 @@ function toolbarDismissIcon (){
 
  function renameButton (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', {
+    return m('#renameButton.fangorn-toolbar-icon.text-info', {
             'data-toggle' : 'tooltip',
             'title':  'Rename the currently selected file or folder',
             'data-placement' : 'bottom',
@@ -1363,7 +1365,7 @@ function toolbarDismissIcon (){
 
  function createFolderButton (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-success', {
+    return m('#createFolderButton.fangorn-toolbar-icon.text-success', {
             onclick : function (event) {
                 _createFolder.call(tb, event, parent);
             }
@@ -1676,9 +1678,12 @@ tbOptions = {
             if (event.keyCode === 27) {
                 _fangornResetToolbar.call(tb);
             }
-
         });
-
+        $(document).on('keypress', '#createFolderInput', function () {
+            if (tb.pressedKey === 13) {
+                _createFolder.call(tb);
+            }
+        });
     },
     createcheck : function (item, parent) {
         return true;
