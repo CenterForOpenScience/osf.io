@@ -97,7 +97,7 @@ edited description of  <a class="log-node-title-link" data-bind="attr: {href: no
 <script type="text/html" id="updated_fields">
   changed the <span data-bind="listing: {
                                  data: params.updated_fields,
-                                 map: function(key, item) { return key + ' to ' + item.new;}
+                                 map: mapUpdates
                                }"></span> of 
   <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
