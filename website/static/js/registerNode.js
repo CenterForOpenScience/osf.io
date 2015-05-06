@@ -40,10 +40,10 @@ $(document).ready(function() {
         bootbox.confirm({
             title: bootboxTitle,
             message: preRegisterMessage(title, parentTitle, parentRegisterUrl, category),
-            callback: function (comfirmed) {
-
-                window.location.href = target;
-
+            callback: function (confirmed) {
+                if(confirmed) {
+                    window.location.href = target;
+                }
             }
         });
     });
