@@ -13,13 +13,12 @@ from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo
+from framework.mongo.utils import from_mongo, get_or_http_error
 
 from website import language
 
 from website.util import paths
 from website.util import rubeus
-from website.util import js_to_python
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -78,10 +77,12 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = strip_html(request.json.get('title'))
-    template = request.json.get('template')
-    description = strip_html(request.json.get('description'))
+    data = request.get_json()
+    title = strip_html(data.get('title'))
     title = title.strip()
+    category = data.get('category', 'project')
+    template = data.get('template')
+    description = strip_html(data.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -89,7 +90,9 @@ def project_new_post(auth, **kwargs):
     if template:
         original_node = Node.load(template)
         changes = {
-            'title': title
+            'title': title,
+            'category': category,
+            'template_node': original_node,
         }
 
         if description:
@@ -98,11 +101,12 @@ def project_new_post(auth, **kwargs):
         project = original_node.use_as_template(
             auth=auth,
             changes={
-                template: changes
-            })
+                template: changes,
+            }
+        )
 
     else:
-        project = new_node('project', title, user, description)
+        project = new_node(category, title, user, description)
 
     return {
         'projectUrl': project.url
@@ -155,11 +159,15 @@ def folder_new_post(auth, node, **kwargs):
         'projectUrl': '/dashboard/',
     }, http.CREATED
 
-@must_be_valid_project
+
 @collect_auth
-def add_folder(auth, node, **kwargs):
+def add_folder(auth, **kwargs):
+    data = request.get_json()
+    node_id = data.get('node_id')
+    node = get_or_http_error(Node, node_id)
+
     user = auth.user
-    title = strip_html(request.json.get('title'))
+    title = strip_html(data.get('title'))
     if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -238,6 +246,11 @@ def project_before_template(auth, node, **kwargs):
 @must_be_logged_in
 @must_be_valid_project
 def node_fork_page(auth, node, **kwargs):
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
     try:
         fork = node.fork_node(auth)
     except PermissionsError:
@@ -538,7 +551,6 @@ def togglewatch_post(auth, node, **kwargs):
         'watched': user.is_watching(node)
     }
 
-@must_be_logged_in
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission(ADMIN)
@@ -548,7 +560,7 @@ def update_node(auth, node, **kwargs):
             'updated_fields': {
                 key: getattr(node, key)
                 for key in
-                node.update(js_to_python(request.json))
+                node.update(request.get_json(), auth=auth)
             }
         }
     except NodeUpdateError as e:
@@ -571,6 +583,7 @@ def component_remove(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
@@ -580,7 +593,8 @@ def component_remove(auth, node, **kwargs):
         node.project_or_component.capitalize()
     )
     status.push_status_message(message)
-    if node.node__parent:
+    parent = node.parent_node
+    if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
     else:
         redirect_url = '/dashboard/'
@@ -608,6 +622,7 @@ def delete_folder(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
@@ -734,11 +749,14 @@ def _view_project(node, auth, primary=False):
             },
         },
         'parent_node': {
+            'exists': parent is not None,
             'id': parent._primary_key if parent else '',
             'title': parent.title if parent else '',
+            'category': parent.category_display if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
             'absolute_url': parent.absolute_url if parent else '',
+            'registrations_url': parent.web_url_for('node_registrations') if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': parent.can_view(auth) if parent else False
@@ -766,6 +784,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
+        'node_categories': Node.CATEGORY_MAP,
     }
     return data
 
@@ -1025,10 +1044,12 @@ def _serialize_node_search(node):
     if node.is_registration:
         title += ' (registration)'
 
+    first_author = node.visible_contributors[0]
+
     return {
         'id': node._id,
         'title': title,
-        'firstAuthor': node.visible_contributors[0].family_name,
+        'firstAuthor': first_author.family_name or first_author.given_name or first_author.full_name,
         'etal': len(node.visible_contributors) > 1,
     }
 

@@ -10,16 +10,11 @@ from framework.auth import Auth
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
+from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
 
-def _load_node_or_fail(nid):
-    node = Node.load(nid)
-    if not node:
-        raise HTTPError(http.NOT_FOUND)
-    if node.is_deleted:
-        raise HTTPError(http.GONE)
-    return node
+_load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
@@ -28,11 +23,13 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of parent and node
 
     """
-    node = None
-    parent = None
+    node = kwargs.get('node') or kwargs.get('project')
+    parent = kwargs.get('parent')
+    if node:
+        return parent, node
 
-    pid = kwargs.get('project') or kwargs.get('pid')
-    nid = kwargs.get('node') or kwargs.get('nid')
+    pid = kwargs.get('pid')
+    nid = kwargs.get('nid')
     if pid and nid:
         node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
@@ -42,7 +39,6 @@ def _kwargs_to_nodes(kwargs):
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
         raise HTTPError(http.NOT_FOUND)
-
     return parent, node
 
 def _inject_nodes(kwargs):

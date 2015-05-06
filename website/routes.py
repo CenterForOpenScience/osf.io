@@ -551,6 +551,20 @@ def make_url_map(app):
              project_views.contributor.claim_user_post, json_renderer),
 
         Rule(
+            '/profile/export/',
+            'post',
+            profile_views.request_export,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/deactivate/',
+            'post',
+            profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
             [
                 '/profile/gravatar/',
                 '/users/gravatar/',
@@ -844,7 +858,13 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
                 '/project/<pid>/files/download/<fid>/version/<vid>/',
                 '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-
+            ],
+            'get',
+            addon_views.addon_view_or_download_file_legacy,
+            OsfWebRenderer('project/view_file.mako'),
+        ),
+        Rule(
+            [
                 # api/v1 Legacy routes for `download_file`
                 '/api/v1/project/<pid>/osffiles/<fid>/',
                 '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',

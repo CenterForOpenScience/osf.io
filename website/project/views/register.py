@@ -135,6 +135,12 @@ def project_before_register(auth, node, **kwargs):
 def node_register_template_page_post(auth, node, **kwargs):
     data = request.json
 
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
+
     # Sanitize payload data
     clean_data = process_payload(data)
 

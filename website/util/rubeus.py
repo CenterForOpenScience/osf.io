@@ -12,7 +12,7 @@ from framework.auth.decorators import Auth
 from website.util import paths
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
-    ALL_MY_REGISTRATIONS_NAME
+    ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 )
 
 
@@ -24,7 +24,7 @@ KIND = 'kind'
 
 DEFAULT_PERMISSIONS = {
     'view': True,
-    'edit': False
+    'edit': False,
 }
 
 
@@ -93,11 +93,15 @@ def build_addon_root(node_settings, name, permissions=None,
         urls = node_settings.config.urls
     if urls is None:
         urls = default_urls(node_settings.owner.api_url, node_settings.config.short_name)
+
+    forbid_edit = DISK_SAVING_MODE if node_settings.config.short_name == 'osfstorage' else False
     if isinstance(permissions, Auth):
         auth = permissions
         permissions = {
             'view': node_settings.owner.can_view(auth),
-            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
+            'edit': (node_settings.owner.can_edit(auth)
+                     and not node_settings.owner.is_registration
+                     and not forbid_edit),
         }
 
     max_size = node_settings.config.max_file_size
@@ -324,7 +328,7 @@ class NodeProjectCollector(object):
             #TODO Remove the replace when mako html safe comes around
             'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
             'kind': FOLDER,
-            'category': '_'.join(node.category.split(' ')),
+            'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
                 'edit': can_edit,

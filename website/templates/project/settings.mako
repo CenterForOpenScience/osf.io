@@ -16,8 +16,8 @@
 </div>
 
 <div class="row project-page">
-    <div class="col-sm-3">
-        <div class="panel panel-default" data-spy="affix" >
+    <div class="col-sm-3 affix-parent">
+        <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
@@ -51,20 +51,24 @@
                 </div>
                 <div id="nodeCategorySettings" class="panel-body">
                   <h5>
-                    Category: <select data-bind="options: categories,
+                    Category: <select data-bind="attr.disabled: disabled,
+                                                 options: categories,
                                                  optionsValue: 'value',
                                                  optionsText: 'label',
                                                  value: selectedCategory"></select>
                   </h5>
-                  <p>
-                    <button data-bind="css: {disabled: !dirty()}, 
-                                       click: updateCategory" 
+                  <p data-bind="if: !disabled">
+                    <button data-bind="css: {disabled: !dirty()},
+                                       click: updateCategory"
                             class="btn btn-primary">Change</button>
                     <button data-bind="css: {disabled: !dirty()},
                                        click: cancelUpdateCategory"
-                            class="btn btn-default">Cancel</button>                
+                            class="btn btn-default">Cancel</button>
                   </p>
-                  <span data-bind="css: messageClass, text: message"></span>
+                  <span data-bind="css: messageClass, html: message"></span>
+                  <span data-bind="if: disabled" class="help-block">
+                    A top-level project's category cannot be changed
+                  </span>
                 </div>
                 <hr />
                 <div class="panel-body">

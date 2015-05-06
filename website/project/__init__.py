@@ -42,7 +42,7 @@ def new_node(category, title, user, description=None, parent=None):
     :return Node: Created node
 
     """
-    category = category.strip().lower()
+    category = category
     title = sanitize(title.strip())
     if description:
         description = sanitize(description.strip())

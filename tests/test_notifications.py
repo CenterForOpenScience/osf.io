@@ -1027,7 +1027,7 @@ class TestSendEmails(OsfTestCase):
         )
 
     def test_send_email_digest_creates_digest_notification(self):
-        subscribed_users = [factories.UserFactory()]
+        subscribed_users = [factories.UserFactory()._id]
         digest_count_before = NotificationDigest.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             user=self.user,
@@ -1043,7 +1043,7 @@ class TestSendEmails(OsfTestCase):
         assert_equal((digest_count - digest_count_before), 1)
 
     def test_send_email_digest_not_created_for_user_performed_actions(self):
-        subscribed_users = [self.user]
+        subscribed_users = [self.user._id]
         digest_count_before = NotificationDigest.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             user=self.user,

@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import mock
@@ -7,14 +8,17 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytz
 import datetime
 import urlparse
+import itsdangerous
 from dateutil import parser
 
+from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
@@ -368,6 +372,21 @@ class TestUser(OsfTestCase):
         token = u.get_confirmation_token('foo@bar.com', force=True)
         assert_equal(token, '54321')
 
+    # Some old users will not have an 'expired' key in their email_verifications.
+    # Assume the token in expired
+    def test_get_confirmation_token_if_email_verification_doesnt_have_expiration(self):
+        u = UserFactory()
+
+        email = fake.email()
+        u.add_unconfirmed_email(email)
+        # manually remove 'expiration' key
+        token = u.get_confirmation_token(email)
+        del u.email_verifications[token]['expiration']
+        u.save()
+
+        with assert_raises(ExpiredTokenError):
+            u.get_confirmation_token(email)
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
@@ -688,7 +707,7 @@ class TestUser(OsfTestCase):
     def test_display_full_name_unregistered(self):
         name = fake.name()
         u = UnregUserFactory()
-        project =ProjectFactory()
+        project = ProjectFactory()
         project.add_unregistered_contributor(fullname=name, email=u.username,
             auth=Auth(project.creator))
         project.save()
@@ -718,6 +737,67 @@ class TestUser(OsfTestCase):
 
         assert_equal(self.user.n_projects_in_common(user2), 1)
         assert_equal(self.user.n_projects_in_common(user3), 0)
+
+    def test_user_get_cookie(self):
+        user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
+        session = Session(data={
+            'auth_user_id': user._id,
+            'auth_user_username': user.username,
+            'auth_user_fullname': user.fullname,
+        })
+        session.save()
+
+        assert_equal(signer.unsign(user.get_or_create_cookie(super_secret_key)), session._id)
+
+    def test_user_get_cookie_no_session(self):
+        user = UserFactory()
+        super_secret_key = 'children need maps'
+        signer = itsdangerous.Signer(super_secret_key)
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+
+        cookie = user.get_or_create_cookie(super_secret_key)
+
+        session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
+
+        assert_equal(session._id, signer.unsign(cookie))
+        assert_equal(session.data['auth_user_id'], user._id)
+        assert_equal(session.data['auth_user_username'], user.username)
+        assert_equal(session.data['auth_user_fullname'], user.fullname)
+
+    def test_get_user_by_cookie(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        assert_equal(user, User.from_cookie(cookie))
+
+    def test_get_user_by_cookie_returns_none(self):
+        assert_equal(None, User.from_cookie(''))
+
+    def test_get_user_by_cookie_bad_cookie(self):
+        assert_equal(None, User.from_cookie('foobar'))
+
+    def test_get_user_by_cookie_no_user_id(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        session = Session.find_one(Q('data.auth_user_id', 'eq', user._id))
+        del session.data['auth_user_id']
+        assert_in('data', session.save())
+
+        assert_equal(None, User.from_cookie(cookie))
+
+    def test_get_user_by_cookie_no_session(self):
+        user = UserFactory()
+        cookie = user.get_or_create_cookie()
+        Session.remove()
+        assert_equal(
+            0,
+            Session.find(Q('data.auth_user_id', 'eq', user._id)).count()
+        )
+        assert_equal(None, User.from_cookie(cookie))
 
 
 class TestUserParse(unittest.TestCase):
@@ -1210,7 +1290,7 @@ class TestNode(OsfTestCase):
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
         assert_equal(node.category_display, 'Hypothesis')
-        node2 = NodeFactory(category='methods_and_measures')
+        node2 = NodeFactory(category='methods and measures')
         assert_equal(node2.category_display, 'Methods and Measures')
 
     def test_api_url_for(self):
@@ -1514,104 +1594,77 @@ class TestNode(OsfTestCase):
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
+class TestNodeTraversals(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeTraversals, self).setUp()
+        self.viewer = AuthUserFactory()
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.root = ProjectFactory(creator=self.user)
+
     def test_next_descendants(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.next_descendants(
-            Auth(viewer),
+        descendants = self.root.next_descendants(
+            Auth(self.viewer),
             condition=lambda auth, node: node.is_contributor(auth.user)
         )
         assert_equal(len(descendants), 2)  # two immediate children
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
-        
+
     def test_get_descendants_recursive(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.get_descendants_recursive()
+        descendants = self.root.get_descendants_recursive()
         ids = {d._id for d in descendants}
         assert_false({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids))
 
     def test_get_descendants_recursive_filtered(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
+        comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
+        comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2b = ProjectFactory(creator=self.user, parent=comp2)
 
-        descendants = root.get_descendants_recursive(
-            lambda n: n.is_contributor(viewer)
+        descendants = self.root.get_descendants_recursive(
+            lambda n: n.is_contributor(self.viewer)
         )
         ids = {d._id for d in descendants}
-        assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
+        nids = {node._id for node in [comp1a, comp2, comp2a]}
+        assert_false(ids.difference(nids))
 
-    def test_get_descendants_iterative(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
-        comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
-        comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
-        comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
-        comp2b = ProjectFactory(creator=self.user, parent=comp2)
+    def test_get_descendants_recursive_cyclic(self):
+        point1 = ProjectFactory(creator=self.user, parent=self.root)
+        point2 = ProjectFactory(creator=self.user, parent=self.root)
+        point1.add_pointer(point2, auth=self.consolidate_auth)
+        point2.add_pointer(point1, auth=self.consolidate_auth)
 
-        descendants = root.get_descendants_iterative()
-        ids = {d._id for d in descendants}
-        assert_false({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids))
+        descendants = list(point1.get_descendants_recursive())
+        assert_equal(len(descendants), 1)
 
-    def test_get_descendants_iterative_filtered(self):
-        viewer = AuthUserFactory()
-        
-        root = ProjectFactory(creator=self.user)
-        comp1 = ProjectFactory(creator=self.user, parent=root)
-        comp1a = ProjectFactory(creator=self.user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
-        comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=root)
-        comp2.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
-        comp2a = ProjectFactory(creator=self.user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=self.consolidate_auth, permissions='read')
-        comp2b = ProjectFactory(creator=self.user, parent=comp2)
-
-        descendants = root.get_descendants_iterative(
-            lambda n: n.is_contributor(viewer)
-        )
-        ids = {d._id for d in descendants}
-        assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
-        
 class TestRemoveNode(OsfTestCase):
 
     def setUp(self):
@@ -1629,7 +1682,7 @@ class TestRemoveNode(OsfTestCase):
         assert_true(self.project.is_deleted)
         # parent node should have a log of the event
         assert_equal(
-            self.parent_project.get_aggregate_logs_set(self.consolidate_auth)[0].action,
+            self.parent_project.get_aggregate_logs_queryset(self.consolidate_auth)[0].action,
             'node_removed'
         )
 
@@ -2400,6 +2453,19 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_equal(self.project.description, 'new description')
         latest_log = self.project.logs[-1]
+        assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
+        assert_equal(latest_log.params['description_original'], old_desc)
+        assert_equal(latest_log.params['description_new'], 'new description')
+
+    def test_set_description_on_node(self):
+        node = NodeFactory(project=self.project)
+
+        old_desc = node.description
+        node.set_description(
+            'new description', auth=self.consolidate_auth)
+        node.save()
+        assert_equal(node.description, 'new description')
+        latest_log = node.logs[-1]
         assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
         assert_equal(latest_log.params['description_original'], old_desc)
         assert_equal(latest_log.params['description_new'], 'new description')

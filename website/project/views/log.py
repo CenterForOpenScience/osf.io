@@ -47,7 +47,7 @@ def _get_logs(node, count, auth, link=None, page=0):
             boolean: if there are more logs
 
     """
-    logs_set = node.get_aggregate_logs_set(auth)
+    logs_set = node.get_aggregate_logs_queryset(auth)
     total = logs_set.count()
     start = page * count
     stop = start + count

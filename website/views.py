@@ -134,7 +134,7 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = find_dashboard(user)
         data = [node]
     elif nid == ALL_MY_PROJECTS_ID:
-        data = po_utils.get_all_projects_smart_folder(auth)
+        return_value = {'data': get_all_projects_smart_folder(**kwargs)}
     elif nid == ALL_MY_REGISTRATIONS_ID:
         data = po_utils.get_all_registrations_smart_folder(auth)
     else:

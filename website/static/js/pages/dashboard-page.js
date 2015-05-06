@@ -11,11 +11,10 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
 // Knockout components for the onboarder
-require('../onboarder.js');
-var $osf = require('../osfHelpers');
+require('js/onboarder.js');
+var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
-var projectOrganizer = require('..//projectorganizer');
-var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
+var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
@@ -25,6 +24,7 @@ var request = $.getJSON(url, function(response) {
         return $.inArray(node.permissions, ['write', 'admin']) !== -1;
     });
 
+    // If we need to change what nodes can be registered, filter here
     var registrationSelection = uploadSelection;
 
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
@@ -81,12 +81,13 @@ $(document).ready(function() {
         url:  '/api/v1/dashboard/'
     });
     request.done(function(data) {
-        new ProjectOrganizer({
+        var po = new ProjectOrganizer({
             placement : 'dashboard',
             divID: 'project-grid',
             filesData: data.data,
             multiselect : true
         });
+        po.legend($('#projectOrganizerInfo')[0]);
 
         ensureUserTimezone(data.timezone, data.locale, data.id);
     });

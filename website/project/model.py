@@ -7,7 +7,6 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
-import pymongo
 import warnings
 
 import pytz
@@ -31,7 +30,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key
+from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -284,17 +283,8 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
+@unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
-
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('params.node', pymongo.ASCENDING),
-                ('_id', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -341,6 +331,10 @@ class NodeLog(StoredObject):
 
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
+
+    UPDATED_FIELDS = 'updated_fields'
+
+    FOLDER_CREATED = 'folder_created'
 
     FILE_ADDED = 'file_added'
     FILE_UPDATED = 'file_updated'
@@ -425,7 +419,6 @@ class NodeLog(StoredObject):
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
-
 
 class Tag(StoredObject):
 
@@ -523,7 +516,8 @@ def validate_user(value):
     return True
 
 class NodeUpdateError(Exception):
-    def __init__(self, key, reason):
+    def __init__(self, reason, key, *args, **kwargs):
+        super(NodeUpdateError, self).__init__(*args, **kwargs)
         self.key = key
         self.reason = reason
 
@@ -553,7 +547,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('', 'Uncategorized'),
         ('project', 'Project'),
         ('hypothesis', 'Hypothesis'),
-        ('methods_and_measures', 'Methods and Measures'),
+        ('methods and measures', 'Methods and Measures'),
         ('procedure', 'Procedure'),
         ('instrumentation', 'Instrumentation'),
         ('data', 'Data'),
@@ -561,6 +555,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('communication', 'Communication'),
         ('other', 'Other'),
     ])
+
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+    ]
 
     _id = fields.StringField(primary=True)
 
@@ -950,19 +950,52 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.can_edit(auth)
 
-    def update(self, fields, save=True):
+    def update(self, fields, auth=None, save=True):
+        if self.is_registration:
+            raise NodeUpdateError(reason="Registered content cannot be updated")
+        values = {}
         for key, value in fields.iteritems():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
             with warnings.catch_warnings():
                 try:
+                    # This is in place because historically projects and components
+                    # live on different ElasticSearch indexes, and at the time of Node.save
+                    # there is no reliable way to check what the old Node.category
+                    # value was. When the cateogory changes it is possible to have duplicate/dead
+                    # search entries, so always delete the ES doc on categoryt change
+                    # TODO: consolidate Node indexes into a single index, refactor search
+                    if key == 'category':
+                        self.delete_search_entry()
+                    ###############
+                    values[key] = {
+                        'old': getattr(self, key),
+                        'new': value,
+                    }
                     setattr(self, key, value)
                 except AttributeError:
-                    raise NodeUpdateError(key=key, reason="Invalid value for attribute '{0}'".format(key))
+                    raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                 except warnings.Warning:
-                    raise NodeUpdateError(key=key, reason="Attribute '{0}' doesn't exist on the Node class".format(key))
+                    raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
         if save:
-            return self.save()
+            updated = self.save()
         else:
-            return []
+            updated = []
+        for key in values:
+            values[key]['new'] = getattr(self, key)
+        self.add_log(NodeLog.UPDATED_FIELDS,
+                     params={
+                         'node': self._id,
+                         'updated_fields': {
+                             key: {
+                                 'old': values[key]['old'],
+                                 'new': values[key]['new']
+                             }
+                             for key in values
+                         }
+                     },
+                     auth=auth)
+        return updated
 
     def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)
@@ -1044,7 +1077,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         children.
         :return: The `Node` instance created.
         """
-
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1253,24 +1285,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return ret
 
     def get_descendants_recursive(self, include=lambda n: True):
-        descedants = list(self.nodes) + [
-            item
-            for node in self.nodes
-            for item in node.get_descendants_recursive(include)
-        ]
-        return [d for d in descedants if include(d)]
-
-    def get_descendants_iterative(self, include=lambda n: True):
-        ret = []
-        stack = list(self.nodes)
-        while stack:
-            node = stack.pop()
+        for node in self.nodes:
             if include(node):
-                ret.append(node)
-            stack = list(node.nodes) + stack
-        return ret
+                yield node
+            if node.primary:
+                for descendant in node.get_descendants_recursive(include):
+                    if include(descendant):
+                        yield descendant
 
-    def get_aggregate_logs_set(self, auth):
+    def get_aggregate_logs_queryset(self, auth):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
@@ -1440,7 +1463,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'parent_node': self.parent_node,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -1456,6 +1479,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1738,12 +1769,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
-        '''
-        if self.node__parent:
-            parent = self.node__parent[0]
-            parent.logs.append(log)
-            parent.save()
-        '''
         return log
 
     @property

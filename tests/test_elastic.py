@@ -23,9 +23,9 @@ class SearchTestCase(OsfTestCase):
         super(SearchTestCase, self).tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-
     def setUp(self):
         super(SearchTestCase, self).setUp()
+        search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
 
@@ -181,7 +181,7 @@ class TestProject(SearchTestCase):
 
 @requires_search
 class TestPublicNodes(SearchTestCase):
-
+    
     def setUp(self):
         super(TestPublicNodes, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
@@ -216,7 +216,6 @@ class TestPublicNodes(SearchTestCase):
         self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
-
         self.registration.set_privacy('private')
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
@@ -376,14 +375,6 @@ class TestPublicNodes(SearchTestCase):
         assert len(docs) == 3
         for doc in docs:
             assert doc['key'] in tags
-
-    def test_count_aggregation(self):
-        docs = query("*")['counts']
-        assert_equal(docs['total']['value'], 4)
-        assert_equal(docs['project']['value'], 1)
-        assert_equal(docs['component']['value'], 1)
-        assert_equal(docs['registration']['value'], 1)
-
 
 
 @requires_search
