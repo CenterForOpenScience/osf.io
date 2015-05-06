@@ -400,7 +400,7 @@ function _fangornDragOver(treebeard, event) {
         closestTarget = $(event.target).closest('.tb-row'),
         itemID = parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
-    $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
         if (_fangornCanDrop(treebeard, item)) {
             closestTarget.addClass(dropzoneHoverClass);
@@ -408,6 +408,17 @@ function _fangornDragOver(treebeard, event) {
     }
 }
 
+/**
+ * Runs when Dropzone's drop event hook is run.
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @param event DOM event object
+ * @this Dropzone
+ * @private
+ */
+function _fangornDropzoneDrop(treebeard, event) {
+    var dropzoneHoverClass = 'fangorn-dz-hover';
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass);
+}
 /**
  * Runs when Dropzone's complete hook is run after upload is completed.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -1727,7 +1738,8 @@ tbOptions = {
         success : _fangornDropzoneSuccess,
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
-        addedfile : _fangornAddedFile
+        addedfile : _fangornAddedFile,
+        drop : _fangornDropzoneDrop
     },
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
