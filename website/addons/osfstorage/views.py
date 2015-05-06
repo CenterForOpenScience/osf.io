@@ -169,6 +169,8 @@ def osf_storage_get_metadata(node_addon, fid=None, **kwargs):
 def osf_storage_get_children(node_addon, fid, **kwargs):
     filenode = model.OsfStorageFileNode.get(fid, node_addon)
 
+    if not filenode:
+        raise HTTPError(httplib.NOT_FOUND)
     if filenode.is_deleted:
         raise HTTPError(httplib.GONE)
 

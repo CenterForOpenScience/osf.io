@@ -2,6 +2,10 @@ import abc
 from urllib2 import urlopen
 from celery import chain, group
 
+from raven import Client
+from raven.conf import setup_logging
+from raven.handlers.logging import SentryHandler
+
 from framework.tasks import app as celery_app
 from framework.archiver.exceptions import (
     AddonFileSizeExceeded,
@@ -15,33 +19,19 @@ from framework.archiver import AggregateStatResult
 from website.util import waterbutler_url_for
 from website.addons.base import StorageAddonBase
 from website.project.model import Node
+from website import settings
 
 import logging  # noqa
 from celery.utils.log import get_task_logger
 
 from celery.contrib import rdb
 
-class ArchiverLogger(object):
-
-    logger = get_task_logger(__name__)
-
-    def __init__(self, log_to_sentry=True, *args, **kwargs):
-        self.log_to_sentry = log_to_sentry
-
-    def _log(self, kind, msg):
-        getattr(self.logger, kind)(msg)
-        if self.log_to_sentry:
-            self._log_to_sentry(kind, msg)
-
-    def _log_to_sentry(self, kind, msg):
-        # TODO
-        pass
-
-    def info(self, msg):
-        self._log('info', msg)
-
-    def error(self, msg):
-        self._log('error', msg)
+raven_client = None
+raven_handler = None
+if settings.SENTRY_DSN:
+    raven_client = Client(settings.SENTRY_DSN)
+    raven_handler = SentryHandler(raven_client)
+    setup_logging(raven_handler)
 
 class ArchiverTaskBase(celery_app.Task):
     #  http://jsatt.com/blog/class-based-celery-tasks/
@@ -53,7 +43,9 @@ class ArchiverTaskBase(celery_app.Task):
 
     __meta__ = abc.ABCMeta
 
-    logger = ArchiverLogger()
+    def __init__(self, *args, **kwargs):
+        super(ArchiverTaskBase, self).__init__(*args, **kwargs)
+        self.logger = get_task_logger(__name__)
 
     def bind(self, app):
         return super(ArchiverTaskBase, self).bind(celery_app)
@@ -80,6 +72,7 @@ class StatNodeTask(ArchiverTaskBase):
 
     def _stat(self, src, user):
         stat_addon_task = StatAddonTask()
+        rdb.set_trace()
         return group(
             stat_addon_task.s(type(node_addon), node_addon._id, user._id)
             for node_addon in src.get_addons()
@@ -201,7 +194,6 @@ class ArchiveNodeTask(ArchiverTaskBase):
         return group(iter(tasks))
 
     def run(self, group_result, src_pk, dst_pk, user_pk, *args, **kwargs):
-        rdb.set_trace()
         stat_result = group_result.results[0].result
         src = Node.load(src_pk)
         dst = Node.load(dst_pk)
@@ -221,10 +213,7 @@ class ArchiveAddonTask(ArchiveTask):
     def _archive(self, src_addon, dst_addon, user, stat_result):
         root = dst_addon.root_node
         parent = root.append_folder("Archive of {addon}".format(addon=src_addon.config.full_name))
-        self._copy_file_tree(
-            parent,
-            stat_result.targets.values()
-        )
+        src_addon._copy_files(dst_addon=dst_addon, dst_folder=parent)
         return dst_addon
 
     def run(self, Model, src_addon_pk, dst_addon_pk, user_pk, result):

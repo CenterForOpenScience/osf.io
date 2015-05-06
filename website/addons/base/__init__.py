@@ -822,6 +822,9 @@ class StorageAddonBase(object):
     MAX_ARCHIVE_SIZE = math.pow(1024, 3)  # 1 GB
     MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
+    def _copy_files(self, dst_addon, dst_folder=None, user=None):
+        raise NotImplementedError
+
     def _get_fileobj_child_metadata(self, node, user):
         metadata_url = waterbutler_url_for(
             'metadata',
