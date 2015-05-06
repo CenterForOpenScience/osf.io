@@ -285,11 +285,11 @@ class BoxProvider(provider.BaseProvider):
         # Catch 409s to avoid race conditions
         if resp.status == 409:
             data = yield from self.metadata(str(path.parent), folder=True)
-            raise exceptions.FolderNamingConflict(os.path.join(data['extra']['fullPath'], path.name))
+            raise exceptions.FolderNamingConflict(str(path))
 
         return BoxFolderMetadata(
             (yield from resp.json()),
-            self.folder
+            path
         ).serialized()
 
     def _assert_child(self, paths, target=None):
