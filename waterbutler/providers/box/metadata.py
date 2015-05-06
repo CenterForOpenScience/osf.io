@@ -12,7 +12,7 @@ class BaseBoxMetadata(metadata.BaseMetadata):
         return 'box'
 
     @property
-    def full_path(self):
+    def materialized_path(self):
         return str(self._path_obj)
 
 
@@ -25,14 +25,6 @@ class BoxFolderMetadata(BaseBoxMetadata, metadata.BaseFolderMetadata):
     @property
     def path(self):
         return '/{}/'.format(self.raw['id'])
-
-    @property
-    def full_path(self):
-        path = super().full_path
-        if path is None:
-            return None
-        return path + '/'
-
 
 class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
 
@@ -60,7 +52,6 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
     def extra(self):
         return {
             'etag': self.raw.get('etag'),
-            'fullPath': self.full_path
         }
 
 
