@@ -294,7 +294,6 @@ class NodeProjectCollector(object):
             modified_by = user.family_name or user.given_name
         except AttributeError:
             modified_by = ''
-        # test_children = self._collect_addons(node)
         child_nodes = node.nodes
         readable_children = []
         for child in child_nodes:
@@ -319,7 +318,7 @@ class NodeProjectCollector(object):
 
         if node.is_dashboard:
             to_expand = True
-        elif type_ != 'pointer':
+        elif not is_pointer:
             to_expand = expanded
         else:
             to_expand = False
