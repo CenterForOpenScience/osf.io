@@ -162,6 +162,20 @@ class Comment(GuidStoredObject):
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
+    spam_flagged_count = fields.IntegerField(default=0)
+
+    #spam_status can be in 4 states:
+    #   0 = unknown (could be spam or ham)
+    #   1 = possibly spam
+    #   2 = confidently ham
+    #   3 = confidently spam
+    UNKNOWN =0
+    POSSIBLE_SPAM = 1
+    HAM = 2
+    SPAM = 3
+    spam_status = fields.IntegerField(default=UNKNOWN)
+    NUM_FLAGS_FOR_SPAM = 1
+
     @classmethod
     def create(cls, auth, **kwargs):
 
@@ -200,6 +214,33 @@ class Comment(GuidStoredObject):
         )
         if save:
             self.save()
+
+
+     def mark_as_possible_spam(self,save=False):
+        if self.spam_status == self.UNKNOWN:
+            self.spam_status = self.POSSIBLE_SPAM
+        if save:
+            self.save()
+
+    def unmark_as_possible_spam(self, save=False):
+        if self.spam_status == self.POSSIBLE_SPAM:
+            self.spam_status = self.UNKNOWN
+        if save:
+            self.save()
+
+    def confirm_spam(self,save=False):
+        self.spam_status = self.SPAM
+        if save:
+            self.save()
+
+    def confirm_ham(self,save=False):
+        self.spam_status = self.HAM
+        if save:
+            self.save()
+
+    def is_not_spam(self):
+        return self.spam_status == self.HAM or self.spam_status==self.UNKNOWN
+
 
     def delete(self, auth, save=False):
         self.is_deleted = True
@@ -245,6 +286,12 @@ class Comment(GuidStoredObject):
         if user == self.user:
             raise ValueError
         self.reports[user._id] = kwargs
+
+        if self.reports[user._id].get('category') == 'spam':
+            self.spam_flagged_count = self.spam_flagged_count + 1
+
+            if self.spam_flagged_count >= Comment.NUM_FLAGS_FOR_SPAM:
+                self.mark_as_possible_spam( save=save)
         if save:
             self.save()
 
@@ -257,6 +304,14 @@ class Comment(GuidStoredObject):
         """
         try:
             self.reports.pop(user._id)
+
+            if self.reports[user.id]['category'] == 'spam':
+                if self.spam_flagged_count >0:
+                    self.spam_flagged_count = self.spam_flagged_count - 1
+
+                if self.spam_flagged_count < Comment.NUM_FLAGS_FOR_SPAM:
+                    self.unmark_as_possible_spam( save=save)
+
         except KeyError:
             raise ValueError('User has not reported comment as abuse')
 
@@ -577,6 +632,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     is_dashboard = fields.BooleanField(default=False, index=True)
     is_folder = fields.BooleanField(default=False, index=True)
 
+
+    #spam_status can be in 4 states:
+    #   0 = unknown (could be spam or ham)
+    #   1 = possibly spam
+    #   2 = confidently ham
+    #   3 = confidently spam
+    UNKNOWN =0
+    POSSIBLE_SPAM = 1
+    HAM = 2
+    SPAM = 3
+    spam_status = fields.IntegerField(default=UNKNOWN)
+
     # Expanded: Dictionary field mapping user IDs to expand state of this node:
     # {
     #   'icpnw': True,
@@ -862,6 +929,33 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for key in self.permissions.keys():
             if key not in self.contributors:
                 self.permissions.pop(key)
+
+    def mark_as_possible_spam(self,save=False):
+        if self.spam_status == self.UNKNOWN:
+            self.spam_status = self.POSSIBLE_SPAM
+
+        if save:
+            self.save()
+
+    def unmark_as_possible_spam(self, save=False):
+        if self.spam_status == self.POSSIBLE_SPAM:
+            self.spam_status = self.UNKNOWN
+
+        if save:
+            self.save()
+
+    def confirm_spam(self,save=False):
+        self.spam_status = self.SPAM
+        if save:
+            self.save()
+
+    def confirm_ham(self,save=False):
+        self.spam_status = self.HAM
+        if save:
+            self.save()
+
+    def is_not_spam(self):
+        return self.spam_status == self.HAM or self.spam_status==self.UNKNOWN
 
     @property
     def visible_contributors(self):

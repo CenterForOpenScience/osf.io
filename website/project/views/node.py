@@ -457,13 +457,20 @@ def project_statistics(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
-    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
-    if anonymous_link_warning:
-        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
-                      'contributors after a project or component is made public.')
+
+    if not node.spam_status==node.HAM and _project_is_spam(node):
+        node.mark_as_possible_spam( save=True)
+        is_spam=True
+    else:
+        is_spam=False
+        anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
+        if anonymous_link_warning:
+            prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
+                          'contributors after a project or component is made public.')
 
     return {
-        'prompts': prompt
+        'prompts': prompt,
+        'is_spam':is_spam
     }
 
 
