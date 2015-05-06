@@ -242,7 +242,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
         return dest_path
 
-    def can_intra_copy(self, other, path):
+    def can_intra_copy(self, other, path=None):
         """Indicates if a quick copy can be performed
         between the current and `other`.
 
@@ -254,7 +254,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         """
         return False
 
-    def can_intra_move(self, other, path):
+    def can_intra_move(self, other, path=None):
         """Indicates if a quick move can be performed
         between the current and `other`.
 
