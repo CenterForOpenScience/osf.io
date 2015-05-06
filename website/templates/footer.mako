@@ -1,8 +1,10 @@
+<%page args="placement"/>
+%if placement != 'projectPage':
 <footer class="footer">
     <div class="container">
         <div class="row">
             <div class="col-sm-2 col-md-2 col-md-offset-1">
-                <h4>OSF</h4>
+                <h4>OSF ${placement}</h4>
                 <ul>
                     <li><a href="/4znzp/wiki/home">About</a></li>
                     <li><a href="/faq">FAQ</a></li>
@@ -36,6 +38,8 @@
         </div>
     </div>
 </footer><!-- end footer -->
+% endif
+
 <div class="container copyright">
     <div class="row">
         <div class="col-md-12">
