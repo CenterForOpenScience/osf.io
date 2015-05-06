@@ -8,7 +8,7 @@ from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
-from api.users.serializers import UserSerializer
+from api.users.serializers import UserSerializer, ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
 
 
@@ -82,13 +82,13 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
 
 
 class NodeContributorsList(generics.ListAPIView, NodeMixin):
-    """Return the contributors (users) fora node."""
+    """Return the contributors (users) for a node."""
 
     permission_classes = (
         ContributorOrPublic,
     )
 
-    serializer_class = UserSerializer
+    serializer_class = ContributorSerializer
 
     # overrides ListAPIView
     def get_queryset(self):

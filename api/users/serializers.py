@@ -33,3 +33,13 @@ class UserSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+
+class ContributorSerializer(UserSerializer):
+    is_bibliographic = ser.SerializerMethodField()
+
+    def get_is_bibliographic(self, obj):
+        node = self.context['view'].get_node()
+        return obj._id in node.visible_contributor_ids
+
+    # TODO: Add filtering
