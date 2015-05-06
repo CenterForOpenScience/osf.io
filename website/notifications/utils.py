@@ -1,5 +1,7 @@
 import collections
 
+import pprint  # Remove for production
+
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
@@ -129,7 +131,6 @@ def format_data(user, node_ids):
     :return: treebeard-formatted data
     """
     items = []
-    user_subscriptions = get_all_user_subscriptions(user)
 
     for node_id in node_ids:
         node = Node.load(node_id)
@@ -146,11 +147,9 @@ def format_data(user, node_ids):
         # user is contributor on a component of the project/node
 
         if can_read:
-            node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
-            for node_sub in node_subscriptions:
-                print node_sub
-            for subscription in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
-                children.append(serialize_event(user, subscription, constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, node))
+            node_sub = get_all_node_subscriptions(user, node)
+            children = [serialize_event(user, subscription, node)
+                        for subscription in get_all_node_subscriptions(user, node)]
 
         children.extend(format_data(
             user,
@@ -173,21 +172,22 @@ def format_data(user, node_ids):
         }
 
         items.append(item)
+        print "*********************"
+        pprint.pprint(items)
+        print "*********************"
 
     return items
 
 
-def format_user_subscriptions(user, data):
+def format_user_subscriptions(user):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subscriptions = [s for s in model.NotificationSubscription.find(Q('owner', 'eq', user))]
-    for subscription in constants.USER_SUBSCRIPTIONS_AVAILABLE:
-        event = serialize_event(user, subscription, constants.USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
-        data.append(event)
-
-    return data
+    return [
+        serialize_event(user, subscription) for subscription in get_all_user_subscriptions(user)
+        if getattr(subscription, 'event_name') in constants.USER_SUBSCRIPTIONS_AVAILABLE
+    ]
 
 
-def serialize_event(user, subscription, subscriptions_available, user_subscriptions, node=None):
+def serialize_event(user, subscription, node=None):
     """
     :param user: modular odm User object
     :param subscription: modular odm Subscription object
@@ -196,53 +196,57 @@ def serialize_event(user, subscription, subscriptions_available, user_subscripti
     :param node: modular odm Node object
     :return: treebeard-formatted subscription events
     """
-    event = {
+    all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
+    all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
+    event_description = getattr(subscription, 'event_name')
+    # Looks at only the types available. Deals with prepending file names.
+    for sub_type in all_subs:
+        if sub_type in event_description:
+            sub = sub_type
+    if node and node.node__parent:
+        notification_type = 'adopt_parent'
+    else:
+        notification_type = 'none'
+    for n_type in constants.NOTIFICATION_TYPES:
+        if user in getattr(subscription, n_type):
+            notification_type = n_type
+    # Event returned
+    return {
         'event': {
-            'title': subscription,
-            'description': subscriptions_available[subscription],
-            'notificationType': 'adopt_parent' if node and node.node__parent else 'none',
+            'title': event_description,
+            'description': all_subs[sub],
+            'notificationType': notification_type,
+            'parent_notification_type': get_parent_notification_type(node, sub, user)
         },
         'kind': 'event',
         'children': []
     }
-    for s in user_subscriptions:
-        if s.event_name == subscription:
-            for notification_type in constants.NOTIFICATION_TYPES:
-                if user in getattr(s, notification_type):
-                    event['event']['notificationType'] = notification_type
-
-    if node and node.parent_node and node.parent_node.has_permission(user, 'read'):
-        parent_nt = get_parent_notification_type(node._id, subscription, user)
-        event['event']['parent_notification_type'] = parent_nt if parent_nt else 'none'
-    else:
-        event['event']['parent_notification_type'] = None
-
-    return event
 
 
-def get_parent_notification_type(uid, event, user):
+def get_parent_notification_type(node, event, user):
     """
     Given an event on a node (e.g. comment on node 'xyz'), find the user's notification
     type on the parent project for the same event.
-    :param str uid: id of event owner (Node or User object)
+    :param obj node: event owner (Node or User object)
     :param str event: notification event (e.g. 'comment_replies')
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    node = Node.load(uid)
-    if node and node.node__parent:
-        for p in node.node__parent:
-            key = to_subscription_key(p._id, event)
+    if node and node.node__parent and node.parent_node.has_permission(user, 'read'):
+        for parent in node.node__parent:
+            key = to_subscription_key(parent._id, event)
             try:
                 subscription = model.NotificationSubscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
-                return get_parent_notification_type(p._id, event, user)
+                return get_parent_notification_type(parent, event, user)
 
             for notification_type in constants.NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):
                     return notification_type
             else:
-                return get_parent_notification_type(p._id, event, user)
+                return get_parent_notification_type(parent, event, user)
+    else:
+        return None
 
 
 def format_user_and_project_subscriptions(user):
@@ -254,7 +258,7 @@ def format_user_and_project_subscriptions(user):
                 'title': 'User Notifications',
             },
             'kind': 'heading',
-            'children': format_user_subscriptions(user, [])
+            'children': format_user_subscriptions(user)
         },
         {
             'node': {
