@@ -141,7 +141,7 @@
 ##        </div>
 ##    </div>
 ##</div>
-
+<% import json %>
 <hr />
 <div class="row">
     <div class="col-sm-6">
@@ -150,17 +150,17 @@
                 "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
                 "replace" : true,
-                "kwargs" : {"sortable" : true}
+                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects"}
             }'></div>
     </div>
     <div class="col-sm-6">
         <h3>Public Components</h3>
-        <div mod-meta='{
-                "tpl" : "util/render_nodes.mako",
-                "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
-                "replace" : true,
-                "kwargs" : {"sortable" : true}
-            }'></div>
+          <div mod-meta='{
+                  "tpl" : "util/render_nodes.mako",
+                  "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
+                  "replace" : true,
+                  "kwargs" : {"sortable" : true,  "user": ${json.dumps(user)}, "pluralized_node_type": "components"}
+              }'></div>
     </div>
 </div><!-- end row -->
 

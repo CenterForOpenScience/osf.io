@@ -478,7 +478,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
         return [
             node_addon.owner
             for node_addon in getattr(self, nodes_backref)
-            if not node_addon.owner.is_deleted
+            if node_addon.owner and not node_addon.owner.is_deleted
         ]
 
     def to_json(self, user):

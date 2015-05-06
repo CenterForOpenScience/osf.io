@@ -319,7 +319,7 @@ function _fangornCanDrop(treebeard, item) {
 function _fangornDragOver(treebeard, event) {
     var dropzoneHoverClass = 'fangorn-dz-hover',
         closestTarget = $(event.target).closest('.tb-row'),
-        itemID =  parseInt(closestTarget.attr('data-id')),
+        itemID = parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
     $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
@@ -398,7 +398,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  * @param message Error message returned
  * @private
  */
-var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid.';
+var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
+    'or the file folder has been deleted.';
 function _fangornDropzoneError(treebeard, file, message) {
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
@@ -464,6 +465,88 @@ function _downloadEvent (event, item, col) {
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
+function createFolder(event, parent, col) {
+    var self = this;
+    var folderName = m.prop('');
+    var errorMessage = m.prop('');
+    var creatingFolder = m.prop(false);
+
+    if (!parent.open) {
+        self.updateFolder(null, parent);
+    }
+
+    function doCreate(event) {
+        event.preventDefault();
+        if (folderName().length < 1) {
+            errorMessage('Please enter a folder name.');
+            redraw();
+            return;
+        }
+        if ($.trim(folderName()) < 1) {
+            errorMessage('Folder name cannot be empty.');
+            redraw();
+            return;
+        }
+        if (folderName().indexOf('/') !== -1) {
+            errorMessage('Folder name contains illegal characters.');
+            redraw();
+            return;
+        }
+
+        errorMessage('');
+        creatingFolder(true);
+        redraw();
+        var path = (parent.data.path || '/') + folderName() + '/';
+
+        m.request({
+            method: 'POST',
+            background: true,
+            url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+        }).then(function(item) {
+            inheritFromParent({data: item}, parent);
+
+            item = self.createItem(item, parent.id);
+            _fangornOrderFolder.call(self, parent);
+            folderName('');
+            self.modal.dismiss();
+            creatingFolder(false);
+            item.notify.update('Created!', 'success', undefined, 1000);
+        }, function(data) {
+            if (data && data.code === 409) {
+                errorMessage(data.message);
+            } else {
+                errorMessage('Folder creation failed.');
+            }
+            creatingFolder(false);
+            redraw();
+        });
+    }
+
+    function redraw() {
+        self.modal.update(m('div', [
+            m('h3.break-word', 'Enter a folder name'),
+            m('input.form-control[autofocus][type=text]', {
+                placeholder: 'Folder Name',
+                onkeyup: m.withAttr('value', folderName),
+                disabled: creatingFolder() ? 'disabled' : '',
+            })
+        ]), (function() {
+            return m('div', [
+                m('span.pull-left.text-danger', errorMessage()),
+                m('div', [
+                    m('button.btn.btn-default.btn-md', {onclick: function(){self.modal.dismiss();}}, 'Cancel'),
+                    ' ',
+                    creatingFolder() ?
+                    m('i.fa.fa-spinner.fa-spin') :
+                    m('button.btn.btn-success.btn-md', {onclick: doCreate.bind(self)}, 'Create')
+                ])
+            ]);
+        })());
+    }
+
+    redraw();
+}
+
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -503,18 +586,36 @@ function _removeEvent (event, item, col) {
         });
     }
 
-    if (item.data.permissions.edit) {
-        var mithrilContent = m('div', [
-                m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
-                m('p', 'This action is irreversible.')
-            ]);
-        var mithrilButtons = m('div', [
-                m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
-            ]);
-        tb.modal.update(mithrilContent, mithrilButtons);
+    function doDelete() {
+        if (item.data.permissions.edit) {
+
+            if (item.children.length > 0) {
+                tb.modal.update(m('div', [
+                        m('h3.break-word', '"' + item.data.name + '" must be empty to be deleted.')
+                    ]),
+                    m('button.btn.btn-default', {onclick: function(){cancelDelete.call(tb);}}, 'OK')
+                );
+                tb.modal.update(mithrilContent, mithrilButtons);
+            } else {
+                var mithrilContent = m('div', [
+                        m('h3.break-word', 'Delete "' + item.data.name+ '"?'),
+                        m('p', 'This action is irreversible.')
+                    ]);
+                var mithrilButtons = m('div', [
+                        m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+                    ]);
+                tb.modal.update(mithrilContent, mithrilButtons);
+            }
+        } else {
+            item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+        }
+    }
+
+    if (!item.open) {
+        tb.updateFolder(null, item, doDelete);
     } else {
-        item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+        doDelete();
     }
 }
 
@@ -651,6 +752,25 @@ function _fangornActionColumn (item, col) {
             css: 'fangorn-clickable btn btn-default btn-xs',
             onclick: _uploadEvent
         });
+        buttons.push({
+            name: '',
+            icon: 'fa fa-plus',
+            'tooltip' : 'New folder',
+
+            css: 'fangorn-clickable btn btn-default btn-xs',
+            onclick: createFolder
+        });
+
+        if (item.data.path) {
+            buttons.push({
+                'name' : '',
+                'tooltip' : 'Delete',
+                'icon' : 'fa fa-times',
+                'css' : 'm-l-xs text-danger fg-hover-hide',
+                'style' : 'display:none',
+                'onclick' : _removeEvent
+            });
+        }
     }
     //Download button if this is an item
     if (item.kind === 'file') {
@@ -850,6 +970,16 @@ function setCurrentFileID(tree, nodeID, file) {
                 tb.currentFileID = child.id;
             }
         }
+    } else if (file.provider === 'dataverse') {
+        // Only highlight file in correct dataset version, since paths persist across versions
+        for (var i = 0; i < tree.children.length; i++) {
+            var child = tree.children[i];
+            var urlParams = $osf.urlParams();
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path
+                && child.data.extra.datasetVersion === urlParams.version) {
+                tb.currentFileID = child.id;
+            }
+        }
     } else if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
         for (var j = 0; j < tree.children.length; j++) {
             var child = tree.children[j];
@@ -896,7 +1026,7 @@ tbOptions = {
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
     title : function() {
-        if(window.contextVars.uploadInstruction) {
+        if(window.contextVars.diskSavingMode) {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
             if (window.File && window.FileReader) {
                 return m('p', {
@@ -1043,7 +1173,8 @@ Fangorn.prototype = {
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
-    _removeEvent: _removeEvent
+    _removeEvent: _removeEvent,
+    createFolder: createFolder,
 };
 
 Fangorn.DefaultColumns = {
