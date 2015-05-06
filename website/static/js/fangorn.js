@@ -559,9 +559,9 @@ function _createFolder(event) {
     var tb = this;
     var val = $.trim(tb.select('#createFolderInput').val());
     var parent = tb.multiselected[0];
-    // if (!parent.open) {
-    //     self.updateFolder(null, parent);
-    // }
+    if (!parent.open) {
+         tb.updateFolder(null, parent);
+    }
 
     // event.preventDefault();
     if (val.length < 1) {
