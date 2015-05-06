@@ -27,6 +27,13 @@ def search(query, index=settings.ELASTIC_INDEX, doc_type=None):
 def update_node(node, index=settings.ELASTIC_INDEX):
     search_engine.update_node(node, index=index)
 
+@requires_search
+def delete_node(node, index=settings.ELASTIC_INDEX):
+    doc_type = node.project_or_component
+    if node.is_registration:
+        doc_type = 'registration'
+    search_engine.delete_doc(node._id, node, index=index, category=doc_type)
+
 
 @requires_search
 def update_user(user, index=settings.ELASTIC_INDEX):
