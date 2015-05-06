@@ -38,7 +38,7 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
-
+from website.spam_admin.utils import _project_is_spam
 logger = logging.getLogger(__name__)
 
 

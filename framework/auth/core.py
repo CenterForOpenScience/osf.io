@@ -301,6 +301,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # TODO: remove - unused
     aka = fields.StringField(list=True)
 
+    spam_admin = fields.BooleanField(default=False)
+
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,

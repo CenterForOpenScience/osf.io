@@ -225,7 +225,7 @@ class TestCommentSpamAdmin(OsfTestCase):
         assert_equal(comment.spam_status , Comment.SPAM)
         assert_true(comment.is_deleted)
 
-
+    @httpretty.activate
     def test_marked_as_ham(self):
         comment = self._add_comment(
             self.project, auth=self.project.creator.auth,
@@ -257,10 +257,11 @@ class TestCommentSpamAdmin(OsfTestCase):
             auth=self.spam_admin.auth
         )
 
-
+        print(ret)
         assert_equal(len(ret.json['comments']),3)
         assert_true(ret.json['total']>=5)
 
+    @httpretty.activate
     def test_list_spam_comments_request_is_too_big(self):
         for i in range(5):
             self._add_comment(
