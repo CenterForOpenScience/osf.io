@@ -40,7 +40,13 @@
 </footer><!-- end footer -->
 % endif
 
+%if placement == 'projectPage':
+<div class="container alternate-copyright copyright">
+% endif
+% if placement != 'projectPage':
 <div class="container copyright">
+% endif
+
     <div class="row">
         <div class="col-md-12">
             <p>Copyright &copy; 2011-2015 <a href="http://centerforopenscience.org">Center for Open Science</a> |
