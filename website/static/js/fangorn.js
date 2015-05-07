@@ -836,11 +836,9 @@ function _fangornUploadMethod(item) {
 
 
 /**
- * Defines the contents for the action column, upload and download buttons etc.
+ * Defines for each item what their available buttons should be in the toolbar
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Options for this particulat column
  * @this Treebeard.controller
- * @returns {Array} Returns an array of mithril template objects using m()
  * @private
  */
 function _fangornDefineToolbar (item) {
