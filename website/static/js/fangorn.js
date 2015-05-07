@@ -1612,14 +1612,14 @@ function _dragLogic(event, items, ui) {
 
 
 function _resizeHeight () {
-    var tb = this,
-        windowHeight = $(window).height(),
-        topBuffer = tb.select('#tb-tbody').offset().top + 50,
-        availableSpace = windowHeight - topBuffer;
+    var tb = this;
+    var tbody = tb.select('#tb-tbody');
+    var windowHeight = $(window).height();
+    var topBuffer = tbody.offset().top + 50;
+    var availableSpace = windowHeight - topBuffer;
     if(availableSpace > 0) {
-        tb.select('#tb-tbody').height(availableSpace);
+        tbody.height(availableSpace);
     }
-
 }
 
 /**
@@ -1637,7 +1637,7 @@ tbOptions = {
     hoverClassMultiselect : 'fangorn-selected',
     multiselect : true,
     title : function() {
-
+        //TODO Add disk saving mode message
         // if(window.contextVars.diskSavingMode) {
         //     // If File and FileRead are not defined dropzone is not supported and neither is uploads
         //     if (window.File && window.FileReader) {
