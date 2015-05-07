@@ -52,30 +52,73 @@ def backgroundify(func):
     return wrapped
 
 
+def adhoc_file_backend(func, was_bound=False, basepath=None):
+    basepath = basepath or settings.ADHOC_BACKEND_PATH
+
+    @functools.wraps(func)
+    def wrapped(task, *args, **kwargs):
+        if was_bound:
+            args = (task,) + args
+
+        try:
+            result = func(*args, **kwargs)
+        except Exception as e:
+            result = e
+
+        with open(os.path.join(basepath, task.request.id), 'wb') as result_file:
+            pickle.dump(result, result_file)
+
+        if isinstance(result, Exception):
+            raise result
+        return result
+    return wrapped
+
+
 def celery_task(func, *args, **kwargs):
     """A wrapper around Celery.task.
     When the wrapped method is called it will be called using
     Celery's Task.delay function and run in a background thread
     """
-    task = app.task(__coroutine_unwrapper(func), **kwargs)
+    task_func = __coroutine_unwrapper(func)
+
+    if isinstance(app.backend, DisabledBackend):
+        task_func = adhoc_file_backend(
+            task_func,
+            was_bound=kwargs.pop('bind', False)
+        )
+        kwargs['bind'] = True
+
+    task = app.task(task_func, **kwargs)
     task.adelay = backgroundify(task.delay)
 
     return task
 
 
-#TODO run entire task in background
+@backgroundify
 @asyncio.coroutine
-def wait_on_celery(result, interval=None, timeout=None):
+def wait_on_celery(result, interval=None, timeout=None, basepath=None):
     timeout = timeout or settings.WAIT_TIMEOUT
     interval = interval or settings.WAIT_INTERVAL
+    basepath = basepath or settings.ADHOC_BACKEND_PATH
 
     waited = 0
 
-    while waited < timeout:
-        if (yield from backgrounded(result.ready)):
-            return (yield from backgrounded(lambda: result.result))
-            return result.result
-        waited += interval
-        yield from asyncio.sleep(interval)
+    while True:
+        if isinstance(app.backend, DisabledBackend):
+            try:
+                with open(os.path.join(basepath, result.id), 'rb') as result_file:
+                    data = pickle.load(result_file)
+                if isinstance(data, Exception):
+                    raise data
+                return data
+            except FileNotFoundError:
+                pass
+        else:
+            if result.ready():
+                if result.failed():
+                    raise result.result
+                return result.result
 
-    raise exceptions.WaitTimeOutError
+        if waited > timeout:
+            raise exceptions.WaitTimeOutError
+        yield from asyncio.sleep(interval)
