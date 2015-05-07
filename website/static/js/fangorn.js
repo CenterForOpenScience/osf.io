@@ -1256,6 +1256,11 @@ function _fangornResetToolbar () {
  * Toolbar icon templates
  *
  */
+/**
+ * Template for the toolbar button for dismissing toolbar action rows like sarch
+ * @this Treebeard.controller
+ * @private
+ */
 function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
@@ -1266,7 +1271,13 @@ function toolbarDismissIcon (){
         m('i.fa.fa-times')
     );
 }
- function searchIcon (){
+
+/**
+ * Template for the toolbar button for bringing up the search bar
+ * @this Treebeard.controller
+ * @private
+ */
+function searchIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', {
             'data-toggle' : 'tooltip',
@@ -1282,8 +1293,14 @@ function toolbarDismissIcon (){
         m('i.fa.fa-search'),
         m('span.hidden-xs', 'Search')
     ]);
- }
-  function infoIcon (){
+}
+
+/**
+ * Template for the toolbar button for displaying help information modal
+ * @this Treebeard.controller
+ * @private
+ */
+function infoIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-info', {
             'data-toggle' : 'tooltip',
@@ -1305,8 +1322,14 @@ function toolbarDismissIcon (){
         }, [
         m('i.fa.fa-info')
     ]);
- }
- function cancelUploadsIcon (){
+}
+
+/**
+ * Template for the toolbar button for canceling multiple uploads at once
+ * @this Treebeard.controller
+ * @private
+ */
+function cancelUploadsIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-warning', {
             'data-toggle' : 'tooltip',
@@ -1318,8 +1341,14 @@ function toolbarDismissIcon (){
         m('i.fa.fa-times-circle'),
         m('span.hidden-xs', 'Cancel All Uploads')
     ]);
- }
- function deleteMultipleIcon (){
+}
+
+/**
+ * Template for the toolbar button for deleting multiple items
+ * @this Treebeard.controller
+ * @private
+ */
+function deleteMultipleIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon.text-danger', {
             'data-toggle' : 'tooltip',
@@ -1334,9 +1363,14 @@ function toolbarDismissIcon (){
         m('i.fa.fa-trash'),
         m('span.hidden-xs', 'Delete Selected')
     ]);
- }
+}
 
- function renameButton (){
+/**
+ * Template for the toolbar button for executing Rename
+ * @this Treebeard.controller
+ * @private
+ */
+function renameButton (){
     var tb = this;
     return m('#renameButton.fangorn-toolbar-icon.text-info', {
             'data-toggle' : 'tooltip',
@@ -1349,9 +1383,14 @@ function toolbarDismissIcon (){
         m('i.fa.fa-pencil'),
         m('span.hidden-xs', 'Rename')
     ]);
- }
+}
 
- function createFolderButton (){
+/**
+ * Template for the toolbar button for executing folder creation
+ * @this Treebeard.controller
+ * @private
+ */
+function createFolderButton (){
     var tb = this;
     return m('#createFolderButton.fangorn-toolbar-icon.text-success', {
             onclick : function (event) {
@@ -1361,26 +1400,17 @@ function toolbarDismissIcon (){
         m('i.fa.fa-plus'),
         m('span.hidden-xs', 'Create')
     ]);
- }
-
- function _renameEvent () {
-    var tb = this;
-    // var val = $.trim($('#renameInput').val());
-    // if(tb.multiselected.length !== 1 || val.length < 1){
-    //     tb.options.iconState.mode = 'bar';
-    //     return;
-    // }
-    // var item = tb.multiselected[0];
-    // var theItem = item.data;
-    // //var url = needs url here
-    // postAction = $osf.postJSON(url, postData);
-    // postAction.done(function () {
-    //     tb.updateFolder(null, tb.find(1));
-    //     // Also update every
-    // }).fail($osf.handleJSONError);
-    // tb.options.iconState.mode = 'bar';
 }
 
+/**
+ * Template for the function to rename items in Files
+ * @this Treebeard.controller
+ * @private
+ */
+function _renameEvent () {
+    var tb = this;
+    // placeholder for upcoming feature.
+}
 
 /**
  * When multiple rows are selected remove those that are not in the parent
@@ -1446,7 +1476,7 @@ function filterRowsNotInParent(rows) {
     reapplyTooltips();
 }
 
-/* MOVE */
+/* BEGIN MOVE */
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
 var copyMode = null;
