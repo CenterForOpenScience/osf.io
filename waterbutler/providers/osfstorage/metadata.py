@@ -6,7 +6,11 @@ class BaseOsfStorageMetadata:
         return 'osfstorage'
 
 
-class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
+class BaseOsfStorageItemMetadata(BaseOsfStorageMetadata):
+
+    def __init__(self, raw, materialized):
+        super().__init__(raw)
+        self._materialized = materialized
 
     @property
     def name(self):
@@ -17,16 +21,19 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
         return self.raw['path']
 
     @property
+    def materialized_path(self):
+        return self._materialized
+
+
+class OsfStorageFileMetadata(BaseOsfStorageItemMetadata, metadata.BaseFileMetadata):
+
+    @property
     def modified(self):
         return self.raw.get('modified')
 
     @property
     def size(self):
         return self.raw.get('size')
-
-    @property
-    def full_path(self):
-        return self.raw.get('fullPath')
 
     @property
     def content_type(self):
@@ -42,15 +49,8 @@ class OsfStorageFileMetadata(BaseOsfStorageMetadata, metadata.BaseFileMetadata):
         }
 
 
-class OsfStorageFolderMetadata(BaseOsfStorageMetadata, metadata.BaseFolderMetadata):
-
-    @property
-    def name(self):
-        return self.raw['name']
-
-    @property
-    def path(self):
-        return self.raw['path']
+class OsfStorageFolderMetadata(BaseOsfStorageItemMetadata, metadata.BaseFolderMetadata):
+    pass
 
 
 class OsfStorageRevisionMetadata(BaseOsfStorageMetadata, metadata.BaseFileRevisionMetadata):

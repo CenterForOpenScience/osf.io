@@ -130,9 +130,9 @@ class OSFStorageProvider(provider.BaseProvider):
         data = yield from resp.json()
 
         if data['kind'] == 'file':
-            return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+            return OsfStorageFileMetadata(data, str(dest_path)).serialized(), resp.status == 201
 
-        return OsfStorageFolderMetadata(data).serialized(), resp.status == 201
+        return OsfStorageFolderMetadata(data, str(dest_path)).serialized(), resp.status == 201
 
     def intra_copy(self, dest_provider, src_path, dest_path):
         resp = yield from self.make_signed_request(
@@ -274,7 +274,7 @@ class OSFStorageProvider(provider.BaseProvider):
             'downloads': data['downloads']
         })
 
-        return OsfStorageFileMetadata(metadata).serialized(), created
+        return OsfStorageFileMetadata(metadata, str(path)).serialized(), created
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -301,7 +301,7 @@ class OSFStorageProvider(provider.BaseProvider):
     def revisions(self, path, **kwargs):
         resp = yield from self.make_signed_request(
             'GET',
-            self.build_url(path.parent.identifier, 'revisions'),
+            self.build_url(path.identifier, 'revisions'),
             expects=(200, )
         )
 
@@ -336,7 +336,7 @@ class OSFStorageProvider(provider.BaseProvider):
             expects=(200, )
         )
 
-        return OsfStorageFileMetadata((yield from resp.json())).serialized()
+        return OsfStorageFileMetadata((yield from resp.json()), str(path)).serialized()
 
     @asyncio.coroutine
     def _children_metadata(self, path):
@@ -350,9 +350,9 @@ class OSFStorageProvider(provider.BaseProvider):
         ret = []
         for item in resp_json:
             if item['kind'] == 'folder':
-                ret.append(OsfStorageFolderMetadata(item).serialized())
+                ret.append(OsfStorageFolderMetadata(item, str(path.child(item['name']))).serialized())
             else:
-                ret.append(OsfStorageFileMetadata(item).serialized())
+                ret.append(OsfStorageFileMetadata(item, str(path.child(item['name']))).serialized())
         return ret
 
     def _create_paths(self):
