@@ -229,7 +229,7 @@ def node_registration_embargo_approve(auth, token, **kwargs):
             'message_long': e.message_long
         })
     except PermissionsError as e:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'Unauthorized access',
             'message_long': e.message
         })
