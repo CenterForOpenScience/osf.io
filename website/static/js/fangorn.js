@@ -1670,9 +1670,6 @@ tbOptions = {
     onload : function () {
         var tb = this;
         _loadTopLevelChildren.call(tb);
-        $(document).on('click', '.fangorn-dismiss', function() {
-            tb.redraw();
-        });
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
                 return;
