@@ -146,7 +146,7 @@ var RevisionsViewModel = function(node, file, editable) {
     self.change = ko.computed(function () {
         var notification_type = self.curSubscription();
         console.log(load);
-        if(load !== 0) {
+        if (load !== 0) {
             load = 0;
             return null;
         }
@@ -161,11 +161,15 @@ var RevisionsViewModel = function(node, file, editable) {
         $osf.postJSON(
             '/api/v1/subscriptions/',
             payload
-        ).done(function(){
-            console.log("success");
-        }).fail(function() {
-            console.log("failure");
-        });
+        ).done(function () {
+                console.log("success");
+            }).fail(function () {
+                console.log("failure");
+            });
+    });
+
+    self.hasDate = ko.computed(function() {
+        return self.file.provider !== 'dataverse';
     });
 };
 
