@@ -146,8 +146,11 @@ class ListFilterMixin(FilterMixin):
 
     def get_queryset_from_request(self):
         default_queryset = self.get_default_queryset()
-        param_queryset = self.param_queryset(self.request.QUERY_PARAMS, default_queryset)
-        return param_queryset or default_queryset
+        if self.request.QUERY_PARAMS:
+            param_queryset = self.param_queryset(self.request.QUERY_PARAMS, default_queryset)
+            return param_queryset
+        else:
+            return default_queryset
 
     def param_queryset(self, query_params, default_queryset):
         """filters default queryset based on query parameters"""
