@@ -878,9 +878,12 @@ function _cleanupMithril() {
 function _toolbarDismissEvent() {
     var tb = this;
     $('.tb-header-row .twitter-typeahead').remove();
-    tb.options.iconState.mode = 'bar';
-    tb.resetFilter();
-    tb.filterText('');
+    if (tb.options.poIconState.mode === 'search') {
+        tb.options.poIconState = _defaultIconState();
+        tb.resetFilter();
+        tb.filterText('');
+    }
+    tb.options.poIconState.mode = 'bar';
     m.redraw();
 }
 
