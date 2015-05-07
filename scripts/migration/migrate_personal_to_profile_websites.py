@@ -29,32 +29,16 @@ def main():
         scripts_utils.add_file_logger(logger, __file__)
     logger.info("migrating personal to profileWebsites")
             
-    for user in get_users_with_personal_websites():   
-#        print "user.social['personal'] is", user.social['personal']
-#        try:
-#            print "before migrate, user.social['personal'] is", user.social['personal']
-#        except KeyError:
-#            print "before migrate, user.social['personal'] is busted"
-#        try:
-#            print "before migrate, user.social.get('profileWebsites') is", user.social.get("profileWebsites")
-#        except KeyError:
-#            print "before migrate, user.social.get('profileWebsites') is busted"
+    for user in get_users_with_personal_websites():
+        logger.info(repr(user))
+        logger.info(repr(user.social))
         if not user.social.get('profileWebsites'):
             user.social['profileWebsites'] = [u'']
-            if user.social['personal']:
+            if user.social.get('personal'):
                 migrate_personal_to_profile_websites(user)
-#        try:
-#            print "after migrate, user.social['personal'] is", user.social['personal']
-#        except KeyError:
-#            print "after migrate, user.social['personal'] is busted"
-#        try:
-#            print "after migrate, user.social.get('profileWebsites') is", user.social.get("profileWebsites")
-#        except KeyError:
-#            print "after migrate, user.social.get('profileWebsites') is busted"
-#        remove_unconfirmed_emails(user)
-#        logger.info(repr(user))
-#        if not dry_run:
-#            user.save()
+        logger.info(repr(user.social))
+        if not dry_run:
+            user.save()
 
 
 def get_users_with_personal_websites():
@@ -64,7 +48,7 @@ def get_users_with_personal_websites():
 
 
 def migrate_personal_to_profile_websites(user):
-    user.social['profileWebsites'][0] = user.social['personal']
+    user.social['profileWebsites'][0] = user.social.get('personal')
 
 if __name__ == '__main__':
     main()
