@@ -44,6 +44,16 @@ var projectOrganizerCategories = $.extend({}, {
     link:  'Link'
 }, nodeCategories);
 
+var _defaultIconState = function () {
+    return {
+        mode : 'bar',
+        generalIcons : {
+            search : { on : true, template : searchButton },
+            info : { on : true, template : infoIcon }
+        },
+        rowIcons : [{}]
+    };
+};
 
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
@@ -1514,14 +1524,7 @@ var tbOptions = {
     },
     headerTemplate : _poToolbar,
     // Not treebeard options, specific to Fangorn
-    iconState : {
-        mode : 'bar',
-        generalIcons : {
-            search : { on : true, template : searchButton },
-            info : { on : true, template : infoIcon }
-        },
-        rowIcons : [{}]
-    },
+    poIconState : _defaultIconState(),
     defineToolbar : _poDefineToolbar,
     onselectrow : function (row) {
         console.log(row);
