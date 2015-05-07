@@ -133,7 +133,6 @@ class WaterbutlerLink(Link):
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
-
         return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
 
 
