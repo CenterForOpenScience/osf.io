@@ -25,6 +25,7 @@ function ViewModel(url) {
     $.ajax({
         url: url, type: 'GET', dataType: 'json',
         success: function(response) {
+            console.log(response)
             var data = response.result;
             self.userHasAuth(data.userHasAuth);
             self.boxName(data.boxName);

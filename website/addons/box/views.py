@@ -133,7 +133,7 @@ def box_folder_list(node_addon, **kwargs):
         }]
 
     try:
-        client = BoxClient(node_addon.user_addon.external_accounts[0].oauth_key)  # get_node_client(node)
+        client = BoxClient(node_addon.user_settings.external_accounts[0].oauth_key)  # get_node_client(node)
     except BoxClientException:
         raise HTTPError(http.FORBIDDEN)
 

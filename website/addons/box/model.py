@@ -50,42 +50,42 @@ class Box(ExternalProvider):
     callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     default_scopes = ['root_readwrite']
 
-    @must_be_logged_in
-    def box_oauth_start(self, auth, **kwargs):
-        user = auth.user
-        # Store the node ID on the session in order to get the correct redirect URL
-        # upon finishing the flow
-        nid = kwargs.get('nid') or kwargs.get('pid')
+#    @must_be_logged_in
+#    def box_oauth_start(self, auth, **kwargs):
+#        user = auth.user
+#        # Store the node ID on the session in order to get the correct redirect URL
+#        # upon finishing the flow
+#        nid = kwargs.get('nid') or kwargs.get('pid')
+#
+#        node = Node.load(nid)
+#
+#        if node and not node.is_contributor(user):
+#            raise HTTPError(http.FORBIDDEN)
+#
+#        csrf_token = security.random_string(10)
+#        session.data['box_oauth_state'] = csrf_token
+#
+#        if nid:
+#            session.data['box_auth_nid'] = nid
+#
+#        # If user has already authorized box, flash error message
+#        if user.has_addon('box') and user.get_addon('box').has_auth:
+#            flash('You have already authorized Box for this account', 'warning')
+#            return redirect(web_url_for('user_addons'))
+#
+#        return redirect(self.get_auth_flow(csrf_token))
 
-        node = Node.load(nid)
-
-        if node and not node.is_contributor(user):
-            raise HTTPError(http.FORBIDDEN)
-
-        csrf_token = security.random_string(10)
-        session.data['box_oauth_state'] = csrf_token
-
-        if nid:
-            session.data['box_auth_nid'] = nid
-
-        # If user has already authorized box, flash error message
-        if user.has_addon('box') and user.get_addon('box').has_auth:
-            flash('You have already authorized Box for this account', 'warning')
-            return redirect(web_url_for('user_addons'))
-
-        return redirect(self.get_auth_flow(csrf_token))
-
-    def get_auth_flow(self, csrf_token):
-        url = furl.furl(settings.BOX_OAUTH_AUTH_ENDPOINT)
-
-        url.args = {
-            'state': csrf_token,
-            'response_type': 'code',
-            'client_id': self.client_id,
-            'redirect_uri': api_url_for('box_oauth_finish', _absolute=True),
-        }
-
-        return url.url
+#    def get_auth_flow(self, csrf_token):
+#        url = furl.furl(settings.BOX_OAUTH_AUTH_ENDPOINT)
+#
+#        url.args = {
+#            'state': csrf_token,
+#            'response_type': 'code',
+#            'client_id': self.client_id,
+#            'redirect_uri': api_url_for('box_oauth_finish', _absolute=True),
+#        }
+#
+#        return url.url
 
     @must_be_logged_in
     def handle_callback(self, *args, **kwargs):
@@ -104,7 +104,6 @@ class Box(ExternalProvider):
             return redirect(web_url_for('user_addons'))
 
         result = self.finish_auth()
-
         # If result is a redirect response, follow the redirect
         if isinstance(result, BaseResponse):
             return result
@@ -294,7 +293,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
 
         if not self._folder_data:
             try:
-                client = self.user_settings.oauth_settings.get_client  # get_client_from_user_settings(self.user_settings)
+                client = BoxClient(self.user_settings.external_accounts[0].oauth_key)
                 self._folder_data = client.get_folder(self.folder_id)
             except BoxClientException:
                 return
@@ -350,7 +349,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
         try:
-            return {'token': self.user_settings.fetch_access_token()}
+            return {'token': self.user_settings.external_accounts[0].oauth_key}
         except BoxClientException as error:
             return HTTPError(error.status_code)
 
@@ -472,7 +471,6 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
 
         if self.user_settings and self.user_settings.owner == removed:
 
-            # Delete OAuth tokens
             self.user_settings = None
             self.save()
             message = (
