@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import httplib as http
 import urlparse
 
 import pymongo
@@ -7,12 +8,16 @@ from modularodm import fields
 
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
+from framework.exceptions import HTTPError
+from framework.exceptions import PermissionsError
+
 from website.addons.base import (
     AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile, exceptions,
 )
 from website.addons.dataverse.client import connect_from_settings_or_401
-from website.addons.dataverse.settings import HOST, DEFAULT_HOSTS
 from website.addons.dataverse import serializer
+
+from website.oauth.models import ExternalAccount
 
 
 class DataverseProvider(object):
@@ -20,9 +25,8 @@ class DataverseProvider(object):
 
     name = 'Dataverse'
     short_name = 'dataverse'
-
-    # List of possible Dataverse installations
-    default_hosts = DEFAULT_HOSTS
+    provider_name = 'dataverse'
+    serializer = serializer.DataverseSerializer
 
     def __init__(self):
         super(DataverseProvider, self).__init__()
@@ -35,6 +39,34 @@ class DataverseProvider(object):
             name=self.__class__.__name__,
             status=self.account.provider_id if self.account else 'anonymous'
         )
+
+    def add_user_auth(self, node_addon, user, external_account_id):
+
+        external_account = ExternalAccount.load(external_account_id)
+
+        if external_account not in user.external_accounts:
+            raise HTTPError(http.FORBIDDEN)
+
+        try:
+            node_addon.set_auth(external_account, user)
+        except PermissionsError:
+            raise HTTPError(http.FORBIDDEN)
+
+        result = self.serializer(
+            node_settings=node_addon,
+            user_settings=user.get_addon(self.provider_name),
+        ).serialized_node_settings
+        return {'result': result}
+
+    def remove_user_auth(self, node_addon, user):
+
+        node_addon.clear_auth()
+        node_addon.reload()
+        result = self.serializer(
+            node_settings=node_addon,
+            user_settings=user.get_addon(self.provider_name),
+        ).serialized_node_settings
+        return {'result': result}
 
 
 class DataverseFile(GuidFile):
@@ -91,6 +123,8 @@ class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
     dataverse_username = fields.StringField()
     encrypted_password = fields.StringField()
 
+    # TODO: Verify auth?
+
 
 class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
 
@@ -130,30 +164,9 @@ class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
     def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
 
-    @property
-    def has_auth(self):
-        """Whether a dataverse account is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
-
     def find_or_create_file_guid(self, path):
         file_id = path.strip('/') if path else ''
         return DataverseFile.get_or_create(node=self.owner, file_id=file_id)
-
-    def delete(self, save=True):
-        self.deauthorize(add_log=False)
-        super(AddonDataverseNodeSettings, self).delete(save)
-
-    def set_user_auth(self, user_settings):
-        node = self.owner
-        self.user_settings = user_settings
-        node.add_log(
-            action='dataverse_node_authorized',
-            auth=Auth(user_settings.owner),
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-            }
-        )
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
@@ -178,11 +191,11 @@ class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.api_token}
+        return {'token': self.external_account.oauth_secret}
 
     def serialize_waterbutler_settings(self):
         return {
-            'host': HOST,
+            'host': self.external_account.oauth_key,
             'doi': self.dataset_doi,
             'id': self.dataset_id,
             'name': self.dataset,

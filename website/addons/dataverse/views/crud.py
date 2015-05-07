@@ -31,12 +31,11 @@ def dataverse_publish_both(node_addon, auth, **kwargs):
 
 def dataverse_publish(node_addon, auth, publish_both=False):
     node = node_addon.owner
-    user_settings = node_addon.user_settings
 
     now = datetime.datetime.utcnow()
 
     try:
-        connection = connect_from_settings_or_401(user_settings)
+        connection = connect_from_settings_or_401(node_addon)
     except HTTPError as error:
         if error.code == httplib.UNAUTHORIZED:
             connection = None

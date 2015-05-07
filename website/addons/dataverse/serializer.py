@@ -1,4 +1,6 @@
 from website.addons.base.serializer import OAuthAddonSerializer
+from website.addons.dataverse import client
+from website.addons.dataverse.settings import DEFAULT_HOSTS
 from website.util import api_url_for, web_url_for
 
 
@@ -6,12 +8,13 @@ class DataverseSerializer(OAuthAddonSerializer):
 
     REQUIRED_URLS = []
 
-    # Note: This information is already stored, but not serialized clearly
+    # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
         ret = super(DataverseSerializer, self).serialize_account(external_account)
+        host = external_account.oauth_key
         ret.update({
-            'host': external_account.display_name,
-            'host_url': 'https://{0}'.format(external_account.display_name),
+            'host': host,
+            'host_url': 'https://{0}'.format(host),
         })
 
         return ret
@@ -37,10 +40,7 @@ class DataverseSerializer(OAuthAddonSerializer):
     def serialized_urls(self):
         external_account = self.node_settings.external_account
         ret = {
-            'auth': api_url_for('oauth_connect',
-                                service_name=self.node_settings.provider_name),
-            'settings': web_url_for('user_addons'),
-            'files': self.node_settings.owner.url,
+            'settings': web_url_for('user_addons'),  # TODO: Is this needed?
         }
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
@@ -54,13 +54,51 @@ class DataverseSerializer(OAuthAddonSerializer):
 
     @property
     def addon_serialized_urls(self):
-        # node = self.node_settings.owner
-        #
-        # return {
-        #     'importAuth': node.api_url_for('dataverse_add_user_auth'),
-        #     'config': node.api_url_for('dataverse_set_config'),
-        #     'deauthorize': node.api_url_for('dataverse_remove_user_auth'),
-        #     'accounts': node.api_url_for('dataverse_get_user_accounts'),
-        # }
+        node = self.node_settings.owner
+        external_account = self.node_settings.external_account
+        host = external_account.oauth_key if external_account else ''
 
-        return {}
+        return {
+            'create': api_url_for('dataverse_add_external_account'),
+            'set': node.api_url_for('set_dataverse_and_dataset'),
+            'importAuth': node.api_url_for('dataverse_import_user_auth'),
+            'deauthorize': node.api_url_for('deauthorize_dataverse'),
+            'getDatasets': node.api_url_for('dataverse_get_datasets'),
+            'datasetPrefix': 'http://dx.doi.org/',
+            'dataversePrefix': 'http://{0}/dataverse/'.format(host),
+            'apiToken': 'https://{0}/account/apitoken'.format(host),  # TODO: Duplicated in JS
+            'settings': web_url_for('user_addons'),
+            'accounts': api_url_for('dataverse_get_user_accounts'),
+        }
+
+    @property
+    def serialized_node_settings(self):
+        result = super(DataverseSerializer, self).serialized_node_settings
+        result['hosts'] = DEFAULT_HOSTS
+
+        # Update with Dataverse specific fields
+        if self.node_settings.has_auth:
+            external_account = self.node_settings.external_account
+            dataverse_host = external_account.oauth_key
+            api_token = external_account.oauth_secret
+
+            connection = client._connect(dataverse_host, api_token)
+            dataverses = client.get_dataverses(connection)
+            result.update({
+                'dataverseHost': dataverse_host,
+                'connected': connection is not None,
+                'dataverses': [
+                    {'title': dataverse.title, 'alias': dataverse.alias}
+                    for dataverse in dataverses
+                ],
+                'savedDataverse': {
+                    'title': self.node_settings.dataverse,
+                    'alias': self.node_settings.dataverse_alias,
+                },
+                'savedDataset': {
+                    'title': self.node_settings.dataset,
+                    'doi': self.node_settings.dataset_doi,
+                }
+            })
+
+        return result

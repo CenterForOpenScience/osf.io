@@ -4,38 +4,37 @@ from dataverse import Connection
 from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
 
 from framework.exceptions import HTTPError
-from website.addons.dataverse import settings
 
 
-def _connect(token, host=settings.HOST):
+def _connect(host, token):
     try:
         return Connection(host, token)
     except ConnectionError:
         return None
 
 
-def connect_from_settings(user_settings):
+def connect_from_settings(node_settings):
+    host = node_settings.external_account.oauth_key
+    token = node_settings.external_account.oauth_secret
+
     try:
-        return _connect(
-            user_settings.api_token,
-            # user_settings.host,
-        ) if user_settings else None
+        return _connect(host, token) if node_settings else None
     except UnauthorizedError:
         return None
 
 
-def connect_or_401(token, host):
+def connect_or_401(host, token):
     try:
-        return _connect(token, host)
+        return _connect(host, token)
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
 
 
-def connect_from_settings_or_401(user_settings):
-    return connect_or_401(
-        user_settings.api_token,
-        # user_settings.host,
-    ) if user_settings else None
+def connect_from_settings_or_401(node_settings):
+    host = node_settings.external_account.oauth_key
+    token = node_settings.external_account.oauth_secret
+
+    return connect_or_401(host, token) if node_settings else None
 
 
 def get_files(dataset, published=False):

@@ -15,7 +15,7 @@
 
                             <!-- Select Dataverse installation -->
                             <div class="form-group">
-                                <label for="hostSelect">Dataverse Host</label>
+                                <label for="hostSelect">Dataverse Repository</label>
                                 <select class="form-control"
                                         id="hostSelect"
                                         data-bind="options: visibleHosts,
@@ -62,7 +62,7 @@
 
                     <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
 
-                    <!-- Submit Button; TODO -->
+                    <!-- Submit Button -->
                     <button data-bind="click: sendAuth" class="btn btn-success">
                         Submit
                     </button>

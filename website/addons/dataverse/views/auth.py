@@ -1,8 +1,8 @@
 import httplib as http
 
 from framework.auth.decorators import must_be_logged_in
-from website.addons.dataverse.client import connect_from_settings
-from website.addons.dataverse.settings import HOST, DEFAULT_HOSTS
+from website.addons.dataverse.model import DataverseProvider
+from website.addons.dataverse.settings import DEFAULT_HOSTS
 from website.project import decorators
 from website.util import api_url_for
 
@@ -10,13 +10,10 @@ from website.util import api_url_for
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
 @decorators.must_not_be_registration
-def deauthorize_dataverse(*args, **kwargs):
+def deauthorize_dataverse(auth, node_addon, **kwargs):
 
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
-
-    node_settings.deauthorize(auth)
-    node_settings.save()
+    provider = DataverseProvider()
+    provider.remove_user_auth(node_addon, auth.user)
 
     return {}
 
