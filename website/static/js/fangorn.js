@@ -100,7 +100,7 @@ function cancelUploads (row) {
             }
         }
     }
-    tb.options.iconState.generalIcons.cancelUploads.on = false;
+    tb.options.fgIconState.generalIcons.cancelUploads.on = false;
 }
 
 var cancelUploadTemplate = function(row){
@@ -573,7 +573,7 @@ function _createFolder(event) {
         item = tb.createItem(item, parent.id);
         _fangornOrderFolder.call(tb, parent);
         item.notify.update('New folder created!', 'success', undefined, 1000);
-        tb.options.iconState.mode = 'bar';
+        tb.options.fgIconState.mode = 'bar';
         tb.select('#createFolderError').text('').hide();
     }, function(data) {
         if (data && data.code === 409) {
@@ -868,7 +868,7 @@ function _fangornDefineToolbar (item) {
                     'title':  'Create a new folder inside curently selected folder.',
                     'data-placement' : 'bottom',
                         onclick : function(event) {
-                            tb.options.iconState.mode = 'createFolder';
+                            tb.options.fgIconState.mode = 'createFolder';
                             m.redraw(true);
                         }
                     },[
@@ -926,7 +926,7 @@ function _fangornDefineToolbar (item) {
     //                 'title':  'Change the name of the Collection or project',
     //                 'data-placement' : 'bottom',
     //                 onclick : function(event) {
-    //                     tb.options.iconState.mode = 'rename';
+    //                     tb.options.fgIconState.mode = 'rename';
     //                 }
     //             }, [
     //             m('i.fa.fa-font'),
@@ -1159,13 +1159,13 @@ function _fangornToolbar () {
         if(tb.multiselected.length > 1) {
             return '';
         }
-        return tb.options.iconState.rowIcons.map(function(icon){
+        return tb.options.fgIconState.rowIcons.map(function(icon){
             if(icon.template){
                 return icon.template.call(tb);
             }
         });
     }
-    var generalIcons = tb.options.iconState.generalIcons;
+    var generalIcons = tb.options.fgIconState.generalIcons;
     if (generalIcons.deleteMultiple.on) {
         generalButtons.push(generalIcons.deleteMultiple.template.call(tb));
     }
@@ -1179,7 +1179,7 @@ function _fangornToolbar () {
     if(tb.multiselected.length > 0){
         rowMessage = '';
     }
-    if (tb.options.iconState.mode === 'bar'){
+    if (tb.options.fgIconState.mode === 'bar'){
         return m('.row.tb-header-row', { 'data-mode' : 'bar'}, [
                 m('.col-xs-12', [
                         rowMessage,
@@ -1192,7 +1192,7 @@ function _fangornToolbar () {
                     ])
             ]);
     }
-    if(tb.options.iconState.mode === 'search'){
+    if(tb.options.fgIconState.mode === 'search'){
         return m('.row.tb-header-row', { 'data-mode' : 'search'},  [
             m('#searchRow', { config : function () { $('#searchRow input').focus(); }}, [
                         m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
@@ -1204,7 +1204,7 @@ function _fangornToolbar () {
                     ])
             ]);
     }
-    if(tb.options.iconState.mode === 'rename'){
+    if(tb.options.fgIconState.mode === 'rename'){
         return m('.row.tb-header-row', [
             m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
                         m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
@@ -1219,7 +1219,7 @@ function _fangornToolbar () {
                     ])
             ]);
     }
-    if(tb.options.iconState.mode === 'createFolder'){
+    if(tb.options.fgIconState.mode === 'createFolder'){
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1244,10 +1244,10 @@ function _fangornToolbar () {
 
 function _fangornResetToolbar () {
     var tb = this;
-    if (tb.options.iconState.mode === 'search') {
-        tb.options.iconState = _defaultIconState();
+    if (tb.options.fgIconState.mode === 'search') {
+        tb.options.fgIconState = _defaultIconState();
     }
-    tb.options.iconState.mode = 'bar';
+    tb.options.fgIconState.mode = 'bar';
     tb.resetFilter();
     m.redraw();
 }
@@ -1284,7 +1284,7 @@ function searchIcon (){
             'title':  'Switch to search view.',
             'data-placement' : 'bottom',
             onclick : function () {
-                tb.options.iconState.mode = 'search';
+                tb.options.fgIconState.mode = 'search';
                 tb.filterText('');
                 m.redraw(true);
                 tb.clearMultiselect();
@@ -1457,15 +1457,15 @@ function filterRowsNotInParent(rows) {
 
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
-        tb.options.iconState.rowIcons = row.icons;
+        tb.options.fgIconState.rowIcons = row.icons;
         // temporarily remove classes until mithril redraws raws with another hover.
         // $('.tb-row').removeClass('fangorn-selected');
         // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
         tb.select('#tb-tbody').removeClass('unselectable');
-        tb.options.iconState.generalIcons.deleteMultiple.on = false;
+        tb.options.fgIconState.generalIcons.deleteMultiple.on = false;
     } else if (tb.multiselected.length > 1) {
         if(tb.multiselected[0].data.provider !== 'github') {
-            tb.options.iconState.generalIcons.deleteMultiple.on = true;
+            tb.options.fgIconState.generalIcons.deleteMultiple.on = true;
         }
             tb.select('#tb-tbody').addClass('unselectable');
     }
@@ -1778,7 +1778,7 @@ tbOptions = {
     },
     headerTemplate : _fangornToolbar,
     // Not treebeard options, specific to Fangorn
-    iconState : _defaultIconState(),
+    fgIconState : _defaultIconState(),
     defineToolbar : _fangornDefineToolbar,
     onselectrow : function(row) {
         console.log(row);
