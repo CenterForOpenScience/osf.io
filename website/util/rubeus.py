@@ -318,7 +318,7 @@ class NodeProjectCollector(object):
 
         if node.is_dashboard:
             to_expand = True
-        elif not is_pointer:
+        elif not is_pointer or parent_is_folder:
             to_expand = expanded
         else:
             to_expand = False
