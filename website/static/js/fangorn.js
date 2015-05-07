@@ -1244,9 +1244,10 @@ function _fangornResetToolbar () {
     var tb = this;
     if (tb.options.fgIconState.mode === 'search') {
         tb.options.fgIconState = _defaultIconState();
+        tb.resetFilter();
+
     }
     tb.options.fgIconState.mode = 'bar';
-    tb.filterText('');
     m.redraw();
 }
 
