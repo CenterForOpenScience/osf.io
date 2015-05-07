@@ -67,7 +67,7 @@
                 <label style="margin-top: 7px; margin-right: 2px">Subscription:</label>
                 <select class="form-control" style="width: 140px; float: right;" data-bind="
                     options: $root.subList,
-                    value: subscription,
+                    value: curSubscription,
                     optionsText: 'text'">
                 </select>
             </div>

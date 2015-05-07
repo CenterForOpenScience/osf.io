@@ -123,33 +123,50 @@ var RevisionsViewModel = function(node, file, editable) {
     });
 
     var notificationsURL = self.node.urls.api + 'file_subscriptions/';
-    //console.log(self);
-    //console.log(notificationsURL);
-    // http://localhost:5000/project/hk6ub/node/i5kvm/files/osfstorage/55427630a24f713f036922ee/
-    //console.log(window.contextVars);
-    //console.log(self.urls);
-    //console.log(self.file);
     var payload = {
         node_id: self.node.id,
         path: self.file.path
     };
-
+    var load = 2;
     self.subscription = ko.observable();
+    self.curSubscription = ko.observable();
 
-    var subscription = $.ajax({
-            url: notificationsURL,
-            type: 'GET',
-            dataType: 'json',
-            data: payload
-        }).done(function (response) {
-            response = JSON.parse(response);
-            self.subscription(self.getSub(response.event.notificationType));
-        }).fail(function (xhr, status, error) {
-            console.log(error);
+    $.ajax({
+        url: notificationsURL,
+        type: 'GET',
+        dataType: 'json',
+        data: payload
+    }).done(function (response) {
+        self.curSubscription(self.getSub(response.event.notificationType));
+        load = 0;
+    }).fail(function (xhr, status, error) {
+        console.log(error);
+    });
+
+    self.change = ko.computed(function () {
+        var notification_type = self.curSubscription();
+        console.log(load);
+        if(load !== 0) {
+            load = 0;
+            return null;
+        }
+        self.subscription(notification_type.value);
+        var id = self.node.id;
+        var event = self.file.path + "_file_updated";
+        var payload = {
+            'id': id,
+            'event': event,
+            'notification_type': notification_type.value
+        };
+        $osf.postJSON(
+            '/api/v1/subscriptions/',
+            payload
+        ).done(function(){
+            console.log("success");
+        }).fail(function() {
+            console.log("failure");
         });
-
-    //self.subscription = ko.observable(self.getSub(subscription.event.notificationType))
-
+    });
 };
 
 RevisionsViewModel.prototype.fetch = function() {
