@@ -599,16 +599,14 @@ function OBUploaderViewModel(params) {
             return false;
         }
         else {
-            $osf.postJSON(
+            var request = $osf.postJSON(
                 CREATE_URL,
                 {
                     title: self.newProjectName()
                 }
-            ).done(
-                self.createSuccess
-            ).fail(
-                self.createFailure
             );
+            request.done(self.createSuccess);
+            request.fail(self.createFailure);
         }
 
     };
@@ -620,8 +618,12 @@ function OBUploaderViewModel(params) {
             window.location = response.projectUrl;
     };
 
-    self.createFailure = function () {
-        $osf.growl('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+    self.createFailure = function (xhr, textStatus, error) {
+         Raven.captureMessage('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>',
+             {
+            textStatus: textStatus,
+            error: error
+         })
     };
 }
 ko.components.register('osf-ob-uploader', {

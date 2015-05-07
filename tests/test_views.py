@@ -3854,7 +3854,7 @@ class TestProjectCreation(OsfTestCase):
         }
         res = self.app.post_json(self.url, payload, auth=self.creator.auth)
         assert_equal(res.status_code, 201)
-        node = res.json['new_node']
+        node = res.json['newNode']
         assert_true(node)
         assert_equal(node['title'], 'Im a real title')
 
