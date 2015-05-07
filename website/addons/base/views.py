@@ -363,6 +363,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
+        'materialized_path': getattr(file_guid, 'materialized', file_guid.waterbutler_path),
     })
 
     ret.update(rubeus.collect_addon_assets(node))
