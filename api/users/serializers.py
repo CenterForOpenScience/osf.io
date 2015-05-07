@@ -4,7 +4,13 @@ from api.base.serializers import JSONAPISerializer, LinksField, Link
 
 
 class UserSerializer(JSONAPISerializer):
-
+    filterable_fields = frozenset([
+        'fullname',
+        'given_name',
+        'middle_name',
+        'family_name',
+        'id'
+    ])
     id = ser.CharField(read_only=True, source='_id')
     fullname = ser.CharField()
     given_name = ser.CharField()
