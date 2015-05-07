@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Error</%def>
+<%def name="title()">${message_short}</%def>
 <%def name="content()">
 <div class="container">
     <div class='row'>
