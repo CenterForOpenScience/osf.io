@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import time
 import logging
 from datetime import datetime
@@ -56,15 +55,6 @@ class BoxFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
-
-    @property
-    def extra(self):
-        if not self._metadata_cache:
-            return {}
-
-        return {
-            'fullPath': self._metadata_cache['fullPath'],
-        }
 
 
 class BoxOAuthSettings(StoredObject):
@@ -332,7 +322,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder_id}
 
-    def create_waterbutler_log(self, auth, path, action, metadata):
+    def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
             'box_{0}'.format(action),
             auth=auth,
@@ -340,7 +330,6 @@ class BoxNodeSettings(AddonNodeSettingsBase):
                 'path': metadata['materialized'],
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'name': metadata['name'],
                 'folder': self.folder_id,
                 'urls': {
                     'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=metadata['path']),

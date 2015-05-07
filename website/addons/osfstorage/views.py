@@ -75,21 +75,19 @@ def osf_storage_update_metadata(node_addon, payload, **kwargs):
 @must_be_signed
 @decorators.handle_odm_errors
 @must_have_addon('osfstorage', 'node')
-def osf_storage_get_revisions(payload, node_addon, **kwargs):
-    node = node_addon.owner
-    path = payload.get('path')
-    is_anon = has_anonymous_link(node, Auth(private_key=payload.get('view_only')))
+def osf_storage_get_revisions(fid, node_addon, payload, **kwargs):
+    record = model.OsfStorageFileNode.get(fid, node_addon)
+    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=payload.get('view_only')))
 
-    if not path:
+    if record.is_folder:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    record = model.OsfStorageFileNode.get(path.strip('/'), node_addon)
-
+    # Return revisions in descending order
     return {
-        'revisions': list(reversed([
-            utils.serialize_revision(node, record, version, idx, anon=is_anon)
+        'revisions': [
+            utils.serialize_revision(node_addon.owner, record, version, index=len(record.versions) - idx - 1, anon=is_anon)
             for idx, version in enumerate(reversed(record.versions))
-        ]))
+        ]
     }
 
 
@@ -154,7 +152,7 @@ def osf_storage_get_lineage(node_addon, fid=None, **kwargs):
 def osf_storage_get_metadata(node_addon, fid=None, **kwargs):
     filenode = model.OsfStorageFileNode.get(
         fid or node_addon.root_node._id,
-        node_addon=node_addon
+        node_addon
     )
 
     if filenode.is_deleted:

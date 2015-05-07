@@ -262,6 +262,14 @@ class GuidFile(GuidStoredObject):
             raise AttributeError('No attribute name')
 
     @property
+    def materialized(self):
+        try:
+            return self._metadata_cache['materialized']
+        except (TypeError, KeyError):
+            # If materialized is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute materialized')
+
+    @property
     def file_name(self):
         if self.revision:
             return '{0}_{1}.html'.format(self._id, self.revision)
@@ -831,7 +839,8 @@ class StorageAddonBase(object):
             provider=self.config.short_name,
             path=node.get('path'),
             node=self.owner,
-            user=user
+            user=user,
+            view_only=True,
         )
         res = requests.get(metadata_url)
         if res.status_code != 200:
@@ -849,7 +858,7 @@ class StorageAddonBase(object):
         }
         if node.get('kind') == 'file':
             return node
-        node['children'] = [self._get_file_tree(child) for child in self._get_fileobj_child_metadata(node, user)]
+        node['children'] = [self._get_file_tree(child, user) for child in self._get_fileobj_child_metadata(node, user)]
         return node
 
 

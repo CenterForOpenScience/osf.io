@@ -18,7 +18,6 @@ from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
 from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
-from framework.archiver import listeners  # noqa
 
 import website.models
 from website.routes import make_url_map
@@ -99,6 +98,13 @@ def build_log_templates(settings):
         build_fp.write('\n')
         build_addon_log_templates(build_fp, settings)
 
+def do_set_backends(settings):
+    logger.debug('Setting storage backends')
+    set_up_storage(
+        website.models.MODELS,
+        storage.MongoStorage,
+        addons=settings.ADDONS_AVAILABLE,
+    )
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True, mfr=False,
         attach_request_handlers=True):
@@ -124,12 +130,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         init_mfr(app)
 
     if set_backends:
-        logger.debug('Setting storage backends')
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
+        do_set_backends(settings)
     if routes:
         try:
             make_url_map(app)
@@ -148,6 +149,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if set_backends:
         ensure_schemas()
     apply_middlewares(app, settings)
+
     return app
 
 

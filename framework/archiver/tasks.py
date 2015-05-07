@@ -1,4 +1,3 @@
-import abc
 from urllib2 import urlopen
 from celery import chain, group
 
@@ -19,6 +18,7 @@ from framework.archiver import AggregateStatResult
 from website.util import waterbutler_url_for
 from website.addons.base import StorageAddonBase
 from website.project.model import Node
+
 from website import settings
 
 import logging  # noqa
@@ -33,46 +33,165 @@ if settings.SENTRY_DSN:
     raven_handler = SentryHandler(raven_client)
     setup_logging(raven_handler)
 
-class ArchiverTaskBase(celery_app.Task):
-    #  http://jsatt.com/blog/class-based-celery-tasks/
 
-    ### Celery attributes ###
-    abstract = True
-    max_retries = 3
-    #########################
+def set_app_context(func):
+    def wrapper(*args, **kwargs):
+        from website.app import init_addons, do_set_backends
+        init_addons(settings)
+        do_set_backends(settings)
+        return func(*args, **kwargs)
+    return wrapper
 
-    __meta__ = abc.ABCMeta
+logger = get_task_logger(__name__)
 
-    def __init__(self, *args, **kwargs):
-        super(ArchiverTaskBase, self).__init__(*args, **kwargs)
-        self.logger = get_task_logger(__name__)
+def _add_archiver_log(self, message):
+    logger.info(message)
 
-    def bind(self, app):
-        return super(ArchiverTaskBase, self).bind(celery_app)
+def _add_archiver_error_log(self, error):
+    pass
 
-    def _add_archiver_log(self, message):
-        self.logger.info(message)
+def check_stat_result(src_addon, stat_result):
+    pass
 
-    def _add_archiver_error_log(self, error):
-        pass
+def get_file_size(src_addon, file_metadata, user):
+    """
+    Download a file and get its size
+    """
+    rdb.set_trace()
+    download_url = waterbutler_url_for(
+        'download',
+        provider=src_addon.config.short_name,
+        path=file_metadata.get('path'),
+        node=src_addon.owner,
+        user=user,
+        view_only=False
+    )
+    dl = urlopen(download_url)
+    size = 0
+    while True:
+        chunk = dl.read(512)
+        if not chunk:
+            break
+        size += len(chunk)
+    return size
 
-    @abc.abstractmethod
-    def run(self, *args, **kwargs):
-        pass
+def check_file(src_addon, file_stat_result):
+    if file_stat_result.disk_usage > src_addon.MAX_FILE_SIZE:
+        # TODO better problem reporting?
+        return [
+            "File object '{filename}' (id: {fid}) exceeds the maximum file size ({max}MB) for the {addon}".format(
+                filename=file_stat_result.target_name,
+                fid=file_stat_result.target_id,
+                max=src_addon.MAX_FILE_SIZE,
+                addon=src_addon.config.full_name,
+            )
+        ]
 
+def stat_file_tree(src_addon, fileobj_metadata, user):
+    is_file = fileobj_metadata['kind'] == 'file'
+    disk_usage = fileobj_metadata.get('size')
+    if is_file:
+        if not disk_usage:
+            disk_usage = get_file_size(src_addon, fileobj_metadata, user)
+        result = StatResult(
+            target_name=fileobj_metadata['name'],
+            target_id=fileobj_metadata['path'].lstrip('/'),
+            disk_usage=disk_usage,
+            meta=fileobj_metadata,
+        )
+        result.problems = (check_file(src_addon, result) or [])
+        return result
+    else:
+        return AggregateStatResult(
+            target_id=fileobj_metadata['path'].lstrip('/'),
+            target_name=fileobj_metadata['name'],
+            targets=[stat_file_tree(src_addon, child, user) for child in fileobj_metadata.get('children', [])],
+            meta=fileobj_metadata
+        )
+
+@celery_app.task
+def stat_addon(Model, src_addon_pk, user_pk):
+    src_addon = Model.load(src_addon_pk)
+    user = User.load(user_pk)
+    file_tree = src_addon._get_file_tree(user=user)
+    result = AggregateStatResult(
+        src_addon._id,
+        src_addon.config.short_name,
+        targets=[stat_file_tree(src_addon, file_tree, user)],
+    )
+    try:
+        check_stat_result(src_addon, result)
+        return result
+    except AddonArchiveSizeExceeded as e:
+        result.problems.append("The archive size for this {addon} exceeds the maximum size of {max}MB".format(
+            addon=src_addon.config.full_name,
+            max=src_addon.MAX_ARCHIVE_SIZE,
+        ))
+        raise e
+
+@celery_app.task
+@set_app_context
+def stat_node(src_pk, user_pk):
+    src = Node.load(src_pk)
+    user = User.load(user_pk)
+    subtasks = []
+    # Get addons
+    for addon in src.get_addons():
+        if not isinstance(addon, StorageAddonBase):
+            continue
+        subtasks.append(
+            stat_addon(
+                type(addon),
+                addon._id,
+                user._id
+            )
+        )
+    # TODO other subtasks?
+    return group(iter(subtasks)).apply_async()
+
+@celery_app.task
+def archive_addon(Model, src_addon_pk, dst_addon_pk, user):
+    src_addon = Model.load(src_addon_pk)
+    dst_addon = Model.load(dst_addon_pk)
+    root = dst_addon.root_node
+    parent = root.append_folder("Archive of {addon}".format(addon=src_addon.config.full_name))
+    src_addon._copy_files(dst_addon=dst_addon, dst_folder=parent)
+    return dst_addon
+
+@celery_app.task
+def archive_node(group_result, src_pk, dst_pk, user_pk):
+    stat_result = group_result.results[0].result
+    src = Node.load(src_pk)
+    dst = Node.load(dst_pk)
+    user = User.load(user_pk)
+    subtasks = []
+    for result in stat_result.targets.values():
+        provider = result.target_name
+        if provider:
+            src_addon = src.get_addon(provider)
+            dst_addon = dst.get_or_add_addon(provider)
+            subtasks.append(archive_addon.s(type(src_addon), src_addon._id, dst_addon._id, user._id, result))
+    return group(iter(subtasks))
+
+@celery_app.task
+def archive(src_pk, dst_pk, user_pk):
+    return chain(stat_node.s(src_pk, user_pk), archive_node.s(src_pk, dst_pk, user_pk)).apply_async()
+
+'''
 class ArchiveTask(ArchiverTaskBase):
 
+    @set_app_context
     def run(self, src_pk, dst_pk, user_pk, *args, **kwargs):
         stat_node_task = StatNodeTask()
         archive_node_task = ArchiveNodeTask()
         self._add_archiver_log('Running ArchiveTask')
-        return chain(stat_node_task.s(src_pk, user_pk), archive_node_task.s(src_pk, dst_pk, user_pk)).apply_async()
+        return (stat_node_task.s(src_pk, user_pk) | archive_node_task.s(src_pk, dst_pk, user_pk)).apply_async()
 
 class StatNodeTask(ArchiverTaskBase):
 
+    @set_app_context
     def _stat(self, src, user):
         stat_addon_task = StatAddonTask()
-        rdb.set_trace()
         return group(
             stat_addon_task.s(type(node_addon), node_addon._id, user._id)
             for node_addon in src.get_addons()
@@ -97,7 +216,8 @@ class StatAddonTask(ArchiverTaskBase):
             provider=node_addon.config.short_name,
             path=file_metadata.get('path'),
             node=node_addon.owner,
-            user=user
+            user=user,
+            view_only=False
         )
         dl = urlopen(download_url)
         size = 0
@@ -107,7 +227,6 @@ class StatAddonTask(ArchiverTaskBase):
                 break
             size += len(chunk)
         return size
-
     def _check_file(self, node_addon, file_stat_result):
         if file_stat_result.disk_usage > node_addon.MAX_FILE_SIZE:
             # TODO better problem reporting?
@@ -153,10 +272,12 @@ class StatAddonTask(ArchiverTaskBase):
             raise AddonFileSizeExceeded(node_addon.config.short_name, addon_stat_result)
         return False
 
+    @set_app_context
     def _stat(self, node_addon, user):
         """
         Get the addon's file tree and aggregate the StatResults into an AggregateStatResult
         """
+        rdb.set_trace()
         file_tree = node_addon._get_file_tree(user=user)
         result = AggregateStatResult(
             node_addon._id,
@@ -173,6 +294,7 @@ class StatAddonTask(ArchiverTaskBase):
             ))
             raise e
 
+    @set_app_context
     def run(self, Model, node_addon_pk, user_pk):
         node_addon = Model.load(node_addon_pk)
         user = User.load(user_pk)
@@ -182,6 +304,7 @@ class StatAddonTask(ArchiverTaskBase):
 
 class ArchiveNodeTask(ArchiverTaskBase):
 
+    @set_app_context
     def _archive(self, src, dst, user, stat_result):
         tasks = []
         archive_addon_task = ArchiveAddonTask()
@@ -193,6 +316,7 @@ class ArchiveNodeTask(ArchiverTaskBase):
                 tasks.append(archive_addon_task.s(type(src_addon), src_addon._id, dst_addon._id, user._id, result))
         return group(iter(tasks))
 
+    @set_app_context
     def run(self, group_result, src_pk, dst_pk, user_pk, *args, **kwargs):
         stat_result = group_result.results[0].result
         src = Node.load(src_pk)
@@ -204,12 +328,7 @@ class ArchiveNodeTask(ArchiverTaskBase):
 
 class ArchiveAddonTask(ArchiveTask):
 
-    def _copy_file_tree(self, root, children):
-        for child in children:
-            if isinstance(child, AggregateStatResult):
-                child_node = root.append_folder(child.target_name)
-                self._copy_file_tree(child_node, child.targets)
-
+    @set_app_context
     def _archive(self, src_addon, dst_addon, user, stat_result):
         root = dst_addon.root_node
         parent = root.append_folder("Archive of {addon}".format(addon=src_addon.config.full_name))
@@ -217,9 +336,9 @@ class ArchiveAddonTask(ArchiveTask):
         return dst_addon
 
     def run(self, Model, src_addon_pk, dst_addon_pk, user_pk, result):
-        rdb.set_trace()
         src_addon = Model.load(src_addon_pk)
         dst_addon = Model.load(dst_addon_pk)
         user = User.load(user_pk)
         self._add_archiver_log("Running ArchiveAddonTask")
         return self._archive(src_addon, dst_addon, user, result)
+'''

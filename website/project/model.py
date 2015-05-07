@@ -35,6 +35,7 @@ from framework.analytics import (
 )
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
+from framework.tasks import utils as task_utils
 
 from website import language
 from website import settings
@@ -326,7 +327,6 @@ class NodeLog(StoredObject):
     EDITED_DESCRIPTION = 'edit_description'
 
     UPDATED_FIELDS = 'updated_fields'
-
 
     FILE_MOVED = 'addon_file_moved'
     FILE_COPIED = 'addon_file_copied'
@@ -660,6 +660,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def is_archiving(self):
         return self.archiving or False
+
+    @property
+    def archive_task(self):
+        if not self.archive_task_id:
+            return None
+        else:
+            return task_utils.get_task_by_id(self.archive_task_id)
 
     @property
     def category_display(self):

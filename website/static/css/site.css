@@ -42,7 +42,7 @@ body {
 .gs-sidebar .nav a,
 .gs-sidebar .nav a:hover,
 .gs-sidebar .nav a:focus {
-    
+
     text-decoration: none;
     background-color: transparent;
 }
@@ -981,7 +981,7 @@ h1.unavailable {
     padding-top: 100px;
     display: block;
   z-index: -1;
-  position: relative;    
+  position: relative;
 }
 
 .anchor {
@@ -2122,12 +2122,12 @@ span#profileFullname{
 @media (min-width: 768px) and (max-width: 991px)  {
     #signInForm input {
         width: 110px;
-    }    
+    }
 }
 @media (min-width: 1600px) {
     #signInForm input {
         width: 220px;
-    }    
+    }
 }
 
 /* Search bar */
@@ -2504,6 +2504,15 @@ span#profileFullname{
   padding-left: 20px;
   padding-right: 20px;
 }
+.unselectable {
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+
+  /* No support for these yet, use at own risk */
+  -o-user-select: none;
+  user-select: none;
+}
 .inline {
     display: inline-block;
 }
@@ -2651,6 +2660,90 @@ span#profileFullname{
 }
 .m-xl {
     margin: 50px;
+}
+
+/* COS logo spin */
+.logo-spin {
+    -webkit-animation: spin 3s infinite linear, opacity 3s infinite linear;
+    animation: spin 3s infinite linear, opacity 3s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+@-webkit-keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@-moz-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@-webkit-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+
+/* OSF Font-Awesome Stack Alternative */
+.osf-fa-stack {
+  display: inline-block;
+  width: 15px;
+  height: 13px;
+  position: relative;
+}
+.fangorn-toolbar-icon .osf-fa-stack-top {
+  font-size: 10px;
+  margin-top: 5px;
+  line-height: 11px;
+}
+.fangorn-toolbar-icon .osf-fa-stack-bottom {
+  font-size: 18px;
+  line-height: 20px;
+}
+.text-white {
+    color: #FFF;
 }
 
 @media (max-width: 768px) {

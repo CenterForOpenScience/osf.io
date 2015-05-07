@@ -53,7 +53,7 @@ $.extend(EXTENSION_MAP, {
     gsheet: 'xlsx'
 });
 
-var _defaultIconState = function (){
+var _defaultIconState = function () {
     return {
         mode : 'bar',
         generalIcons : {
@@ -66,6 +66,9 @@ var _defaultIconState = function (){
 
     };
 };
+
+// Cross browser key codes for the Command key
+var commandKeys = [224, 17, 91, 93];
 
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
@@ -440,8 +443,10 @@ function _fangornSending(treebeard, file, xhr, formData) {
         _send.call(xhr, file);
     };
     var filesArr = treebeard.dropzone.getQueuedFiles();
-    if (filesArr.length  > 1) {
+    if (filesArr.length  > 0) {
         treebeard.options.iconState.generalIcons.cancelUploads.on = true;
+    } else {
+        treebeard.options.iconState.generalIcons.cancelUploads.on = false;
     }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
@@ -503,7 +508,7 @@ function _fangornDragOver(treebeard, event) {
         closestTarget = $(event.target).closest('.tb-row'),
         itemID = parseInt(closestTarget.attr('data-id')),
         item = treebeard.find(itemID);
-    $('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass).removeClass(treebeard.options.hoverClass);
     if (item !== undefined) {
         if (_fangornCanDrop(treebeard, item)) {
             closestTarget.addClass(dropzoneHoverClass);
@@ -511,6 +516,17 @@ function _fangornDragOver(treebeard, event) {
     }
 }
 
+/**
+ * Runs when Dropzone's drop event hook is run.
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @param event DOM event object
+ * @this Dropzone
+ * @private
+ */
+function _fangornDropzoneDrop(treebeard, event) {
+    var dropzoneHoverClass = 'fangorn-dz-hover';
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass);
+}
 /**
  * Runs when Dropzone's complete hook is run after upload is completed.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -591,7 +607,7 @@ function _fangornDropzoneError(treebeard, file, message) {
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
-    var parent = file.treebeardParent || tb.dropzoneItemCache;
+    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache;
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
     var item;
     var child;
@@ -602,12 +618,11 @@ function _fangornDropzoneError(treebeard, file, message) {
             continue;
         }
         if (child.data.tmpID === file.tmpID) {
-            item = child;
-            tb.deleteNode(parent.id, item.id);
+            child.removeSelf();
         }
     }
     $osf.growl('Error', msgText);
-    tb.options.uploadInProgress = false;
+    treebeardParent.options.uploadInProgress = false;
 }
 
 /**
@@ -652,9 +667,9 @@ function _createFolder(event) {
     var tb = this;
     var val = $.trim(tb.select('#createFolderInput').val());
     var parent = tb.multiselected[0];
-    // if (!parent.open) {
-    //     self.updateFolder(null, parent);
-    // }
+    if (!parent.open) {
+         tb.updateFolder(null, parent);
+    }
 
     // event.preventDefault();
     if (val.length < 1) {
@@ -671,7 +686,7 @@ function _createFolder(event) {
     m.request({
         method: 'POST',
         background: true,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId),
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent);
         item = tb.createItem(item, parent.id);
@@ -702,7 +717,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
+        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);
@@ -738,7 +753,7 @@ function _removeEvent (event, items, col) {
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'OK')
+                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'Delete')
                     ]);
                 tb.modal.update(mithrilContent, mithrilButtons);
         } else {
@@ -755,7 +770,7 @@ function _removeEvent (event, items, col) {
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'OK')
+                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
@@ -784,7 +799,7 @@ function _removeEvent (event, items, col) {
             } else {
                 deleteList.push(item);
             }
-            if(item.kind === 'folder') {
+            if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'))
             }
         });
@@ -795,11 +810,11 @@ function _removeEvent (event, items, col) {
                     deleteMessage,
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
-                            return m('.fangorn-canDelete.text-success', [
+                            return m('.fangorn-canDelete.text-success.break-word', [
                                 m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success', n.data.name);
+                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
@@ -812,14 +827,14 @@ function _removeEvent (event, items, col) {
                     m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
-                            return m('.fangorn-canDelete.text-success', [
+                            return m('.fangorn-canDelete.text-success.break-word', [
                                 m('i.fa.fa-folder'),m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success', n.data.name);
+                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
                     }),
                     noDeleteList.map(function(n){
-                        return m('.fangorn-noDelete.text-warning', n.data.name);
+                        return m('.fangorn-noDelete.text-warning.break-word', n.data.name);
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
@@ -891,13 +906,6 @@ function _fangornLazyLoadError (item) {
  */
 function reapplyTooltips () {
     $('[data-toggle="tooltip"]').tooltip({container: 'body', 'animation' : false});
-    $(".title-text [data-toggle=tooltip]").hover(function(event){
-        var mousePosition = event.pageX - 400;
-        $('.tooltip').css('margin-left', mousePosition + 'px');
-    });
-    // $(".title-text [data-toggle=tooltip]").mouseout(function(event){
-    //     $('.tooltip').remove();
-    // });
 }
 
 /**
@@ -955,7 +963,7 @@ function _fangornUploadMethod(item) {
  * @private
  */
 function _fangornDefineToolbar (item) {
-    var self = this,
+    var tb = this,
         buttons = [];
     $('.fangorn-toolbar-icon').tooltip('destroy');
 
@@ -967,7 +975,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Select files to upload from your computer.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) { _uploadEvent.call(self, event, item); }
+                    onclick : function(event) { _uploadEvent.call(tb, event, item); }
                 },[
                 m('i.fa.fa-upload'),
                 m('span.hidden-xs','Upload')
@@ -979,8 +987,8 @@ function _fangornDefineToolbar (item) {
                     'title':  'Create a new folder inside curently selected folder.',
                     'data-placement' : 'bottom',
                         onclick : function(event) {
-                            self.options.iconState.mode = 'createFolder';
-                            Fangorn.ButtonEvents.createFolder.call(self, event, item);
+                            tb.options.iconState.mode = 'createFolder';
+                            m.redraw(true);
                         }
                     },[
                     m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
@@ -993,7 +1001,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Delete this folder and all its contents.',
                     'data-placement' : 'bottom',
-                        onclick : function(event) { _removeEvent.call(self, event, [item]); }
+                        onclick : function(event) { _removeEvent.call(tb, event, [item]); }
                     },[
                     m('i.fa.fa-trash'),
                     m('span.hidden-xs','Delete Folder')
@@ -1008,7 +1016,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Download this file to your computer.',
                     'data-placement' : 'bottom',
-                    onclick : function(event) { _downloadEvent.call(self, event, [item]); }
+                    onclick : function(event) { _downloadEvent.call(tb, event, [item]); }
                 }, [
                 m('i.fa.fa-download'),
                 m('span.hidden-xs','Download')
@@ -1020,7 +1028,7 @@ function _fangornDefineToolbar (item) {
                     'data-toggle' : 'tooltip',
                     'title':  'Permanently delete this file.',
                     'data-placement' : 'bottom',
-                        onclick : function(event) { _removeEvent.call(self, event, [item]); }
+                        onclick : function(event) { _removeEvent.call(tb, event, [item]); }
                     }, [
                     m('i.fa.fa-times'),
                     m('span.hidden-xs','Delete')
@@ -1036,7 +1044,7 @@ function _fangornDefineToolbar (item) {
                     'title':  'Change the name of the Collection or project',
                     'data-placement' : 'bottom',
                     onclick : function(event) {
-                        self.options.iconState.mode = 'rename';
+                        tb.options.iconState.mode = 'rename';
                     }
                 }, [
                 m('i.fa.fa-font'),
@@ -1058,14 +1066,19 @@ function _fangornDefineToolbar (item) {
  * @private
  */
 function _fangornTitleColumn(item, col) {
+    var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span',{
             ondblclick: function() {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-                window.location = redir.toString() + '/';
+                var fileurl  = redir.toString() + '/';
+                if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+                    window.open(fileurl, '_blank');
+                } else {
+                    window.open(fileurl, '_self');
+                }
             },
-            'data-toggle' : 'tooltip', title : 'View file', 'data-placement': 'bottom'
         }, item.data.name);
     }
     return m('span', item.data.name);
@@ -1092,25 +1105,8 @@ function _fangornResolveRows(item) {
         _fangornDefineToolbar.call(this, item);
     }
 
-
-    // Column that does the toggles :
-    var toggleTemplate = {
-        data : null,
-        folderIcons: false,
-        filter : false,
-        custom : function(){
-            if(this.isMultiselected(item.id)) {
-                return m('div.fangorn-select-toggle', { style : 'color: white'},m('i.fa.fa-check-square-o'));
-            }
-            return m('div.fangorn-select-toggle', m('i.fa.fa-square-o'));
-        }
-    };
     if(item.data.tmpID){
         return [
-        {
-            data : '',  // Data field name
-            custom : function(){ return m('span', ''); }
-        },
         {
             data : '',  // Data field name
             css : 't-a-c',
@@ -1119,8 +1115,7 @@ function _fangornResolveRows(item) {
         {
             data : '',  // Data field name
             custom : function(){ return '';}
-        }
-        ];
+        }];
     }
     if(item.data.status) {
         return [{
@@ -1132,10 +1127,6 @@ function _fangornResolveRows(item) {
         {
             data : '',
             custom : function(){ return m('span.text-muted', STATE_MAP[item.data.status].display); }
-        },
-        {
-            data : '',
-            custom : function(){ return m('span', ''); }
         }];
     }
 
@@ -1146,7 +1137,6 @@ function _fangornResolveRows(item) {
         }
     }
     default_columns.push(
-    toggleTemplate,
     {
         data : 'name',  // Data field name
         folderIcons : true,
@@ -1182,13 +1172,8 @@ function _fangornColumnTitles () {
     var columns = [];
     columns.push(
     {
-        title : '',
-        width: '5%',
-        sort: false
-    },
-    {
         title: 'Name',
-        width : '85%',
+        width : '90%',
         sort : true,
         sortType : 'text'
     }, {
@@ -1299,6 +1284,16 @@ function _fangornToolbar () {
     var titleContent = tb.options.title();
     var generalButtons = [];
     var rowMessage = m('i.m-r-sm','Select rows for further actions.');
+    var rowButtons = function(){
+        if(tb.multiselected.length > 1) {
+            return '';
+        }
+        return tb.options.iconState.rowIcons.map(function(icon){
+            if(icon.template){
+                return icon.template.call(tb);
+            }
+        });
+    }
     var generalIcons = tb.options.iconState.generalIcons;
     if (generalIcons.deleteMultiple.on) {
         generalButtons.push(generalIcons.deleteMultiple.template.call(tb));
@@ -1319,11 +1314,7 @@ function _fangornToolbar () {
                         rowMessage,
                         m('.fangorn-toolbar.pull-right',
                             [
-                                tb.options.iconState.rowIcons.map(function(icon){
-                                    if(icon.template){
-                                        return icon.template.call(tb);
-                                    }
-                                }),
+                                rowButtons(),
                                 generalButtons
                             ]
                         )
@@ -1332,7 +1323,7 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'search'){
         return m('.row.tb-header-row', { 'data-mode' : 'search'},  [
-                m('', [
+            m('#searchRow', { config : function () { $('#searchRow input').focus(); }}, [
                         m('.col-xs-11',{ style : 'width: 90%'}, tb.options.filterTemplate.call(tb)),
                         m('.col-xs-1',
                             m('.fangorn-toolbar.pull-right',
@@ -1344,7 +1335,7 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'rename'){
         return m('.row.tb-header-row', [
-                m('', [
+            m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
                         m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
                         m('.col-xs-3.tb-buttons-col',
                             m('.fangorn-toolbar.pull-right',
@@ -1359,7 +1350,9 @@ function _fangornToolbar () {
     }
     if(tb.options.iconState.mode === 'createFolder'){
         return m('.row.tb-header-row', [
-                m('', [
+            m('#folderRow', { config : function () {
+                $('#folderRow input').focus();
+            }}, [
                         m('.col-xs-9', [
                             m('input#createFolderInput.tb-header-input', { placeholder : 'Folder name' }),
                             m('#createFolderError.text-danger', { style : "display: none"})
@@ -1380,8 +1373,11 @@ function _fangornToolbar () {
 
 function _fangornResetToolbar () {
     var tb = this;
-    tb.options.iconState.mode === 'bar';
-    tb.options.iconState = _defaultIconState();
+    if (tb.options.iconState.mode === 'search') {
+        tb.options.iconState = _defaultIconState();
+    }
+    tb.options.iconState.mode = 'bar';
+    tb.resetFilter();
     m.redraw();
 }
 
@@ -1392,7 +1388,9 @@ function _fangornResetToolbar () {
 function toolbarDismissIcon (){
     var tb = this;
     return m('.fangorn-toolbar-icon', {
-            onclick : function () { tb.options.iconState.mode = 'bar'; tb.resetFilter(); }
+            onclick : function () {
+                _fangornResetToolbar.call(tb);
+            }
         },
         m('i.fa.fa-times')
     );
@@ -1403,7 +1401,12 @@ function toolbarDismissIcon (){
             'data-toggle' : 'tooltip',
             'title':  'Switch to search view.',
             'data-placement' : 'bottom',
-            onclick : function () { tb.options.iconState.mode = 'search'; }
+            onclick : function () {
+                tb.options.iconState.mode = 'search';
+                tb.filterText('');
+                m.redraw(true);
+                tb.clearMultiselect();
+            }
         }, [
         m('i.fa.fa-search'),
         m('span.hidden-xs', 'Search')
@@ -1417,11 +1420,10 @@ function toolbarDismissIcon (){
             'data-placement' : 'bottom',
             onclick : function () {
                 var mithrilContent = m('div', [
-                        m('h3.break-word', 'How to Use the File Browser'),
-                        m('p', 'Select Multiple Files: Use command or shift keys to select multiple files.'),
-                        m('p', 'Go to Files: Double click a file name to go to the file.'),
-                        m('p', 'Open Files in New Tab: Command + click a file name to open it in a new tab.'),
-
+                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
+                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Close'),
@@ -1464,7 +1466,7 @@ function toolbarDismissIcon (){
 
  function renameButton (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', {
+    return m('#renameButton.fangorn-toolbar-icon.text-info', {
             'data-toggle' : 'tooltip',
             'title':  'Rename the currently selected file or folder',
             'data-placement' : 'bottom',
@@ -1479,7 +1481,7 @@ function toolbarDismissIcon (){
 
  function createFolderButton (){
     var tb = this;
-    return m('.fangorn-toolbar-icon.text-success', {
+    return m('#createFolderButton.fangorn-toolbar-icon.text-success', {
             onclick : function (event) {
                 _createFolder.call(tb, event, parent);
             }
@@ -1509,6 +1511,7 @@ function toolbarDismissIcon (){
     //     tb.updateFolder(null, tb.find(1));
     //     // Also update every
     // }).fail($osf.handleJSONError);
+    // tb.options.iconState.mode = 'bar';
 }
 
 
@@ -1553,8 +1556,8 @@ function filterRowsNotInParent(rows) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
-    tb.options.iconState.mode = 'bar';
-    tb.options.iconState.rowIcons = [];
+    _fangornResetToolbar.call(tb);
+
     if(tb.multiselected.length === 1){
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = row.icons;
@@ -1575,29 +1578,6 @@ function filterRowsNotInParent(rows) {
     }
     reapplyTooltips();
 }
-
-/**
- * Runs before multiselect handle in Treebeard does its logic to set special cases.
- * @this Treebeard.controller
- * @param {Object} event jQuery click event.
- * @param {Object} row A Treebeard _item object.
- * @private
- */
-
-function _fangornBeforeMultiselect (event, row) {
-    var tb = this;
-    if( !tb.pressedKey && $(event.target).parents('.tb-col-0').length > 0 ) {
-        tb.pressedKey = 'toggle';
-        // if already toggled take it out of multiselect
-        if($(event.target).parents('.tb-row').first().hasClass('fangorn-selected')) {
-            tb.removeMultiselected(row.id);
-        } else {
-        // otherwise add to multiselect.
-            tb.multiselected.push(row);
-        }
-    }
-}
-
 
 /* MOVE */
 // copyMode can be 'copy', 'move', 'forbidden', or null.
@@ -1678,8 +1658,10 @@ function _dropLogic(event, items, folder) {
     if (items.length < 1) return;
     if (items.indexOf(folder) > -1) return;
 
+    if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) != -1) return;
+
     if (!folder.open) {
-        tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
+        return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
     $.each(items, function(index, item) {
@@ -1702,6 +1684,11 @@ function _dragLogic(event, items, ui) {
         isSelf = false,
         isParent  = false,
         dragGhost = $('.tb-drag-ghost');
+
+    if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) != -1) {
+        copyMode = 'forbidden';
+    }
+
     items.forEach(function (item) {
         if (!isSelf) {
             isSelf = item.id === folder.id;
@@ -1826,7 +1813,16 @@ tbOptions = {
                 _resizeHeight.call(tb);
             })
         }
-
+        $(window).on('keydown', function(event){
+            if (event.keyCode === 27) {
+                _fangornResetToolbar.call(tb);
+            }
+        });
+        $(document).on('keypress', '#createFolderInput', function () {
+            if (tb.pressedKey === 13) {
+                _createFolder.call(tb);
+            }
+        });
     },
     createcheck : function (item, parent) {
         return true;
@@ -1864,7 +1860,6 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
-    onbeforemultiselect : _fangornBeforeMultiselect,
     filterPlaceholder : 'Search',
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
@@ -1893,7 +1888,8 @@ tbOptions = {
         success : _fangornDropzoneSuccess,
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
-        addedfile : _fangornAddedFile
+        addedfile : _fangornAddedFile,
+        drop : _fangornDropzoneDrop
     },
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
@@ -1918,6 +1914,12 @@ tbOptions = {
         drop : _fangornDrop,
         over : _fangornOver
     },
+    onafterselectwitharrow : function(row, direction) {
+        var tb = this;
+        var item = tb.find(row.id);
+        _fangornMultiselect.call(tb,null,item);
+    },
+    hScroll : 400
 };
 
 /**

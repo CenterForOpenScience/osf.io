@@ -80,7 +80,7 @@ def is_json_request():
     return content_type and ('application/json' in content_type)
 
 
-def waterbutler_url_for(route, provider, path, node, user=None, **query):
+def waterbutler_url_for(route, provider, path, node, user=None, use_request=True, **kwargs):
     """Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
     :param str provider: The name of the requested provider
@@ -100,11 +100,16 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
 
     if user:
         url.args['cookie'] = user.get_or_create_cookie()
-    elif settings.COOKIE_NAME in request.cookies:
+    else:
         url.args['cookie'] = request.cookies[settings.COOKIE_NAME]
 
-    if 'view_only' in request.args:
-        url.args['view_only'] = request.args['view_only']
+    view_only = False
+    if 'view_only' in kwargs:
+        view_only = kwargs.get('view_only')
+    else:
+        view_only = request.args.get('view_only')
 
-    url.args.update(query)
+    url.args['view_only'] = view_only
+
+    url.args.update(kwargs)
     return url.url
