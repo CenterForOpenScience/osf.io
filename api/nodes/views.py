@@ -6,9 +6,9 @@ from modularodm import Q
 from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
-from api.users.serializers import UserSerializer
+from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
 
 
@@ -95,8 +95,8 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
         return {'request': self.request}
 
 
-class NodeContributorsList(generics.ListAPIView, NodeMixin):
-    """ Return a list of contributors.
+class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+    """Return the contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
     have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
@@ -108,11 +108,15 @@ class NodeContributorsList(generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
     )
 
-    serializer_class = UserSerializer
+    serializer_class = ContributorSerializer
+
+    def get_default_queryset(self):
+        node = self.get_node()
+        return node.contributors
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_node().visible_contributors
+        return self.get_queryset_from_request()
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
