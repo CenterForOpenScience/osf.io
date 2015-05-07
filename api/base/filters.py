@@ -156,15 +156,14 @@ class ListFilterMixin(FilterMixin):
         """filters default queryset based on query parameters"""
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
-            for k in fields_dict:
-                v = fields_dict[k]
-                if self.is_filterable_field(key=k):
-                    if isinstance(self.serializer_class._declared_fields[k], ser.SerializerMethodField):
-                        return self.get_serializer_field_value(k, v, default_queryset)
-                    elif isinstance(self.serializer_class._declared_fields[k], ser.BooleanField):
-                        return [item for item in default_queryset if item.get('key', None) == v]
+            for field_name, value in fields_dict.items():
+                if self.is_filterable_field(key=field_name):
+                    if isinstance(self.serializer_class._declared_fields[field_name], ser.SerializerMethodField):
+                        return self.get_serializer_field_value(field_name, value, default_queryset)
+                    elif isinstance(self.serializer_class._declared_fields[field_name], ser.BooleanField):
+                        return [item for item in default_queryset if item.get('key', None) == value]
                     else:
-                        return [item for item in default_queryset if v in item.get('key', None)]
+                        return [item for item in default_queryset if value in item.get('key', None)]
 
     def get_serializer_field_value(self, key, value, default_queryset):
         serializer = self.get_serializer()
