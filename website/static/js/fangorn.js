@@ -68,7 +68,7 @@ var getExtensionIconClass = function (name) {
     return null;
 };
 
-function findByTempID(parent, tmpID){
+function findByTempID(parent, tmpID) {
     var child;
     var item;
     for (var i = 0; i < parent.children.length; i++) {
@@ -111,20 +111,6 @@ var cancelUploadTemplate = function(row){
             }},
         m('.fa.fa-times-circle.text-danger', { style : 'display:block;font-size:18px'}));
 };
-
-
-// var cancelAllUploadsTemplate = function(){
-//     var treebeard = this;
-//     return m('div', [
-//         m('span', 'Uploads in progress'),
-//         m('.btn.btn-xs.m-l-sm.btn-danger', {
-//             'onclick' : function() {
-//                 cancelUploads.call(treebeard);
-//             }
-//         }, 'Cancel All Uploads')
-//     ]);
-// }
-
 
 /**
  * Returns custom icons for OSF depending on the type of item
@@ -493,6 +479,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
 var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
 function _fangornDropzoneError(treebeard, file, message) {
+    var tb = treebeard;
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;
@@ -1819,7 +1806,7 @@ Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
-    createFolder: _createFolder,
+    createFolder: _createFolder
 };
 
 Fangorn.DefaultColumns = {
