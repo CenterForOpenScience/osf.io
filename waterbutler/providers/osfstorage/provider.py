@@ -325,7 +325,8 @@ class OSFStorageProvider(provider.BaseProvider):
         )
 
         return OsfStorageFolderMetadata(
-            (yield from resp.json())
+            (yield from resp.json()),
+            str(path)
         ).serialized()
 
     @asyncio.coroutine
