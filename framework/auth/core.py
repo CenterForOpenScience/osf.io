@@ -781,6 +781,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.merge_user(user_to_merge)
         elif user_to_merge:
             raise exceptions.MergeConfirmedRequiredError(
+                'Merge requires confirmation',
                 user=self,
                 user_to_merge=user_to_merge,
             )
