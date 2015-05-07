@@ -85,3 +85,7 @@ Interested in being a developer?  Contact <a href="mailto:jspies@virginia.edu.ed
 Have ideas to make the OSF useful to you?  <a href="mailto:feedback@openscienceframework.org">Submit them here</a>.
 </p>
 </%def>
+
+<%def name="footer()">
+    <%include file="footer.mako" args="placement=''"/>
+</%def>

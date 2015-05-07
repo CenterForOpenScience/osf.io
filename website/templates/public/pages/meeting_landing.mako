@@ -59,3 +59,6 @@
     </div>
 
 </%def>
+<%def name="footer()">
+    <%include file="footer.mako" args="placement='presentationsPage'"/>
+</%def>
