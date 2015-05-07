@@ -1,7 +1,5 @@
 import collections
 
-import pprint  # Remove for production
-
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
@@ -118,16 +116,15 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    for s in user_subscriptions:
-        if s.owner == node:
-            yield s
+    for subscription in user_subscriptions:
+        if subscription.owner == node:
+            yield subscription
 
 
 def format_data(user, node_ids):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
-    :param data: the formatted data
     :return: treebeard-formatted data
     """
     items = []
@@ -147,9 +144,17 @@ def format_data(user, node_ids):
         # user is contributor on a component of the project/node
 
         if can_read:
-            node_sub = get_all_node_subscriptions(user, node)
-            children = [serialize_event(user, subscription, node)
-                        for subscription in get_all_node_subscriptions(user, node)]
+            node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
+            for subscription in get_all_node_subscriptions(user, node):
+                try:
+                    index = node_sub_available.index(getattr(subscription, 'event_name'))
+                    children.append(serialize_event(user, subscription=subscription,
+                                                    node=node, event_description=node_sub_available.pop(index)))
+                except ValueError:
+                    pass  # Currently doesn't handle non-specified subscriptions as in <file>_file_updated
+            for node_sub in node_sub_available:
+                    children.append(serialize_event(user, node=node, event_description=node_sub))
+            children.sort(key=lambda s: s['event']['title'])
 
         children.extend(format_data(
             user,
@@ -168,13 +173,10 @@ def format_data(user, node_ids):
                 'title': node.title if can_read else 'Private Project',
             },
             'children': children,
-            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node'
         }
 
         items.append(item)
-        print "*********************"
-        pprint.pprint(items)
-        print "*********************"
 
     return items
 
@@ -187,30 +189,41 @@ def format_user_subscriptions(user):
     ]
 
 
-def serialize_event(user, subscription, node=None):
+def format_file_subscription(user, node_id, file_id):
+    """Formats a single file event"""
+    node = Node.load(node_id)
+    for subscription in get_all_node_subscriptions(user, node):
+        if file_id in getattr(subscription, 'event_name'):
+            return serialize_event(user, subscription, node)
+    return serialize_event(user, node=node, event_description='file_updated')
+
+
+def serialize_event(user, subscription=None, node=None, event_description=None):
     """
     :param user: modular odm User object
-    :param subscription: modular odm Subscription object
-    :param subscriptions_available: dict of available notification events for a project or user
-    :param user_subscriptions: all user subscriptions
-    :param node: modular odm Node object
-    :return: treebeard-formatted subscription events
+    :param subscription: modular odm Subscription object, use if parsing particular subscription
+    :param node: modular odm Node object, use if node is known
+    :param event_description: use if specific subscription is known
+    :return: treebeard-formatted subscription event
     """
     all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
     all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
-    event_description = getattr(subscription, 'event_name')
+    if not event_description:
+        event_description = getattr(subscription, 'event_name')
     # Looks at only the types available. Deals with prepending file names.
-    for sub_type in all_subs:
-        if sub_type in event_description:
-            sub = sub_type
+        for sub_type in all_subs:
+            if sub_type in event_description:
+                sub = sub_type
+    else:
+        sub = event_description
     if node and node.node__parent:
         notification_type = 'adopt_parent'
     else:
         notification_type = 'none'
-    for n_type in constants.NOTIFICATION_TYPES:
-        if user in getattr(subscription, n_type):
-            notification_type = n_type
-    # Event returned
+    if subscription:
+        for n_type in constants.NOTIFICATION_TYPES:
+            if user in getattr(subscription, n_type):
+                notification_type = n_type
     return {
         'event': {
             'title': event_description,

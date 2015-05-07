@@ -75,6 +75,7 @@ var RevisionsViewModel = function(node, file, editable) {
     self.subList = [
         {value: 'email_transactional', text: 'Emails'},
         {value: 'email_digest', text: 'Email Digest'},
+        {value: 'adopt_parent', text: 'Adopt from Parent'},
         {value: 'none', text: 'None'}
     ];
     self.getSub = function(sub) {
@@ -82,8 +83,10 @@ var RevisionsViewModel = function(node, file, editable) {
             return self.subList[0];
         } else if (sub === 'email_digest') {
             return self.subList[1];
+        } else if (sub === 'adopt_parent') {
+            return self.subList[2];
         } else {
-            return 'None'
+            return self.subList[3];
         }
     };
 
@@ -119,21 +122,34 @@ var RevisionsViewModel = function(node, file, editable) {
             self.revisions()[0].extra.user;
     });
 
-    var notificationsURL = self.node.urls.api + 'subscriptions/';
-    console.log(notificationsURL);
-    console.log(self.file);
+    var notificationsURL = self.node.urls.api + 'file_subscriptions/';
+    //console.log(self);
+    //console.log(notificationsURL);
+    // http://localhost:5000/project/hk6ub/node/i5kvm/files/osfstorage/55427630a24f713f036922ee/
+    //console.log(window.contextVars);
+    //console.log(self.urls);
+    //console.log(self.file);
+    var payload = {
+        node_id: self.node.id,
+        path: self.file.path
+    };
 
-    self.subscription = ko.observable(
-        $.ajax({
+    self.subscription = ko.observable();
+
+    var subscription = $.ajax({
             url: notificationsURL,
             type: 'GET',
-            dataType: 'json'
+            dataType: 'json',
+            data: payload
         }).done(function (response) {
-            console.log(response)
+            response = JSON.parse(response);
+            self.subscription(self.getSub(response.event.notificationType));
         }).fail(function (xhr, status, error) {
-            return 'none'
-        })
-    );
+            console.log(error);
+        });
+
+    //self.subscription = ko.observable(self.getSub(subscription.event.notificationType))
+
 };
 
 RevisionsViewModel.prototype.fetch = function() {

@@ -26,6 +26,13 @@ def get_node_subscriptions(auth, **kwargs):
 
 
 @must_be_logged_in
+def get_file_subscriptions(auth, **kwargs):
+    node_id = request.args.get('node_id')
+    path = request.args.get('path')
+    return utils.format_file_subscription(auth.user, node_id, path)
+
+
+@must_be_logged_in
 def configure_subscription(auth):
     user = auth.user
     json_data = request.get_json()

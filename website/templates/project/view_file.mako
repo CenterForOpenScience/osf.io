@@ -65,10 +65,10 @@
 
             <div class="tb-row" style="margin-bottom: 10px">
                 <label style="margin-top: 7px; margin-right: 2px">Subscription:</label>
-                <select class="form-control" style="width: 140px; float: right;">
-                    <option>None</option>
-                    <option>Emails</option>
-                    <option>Email Digest</option>
+                <select class="form-control" style="width: 140px; float: right;" data-bind="
+                    options: $root.subList,
+                    value: subscription,
+                    optionsText: 'text'">
                 </select>
             </div>
 

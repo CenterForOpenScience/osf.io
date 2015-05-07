@@ -1345,6 +1345,16 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/file_subscriptions/',
+                '/project/<pid>/node/<nid>/file_subscriptions/',
+            ],
+            'get',
+            notification_views.get_file_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
             '/subscriptions/',
             'post',
             notification_views.configure_subscription,
