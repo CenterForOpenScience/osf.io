@@ -1661,7 +1661,7 @@ function _dropLogic(event, items, folder) {
     if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) != -1) return;
 
     if (!folder.open) {
-        tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
+        return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
     $.each(items, function(index, item) {
