@@ -215,6 +215,9 @@
     ### Javascript loaded at the bottom of the page ###
 </%def>
 
+<%def name="footer()">
+    ### Footer for the pages ###
+</%def>
 
 <%def name="includes_top()">
 
