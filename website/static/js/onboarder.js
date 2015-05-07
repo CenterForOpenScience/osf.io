@@ -25,6 +25,7 @@ function noop() {}
 var MAX_RESULTS = 14;
 var DEFAULT_FETCH_URL = '/api/v1/dashboard/get_nodes/';
 var CREATE_URL = '/api/v1/project/new/';
+var DELETE_NODE_URL ='/api/v1/project/new/delete';
 
 
 var substringMatcher = function(strs) {
@@ -446,6 +447,24 @@ function OBUploaderViewModel(params) {
         }
         if (!self.dropzone.getQueuedFiles().length) {
             self.changeMessage('Please select at least one file to upload.', 'text-danger');
+
+            // Delete node only if a new project is created
+            if(self.newProjectName() != null)
+            {
+                var request = $.ajax({
+                url: DELETE_NODE_URL + '/' + selectedProject.id + '/',
+                type: 'DELETE'
+                });
+                request.done(function() {
+                    return false;
+                });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Project created without any upload', {
+                        textStatus: textStatus,
+                        error: error
+                    });
+                });
+            }
             return false;
         }
         var selected = selectedComponent || selectedProject;
