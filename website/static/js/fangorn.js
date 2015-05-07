@@ -1246,7 +1246,7 @@ function _fangornResetToolbar () {
         tb.options.fgIconState = _defaultIconState();
     }
     tb.options.fgIconState.mode = 'bar';
-    tb.resetFilter();
+    tb.filterText('');
     m.redraw();
 }
 
