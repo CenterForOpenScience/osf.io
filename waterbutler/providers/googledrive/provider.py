@@ -69,7 +69,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         return self == other
 
     def can_intra_copy(self, other, path=None):
-        return self == other
+        return self == other and (path and path.is_file)
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, src_path, dest_path):
