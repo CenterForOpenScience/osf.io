@@ -91,6 +91,7 @@ before_cache:
   - rm -f $HOME/.cache/wheelhouse/mfr-*.whl
   - rm -f $HOME/.cache/wheelhouse/httpretty-*.whl
   - rm -f $HOME/.cache/wheelhouse/mendeley-*.whl
+  - rm -f $HOME/.cache/wheelhouse/feedparser-*.whl
   # exclude npm from github repo's
   - rm -Rf node_modules/dropzone
   - rm -Rf node_modules/treebeard

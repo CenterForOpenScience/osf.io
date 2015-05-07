@@ -44,7 +44,7 @@
         </p>
     </div>
 % elif profile is not UNDEFINED:  # On profile page and user has no public projects/components
-  <div class="help-block">This user has no public ${pluralized_node_type}.</div>
+    <div class="help-block">This user has no public ${pluralized_node_type}.</div>
 % else:
-  <div class="help-block">No ${pluralized_node_type} to display.</div>
+    <div class="help-block">No ${pluralized_node_type} to display.</div>
 % endif
