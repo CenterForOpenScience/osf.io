@@ -465,25 +465,29 @@ function _poLoadOpenChildren() {
  * @this Treebeard.controller
  * @private
  */
-// TODO : Cleanup
 function _poMultiselect(event, tree) {
     var tb = this,
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
         someItemsAreFolders,
         pointerIds;
-    _toolbarDismissEvent.call(tb);
-    tb.options.iconState.rowIcons = [];
-    if (!tb.filterOn) {
-        tb.options.iconState.mode = 'bar';
+    var scrollToItem = false;
+    if (tb.options.poIconState.mode === 'search') {
+        scrollToItem = true;
+        // recursively open parents of the selected item but do not lazyload;
+        Fangorn.Utils.openParentFolders.call(tb, tree);
     }
+    m.redraw();
+    _toolbarDismissEvent.call(tb);
     if (tb.multiselected.length === 1) {
         // empty row icons and assign row icons from item information
-        tb.options.iconState.rowIcons = tree.icons;
-        //tb.options.iconState.title = tree.data.name;
-
+        tb.options.poIconState.rowIcons = tree.icons;
+        //tb.options.poIconState.title = tree.data.name;
         // temporarily remove classes until mithril redraws raws with another hover. 
         tb.select('#tb-tbody').removeClass('unselectable');
-    } else {
+        if (scrollToItem) {
+            Fangorn.Utils.scrollToFile.call(tb, tb.multiselected[0].id);
+        }
+    } else if (tb.multiselected.length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
         someItemsAreFolders = false;
         pointerIds = [];
