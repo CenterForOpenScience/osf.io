@@ -152,7 +152,7 @@ def osf_storage_get_lineage(node_addon, fid=None, **kwargs):
 def osf_storage_get_metadata(node_addon, fid=None, **kwargs):
     filenode = model.OsfStorageFileNode.get(
         fid or node_addon.root_node._id,
-        node_addon=node_addon
+        node_addon
     )
 
     if filenode.is_deleted:
