@@ -1044,7 +1044,7 @@ function _fangornDefineToolbar (item) {
                     'title':  'Change the name of the Collection or project',
                     'data-placement' : 'bottom',
                     onclick : function(event) {
-                        self.options.iconState.mode = 'rename';
+                        tb.options.iconState.mode = 'rename';
                     }
                 }, [
                 m('i.fa.fa-font'),
