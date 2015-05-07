@@ -495,48 +495,8 @@ function _poMultiselect(event, tree) {
                                   !thisItem.permissions.movable;
             pointerIds.push(thisItem.node_id);
         });
-        var detailTemplateContext;
-        if (!selectedRows[0].parent().data.isFolder){
-            // detailTemplateContext = {
-            //     itemsCount: selectedRows.length
-            // };
-            // var theParentNode = selectedRows[0].parent();
-            // var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-            // $detailDiv.html(displayHTML).show();
-        } else {
-            if (!someItemsAreFolders) {
-                // detailTemplateContext = {
-                //     multipleItems: true,
-                //     itemsCount: selectedRows.length
-                // };
-                // var theParentNode = selectedRows[0].parent();
-                // var displayHTML = multiItemDetailTemplate(detailTemplateContext);
-                // $detailDiv.html(displayHTML).show();
-                // $('#remove-links-multiple').click(function () {
-                //     deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                //     createBlankProjectDetail();
-                // });
-                // $('#close-multi-select').click(function () {
-                //     createBlankProjectDetail();
-                //     return false;
-                // });
-            } else {
-                // detailTemplateContext = {
-                //     itemsCount: selectedRows.length
-                // };
-                // var theParentNode = selectedRows[0].parent();
-                // var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-                // $detailDiv.html(displayHTML).show();
-            }
-        }
-
-
-
     }
-
 }
-
-
 
 /**
  * Deletes pointers based on their ids from the folder specified
@@ -1510,7 +1470,7 @@ var tbOptions = {
         }
         $('[data-toggle="tooltip"]').tooltip();
     },
-    onscrollcomplete : function(){
+    onscrollcomplete : function () {
         $('[data-toggle="tooltip"]').tooltip();
         _cleanupMithril();
     },
