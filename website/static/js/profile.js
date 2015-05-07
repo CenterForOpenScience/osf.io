@@ -502,6 +502,14 @@ var SocialViewModel = function(urls, modes) {
         }
         else return false
     });
+
+    self.canEditWebsites = ko.computed(function() {
+        if (self.profileWebsites()) {
+            return self.profileWebsites().length > 1;
+        }
+        else return false
+    });
+
     
     self.canRemove = ko.computed(function () {
         if (self.profileWebsites())
