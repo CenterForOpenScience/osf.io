@@ -354,31 +354,51 @@ def project_before_register(auth, node, **kwargs):
     return {'prompts': prompts}
 
 
-def _send_embargo_email(node, user, approval_token, disapproval_token, embargo_end_date):
-    """ Sends Approve/Disapprove email for embargo of a public registration to user
-        :param node: Node being embargoed
-        :param user: Admin user to be emailed
-        :param embargo_end_date: End date for the proposed embargo
-        :param approval_token: token `user` needs to approve embargo
-        :param disapproval_token: token `user` needs to disapprove embargo
+def _send_embargo_email(node, user):
+    """ Sends pending embargo announcement email to contributors. Project
+    admins will also receive approval/disapproval information.
+    :param node: Node being embargoed
+    :param user: User to be emailed
     """
 
+    embargo_end_date = node.embargo.end_date
     registration_link = node.web_url_for('view_project', _absolute=True)
-    approval_link = node.web_url_for('node_registration_embargo_approve', token=approval_token, _absolute=True)
-    disapproval_link = node.web_url_for('node_registration_embargo_disapprove', token=disapproval_token, _absolute=True)
-    approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+    initiators_fullname = node.embargo.initiated_by.fullname
 
-    mails.send_mail(
-        user.username,
-        mails.PENDING_EMBARGO,
-        'plain',
-        user=user,
-        approval_link=approval_link,
-        disapproval_link=disapproval_link,
-        registration_link=registration_link,
-        embargo_end_date=embargo_end_date,
-        approval_time_span=approval_time_span
-    )
+    if node.has_permission(user, 'admin'):
+        approval_token = node.embargo.approval_state[user._id]['approval_token'],
+        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token'],
+        approval_link = node.web_url_for('node_registration_embargo_approve',
+                                         token=approval_token,
+                                         _absolute=True)
+        disapproval_link = node.web_url_for(
+            'node_registration_embargo_disapprove',
+            token=disapproval_token,
+            _absolute=True)
+        approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+
+        mails.send_mail(
+            user.username,
+            mails.PENDING_EMBARGO_ADMIN,
+            'plain',
+            user=user,
+            iniated_by=initiators_fullname,
+            approval_link=approval_link,
+            disapproval_link=disapproval_link,
+            registration_link=registration_link,
+            embargo_end_date=embargo_end_date,
+            approval_time_span=approval_time_span
+        )
+    else:
+        mails.send_mail(
+            user.username,
+            mails.PENDING_EMBARGO_NON_ADMIN,
+            user=user,
+            initated_by=initiators_fullname,
+            registration_link=registration_link,
+            embargo_end_date=embargo_end_date,
+
+        )
 
 
 @must_be_valid_project
@@ -426,16 +446,8 @@ def node_register_template_page_post(auth, node, **kwargs):
         except ValidationValueError:
             raise HTTPError(http.BAD_REQUEST)
 
-        # Email admins for approval/disapproval
-        admins = [contrib for contrib in register.contributors if register.has_permission(contrib, 'admin')]
-        for admin in admins:
-            _send_embargo_email(
-                register,
-                admin,
-                register.embargo.approval_state[admin._id]['approval_token'],
-                register.embargo.approval_state[admin._id]['disapproval_token'],
-                embargo_end_date
-            )
+        for contributor in register.contributors:
+            _send_embargo_email(register, contributor)
 
     return {
         'status': 'success',
