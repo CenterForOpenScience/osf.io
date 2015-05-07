@@ -53,11 +53,13 @@ var _defaultIconState = function () {
 };
 
 // Cross browser key codes for the Command key
-var commandKeys = [224, 17, 91, 93];
+var COMMAND_KEYS = [224, 17, 91, 93];
+var ESCAPE_KEY = 27;
+var ENTER_KEY = 13;
 
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
-var getExtensionIconClass = function(name) {
+var getExtensionIconClass = function (name) {
     var extension = name.split('.').pop().toLowerCase();
     var icon = EXTENSION_MAP[extension];
     if (icon) {
@@ -966,12 +968,12 @@ function _fangornTitleColumn(item, col) {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 var fileurl  = redir.toString() + '/';
-                if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+                if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
                     window.open(fileurl, '_blank');
                 } else {
                     window.open(fileurl, '_self');
                 }
-            },
+            }
         }, item.data.name);
     }
     return m('span', item.data.name);
@@ -1674,12 +1676,12 @@ tbOptions = {
             })
         }
         $(window).on('keydown', function(event){
-            if (event.keyCode === 27) {
+            if (event.keyCode === ESCAPE_KEY) {
                 _fangornResetToolbar.call(tb);
             }
         });
         $(document).on('keypress', '#createFolderInput', function () {
-            if (tb.pressedKey === 13) {
+            if (tb.pressedKey === ENTER_KEY) {
                 _createFolder.call(tb);
             }
         });
