@@ -1451,7 +1451,11 @@ function filterRowsNotInParent(rows) {
 
  function _fangornMultiselect (event, row) {
     var tb = this;
+    var scrollToItem = false;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+    if (tb.options.fgIconState.mode === 'search') {
+        scrollToItem = true;
+    }
     _fangornResetToolbar.call(tb);
 
     if(tb.multiselected.length === 1){
@@ -1462,6 +1466,9 @@ function filterRowsNotInParent(rows) {
         // $('.tb-row[data-id="' + row.id + '"]').removeClass(this.options.hoverClass).addClass('fangorn-selected');
         tb.select('#tb-tbody').removeClass('unselectable');
         tb.options.fgIconState.generalIcons.deleteMultiple.on = false;
+        if(scrollToItem) {
+             scrollToFile.call(tb, tb.multiselected[0].id);
+        }
     } else if (tb.multiselected.length > 1) {
         if(tb.multiselected[0].data.provider !== 'github') {
             tb.options.fgIconState.generalIcons.deleteMultiple.on = true;
@@ -1469,6 +1476,7 @@ function filterRowsNotInParent(rows) {
             tb.select('#tb-tbody').addClass('unselectable');
     }
     tb.redraw();
+
     if(tb.pressedKey === 'toggle') {
         tb.pressedKey = undefined;
     }
