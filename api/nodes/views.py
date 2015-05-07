@@ -197,14 +197,13 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
         return valid_methods
 
-    @staticmethod
-    def get_file_item(item, valid_file_methods, node_id, cookie, obj_args):
+    def get_file_item(self, item, cookie, obj_args):
         file_item = {
-            'valid_self_link_methods': valid_file_methods[item['kind']],
+            'valid_self_link_methods': self.get_valid_self_link_methods(self.request.user)[item['kind']],
             'provider': item['provider'],
             'path': item['path'],
             'name': item['name'],
-            'node_id': node_id,
+            'node_id': self.get_node()._primary_key,
             'cookie': cookie,
             'args': obj_args,
             'waterbutler_type': 'file',
@@ -251,20 +250,14 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
                         'metadata': {},
                     })
         else:
-            valid_self_link_methods = self.get_valid_self_link_methods(user, False)
             url = waterbutler_url_for('data', provider, path, self.kwargs['pk'], node_id, obj_args)
             waterbutler_request = requests.get(url)
             waterbutler_data = waterbutler_request.json()['data']
             if isinstance(waterbutler_data, list):
                 for item in waterbutler_data:
-                    file = self.get_file_item(item, valid_self_link_methods, node_id, cookie, obj_args)
+                    file = self.get_file_item(item, cookie, obj_args)
                     files.append(file)
             else:
-                files.append(self.get_file_item(waterbutler_data, valid_self_link_methods, node_id, cookie, obj_args))
+                files.append(self.get_file_item(waterbutler_data, cookie, obj_args))
 
         return files
-
-    def get_current_user(self):
-        request = self.context['request']
-        user = request.user
-        return user
