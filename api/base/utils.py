@@ -15,7 +15,8 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     if query_kwargs:
         relative_url = u'%s?%s' % (relative_url, urlencode(query_kwargs))
 
-    return urlparse.urljoin(settings.API_DOMAIN, relative_url)
+    domain = settings.DOMAIN if settings.API_SERVER_PORT == 5000 else settings.API_DOMAIN
+    return urlparse.urljoin(domain, relative_url)
 
 
 def get_object_or_404(model_cls, query_or_pk):
