@@ -1440,6 +1440,22 @@ function filterRowsNotInParent(rows) {
     return newRows;
 }
 
+/**
+ * Helper function that turns parent open values to true to respective redraws can open the folder
+ * @this Treebeard.controller
+ * @param {Object} item A Treebeard _item object.
+ * @private
+ */
+function _openParentFolders (item) {
+    var tb = this;
+    // does it have a parent? If so change open
+    var parent = item.parent();
+    if(parent){
+        parent.open = true;
+        _openParentFolders.call(tb, parent);
+    }
+    return;
+}
 
 /**
  * Handles multiselect conditions and actions
@@ -1448,13 +1464,14 @@ function filterRowsNotInParent(rows) {
  * @param {Object} row A Treebeard _item object.
  * @private
  */
-
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
     if (tb.options.fgIconState.mode === 'search') {
         scrollToItem = true;
+        // recursively open parents of the selected item but do not lazyload;
+        _openParentFolders.call(tb, row)
     }
     _fangornResetToolbar.call(tb);
 
