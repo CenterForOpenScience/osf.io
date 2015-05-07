@@ -1873,8 +1873,8 @@ Fangorn.Utils = {
     setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile,
     defineToolbar : _fangornDefineToolbar,
-    resetToolbar : _fangornResetToolbar
-
+    resetToolbar : _fangornResetToolbar,
+    openParentFolders : _openParentFolders
 };
 
 Fangorn.DefaultOptions = tbOptions;
