@@ -118,7 +118,7 @@
 <p>If the project is private, claim the account, and then follow the steps above.</p>
 
 <h3>How do I make folders to organize the files in my project?</h3>
-<p>Components act like folders. Thus, to organize your files into folders, create components. From the project overview page, click “create component” on the right half of the page.</p>
+<p>You can create a folder or a component to help organize your files. To create a folder, navigate to the files tab of your project. Find the storage add-on you'd like to put a folder in and click the "+" sign next to its name. Components also act like folders, but can be used to control privacy settings independently of the whole project. To create a component, navigate to the project overview page and click “create component” on the right half of the page.</p>
 
 <h3>I’m using the search function to find one of my projects, but it’s not showing up in the results. What’s wrong?</h3>
 <p>The search function only returns public projects, so if you’re searching for one of your own private projects, it won’t be returned in the results. To search for your own projects, go to your dashboard, and use the “Go to my project” widget on the top right.</p>
