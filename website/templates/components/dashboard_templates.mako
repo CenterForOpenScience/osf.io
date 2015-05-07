@@ -139,13 +139,13 @@
             <span class="text-danger" data-bind="text: errorMessage"></span>
             <br />
             
-            <label>Category </label>
-            <select class="form-control"
-                    data-bind="value: category,
-                               options: categories,
-                               optionsText: function(val) { return categoryMap[val]}">
-            </select>
-            <br />
+##            <label>Category </label>
+##            <select class="form-control"
+##                    data-bind="value: category,
+##                               options: categories,
+##                               optionsText: function(val) { return categoryMap[val]}">
+##            </select>
+##            <br />
 
             <label>Description (Optional)</label>
             <textarea data-bind="value: description"class="form-control resize-vertical" name="description"

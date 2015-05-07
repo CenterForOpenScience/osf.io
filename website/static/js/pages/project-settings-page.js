@@ -50,10 +50,12 @@ $(document).ready(function() {
             value: keys[i]
         });
     }
+    var disableCategory = !window.contextVars.node.parentExists;
     var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
         window.contextVars.node.category,
         categories,
-        window.contextVars.node.urls.update
+        window.contextVars.node.urls.update,
+        disableCategory
     );
     ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
 
