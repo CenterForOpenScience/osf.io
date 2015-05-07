@@ -81,10 +81,10 @@ MERGE_COMPLETE = 'Accounts successfully merged.'
 MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
 
 MERGE_CONFIRMATION_REQUIRED_LONG = (
-    'This email is confirmed to another account. '
-    '<a href="?confirm_merge">Click here</a> to merge account '
-    '<em>{user_to_merge.username}</em> with the account '
-    '<em>{user.username}</em>.'
+    '<p>This email is confirmed to another account. '
+    'Would you like to merge <em>{user_to_merge.username}</em> with the account '
+    '<em>{user.username}</em>?<p>'
+    '<a class="btn btn-success" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions
