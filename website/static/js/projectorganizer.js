@@ -904,7 +904,7 @@ function searchButton() {
         'title':  'Switch to search panel to filter rows below.',
         'data-placement' : 'bottom',
         onclick : function () {
-            tb.options.iconState.mode = 'search';
+            tb.options.poIconState.mode = 'search';
             tb.clearMultiselect();
         }
     }, [
@@ -917,7 +917,7 @@ function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
     if (tb.multiselected.length !== 1 || val.length < 1) {
-        tb.options.iconState.mode = 'bar';
+        tb.options.poIconState.mode = 'bar';
         return;
     }
     var item = tb.multiselected[0];
@@ -936,7 +936,7 @@ function _addFolderEvent() {
         }).fail($osf.handleJSONError);
 
     });
-    tb.options.iconState.mode = 'bar';
+    tb.options.poIconState.mode = 'bar';
 }
 
 function addFolderButton() {
@@ -955,7 +955,7 @@ function _renameEvent() {
     var tb = this;
     var val = $.trim($('#renameInput').val());
     if (tb.multiselected.length !== 1 || val.length < 1) {
-        tb.options.iconState.mode = 'bar';
+        tb.options.poIconState.mode = 'bar';
         return;
     }
     var item = tb.multiselected[0];
@@ -971,7 +971,7 @@ function _renameEvent() {
         tb.updateFolder(null, tb.find(1));
         // Also update every
     }).fail($osf.handleJSONError);
-    tb.options.iconState.mode = 'bar';
+    tb.options.poIconState.mode = 'bar';
 }
 
 function renameButton() {
@@ -1114,7 +1114,7 @@ function addProjectButton() {
                 });
             });
             triggerClickOnItem.call(tb, item);
-            tb.options.iconState.mode = 'bar';
+            tb.options.poIconState.mode = 'bar';
         }
     }, [
         m('i.fa.fa-plus'),
@@ -1173,19 +1173,19 @@ function infoIcon() {
 function _poToolbar() {
     var tb = this;
     var generalButtons = [];
-    var generalIcons = tb.options.iconState.generalIcons;
+    var generalIcons = tb.options.poIconState.generalIcons;
     if (generalIcons.search.on) {
         generalButtons.push(generalIcons.search.template.call(tb));
     }
 
     generalButtons.push(generalIcons.info.template.call(tb));
 
-    if (tb.options.iconState.mode === 'bar') {
+    if (tb.options.poIconState.mode === 'bar') {
         return m('.row.tb-header-row', [
             m('.col-xs-12.tb-buttons-col', [
                 m('.fangorn-toolbar.pull-right',
                     [
-                        tb.options.iconState.rowIcons.map(function (icon) {
+                        tb.options.poIconState.rowIcons.map(function (icon) {
                             if (icon.template) {
                                 return icon.template.call(tb);
                             }
@@ -1196,7 +1196,7 @@ function _poToolbar() {
             ])
         ]);
     }
-    if (tb.options.iconState.mode === 'search') {
+    if (tb.options.poIconState.mode === 'search') {
         return m('.row.tb-header-row', [
             m('#searchRow', { config : function () { $('#searchRow input').focus(); }}, [
                 m('.col-xs-11', tb.options.filterTemplate.call(tb)),
@@ -1208,7 +1208,7 @@ function _poToolbar() {
             ])
         ]);
     }
-    if (tb.options.iconState.mode === 'addFolder') {
+    if (tb.options.poIconState.mode === 'addFolder') {
         return m('.row.tb-header-row', [
             m('#collRow', { config : function () { $('#collRow input').focus(); }}, [
                 m('.col-xs-9', m('input#addNewFolder.tb-header-input', { 'placeholder' : 'Collection name'})),
@@ -1223,7 +1223,7 @@ function _poToolbar() {
             ])
         ]);
     }
-    if (tb.options.iconState.mode === 'rename') {
+    if (tb.options.poIconState.mode === 'rename') {
         return m('.row.tb-header-row', [
             m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
                 m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
@@ -1238,7 +1238,7 @@ function _poToolbar() {
             ])
         ]);
     }
-    if (tb.options.iconState.mode === 'addProject') {
+    if (tb.options.poIconState.mode === 'addProject') {
         return m('.row.tb-header-row', [
             m('#projRow', { config : function () { $('#projRow input').focus(); }}, [
                 m('.col-xs-9', [
@@ -1295,7 +1295,7 @@ function _poDefineToolbar(item) {
                     'title':  'Adds a Collection to visually organize your projects or components.',
                     'data-placement' : 'bottom',
                     onclick : function (event) {
-                        tb.options.iconState.mode = 'addFolder';
+                        tb.options.poIconState.mode = 'addFolder';
                     }
                 }, [
                     m('i.fa.fa-cubes'),
@@ -1308,7 +1308,7 @@ function _poDefineToolbar(item) {
                     'title':  'Adds an existing project or component to the Collection.',
                     'data-placement' : 'bottom',
                     onclick : function (event) {
-                        tb.options.iconState.mode = 'addProject';
+                        tb.options.poIconState.mode = 'addProject';
                     }
                 }, [
                     m('i.fa.fa-cube'),
@@ -1352,7 +1352,7 @@ function _poDefineToolbar(item) {
                     'title':  'Change the name of the Collection or project',
                     'data-placement' : 'bottom',
                     onclick : function (event) {
-                        tb.options.iconState.mode = 'rename';
+                        tb.options.poIconState.mode = 'rename';
                     }
                 }, [
                     m('i.fa.fa-font'),
