@@ -97,6 +97,8 @@ class GitHubProvider(provider.BaseProvider):
             data = yield from self.metadata(path)
             file_sha = data['extra']['fileSha']
 
+        data = yield from self.metadata(path)
+
         resp = yield from self.make_request(
             'GET',
             self.build_repo_url('git', 'blobs', file_sha),
@@ -105,7 +107,7 @@ class GitHubProvider(provider.BaseProvider):
             throws=exceptions.DownloadError,
         )
 
-        return streams.ResponseStreamReader(resp)
+        return streams.ResponseStreamReader(resp, size=data['size'])
 
     @asyncio.coroutine
     def upload(self, stream, path, message=None, branch=None, **kwargs):
@@ -140,7 +142,8 @@ class GitHubProvider(provider.BaseProvider):
         # You're hacky
         return GitHubFileTreeMetadata({
             'path': path.path,
-            'sha': blob['sha']
+            'sha': blob['sha'],
+            'size': stream.size,
         }, folder=path.path, commit=commit).serialized(), not exists
 
     @asyncio.coroutine

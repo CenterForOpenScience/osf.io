@@ -76,7 +76,7 @@ class GitHubFileTreeMetadata(BaseGitHubFileMetadata):
 
     @property
     def size(self):
-        return None
+        return self.raw['size']
 
 
 class GitHubFolderTreeMetadata(BaseGitHubFolderMetadata):
