@@ -1,6 +1,6 @@
 Hello ${user.fullname},
 
-I just wanted to let you know, an administrator has requested an embargoed registration for a project you adminstor.
+I just wanted to let you know, another administrator has requested an embargoed registration for a project you adminstor.
 
 The proposed registration can be reviewed here: ${registration_link}.
 
