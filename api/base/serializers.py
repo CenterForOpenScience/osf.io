@@ -23,8 +23,6 @@ def _url_val(val, obj, serializer, **kwargs):
         return val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
         return getattr(serializer, val)(obj)
-    elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
-        return val.resolve_url(obj, **kwargs)
     else:
         return val
 
@@ -124,15 +122,13 @@ class Link(object):
         )
 
 
-class WaterbutlerLink(object):
+class WaterbutlerLink(Link):
     """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
     """
 
     def __init__(self, args=None, kwargs=None, **kw):
         # self.endpoint = endpoint
-        self.kwargs = kwargs or {}
-        self.args = args or tuple()
-        self.reverse_kwargs = kw
+        super(WaterbutlerLink, self).__init__(None, args, kwargs, None, **kw)
 
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
