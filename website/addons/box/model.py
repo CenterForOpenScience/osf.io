@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import time
 import logging
 from datetime import datetime
@@ -56,15 +55,6 @@ class BoxFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
-
-    @property
-    def extra(self):
-        if not self._metadata_cache:
-            return {}
-
-        return {
-            'fullPath': self._metadata_cache['fullPath'],
-        }
 
 
 class BoxOAuthSettings(StoredObject):
