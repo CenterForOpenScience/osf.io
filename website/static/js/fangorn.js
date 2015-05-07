@@ -324,9 +324,9 @@ function _fangornSending(treebeard, file, xhr, formData) {
     };
     var filesArr = treebeard.dropzone.getQueuedFiles();
     if (filesArr.length  > 0) {
-        treebeard.options.iconState.generalIcons.cancelUploads.on = true;
+        treebeard.options.fgIconState.generalIcons.cancelUploads.on = true;
     } else {
-        treebeard.options.iconState.generalIcons.cancelUploads.on = false;
+        treebeard.options.fgIconState.generalIcons.cancelUploads.on = false;
     }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
@@ -622,7 +622,7 @@ function _removeEvent (event, items, col) {
         items.forEach(function(item){
             runDelete(item);
         });
-        this.options.iconState.generalIcons.deleteMultiple.on = false;
+        this.options.fgIconState.generalIcons.deleteMultiple.on = false;
     }
 
     function doDelete() {

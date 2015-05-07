@@ -45,7 +45,7 @@ function _removeEvent(event, items) {
         items.forEach(function (item) {
             runDelete(item);
         });
-        this.options.iconState.generalIcons.deleteMultiple.on = false;
+        this.options.fgIconState.generalIcons.deleteMultiple.on = false;
     }
 
     // If there is only one item being deleted, don't complicate the issue:
@@ -147,7 +147,7 @@ function _githubDefineToolbar(item) {
             { name : 'createFolder', template : function(){
                 return m('.fangorn-toolbar-icon.text-info', {
                         onclick : function(event) {
-                            tb.options.iconState.mode = 'createFolder';
+                            tb.options.fgIconState.mode = 'createFolder';
                             m.redraw(true);
                         }
                     },[
