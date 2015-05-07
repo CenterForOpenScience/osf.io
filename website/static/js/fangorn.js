@@ -48,7 +48,6 @@ var _defaultIconState = function () {
             deleteMultiple : { on : false, template :  deleteMultipleIcon }
         },
         rowIcons : [{}]
-
     };
 };
 
@@ -1245,7 +1244,6 @@ function _fangornResetToolbar () {
     if (tb.options.fgIconState.mode === 'search') {
         tb.options.fgIconState = _defaultIconState();
         tb.resetFilter();
-
     }
     tb.options.fgIconState.mode = 'bar';
     m.redraw();
@@ -1450,8 +1448,12 @@ function _openParentFolders (item) {
     var tb = this;
     // does it have a parent? If so change open
     var parent = item.parent();
-    if(parent){
-        parent.open = true;
+    if(parent ){
+        if(!parent.open) {
+            var index = tb.returnIndex(parent.id);
+            parent.load = true;
+            tb.toggleFolder(index);
+        }
         _openParentFolders.call(tb, parent);
     }
     return;
