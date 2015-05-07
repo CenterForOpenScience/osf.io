@@ -13,7 +13,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     relative_url = reverse(view_name, kwargs=kwargs)
 
     if query_kwargs:
-        relative_url = u'%s?%s' % (relative_url, urlencode(query_kwargs))
+        relative_url = '{}?{}'.format(relative_url, urlencode(query_kwargs))
 
     return urlparse.urljoin(settings.API_DOMAIN, relative_url)
 
