@@ -113,7 +113,7 @@ var ViewModel = function(submitUrl) {
             return false;
         }
         // Else submit, and send Google Analytics event
-        ga('send', 'event', 'signup-submit', 'click', 'new_user_submit');
+        window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
         $osf.postJSON(
             submitUrl,
             ko.toJS(self)
