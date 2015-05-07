@@ -840,7 +840,7 @@ class User(GuidStoredObject, AddonModelMixin):
             print "val is ", val
             print "self.SOCIAL_FIELDS.get(key) is ", self.SOCIAL_FIELDS.get(key)
             #print "self.SOCIAL_FIELDS[key].format(val) is ", self.SOCIAL_FIELDS[key].format(val)
-            if val:
+            if val and self.SOCIAL_FIELDS.get(key):
                 if isinstance(val, list):
                     social_user_fields[key] = val
                     print "in isinstance"
