@@ -18,11 +18,12 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
 
     @property
     def path(self):
-        return os.path.join(str(self._path), parse.quote(self.raw['title'], safe=''))
+        #TODO Address this
+        return os.path.join(parse.quote(str(self._path)), parse.quote(self.raw['title'], safe=''))
 
     @property
-    def full_path(self):
-        return os.path.join(parse.unquote(str(self._path)), self.raw['title'])
+    def materialized_path(self):
+        return os.path.join(str(self._path), self.raw['title'])
 
     @property
     def extra(self):
@@ -44,8 +45,8 @@ class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMeta
         return super().path + '/'
 
     @property
-    def full_path(self):
-        return super().path + '/'
+    def materialized_path(self):
+        return super().materialized_path + '/'
 
 
 class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata):
