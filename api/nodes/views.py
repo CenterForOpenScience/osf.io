@@ -180,8 +180,9 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    def get_valid_self_link_methods(self, user, root_folder=False):
+    def get_valid_self_link_methods(self, root_folder=False):
         valid_methods = {'file': [], 'folder': [], }
+        user = self.request.user
         if user is None:
             return valid_methods
 
@@ -199,7 +200,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
     def get_file_item(self, item, cookie, obj_args):
         file_item = {
-            'valid_self_link_methods': self.get_valid_self_link_methods(self.request.user)[item['kind']],
+            'valid_self_link_methods': self.get_valid_self_link_methods()[item['kind']],
             'provider': item['provider'],
             'path': item['path'],
             'name': item['name'],
@@ -234,7 +235,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         files = []
 
         if provider is None:
-            valid_self_link_methods = self.get_valid_self_link_methods(user, True)
+            valid_self_link_methods = self.get_valid_self_link_methods(True)
             for addon in addons:
                 if addon.config.has_hgrid_files:
                     files.append({
