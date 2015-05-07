@@ -21,6 +21,7 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
 var legendView = require('js/components/legend').view;
+var Fangorn = require('js/fangorn');
 
 var nodeCategories = require('json!built/nodeCategories.json');
 
