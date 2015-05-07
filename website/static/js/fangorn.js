@@ -1148,6 +1148,19 @@ function scrollToFile(fileID) {
     }
 }
 
+/// Mithril Component
+
+var Toolbar = {
+    controller : function(args){
+        this.message = args.message;
+    },
+    view : function(ctrl) {
+        return m('p', ctrl.message);
+    }
+
+}
+
+
 function _fangornToolbar () {
     var tb = this;
     var titleContent = tb.options.title();
@@ -1797,9 +1810,11 @@ tbOptions = {
     removeIcon : function(){
         return m.trust('&times;');
     },
-    headerTemplate : _fangornToolbar,
-    // Not treebeard options, specific to Fangorn
-    fgIconState : _defaultIconState(),
+    headerTemplate : function () {
+        return m.component(Toolbar, {message: "This is it."})
+    },
+            // Not treebeard options, specific to Fangorn
+    fgIconState  : _defaultIconState(),
     defineToolbar : _fangornDefineToolbar,
     onselectrow : function(row) {
         console.log(row);
@@ -1871,8 +1886,8 @@ Fangorn.Utils = {
     setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile,
     defineToolbar : _fangornDefineToolbar,
-    resetToolbar : _fangornResetToolbar
-
+    resetToolbar : _fangornResetToolbar,
+    //toolbar : Toolbar
 };
 
 Fangorn.DefaultOptions = tbOptions;
