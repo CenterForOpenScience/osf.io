@@ -95,10 +95,7 @@ class CRUDHandler(core.BaseProviderHandler):
         self.set_status(201)
         self.write(metadata)
 
-        self._send_hook(
-            'create_folder',
-            metadata,
-        )
+        self._send_hook('create_folder', metadata)
 
     @utils.coroutine
     def put(self):
