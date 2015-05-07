@@ -981,6 +981,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def update(self, fields, auth=None, save=True):
         if self.is_registration:
             raise NodeUpdateError(reason="Registered content cannot be updated")
+        values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
@@ -995,6 +996,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     if key == 'category':
                         self.delete_search_entry()
                     ###############
+                    values[key] = {
+                        'old': getattr(self, key),
+                        'new': value,
+                    }
                     setattr(self, key, value)
                 except AttributeError:
                     raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
@@ -1004,10 +1009,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             updated = self.save()
         else:
             updated = []
+        for key in values:
+            values[key]['new'] = getattr(self, key)
         self.add_log(NodeLog.UPDATED_FIELDS,
                      params={
                          'node': self._id,
-                         'updated_fields': list(updated)
+                         'updated_fields': {
+                             key: {
+                                 'old': values[key]['old'],
+                                 'new': values[key]['new']
+                             }
+                             for key in values
+                         }
                      },
                      auth=auth)
         return updated

@@ -1662,7 +1662,7 @@ class TestNodeTraversals(OsfTestCase):
         point1.add_pointer(point2, auth=self.consolidate_auth)
         point2.add_pointer(point1, auth=self.consolidate_auth)
 
-        descendants = point1.get_descendants_recursive()
+        descendants = list(point1.get_descendants_recursive())
         assert_equal(len(descendants), 1)
 
 class TestRemoveNode(OsfTestCase):
