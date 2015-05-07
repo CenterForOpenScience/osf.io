@@ -184,19 +184,24 @@ class BaseProvider(metaclass=abc.ABCMeta):
             raise exceptions.NotFoundError()
 
         files = []
-        remaining = [base_path]
+        remaining = [(base_path, ())]  # (WaterButlerPath, ('path', 'to'))
         while remaining:
-            path = remaining.pop()
-            metadata = yield from self.metadata(str(path), **kwargs)
+            name, relative_path = remaining.pop()
+            kwargs['path'] = str(name)
+            metadata = yield from self.metadata(**kwargs)
 
             for item in metadata:
                 path = utils.WaterButlerPath(item['path'])
+                name = item.get('name', str(path))
                 if path.is_file:
-                    files.append(
-                        (str(path), (yield from self.download(str(path))))
-                    )
+                    kw = kwargs.copy()
+                    kw['path'] = str(path)
+                    files.append((
+                        '/'.join(relative_path + (name, )),  # path
+                        (yield from self.download(**kw))  # download stream
+                    ))
                 elif path.is_dir:
-                    remaining.append(path)
+                    remaining.append((path, relative_path + (name, )))
 
         return streams.ZipStreamReader(*files)
 
