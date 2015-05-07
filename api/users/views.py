@@ -25,7 +25,19 @@ class UserMixin(object):
 
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
-    """Return a list of registered users."""
+    """Return a list of registered users.
+
+    You can filter on users by their id, fullname, given_name, middle_name, or family_name. Filtering by field is done
+    by adding a query parameter in the form: <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
+
+    For example:
+
+    <pre>/users?filter[fullname]=feynm</pre>
+
+    You can filter on multiple fields, or the same field in different ways, by &ing the query parameters together.
+
+    <pre>/users?filter[fullname]=rich&family_name=feynmann</pre>
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
@@ -57,7 +69,9 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
 
 
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
-    """Get a user's nodes. Return a list of nodes that the user contributes to."""
+    """Get a user's nodes.
+
+    Return a list of nodes that the user contributes to. """
     serializer_class = NodeSerializer
 
     # overrides ODMFilterMixin
