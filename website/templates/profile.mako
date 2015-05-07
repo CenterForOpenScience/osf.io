@@ -141,51 +141,27 @@
 ##        </div>
 ##    </div>
 ##</div>
-
+<% import json %>
 <hr />
 <div class="row">
-        <div class="col-sm-6">
-            <h3>Public Projects</h3>
-            % if profile.get("number_public_projects") > 0:
-                <div mod-meta='{
-                        "tpl" : "util/render_nodes.mako",
-                        "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
-                        "replace" : true,
-                        "kwargs" : {"sortable" : true}
-                    }'></div>
-            % elif user['is_profile']:
-                <div class="help-block">
-                    You have no public projects.
-                    <p>
-                        Find out how to make your projects
-                        <a href="https://osf.io/getting-started/#privacy" target="_blank">public</a>.
-                    </p>
-                </div>
-            % else:
-                <div>This user has no public projects</div>
-            % endif
-        </div>
-        <div class="col-sm-6">
-            <h3>Public Components</h3>
-            %if profile.get("number_public_components") > 0:
-                <div mod-meta='{
-                        "tpl" : "util/render_nodes.mako",
-                        "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
-                        "replace" : true,
-                        "kwargs" : {"sortable" : true}
-                    }'></div>
-            % elif user['is_profile']:
-                <div class="help-block">
-                    You have no public components.
-                    <p>
-                        Find out how to make your components
-                        <a href="https://osf.io/getting-started/#privacy" target="_blank">public</a>.
-                    </p>
-                </div>
-            % else:
-                <div>This user has no public components</div>
-            %endif
-        </div>
+    <div class="col-sm-6">
+        <h3>Public Projects</h3>
+        <div mod-meta='{
+                "tpl" : "util/render_nodes.mako",
+                "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
+                "replace" : true,
+                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects"}
+            }'></div>
+    </div>
+    <div class="col-sm-6">
+        <h3>Public Components</h3>
+          <div mod-meta='{
+                  "tpl" : "util/render_nodes.mako",
+                  "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
+                  "replace" : true,
+                  "kwargs" : {"sortable" : true,  "user": ${json.dumps(user)}, "pluralized_node_type": "components"}
+              }'></div>
+    </div>
 </div><!-- end row -->
 
 <%include file="_log_templates.mako"/>

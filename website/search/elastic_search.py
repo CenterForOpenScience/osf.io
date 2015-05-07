@@ -204,7 +204,7 @@ def load_parent(parent_id):
 def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
 
-    component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
+    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
     category = 'component' if node.category in component_categories else node.category
 
     if category == 'project':
@@ -333,8 +333,8 @@ def create_index(index=INDEX):
 
 
 @requires_search
-def delete_doc(elastic_document_id, node, index=INDEX):
-    category = 'registration' if node.is_registration else node.project_or_component
+def delete_doc(elastic_document_id, node, index=INDEX, category=None):
+    category = category or 'registration' if node.is_registration else node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 

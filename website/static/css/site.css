@@ -87,7 +87,7 @@ body {
     position: fixed;
     top: 70px;
 }
-.gs-sidebar.affix-bottom {
+.affix-bottom {
     position: relative;
 }
 
@@ -980,6 +980,8 @@ h1.unavailable {
     margin-top: -100px;
     padding-top: 100px;
     display: block;
+  z-index: -1;
+  position: relative;    
 }
 
 .anchor {
@@ -1490,14 +1492,13 @@ dl.activity-log dd {
     /*margin-bottom: 625px;*/
 /*}*/
 thead.file-version-thread{
-    display: inline-block;
+    display: block;
 }
 
 tbody.file-version{
     max-height: 580px;
     overflow-y: auto;
     display: inline-block;
-    /*position: absolute;*/
 }
 
 /** The project and wiki name editable inputs should be larger
@@ -2649,4 +2650,10 @@ span#profileFullname{
 }
 .m-xl {
     margin: 50px;
+}
+
+@media (max-width: 768px) {
+    .affix {
+        position: relative;
+    }
 }

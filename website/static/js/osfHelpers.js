@@ -93,8 +93,8 @@ var errorDefaultLong = 'OSF was unable to resolve your request. If this issue pe
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
 var handleJSONError = function(response) {
-    var title = response.message_short || errorDefaultShort;
-    var message = response.message_long || errorDefaultLong;
+    var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
+    var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
 
     $.osf.growl(title, message);
 
@@ -418,6 +418,57 @@ var tableResize = function(selector, checker) {
             }
         });
     }).resize(); // Trigger resize handler
+};
+
+/* A binding handler to convert lists into formatted lists, e.g.:
+ * [dog] -> dog
+ * [dog, cat] -> dog and cat
+ * [dog, cat, fish] -> dog, cat, and fish
+ *
+ * This handler should not be used for user inputs.
+ *
+ * Example use:
+ * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'], 
+ *                            map: function(item) {return item.charAt(0) + '.';}}"></span>
+ * yields
+ * <span ...>A., B., and G.</span>
+ */
+ko.bindingHandlers.listing = {
+    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        var value = valueAccessor();
+        var valueUnwrapped = ko.unwrap(value);       
+        var map = valueUnwrapped.map || function(item) {return item;};
+        var data = valueUnwrapped.data || [];
+        var keys = [];
+        if (!Array.isArray(data)) {
+            keys = Object.keys(data);
+        }
+        else {
+            keys = data;
+        }
+        var index = 1;
+        var list = ko.utils.arrayMap(keys, function(key) {
+            var ret;
+            if (index === 1){
+                ret = '';
+            }
+            else if (index === 2){
+                if (valueUnwrapped.length === 2) {
+                    ret = ' and ';
+                }
+                else {
+                    ret = ', ';
+                }
+            }
+            else {
+                ret = ', and ';
+            }
+            ret += map(key, data[key]);
+            index++;
+            return ret;
+        }).join('');
+        $(element).html(list);
+    }
 };
 
 
