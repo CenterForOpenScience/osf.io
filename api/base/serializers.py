@@ -21,7 +21,7 @@ def _url_val(val, obj, serializer, **kwargs):
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
-    elif isinstance(val, basestring):  # if a string is passed, it's an attribute
+    elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
         return getattr(serializer, val)(obj)
     elif isinstance(val, WaterbutlerLink):  # If a WaterbutlerLink is passed, get the url value
         return val.resolve_url(obj, **kwargs)
