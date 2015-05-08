@@ -217,7 +217,7 @@ class BoxProvider(provider.BaseProvider):
         )
 
         data = yield from resp.json()
-        return BoxFileMetadata(data['entries'][0], self.folder).serialized(), path.identifier is None
+        return BoxFileMetadata(data['entries'][0], path).serialized(), path.identifier is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
