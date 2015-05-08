@@ -601,8 +601,10 @@ var SocialViewModel = function(urls, modes) {
     }
     
     self.removeWebsite = function(profileWebsite) {
-        var idx = self.profileWebsites.indexOf(profileWebsite);
-        self.profileWebsites.splice(idx, 1);
+        for (var i=0; i < self.profileWebsites().length; i++) {
+            if (profileWebsite == ko.toJS(self.profileWebsites()[i]))
+                self.profileWebsites.splice(i, 1);
+        }
     }
 
 

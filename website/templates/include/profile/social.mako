@@ -1,15 +1,8 @@
 <script id="profileSocial" type="text/html">
 
     <div data-bind="if: mode() === 'edit'">
-        <% from website import settings %>
         <form role="form" data-bind="submit: submit">
-        <div   class = "panel panel-default" >
-            <div class="panel-heading">
-                <label class="panel-title">Websites</label>
-                <a class="pull-right" data-bind="click: editWebsiteButton">
-                    Edit
-                </a>
-            </div>
+            <label>Your Websites</label>
             <div data-bind="sortable: {
                         data: profileWebsites,
                         options: {
@@ -17,32 +10,26 @@
                             containment: '#containDrag'
                         }
                     }">
-                <div class="sort-handle">
-                    <i class="btn text-danger pull-right  fa fa-times fa-lg"  data-bind="click: $parent.canRemove(),
-                        visible: $parent.canEditWebsite()"></i>
-                   
-                    <div class="input-group" >
 
-                        <span class="input-group-addon" data-bind="visible: $parent.canEditWebsite()"> 
-                            <i class="fa fa-bars"></i>
-                        </span>
-                        <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                        <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
+                <div>
+                    <div class="sort-handle">
+                        <i title="Click to Remove" class="btn text-danger pull-right  fa fa-times fa" data-bind="click: $parent.removeWebsite"></i>
+                        <div class="input-group" >
+                            <span class="input-group-addon"><i title="Drag to Reorder"  class="glyphicon glyphicon-menu-hamburger"></i></span>
+                            <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
+                        </div>
                     </div>
-
+                    <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)">
+                    </div>
                 </div>
-
-                <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)"></div>  
-
             </div>
+
             <div class="padded" data-bind="visible: !profileWebsiteEmpty()">
                 <a class="btn btn-default" data-bind="click: addWebsite">
                     Add another
                 </a>
             </div>
-        </div>
 
-     
             <div class="padded">
                 
                 <div class="form-group">
@@ -111,10 +98,9 @@
                     <input class="form-control" data-bind="value: scholar" placeholder="profileID"/>
                     </div>
                 </div>
-                </div>
+            </div>
 
             <div class="padded">
-
                 <button
                         type="button"
                         class="btn btn-default"

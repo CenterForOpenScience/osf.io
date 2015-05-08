@@ -836,34 +836,12 @@ class User(GuidStoredObject, AddonModelMixin):
         social_user_fields = {}
         #import ipdb;ipdb.set_trace()
         for key, val in self.social.items():
-            print "key is ", key
-            print "val is ", val
-            print "self.SOCIAL_FIELDS.get(key) is ", self.SOCIAL_FIELDS.get(key)
-            #print "self.SOCIAL_FIELDS[key].format(val) is ", self.SOCIAL_FIELDS[key].format(val)
             if val and key in self.SOCIAL_FIELDS.keys():
                 if isinstance(val, list):
                     social_user_fields[key] = val
-                    print "in isinstance"
                 else:
-                    print "in self.SOCIAL_FIELDS.get(key)"
                     social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
-        print "social_user_fields is ", social_user_fields
         return social_user_fields
-
-#    @property
-#    def social_links(self):
-#        social_user_fields = {}
-##        import ipdb;ipdb.set_trace()
-#        for key, val in self.social.items():
-#            if val:
-#                if isinstance(val, list):
-#                    return {
-#                        key: self.SOCIAL_FIELDS[key]
-#                    }
-#                else:
-#                    return {
-#                        key: self.SOCIAL_FIELDS[key].format(val)
-#                    }
 
     @property
     def biblio_name(self):
