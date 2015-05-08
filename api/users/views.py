@@ -30,8 +30,8 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     You can filter on users by their id, fullname, given_name, middle_name, or family_name. Filtering by field is done
     by adding a query parameter in the form: <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
 
-    For example, if you were trying to find science done by
-    <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Metiner</a>:
+    For example, if you were trying to find <a href="http://en.wikipedia.org/wiki/Lise_Meitner">
+    Lise Metiner</a>:
 
     <pre>/users?filter[fullname]=meitner</pre>
 
