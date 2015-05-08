@@ -1594,6 +1594,7 @@ class TestNode(OsfTestCase):
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
@@ -2944,6 +2945,23 @@ class TestRegisterNode(OsfTestCase):
         self.project.set_privacy('public')
         registration = RegistrationFactory(project=self.project)
         assert_true(registration.is_public)
+
+    def test_public_registration_made_after_cutoff_date_cannot_be_made_private(self):
+        self.registration.is_public = True
+        self.registration.registered_date = settings.REGISTRATION_CUTOFF_DATE + datetime.timedelta(days=1)
+        self.registration.save()
+
+        with assert_raises(NodeStateError):
+            self.registration.set_privacy('private', auth=self.consolidate_auth)
+        assert_true(self.registration.is_public)
+
+    def test_public_registration_made_before_cutoff_date_can_be_made_private(self):
+        self.registration.is_public = True
+        self.registration.registered_date = settings.REGISTRATION_CUTOFF_DATE - datetime.timedelta(days=1)
+        self.registration.save()
+
+        self.registration.set_privacy('private', auth=self.consolidate_auth)
+        assert_false(self.registration.is_public)
 
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)

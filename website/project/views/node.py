@@ -475,6 +475,9 @@ def project_set_privacy(auth, node, **kwargs):
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
 
+    if permissions == 'private' and node.is_registration and not node.registered_before_cutoff_date:
+        raise HTTPError(http.BAD_REQUEST)
+
     node.set_privacy(permissions, auth)
 
     return {
@@ -728,6 +731,7 @@ def _view_project(node, auth, primary=False):
                 for meta in node.registered_meta or []
             ],
             'registration_count': len(node.node__registrations),
+            'registered_before_cutoff_date': node.registered_before_cutoff_date,
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
@@ -902,6 +906,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'category': node.category,
             'node_type': node.project_or_component,
             'is_registration': node.is_registration,
+            'registered_before_cutoff_date': node.registered_before_cutoff_date,
             'anonymous': has_anonymous_link(node, auth),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_registration
