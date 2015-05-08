@@ -254,4 +254,4 @@ SHARE_API_DOCS_URL = ''
 
 # TODO(hrybacki): Remove this and datetime import once no public registrations can be made private
 # Date which registrations created after cannot be made public
-REGISTRATION_CUTOFF_DATE = datetime.datetime(2015, 5, 10)
+REGISTRATION_CUTOFF_DATE = datetime.datetime(2015, 5, 22)
