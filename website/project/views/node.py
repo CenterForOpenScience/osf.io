@@ -475,6 +475,9 @@ def project_set_privacy(auth, node, **kwargs):
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
 
+    if permissions == 'private' and node.is_registration:
+        raise HTTPError(http.BAD_REQUEST)
+
     node.set_privacy(permissions, auth)
 
     return {

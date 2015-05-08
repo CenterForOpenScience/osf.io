@@ -408,6 +408,16 @@ class TestProjectViews(OsfTestCase):
         assert_false(self.project.is_public)
         assert_equal(res.json['status'], 'success')
 
+    def test_make_registration_private_raises_HTTPBad_Request(self):
+        self.project.is_public = True
+        self.project.is_registration = True
+        self.project.save()
+        url = self.project.api_url_for('project_set_privacy', permissions='private')
+        res = self.app.post_json(url, {}, auth=self.auth, expect_errors=True)
+        self.project.reload()
+        assert_true(self.project.is_public)
+        assert_equal(res.status_code, 400)
+
     def test_cant_make_public_if_not_admin(self):
         non_admin = AuthUserFactory()
         self.project.add_contributor(non_admin, permissions=['read', 'write'])
