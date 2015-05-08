@@ -103,6 +103,10 @@ var RevisionsViewModel = function(node, file, editable) {
             self.revisions()[0].extra &&
             self.revisions()[0].extra.user;
     });
+
+    self.hasDate = ko.computed(function() {
+        return self.file.provider !== 'dataverse';
+    });
 };
 
 RevisionsViewModel.prototype.fetch = function() {
