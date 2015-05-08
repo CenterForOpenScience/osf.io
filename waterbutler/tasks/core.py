@@ -31,6 +31,7 @@ def __coroutine_unwrapper(func):
     return wrapped
 
 
+@asyncio.coroutine
 def backgrounded(func, *args, **kwargs):
     """Runs the given function with the given arguments in
     a background thread
@@ -40,7 +41,7 @@ def backgrounded(func, *args, **kwargs):
         func = __coroutine_unwrapper(func)
 
     return (yield from loop.run_in_executor(
-        None,
+        None,  # None uses the default executer, ThreadPoolExecuter
         functools.partial(func, *args, **kwargs)
     ))
 
