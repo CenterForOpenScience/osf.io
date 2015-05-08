@@ -127,3 +127,4 @@ def wait_on_celery(result, interval=None, timeout=None, basepath=None):
         if waited > timeout:
             raise exceptions.WaitTimeOutError
         yield from asyncio.sleep(interval)
+        waited += interval
