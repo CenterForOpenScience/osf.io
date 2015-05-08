@@ -1,5 +1,9 @@
+import os
+import pickle
 import asyncio
 import functools
+
+from celery.backends.base import DisabledBackend
 
 from waterbutler.tasks import app
 from waterbutler.tasks import settings
