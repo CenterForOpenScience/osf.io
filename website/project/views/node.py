@@ -593,7 +593,8 @@ def component_remove(auth, node, **kwargs):
         node.project_or_component.capitalize()
     )
     status.push_status_message(message)
-    if node.node__parent:
+    parent = node.parent_node
+    if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
     else:
         redirect_url = '/dashboard/'
@@ -1043,10 +1044,12 @@ def _serialize_node_search(node):
     if node.is_registration:
         title += ' (registration)'
 
+    first_author = node.visible_contributors[0]
+
     return {
         'id': node._id,
         'title': title,
-        'firstAuthor': node.visible_contributors[0].family_name,
+        'firstAuthor': first_author.family_name or first_author.given_name or first_author.full_name,
         'etal': len(node.visible_contributors) > 1,
     }
 
