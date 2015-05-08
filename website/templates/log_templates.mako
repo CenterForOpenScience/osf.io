@@ -159,14 +159,14 @@ invisible on
 </script>
 
 <script type="text/html" id="addon_file_copied">
-  copied <span class="overflow">{{params.source.path}}</span> from {{ params.source.addon }}
-  to <span class="overflow">{{params.destination.path}}</span> in {{ params.destination.addon }}
+  copied <span class="overflow log-folder">{{params.source.path}}</span> from {{ params.source.addon }}
+  to <span class="overflow log-folder">{{params.destination.path}}</span> in {{ params.destination.addon }}
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="addon_file_moved">
-  moved <span class="overflow">{{params.source.path}}</span> from {{ params.source.addon }}
-  to <span class="overflow">{{params.destination.path}}</span> in {{ params.destination.addon }}
+  moved <span class="overflow log-folder">{{params.source.path}}</span> from {{ params.source.addon }}
+  to <span class="overflow log-folder">{{params.destination.path}}</span> in {{ params.destination.addon }}
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
