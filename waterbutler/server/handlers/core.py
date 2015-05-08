@@ -186,15 +186,12 @@ class BaseCrossProviderHandler(BaseHandler):
         return (yield from utils.send_signed_request('PUT', self.callback_url, {
             'action': action,
             'source': {
-                'path': str(self.json['source']['path']),
-                'name': self.json['source']['path'].name,
                 'provider': self.source_provider.NAME,
+                'path': self.json['source']['path'].path,
+                'name': self.json['source']['path'].name,
+                'materialized': str(self.json['source']['path']),
             },
-            'destination': {
-                'name': data['name'],
-                'path': data['materialized'],
-                'provider': self.destination_provider.NAME,
-            },
+            'destination': data,
             'auth': self.auth['auth'],
             'time': time.time() + 60
         }))
