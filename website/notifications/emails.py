@@ -86,9 +86,12 @@ def notify(uid, event, user, node, timestamp, **context):
     :return:
     """
     node_subscribers = []
-    subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
+    subscriptions = []
+    subscriptions.append(NotificationSubscription.load(utils.to_subscription_key(uid, event)))
+    event = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
+    subscriptions.append(NotificationSubscription.load(utils.to_subscription_key(uid, event)))
 
-    if subscription:
+    for subscription in subscriptions:
         for notification_type in constants.NOTIFICATION_TYPES:
             subscribed_users = getattr(subscription, notification_type, [])
 
@@ -134,6 +137,9 @@ def check_parent(uid, event, node_subscribers, user, orig_node, timestamp, **con
 def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **context):
     """Dispatch to the handler for the provided notification_type"""
 
+    # Remove file path if it exists
+    event_type = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
+
     if notification_type == 'none':
         return
 
@@ -141,7 +147,7 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
         EMAIL_FUNCTION_MAP[notification_type](
             recipient_ids=recipient_ids,
             uid=uid,
-            event=event,
+            event=event_type,
             user=user,
             node=node,
             timestamp=timestamp,

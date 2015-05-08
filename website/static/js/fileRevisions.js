@@ -79,15 +79,12 @@ var RevisionsViewModel = function(node, file, editable) {
         {value: 'none', text: 'None'}
     ];
     self.getSub = function(sub) {
-        if(sub === 'email_transactional') {
-            return self.subList[0];
-        } else if (sub === 'email_digest') {
-            return self.subList[1];
-        } else if (sub === 'adopt_parent') {
-            return self.subList[2];
-        } else {
-            return self.subList[3];
+        for(var i=0; i < self.subList.length; i++) {
+            if(sub === self.subList[i].value) {
+                return self.subList[i]
+            }
         }
+        return self.subList[3];
     };
 
     if (urlParams.branch !== undefined) {
@@ -233,8 +230,6 @@ RevisionsViewModel.prototype.fetch = function() {
             }
         });
     });
-
-    console.log(self);
 };
 
 RevisionsViewModel.prototype.delete = function() {
