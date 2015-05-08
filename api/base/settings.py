@@ -46,6 +46,10 @@ INSTALLED_APPS = (
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
+
+    # Order is important here because of a bug in rest_framework_swagger. For now,
+    # rest_framework.renderers.JSONRenderer needs to be first, at least until
+    # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
         'api.base.renderers.JSONAPIRenderer',
