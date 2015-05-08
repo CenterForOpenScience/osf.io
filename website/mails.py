@@ -151,4 +151,11 @@ CONFERENCE_FAILED = Mail(
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
-PENDING_RETRACTION = Mail('pending_retraction', subject='A registration you administer is pending retraction.')
+PENDING_RETRACTION_ADMIN = Mail(
+    'pending_retraction_admin',
+    subject='Retraction pending for one of your registrations.'
+)
+PENDING_RETRACTION_NON_ADMIN = Mail(
+    'pending_retraction_non_admin',
+    subject='Retraction pending for one of your registrations.'
+)
