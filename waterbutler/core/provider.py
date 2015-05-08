@@ -225,7 +225,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
             finished.pop().result()
 
         folder['children'] = [
-            future.result()
+            future.result()[0]  # result is a tuple of (metadata, created)
             for future in finished
         ]
 
