@@ -547,7 +547,7 @@ function _downloadEvent (event, item, col) {
 function _createFolder(event) {
     var tb = this;
     var val = $.trim(tb.select('#createFolderInput').val());
-    var parent = tb.multiselected[0];
+    var parent = tb.multiselected()[0];
     if (!parent.open) {
          tb.updateFolder(null, parent);
     }
@@ -1294,7 +1294,7 @@ function _fangornToolbar () {
     var generalButtons = [];
     var rowMessage = m('i.m-r-sm','Select rows for further actions.');
     var rowButtons = function(){
-        if(tb.multiselected.length > 1) {
+        if(tb.multiselected().length > 1) {
             return '';
         }
         return tb.options.fgIconState.rowIcons.map(function(icon){
@@ -1314,7 +1314,7 @@ function _fangornToolbar () {
         generalButtons.push(generalIcons.search.template.call(tb));
     }
     generalButtons.push(generalIcons.info.template.call(tb));
-    if(tb.multiselected.length > 0){
+    if(tb.multiselected().length > 0){
         rowMessage = '';
     }
     if (tb.options.fgIconState.mode === 'bar'){
@@ -1345,7 +1345,7 @@ function _fangornToolbar () {
     if(tb.options.fgIconState.mode === 'rename'){
         return m('.row.tb-header-row', [
             m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
-                        m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
+                        m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected()[0].data.name })),
                         m('.col-xs-3.tb-buttons-col',
                             m('.fangorn-toolbar.pull-right',
                                 [
@@ -1494,8 +1494,8 @@ function deleteMultipleIcon (){
             'title':  'Delete all of the currently selected items.',
             'data-placement' : 'bottom',
             onclick : function (event) {
-                    var configOption = resolveconfigOption.call(tb, tb.multiselected[0], 'removeEvent', [event, tb.multiselected]); // jshint ignore:line
-                if(!configOption){ _removeEvent.call(tb, null, tb.multiselected); }
+                    var configOption = resolveconfigOption.call(tb, tb.multiselected()[0], 'removeEvent', [event, tb.multiselected()]); // jshint ignore:line
+                if(!configOption){ _removeEvent.call(tb, null, tb.multiselected()); }
 
             }
         }, [
@@ -1557,11 +1557,11 @@ function _renameEvent () {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRowsNotInParent(rows) {
-    if (this.multiselected.length < 2) {
-        return this.multiselected;
+    if (this.multiselected().length < 2) {
+        return this.multiselected();
     }
     var i, newRows = [],
-        originalRow = this.find(this.multiselected[0].id),
+        originalRow = this.find(this.multiselected()[0].id),
         originalParent,
         currentItem;
     if (typeof originalRow !== "undefined") {
@@ -1575,7 +1575,7 @@ function filterRowsNotInParent(rows) {
             }
         }
     }
-    this.multiselected = newRows;
+    this.multiselected(newRows);
     this.highlightMultiselect();
     return newRows;
 }
@@ -1607,7 +1607,7 @@ function _openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
-    var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected);
+    var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.options.fgIconState.mode === 'search') {
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
@@ -1615,7 +1615,7 @@ function _openParentFolders (item) {
     }
     _fangornResetToolbar.call(tb);
 
-    if(tb.multiselected.length === 1){
+    if(tb.multiselected().length === 1){
         // empty row icons and assign row icons from item information
         tb.options.fgIconState.rowIcons = row.icons;
         // temporarily remove classes until mithril redraws raws with another hover.
@@ -1624,10 +1624,10 @@ function _openParentFolders (item) {
         tb.select('#tb-tbody').removeClass('unselectable');
         tb.options.fgIconState.generalIcons.deleteMultiple.on = false;
         if(scrollToItem) {
-             scrollToFile.call(tb, tb.multiselected[0].id);
+             scrollToFile.call(tb, tb.multiselected()[0].id);
         }
-    } else if (tb.multiselected.length > 1) {
-        if(tb.multiselected[0].data.provider !== 'github') {
+    } else if (tb.multiselected().length > 1) {
+        if(tb.multiselected()[0].data.provider !== 'github') {
             tb.options.fgIconState.generalIcons.deleteMultiple.on = true;
         }
             tb.select('#tb-tbody').addClass('unselectable');
@@ -1667,8 +1667,8 @@ var copyMode = null;
 function _fangornDragStart(event, ui) {
     var itemID = $(event.target).attr('data-id'),
         item = this.find(itemID);
-    if (this.multiselected.length < 2) {
-        this.multiselected = [item];
+    if (this.multiselected().length < 2) {
+        this.multiselected([item]);
     }
 }
 
@@ -1680,7 +1680,7 @@ function _fangornDragStart(event, ui) {
  */
 function _fangornDrop(event, ui) {
     var tb = this;
-    var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected,
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
         folder = tb.find($(event.target).attr('data-id'));
 
     // Run drop logic here
@@ -1696,7 +1696,7 @@ function _fangornDrop(event, ui) {
  */
 function _fangornOver(event, ui) {
     var tb = this;
-    var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected,
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
         folder = tb.find($(event.target).attr('data-id')),
         dragState = _dragLogic.call(tb, event, items, ui);
     $('.tb-row').removeClass('tb-h-success fangorn-hover');
