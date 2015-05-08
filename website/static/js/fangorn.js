@@ -25,13 +25,13 @@ var STATE_MAP = {
         display: 'Upload pending...'
     },
     copy: {
-        display: 'Copying...'
+        display: 'Copying '
     },
     delete: {
-        display: 'Deleting...'
+        display: 'Deleting '
     },
     move: {
-        display: 'Moving...'
+        display: 'Moving '
     }
 };
 
@@ -335,7 +335,7 @@ function doItemOp(isMove, to, from, rename, conflict) {
         if (xhr.status !== 202) {
             from.data = resp;
             from.data.status = undefined;
-            from.notify.update('Successfully ' + (isMove ? 'moved.' : 'copied.'), 'success', 1, 1000);
+            from.notify.update('Successfully ' + (isMove ? 'moved.' : 'copied.'), 'success', null, 1000);
         }
 
         if (!isMove && xhr.status === 200) {
@@ -1114,27 +1114,24 @@ function _fangornResolveRows(item) {
     }
 
     if(item.data.tmpID){
-        return [
-        {
+        return [{
             data : '',  // Data field name
             css : 't-a-c',
             custom : function(){ return m('span.text-muted', [m('span', ' Uploading:' + item.data.name), m('span', cancelUploadTemplate.call(this, item))]); }
-        },
-        {
+        }, {
             data : '',  // Data field name
             custom : function(){ return '';}
         }];
     }
+
     if(item.data.status) {
         return [{
-            data : 'name',
-            folderIcons : true,
-            filter : true,
-            custom : function(){ return m('span.text-muted', item.data.name); }
-        },
-        {
-            data : '',
-            custom : function(){ return m('span.text-muted', STATE_MAP[item.data.status].display); }
+            data : '',  // Data field name
+            css : 't-a-c',
+            custom : function(){ return m('span.text-muted', [STATE_MAP[item.data.status].display, item.data.name, '...']); }
+        }, {
+            data : '',  // Data field name
+            custom : function(){ return '';}
         }];
     }
 
@@ -1383,9 +1380,9 @@ function _fangornResetToolbar () {
     var tb = this;
     if (tb.options.iconState.mode === 'search') {
         tb.options.iconState = _defaultIconState();
+        tb.resetFilter();
     }
     tb.options.iconState.mode = 'bar';
-    tb.resetFilter();
     m.redraw();
 }
 
