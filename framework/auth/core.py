@@ -95,11 +95,11 @@ def validate_profile_websites(profile_websites):
                 validate_url(profile_website)
             except ValidationError:
                 # Reraise with a better message
-                raise ValidationError('Invalid personal URL.')               
+                raise ValidationError('Invalid personal URL.')
 
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
-    
+
 def validate_email(item):
     if not (item
             and re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE)
