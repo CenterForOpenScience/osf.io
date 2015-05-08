@@ -25,7 +25,7 @@ def file_notify(user, node, event, metadata, provider):
 
     notify(
         uid=node._id,
-        event='file_updated',
+        event=path + '_file_updated',
         user=user,
         node=node,
         timestamp=timestamp,
