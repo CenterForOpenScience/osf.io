@@ -1,7 +1,7 @@
 <div class="col-md-12 col-sm-12">
     <span id="components" class="anchor"></span>
     <h4>Components</h4>
-    <p>Components are subsets of a project. They can help you organize different parts of your research. Components are nested underneath a project or another component, and have their own privacy settings, contributors, wiki, add-ons, and files. </p>
+    <p>Components are like sub-projects that help you organize different parts of your research. Components have their own privacy settings, contributors, wiki, add-ons, and files.</p>
     <div class="col-md-8 col-md-offset-2 col-sm-12">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="kotF8Pnurpw"></div>
