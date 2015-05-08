@@ -18,6 +18,7 @@ from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
+from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
@@ -216,6 +217,9 @@ def create_waterbutler_log(payload, **kwargs):
             auth=auth,
             params=payload
         )
+
+        if payload.get('email'):
+            mails.send_mail(user.username, mails.FILE_OPERATION_COMPLETE, user)
     else:
         try:
             metadata = payload['metadata']
