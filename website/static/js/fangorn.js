@@ -1202,12 +1202,13 @@ var FGInput = {
 
 var FGToolbar = {
     controller : function(args) {
-        this.tb = args.treebeard;
-        this.items = args.treebeard.multiselected;
-        this.mode = m.prop('bar');
-        this.onClickCreateFolder = function(evt) {
-            console.log('folder');
-        }
+        var self = this;
+        self.tb = args.treebeard;
+        self.items = args.treebeard.multiselected;
+        self.mode = m.prop('bar');
+        self.helpText = m.prop('');
+        self.dismissToolbar = function(){ self.mode('bar');}
+        self.createFolder = function(event){ _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText ); }
     },
     view : function(ctrl) {
         var templates = {};
