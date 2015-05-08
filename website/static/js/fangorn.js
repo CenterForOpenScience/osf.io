@@ -1170,6 +1170,34 @@ var FGButton = {
     }
 }
 
+var FGInput = {
+    controller : function(args) {
+        var noop = function() {};
+        this.onkeydown = args.onkeydown || noop;
+        this.onclick = args.onclick || noop;
+    },
+    view : function(ctrl, args) {
+        var extraCSS = args.className || '';
+        var tooltipText = args.tooltip || '';
+        var placeholder = args.placeholder || '';
+        var id = args.id || '';
+        var helpTextId = args.helpTextId || '';
+        return m('span', [
+            m('input', {
+                'id' : id,
+                className: 'tb-header-input' + extraCSS,
+                onclick: ctrl.onclick,
+                onkeydown: ctrl.onkeydown,
+                'data-toggle': tooltipText,
+                'title':  tooltipText,
+                'placeholder' : placeholder
+                }),
+            m('.text-danger', {
+                'id' : helpTextId,
+                style : "display: none"
+            })
+        ]);
+    }
 }
 
 
