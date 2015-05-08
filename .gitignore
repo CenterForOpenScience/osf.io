@@ -59,6 +59,7 @@ website/static/robots.local.txt
 ##############
 
 api/static/rest_framework
+api/static/rest_framework_swagger/css
 api/static/rest_framework_swagger/images
 api/static/rest_framework_swagger/lib
 api/static/rest_framework_swagger/swagger-ui.js
