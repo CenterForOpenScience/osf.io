@@ -2946,6 +2946,7 @@ class TestRegisterNode(OsfTestCase):
         registration = RegistrationFactory(project=self.project)
         assert_true(registration.is_public)
 
+    # TODO(hrybacki): Re-work once no public registrations can be made private
     def test_public_registration_made_after_cutoff_date_cannot_be_made_private(self):
         self.registration.is_public = True
         self.registration.registered_date = settings.REGISTRATION_CUTOFF_DATE + datetime.timedelta(days=1)
@@ -2955,6 +2956,7 @@ class TestRegisterNode(OsfTestCase):
             self.registration.set_privacy('private', auth=self.consolidate_auth)
         assert_true(self.registration.is_public)
 
+    # TODO(hrybacki): Re-work once no public registrations can be made private
     def test_public_registration_made_before_cutoff_date_can_be_made_private(self):
         self.registration.is_public = True
         self.registration.registered_date = settings.REGISTRATION_CUTOFF_DATE - datetime.timedelta(days=1)
