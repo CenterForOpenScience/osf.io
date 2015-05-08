@@ -687,6 +687,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return {p._id for p in parents}
 
+    # TODO(hrybacki): Remove once no public registrations can be made private
     @property
     def registered_before_cutoff_date(self):
         if self.is_registration:
@@ -2307,6 +2308,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if permissions == 'public' and not self.is_public:
             self.is_public = True
         elif permissions == 'private' and self.is_public:
+            # TODO(hrybacki): Remove 2nd antecedent once no public registrations can be made private
             if self.is_registration and not self.registered_before_cutoff_date:
                 raise NodeStateError('Cannot make a public registration private')
             self.is_public = False

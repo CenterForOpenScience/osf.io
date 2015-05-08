@@ -408,6 +408,7 @@ class TestProjectViews(OsfTestCase):
         assert_false(self.project.is_public)
         assert_equal(res.json['status'], 'success')
 
+    # TODO(hrybacki): Re-work once no public registrations can be made private
     def test_make_registration_private_created_after_cutoff_raises_HTTPBad_Request(self):
         registration = RegistrationFactory(creator=self.user1, is_public=True)
         registration.registered_date = settings.REGISTRATION_CUTOFF_DATE + dt.timedelta(days=1)
@@ -419,6 +420,7 @@ class TestProjectViews(OsfTestCase):
         assert_true(registration.is_public)
         assert_equal(res.status_code, 400)
 
+    # TODO(hrybacki): Re-work once no public registrations can be made private
     def test_make_registration_private_created_before_cutoff_returns_HTTPOK(self):
         registration = RegistrationFactory(creator=self.user1, is_public=True)
         registration.registered_date = settings.REGISTRATION_CUTOFF_DATE - dt.timedelta(days=1)
