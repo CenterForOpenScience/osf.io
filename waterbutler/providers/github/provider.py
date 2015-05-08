@@ -114,8 +114,8 @@ class GitHubProvider(provider.BaseProvider):
         assert self.name is not None
         assert self.email is not None
 
-        exists = yield from self.exists(path, ref=path.identifier)
-        latest_sha = yield from self._get_latest_sha(ref=path.identifier)
+        exists = yield from self.exists(path)
+        latest_sha = yield from self._get_latest_sha(ref=path.identifier[0])
 
         blob = yield from self._create_blob(stream)
 
@@ -137,14 +137,14 @@ class GitHubProvider(provider.BaseProvider):
         })
 
         # Doesn't return anything useful
-        yield from self._update_ref(commit['sha'])
+        yield from self._update_ref(commit['sha'], ref=path.identifier[0])
 
         # You're hacky
         return GitHubFileTreeMetadata({
             'path': path.path,
             'sha': blob['sha'],
             'size': stream.size,
-        }, folder=path.path, commit=commit).serialized(), not exists
+        }, commit=commit).serialized(), not exists
 
     @asyncio.coroutine
     def delete(self, path, sha=None, message=None, branch=None, **kwargs):
