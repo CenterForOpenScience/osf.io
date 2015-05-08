@@ -30,13 +30,14 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     You can filter on users by their id, fullname, given_name, middle_name, or family_name. Filtering by field is done
     by adding a query parameter in the form: <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
 
-    For example:
+    For example, if you were trying to find science done by
+    <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Metiner</a>:
 
-    <pre>/users?filter[fullname]=feynm</pre>
+    <pre>/users?filter[fullname]=meitner</pre>
 
     You can filter on multiple fields, or the same field in different ways, by &ing the query parameters together.
 
-    <pre>/users?filter[fullname]=rich&family_name=feynmann</pre>
+    <pre>/users?filter[fullname]=lise&family_name=meitner</pre>
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
