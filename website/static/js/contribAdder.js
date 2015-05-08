@@ -271,7 +271,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
     add: function(data) {
-        data.permission = ko.observable('read'); //default permission
+        data.permission = ko.observable('write'); //default permission
         // All manually added contributors are visible
         data.visible = true;
         this.selection.push(data);
