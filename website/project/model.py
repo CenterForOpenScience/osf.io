@@ -2296,11 +2296,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
         elif permissions == 'private' and self.is_public:
+            if self.is_registration:
+                raise NodeStateError('Cannot make a public registration private')
             self.is_public = False
         else:
             return False

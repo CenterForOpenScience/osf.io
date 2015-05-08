@@ -1594,6 +1594,15 @@ class TestNode(OsfTestCase):
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
+    def test_set_privacy_private_for_public_registration_raises_NodeStateError(self):
+        self.node.is_registration = True
+        self.node.is_public = True
+        self.node.save()
+        with assert_raises(NodeStateError):
+            self.node.set_privacy('private', auth=self.consolidate_auth)
+        assert_true(self.node.is_public)
+
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
