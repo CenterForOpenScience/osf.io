@@ -332,11 +332,21 @@ function doItemOp(isMove, to, from, rename, conflict) {
             'destination': waterbutler.toJsonBlob(to),
         })
     }).done(function(resp, _, xhr) {
-        if (xhr.status !== 202) {
-            from.data = resp;
-            from.data.status = undefined;
-            from.notify.update('Successfully ' + (isMove ? 'moved.' : 'copied.'), 'success', null, 1000);
+        if (xhr.status === 202) {
+            var mithrilContent = m('div', [
+                m('h3.break-word', (isMove ? 'Moving' : 'Copying') + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
+                m('p', 'We\'ll send you an email when it has finished.')
+            ]);
+            var mithrilButtons = m('div', [
+                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
+            ]);
+            tb.modal.update(mithrilContent, mithrilButtons);
+            return;
         }
+
+        from.data = resp;
+        from.data.status = undefined;
+        from.notify.update('Successfully ' + (isMove ? 'moved.' : 'copied.'), 'success', null, 1000);
 
         if (!isMove && xhr.status === 200) {
             to.children.forEach(function(child) {
