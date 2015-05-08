@@ -181,9 +181,9 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     )
 
     def get_valid_self_link_methods(self, root_folder=False):
-        valid_methods = {'file': [], 'folder': [], }
+        valid_methods = {'file': ['GET'], 'folder': [], }
         user = self.request.user
-        if user is None:
+        if user is None or user.is_anonymous():
             return valid_methods
 
         permissions = self.get_node().get_permissions(user)
@@ -226,7 +226,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
         addons = self.get_node().get_addons()
         user = self.request.user
-        cookie = user.get_or_create_cookie() if self.request.user else None
+        cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
         node_id = self.get_node()._id
         obj_args = self.request.parser_context['args']
 
@@ -239,7 +239,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             for addon in addons:
                 if addon.config.has_hgrid_files:
                     files.append({
-                        'valid_self_link_methods': valid_self_link_methods,
+                        'valid_self_link_methods': valid_self_link_methods['folder'],
                         'provider': addon.config.short_name,
                         'name': addon.config.short_name,
                         'path': path,
