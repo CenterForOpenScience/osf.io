@@ -56,6 +56,9 @@ text-align: center;
 .fangorn-selected a {
 	color : white;
 }
+.fangorn-selected > div span.text-muted {
+	color: #DDD;
+}
 .tb-disabled {
 	background: #eee;
 	color: #ccc;

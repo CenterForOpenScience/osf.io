@@ -18,6 +18,7 @@ from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
+from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
@@ -193,7 +194,7 @@ def create_waterbutler_log(payload, **kwargs):
 
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
         for bundle in ('source', 'destination'):
-            for key in ('provider', 'path', 'name'):
+            for key in ('provider', 'materialized', 'name'):
                 if key not in payload[bundle]:
                     raise HTTPError(httplib.BAD_REQUEST)
 
@@ -202,6 +203,9 @@ def create_waterbutler_log(payload, **kwargs):
 
         payload['source']['addon'] = source.config.full_name
         payload['destination']['addon'] = destination.config.full_name
+
+        payload['source']['path'] = payload['source']['materialized']
+        payload['destination']['path'] = payload['destination']['materialized']
 
         payload.update({
             'node': node._id,
@@ -213,6 +217,9 @@ def create_waterbutler_log(payload, **kwargs):
             auth=auth,
             params=payload
         )
+
+        if payload.get('email'):
+            mails.send_mail(user.username, mails.FILE_OPERATION_COMPLETE, user)
     else:
         try:
             metadata = payload['metadata']
