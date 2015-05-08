@@ -52,14 +52,25 @@ class GitHubProvider(provider.BaseProvider):
             self.default_branch = self._repo['default_branch']
 
         path = WaterButlerPath(path)
-        path.parts[-1]._id = next(
-            (kwargs[key] for key in
-            ('fileSha', 'ref', 'branch')
-            if key in kwargs),
-            self.default_branch
+
+        path.parts[-1]._id = (
+            next(
+                (kwargs[key] for key in
+                ('ref', 'branch')
+                if key in kwargs),
+                self.default_branch
+            ),
+            kwargs.get('fileSha')
         )
 
         return path
+
+    @asyncio.coroutine
+    def revalidate_path(self, base, path, folder=False):
+        if not getattr(self, '_repo', None):
+            self._repo = yield from self._fetch_repo()
+            self.default_branch = self._repo['default_branch']
+        return base.child(path, _id=(base.identifier[0], None), folder=folder)
 
     @property
     def default_headers(self):
