@@ -1226,7 +1226,7 @@ var FGToolbar = {
                     m('.fangorn-toolbar.pull-right',
                         [
                             m.component(FGButton, {
-                                onclick: function(event){ ctrl.mode('bar'); },
+                                onclick: ctrl.dismissToolbar,
                                 tooltip: 'Close Search',
                                 icon : 'fa fa-times'
                             }, 'Close'),
@@ -1253,7 +1253,7 @@ var FGToolbar = {
                             icon : 'fa fa-plus'
                         }, 'Create'),
                         m.component(FGButton, {
-                            onclick: function(event){ ctrl.mode('bar'); },
+                            onclick: ctrl.dismissToolbar,
                             tooltip: 'Close Search',
                             icon : 'fa fa-times'
                         }, 'Close')
