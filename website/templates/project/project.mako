@@ -328,7 +328,9 @@ ${parent.javascript_bottom()}
         node: {
             hasChildren: ${json.dumps(node['has_children'])},
             isRegistration: ${json.dumps(node['is_registration'])},
-            tags: ${json.dumps(node['tags'])}
+            tags: ${json.dumps(node['tags'])},
+            // TODO(hrybacki): Remove once the hotifx is taken out
+            registeredBeforeCutoffDate: ${json.dumps(node['registered_before_cutoff_date'])}
         }
     });
 </script>
