@@ -11,6 +11,7 @@ var $osf = require('../osfHelpers');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('osfHelpers', () => {
+
     describe('growl', () => {
         it('calls $.growl with correct arguments', () => {
             var stub = new sinon.stub($, 'growl');
@@ -24,26 +25,36 @@ describe('osfHelpers', () => {
     });
 
     describe('handleJSONError', () => {
+
+        var growlStub;
+        var ravenStub;
+        beforeEach(() => {
+            growlStub = new sinon.stub($osf, 'growl');
+            ravenStub = new sinon.stub(Raven, 'captureMessage');
+        });
+
+        afterEach(() => {
+            growlStub.restore();
+            ravenStub.restore();
+        });
         var response = {
-            responseJSON: {message_short: 'Oh no!', message_long: 'Something went wrong'}
+            responseJSON: {
+                message_short: 'Oh no!',
+                message_long: 'Something went wrong'
+            }
         };
         it('uses the response body if available', () => {
-            var stub = new sinon.stub($osf, 'growl');
             $osf.handleJSONError(response);
-            assert.called(stub);
-            assert.calledWith(stub,
+            assert.called(growlStub);
+            assert.calledWith(growlStub,
                               response.responseJSON.message_short,
                               response.responseJSON.message_long);
-            stub.restore();
         });
 
         it('logs error with Raven', () => {
-            var growlStub = new sinon.stub($osf, 'growl');
-            var stub = new sinon.stub(Raven, 'captureMessage');
             $osf.handleJSONError(response);
-            assert.called(stub);
-            stub.restore();
-            growlStub.restore();
+            assert.called(growlStub);
+            assert.called(ravenStub);
         });
     });
 

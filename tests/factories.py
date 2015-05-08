@@ -19,6 +19,7 @@ from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
@@ -82,6 +83,9 @@ class UserFactory(ModularOdmFactory):
     is_claimed = True
     api_keys = []
     date_confirmed = datetime.datetime(2014, 2, 21)
+    merged_by = None
+    email_verifications = {}
+    verification_key = None
 
     @post_generation
     def set_names(self, create, extracted):
@@ -89,6 +93,12 @@ class UserFactory(ModularOdmFactory):
         for key, value in parsed.items():
             setattr(self, key, value)
         if create:
+            self.save()
+
+    @post_generation
+    def set_emails(self, create, extracted):
+        if self.username not in self.emails:
+            self.emails.append(self.username)
             self.save()
 
 
@@ -148,7 +158,7 @@ class DashboardFactory(FolderFactory):
 
 class NodeFactory(AbstractNodeFactory):
     category = 'hypothesis'
-    project = SubFactory(ProjectFactory)
+    parent = SubFactory(ProjectFactory)
 
 
 class RegistrationFactory(AbstractNodeFactory):
@@ -383,6 +393,7 @@ class ExternalAccountFactory(ModularOdmFactory):
     provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
     provider_name = 'Fake Provider'
+    display_name = Sequence(lambda n: 'user-{0}'.format(n))
 
 
 class MockOAuth2Provider(ExternalProvider):
@@ -399,3 +410,16 @@ class MockOAuth2Provider(ExternalProvider):
         return {
             'provider_id': 'mock_provider_id'
         }
+
+
+class MockAddonNodeSettings(addons_base.AddonNodeSettingsBase):
+    pass
+
+
+class MockAddonUserSettings(addons_base.AddonUserSettingsBase):
+    pass
+
+
+class MockAddonUserSettingsMergeable(addons_base.AddonUserSettingsBase):
+    def merge(self):
+        pass

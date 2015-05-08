@@ -16,7 +16,7 @@
 
             <span data-bind="if: showLinkDataverse">
                 <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
-                    Import Credentials
+                    Import API Token
                 </a>
             </span>
 
@@ -26,15 +26,15 @@
 
     <div class="dataverse-settings" data-bind="if: nodeHasAuth && connected">
 
-        <!-- The linked study -->
+        <!-- The linked dataset -->
         <p>
-            <strong>Current Study:</strong>
+            <strong>Current Dataset:</strong>
             <span data-bind="ifnot: submitting">
-                <span data-bind="if: showLinkedStudy">
-                    <a data-bind="attr.href: savedStudyUrl()"> {{ savedStudyTitle }}</a> on
-                    <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }}</a>.
+                <span data-bind="if: showLinkedDataset">
+                    <a data-bind="attr.href: savedDatasetUrl()"> {{ savedDatasetTitle }}</a> on
+                    <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }} Dataverse</a>.
                 </span>
-                <span data-bind="ifnot: showLinkedStudy" class="text-muted">
+                <span data-bind="ifnot: showLinkedDataset" class="text-muted">
                     None
                 </span>
             </span>
@@ -44,7 +44,7 @@
         </p>
 
         <div data-bind="if: showNotFound" class="text-danger">
-            The current study was not found on Dataverse.
+            The current dataset was not found on Dataverse.
         </div>
 
         <div data-bind="if: userIsOwner">
@@ -57,29 +57,29 @@
                                            optionsValue: 'alias',
                                            optionsText: 'title',
                                            value: selectedDataverseAlias,
-                                           event: {change: getStudies}">
+                                           event: {change: getDatasets}">
                         </select>
                     </div>
 
                     <div class="col-md-6">
-                        Study:
-                        <div data-bind="if: showStudySelect">
+                        Dataset:
+                        <div data-bind="if: showDatasetSelect">
                             <select class="form-control"
-                                    data-bind="options: studies,
-                                               optionsValue: 'hdl',
+                                    data-bind="options: datasets,
+                                               optionsValue: 'doi',
                                                optionsText: 'title',
-                                               value: selectedStudyHdl">
+                                               value: selectedDatasetDoi">
                             </select>
                         </div>
-                        <div data-bind="if: showNoStudies">
+                        <div data-bind="if: showNoDatasets">
                             <div class="text-info" style="padding-top: 8px">
-                                No studies available.
+                                No datasets available.
                             </div>
                         </div>
-                        <div data-bind="ifnot: loadedStudies">
+                        <div data-bind="ifnot: loadedDatasets">
                             <i class="fa fa-spinner fa-lg fa-spin"
                                style="padding-bottom: 8px; padding-top: 8px"></i>
-                            <span class="text-info">Retrieving studies...</span>
+                            <span class="text-info">Retrieving datasets...</span>
                         </div>
                     </div>
 
@@ -90,7 +90,7 @@
             </span>
 
             <div class="text-info" data-bind="ifnot: hasDataverses">
-                Dataverse user {{ dataverseUsername }} does not currently have any released Dataverses.
+                The Dataverse user associated with this node does not currently have any published Dataverses.
             </div>
 
         </div>
@@ -100,7 +100,7 @@
     <!-- Changed Credentials -->
     <div class="text-info dataverse-settings" data-bind="if: credentialsChanged">
         <span data-bind="if: userIsOwner">
-            Your dataverse credentials may not be valid. Please re-enter your password.
+            Your dataverse credentials may not be valid. Please re-enter your api token.
         </span>
         <span data-bind="ifnot: userIsOwner">
             There was a problem connecting to the Dataverse with the given
@@ -111,12 +111,14 @@
     <!-- Input Credentials-->
     <form data-bind="if: showInputCredentials">
         <div class="form-group">
-            <label for="dataverseUsername">Dataverse Username</label>
-            <input class="form-control" name="dataverseUsername" data-bind="value: dataverseUsername"/>
-        </div>
-        <div class="form-group">
-            <label for="dataversePassword">Dataverse Password</label>
-            <input class="form-control" type="password" name="dataversePassword" data-bind="value: dataversePassword" />
+            <label for="apiToken">
+                API Token
+                <a href="{{urls().apiToken}}"
+                   target="_blank" class="text-muted addon-external-link">
+                    (Get from Dataverse <i class="fa fa-external-link-square"></i>)
+                </a>
+            </label>
+            <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
         </div>
         <!-- Submit button for input credentials -->
         <button data-bind="click: sendAuth" class="btn btn-success">
@@ -135,8 +137,8 @@
             <div class="col-md-10">
                 <p data-bind="html: message, attr: {class: messageClass}"></p>
             </div>
-            <div class="col-md-2" data-bind="if: showSubmitStudy">
-                <button data-bind="enable: enableSubmitStudy, click: setInfo"
+            <div class="col-md-2" data-bind="if: showSubmitDataset">
+                <button data-bind="enable: enableSubmitDataset, click: setInfo"
                         class="btn btn-primary pull-right">
                     Submit
                 </button>

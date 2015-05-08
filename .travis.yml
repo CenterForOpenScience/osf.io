@@ -1,44 +1,100 @@
 # Config file for automatic testing at travis-ci.org
 
 language: python
-services:
-    - elasticsearch
 
 python:
     - "2.7"
 
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.cache
+    - node_modules
+    - website/static/vendor/bower_components
+
+env:
+  PROJECT_DIR: $PWD
+  WHEELHOUSE: $HOME/.cache/wheelhouse
+  TOKU_HUGE_PAGES_OK: 1
+  TOKUMX_ARCHIVE: tokumx-2.0.0-linux-x86_64-main.tar.gz
+  ELASTICSEARCH_ARCHIVE: elasticsearch-1.5.0.tar.gz
+
 before_install:
-    - export WHEELHOUSE=$(pwd)/.wheelhouse
-    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
-    - echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
-    - sudo apt-get update
-    - sudo apt-get -y install tokumx
-    - wget https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb && sudo dpkg -i --force-confold elasticsearch-1.2.1.deb && sudo service elasticsearch restart
+    # cache directories
+    - |
+      mkdir -p $HOME/.cache/downloads
+      mkdir -p $HOME/.cache/pip
+      mkdir -p $HOME/.cache/wheelhouse
+    # tokumx
+    - |
+      cd $HOME/.cache/downloads
+
+      if [ ! -f "$TOKUMX_ARCHIVE" ]; then
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE
+      fi
+
+      if [ ! -f "$TOKUMX_ARCHIVE.md5" ]; then
+        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5
+      fi
+
+      md5sum --check $TOKUMX_ARCHIVE.md5
+
+      mkdir -p /tmp/tokumx/data
+      tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
+    - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
+    # elasticsearch
+    - |
+      cd $HOME/.cache/downloads
+
+      if [ ! -f "$ELASTICSEARCH_ARCHIVE" ]; then
+        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE
+      fi
+
+      if [ ! -f "$ELASTICSEARCH_ARCHIVE.sha1.txt" ]; then
+        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ELASTICSEARCH_ARCHIVE.sha1.txt
+      fi
+
+      sha1sum --check $ELASTICSEARCH_ARCHIVE.sha1.txt
+
+      mkdir -p /tmp/elasticsearch
+      tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
+    - /tmp/elasticsearch/bin/elasticsearch > /dev/null &
 
 install:
+    - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     # - travis_retry invoke encryption
-    - travis_retry pip install invoke==0.9.0 --force-reinstall --upgrade
-    - travis_retry pip install flake8 --force-reinstall --upgrade
-    - travis_retry invoke wheelhouse --repo https://github.com/CenterForOpenScience/wheelhouse --path $WHEELHOUSE
+
+    - travis_retry pip install --upgrade pip
+    - travis_retry pip install invoke==0.9.0
+    - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
+    - travis_retry invoke wheelhouse --dev --addons
     - travis_retry invoke travis_addon_settings
-    - travis_retry invoke requirements
-    - travis_retry invoke addon_requirements
-    - travis_retry mfr -r install all
-    - travis_retry npm install
-    - travis_retry npm install -g bower
-    - travis_retry bower install
-    - inv webpack
+    - travis_retry invoke requirements --dev --addons
+    # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
+    - pip uninstall uritemplate.py --yes
+    - pip install uritemplate.py==0.3.0
+    - travis_retry invoke assets --dev
 
 before_script:
     - flake8 .
 
-script: invoke test_all
+# Run Python tests (core and addon) and JS tests
+script: invoke test --all
 
-cache:
-  directories:
-    - website/vendor/bower_components
-    - $HOME/virtualenv/python2.7/lib/python2.7/site-packages
+before_cache:
+  - rm -Rf $HOME/.cache/pip/http
+  - rm -f $HOME/.cache/pip/log/debug.log
+  # exclude python requirements from github repo's
+  - rm -f $HOME/.cache/wheelhouse/modular_odm-*.whl
+  - rm -f $HOME/.cache/wheelhouse/mfr-*.whl
+  - rm -f $HOME/.cache/wheelhouse/httpretty-*.whl
+  - rm -f $HOME/.cache/wheelhouse/mendeley-*.whl
+  - rm -f $HOME/.cache/wheelhouse/feedparser-*.whl
+  # exclude npm from github repo's
+  - rm -Rf node_modules/dropzone
+  - rm -Rf node_modules/treebeard
 
 notifications:
   flowdock: 0221882cdda034c0e9ac2a0e766053dd

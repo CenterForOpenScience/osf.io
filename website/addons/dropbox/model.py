@@ -3,8 +3,9 @@ import os
 import base64
 import logging
 
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+import pymongo
+
+from modularodm import fields
 
 from framework.auth import Auth
 from website.addons.base import exceptions
@@ -19,6 +20,15 @@ class DropboxFile(GuidFile):
     """A Dropbox file model with a GUID. Created lazily upon viewing a
     file's detail page.
     """
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
@@ -54,23 +64,6 @@ class DropboxFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra']['revisionId']
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        """Get or create a new file record. Return a tuple of the form (obj, created)
-        """
-        try:
-            new = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-            created = False
-        except ModularOdmException:
-            # Create new
-            new = cls(node=node, path=path)
-            new.save()
-            created = True
-        return new, created
 
 
 class DropboxUserSettings(AddonUserSettingsBase):
@@ -139,7 +132,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def find_or_create_file_guid(self, path):
-        return DropboxFile.get_or_create(self.owner, clean_path(os.path.join(self.folder, path.lstrip('/'))))
+        return DropboxFile.get_or_create(
+            node=self.owner,
+            path=clean_path(os.path.join(self.folder, path.lstrip('/'))),
+        )
 
     def set_folder(self, folder, auth):
         self.folder = folder
@@ -193,7 +189,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': cleaned_path,
+                'path': metadata['path'],
                 'folder': self.folder,
                 'urls': {
                     'view': url,

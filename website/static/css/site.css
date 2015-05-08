@@ -29,6 +29,12 @@ body {
 .table-description{
     padding-left: 50px;
 }
+/* login Page */
+.forget-password{
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 34px;
+}
 
 /* Getting Started */
 
@@ -36,7 +42,7 @@ body {
 .gs-sidebar .nav a,
 .gs-sidebar .nav a:hover,
 .gs-sidebar .nav a:focus {
-    padding: 0;
+    
     text-decoration: none;
     background-color: transparent;
 }
@@ -45,6 +51,7 @@ body {
     font-size: 12px;
     padding: 4px 0 4px 15px;
     opacity: 0.8;
+    font-weight: bold;
 }/* nested navs */
 .gs-sidebar .nav .nav {
     display: none;
@@ -80,7 +87,7 @@ body {
     position: fixed;
     top: 70px;
 }
-.gs-sidebar.affix-bottom {
+.affix-bottom {
     position: relative;
 }
 
@@ -100,26 +107,18 @@ body {
 }
 
 /* headers */
-.gs-header {
-    display: block;
-    font-family: 'Patua One', cursive;
-    font-size: 24px;
-    padding-bottom: 20px;
-    padding-top: 20px;
-}
-
 #conferenceViewTable td {
     vertical-align: middle;
 }
 
-/*CSS Johanna added for front page*/
+/*CSS added for front page*/
 
 /* Knockout Validation Styles */
 
 .validationMessage { color: #A94442; }
 .customMessage { color: #ed9c28; }
 
-.hideValidation .validationMessage { display: none; }
+/* .hideValidation .validationMessage { display: none; } */
 
 
 /* Home Page */
@@ -328,6 +327,10 @@ li.pointer {
     overflow-x: hidden;
 }
 
+.comment-actions i {
+    cursor: pointer;
+}
+
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;
@@ -347,11 +350,9 @@ li.pointer {
 }
 .edit-comment {
     background-color: #F3F3F3;
-    cursor: pointer;
 }
 
 .comment-body i {
-    cursor: pointer;
     padding-right: 5px;
 }
 
@@ -858,16 +859,14 @@ h1.node-title, h1.node-parent-title {
     }
 }
 
-.wiki-panel-header .icon-angle-right, .wiki-panel-header .icon-angle-left {
+.osf-panel-header .fa-angle-right, .osf-panel-header .fa-angle-left {
     cursor: pointer;
 }
-.wiki-panel-header .fa-list {
+.osf-panel-header .fa-list {
     color: #808080;
 }
 
-
-
-.wiki-panel-body .superlist li {
+.osf-panel-body .superlist li {
     display: block;
     font-size: 20px;
 }
@@ -980,7 +979,9 @@ h1.unavailable {
 .project-page .anchor {
     margin-top: -100px;
     padding-top: 100px;
-    display: block; 
+    display: block;
+  z-index: -1;
+  position: relative;    
 }
 
 .anchor {
@@ -1384,6 +1385,9 @@ div.search-result  {
 }
 
 /* Logs */
+.logs .addon-widget-body .activity-log{
+    margin-bottom: 74px;
+}
 
 dl.activity-log dd {
     margin-bottom: 4px;
@@ -1405,6 +1409,10 @@ dl.activity-log dd {
     cursor: pointer;
 }
 
+.log-folder {
+  font-style: italic;
+}
+
 .log-node-title-link {
     font-weight: bold;
 }
@@ -1419,7 +1427,6 @@ dl.activity-log dd {
 
 .overflow {
     word-wrap: break-word;
-    word-break: break-all;
     max-width: 100%;
 }
 
@@ -1479,6 +1486,19 @@ dl.activity-log dd {
 
 #privateLinkTable .btn-group .btn-mini{
     padding:5px;
+}
+
+/*#fileRevisions{*/
+    /*margin-bottom: 625px;*/
+/*}*/
+thead.file-version-thread{
+    display: block;
+}
+
+tbody.file-version{
+    max-height: 580px;
+    overflow-y: auto;
+    display: inline-block;
 }
 
 /** The project and wiki name editable inputs should be larger
@@ -1849,9 +1869,11 @@ span#profileFullname{
     padding:13px 15px;
 }
 
-.navbar-form {
+.osf-navbar .navbar-form {
     margin-top: 5px;
     margin-bottom: 2px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .navbar-toggle {
@@ -1945,6 +1967,15 @@ span#profileFullname{
     padding-bottom: 20px;
 }
 
+/*Dashboard */
+.tab-content .components .addon-widget-body{
+    min-height: 605px;
+}
+
+.absolute-bottom {
+    position: absolute;
+    bottom: 0px;
+}
 
 /* Project Dashboard */
 
@@ -1968,6 +1999,9 @@ span#profileFullname{
     float: left;
     margin-bottom: 0;
 
+}
+.osf-dash-col .logs .addon-widget-body{
+    min-height: 485px;
 }
 .addon-widget-body {
     padding: 15px;
@@ -2036,7 +2070,7 @@ span#profileFullname{
     }
     .osf-xs-search {
         text-decoration: none !important;
-        padding: 8px;
+        padding: 14px;
     }
 }
 
@@ -2083,6 +2117,16 @@ span#profileFullname{
     .osf-project-navbar a.project-title {
         max-width: 400px;
     }
+}
+@media (min-width: 768px) and (max-width: 991px)  {
+    #signInForm input {
+        width: 110px;
+    }    
+}
+@media (min-width: 1600px) {
+    #signInForm input {
+        width: 220px;
+    }    
 }
 
 /* Search bar */
@@ -2268,8 +2312,8 @@ span#profileFullname{
     to {transform:rotate(360deg);}
 }
 /* Wiki additions */
-.wiki-panel {
-    border: 1px solid #ccc;
+.osf-panel {
+    border: 1px solid #ddd;
     height: 750px;
     overflow: auto;
     display: block;
@@ -2281,22 +2325,34 @@ span#profileFullname{
     background: #EFEFEF;
     font-weight: bold;
 }
-.wiki-panel-body {
+.osf-panel-body {
     overflow: auto;
     overflow-x: hidden;
 }
-.wiki-panel-body .navbar-collapse {
+.osf-panel-body .navbar-collapse {
     background: #F5F5F5;
     padding: 0px;
 }
-.wiki-panel-header {
+.osf-panel-header {
     background: #efefef;
     padding: 10px;
     font-size: 16px;
     font-weight: 300;
 }
 
-.wiki-panel-footer {
+.osf-panel-header.no-background {
+    background: transparent;
+}
+
+.osf-panel-header.bottom-border {
+    border-bottom: 1px solid #eee;
+}
+
+.osf-panel-header.bordered {
+    border: 1px solid #ddd;
+}
+
+.osf-panel-footer {
     position: absolute;
     bottom : 0;
     left: 0;
@@ -2305,6 +2361,7 @@ span#profileFullname{
     width: 100%;
     z-index: 99;
 }
+
 #wiki-form {
     padding: 10px;
 }
@@ -2319,7 +2376,7 @@ span#profileFullname{
 }
 
 @media (max-width: 991px) {
-    .wiki-panel {
+    .osf-panel {
         margin-bottom: 20px;
     }
 }
@@ -2365,8 +2422,12 @@ span#profileFullname{
     background: #D9E8D9;
 }
 
+.addon-external-link:hover,
+.addon-external-link:focus {
+    text-decoration: none !important;
+}
 
-.wiki-panel-flex {
+.osf-panel-flex {
     width: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -2388,7 +2449,7 @@ span#profileFullname{
     flex-wrap: wrap;
 }
 
-.wiki-panel-header-flex {
+.osf-panel-header-flex {
     width: 100%;
     margin: auto;
     -webkit-box-flex: 0 0 auto;
@@ -2396,7 +2457,7 @@ span#profileFullname{
     -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
-.wiki-panel-body-flex{
+.osf-panel-body-flex {
     width: 100%;
     margin: auto;
     -webkit-box-flex: 3 0 auto;
@@ -2404,6 +2465,25 @@ span#profileFullname{
     -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px;
+}
+
+.reset-height {
+    height: auto;
+}
+
+/* File view page css */
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}
+.file-page #tb-tbody {
+    border: none;
+}
+#filesSearch {
+    width: 95%;
+}
+#toggleIcon {
+    margin-top: 5px;
 }
 
 /* scroll fix for wherever treebeard is used */
@@ -2422,4 +2502,158 @@ span#profileFullname{
   width : 100%;
   padding-left: 20px;
   padding-right: 20px;
+}
+.inline {
+    display: inline-block;
+}
+
+/* OSF themed panel */
+.panel-osf {
+    border-color: #214762;
+}
+.panel-osf > .panel-heading {
+    color: #fff;
+    background-color: #214762;
+    border-color: #214762;
+}
+.panel-osf > .panel-heading + .panel-collapse > .panel-body {
+    border-top-color: #214762;
+}
+.panel-osf > .panel-heading .badge {
+    color: #214762;
+    background-color: #fff;
+}
+.panel-osf > .panel-footer + .panel-collapse > .panel-body {
+    border-bottom-color: #214762;
+}
+
+/* Classes to create margin sizes */
+/* Left Margin Only */
+.m-l-xs {
+    margin-left: 5px;
+}
+.m-l-sm {
+    margin-left: 10px;
+}
+.m-l-md {
+    margin-left: 20px;
+}
+.m-l-lg {
+    margin-left: 30px;
+}
+.m-l-xl {
+    margin-left: 50px;
+}
+/*Right Margin Only*/
+.m-r-xs {
+    margin-right: 5px;
+}
+.m-r-sm {
+    margin-right: 10px;
+}
+.m-r-md {
+    margin-right: 20px;
+}
+.m-r-lg {
+    margin-right: 30px;
+}
+.m-r-xl {
+    margin-right: 50px;
+}
+
+/*Top Margin Only*/
+.m-t-xs {
+    margin-top: 5px;
+}
+.m-t-sm {
+    margin-top: 10px;
+}
+.m-t-md {
+    margin-top: 20px;
+}
+.m-t-lg {
+    margin-top: 30px;
+}
+.m-t-xl {
+    margin-top: 50px;
+}
+/*Bottom Margin Only*/
+.m-b-xs {
+    margin-bottom: 5px;
+}
+.m-b-sm {
+    margin-bottom: 10px;
+}
+.m-b-md {
+    margin-bottom: 20px;
+}
+.m-b-lg {
+    margin-bottom: 30px;
+}
+.m-b-xl {
+    margin-bottom: 50px;
+}
+/*Vertical Margins*/
+.m-v-xs {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+.m-v-sm {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.m-v-md {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+.m-v-lg {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+.m-v-xl {
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+/*Horizontal Margins*/
+.m-h-xs {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+.m-h-sm {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+.m-h-md {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+.m-h-lg {
+    margin-left: 30px;
+    margin-right: 30px;
+}
+.m-h-xl {
+    margin-left: 50px;
+    margin-right: 50px;
+}
+/*Complete Margins*/
+.m-xs {
+    margin: 5px;
+}
+.m-sm {
+    margin: 10px;
+}
+.m-md {
+    margin: 20px;
+}
+.m-lg {
+    margin: 30px;
+}
+.m-xl {
+    margin: 50px;
+}
+
+@media (max-width: 768px) {
+    .affix {
+        position: relative;
+    }
 }

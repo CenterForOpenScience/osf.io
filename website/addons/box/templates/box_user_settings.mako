@@ -25,3 +25,5 @@
     </div>
 
 <%include file="profile/addon_permissions.mako" />
+
+</div>

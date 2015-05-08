@@ -1,3 +1,5 @@
+import os
+
 from . import routes, views, model  # noqa
 
 MODELS = [
@@ -28,3 +30,7 @@ INCLUDE_CSS = {}
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.figshare_hgrid_data
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = None  # use default nodes settings templates
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'figshare_user_settings.mako')

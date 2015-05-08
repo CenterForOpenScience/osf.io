@@ -20,7 +20,6 @@ from website.search.elastic_search import es
 logger = logging.getLogger(__name__)
 
 app = init_app("website.settings", set_backends=True, routes=True)
-logger = logging.getLogger(__name__)
 
 
 def migrate_nodes(index):

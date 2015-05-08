@@ -12,8 +12,13 @@ from dateutil.relativedelta import relativedelta
 from elasticsearch import Elasticsearch
 
 from website import settings
+from website.search.elastic_search import requires_search
 
-from util import generate_color
+from util import generate_color, html_and_illegal_unicode_replace
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 share_es = Elasticsearch(
     settings.SHARE_ELASTIC_URI,
@@ -21,23 +26,28 @@ share_es = Elasticsearch(
 )
 
 
-def search(query, raw=False):
+@requires_search
+def search(query, raw=False, index='share'):
     # Run the real query and get the results
-    results = share_es.search(index='share', doc_type=None, body=query)
+    results = share_es.search(index=index, doc_type=None, body=query)
 
     return results if raw else {
-        'results': [hit['_source'] for hit in results['hits']['hits']],
+        'results': [remove_key(hit['_source'], 'raw') for hit in results['hits']['hits']],
         'count': results['hits']['total'],
     }
 
+def remove_key(d, k):
+    d.pop(k, None)
+    return d
 
-def count(query):
+@requires_search
+def count(query, index='share'):
     if query.get('from') is not None:
         del query['from']
     if query.get('size') is not None:
         del query['size']
 
-    count = share_es.count(index='share', body=query)
+    count = share_es.count(index=index, body=query)
 
     return {
         'results': [],
@@ -45,6 +55,7 @@ def count(query):
     }
 
 
+@requires_search
 def providers():
 
     provider_map = share_es.search(index='share_providers', doc_type=None, body={
@@ -60,6 +71,8 @@ def providers():
         }
     }
 
+
+@requires_search
 def stats(query=None):
     query = query or {"query": {"match_all": {}}}
     three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
@@ -157,8 +170,8 @@ def stats(query=None):
         }
     }
 
-    results = share_es.search(index='share', body=query)
-    date_results = share_es.search(index='share', body=date_histogram_query)
+    results = share_es.search(index='share_v1', body=query)
+    date_results = share_es.search(index='share_v1', body=date_histogram_query)
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)
@@ -227,6 +240,10 @@ def data_for_charts(elastic_results):
         'group_names': names
     }
 
+    if date_totals.get('date_numbers') == [[u'x']]:
+        for name in date_totals.get('group_names'):
+            date_totals.get('date_numbers').append([name, 0])
+
     for_charts['date_totals'] = date_totals
 
     all_data = {}
@@ -251,16 +268,18 @@ def data_for_charts(elastic_results):
 
 
 def to_atom(result):
+    if not result['id']['url']:
+        logger.error('ATOM error for {}: Missing id'.format(result['source']))
     return {
-        'title': result.get('title') or 'No title provided.',
-        'summary': result.get('description') or 'No summary provided.',
+        'title': html_and_illegal_unicode_replace(result.get('title')) or 'No title provided.',
+        'summary': html_and_illegal_unicode_replace(result.get('description')) or 'No summary provided.',
         'id': result['id']['url'],
         'updated': get_date_updated(result),
         'links': [
             {'href': result['id']['url'], 'rel': 'alternate'}
         ],
         'author': format_contributors_for_atom(result['contributors']),
-        'categories': [{"term": tag} for tag in result.get('tags')],
+        'categories': [{"term": html_and_illegal_unicode_replace(tag)} for tag in result.get('tags')],
         'published': parse(result.get('dateUpdated'))
     }
 
@@ -268,7 +287,10 @@ def to_atom(result):
 def format_contributors_for_atom(contributors_list):
     return [
         {
-            'name': '{} {}'.format(entry['given'], entry['family'])
+            'name': '{} {}'.format(
+                html_and_illegal_unicode_replace(entry['given']),
+                html_and_illegal_unicode_replace(entry['family'])
+            )
         }
         for entry in contributors_list
     ]

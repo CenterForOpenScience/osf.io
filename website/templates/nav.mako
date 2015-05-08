@@ -4,14 +4,12 @@
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
                 <span class="sr-only">Toggle navigation</span>
-                <span class="fa fa-bar"></span>
-                <span class="fa fa-bar"></span>
-                <span class="fa fa-bar"></span>
+                <span class="fa fa-bars fa-lg fa-inverse"></span>
             </button>
             <!-- ko ifnot: onSearchPage -->
             <span class="visible-xs" data-bind="click : toggleSearch, css: searchCSS">
                 <a class="osf-xs-search pull-right" >
-                    <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg" ></span>
+                  <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg fa-inverse" ></span>
                 </a>
             </span>
             <!-- /ko -->
@@ -29,7 +27,8 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li><a href="/search/?q=*&filter=registration">Registry</a></li>
-                        <li><a href="/explore/activity">Public Activity</a></li>
+                        <li><a href="/presentations/">Presentations</a></li>
+                        <li><a href="/explore/activity/">Public Activity</a></li>
                     </ul><!-- end dropdown-menu -->
                 </li><!-- end dropdown -->
                 <li class="dropdown">
@@ -86,7 +85,7 @@
                             method="POST"
                         >
                         <div class="form-group">
-                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Username">
+                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Email">
                         </div>
                         <div class="form-group">
                             <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">

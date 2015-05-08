@@ -1,19 +1,20 @@
 /**
  * Initialization code for the dashboard pages. Starts up the Project Organizer
  * and binds the onboarder Knockout components.
- * */
+ */
+
+'use strict';
+
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
-var $osf = require('osfHelpers');
-var projectOrganizer = require('js/projectorganizer');
-var ProjectOrganizer = projectOrganizer.ProjectOrganizer;
-
-var LogFeed = require('../logFeed.js');
 // Knockout components for the onboarder
-require('../onboarder.js');
+require('js/onboarder.js');
+var $osf = require('js/osfHelpers');
+var LogFeed = require('js/logFeed');
+var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
@@ -22,18 +23,17 @@ var request = $.getJSON(url, function(response) {
     var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
         return $.inArray(node.permissions, ['write', 'admin']) !== -1;
     });
-    // Filter out components and nodes for which user is not admin
-    var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
-        return node.category === 'project' && node.permissions === 'admin';
-    });
+
+    // If we need to change what nodes can be registered, filter here
+    var registrationSelection = uploadSelection;
 
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-    $osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+    $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
     $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
 
     function ProjectCreateViewModel() {
         var self = this;
-        self.isOpen = ko.observable(false),
+        self.isOpen = ko.observable(false);
         self.focus = ko.observable(false);
         self.toggle = function() {
             self.isOpen(!self.isOpen());
@@ -41,7 +41,7 @@ var request = $.getJSON(url, function(response) {
         };
         self.nodes = response.nodes;
     }
-    $osf.applyBindings(ProjectCreateViewModel, '#projectCreate');
+    $osf.applyBindings(new ProjectCreateViewModel(), '#projectCreate');
 });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
@@ -49,7 +49,7 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-var ensureUserTimezone = function(savedTimezone, savedLocale) {
+var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
     var clientLocale = window.navigator.userLanguage || window.navigator.language;
 
@@ -60,7 +60,8 @@ var ensureUserTimezone = function(savedTimezone, savedLocale) {
             url,
             {
                 'timezone': clientTimezone,
-                'locale': clientLocale
+                'locale': clientLocale,
+                'id': id
             }
         );
         request.fail(function(xhr, textStatus, error) {
@@ -80,14 +81,15 @@ $(document).ready(function() {
         url:  '/api/v1/dashboard/'
     });
     request.done(function(data) {
-        new ProjectOrganizer({
+        var po = new ProjectOrganizer({
             placement : 'dashboard',
             divID: 'project-grid',
             filesData: data.data,
             multiselect : true
         });
+        po.legend($('#projectOrganizerInfo')[0]);
 
-        ensureUserTimezone(data.timezone, data.locale);
+        ensureUserTimezone(data.timezone, data.locale, data.id);
     });
     request.fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Failed to populate user dashboard', {
@@ -97,8 +99,7 @@ $(document).ready(function() {
         });
     });
 
-
-
 });
+
 // Initialize logfeed
 new LogFeed('#logScope', '/api/v1/watched/logs/');

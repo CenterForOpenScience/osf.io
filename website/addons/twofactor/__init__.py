@@ -1,3 +1,5 @@
+import os
+
 from .models import TwoFactorUserSettings
 from .routes import settings_routes
 
@@ -22,3 +24,7 @@ VIEWS = []
 CONFIGS = ['user']
 
 CATEGORIES = ['security']
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = None  # no node settings view
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'twofactor_user_settings.mako')

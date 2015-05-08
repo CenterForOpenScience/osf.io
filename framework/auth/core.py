@@ -7,23 +7,26 @@ import datetime as dt
 
 import bson
 import pytz
+import itsdangerous
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
+from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 import framework
 from framework import analytics
 from framework.sessions import session
-from framework.auth import utils, signals
+from framework.auth import exceptions, utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
+from framework.sessions.model import Session
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 
-from website import settings, filters, security
+from website import mails, settings, filters, security
 
 
 name_formatters = {
@@ -93,6 +96,14 @@ def validate_personal_site(value):
 def validate_social(value):
     validate_personal_site(value.get('personal'))
 
+
+def validate_email(item):
+    if not (item
+            and re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE)
+            and item == item.strip().lower()):
+        raise ValidationError("Invalid Email")
+
+
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -100,21 +111,21 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(username=None, password=None, verification_key=None):
+def get_user(email=None, password=None, verification_key=None):
     """Get an instance of User matching the provided params.
 
     :return: The instance of User requested
     :rtype: User or None
     """
     # tag: database
-    if password and not username:
-        raise AssertionError("If a password is provided, a username must also "
+    if password and not email:
+        raise AssertionError("If a password is provided, an email must also "
                              "be provided.")
 
     query_list = []
-    if username:
-        username = username.strip().lower()
-        query_list.append(Q('username', 'eq', username))
+    if email:
+        email = email.strip().lower()
+        query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
     if password:
         password = password.strip()
         try:
@@ -176,8 +187,6 @@ class Auth(object):
 
 class User(GuidStoredObject, AddonModelMixin):
 
-    redirect_mode = 'proxy'
-
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
@@ -187,10 +196,14 @@ class User(GuidStoredObject, AddonModelMixin):
         'suffix',
         'merged_by',
         'date_disabled',
+        'date_confirmed',
         'jobs',
         'schools',
         'social',
     }
+
+    # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
+    #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
         'orcid': u'http://orcid.com/{}',
@@ -203,23 +216,45 @@ class User(GuidStoredObject, AddonModelMixin):
         'researcherId': u'http://researcherid.com/rid/{}',
     }
 
+    # This is a GuidStoredObject, so this will be a GUID.
     _id = fields.StringField(primary=True)
 
-    # NOTE: In the OSF, username is an email
-    # May be None for unregistered contributors
+    # The primary email address for the account.
+    # This value is unique, but multiple "None" records exist for:
+    #   * unregistered contributors where an email address was not provided.
     username = fields.StringField(required=False, unique=True, index=True)
+
+    # Hashed. Use `User.set_password` and `User.check_password`
     password = fields.StringField()
+
     fullname = fields.StringField(required=True, validate=string_required)
+
+    # user has taken action to register the account
     is_registered = fields.BooleanField(index=True)
 
+    # user has claimed the account
+    # TODO: This should be retired - it always reflects is_registered.
+    #   While a few entries exist where this is not the case, they appear to be
+    #   the result of a bug, as they were all created over a small time span.
     is_claimed = fields.BooleanField(default=False, index=True)
 
-    # Tags for internal use
+    # a list of strings - for internal use
     system_tags = fields.StringField(list=True)
+
+    # security emails that have been sent
+    # TODO: This should be removed and/or merged with system_tags
     security_messages = fields.DictionaryField()
+    # Format: {
+    #   <message label>: <datetime>
+    #   ...
+    # }
+
+    # user was invited (as opposed to registered unprompted)
     is_invited = fields.BooleanField(default=False, index=True)
 
     # Per-project unclaimed user data:
+    # TODO: add validation
+    unclaimed_records = fields.DictionaryField(required=False)
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
@@ -230,33 +265,51 @@ class User(GuidStoredObject, AddonModelMixin):
     #   }
     #   ...
     # }
-    # TODO: add validation
-    unclaimed_records = fields.DictionaryField(required=False)
-    # The user who merged this account
-    merged_by = fields.ForeignField('user', default=None, backref='merged', index=True)
-    #: Verification key used for resetting password
+
+    # The user into which this account was merged
+    merged_by = fields.ForeignField('user',
+                                    default=None,
+                                    backref='merged',
+                                    index=True)
+
+    # verification key used for resetting password
     verification_key = fields.StringField()
+
+    # confirmed emails
+    #   emails should be stripped of whitespace and lower-cased before appending
+    # TODO: Add validator to ensure an email address only exists once across
+    # all User's email lists
     emails = fields.StringField(list=True)
-    # Email verification tokens
+
+    # email verification tokens
+    #   see also ``unconfirmed_emails``
+    email_verifications = fields.DictionaryField(default=dict)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
     # }
-    email_verifications = fields.DictionaryField()
 
+    # email lists to which the user has chosen a subscription setting
+    mailing_lists = fields.DictionaryField()
     # Format: {
     #   'list1': True,
     #   'list2: False,
     #    ...
     # }
-    mailing_lists = fields.DictionaryField()
 
+    # nicknames, or other names by which this used is known
+    # TODO: remove - unused
     aka = fields.StringField(list=True)
-    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow, index=True)
-    # Watched nodes are stored via a list of WatchConfigs
+
+    # the date this user was registered
+    # TODO: consider removal - this can be derived from date_registered
+    date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
+                                           index=True)
+
+    # watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
 
-    # Recently added contributors stored via a list of users
+    # list of users recently added to nodes as a contributor
     recently_added = fields.ForeignField("user", list=True, backref="recently_added")
 
     # Attached external accounts (OAuth)
@@ -271,6 +324,7 @@ class User(GuidStoredObject, AddonModelMixin):
     suffix = fields.StringField()
 
     # Employment history
+    jobs = fields.DictionaryField(list=True, validate=validate_history_item)
     # Format: {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -282,9 +336,9 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'endYear': <end year>,
     #     'ongoing: <boolean>
     # }
-    jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
     # Educational history
+    schools = fields.DictionaryField(list=True, validate=validate_history_item)
     # Format: {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -296,30 +350,33 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'endYear': <end year>,
     #     'ongoing: <boolean>
     # }
-    schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
     # Social links
+    social = fields.DictionaryField(validate=validate_social)
     # Format: {
     #     'personal': <personal site>,
     #     'twitter': <twitter id>,
     # }
-    social = fields.DictionaryField(validate=validate_social)
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
+    # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
+    # date the user last logged in via the web interface
     date_last_login = fields.DateTimeField()
 
+    # date the user first successfully confirmed an email address
     date_confirmed = fields.DateTimeField(index=True)
 
     # When the user was disabled.
     date_disabled = fields.DateTimeField(index=True)
 
+    # when comments for a node were last viewed
+    comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
     #   'node_id': 'timestamp'
     # }
-    comments_viewed_timestamp = fields.DictionaryField()
 
     # timezone for user's locale (e.g. 'America/New_York')
     timezone = fields.StringField(default='Etc/UTC')
@@ -343,8 +400,6 @@ class User(GuidStoredObject, AddonModelMixin):
             is_registered=False,
         )
         user.update_guessed_names()
-        if email:
-            user.emails.append(email)
         return user
 
     @classmethod
@@ -363,7 +418,7 @@ class User(GuidStoredObject, AddonModelMixin):
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_email_verification(username)
+        user.add_unconfirmed_email(username)
         user.is_registered = False
         return user
 
@@ -374,6 +429,55 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_claimed = True
         user.date_confirmed = user.date_registered
         return user
+
+    @classmethod
+    def from_cookie(cls, cookie, secret=None):
+        """Attempt to load a user from their signed cookie
+        :returns: None if a user cannot be loaded else User
+        """
+        if not cookie:
+            return None
+
+        secret = secret or settings.SECRET_KEY
+
+        try:
+            token = itsdangerous.Signer(secret).unsign(cookie)
+        except itsdangerous.BadSignature:
+            return None
+
+        user_session = Session.load(token)
+
+        if user_session is None:
+            return None
+
+        return cls.load(user_session.data.get('auth_user_id'))
+
+    def get_or_create_cookie(self, secret=None):
+        """Find the cookie for the given user
+        Create a new session if no cookie is found
+
+        :param str secret: The key to sign the cookie with
+        :returns: The signed cookie
+        """
+        secret = secret or settings.SECRET_KEY
+        sessions = Session.find(
+            Q('data.auth_user_id', 'eq', self._id)
+        ).sort(
+            '-date_modified'
+        ).limit(1)
+
+        if sessions.count() > 0:
+            user_session = sessions[0]
+        else:
+            user_session = Session(data={
+                'auth_user_id': self._id,
+                'auth_user_username': self.username,
+                'auth_user_fullname': self.fullname,
+            })
+            user_session.save()
+
+        signer = itsdangerous.Signer(secret)
+        return signer.sign(user_session._id)
 
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
@@ -453,7 +557,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.password is not None and
                 not self.is_merged and
                 not self.is_disabled and
-                self.is_confirmed())
+                self.is_confirmed)
 
     def get_unclaimed_record(self, project_id):
         """Get an unclaimed record for a given project_id.
@@ -507,6 +611,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'given': self.csl_given_name,
         }
 
+    # TODO: This should not be on the User object.
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
         raw_old_password = (raw_old_password or '').strip()
@@ -543,13 +648,61 @@ class User(GuidStoredObject, AddonModelMixin):
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 
-    def add_email_verification(self, email, expiration=None):
+    def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
+        # TODO: If the unconfirmed email is already present, refresh the token
+
+        # TODO: This is technically not compliant with RFC 822, which requires
+        #       that case be preserved in the "local-part" of an address. From
+        #       a practical standpoint, the vast majority of email servers do
+        #       not preserve case.
+        #       ref: https://tools.ietf.org/html/rfc822#section-6
+        email = email.lower().strip()
+
+        if email in self.emails:
+            raise ValueError("Email already confirmed to this user.")
+
+        validate_email(email)
+
         token = generate_confirm_token()
 
-        self.email_verifications[token] = {'email': email.lower()}
+        # handle when email_verifications is None
+        if not self.email_verifications:
+            self.email_verifications = {}
+
+        self.email_verifications[token] = {'email': email}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
+
+    def remove_unconfirmed_email(self, email):
+        """Remove an unconfirmed email addresses and their tokens."""
+        if email == self.username:
+            raise PermissionsError("Can't remove primary email")
+        for token, value in self.email_verifications.iteritems():
+            if value.get('email') == email:
+                del self.email_verifications[token]
+                return True
+
+        return False
+
+    def remove_email(self, email):
+        """Remove a confirmed email"""
+        if email == self.username:
+            raise PermissionsError("Can't remove primary email")
+        if email in self.emails:
+            self.emails.remove(email)
+            signals.user_email_removed.send(self, email=email)
+
+    @signals.user_email_removed.connect
+    def _send_email_removal_confirmations(self, email):
+        mails.send_mail(to_addr=self.username,
+                        mail=mails.REMOVED_EMAIL,
+                        user=self,
+                        removed_email=email)
+        mails.send_mail(to_addr=email,
+                        mail=mails.REMOVED_EMAIL,
+                        user=self,
+                        removed_email=email)
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
@@ -561,13 +714,17 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
         :raises: KeyError if there no token for the email.
         """
+        # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
-                if info['expiration'] < dt.datetime.utcnow():
+                # Old records will not have an expiration key. If it's missing,
+                # assume the token is expired
+                expiration = info.get('expiration')
+                if not expiration or (expiration and expiration < dt.datetime.utcnow()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
                     else:
-                        new_token = self.add_email_verification(email)
+                        new_token = self.add_unconfirmed_email(email)
                         self.save()
                         return new_token
                 return token
@@ -583,18 +740,22 @@ class User(GuidStoredObject, AddonModelMixin):
         token = self.get_confirmation_token(email, force=force)
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
-    def verify_confirmation_token(self, token):
+    def _get_unconfirmed_email_for_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
-        if token in self.email_verifications:
-            verification = self.email_verifications[token]
-            # Not all tokens are guaranteed to have expiration dates
-            if 'expiration' in verification:
-                return verification['expiration'] > dt.datetime.utcnow()
-            else:
-                return True
-        return False
+        if token not in self.email_verifications:
+            raise exceptions.InvalidTokenError()
+
+        verification = self.email_verifications[token]
+        # Not all tokens are guaranteed to have expiration dates
+        if (
+            'expiration' in verification and
+            verification['expiration'] < dt.datetime.utcnow()
+        ):
+            raise exceptions.ExpiredTokenError()
+
+        return verification['email']
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
@@ -606,27 +767,66 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return record['token'] == token
 
-    def confirm_email(self, token):
-        if self.verify_confirmation_token(token):
-            email = self.email_verifications[token]['email']
-            self.emails.append(email)
-            # Complete registration if primary email
-            if email.lower() == self.username.lower():
-                self.register(self.username)
-                self.date_confirmed = dt.datetime.utcnow()
-            # Revoke token
-            del self.email_verifications[token]
-            # Clear unclaimed records, so user's name shows up correctly on
-            # all projects
-            self.unclaimed_records = {}
+    def confirm_email(self, token, merge=False):
+        """Confirm the email address associated with the token"""
+        email = self._get_unconfirmed_email_for_token(token)
+
+        # If this email is confirmed on another account, abort
+        try:
+            user_to_merge = User.find_one(Q('emails', 'iexact', email))
+        except NoResultsFound:
+            user_to_merge = None
+
+        if user_to_merge and merge:
+            self.merge_user(user_to_merge)
+        elif user_to_merge:
+            raise exceptions.MergeConfirmedRequiredError(
+                'Merge requires confirmation',
+                user=self,
+                user_to_merge=user_to_merge,
+            )
+
+        # If another user has this email as its username, get it
+        try:
+            unregistered_user = User.find_one(Q('username', 'eq', email) &
+                                              Q('_id', 'ne', self._id))
+        except NoResultsFound:
+            unregistered_user = None
+
+        if unregistered_user:
+            self.merge_user(unregistered_user)
             self.save()
-            # Note: We must manually update search here because the fullname
-            # field has not changed
-            self.update_search()
-            self.update_search_nodes()
-            return True
-        else:
-            return False
+            unregistered_user.username = None
+
+        if email not in self.emails:
+            self.emails.append(email)
+
+        # Complete registration if primary email
+        if email.lower() == self.username.lower():
+            self.register(self.username)
+            self.date_confirmed = dt.datetime.utcnow()
+        # Revoke token
+        del self.email_verifications[token]
+
+        # TODO: We can't assume that all unclaimed records are now claimed.
+        # Clear unclaimed records, so user's name shows up correctly on
+        # all projects
+        self.unclaimed_records = {}
+        self.save()
+
+        self.update_search_nodes()
+
+        return True
+
+    @property
+    def unconfirmed_emails(self):
+        # Handle when email_verifications field is None
+        email_verifications = self.email_verifications or {}
+        return [
+            each['email']
+            for each
+            in email_verifications.values()
+        ]
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a
@@ -637,6 +837,7 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in self.node__contributed:
             node.update_search()
 
+    @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
 
@@ -754,7 +955,7 @@ class User(GuidStoredObject, AddonModelMixin):
         from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
-        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed():
+        if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             piwik_tasks.update_user(self._id)
@@ -860,15 +1061,92 @@ class User(GuidStoredObject, AddonModelMixin):
         )
         return self.get_recent_log_ids(since=midnight)
 
-    def merge_user(self, user, save=False):
+    @property
+    def can_be_merged(self):
+        """The ability of the `merge_user` method to fully merge the user"""
+        return all((addon.can_be_merged for addon in self.get_addons()))
+
+    def merge_user(self, user):
         """Merge a registered user into this account. This user will be
         a contributor on any project
 
         :param user: A User object to be merged.
         """
-        # Inherit emails
+        # Fail if the other user has conflicts.
+        if not user.can_be_merged:
+            raise exceptions.MergeConflictError("Users cannot be merged")
+
+        # Fail if this user has conflicts, unless the other is unconfirmed.
+        if (not self.can_be_merged) and user.is_confirmed:
+            raise exceptions.MergeConflictError("Users cannot be merged")
+
+        # Move over the other user's attributes
+
+        # TODO: confirm
+        for system_tag in user.system_tags:
+            if system_tag not in self.system_tags:
+                self.system_tags.append(system_tag)
+
+        [self.aka.append(each) for each in user.aka if each not in self.aka]
+
+        self.is_claimed = self.is_claimed or user.is_claimed
+        self.is_invited = self.is_invited or user.is_invited
+
+        # copy over profile only if this user has no profile info
+        if user.jobs and not self.jobs:
+            self.jobs = user.jobs
+
+        if user.schools and not self.schools:
+            self.schools = user.schools
+
+        if user.social and not self.social:
+            self.social = user.social
+
+        unclaimed = user.unclaimed_records.copy()
+        unclaimed.update(self.unclaimed_records)
+        self.unclaimed_records = unclaimed
+        # - unclaimed records should be connected to only one user
+        user.unclaimed_records = {}
+
+        security_messages = user.security_messages.copy()
+        security_messages.update(self.security_messages)
+        self.security_messages = security_messages
+
+        for key, value in user.mailing_lists.iteritems():
+            # subscribe to each list if either user was subscribed
+            self.mailing_lists[key] = value or self.mailing_lists.get(key)
+        # - clear subscriptions for merged user
+        user.mailing_lists = {}
+
+        for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(node_id):
+                self.comments_viewed_timestamp[node_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[node_id]:
+                self.comments_viewed_timestamp[node_id] = timestamp
+
         self.emails.extend(user.emails)
-        # Inherit projects the user was a contributor for
+
+        for k, v in user.email_verifications.iteritems():
+            if k not in self.email_verifications:
+                self.email_verifications[k] = v
+        user.email_verifications = {}
+
+        # FOREIGN FIELDS
+        for watched in user.watched:
+            if watched not in self.watched:
+                self.watched.append(watched)
+        user.watched = []
+
+        for account in user.external_accounts:
+            if account not in self.external_accounts:
+                self.external_accounts.append(account)
+        user.external_accounts = []
+
+        for api_key in user.api_keys:
+            self.api_keys.append(api_key)
+        user.api_keys = []
+
+        # - projects where the user was a contributor
         for node in user.node__contributed:
             # Skip dashboard node
             if node.is_dashboard:
@@ -890,15 +1168,28 @@ class User(GuidStoredObject, AddonModelMixin):
                     user._id, node._id
                 ))
             node.save()
-        # Inherits projects the user created
+
+        # - projects where the user was the creator
         for node in user.node__created:
             node.creator = self
             node.save()
+
+        # - addons
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
+
+        # finalize the merge
+
+        # - username is set to None so the resultant user can set it primary
+        #   in the future.
+        user.username = None
+        user.password = None
+        user.verification_key = None
         user.merged_by = self
+
         user.save()
-        if save:
-            self.save()
-        return None
 
     def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)

@@ -51,7 +51,7 @@ def googledrive_oauth_start(auth, **kwargs):
     if nid:
         session.data['googledrive_auth_nid'] = nid
 
-    return {'url': authorization_url}
+    return redirect(authorization_url)
 
 
 @must_be_logged_in

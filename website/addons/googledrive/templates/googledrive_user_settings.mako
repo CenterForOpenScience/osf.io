@@ -14,7 +14,7 @@
         </span>
         <!-- Create Access Token Button -->
         <span data-bind="if: !userHasAuth() && loaded()">
-            <a data-bind="click:createAuth" class="text-primary pull-right addon-auth">
+            <a data-bind="attr.href: urls().create" class="text-primary pull-right addon-auth">
                 Create Access Token
             </a>
         </span>

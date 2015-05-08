@@ -1,0 +1,13 @@
+/*
+Override treebeard styles
+*/
+.addon-folderpicker-widget .title-text {
+    cursor: initial;
+}
+.addon-folderpicker-widget .tb-expand-icon-holder {
+    cursor: initial;
+}
+.addon-folderpicker-widget .tb-multiselect {
+    background-color: white;
+}
+/* ---------------- */

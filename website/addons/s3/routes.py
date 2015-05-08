@@ -21,12 +21,27 @@ settings_routes = {
             json_renderer
         ),
         Rule(
+            '/settings/s3/',
+            'delete',
+            views.config.s3_remove_user_settings,
+            json_renderer,
+        ),
+        Rule(
             [
                 '/project/<pid>/s3/settings/',
                 '/project/<pid>/node/<nid>/s3/settings/',
             ],
             'post',
             views.config.s3_node_settings,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3/settings/',
+                '/project/<pid>/node/<nid>/s3/settings/',
+            ],
+            'get',
+            views.config.s3_get_node_settings,
             json_renderer,
         ),
         Rule(
@@ -59,9 +74,12 @@ settings_routes = {
             json_renderer,
         ),
         Rule(
-            '/settings/s3/',
-            'delete',
-            views.config.s3_remove_user_settings,
+            [
+                '/project/<pid>/s3/buckets/',
+                '/project/<pid>/node/<nid>/s3/buckets/',
+            ],
+            'get',
+            views.config.s3_bucket_list,
             json_renderer,
         ),
     ],

@@ -11,7 +11,6 @@ import subprocess
 import logging
 
 from invoke import task, run
-from invoke.exceptions import Failure
 
 from website import settings
 
@@ -34,18 +33,26 @@ def bin_prefix(cmd):
 
 
 try:
-    run('pip freeze | grep rednose', hide='both')
-    TEST_CMD = 'nosetests --rednose'
-except Failure:
+    __import__('rednose')
+except ImportError:
     TEST_CMD = 'nosetests'
+else:
+    TEST_CMD = 'nosetests --rednose'
 
 
 @task
-def server(host=None, port=5000, debug=True):
+def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
     app = init_app(set_backends=True, routes=True, mfr=True)
-    app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+    if live:
+        from livereload import Server
+        server = Server(app.wsgi_app)
+        server.watch(os.path.join(HERE, 'website', 'static', 'public'))
+        server.serve(port=port)
+    else:
+        app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 SHELL_BANNER = """
@@ -315,17 +322,36 @@ def flake():
     run('flake8 .', echo=True)
 
 
-@task
-def requirements(all=False, download_cache=None):
-    """Install dependencies."""
-    cmd = "pip install --upgrade -r dev-requirements.txt"
+def pip_install(req_file):
+    """Return the proper 'pip install' command for installing the dependencies
+    defined in ``req_file``.
+    """
+    cmd = bin_prefix('pip install --exists-action w --upgrade -r {} '.format(req_file))
     if WHEELHOUSE_PATH:
-        cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
-    if download_cache:
-        cmd += ' --download-cache {0}'.format(download_cache)
-    run(bin_prefix(cmd), echo=True)
-    if all:
-        addon_requirements(download_cache=download_cache)
+        cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
+    return cmd
+
+@task(aliases=['req'])
+def requirements(addons=False, release=False, dev=False):
+    """Install python dependencies.
+
+    Examples:
+
+        inv requirements --dev
+        inv requirements --addons
+        inv requirements --release
+    """
+    if addons:
+        addon_requirements()
+    req_file = None
+    # "release" takes precedence
+    if release:
+        req_file = os.path.join(HERE, 'requirements', 'release.txt')
+    elif dev:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    else:  # then base requirements
+        req_file = os.path.join(HERE, 'requirements.txt')
+    run(pip_install(req_file), echo=True)
 
 
 @task
@@ -393,20 +419,29 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(repo, path):
-    version = '.'.join([str(i) for i in sys.version_info[0:2]])
-    run('pip install wheel --upgrade', pty=False)
-    name = 'wheelhouse-{}.tar.gz'.format(version)
-    url = '{}/archive/{}.tar.gz'.format(repo, version)
-    # download and extract the wheelhouse github repository archive
-    run('mkdir {}'.format(path), pty=False)
-    run('curl -o {} -L {}'.format(name, url), pty=False)
-    run('tar -xvf {} --strip 1 -C {}'.format(name, path), pty=False)
-    run('rm -f {}'.format(name), pty=False)
+def wheelhouse(addons=False, release=False, dev=False):
+    if release:
+        req_file = os.path.join(HERE, 'requirements', 'release.txt')
+    elif dev:
+        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    else:
+        req_file = os.path.join(HERE, 'requirements.txt')
+    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    run(cmd, pty=True)
+
+    if not addons:
+        return
+    for directory in os.listdir(settings.ADDON_PATH):
+        path = os.path.join(settings.ADDON_PATH, directory)
+        if os.path.isdir(path):
+            req_file = os.path.join(path, 'requirements.txt')
+            if os.path.exists(req_file):
+                cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                run(cmd, pty=True)
 
 
 @task
-def addon_requirements(download_cache=None):
+def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
@@ -415,11 +450,9 @@ def addon_requirements(download_cache=None):
                 requirements_file = os.path.join(path, 'requirements.txt')
                 open(requirements_file)
                 print('Installing requirements for {0}'.format(directory))
-                cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
+                cmd = 'pip install --exists-action w --upgrade -r {0}'.format(requirements_file)
                 if WHEELHOUSE_PATH:
-                    cmd += ' --use-wheel --find-links {}'.format(WHEELHOUSE_PATH)
-                if download_cache:
-                    cmd += ' --download-cache {0}'.format(download_cache)
+                    cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
                 run(bin_prefix(cmd))
             except IOError:
                 pass
@@ -530,9 +563,9 @@ def setup():
     """Creates local settings, installs requirements, and generates encryption key"""
     copy_settings(addons=True)
     packages()
-    requirements(all=True)
+    requirements(addons=True, dev=True)
     encryption()
-    assets(develop=True, watch=False)
+    assets(dev=True, watch=False)
 
 
 @task
@@ -557,7 +590,7 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True)
+    init_app(routes=False, set_backends=True, mfr=False)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
 
@@ -713,34 +746,34 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, develop=False):
+def webpack(clean=False, watch=False, dev=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and develop:
+    if settings.DEBUG_MODE and dev:
         args += ['--colors']
     else:
         args += ['--progress']
     if watch:
         args += ['--watch']
-    config_file = 'webpack.dev.config.js' if develop else 'webpack.prod.config.js'
+    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     run(command, echo=True)
 
 @task()
-def assets(develop=False, watch=False):
+def assets(dev=False, watch=False):
     """Install and build static assets."""
     npm = 'npm install'
-    if not develop:
+    if not dev:
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, develop=develop)
+    webpack(clean=False, watch=watch, dev=dev)
 
 @task
 def generate_self_signed(domain):

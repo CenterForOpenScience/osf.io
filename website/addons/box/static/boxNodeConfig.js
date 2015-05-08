@@ -5,20 +5,18 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var FolderPicker = require('folderpicker');
-var ZeroClipboard = require('zeroclipboard');
-ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
-var $osf = require('osfHelpers');
+var FolderPicker = require('js/folderpicker');
+var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 /**
-*  Knockout view model for the Box node settings widget.
-*/
+ *  Knockout view model for the Box node settings widget.
+ */
 var ViewModel = function(url, selector, folderPicker) {
     var self = this;
     self.selector = selector;
@@ -39,36 +37,16 @@ var ViewModel = function(url, selector, folderPicker) {
     self.messageClass = ko.observable('text-info');
     // Display names
     self.PICKER = 'picker';
-    self.SHARE = 'share';
     // Current folder display
     self.currentDisplay = ko.observable(null);
     // CSS selector for the folder picker div
     self.folderPicker = folderPicker;
     // Currently selected folder, an Object of the form {name: ..., path: ...}
     self.selected = ko.observable(null);
-    // Emails of contributors, can only be populated by activating the share dialog
-    self.emails = ko.observableArray([]);
     self.loading = ko.observable(false);
-    // Whether the initial data has been fetched form the server. Used for
-    // error handling.
-    self.loadedSettings = ko.observable(false);
-    // Whether the contributor emails have been loaded from the server
-    self.loadedEmails = ko.observable(false);
-
     // Whether the box folders have been loaded from the server/Box API
     self.loadedFolders = ko.observable(false);
-
-    // List of contributor emails as a comma-separated values
-    self.emailList = ko.pureComputed(function() {
-        return self.emails().join([', ']);
-    });
-
-    self.disableShare = ko.pureComputed(function() {       
-        var isRoot = self.folder().path === 'All Files';
-        var notSet = (self.folder().path == null);
-        return !(self.urls().emails) || !self.validCredentials() || isRoot || notSet;
-
-    });
+    self.loadedSettings = ko.observable(false);
 
     /**
     *  Update the view model from data returned from the server.
@@ -123,36 +101,6 @@ var ViewModel = function(url, selector, folderPicker) {
 
     // Initial fetch from server
     self.fetchFromServer();
-
-    self.toggleShare = function() {
-        if (self.currentDisplay() === self.SHARE) {
-            self.currentDisplay(null);
-        } else {
-            // Clear selection
-            self.cancelSelection();
-            self.currentDisplay(self.SHARE);
-            self.activateShare();
-        }
-    };
-
-
-    function onGetEmailsSuccess(response) {
-        var emails = response.result.emails;
-        self.emails(emails);
-        self.loadedEmails(true);
-    }
-
-    self.activateShare = function() {
-        if (!self.loadedEmails()) {
-            $.ajax({
-                url: self.urls().emails, type: 'GET', dataType: 'json',
-                success: onGetEmailsSuccess
-            });
-        }
-        var $copyBtn = $('#copyBtn');
-        new ZeroClipboard($copyBtn);
-    };
-
 
     /**
     *  Whether or not to show the Import Access Token Button
@@ -213,7 +161,7 @@ var ViewModel = function(url, selector, folderPicker) {
     * Send a PUT request to change the linked Box folder.
     */
     self.submitSettings = function() {
-        $osf.putJSON(self.urls().config, ko.toJS(self))
+        return $osf.putJSON(self.urls().config, ko.toJS(self))
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     };

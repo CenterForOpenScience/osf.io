@@ -1,11 +1,12 @@
+'use strict';
 /**
  * Github FileBrowser configuration module.
  */
 var m = require('mithril');
-
-var Fangorn = require('fangorn');
-var waterbutler = require('waterbutler');
 var URI = require('URIjs');
+
+var Fangorn = require('js/fangorn');
+var waterbutler = require('js/waterbutler');
 
 
 function _uploadUrl(item, file) {
@@ -25,6 +26,7 @@ function _fangornActionColumn (item, col){
             window.event.cancelBubble = true;
         }
         var tb = this;
+        var parent = item.parent();
 
         function cancelDelete () {
             this.modal.dismiss();
@@ -39,7 +41,11 @@ function _fangornActionColumn (item, col){
             })
             .done(function(data) {
                 // delete view
-                tb.deleteNode(item.parentID, item.id);
+                if (parent.children.length < 2) {
+                    tb.deleteNode(parent.parentID, parent.id);
+                } else {
+                    tb.deleteNode(parent.id, item.id);
+                }
                 tb.modal.dismiss();
             })
             .fail(function(data){
@@ -50,7 +56,8 @@ function _fangornActionColumn (item, col){
         if (item.data.permissions.edit) {
             var mithrilContent = m('div', [
                     m('h3', 'Delete "' + item.data.name+ '"?'),
-                    m('p', 'This action is irreversible.')
+                    m('p', 'This action is irreversible.'),
+                    parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
                 ]);
             var mithrilButtons = m('div', [
                     m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
@@ -78,6 +85,14 @@ function _fangornActionColumn (item, col){
                 'icon' : 'fa fa-upload',
                 'css' : 'fangorn-clickable btn btn-default btn-xs',
                 'onclick' : Fangorn.ButtonEvents._uploadEvent
+            });
+            buttons.push({
+                name: '',
+                icon: 'fa fa-plus',
+                'tooltip' : 'New folder',
+
+                css: 'fangorn-clickable btn btn-default btn-xs',
+                onclick: Fangorn.ButtonEvents.createFolder
             });
         }
 
@@ -141,10 +156,15 @@ function _resolveLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item, {ref: item.data.branch});
 }
 
-function _fangornLazyLoadOnLoad (tree) {
+function _fangornLazyLoadOnLoad (tree, event) {
+    var tb = this;
     tree.children.forEach(function(item) {
         Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
     });
+    Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
+    if(!event){
+        Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
+    }
 }
 
 function _fangornGithubTitle(item, col)  {
@@ -190,11 +210,18 @@ function _fangornGithubTitle(item, col)  {
 
 
 function _fangornColumns (item) {
+    var selectClass = '';
+    var node = item.parent().parent();
+    if (item.data.kind === 'file' && this.currentFileID === item.id) {
+        selectClass = 'fangorn-hover';
+    }
+
     var columns = [];
     columns.push({
         data : 'name',
         folderIcons : true,
         filter: true,
+        css: selectClass,
         custom : _fangornGithubTitle
     });
 

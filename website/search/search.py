@@ -27,6 +27,13 @@ def search(query, index=settings.ELASTIC_INDEX, doc_type=None):
 def update_node(node, index=settings.ELASTIC_INDEX):
     search_engine.update_node(node, index=index)
 
+@requires_search
+def delete_node(node, index=settings.ELASTIC_INDEX):
+    doc_type = node.project_or_component
+    if node.is_registration:
+        doc_type = 'registration'
+    search_engine.delete_doc(node._id, node, index=index, category=doc_type)
+
 
 @requires_search
 def update_user(user, index=settings.ELASTIC_INDEX):
@@ -52,11 +59,11 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
                                               exclude=exclude, current_user=current_user)
     return result
 
-def search_share(query, raw=False):
-    return share_search.search(query, raw=raw)
+def search_share(query, raw=False, index='share'):
+    return share_search.search(query, raw=raw, index=index)
 
-def count_share(query):
-    return share_search.count(query)
+def count_share(query, index='share'):
+    return share_search.count(query, index=index)
 
 def share_stats(query=None):
     query = query or {}

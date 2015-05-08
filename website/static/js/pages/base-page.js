@@ -14,13 +14,20 @@ require('font-awesome-webpack');
 
 var $ = require('jquery');
 require('jquery.cookie');
-require('../crossOrigin.js');
 
-var NavbarControl = require('navbar-control');
-var $osf = require('osfHelpers');
+require('js/crossOrigin.js');
+var $osf = require('js/osfHelpers');
+var NavbarControl = require('js/navbarControl');
 
 // Prevent IE from caching responses
-$.ajaxSetup({ cache: false });
+$.ajaxSetup({cache: false});
+
+// Polyfill for String.prototype.endsWith
+if (String.prototype.endsWith == undefined) {
+    String.prototype.endsWith = function(suffix) {
+        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+}
 
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler
 // can be used
@@ -59,6 +66,8 @@ var SlideInViewModel = function (){
     // Google Analytics click event tracking
     self.trackClick = function(source) {
         window.ga('send', 'event', 'button', 'click', source);
+        //in order to make the href redirect work under knockout onclick binding
+        return true;
     };
 };
 

@@ -1,9 +1,9 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 ko.punches.enableAll();
 
 var ViewModel = function(list) {

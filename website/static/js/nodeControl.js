@@ -7,13 +7,14 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
+var Raven = require('raven-js');
 require('bootstrap-editable');
-require('knockout-punches');
+require('knockout.punches');
 ko.punches.enableAll();
 
-$.ajaxSetup({ cache: false });
-var osfHelpers = require('osfHelpers');
-var NodeActions = require('./project.js');
+var osfHelpers = require('js/osfHelpers');
+var NodeActions = require('js/project.js');
+var iconmap = require('js/iconmap')
 
 // Modal language
 var MESSAGES = {
@@ -99,9 +100,9 @@ function setPermissions(permissions, nodeType) {
 }
 
 /**
-    * The ProjectViewModel, scoped to the project header.
-    * @param {Object} data The parsed project data returned from the project's API url.
-    */
+ * The ProjectViewModel, scoped to the project header.
+ * @param {Object} data The parsed project data returned from the project's API url.
+ */
 var ProjectViewModel = function(data) {
     var self = this;
     self._id = data.node.id;
@@ -109,12 +110,17 @@ var ProjectViewModel = function(data) {
     self.dateCreated = new osfHelpers.FormattableDate(data.node.date_created);
     self.dateModified = new osfHelpers.FormattableDate(data.node.date_modified);
     self.dateForked = new osfHelpers.FormattableDate(data.node.forked_date);
+    self.parent = data.parent_node;
+    self.doi = ko.observable(data.node.identifiers.doi);
+    self.ark = ko.observable(data.node.identifiers.ark);
+    self.idCreationInProgress = ko.observable(false);
     self.watchedCount = ko.observable(data.node.watched_count);
     self.userIsWatching = ko.observable(data.user.is_watching);
     self.dateRegistered = new osfHelpers.FormattableDate(data.node.registered_date);
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
+    self.userPermissions = data.user.permissions;
     self.description = data.node.description;
     self.title = data.node.title;
     self.category = data.node.category;
@@ -123,20 +129,26 @@ var ProjectViewModel = function(data) {
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
     // The button text to display (e.g. "Watch" if not watching)
-    self.watchButtonDisplay = ko.computed(function() {
+    self.watchButtonDisplay = ko.pureComputed(function() {
         return self.watchedCount().toString();
     });
-    self.watchButtonAction = ko.computed(function() {
+    self.watchButtonAction = ko.pureComputed(function() {
         return self.userIsWatching() ? 'Unwatch' : 'Watch';
     });
 
+    self.canBeOrganized = ko.pureComputed(function() {
+        return !!(self.user.username && (self.nodeIsPublic || self.user.is_contributor));
+    });
 
-    self.canBeOrganized = ko.computed(function(){
-            if (self.user.username && (self.nodeIsPublic || self.user.is_contributor)) {
-                return true;
-            }
-            return false;
-        });
+    // Add icon to title
+    self.icon = '';
+    var category = data.node.category_short;
+    if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+        self.icon = iconmap.componentIcons[category];        
+    }
+    else {
+        self.icon = iconmap.projectIcons[category];
+    }
 
     // Editable Title and Description
     if (self.userCanEdit) {
@@ -209,8 +221,8 @@ var ProjectViewModel = function(data) {
 
 
     /**
-    * Toggle the watch status for this project.
-    */
+     * Toggle the watch status for this project.
+     */
     self.toggleWatch = function() {
         // Send POST request to node's watch API url and update the watch count
         if(self.userIsWatching()) {
@@ -241,6 +253,59 @@ var ProjectViewModel = function(data) {
     self.forkNode = function() {
         NodeActions.forkNode();
     };
+
+    self.hasIdentifiers = ko.pureComputed(function() {
+        return !!(self.doi() && self.ark());
+    });
+
+    self.canCreateIdentifiers = ko.pureComputed(function() {
+        return !self.hasIdentifiers() &&
+            self.isRegistration &&
+            self.nodeIsPublic &&
+            self.userPermissions.indexOf('admin') !== -1;
+    });
+
+    self.doiUrl = ko.pureComputed(function() {
+        return self.doi() ? 'http://ezid.cdlib.org/id/doi:' + self.doi() : null;
+    });
+
+    self.arkUrl = ko.pureComputed(function() {
+        return self.ark() ? 'http://ezid.cdlib.org/id/ark:/' + self.ark() : null;
+    });
+
+    self.askCreateIdentifiers = function() {
+        var self = this;
+        bootbox.confirm({
+            title: 'Create identifiers',
+            message: '<p class="overflow">' +
+                'Are you sure you want to create a DOI and ARK for this ' +
+                self.nodeType + '?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    self.createIdentifiers();
+                }
+            }
+        });
+    };
+
+    self.createIdentifiers = function() {
+        // Only show loading indicator for slow responses
+        var timeout = setTimeout(function() {
+            self.idCreationInProgress(true); // show loading indicator
+        }, 500);
+        return $.post(
+            self.apiUrl + 'identifiers/'
+        ).done(function(resp) {
+            self.doi(resp.doi);
+            self.ark(resp.ark);
+        }).fail(function() {
+            osfHelpers.growl('Error', 'Could not create identifiers.', 'danger');
+            Raven.captureMessage('Could not create identifiers');
+        }).always(function() {
+            clearTimeout(timeout);
+            self.idCreationInProgress(false); // hide loading indicator
+        });
+    };
 };
 
 ////////////////
@@ -263,7 +328,10 @@ function NodeControl (selector, data, options) {
 
 NodeControl.prototype.init = function() {
     var self = this;
-    ko.applyBindings(self.viewModel, self.$element[0]);
+    osfHelpers.applyBindings(self.viewModel, this.selector);
 };
 
-module.exports = NodeControl;
+module.exports = {
+    _ProjectViewModel: ProjectViewModel,
+    NodeControl: NodeControl
+};

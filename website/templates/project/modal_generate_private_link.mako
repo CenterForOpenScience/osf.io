@@ -26,7 +26,7 @@
                             <input type="checkbox" data-bind="checked: anonymous"/>
                             <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review).
                             <br>
-                            <i>Ensure the wiki pages, files, and registration supplements you have created do not contain identifying information</i>
+                            <i>Ensure the wiki pages, files, registration supplements and add-ons do not contain identifying information.</i>
                         </label>
                     </div>
 
@@ -54,7 +54,7 @@
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <!-- /ko -->
                                     <!-- ko ifnot: $root.isChildVisible($data) -->
-                                        <i class="fa fa-question-sign" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
+                                        <i class="fa fa-question-circle" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
                                     <!-- /ko -->
                                     <span data-bind="text:$data.title"></span>
                                     <span data-bind="if: $data.is_public">(public)</span>

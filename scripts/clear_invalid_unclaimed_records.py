@@ -60,7 +60,7 @@ class TestMigrateNodeCategories(OsfTestCase):
         user = UserFactory.build()
         user.add_unclaimed_record(self.project, self.referrer, 'foo')
         user.save()
-        assert_true(user.is_confirmed())
+        assert_true(user.is_confirmed)
 
         targets = list(get_targets())
         assert_in(user, targets)
@@ -69,7 +69,7 @@ class TestMigrateNodeCategories(OsfTestCase):
         user = UserFactory.build()
         user.add_unclaimed_record(self.project, self.referrer, 'foo')
         user.save()
-        assert_true(user.is_confirmed())
+        assert_true(user.is_confirmed)
 
         assert_equal(len(user.unclaimed_records.keys()), 1)
         do_migration()

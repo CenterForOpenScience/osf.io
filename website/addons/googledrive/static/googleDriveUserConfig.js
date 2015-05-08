@@ -4,14 +4,14 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 ko.punches.enableAll();
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-var language = require('osfLanguage').Addons.googledrive;
-var osfHelpers = require('osfHelpers');
+var language = require('js/osfLanguage').Addons.googledrive;
+var osfHelpers = require('js/osfHelpers');
 
 var ViewModel = function(url) {
     var self = this;
@@ -27,7 +27,7 @@ var ViewModel = function(url) {
     $.ajax({
         url: url,
         type: 'GET',
-        dataType: 'json',
+        dataType: 'json'
     }).done(function(response) {
         var data =response.result;
         self.userHasAuth(data.userHasAuth);

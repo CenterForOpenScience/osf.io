@@ -2,7 +2,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-var signIn = require('./signIn.js');
+var signIn = require('js/signIn');
 
 /**
     * The NavbarViewModel, for OSF wide navigation.

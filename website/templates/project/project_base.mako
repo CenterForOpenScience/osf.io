@@ -18,9 +18,9 @@
 
 ${next.body()}
 
-% if node['node_type'] == 'project':
+## % if node['node_type'] == 'project':
     <%include file="modal_duplicate.mako"/>
-% endif
+## % endif
 
 </%def>
 
@@ -44,6 +44,18 @@ ${next.body()}
     var userApiUrl = '${user_api_url}';
     var nodeApiUrl = '${node['api_url']}';
     var absoluteUrl = '${node['display_absolute_url']}';
+    <%
+       parent_exists = parent_node['exists']
+       parent_title = ''
+       parent_registration_url = ''
+       if parent_exists:
+           parent_title = "Private {0}".format(parent_node['category'])
+           parent_registration_url = ''
+       if parent_node['can_view'] or parent_node['is_contributor']:
+           parent_title = parent_node['title']
+           parent_registration_url = parent_node['registrations_url']
+    %>
+
     // Mako variables accessible globally
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
@@ -58,11 +70,19 @@ ${next.body()}
             ## TODO: Abstract me
             id: nodeId,
             title: ${json.dumps(node['title']) | n},
-            urls: {api: nodeApiUrl, web: ${json.dumps(node['url'])}},
+            urls: {
+                api: nodeApiUrl,
+                web: ${json.dumps(node['url'])},
+                update: ${json.dumps(node['update_url'])}
+            },
             isPublic: ${json.dumps(node.get('is_public', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)},
-            anonymous: ${json.dumps(node['anonymous'])}
+            anonymous: ${json.dumps(node['anonymous'])},
+            category: '${node['category_short']}',
+            parentTitle: ${json.dumps(parent_title) | n},
+            parentRegisterUrl: '${parent_registration_url}',
+            parentExists: ${'true' if parent_exists else 'false'}
         }
     });
 

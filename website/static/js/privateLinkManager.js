@@ -1,6 +1,8 @@
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
 
 var NODE_OFFSET = 25;
 var PrivateLinkViewModel = function(url) {
@@ -47,10 +49,10 @@ var PrivateLinkViewModel = function(url) {
         self.title(response.node.title);
         self.isPublic(response.node.is_public);
         self.id(response.node.id);
-        $.each(response['children'], function(idx, child) {
-            child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
+        $.each(response.children, function(idx, child) {
+            child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
         });
-        self.nodes(response['children']);
+        self.nodes(response.children);
     }
 
     function onFetchError() {
@@ -122,4 +124,3 @@ function PrivateLinkManager (selector, url) {
     $osf.applyBindings(self.viewModel, selector);
 }
 module.exports = PrivateLinkManager;
-

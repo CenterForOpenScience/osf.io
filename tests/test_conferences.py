@@ -202,34 +202,38 @@ class TestProvisionNode(ContextTestCase):
         assert_in('emailed', self.node.system_tags)
         assert_in('spam', self.node.system_tags)
 
+    @mock.patch('website.util.waterbutler_url_for')
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
-    def test_upload(self, mock_get_url, mock_put):
+    def test_upload(self, mock_put, mock_get_url):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = 'hammer-to-fall'
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.user,
+            'upload',
+            'osfstorage',
+            self.attachment.filename,
             self.node,
-            path=self.attachment.filename,
+            user=self.user,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
         )
 
+    @mock.patch('website.util.waterbutler_url_for')
     @mock.patch('website.conferences.utils.requests.put')
-    @mock.patch('website.addons.osfstorage.utils.get_waterbutler_upload_url')
-    def test_upload_no_file_name(self, mock_get_url, mock_put):
+    def test_upload_no_file_name(self, mock_put, mock_get_url):
         mock_get_url.return_value = 'http://queen.com/'
         self.attachment.filename = ''
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            self.user,
+            'upload',
+            'osfstorage',
+            settings.MISSING_FILE_NAME,
             self.node,
-            path=settings.MISSING_FILE_NAME,
+            user=self.user,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -386,6 +390,12 @@ class TestMessage(ContextTestCase):
 
 
 class TestConferenceEmailViews(OsfTestCase):
+
+    def test_conference_plain_returns_200(self):
+        conference = ConferenceFactory()
+        url = web_url_for('conference_results__plain', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
 
     def test_conference_data(self):
         conference = ConferenceFactory()

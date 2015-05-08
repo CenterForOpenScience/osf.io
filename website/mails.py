@@ -121,6 +121,8 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 TEST = Mail('test', subject='A test email to ${name}')
 CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
+REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
+PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
@@ -129,6 +131,9 @@ FORWARD_INVITE_REGiSTERED = Mail('forward_invite_registered', subject='Please fo
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
 PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
+
+REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
+REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',

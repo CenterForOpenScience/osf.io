@@ -6,10 +6,15 @@
 var ko = require('knockout');
 var $ = require('jquery');
 var moment = require('moment');
-require('knockout-punches');
-var $osf = require('osfHelpers');
+var Paginator = require('js/paginator');
+var oop = require('js/oop');
+require('knockout.punches');
+
+var $osf = require('js/osfHelpers');  // Injects 'listing' binding hanlder to to Knockout
+var nodeCategories = require('json!built/nodeCategories.json');
 
 ko.punches.enableAll();  // Enable knockout punches
+
 /**
   * Log model.
   */
@@ -39,6 +44,14 @@ var Log = function(params) {
         return $('script#' + self.action).length > 0;
     });
 
+    self.mapUpdates = function(key, item) {
+        if (key === 'category') {
+            return key + ' to ' + nodeCategories[item['new']];
+        }
+        else {
+            return key + ' to ' + item;
+        }
+    };
 
     /**
       * Return the html for a comma-delimited list of contributor links, formatted
@@ -74,47 +87,56 @@ var Log = function(params) {
 /**
   * View model for a log list.
   * @param {Log[]} logs An array of Log model objects to render.
-  * @param hasMoreLogs boolean value if there are more logs or not
   * @param url the url ajax request post to
   */
-var LogsViewModel = function(logs, hasMoreLogs, url) {
-    var self = this;
-    self.enableMoreLogs = ko.observable(hasMoreLogs);
-    self.logs = ko.observableArray(logs);
-    var pageNum=  0;
-    self.url = url;
+var LogsViewModel = oop.extend(Paginator, {
+    constructor: function(logs, url) {
+        this.super.constructor.call(this);
+        var self = this;
+        self.loading = ko.observable(false);
+        self.logs = ko.observableArray(logs);
+        self.url = url;
 
+        self.tzname = ko.pureComputed(function() {
+            var logs = self.logs();
+            if (logs.length) {
+                var tz =  moment(logs[0].date.date).format('ZZ');
+                return tz;
+            }
+            return '';
+        });
+    },
     //send request to get more logs when the more button is clicked
-    self.moreLogs = function(){
-        pageNum+=1;
-        $.ajax({
+    fetchResults: function(){
+        var self = this;
+        self.loading(true);
+        return $.ajax({
             type: 'get',
             url: self.url,
             data:{
-                pageNum: pageNum
+                page: self.currentPage()
             },
             cache: false
         }).done(function(response) {
+            self.loading(false);
             // Initialize LogViewModel
+            self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
-            self.enableMoreLogs(response.has_more_logs);
+            self.currentPage(response.page);
+            self.numberOfPages(response.pages);
+            self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
-        );
-    };
+        ).fail(function() {
+            self.loading(false);
+        });
 
-    self.tzname = ko.computed(function() {
-        var logs = self.logs();
-        if (logs.length) {
-            var tz =  moment(logs[0].date.date).format('ZZ');
-            return tz;
-        }
-        return '';
-    });
-};
+    }
+});
+
 
 /**
   * Create an Array of Log model objects from data returned from an endpoint
@@ -124,21 +146,22 @@ var LogsViewModel = function(logs, hasMoreLogs, url) {
 var createLogs = function(logData){
     var mappedLogs = $.map(logData, function(item) {
         return new Log({
-            'anonymous': item.anonymous,
-            'action': item.action,
-            'date': item.date,
+            anonymous: item.anonymous,
+            action: item.action,
+            date: item.date,
             // The node type, either 'project' or 'component'
             // NOTE: This is NOT the component category (e.g. 'hypothesis')
-            'nodeType': item.node.is_registration ? 'registration': item.node.node_type,
-            'nodeCategory': item.node.category,
-            'contributors': item.contributors,
-            'nodeUrl': item.node.url,
-            'userFullName': item.user.fullname,
-            'userURL': item.user.url,
-            'apiKey': item.api_key,
-            'params': item.params,
-            'nodeTitle': item.node.title,
-            'nodeDescription': item.params.description_new
+            nodeType: item.node.is_registration ? 'registration': item.node.node_type,
+            nodeCategory: item.node.category,
+            contributors: item.contributors,
+            nodeUrl: item.node.url,
+            userFullName: item.user.fullname,
+            userURL: item.user.url,
+            apiKey: item.api_key,
+            params: item.params,
+            nodeTitle: item.node.title,
+            nodeDescription: item.params.description_new,
+            nodePath: item.node.path
         });
     });
     return mappedLogs;
@@ -154,9 +177,12 @@ var defaults = {
 };
 
 
-var initViewModel = function(self, logs, hasMoreLogs, url){
+var initViewModel = function(self, logs, url){
     self.logs = createLogs(logs);
-    self.viewModel = new LogsViewModel(self.logs, hasMoreLogs, url);
+    self.viewModel = new LogsViewModel(self.logs, url);
+    if(url) {
+        self.viewModel.fetchResults();
+    }
     self.init();
 };
 
@@ -172,12 +198,12 @@ function LogFeed(selector, data, options) {
     self.$element = $(selector);
     self.options = $.extend({}, defaults, options);
     self.$progBar = $(self.options.progBar);
+    //for recent activities logs
     if (Array.isArray(data)) { // data is an array of log object from server
-        initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
-    } else { // data is an URL
-        $.getJSON(data, function(response) {
-            initViewModel(self, response.logs, response.has_more_logs, data);
-        });
+        initViewModel(self, data, self.options.url);
+    } else { // data is an URL, for watch logs and project logs
+        var noLogs =[];
+        initViewModel(self, noLogs, data);
     }
 }
 

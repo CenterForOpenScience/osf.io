@@ -6,11 +6,10 @@
 'use strict';
 
 // CSS
-require('../css/onboarding.css');
-require('../css/typeahead.css');
+require('css/onboarding.css');
+require('css/typeahead.css');
 
 var Dropzone = require('dropzone');
-var waterbutler = require('waterbutler');
 var Handlebars = require('handlebars');
 var Raven = require('raven-js');
 var ko = require('knockout');
@@ -18,8 +17,9 @@ var $ = require('jquery');
 require('typeahead.js');
 
 
-require('./projectCreator.js');
-var $osf = require('osfHelpers');
+require('js/projectCreator.js');
+var waterbutler = require('js/waterbutler');
+var $osf = require('js/osfHelpers');
 
 function noop() {}
 var MAX_RESULTS = 14;

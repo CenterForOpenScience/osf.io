@@ -7,6 +7,7 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
+import warnings
 
 import pytz
 import blinker
@@ -29,7 +30,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key
+from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -42,6 +43,7 @@ from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import NodeStateError
 from website.citations.utils import datetime_to_csl
+from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -281,6 +283,7 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
+@unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -329,6 +332,10 @@ class NodeLog(StoredObject):
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
 
+    UPDATED_FIELDS = 'updated_fields'
+
+    FOLDER_CREATED = 'folder_created'
+
     FILE_ADDED = 'file_added'
     FILE_UPDATED = 'file_updated'
     FILE_REMOVED = 'file_removed'
@@ -342,6 +349,8 @@ class NodeLog(StoredObject):
 
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
+
+    EXTERNAL_IDS_ADDED = 'external_ids_added'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -410,7 +419,6 @@ class NodeLog(StoredObject):
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
-
 
 class Tag(StoredObject):
 
@@ -482,6 +490,7 @@ def get_pointer_parent(pointer):
     assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
     return parent_refs[0]
 
+
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
     categories defined in CATEGORY_MAP.
@@ -506,10 +515,14 @@ def validate_user(value):
             raise ValidationValueError('User does not exist.')
     return True
 
+class NodeUpdateError(Exception):
+    def __init__(self, reason, key, *args, **kwargs):
+        super(NodeUpdateError, self).__init__(*args, **kwargs)
+        self.key = key
+        self.reason = reason
 
-class Node(GuidStoredObject, AddonModelMixin):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
-    redirect_mode = 'proxy'
     #: Whether this is a pointer or not
     primary = True
 
@@ -542,6 +555,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('communication', 'Communication'),
         ('other', 'Other'),
     ])
+
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+    ]
 
     _id = fields.StringField(primary=True)
 
@@ -623,11 +642,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     def __init__(self, *args, **kwargs):
         super(Node, self).__init__(*args, **kwargs)
 
-        # Crash if parent provided and not project
-        project = kwargs.get('project')
-        if project and project.category != 'project':
-            raise ValueError('Parent must be a project.')
-
         if kwargs.get('_is_loaded', False):
             return
 
@@ -663,6 +677,15 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def private_link_keys_deleted(self):
         return [x.key for x in self.private_links if x.is_deleted]
+
+    def path_above(self, auth):
+        parents = self.parents
+        return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
+
+    @property
+    def ids_above(self):
+        parents = self.parents
+        return {p._id for p in parents}
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -700,7 +723,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         return (
             self.is_public or
             (auth.user and self.has_permission(auth.user, 'read')) or
-            auth.private_key in self.private_link_keys_active
+            auth.private_key in self.private_link_keys_active or
+            self.is_admin_parent(auth.user)
         )
 
     def is_expanded(self, user=None):
@@ -908,7 +932,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 message,
                 params={
-                    'project': self.parent_id,
+                    'parent': self.parent_id,
                     'node': self._id,
                     'contributors': [user._id],
                 },
@@ -926,8 +950,54 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         return self.can_edit(auth)
 
-    def save(self, *args, **kwargs):
+    def update(self, fields, auth=None, save=True):
+        if self.is_registration:
+            raise NodeUpdateError(reason="Registered content cannot be updated")
+        values = {}
+        for key, value in fields.iteritems():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
+            with warnings.catch_warnings():
+                try:
+                    # This is in place because historically projects and components
+                    # live on different ElasticSearch indexes, and at the time of Node.save
+                    # there is no reliable way to check what the old Node.category
+                    # value was. When the cateogory changes it is possible to have duplicate/dead
+                    # search entries, so always delete the ES doc on categoryt change
+                    # TODO: consolidate Node indexes into a single index, refactor search
+                    if key == 'category':
+                        self.delete_search_entry()
+                    ###############
+                    values[key] = {
+                        'old': getattr(self, key),
+                        'new': value,
+                    }
+                    setattr(self, key, value)
+                except AttributeError:
+                    raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
+                except warnings.Warning:
+                    raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
+        if save:
+            updated = self.save()
+        else:
+            updated = []
+        for key in values:
+            values[key]['new'] = getattr(self, key)
+        self.add_log(NodeLog.UPDATED_FIELDS,
+                     params={
+                         'node': self._id,
+                         'updated_fields': {
+                             key: {
+                                 'old': values[key]['old'],
+                                 'new': values[key]['new']
+                             }
+                             for key in values
+                         }
+                     },
+                     auth=auth)
+        return updated
 
+    def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)
 
         self.adjust_permissions()
@@ -950,34 +1020,22 @@ class Node(GuidStoredObject, AddonModelMixin):
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
-
-            #
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
 
-            #
-            if getattr(self, 'project', None):
+            # Define log fields for non-component project
+            log_action = NodeLog.PROJECT_CREATED
+            log_params = {
+                'node': self._primary_key,
+            }
 
+            if getattr(self, 'parent', None):
                 # Append log to parent
-                self.project.nodes.append(self)
-                self.project.save()
-
-                # Define log fields for component
-                log_action = NodeLog.NODE_CREATED
-                log_params = {
-                    'node': self._primary_key,
-                    'project': self.project._primary_key,
-                }
-
-            else:
-
-                # Define log fields for non-component project
-                log_action = NodeLog.PROJECT_CREATED
-                log_params = {
-                    'project': self._primary_key,
-                }
+                self.parent.nodes.append(self)
+                self.parent.save()
+                log_params.update({'parent_node': self.parent._primary_key})
 
             # Add log with appropriate fields
             self.add_log(
@@ -1019,7 +1077,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                         children.
         :return: The `Node` instance created.
         """
-
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1143,7 +1200,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.POINTER_CREATED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1179,7 +1236,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.POINTER_REMOVED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1206,6 +1263,42 @@ class Node(GuidStoredObject, AddonModelMixin):
             for node in self.nodes
             if node.primary
         ]
+
+    @property
+    def depth(self):
+        return len(self.parents)
+
+    def next_descendants(self, auth, condition=lambda auth, node: True):
+        """
+        Recursively find the first set of descedants under a given node that meet a given condition
+
+        returns a list of [(node, [children]), ...]
+        """
+        ret = []
+        for node in self.nodes:
+            if condition(auth, node):
+                # base case
+                ret.append((node, []))
+            else:
+                ret.append((node, node.next_descendants(auth, condition)))
+        ret = [item for item in ret if item[1] or condition(auth, item[0])]  # prune empty branches
+        return ret
+
+    def get_descendants_recursive(self, include=lambda n: True):
+        for node in self.nodes:
+            if include(node):
+                yield node
+            if node.primary:
+                for descendant in node.get_descendants_recursive(include):
+                    if include(descendant):
+                        yield descendant
+
+    def get_aggregate_logs_queryset(self, auth):
+        ids = [self._id] + [n._id
+                            for n in self.get_descendants_recursive()
+                            if n.can_view(auth)]
+        query = Q('__backrefs.logged.node.logs', 'in', ids)
+        return NodeLog.find(query).sort('-_id')
 
     @property
     def nodes_pointer(self):
@@ -1291,7 +1384,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             NodeLog.POINTER_FORKED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1346,7 +1439,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'title_new': self.title,
                 'title_original': original_title,
@@ -1370,7 +1463,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'project': self.parent_node,  # None if no parent
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -1386,6 +1479,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1512,7 +1613,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
-                'project': original.parent_id,
+                'parent_node': original.parent_id,
                 'node': original._primary_key,
                 'registration': forked._primary_key,
             },
@@ -1522,7 +1623,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
         forked.save()
-
         # After fork callback
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
@@ -1598,7 +1698,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'project': original.parent_id,
+                'parent_node': original.parent_id,
                 'node': original._primary_key,
                 'registration': registered._primary_key,
             },
@@ -1620,7 +1720,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
-                    'project': self.parent_id,
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
@@ -1640,7 +1740,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_ADDED,
                 params={
-                    'project': self.parent_id,
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
@@ -1653,6 +1753,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
+        params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
@@ -1668,10 +1769,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
-        if self.node__parent:
-            parent = self.node__parent[0]
-            parent.logs.append(log)
-            parent.save()
         return log
 
     @property
@@ -1679,25 +1776,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         return '/{}/'.format(self._primary_key)
 
     def web_url_for(self, view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, _guid=_guid, *args, **kwargs)
-        else:
-            return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, _guid=_guid, *args, **kwargs)
+        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                           _offload=_offload, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, _offload=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, *args, **kwargs)
-        else:
-            return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, *args, **kwargs)
-
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                           _offload=_offload, *args, **kwargs)
     @property
     def absolute_url(self):
         if not self.url:
@@ -1720,15 +1804,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def deep_url(self):
-        if self.category == 'project':
-            return '/project/{}/'.format(self._primary_key)
-        else:
-            if self.node__parent and self.node__parent[0].category == 'project':
-                return '/project/{}/node/{}/'.format(
-                    self.parent_id,
-                    self._primary_key
-                )
-        logger.error("Node {0} has a parent that is not a project".format(self._id))
+        return '/project/{}/'.format(self._primary_key)
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -1748,6 +1824,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             'type': 'webpage',
             'URL': self.display_absolute_url,
         }
+
+        doi = self.get_identifier_value('doi')
+        if doi:
+            csl['DOI'] = doi
 
         if self.logs:
             csl['issued'] = datetime_to_csl(self.logs[-1].date)
@@ -1793,6 +1873,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         except IndexError:
             pass
         return None
+
+    @property
+    def root(self):
+        if self.parent_node:
+            return self.parent_node.root
+        else:
+            return self
 
     @property
     def watch_url(self):
@@ -2189,7 +2276,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         try:
             contributor.save()
         except ValidationValueError:  # User with same email already exists
-            contributor = get_user(username=email)
+            contributor = get_user(email=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
@@ -2405,7 +2492,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     # TODO: Deprecate this; it duplicates much of what serialize_project already
     # does
-    def serialize(self):
+    def serialize(self, auth=None):
         """Dictionary representation of node that is nested within a NodeLog's
         representation.
         """
@@ -2417,9 +2504,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),
+            'path': self.path_above(auth),
             'api_url': self.api_url,
             'is_public': self.is_public,
-            'is_registration': self.is_registration
+            'is_registration': self.is_registration,
         }
 
 

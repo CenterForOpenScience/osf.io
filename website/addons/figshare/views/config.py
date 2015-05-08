@@ -37,15 +37,25 @@ def figshare_config_put(node_addon, auth, **kwargs):
     """View for changing a node's linked figshare folder."""
     fields = request.json.get('selected', {})
     node = node_addon.owner
-    node_addon.update_fields(fields, node, auth)
 
+    name = fields.get('name')
+    figshare_id = fields.get('id')
+    figshare_type = fields.get('type')
+
+    if not all([name, figshare_id, figshare_type]):
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message='You must supply a name, id, and type'
+        ))
+
+    folder = {
+        'name': name,
+        'id': figshare_id,
+        'type': figshare_type,
+    }
+    node_addon.update_fields(folder, node, auth)
     return {
         'result': {
-            'linked': {
-                'title': fields.get('title') or '',
-                'id': fields.get('id') or None,
-                'type': fields.get('type') or None,
-            },
+            'folder': folder,
             'urls': serialize_urls(node_addon),
         },
         'message': 'Successfully updated settings.',
@@ -89,11 +99,19 @@ def serialize_settings(node_settings, current_user, client=None):
         user_settings.owner._primary_key == current_user._primary_key
     )
 
+    valid_credentials = True
+    if user_settings:
+        client = client or Figshare.from_settings(user_settings)
+        articles, status = client.articles(node_settings)
+        if status == 401:
+            valid_credentials = False
+
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userHasAuth': user_has_auth,
         'userIsOwner': user_is_owner,
-        'urls': serialize_urls(node_settings)
+        'urls': serialize_urls(node_settings),
+        'validCredentials': valid_credentials,
     }
 
     if node_settings.has_auth:
@@ -102,8 +120,8 @@ def serialize_settings(node_settings, current_user, client=None):
             uid=user_settings.owner._primary_key)
         result['ownerName'] = user_settings.owner.fullname
         # Show available projects
-        linked = node_settings.linked_content or {'id': None, 'type': None, 'title': None}
-        result['linked'] = linked
+        linked = node_settings.linked_content or {'id': None, 'type': None, 'name': None}
+        result['folder'] = linked
     return result
 
 
@@ -115,7 +133,9 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
+        'folders': node.api_url_for('figshare_get_options'),
         'files': node.web_url_for('collect_file_trees'),
+        'settings': web_url_for('user_addons')
     }
 
 

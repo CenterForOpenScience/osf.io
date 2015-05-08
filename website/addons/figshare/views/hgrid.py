@@ -4,7 +4,6 @@ from website.util import rubeus
 
 from ..api import Figshare
 
-
 def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     node = node_settings.owner
     if node_settings.figshare_type == 'project':
@@ -19,7 +18,7 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     node_settings.save()
     return [
         rubeus.build_addon_root(
-            node_settings, u'{0}:{1}'.format(node_settings.figshare_title or 'Unnamed', node_settings.figshare_id), permissions=auth,
+            node_settings, u'{0}:{1}'.format(node_settings.figshare_title or "Unnamed {0}".format(node_settings.figshare_type or ''), node_settings.figshare_id), permissions=auth,
             nodeUrl=node.url, nodeApiUrl=node.api_url,
         )
     ]

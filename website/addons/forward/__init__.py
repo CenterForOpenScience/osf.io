@@ -1,3 +1,5 @@
+import os
+
 from website.addons.forward import model, routes, views  # noqa
 
 
@@ -28,3 +30,7 @@ INCLUDE_CSS = {
     'widget': [],
     'page': [],
 }
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'forward_node_settings.mako')
+USER_SETTINGS_TEMPLATE = None  # has no user-facing settings

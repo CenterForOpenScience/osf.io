@@ -5,9 +5,9 @@ import urlparse
 import itertools
 import httplib as http
 
+import pymongo
 from github3 import GitHubError
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+from modularodm import fields
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
@@ -28,6 +28,15 @@ hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
 class GithubGuidFile(GuidFile):
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
 
     path = fields.StringField(index=True)
 
@@ -212,18 +221,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         return self.has_auth and self.repo is not None and self.user is not None
 
     def find_or_create_file_guid(self, path):
-        try:
-            return GithubGuidFile.find_one(
-                Q('path', 'eq', path) &
-                Q('node', 'eq', self.owner)
-            ), False
-        except ModularOdmException:
-            pass
-
-        # Create new
-        new = GithubGuidFile(node=self.owner, path=path)
-        new.save()
-        return new, True
+        return GithubGuidFile.get_or_create(node=self.owner, path=path)
 
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings

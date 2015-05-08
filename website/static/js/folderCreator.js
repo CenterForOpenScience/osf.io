@@ -3,7 +3,7 @@
 var ko = require('knockout');
 var bootbox = require('bootbox');
 
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 function FolderCreatorViewModel(url) {
     var self = this;

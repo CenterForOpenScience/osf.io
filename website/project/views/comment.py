@@ -41,10 +41,8 @@ def collect_discussion(target, users=None):
 
 
 @must_be_contributor_or_public
-def comment_discussion(**kwargs):
+def comment_discussion(auth, node, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     users = collect_discussion(node)
     anonymous = has_anonymous_link(node, auth)
     # Sort users by comment frequency
@@ -111,26 +109,19 @@ def serialize_comments(record, auth, anonymous=False):
     ]
 
 
-def kwargs_to_comment(kwargs, owner=False):
-
-    comment = Comment.load(kwargs.get('cid'))
+def get_comment(cid, auth, owner=False):
+    comment = Comment.load(cid)
     if comment is None:
-        raise HTTPError(http.BAD_REQUEST)
-
+        raise HTTPError(http.NOT_FOUND)
     if owner:
-        auth = kwargs['auth']
         if auth.user != comment.user:
             raise HTTPError(http.FORBIDDEN)
-
     return comment
 
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def add_comment(**kwargs):
-
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
+def add_comment(auth, node, **kwargs):
 
     if not node.comment_level:
         raise HTTPError(http.BAD_REQUEST)
@@ -158,22 +149,32 @@ def add_comment(**kwargs):
     comment.save()
 
     context = dict(
-        node_type=node.project_or_component,
-        timestamp=datetime.utcnow().replace(tzinfo=pytz.utc),
-        commenter=auth.user,
         gravatar_url=auth.user.gravatar_url,
         content=content,
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
-        title=node.title,
-        node_id=node._id,
         url=node.absolute_url
     )
-    sent_subscribers = notify(uid=node._id, event="comments", **context)
+    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    sent_subscribers = notify(
+        uid=node._id,
+        event="comments",
+        user=auth.user,
+        node=node,
+        timestamp=time_now,
+        **context
+    )
 
     if is_reply(target):
         if target.user and target.user not in sent_subscribers:
-            notify(uid=target.user._id, event='comment_replies', **context)
+            notify(
+                uid=target.user._id,
+                event='comment_replies',
+                user=auth.user,
+                node=node,
+                timestamp=time_now,
+                **context
+            )
 
     return {
         'comment': serialize_comment(comment, auth)
@@ -185,8 +186,7 @@ def is_reply(target):
 
 
 @must_be_contributor_or_public
-def list_comments(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def list_comments(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
     target = resolve_target(node, guid)
@@ -216,11 +216,10 @@ def n_unread_comments(node, user):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def edit_comment(**kwargs):
+def edit_comment(auth, **kwargs):
 
-    auth = kwargs['auth']
-
-    comment = kwargs_to_comment(kwargs, owner=True)
+    cid = kwargs.get('cid')
+    comment = get_comment(cid, auth, owner=True)
 
     content = request.json.get('content').strip()
     content = sanitize(content)
@@ -240,10 +239,10 @@ def edit_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def delete_comment(**kwargs):
+def delete_comment(auth, **kwargs):
 
-    auth = kwargs['auth']
-    comment = kwargs_to_comment(kwargs, owner=True)
+    cid = kwargs.get('cid')
+    comment = get_comment(cid, auth, owner=True)
     comment.delete(auth=auth, save=True)
 
     return {}
@@ -251,10 +250,10 @@ def delete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def undelete_comment(**kwargs):
+def undelete_comment(auth, **kwargs):
 
-    auth = kwargs['auth']
-    comment = kwargs_to_comment(kwargs, owner=True)
+    cid = kwargs.get('comment')
+    comment = get_comment(cid, auth, owner=True)
     comment.undelete(auth=auth, save=True)
 
     return {}
@@ -262,9 +261,7 @@ def undelete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def update_comments_timestamp(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-
+def update_comments_timestamp(auth, node, **kwargs):
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
         auth.user.save()
@@ -276,12 +273,12 @@ def update_comments_timestamp(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def report_abuse(**kwargs):
+def report_abuse(auth, **kwargs):
 
-    auth = kwargs['auth']
     user = auth.user
 
-    comment = kwargs_to_comment(kwargs)
+    cid = kwargs.get('cid')
+    comment = get_comment(cid, auth)
 
     category = request.json.get('category')
     text = request.json.get('text', '')
@@ -298,12 +295,11 @@ def report_abuse(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def unreport_abuse(**kwargs):
-
-    auth = kwargs['auth']
+def unreport_abuse(auth, **kwargs):
     user = auth.user
 
-    comment = kwargs_to_comment(kwargs)
+    cid = kwargs.get('cid')
+    comment = get_comment(cid, auth)
 
     try:
         comment.unreport_abuse(user, save=True)

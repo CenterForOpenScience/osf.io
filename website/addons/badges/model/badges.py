@@ -16,8 +16,6 @@ from website.addons.badges.util import acquire_badge_image
 
 class Badge(GuidStoredObject):
 
-    redirect_mode = 'proxy'
-
     _id = fields.StringField(primary=True)
 
     creator = fields.ForeignField('badgesusersettings', backref='creator')

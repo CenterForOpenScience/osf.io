@@ -1,4 +1,3 @@
-% if not disk_saving_mode:
 <div class="modal fade" id="duplicateModal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -38,7 +37,11 @@
                                 ${ node['fork_count'] }
                             </a>
                         </h4>
-                        ${ language.FORK_DESCRIPTION }
+                        % if not disk_saving_mode:
+                            ${ language.FORK_DESCRIPTION }
+                        % else:
+                            ${ language.DISK_SAVING_MODE}
+                        % endif
                     </div>
                 </div>
                 <div class="row">
@@ -53,13 +56,16 @@
                             ${ language.TEMPLATE_ACTION }
                         </a>
                     </div>
+
                     <div class="col-md-4">
-                        <a class="btn btn-primary form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
-                           data-dismiss="modal"
-                           onclick="NodeActions.forkNode();"
-                        >
-                            ${ language.FORK_ACTION }
-                        </a>
+                        % if not disk_saving_mode:
+                            <a class="btn btn-primary form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                               data-dismiss="modal"
+                               onclick="NodeActions.forkNode();"
+                            >
+                                ${ language.FORK_ACTION }
+                            </a>
+                        % endif
                     </div>
                 </div>
             </div>
@@ -70,21 +76,3 @@
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
-## Alternate modal for when undergoing a disk upgrade.
-% else:
-<div class="modal fade" id="duplicateModal">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Temporarily Disabled</h4>
-            </div>
-            <div class="modal-body">
-                Forks and registrations are currently disabled while the OSF is undergoing a server upgrade. These features will return shortly.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
-            </div>
-        </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-% endif

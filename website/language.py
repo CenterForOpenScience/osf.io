@@ -26,6 +26,9 @@ ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
 
+# Shown upon successful email address confirmation
+CONFIRMED_EMAIL = 'Email address confirmation successful.'
+
 # Shown if the user's account is disabled
 DISABLED = '''
 Log-in failed: Deactivated account.
@@ -65,7 +68,24 @@ CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display n
 # ###########
 
 # Shown at error page if an expired/revokes email confirmation link is clicked
-LINK_EXPIRED = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
+EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
+
+INVALID_EMAIL_CONFIRM_TOKEN = 'This confirmation link is invalid. Please <a href="/login/">log in</a> to continue.'
+
+CANNOT_MERGE_ACCOUNTS_SHORT = 'Cannot Merge Accounts'
+
+CANNOT_MERGE_ACCOUNTS_LONG = 'Accounts cannot be merged due to a possible conflict with add-ons. Please deactivate any add-ons authorized on the account to be merged and try again.'
+
+MERGE_COMPLETE = 'Accounts successfully merged.'
+
+MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
+
+MERGE_CONFIRMATION_REQUIRED_LONG = (
+    '<p>This email is confirmed to another account. '
+    'Would you like to merge <em>{user_to_merge.username}</em> with the account '
+    '<em>{user.username}</em>?<p>'
+    '<a class="btn btn-success" href="?confirm_merge">Confirm merge</a> '
+)
 
 # Node Actions
 
@@ -144,3 +164,6 @@ SUPPORT = "Contact support@osf.io for further assistance."
 # Custom Error Messages w/ support
 STATA_VERSION_ERROR = 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
 BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
+
+#disk saving mode
+DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'

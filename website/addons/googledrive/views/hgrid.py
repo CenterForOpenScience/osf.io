@@ -39,7 +39,7 @@ def googledrive_folders(node_addon, user_addon, **kwargs):
             'id': about['rootFolderId'],
             'name': '/ (Full Google Drive)',
             'urls': {
-                'get_folders': node.api_url_for('googledrive_folders', folderId=about['rootFolderId'])
+                'folders': node.api_url_for('googledrive_folders', folderId=about['rootFolderId'])
             }
         }]
 

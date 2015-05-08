@@ -1,14 +1,11 @@
-/**
-*
-*/
 'use strict';
 
 var ko = require('knockout');
-require('knockout-validation');
-require('knockout-punches');
+require('knockout.validation');
+require('knockout.punches');
 var $ = require('jquery');
 
-var $osf = require('osfHelpers');
+var $osf = require('./osfHelpers');
 
 ko.punches.enableAll();
 
@@ -51,11 +48,10 @@ var ViewModel = function(submitUrl) {
     // Collect validated fields
     self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
 
-    self.showValidation = ko.observable(false);
     self.submitted = ko.observable(false);
 
-    self.flashMessage = ko.observable();
-    self.flashMessageClass = ko.observable();
+    self.flashMessage = ko.observable('');
+    self.flashMessageClass = ko.observable('');
     self.flashTimeout = null;
 
     self.trim = function(observable) {
@@ -107,10 +103,6 @@ var ViewModel = function(submitUrl) {
         );
     };
 
-    self.hideValidation = function() {
-        self.showValidation(false);
-    };
-
     self.submit = function() {
         // Show errors if invalid
         if (!self.isValid()) {
@@ -118,10 +110,10 @@ var ViewModel = function(submitUrl) {
             $.each(validatedFields, function(key, value) {
                 value.notifySubscribers();
             });
-            self.showValidation(true);
-            return;
+            return false;
         }
-        // Else submit
+        // Else submit, and send Google Analytics event
+        window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
         $osf.postJSON(
             submitUrl,
             ko.toJS(self)
@@ -131,6 +123,8 @@ var ViewModel = function(submitUrl) {
             self.submitError
         );
     };
+
+    self.errors = ko.validation.group(self);
 
 };
 

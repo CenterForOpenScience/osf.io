@@ -4,20 +4,19 @@
 */
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 ko.punches.enableAll();
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-var language = require('osfLanguage').Addons.dataverse;
-var osfHelpers = require('osfHelpers');
+var language = require('js/osfLanguage').Addons.dataverse;
+var osfHelpers = require('js/osfHelpers');
 
 function ViewModel(url) {
     var self = this;
     self.userHasAuth = ko.observable(false);
-    self.dataverseUsername = ko.observable();
-    self.dataversePassword = ko.observable();
+    self.apiToken = ko.observable();
     self.connected = ko.observable();
     self.urls = ko.observable({});
     // Whether the initial data has been loaded
@@ -43,7 +42,7 @@ function ViewModel(url) {
         self.userHasAuth(data.userHasAuth);
         self.urls(data.urls);
         self.loaded(true);
-        self.dataverseUsername(data.dataverseUsername);
+        self.apiToken(data.apiToken);
         self.connected(data.connected);
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(language.userSettingsError, 'text-warning');
@@ -62,10 +61,7 @@ function ViewModel(url) {
     self.sendAuth = function() {
         return osfHelpers.postJSON(
             self.urls().create,
-            ko.toJS({
-                dataverse_username: self.dataverseUsername,
-                dataverse_password: self.dataversePassword
-            })
+            ko.toJS({api_token: self.apiToken})
         ).done(function() {
             // User now has auth
             self.userHasAuth(true);
@@ -107,8 +103,7 @@ function ViewModel(url) {
             // KO logic. Uncomment if page ever doesn't need refreshing
             // self.userHasAuth(false);
             // self.connected(false);
-            // self.dataverseUsername('');
-            // self.dataversePassword('');
+            // self.apiToken('');
             // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
         }).fail(function() {
             self.changeMessage(language.deauthError, 'text-danger');

@@ -39,10 +39,10 @@ class Figshare(object):
             return cls(None, None, None, None)
         else:
             return cls(
-                client_token=figshare_settings.CLIENT_ID,
-                client_secret=figshare_settings.CLIENT_SECRET,
-                owner_token=settings.oauth_access_token,
-                owner_secret=settings.oauth_access_token_secret,
+                client_token=figshare_settings.CLIENT_ID or '',
+                client_secret=figshare_settings.CLIENT_SECRET or '',
+                owner_token=settings.oauth_access_token or '',
+                owner_secret=settings.oauth_access_token_secret or '',
             )
 
     def _get_last_error(self):
@@ -115,15 +115,20 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
         project['articles'] = []
         if(articles):
-            project['articles'] = [self.article(node_settings, article['id'])['items'][0]
-                                   for article in articles]
+            project['articles'] = []
+            for article in articles:
+                fetched = self.article(node_settings, article['id'])
+                if fetched:
+                    project['articles'].append(fetched['items'][0])
         return project
 
     # ARTICLE LEVEL API
     def articles(self, node_settings):
         articles = self._send(os.path.join(node_settings.api_url, 'articles'))
-        articles = [self.article(node_settings, article['id']) for article in articles]
-        return articles
+        if not articles:
+            return [], self.last_error
+        articles = [self.article(node_settings, article['article_id']) for article in articles['items']]
+        return articles, 200
 
     def article_is_public(self, article):
         res = requests.get(os.path.join(figshare_settings.API_URL, 'articles', str(article)))
@@ -144,13 +149,12 @@ class Figshare(object):
     def get_options(self):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
         articles = self._send("http://api.figshare.com/v1/my_data/articles")
-
         if projects is False or articles is False:
             return self._get_last_error()
 
         return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])}
                 for project in projects] + \
-            [{'label': article['title'], 'value': 'fileset_{0}'.format(article['article_id'])}
+            [{'label': (article['title'] or 'untitled article'), 'value': 'fileset_{0}'.format(article['article_id'])}
              for article in articles['items'] if article['defined_type'] == 'fileset']
 
     def categories(self):

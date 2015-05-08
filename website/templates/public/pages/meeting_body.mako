@@ -1,7 +1,7 @@
 <h2 style="padding-bottom: 30px;">${ meeting['name'] } Posters & Talks</h2>
 
 % if meeting['logo_url']:
-    <img src="${ meeting['logo_url'] }" class="image-responsive" />
+    <img src="${ meeting['logo_url'] }" class="img-responsive" />
     <br /><br />
   % endif
 

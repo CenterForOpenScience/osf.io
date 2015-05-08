@@ -46,19 +46,19 @@ def configure_subscription(auth):
         if not target_id == user._id:
             sentry.log_message(
                 '{!r} attempted to subscribe to either a bad '
-                'id or non-node non-self id, {}', format(user, target_id)
+                'id or non-node non-self id, {}'.format(user, target_id)
             )
             raise HTTPError(http.NOT_FOUND)
 
         if notification_type == 'adopt_parent':
             sentry.log_message(
-                '{!r} attempted to adopt_parent of a none node id, {}', format(user, target_id)
+                '{!r} attempted to adopt_parent of a none node id, {}'.format(user, target_id)
             )
             raise HTTPError(http.BAD_REQUEST)
         owner = user
     else:
         if not node.has_permission(user, 'read'):
-            sentry.log_message('{!r} attempted to subscribe to private node, {}', format(user, target_id))
+            sentry.log_message('{!r} attempted to subscribe to private node, {}'.format(user, target_id))
             raise HTTPError(http.FORBIDDEN)
 
         if notification_type != 'adopt_parent':

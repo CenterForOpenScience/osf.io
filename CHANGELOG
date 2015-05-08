@@ -2,6 +2,67 @@
 Changelog
 *********
 
+0.35.0 (2015-05-06)
+===================
+
+- All projects, regardless of their category (Hypothesis, Methods and
+		Measures, etc.), can have subprojects within them.
+- Add buttons on Account Settings page to request exporting account data and
+deactivating account.
+
+0.34.0 (2015-04-28)
+===================
+
+- Add ability to create folders to storage addons.
+
+Migrations
+----------
+
+- scripts/osfstorage/migrate_from_oldels.py
+- scripts/osfstorage/finish_oldel_migration.py
+
+0.33.10 (2015-04-27)
+====================
+
+- Add migrations necessary to support OSF Storage folders.
+- Fixes to DISK_SAVING_MODE.
+
+0.33.0 (2015-04-20)
+===================
+
+- Update Dataverse addon for compatibility with Dataverse 4.0.
+
+0.32.0 (2015-04-18)
+===================
+
+- Add file tree to file detail pages.
+
+0.31.0 (2015-04-12)
+===================
+
+- Updates to SHARE search API, UI, and documentation page.
+- Add SHARE provider registration page.
+- Users can associate multiple emails to their account.
+- DOIs and ARKs can be created for public registrations.
+- Updated login UI.
+- Fix consistency of addon logs display.
+- Dev: Refactor folderpicker for consistency of addon settings UI.
+- Dev: Update markdown-it to version 4.1 along with plugins
+markdown-it-sanitizer, markdown-it-toc, and markdown-toc-video.
+
+0.30.0 (2015-03-27)
+===================
+
+- Wiki: Single-column view: uses page scrolling rather than container
+scrolling when only one column is enabled.
+- SHARE: Updated UI: added filtering by provider.
+- Remove combined login/register/forgot-password page. Sign-in can be done in the navbar.
+Registration can be done on the landing page.
+- Dev: Add unique compound indices for addon file GUID collections.
+- Dev: Improved speed of Travis CI builds.
+- Dev: Cleanup of dead frontend code.
+- Dev: Automated auditing of Glacier backups and parity files.
+
 0.29.0 (2015-03-19)
 ===================
 

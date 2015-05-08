@@ -19,30 +19,30 @@
   <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="wiki-panel wiki-panel-flex hidden-xs" style="${'' if 'menu' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel-header wiki-panel-header-flex"> <i class="fa fa-list"> </i>  Menu
-                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div></div>
+        <div class="osf-panel hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis(), reset-height : $root.singleVis() }">
+            <div class="osf-panel-header" data-bind="css: {  'osf-panel-header-flex': !$root.singleVis()}"> <i class="fa fa-list"> </i>  Menu
+                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
             </div>
-            <div class="wiki-panel-body wiki-panel-body-flex">
+            <div class="osf-panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
 
         <!-- Menu with toggle collapsed -->
-        <div class="wiki-panel panel-collapsed hidden-xs text-center" style="${'display: none' if 'menu' in panels_used else '' | n}">
-          <div class="wiki-panel-header">
+        <div class="osf-panel panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
+          <div class="osf-panel-header pointer">
             <i class="fa fa-list"> </i>
             <i class="fa fa-angle-right"> </i>
           </div>
-          <div class="wiki-panel-body">
+          <div class="osf-panel-body">
               <%include file="wiki/templates/nav.mako"/>
            </div>
         </div>
 
         <!-- Menu without toggle in XS size only -->
-        <div class="wiki-panel visible-xs">
-            <div class="wiki-panel-header"> <i class="fa fa-list"> </i>  Menu </div>
-            <div class="wiki-panel-body ">
+        <div class="osf-panel visible-xs">
+            <div class="osf-panel-header"> <i class="fa fa-list"> </i>  Menu </div>
+            <div class="osf-panel-body ">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
@@ -55,27 +55,24 @@
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
-                <div class="wiki-panel">
-                  <div class="wiki-panel-header">
+                <div class="osf-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
+                  <div class="osf-panel-header" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
-                           <i class="fa fa-pencil-square-o"> </i>  Edit
+                           <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </span>
                       </div>
                         <div class="col-md-6">
-                          <div class="progress progress-no-margin pointer pull-right"
-                               data-toggle="modal"
-                               data-bind="attr: {data-target: modalTarget}"
-                                  >
-                              <div role="progressbar"
-                                   data-bind="attr: progressBar"
-                                      >
-                                  <span class="progress-bar-content">
-                                      <span data-bind="text: statusDisplay"></span>
-                                      <span class="sharejs-info-btn">
-                                          <i class="fa fa-question-circle fa-large"></i>
-                                      </span>
-                                  </span>
-                              </div>
+                          <div class="pull-right">
+                            <div class="progress progress-no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
+                                <div role="progressbar"data-bind="attr: progressBar">
+                                    <span class="progress-bar-content">
+                                        <span data-bind="text: statusDisplay"></span>
+                                        <span class="sharejs-info-btn">
+                                            <i class="fa fa-question-circle fa-large"></i>
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
                           </div>
                         </div>
                         <div class="col-md-2">
@@ -83,7 +80,7 @@
                     </div>
                   </div>
                   <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                  <div class="wiki-panel-body">
+                  <div class="osf-panel-body">
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
@@ -103,7 +100,7 @@
                         </div>
                       </div>                    
                   </div>
-                  <div class="wiki-panel-footer">
+                  <div class="osf-panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
@@ -130,31 +127,37 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="wiki-panel wiki-panel-flex">
-                <div class="wiki-panel-header wiki-panel-header-flex">
+              <div class="osf-panel no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
+                <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
-                            <i class="fa fa-eye"> </i>  View
+                            <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
                         </div>
                         <div class="col-sm-6">
-                            <!-- Version Picker -->
-                            <select data-bind="value:viewVersion" id="viewVersionSelect" class="pull-right">
-                                % if user['can_edit']:
-                                    <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
-                                % endif
-                                <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
-                                % if len(versions) > 1:
-                                    <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
-                                % endif
-                                % for version in versions[2:]:
-                                    <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
-                                % endfor
-                            </select>
+
+                            <div class="pull-right">
+                                <!-- Version Picker -->                            
+                                <select data-bind="value:viewVersion" id="viewVersionSelect">
+                                    % if user['can_edit']:
+                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
+                                    % endif
+                                    <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                    % if len(versions) > 1:
+                                        <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
+                                    % endif
+                                    % for version in versions[2:]:
+                                        <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
+                                    % endfor
+                                </select>
+
+                            </div> 
+
                         </div>
                     </div>
                 </div>
-                <div id="wikiViewPanel"  class="wiki-panel-body wiki-panel-body-flex">
-                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 215, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+
+                <div id="wikiViewPanel"  class="osf-panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
+                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
                       % if wiki_content:
                           ${wiki_content | n}
                       % else:
@@ -167,27 +170,30 @@
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
-            <div class="wiki-panel wiki-panel-flex">
-              <div class="wiki-panel-header wiki-panel-header-flex">
+            <div class="osf-panel osf-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'osf-panel-flex': $root.singleVis() !== 'compare' }">
+              <div class="osf-panel-header osf-panel-header-flex" data-bind="css: {  'osf-panel-header-flex': $root.singleVis() !== 'compare', 'bordered': $root.singleVis() === 'compare'}">
                   <div class="row">
                       <div class="col-xs-12">
-                          <i class="fa fa-exchange"> </i>  Compare
+                          <span class="wiki-panel-title"> <i class="fa fa-exchange"> </i>   Compare </span>                        
+                          <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <!-- Version Picker -->
-                          <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
-                            <select data-bind="value: compareVersion" id="compareVersionSelect">
-                                <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
-                                % if len(versions) > 1:
-                                    <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
-                                % endif
-                                % for version in versions[2:]:
-                                    <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
-                                % endfor
-                            </select></span>
+                            <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
+                              <select data-bind="value: compareVersion" id="compareVersionSelect">
+                                  <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
+                                  % if len(versions) > 1:
+                                      <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
+                                  % endif
+                                  % for version in versions[2:]:
+                                      <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
+                                  % endfor
+                              </select></span>
+
+                          </div>
+
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare" class="wiki-panel-body wiki-compare-view wiki-panel-body-flex">
-
+              <div data-bind="html: renderedCompare, css: { 'osf-panel-body-flex': $root.singleVis() !== 'compare' }" class="osf-panel-body wiki-compare-view">
               </div>
             </div>
           </div>

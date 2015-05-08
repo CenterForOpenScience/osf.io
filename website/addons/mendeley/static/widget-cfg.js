@@ -2,9 +2,9 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osfHelpers');
-var citations = require('../../../static/js/citations');
-var CitationGrid = require('../../../static/js/citationGrid');
+var $osf = require('js/osfHelpers');
+var citations = require('js/citations');
+var CitationGrid = require('js/citationGrid');
 
 ////////////////
 // Public API //

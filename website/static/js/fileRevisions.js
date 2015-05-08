@@ -1,11 +1,11 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-var waterbutler = require('waterbutler');
+var $osf = require('./osfHelpers');
+var waterbutler = require('./waterbutler');
 
 ko.punches.enableAll();
 
@@ -21,10 +21,26 @@ var Revision = function(data, index, file, node) {
         options.branch = urlParams.branch;
     }
     options[self.versionIdentifier] = self.version;
-    // Note: Google Drive version identifiers often begin with the same sequence
-    self.displayVersion = file.provider === 'googledrive' ?
-        self.version.substring(self.version.length - 8) :
-        self.version.substring(0, 8);
+    self.displayVersion = null;
+    switch (file.provider) {
+        // Note: Google Drive version identifiers often begin with the same sequence
+        case 'googledrive':
+            self.displayVersion = self.version.substring(self.version.length - 8);
+            break;
+        // Note: Dataverse internal version names are ugly; Substitute our own
+        case 'dataverse':
+            var displayMap = {
+                'latest': 'Draft',
+                'latest-published': 'Published'
+            };
+
+            self.displayVersion = self.version in displayMap ?
+                displayMap[self.version] : self.version.substring(0, 8);
+            break;
+        default:
+            self.displayVersion = self.version.substring(0, 8);
+    }
+
 
     self.date = new $osf.FormattableDate(data.modified);
     self.displayDate = self.date.local !== 'Invalid date' ?
@@ -64,8 +80,8 @@ var RevisionsViewModel = function(node, file, editable) {
     self.node = node;
     self.file = file;
     self.path = file.provider !== 'googledrive' ?
-        file.path.split('/') :
-        file.path.split('/').map(decodeURIComponent);
+        (file.extra.fullPath || file.path).split('/') :
+        (file.extra.fullPath || file.path).split('/').map(decodeURIComponent);
 
     // Hack: Set Figshare files to uneditable by default, then update after
     // fetching file metadata after revisions request fails
@@ -87,10 +103,25 @@ var RevisionsViewModel = function(node, file, editable) {
             self.revisions()[0].extra &&
             self.revisions()[0].extra.user;
     });
+
+    self.hasDate = ko.computed(function() {
+        return self.file.provider !== 'dataverse';
+    });
 };
 
 RevisionsViewModel.prototype.fetch = function() {
     var self = this;
+
+    // Dataverse Hack: Only latest version is editable;
+    // Users without edit permission should not see revision table
+    if (self.file.provider === 'dataverse') {
+        if (self.editable()) {
+            self.editable(urlParams.version === 'latest');
+        } else {
+            return;
+        }
+    }
+
     var request = $.getJSON(self.urls.revisions);
 
     request.done(function(response) {
@@ -105,6 +136,8 @@ RevisionsViewModel.prototype.fetch = function() {
         if (Object.keys(self.currentVersion()).length === 0) {
             self.currentVersion(self.revisions()[0]);
         }
+
+        $osf.tableResize('#fileRevisions', 4);
     });
 
     request.fail(function(response) {

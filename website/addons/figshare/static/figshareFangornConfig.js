@@ -2,7 +2,7 @@
 
 var m = require('mithril');
 
-var Fangorn = require('fangorn');
+var Fangorn = require('js/fangorn');
 
 
 // Define Fangorn Button Actions

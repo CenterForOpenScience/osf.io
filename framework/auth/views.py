@@ -66,7 +66,7 @@ def forgot_password():
 
     if form.validate():
         email = form.email.data
-        user_obj = get_user(username=email)
+        user_obj = get_user(email=email)
         if user_obj:
             user_obj.verification_key = security.random_string(20)
             user_obj.save()
@@ -82,9 +82,12 @@ def forgot_password():
                 mail=mails.FORGOT_PASSWORD,
                 reset_link=reset_link
             )
-            status.push_status_message('Reset email sent to {0}'.format(email))
-        else:
-            status.push_status_message('Email {email} not found'.format(email=email))
+        status.push_status_message(
+            'An email with instructions on how to reset the password for the '
+            'account associated with {0} has been sent. If you do not receive '
+            'an email and believe you should have please '
+            'contact OSF Support.'.format(email)
+        )
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -193,23 +196,37 @@ def confirm_email_get(**kwargs):
     methods: GET
     """
     user = User.load(kwargs['uid'])
+    is_initial_confirmation = not user.date_confirmed
+    is_merge = 'confirm_merge' in request.args
     token = kwargs['token']
-    if user:
-        if user.confirm_email(token):  # Confirm and register the user
-            user.date_last_login = datetime.datetime.utcnow()
-            user.save()
 
-            # Go to settings page
-            status.push_status_message(language.WELCOME_MESSAGE, 'success')
-            response = redirect('/settings/')
+    if user is None:
+        raise HTTPError(http.NOT_FOUND)
 
-            return framework.auth.authenticate(user, response=response)
-    # Return data for the error template
-    return {
-        'code': http.BAD_REQUEST,
-        'message_short': 'Link Expired',
-        'message_long': language.LINK_EXPIRED
-    }, http.BAD_REQUEST
+    try:
+        user.confirm_email(token, merge=is_merge)
+    except exceptions.EmailConfirmTokenError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+
+    if is_initial_confirmation:
+        user.date_last_login = datetime.datetime.utcnow()
+        user.save()
+
+        # Go to settings page
+        status.push_status_message(language.WELCOME_MESSAGE, 'success')
+        response = redirect('/settings/')
+    else:
+        response = redirect(web_url_for('user_account'))
+
+    if is_merge:
+        status.push_status_message(language.MERGE_COMPLETE, 'success')
+    else:
+        status.push_status_message(language.CONFIRMED_EMAIL, 'success')
+
+    return framework.auth.authenticate(user, response=response)
 
 
 def send_confirm_email(user, email):
@@ -307,7 +324,7 @@ def resend_confirmation():
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data
-            user = get_user(username=clean_email)
+            user = get_user(email=clean_email)
             if not user:
                 return {'form': form}
             try:

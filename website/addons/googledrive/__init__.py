@@ -1,3 +1,5 @@
+import os
+
 from website.addons.googledrive import routes, model, views
 
 
@@ -35,3 +37,7 @@ INCLUDE_CSS = {
 HAS_HGRID_FILES = True  # set to True for storage addons that display in HGrid
 GET_HGRID_DATA = views.hgrid.googledrive_addon_folder
 # MAX_FILE_SIZE = 10  # MB
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = None  # use default nodes settings templates
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'googledrive_user_settings.mako')

@@ -1,14 +1,16 @@
 /**
  * Controller for the Add Contributor modal.
  */
+'use strict';
+
 var $ = require('jquery');
 var ko = require('knockout');
-var $osf = require('osfHelpers');
 var bootbox = require('bootbox');
-var Paginator = require('js/paginator');
-
 require('bootstrap-editable');
-var oop = require('js/oop');
+
+var oop = require('./oop');
+var $osf = require('./osfHelpers');
+var Paginator = require('./paginator');
 
 var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show
@@ -27,7 +29,7 @@ function Contributor(data) {
 
 var AddContributorViewModel = oop.extend(Paginator, {
     constructor: function(title, parentId, parentTitle) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         var self = this;
 
         self.title = title;
@@ -66,11 +68,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 self.nodes(result.children);
             }
         );
-        self.foundResults = ko.computed(function() {
+        self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
 
-        self.noResults = ko.computed(function() {
+        self.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
         });
 
@@ -108,9 +110,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
      */
     startSearch: function() {
         this.currentPage(0);
-        this.search();
+        this.fetchResults();
     },
-    search: function() {
+    fetchResults: function() {
         var self = this;
         self.notification(false);
         if (self.query()) {
@@ -137,6 +139,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
     },
     importFromParent: function() {
+        var self = this;
         self.notification(false);
         $.getJSON(
             nodeApiUrl + 'get_contributors_from_parent/', {},
@@ -248,9 +251,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         // Make sure that entered email is not already in selection
         for (var i = 0, contrib; contrib = self.selection()[i]; ++i) {
-            var contribEmail = contrib.email.toLowerCase().trim();
-            if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
-                return self.inviteEmail() + ' is already in queue.';
+            if (contrib.email) {
+                var contribEmail = contrib.email.toLowerCase().trim();
+                if (contribEmail === self.inviteEmail().toLowerCase().trim()) {
+                    return self.inviteEmail() + ' is already in queue.';
+                }
             }
         }
         return true;
@@ -283,15 +288,17 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $('.contrib-button').tooltip();
     },
     addAll: function() {
-        $.each(this.results(), function(idx, result) {
-            if (this.selection().indexOf(result) === -1) {
-                this.add(result);
+        var self = this;
+        $.each(self.results(), function(idx, result) {
+            if (self.selection().indexOf(result) === -1) {
+                self.add(result);
             }
         });
     },
     removeAll: function() {
-        $.each(this.selection(), function(idx, selected) {
-            this.remove(selected);
+        var self = this;
+        $.each(self.selection(), function(idx, selected) {
+            self.remove(selected);
         });
     },
     cantSelectNodes: function() {
@@ -307,8 +314,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.nodesToChange([]);
     },
     selected: function(data) {
-        for (var idx = 0; idx < this.selection().length; idx++) {
-            if (data.id === this.selection()[idx].id) {
+        var self = this;
+        for (var idx = 0; idx < self.selection().length; idx++) {
+            if (data.id === self.selection()[idx].id) {
                 return true;
             }
         }

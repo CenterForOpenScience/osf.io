@@ -6,7 +6,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 
-var osfHelpers = require('osfHelpers');
+var osfHelpers = require('js/osfHelpers');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
 
@@ -16,7 +16,7 @@ var nodeId = window.contextVars.node.id;
 
 var AddPointerViewModel = oop.extend(Paginator, {
     constructor: function(nodeTitle) {
-        this.super.constructor();
+        this.super.constructor.call(this);
         var self = this;
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
@@ -28,23 +28,23 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(true);
 
-        this.foundResults = ko.computed(function() {
+        this.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
 
-        this.noResults = ko.computed(function() {
+        this.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
         });
     },
     searchAllProjects: function() {
         this.includePublic(true);
-        this.search();
+        this.fetchResults();
     },
     searchMyProjects: function() {
         this.includePublic(false);
-        this.search();
+        this.fetchResults();
     },
-    search: function() {
+    fetchResults: function() {
         var self = this;
         self.errorMsg('');
         if (self.query()) {

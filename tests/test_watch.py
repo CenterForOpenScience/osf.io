@@ -11,7 +11,8 @@ from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
                              WatchConfigFactory)
-
+from website.views import paginate
+import math
 
 class TestWatching(OsfTestCase):
 
@@ -97,6 +98,17 @@ class TestWatching(OsfTestCase):
         self.user.watch(watch_config)
         self.user.save()
 
+    def test_paginate_helper(self):
+        self._watch_project(self.project)
+        logs = list(self.user.get_recent_log_ids())
+        size = 10
+        page = 0
+        total = len(logs)
+        paginated_logs, pages = paginate(
+            self.user.get_recent_log_ids(), total, page, size)
+        page_num = math.ceil(total / float(size))
+        assert_equal(len(list(paginated_logs)), total)
+        assert_equal(page_num, pages)
 
 if __name__ == '__main__':
     unittest.main()

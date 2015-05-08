@@ -14,7 +14,7 @@ from json import dumps
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
-    
+
 mock_responses = {
     'folders': [
         {

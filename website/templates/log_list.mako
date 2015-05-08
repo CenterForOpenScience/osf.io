@@ -27,8 +27,8 @@
                     <span data-bind="text: tzname"></span>
                     <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
                 </p>
-
-                <p data-bind="if: !logs().length" class="help-block">
+                <p class="text-muted" data-bind="if: loading()">Loading logs...</p>
+                <p data-bind="if: !logs().length && !loading()" class="help-block">
                     No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) icon on a
                     project's page to get activity updates here.
                 </p>
@@ -61,12 +61,14 @@
 
                     </dd>
                 </dl><!-- end foreach logs -->
-                  <a href="#{}"  data-bind="click: moreLogs, visible: enableMoreLogs">  Load more... </a>
+                <div class='help-block absolute-bottom'>
+                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                    </ul>
+                </div>
 
             </div> 
         </div>
 </div>
-
-
 </div><!-- end #logScope -->
 <%include file="_log_templates.mako"/>

@@ -5,12 +5,12 @@
 
 var $ = require('jquery');
 var Raven = require('raven-js');
-var $osf = require('osfHelpers');
+require('select2');
+
+var $osf = require('./osfHelpers');
 var citations = require('./citations');
 
 require('../css/citations_widget.css');
-
-require('select2');
 
 var ctx = window.contextVars;
 

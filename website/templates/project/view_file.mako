@@ -1,5 +1,10 @@
 <%inherit file="project/project_base.mako"/>
+
+## Use full page width
+<%def name="container_class()">container-xxl</%def>
+
 <%def name="title()">${file_name | h}</%def>
+
     <div>
         <h2 class="break-word">
             ${file_name | h}
@@ -12,7 +17,33 @@
 
     <div id="file-container" class="row">
 
-      <div class="col-md-8">
+    <div id="file-navigation" class="panel-toggle col-md-3">
+        <div class="osf-panel osf-panel-flex hidden-xs reset-height">
+            <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+                <div id="filesSearch"></div>
+                <div id="toggleIcon" class="pull-right">
+                    <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div>
+                </div>
+            </div>
+
+            <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+                <div id="grid">
+                    <div class="fangorn-loading"> <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Menu toggle closed -->
+        <div class="osf-panel panel-collapsed hidden-xs text-center reset-height"  style="display: none">
+            <div class="osf-panel-header">
+                <i class="fa fa-file"> </i>
+                <i class="fa fa-angle-right"> </i>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-expand col-md-6">
+
         <div id="fileRendered" class="mfr mfr-file">
           % if rendered is not None:
             ${rendered}
@@ -20,9 +51,9 @@
             <img src="/static/img/loading.gif">
           % endif
         </div>
-      </div>
+    </div>
 
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div id="fileRevisions" class="scripted">
           <ol class="breadcrumb">
             <li><a href="{{ node.urls.files }}" data-bind="text: node.title"></a></li>
@@ -46,16 +77,17 @@
 
 
           <table class="table" data-bind="if: versioningSupported && revisions().length">
-            <thead>
+            <thead class="file-version-thread">
               <tr>
-                <th>Version ID</th>
-                <th>Date</th>
+                <th width="10%">Version ID</th>
+                <th data-bind="if: hasDate">Date</th>
                 <th data-bind="if: userColumn">User</th>
                 <th colspan="2">Download</th>
+                <th></th>
               </tr>
             </thead>
-
-            <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
+            
+            <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
                   <a href="{{ revision.osfViewUrl }}" data-bind="if: revision !== $parent.currentVersion()">
@@ -65,7 +97,7 @@
                     {{ revision.displayVersion }}
                   </span>
                 </td>
-                <td>{{ revision.displayDate }}</td>
+                <td data-bind="if: $parent.hasDate">{{ revision.displayDate }}</td>
                 <td data-bind="if: $parent.userColumn">
                   <a data-bind="if: revision.extra.user.url"
                     href="{{ revision.extra.user.url }}">
@@ -101,10 +133,13 @@
       </div>
     </div>
 
-  </div>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    % for script in tree_js:
+        <script type="text/javascript" src="${script | webpack_asset}"></script>
+    % endfor
+
     % if 'osf.io' in domain:
     <script>
         // IE10 Same Origin (CORS) fix
@@ -136,4 +171,5 @@
       });
     </script>
     <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>

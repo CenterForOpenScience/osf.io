@@ -5,7 +5,7 @@
 'use strict';
 
 var $ = require('jquery');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 
 var FileRenderer = {
     start: function(url, selector){

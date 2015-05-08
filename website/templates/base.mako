@@ -81,14 +81,15 @@
     <div class="container">
         <div class="row">
             <div class='col-sm-2 hidden-xs'>
-                <img class="logo" src="/static/img/circle_logo.png"></img>
+                <img class="logo" src="/static/img/circle_logo.png">
             </div>
             <div class='col-sm-10 col-xs-12'>
                 <a data-bind="click: dismiss" class="close" href="#">&times;</a>
                 <h1>Start managing your projects on the OSF today.</h1>
                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
-                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="/login/">Create an Account</a>
+                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
+
                     <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
@@ -150,7 +151,6 @@
                 cookieName: '${cookie_name}'
             });
         </script>
-
 
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
@@ -233,10 +233,15 @@
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
-    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
-    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
-    <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
-    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+    % if settings.USE_CDN_FOR_CLIENT_LIBS:
+        <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
+        <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+        <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+    % else:
+        <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
+        <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
+    % endif
 
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees

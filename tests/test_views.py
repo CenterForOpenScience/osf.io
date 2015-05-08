@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Views tests for the OSF.'''
+
 from __future__ import absolute_import
 import unittest
 import json
@@ -145,6 +146,26 @@ class TestProjectViews(OsfTestCase):
         )
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
+
+    def test_can_view_nested_project_as_admin(self):
+        self.parent_project = NodeFactory(
+            title='parent project',
+            category='project',
+            parent=self.project,
+            is_public=False
+        )
+        self.parent_project.save()
+        self.child_project = NodeFactory(
+            title='child project',
+            category='project',
+            parent=self.parent_project,
+            is_public=False
+        )
+        self.child_project.save()
+        url = self.child_project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+        assert_not_in('Private Project', res.body)
+        assert_in('parent project', res.body)
 
     def test_edit_description(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
@@ -343,7 +364,7 @@ class TestProjectViews(OsfTestCase):
         )
 
         # add an unregistered contributor
-        unregistered_user = project.add_unregistered_contributor(
+        project.add_unregistered_contributor(
             fullname=fake.name(), email=fake.email(),
             auth=self.consolidate_auth1,
             save=True,
@@ -491,20 +512,34 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action='file_added',
-                    params={'project': self.project._id}
+                    params={'node': self.project._id}
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         for mock_command in mock_commands:
             assert_false(mock_command.called)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
-        assert_false(data['has_more_logs'])
+        assert_equal(data['total'], len(self.project.logs))
+        assert_equal(data['page'], 0)
+        assert_equal(data['pages'], 1)
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
+
+    def test_get_logs_invalid_page_input(self):
+        url = self.project.api_url_for('get_logs')
+        invalid_input = 'invalid page'
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
 
     def test_get_logs_with_count_param(self):
         # Add some logs
@@ -513,14 +548,17 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action='file_added',
-                    params={'project': self.project._id}
+                    params={'node': self.project._id}
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['total'], 5 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 3)
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
@@ -529,14 +567,17 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action='file_added',
-                    params={'project': self.project._id}
+                    params={'node': self.project._id}
                 )
             )
         self.project.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
 
     def test_get_more_logs(self):
         # Add some logs
@@ -545,14 +586,17 @@ class TestProjectViews(OsfTestCase):
                 NodeLogFactory(
                     user=self.user1,
                     action="file_added",
-                    params={"project": self.project._id}
+                    params={"node": self.project._id}
                 )
             )
         self.project.save()
-        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        url = self.project.api_url_for('get_logs')
+        res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
-        assert_false(res.json['has_more_logs'])
+        #1 project create log, 1 add contributor log, then 12 generated logs
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 1)
+        assert_equal(res.json['pages'], 2)
 
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
@@ -565,26 +609,29 @@ class TestProjectViews(OsfTestCase):
             self.project.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
-                params={'project': self.project._id}
+                params={'node': self.project._id}
             )
         self.project.is_public = True
         self.project.save()
-        child = NodeFactory(project=self.project)
+        child = NodeFactory(parent=self.project)
         for _ in range(5):
             child.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
-                params={'project': child._id}
+                params={'node': child._id}
             )
 
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
-        assert_true(res.json['has_more_logs'])
+        # 1 project create log, 1 add contributor log, then 15 generated logs
+        assert_equal(res.json['total'], 15 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
         assert_equal(
             [self.project._id] * 10,
             [
-                log['params']['project']
+                log['params']['node']
                 for log in res.json['logs']
             ]
         )
@@ -611,22 +658,22 @@ class TestProjectViews(OsfTestCase):
             self.project.add_log(
                 auth=self.consolidate_auth1,
                 action='file_added',
-                params={'project': self.project._id}
+                params={'node': self.project._id}
             )
         self.project.is_public = True
         self.project.save()
-        child = NodeFactory(project=self.project)
+        child = NodeFactory(parent=self.project)
         child.is_public = False
         child.set_title("foo", auth=self.consolidate_auth1)
         child.set_title("bar", auth=self.consolidate_auth1)
         child.save()
-        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        url = self.project.api_url_for('get_logs')
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 7)
         assert_not_in(
             child._id,
             [
-                log['params']['project']
+                log['params']['node']
                 for log in res.json['logs']
             ]
         )
@@ -669,7 +716,7 @@ class TestProjectViews(OsfTestCase):
         assert_true(link.is_deleted)
 
     def test_remove_component(self):
-        node = NodeFactory(project=self.project, creator=self.user1)
+        node = NodeFactory(parent=self.project, creator=self.user1)
         url = node.api_url
         res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
         node.reload()
@@ -678,7 +725,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.json['url'], self.project.url)
 
     def test_cant_remove_component_if_not_admin(self):
-        node = NodeFactory(project=self.project, creator=self.user1)
+        node = NodeFactory(parent=self.project, creator=self.user1)
         non_admin = AuthUserFactory()
         node.add_contributor(
             non_admin,
@@ -720,7 +767,6 @@ class TestProjectViews(OsfTestCase):
         project = ProjectFactory(creator=user)
         auth = Auth(project.creator)
         fork = project.fork_node(auth)
-        fork2 = project.fork_node(auth)
         project.save()
         fork.remove_node(auth)
         fork.save()
@@ -728,7 +774,7 @@ class TestProjectViews(OsfTestCase):
         url = project.api_url_for('view_project')
         res = self.app.get(url, auth=user.auth)
         assert_in('fork_count', res.json['node'])
-        assert_equal(1, res.json['node']['fork_count'])
+        assert_equal(0, res.json['node']['fork_count'])
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -737,10 +783,10 @@ class TestEditableChildrenViews(OsfTestCase):
         OsfTestCase.setUp(self)
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=False)
-        self.child = ProjectFactory(project=self.project, creator=self.user, is_public=True)
-        self.grandchild = ProjectFactory(project=self.child, creator=self.user, is_public=False)
-        self.great_grandchild = ProjectFactory(project=self.grandchild, creator=self.user, is_public=True)
-        self.great_great_grandchild = ProjectFactory(project=self.great_grandchild, creator=self.user, is_public=False)
+        self.child = ProjectFactory(parent=self.project, creator=self.user, is_public=True)
+        self.grandchild = ProjectFactory(parent=self.child, creator=self.user, is_public=False)
+        self.great_grandchild = ProjectFactory(parent=self.grandchild, creator=self.user, is_public=True)
+        self.great_great_grandchild = ProjectFactory(parent=self.great_grandchild, creator=self.user, is_public=False)
         url = self.project.api_url_for('get_editable_children')
         self.project_results = self.app.get(url, auth=self.user.auth).json
 
@@ -789,7 +835,7 @@ class TestChildrenViews(OsfTestCase):
 
     def test_get_children(self):
         project = ProjectFactory(creator=self.user)
-        child = NodeFactory(project=project, creator=self.user)
+        child = NodeFactory(parent=project, creator=self.user)
 
         url = project.api_url_for('get_children')
         res = self.app.get(url, auth=self.user.auth)
@@ -819,7 +865,7 @@ class TestChildrenViews(OsfTestCase):
 
         # self.user only has read access to this project, which project points
         # to
-        read_only_pointed =  ProjectFactory()
+        read_only_pointed = ProjectFactory()
         read_only_creator = read_only_pointed.creator
         read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
         read_only_pointed.save()
@@ -829,7 +875,6 @@ class TestChildrenViews(OsfTestCase):
         read_only = ProjectFactory()
         read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
         project.nodes.append(read_only)
-
 
         # self.user adds a pointer to read_only
         project.add_pointer(read_only_pointed, Auth(self.user))
@@ -845,7 +890,7 @@ class TestChildrenViews(OsfTestCase):
 
     def test_get_children_rescale_ratio(self):
         project = ProjectFactory(creator=self.user)
-        child = NodeFactory(project=project, creator=self.user)
+        child = NodeFactory(parent=project, creator=self.user)
 
         url = project.api_url_for('get_children')
         res = self.app.get(url, auth=self.user.auth)
@@ -856,7 +901,7 @@ class TestChildrenViews(OsfTestCase):
 
     def test_get_children_render_nodes_receives_auth(self):
         project = ProjectFactory(creator=self.user)
-        child = NodeFactory(project=project, creator=self.user)
+        NodeFactory(parent=project, creator=self.user)
 
         url = project.api_url_for('get_children')
         res = self.app.get(url, auth=self.user.auth)
@@ -1172,7 +1217,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_timezone(self):
         assert_equal(self.user.timezone, 'Etc/UTC')
-        payload = {'timezone': 'America/New_York'}
+        payload = {'timezone': 'America/New_York', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1180,7 +1225,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': 'de_DE'}
+        payload = {'locale': 'de_DE', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1188,7 +1233,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_none(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': None}
+        payload = {'locale': None, 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -1196,12 +1241,19 @@ class TestUserProfile(OsfTestCase):
 
     def test_update_user_locale_empty_string(self):
         assert_equal(self.user.locale, 'en_US')
-        payload = {'locale': ''}
+        payload = {'locale': '', 'id': self.user._id}
         url = api_url_for('update_user', uid=self.user._id)
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
         assert_equal(self.user.locale, 'en_US')
 
+    def test_cannot_update_user_without_user_id(self):
+        user1 = AuthUserFactory()
+        url = api_url_for('update_user')
+        header = {'emails': [{'address': user1.username}]}
+        res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], '"id" is required')
 
 class TestUserAccount(OsfTestCase):
 
@@ -1390,7 +1442,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(len(self.project.contributors),
                      n_contributors_pre + len(payload['users']))
 
-        new_unreg = auth.get_user(username=email)
+        new_unreg = auth.get_user(email=email)
         assert_false(new_unreg.is_registered)
         # unclaimed record was added
         new_unreg.reload()
@@ -1476,7 +1528,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(len(self.project.logs), n_logs_pre + 1)
 
     def test_add_contribs_to_multiple_nodes(self):
-        child = NodeFactory(project=self.project, creator=self.creator)
+        child = NodeFactory(parent=self.project, creator=self.creator)
         n_contributors_pre = len(child.contributors)
         reg_user = UserFactory()
         name, email = fake.name(), fake.email()
@@ -1852,8 +1904,10 @@ class TestWatchViews(OsfTestCase):
         self.project.logs[0].save()
         # A log added now
         self.last_log = self.project.add_log(
-            NodeLog.TAG_ADDED, params={'project': self.project._primary_key},
-            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
+            NodeLog.TAG_ADDED,
+            params={'node': self.project._primary_key},
+            auth=self.consolidate_auth,
+            log_date=dt.datetime.utcnow(),
             save=True,
         )
         # Clear watched list
@@ -1873,7 +1927,7 @@ class TestWatchViews(OsfTestCase):
         assert_equal(n_watched_now, n_watched_then + 1)
         assert_true(self.user.watched[-1].digest)
 
-    def test_watching_project_twice_returns_400(self):
+    def test_watching_project_twice_returns_400(self):        
         url = "/api/v1/project/{0}/watch/".format(self.project._id)
         res = self.app.post_json(url,
                                  params={},
@@ -1916,7 +1970,7 @@ class TestWatchViews(OsfTestCase):
 
     def test_toggle_watch_node(self):
         # The project has a public sub-node
-        node = NodeFactory(creator=self.user, project=self.project, is_public=True)
+        node = NodeFactory(creator=self.user, parent=self.project, is_public=True)
         url = "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
                                                                node._id)
         res = self.app.post_json(url, {}, auth=self.auth)
@@ -1940,6 +1994,24 @@ class TestWatchViews(OsfTestCase):
         assert_equal(len(res.json['logs']), 10)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
+        # 1 project create log then 12 generated logs
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
     def test_get_more_watched_logs(self):
         project = ProjectFactory()
         # Add some logs
@@ -1949,11 +2021,47 @@ class TestWatchViews(OsfTestCase):
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
         self.user.save()
-        url = "/api/v1/watched/logs/"
-        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        url = api_url_for("watched_logs_get")
+        page = 1
+        res = self.app.get(url, {'page': page}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        # 1 project create log then 12 generated logs
+        assert_equal(res.json['total'], 12 + 1)
+        assert_equal(res.json['page'], page)
+        assert_equal(res.json['pages'], 2)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
+    def test_get_more_watched_logs_invalid_page(self):
+        project = ProjectFactory()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        invalid_page = 'invalid page'
+        res = self.app.get(
+            url, {'page': invalid_page}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_more_watched_logs_invalid_size(self):
+        project = ProjectFactory()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = api_url_for("watched_logs_get")
+        invalid_size = 'invalid size'
+        res = self.app.get(
+            url, {'size': invalid_size}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "size".'
+        )
 
 class TestPointerViews(OsfTestCase):
 
@@ -2388,7 +2496,7 @@ class TestAuthViews(OsfTestCase):
 
         new_user.reload()
         # Password and fullname should be updated
-        assert_true(new_user.is_confirmed())
+        assert_true(new_user.is_confirmed)
         assert_true(new_user.check_password(password))
         assert_equal(new_user.fullname, real_name)
 
@@ -2449,12 +2557,13 @@ class TestAuthViews(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
-        self.user.add_email_verification(self.user.username)
-        self.user.save()
-        self.app.post('/resend/', {'email': self.user.username})
+        u = UnconfirmedUserFactory()
+        u.add_unconfirmed_email(u.username)
+        u.save()
+        self.app.post('/resend/', {'email': u.username})
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr=self.user.username
+            to_addr=u.username
         ))
 
     # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
@@ -2463,14 +2572,15 @@ class TestAuthViews(OsfTestCase):
     def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
         expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
         random_string.return_value = '12345'
-        self.user.add_email_verification(self.user.username, expiration=expiration)
-        self.user.save()
+        u = UnconfirmedUserFactory()
+        u.add_unconfirmed_email(u.username, expiration=expiration)
+        u.save()
 
-        self.app.post('/resend/', {'email': self.user.username})
-        confirm_url = self.user.get_confirmation_url(self.user.username, force=True)
+        self.app.post('/resend/', {'email': u.username})
+        confirm_url = u.get_confirmation_url(u.username, force=True)
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr=self.user.username,
+            to_addr=u.username,
             confirmation_url=confirm_url
         ))
 
@@ -2489,20 +2599,6 @@ class TestAuthViews(OsfTestCase):
         res = res.follow()
         user.reload()
         assert_true(user.is_registered)
-
-    def test_expired_link_returns_400(self):
-        user = User.create_unconfirmed(
-            'brian1@queen.com',
-            'bicycle123',
-            'Brian May',
-        )
-        user.save()
-        token = user.get_confirmation_token('brian1@queen.com')
-        url = user.get_confirmation_url('brian1@queen.com', external=False)
-        user.confirm_email(token)
-        user.save()
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
 
 
 # TODO: Use mock add-on
@@ -2684,7 +2780,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                               'data': {'list_id': '12345',
                                        'email': 'freddie@cos.io'}}}
         url = api_url_for('sync_data_from_mailchimp')
-        res = self.app.post_json(url, payload, auth= user.auth, expect_errors=True)
+        res = self.app.post_json(url, payload, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
     @classmethod
@@ -2703,8 +2799,8 @@ class TestFileViews(OsfTestCase):
         self.project.save()
 
     def test_files_get(self):
-        url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        url = self.project.api_url_for('collect_file_trees')
+        res = self.app.get(url, auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
 
         assert_equal(res.status_code, http.OK)
@@ -2713,7 +2809,7 @@ class TestFileViews(OsfTestCase):
         assert_in('tree_css', res.json)
 
     def test_grid_data(self):
-        url = '/api/v1/{0}/files/grid/'.format(self.project._primary_key)
+        url = self.project.api_url_for('grid_data')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, http.OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
@@ -3038,8 +3134,8 @@ class TestComments(OsfTestCase):
         assert_equal(len(res.json['comments']), 1)
 
     def test_view_comments_with_anonymous_link(self):
-        self.project.set_privacy('private')
         self.project.save()
+        self.project.set_privacy('private')
         self.project.reload()
         user = AuthUserFactory()
         link = PrivateLinkFactory(anonymous=True)
@@ -3438,7 +3534,7 @@ class TestDashboardViews(OsfTestCase):
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         # Get the All My Projects smart folder from the dashboard
@@ -3448,7 +3544,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_get_dashboard_nodes(self):
         project = ProjectFactory(creator=self.creator)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
 
         url = api_url_for('get_dashboard_nodes')
 
@@ -3456,7 +3552,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
         nodes = res.json['nodes']
-        assert_equal(len(nodes), 1)
+        assert_equal(len(nodes), 2)
 
         project_serialized = nodes[0]
         assert_equal(project_serialized['id'], project._primary_key)
@@ -3464,7 +3560,7 @@ class TestDashboardViews(OsfTestCase):
     def test_get_dashboard_nodes_shows_components_if_user_is_not_contrib_on_project(self):
         # User creates a project with a component
         project = ProjectFactory(creator=self.creator)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
         # User adds friend as a contributor to the component but not the
         # project
         friend = AuthUserFactory()
@@ -3479,7 +3575,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(len(nodes), 1)
         assert_equal(nodes[0]['id'], component._primary_key)
 
-        # friend requests dashboard nodes ,filtering against components
+        # friend requests dashboard nodes, filtering against components
         url = api_url_for('get_dashboard_nodes', no_components=True)
         res = self.app.get(url, auth=friend.auth)
         nodes = res.json['nodes']
@@ -3510,7 +3606,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
-        component = NodeFactory(creator=self.creator, project=project)
+        component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         project.register_node(
@@ -3792,13 +3888,13 @@ class TestProjectCreation(OsfTestCase):
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
         assert_equal(res2.status_code, 401)
-        assert_in("Sign up or Log in", res2.body)
+        assert_in("Sign In", res2.body)
 
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()
         project = ProjectFactory(is_public=True)
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth = non_contributor.auth)
+        res = self.app.post(url, auth=non_contributor.auth)
         assert_equal(res.status_code, 201)
 
     def test_project_new_from_template_contributor(self):
@@ -3808,7 +3904,7 @@ class TestProjectCreation(OsfTestCase):
         project.save()
 
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth = contributor.auth)
+        res = self.app.post(url, auth=contributor.auth)
         assert_equal(res.status_code, 201)
 
 
@@ -3828,7 +3924,7 @@ class TestProfileNodeList(OsfTestCase):
         self.user = AuthUserFactory()
 
         self.public = ProjectFactory(is_public=True)
-        self.public_component = NodeFactory(project=self.public, is_public=True)
+        self.public_component = NodeFactory(parent=self.public, is_public=True)
         self.private = ProjectFactory(is_public=False)
         self.deleted = ProjectFactory(is_public=True, is_deleted=True)
 

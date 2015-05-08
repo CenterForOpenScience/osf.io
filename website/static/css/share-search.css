@@ -28,26 +28,19 @@
 .share-search-input:focus {
   outline: 0 !important;
   box-shadow: none;
-  border-bottom-style: solid;
-  border-bottom-width: medium;
-  border-bottom-color: lightgrey;
-  border-bottom-left-radius: 5px;
+  border: 1px solid #ccc;
 }
 
 .share-search-input {
-  background: none;
-  border: none;
+ background: none;
+  border: 1px solid #eee;
   box-shadow: none;
-  border-bottom: 1px dotted #FFF;
   border-radius: 0;
-  padding: 0 0;
-  font-size: 20px;
+  height: 70px;
+  padding: 20px 20px;
+  font-size: 21px;
   color: #214762;
   font-weight: 300;
-  border-bottom-style: solid;
-  border-bottom-width: medium;
-  border-bottom-color: lightgrey;
-  border-bottom-left-radius: 5px;
 }
 
 .stats-expand:hover {
@@ -76,6 +69,47 @@
   /* border-top-color: #e4e4e4 */
 }
 
+.search-helper {
+  margin-bottom: 40px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 15px;
+}
+.search-content {
+  margin-top: 30px;
+}
+
+.provider-filter {
+  background: #f5f5f5;
+  margin: 4px 0;
+  padding: 9px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.provider-filter.in-filter {
+  background: #337ab7;
+  color: white;
+}
+
+.sidebar-header {
+  margin: 12px 0 7px 0;
+  font-size: 19px;
+  border-bottom: 1px solid #eee;
+  padding: 3px 0;
+  font-weight: 300;
+}
+
+.li.render-filter {
+  padding: 1px;
+  font-size: 15px;
+}
+
+p.readable {
+  font-size: 15px;
+  font-weight: normal;
+  line-height: 20px;
+  margin: 5px 0;
+}
 
 .c3 path, .c3 line {
 fill: none;

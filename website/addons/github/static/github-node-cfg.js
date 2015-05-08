@@ -1,6 +1,10 @@
-    var $osf = require('osfHelpers');
+'use strict';
+
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var $osf = require('js/osfHelpers');
+
+var nodeApiUrl = window.contextVars.node.urls.api;
 
 var GithubConfigHelper = (function() {
 

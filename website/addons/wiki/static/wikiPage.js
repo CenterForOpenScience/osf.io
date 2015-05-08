@@ -1,12 +1,12 @@
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 
-var mathrender = require('mathrender');
-var md = require('markdown').full;
-var mdQuick = require('markdown').quick;
-var diffTool = require('diffTool');
+var $osf = require('js/osfHelpers');
+var mathrender = require('js/mathrender');
+var md = require('js/markdown').full;
+var mdQuick = require('js/markdown').quick;
+var diffTool = require('js/diffTool');
 
 var THROTTLE = 500;
 
@@ -166,6 +166,27 @@ function ViewModel(options){
     self.viewVis = ko.observable(options.viewVisible);
     self.compareVis = ko.observable(options.compareVisible);
     self.menuVis = ko.observable(options.menuVisible);
+    // singleVis : checks if the item visible is the only visible column
+    self.singleVis = ko.pureComputed(function(){
+        var visible = 0;
+        var single;
+        if(self.editVis()){
+            visible++;
+            single = 'edit';
+        }
+        if(self.viewVis()){
+            visible++;
+            single = 'view';
+        }
+        if(self.compareVis()){
+            visible++;
+            single = 'compare';
+        }
+        if(visible === 1){
+            return single;
+        }
+        return false;
+    });
 
     self.pageTitle = $(document).find('title').text();
 

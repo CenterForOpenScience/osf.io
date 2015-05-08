@@ -4,6 +4,7 @@ var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 
 var forgotPassword = require('js/forgotPassword');
+var formViewModel = require('js/formViewModel');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
@@ -19,6 +20,10 @@ describe('forgotPassword', () => {
 
             beforeEach(() => {
                 vm = new forgotPassword.ViewModel();
+            });
+
+            it('inherit from FormViewModel', () => {
+                assert.instanceOf(vm, formViewModel.FormViewModel);
             });
 
             it('invalid email is not valid', () => {

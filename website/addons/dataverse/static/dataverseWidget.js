@@ -1,26 +1,27 @@
 'use strict';
 var ko = require('knockout');
-require('knockout-punches');
+require('knockout.punches');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
 
 ko.punches.enableAll();
-var language = require('osfLanguage').Addons.dataverse;
+
+var $osf = require('js/osfHelpers');
+var language = require('js/osfLanguage').Addons.dataverse;
 
 function ViewModel(url) {
     var self = this;
     self.connected = ko.observable();
     self.dataverse = ko.observable();
     self.dataverseUrl = ko.observable();
-    self.study = ko.observable();
+    self.dataset = ko.observable();
     self.doi = ko.observable();
-    self.studyUrl = ko.observable('');
+    self.datasetUrl = ko.observable('');
     self.citation = ko.observable('');
     self.loaded = ko.observable(false);
 
     // Flashed messages
     self.message = ko.observable('');
-    self.messageClass = ko.observable('text-info')
+    self.messageClass = ko.observable('text-info');
 
     self.init = function() {
         $.ajax({
@@ -30,9 +31,9 @@ function ViewModel(url) {
                 self.connected(data.connected);
                 self.dataverse(data.dataverse);
                 self.dataverseUrl(data.dataverseUrl);
-                self.study(data.study);
+                self.dataset(data.dataset);
                 self.doi(data.doi);
-                self.studyUrl(data.studyUrl);
+                self.datasetUrl(data.datasetUrl);
                 self.citation(data.citation);
                 self.loaded(true);
             },

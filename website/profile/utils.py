@@ -4,18 +4,18 @@ from website.util.permissions import reduce_permissions
 from website.filters import gravatar
 from website import settings
 
+from modularodm import Q
 
 def get_projects(user):
     '''Return a list of user's projects, excluding registrations and folders.'''
-    return [
-        node
-        for node in user.node__contributed
-        if node.category == 'project'
-        and not node.is_registration
-        and not node.is_deleted
-        and not node.is_folder
-    ]
-
+    return list(user.node__contributed.find(
+        (
+            Q('category', 'eq', 'project') &
+            Q('is_registration', 'eq', False) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_folder', 'eq', False)
+        )
+    ))
 
 def get_public_projects(user):
     '''Return a list of a user's public projects.'''
@@ -71,6 +71,22 @@ def serialize_user(user, node=None, admin=False, full=False):
         })
 
     if full:
+        # Add emails
+        ret['emails'] = [
+            {
+                'address': each,
+                'primary': each == user.username,
+                'confirmed': True,
+            } for each in user.emails
+        ] + [
+            {
+                'address': each,
+                'primary': each == user.username,
+                'confirmed': False
+            }
+            for each in user.unconfirmed_emails
+        ]
+
         if user.is_merged:
             merger = user.merged_by
             merged_by = {
@@ -138,7 +154,7 @@ def add_contributor_json(user, current_user=None):
 def serialize_unregistered(fullname, email):
     """Serializes an unregistered user.
     """
-    user = framework.auth.get_user(username=email)
+    user = framework.auth.get_user(email=email)
     if user is None:
         serialized = {
             'fullname': fullname,

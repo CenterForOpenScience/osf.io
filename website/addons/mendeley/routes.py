@@ -11,7 +11,7 @@ api_routes = {
                 '/settings/mendeley/accounts/',
             ],
             'get',
-            views.mendeley_get_user_settings,
+            views.mendeley_get_user_accounts,
             json_renderer,
         ),
         Rule(
@@ -37,7 +37,7 @@ api_routes = {
                 '/project/<pid>/mendeley/user_auth/',
                 '/project/<pid>/node/<nid>/mendeley/user_auth/',
             ],
-            'post',
+            'put',
             views.mendeley_add_user_auth,
             json_renderer,
         ),

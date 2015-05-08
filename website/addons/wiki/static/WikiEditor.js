@@ -1,7 +1,7 @@
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
-var $osf = require('osfHelpers');
+var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;

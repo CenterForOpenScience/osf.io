@@ -20,8 +20,6 @@ from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
 
-BOX_SHARE_URL_TEMPLATE = 'https://app.box.com/files/0/f/{0}'
-
 @must_have_addon('box', 'node')
 @must_have_permission(permissions.WRITE)
 def box_config_get(node_addon, auth, **kwargs):
@@ -71,8 +69,6 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('box_oauth_start'),
         'config': node.api_url_for('box_config_put'),
         'files': node.web_url_for('collect_file_trees'),
-        'emails': node.api_url_for('box_get_share_emails'),
-        'share': BOX_SHARE_URL_TEMPLATE.format(node_settings.folder_id),
         'deauthorize': node.api_url_for('box_deauthorize'),
         'importAuth': node.api_url_for('box_import_user_auth'),
         # Endpoint for fetching only folders (including root)

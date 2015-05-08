@@ -136,7 +136,7 @@ def make_url_map(app):
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
             website_views.resolve_guid,
-            OsfWebRenderer('', render_mako_string),
+            notemplate,
         ),
 
         Rule(
@@ -551,6 +551,20 @@ def make_url_map(app):
              project_views.contributor.claim_user_post, json_renderer),
 
         Rule(
+            '/profile/export/',
+            'post',
+            profile_views.request_export,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/deactivate/',
+            'post',
+            profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
             [
                 '/profile/gravatar/',
                 '/users/gravatar/',
@@ -650,6 +664,8 @@ def make_url_map(app):
 
         Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
         Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
+        Rule('/share/registration/', 'get', {'register': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
+        Rule('/share/help/', 'get', {'help': settings.SHARE_API_DOCS_URL}, OsfWebRenderer('share_api_docs.mako')),
         Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
         Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
@@ -669,7 +685,7 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/share/', ['get', 'post'], search_views.search_share, json_renderer),
+        Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
         Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
         Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
 
@@ -765,6 +781,13 @@ def make_url_map(app):
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
 
+        Rule(
+            '/ids/<category>/<path:value>/',
+            'get',
+            project_views.register.get_referent_by_identifier,
+            notemplate,
+        ),
+
         # Statistics
         Rule([
             '/project/<pid>/statistics/',
@@ -835,7 +858,13 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
                 '/project/<pid>/files/download/<fid>/version/<vid>/',
                 '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-
+            ],
+            'get',
+            addon_views.addon_view_or_download_file_legacy,
+            OsfWebRenderer('project/view_file.mako'),
+        ),
+        Rule(
+            [
                 # api/v1 Legacy routes for `download_file`
                 '/api/v1/project/<pid>/osffiles/<fid>/',
                 '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',
@@ -1053,6 +1082,17 @@ def make_url_map(app):
             '/project/new/<nid>/',
         ], 'post', project_views.node.project_new_from_template, json_renderer),
 
+        # Update
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'put',
+            project_views.node.update_node,
+            json_renderer,
+        ),
+
         # Remove
         Rule(
             [
@@ -1153,6 +1193,26 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'post', project_views.register.node_register_template_page_post, json_renderer),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'get',
+            project_views.register.node_identifiers_get,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/identifiers/',
+                '/project/<pid>/node/<nid>/identifiers/',
+            ],
+            'post',
+            project_views.register.node_identifiers_post,
+            json_renderer,
+        ),
 
         # Statistics
         Rule([

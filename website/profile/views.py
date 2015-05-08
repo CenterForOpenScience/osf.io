@@ -2,7 +2,9 @@
 
 import logging
 import operator
+import httplib
 import httplib as http
+import os
 
 from dateutil.parser import parse as parse_date
 
@@ -15,10 +17,12 @@ from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
-from framework.exceptions import HTTPError
+from framework.auth.views import send_confirm_email
+from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.models import User
@@ -35,26 +39,30 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes([
-        node
-        for node in user.node__contributed
-        if node.category == 'project'
-        and node.is_public
-        and not node.is_registration
-        and not node.is_deleted
-    ])
+    return _render_nodes(
+        list(user.node__contributed.find(
+            (
+                Q('category', 'eq', 'project') &
+                Q('is_public', 'eq', True) &
+                Q('is_registration', 'eq', False) &
+                Q('is_deleted', 'eq', False)
+            )
+        ))
+    )
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes([
-        node
-        for node in user.node__contributed
-        if node.category != 'project'
-        and node.is_public
-        and not node.is_registration
-        and not node.is_deleted
-    ])
+    return _render_nodes(
+        list(user.node__contributed.find(
+            (
+                Q('category', 'ne', 'project') &
+                Q('is_public', 'eq', True) &
+                Q('is_registration', 'eq', False) &
+                Q('is_deleted', 'eq', False)
+            )
+        ))
+    )
 
 
 @must_be_logged_in
@@ -84,21 +92,115 @@ def update_user(auth):
 
     data = request.get_json()
 
+    # check if the user in request is the user who log in
+    if 'id' in data:
+        if data['id'] != user._id:
+            raise HTTPError(httplib.FORBIDDEN)
+    else:
+        # raise an error if request doesn't have user id
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
+
     # TODO: Expand this to support other user attributes
-    if 'timezone' in data:
-        if data['timezone']:
-            user.timezone = data['timezone']
+
+    ##########
+    # Emails #
+    ##########
+
+    if 'emails' in data:
+
+        emails_list = [x['address'].strip().lower() for x in data['emails']]
+
+        if user.username not in emails_list:
+            raise HTTPError(httplib.FORBIDDEN)
+
+        # removals
+        removed_emails = [
+            each
+            for each in user.emails + user.unconfirmed_emails
+            if each not in emails_list
+        ]
+
+        if user.username in removed_emails:
+            raise HTTPError(httplib.FORBIDDEN)
+
+        for address in removed_emails:
+            if address in user.emails:
+                try:
+                    user.remove_email(address)
+                except PermissionsError as e:
+                    raise HTTPError(httplib.FORBIDDEN, e.message)
+            try:
+                user.remove_unconfirmed_email(address)
+            except PermissionsError as e:
+                raise HTTPError(httplib.FORBIDDEN, e.message)
+
+        # additions
+        added_emails = [
+            each['address'].strip().lower()
+            for each in data['emails']
+            if each['address'].strip().lower() not in user.emails
+            and each['address'].strip().lower() not in user.unconfirmed_emails
+        ]
+
+        for address in added_emails:
+            try:
+                user.add_unconfirmed_email(address)
+            except (ValidationError, ValueError):
+                continue
+
+            # TODO: This setting is now named incorrectly.
+            if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                send_confirm_email(user, email=address)
+
+        ############
+        # Username #
+        ############
+
+        # get the first email that is set to primary and has an address
+        primary_email = next(
+            (
+                each for each in data['emails']
+                # email is primary
+                if each.get('primary') and each.get('confirmed')
+                # an address is specified (can't trust those sneaky users!)
+                and each.get('address')
+            )
+        )
+
+        if primary_email:
+            primary_email_address = primary_email['address'].strip().lower()
+            if primary_email_address not in user.emails:
+                raise HTTPError(httplib.FORBIDDEN)
+            username = primary_email_address
+
+        # make sure the new username has already been confirmed
+        if username and username in user.emails and username != user.username:
+            mails.send_mail(user.username,
+                            mails.PRIMARY_EMAIL_CHANGED,
+                            user=user,
+                            new_address=username)
+            user.username = username
+
+    ###################
+    # Timezone/Locale #
+    ###################
+
     if 'locale' in data:
         if data['locale']:
             locale = data['locale'].replace('-', '_')
             user.locale = locale
+    # TODO: Refactor to something like:
+    #   user.timezone = data.get('timezone', user.timezone)
+    if 'timezone' in data:
+        if data['timezone']:
+            user.timezone = data['timezone']
 
     user.save()
 
-    return {}
+    return _profile_view(user)
 
 
-def _profile_view(profile, is_profile):
+def _profile_view(profile, is_profile=False):
     # TODO: Fix circular import
     from website.addons.badges.util import get_sorted_user_badges
 
@@ -225,12 +327,13 @@ def user_addons(auth, **kwargs):
             if addon_config.categories[0] == category:
                 addons_enabled.append(addon_config.short_name)
                 if 'user' in addon_config.configs:
-                    addon_enabled_settings.append(addon_config.short_name)
-                    user_addons_enabled[addon_config.short_name] = {
-                        'urls': {
-                            'user_settings': addon_config.user_settings_template
-                        }
-                    }
+                    short_name = addon_config.short_name
+                    addon_enabled_settings.append(short_name)
+                    user_addons_enabled[addon_config.short_name] = user.get_addon(short_name).to_json(user)
+                    # inject the MakoTemplateLookup into the template context
+                    # TODO inject only short_name and render fully client side
+                    user_addons_enabled[short_name]['template_lookup'] = addon_config.template_lookup
+                    user_addons_enabled[short_name]['user_settings_template'] = os.path.basename(addon_config.user_settings_template)
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = [
@@ -631,3 +734,23 @@ def unserialize_schools(auth, **kwargs):
     verify_user_match(auth, **kwargs)
     unserialize_contents('schools', unserialize_school, auth)
     # TODO: Add return value
+
+
+@must_be_logged_in
+def request_export(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_EXPORT,
+        user=auth.user,
+    )
+    return {'message': 'Sent account export request'}
+
+
+@must_be_logged_in
+def request_deactivation(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_DEACTIVATION,
+        user=auth.user,
+    )
+    return {'message': 'Sent account deactivation request'}

@@ -5,10 +5,10 @@ import logging
 from datetime import datetime
 
 import furl
+import pymongo
 import requests
+from modularodm import fields, StoredObject
 from box import CredentialsV2, refresh_v2_token, BoxClientException
-from modularodm import fields, Q, StoredObject
-from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -28,8 +28,15 @@ class BoxFile(GuidFile):
     """A Box file model with a GUID. Created lazily upon viewing a
     file's detail page.
     """
-
-    #: Full path to the file, e.g. 'My Pictures/foo.png'
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('node', pymongo.ASCENDING),
+                ('path', pymongo.ASCENDING),
+            ],
+            'unique': True,
+        }
+    ]
     path = fields.StringField(required=True, index=True)
 
     @property
@@ -50,22 +57,14 @@ class BoxFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
-    @classmethod
-    def get_or_create(cls, node, path):
-        """Get or create a new file record. Return a tuple of the form (obj, created)
-        """
-        try:
-            new = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-            created = False
-        except ModularOdmException:
-            # Create new
-            new = cls(node=node, path=path)
-            new.save()
-            created = True
-        return new, created
+    @property
+    def extra(self):
+        if not self._metadata_cache:
+            return {}
+
+        return {
+            'fullPath': self._metadata_cache['extra']['fullPath'],
+        }
 
 
 class BoxOAuthSettings(StoredObject):
@@ -282,6 +281,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     def set_folder(self, folder_id, auth):
         self.folder_id = str(folder_id)
+        self._update_folder_data()
         self.save()
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
@@ -297,7 +297,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         nodelogger.log(action="node_authorized", save=True)
 
     def find_or_create_file_guid(self, path):
-        return BoxFile.get_or_create(self.owner, path)
+        return BoxFile.get_or_create(node=self.owner, path=path)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
@@ -314,6 +314,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
         self.folder_id = None
+        self._update_folder_data()
         self.user_settings = None
 
         self.save()
