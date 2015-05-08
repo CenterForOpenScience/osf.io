@@ -1176,7 +1176,7 @@ var FGInput = {
         this.onkeydown = args.onkeydown || noop;
         this.onclick = args.onclick || noop;
     },
-    view : function(ctrl, args) {
+    view : function(ctrl, args, helpText) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip || '';
         var placeholder = args.placeholder || '';
@@ -1194,8 +1194,7 @@ var FGInput = {
                 }),
             m('.text-danger', {
                 'id' : helpTextId,
-                style : "display: none"
-            })
+            }, helpText)
         ]);
     }
 }
