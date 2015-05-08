@@ -48,14 +48,12 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         {value: 'admin', text: 'Administrator'}
     ];
     self.getPermission = function(permission) {
-        if(permission === 'admin') {
-            return self.permissionList[2];
-        } else if(permission === 'write') {
-            return self.permissionList[1];
-        } else {
-            // default 'read'
-            return self.permissionList[0];
+        for(var i = 0; i < self.permissionList.length; i++) {
+            if(permission === self.permissionList[i].value) {
+                return self.permissionList[i];
+            }
         }
+        return self.permissionList[0];
     };
 
     self.currentUserCanEdit = currentUserCanEdit;
