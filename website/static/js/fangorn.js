@@ -1810,10 +1810,8 @@ tbOptions = {
     removeIcon : function(){
         return m.trust('&times;');
     },
-    headerTemplate : function () {
-        return m.component(Toolbar, {message: "This is it."})
-    },
-            // Not treebeard options, specific to Fangorn
+    toolbarComponent : FGToolbar,
+    // Not treebeard options, specific to Fangorn
     fgIconState  : _defaultIconState(),
     defineToolbar : _fangornDefineToolbar,
     onselectrow : function(row) {
