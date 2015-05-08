@@ -45,6 +45,7 @@ def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
     app = init_app(set_backends=True, routes=True, mfr=True)
+    settings.API_SERVER_PORT = port
 
     if live:
         from livereload import Server
