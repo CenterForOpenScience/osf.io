@@ -176,7 +176,7 @@ class WaterButlerPath:
         return self
 
     def __str__(self):
-        return '/'.join([x.raw for x in self.parts]) + ('/' if self.is_dir else '')
+        return '/'.join([x.value for x in self.parts]) + ('/' if self.is_dir else '')
 
     def __repr__(self):
         return '{}({!r}, prepend={!r})'.format(self.__class__.__name__, self._orig_path, self._prepend)
