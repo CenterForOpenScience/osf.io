@@ -178,6 +178,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
     )
 
     def get_valid_self_link_methods(self, root_folder=False):
