@@ -544,24 +544,21 @@ function _downloadEvent (event, item, col) {
     window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
-function _createFolder(event) {
+function _createFolder(event, dismissCallback, helpText) {
     var tb = this;
     var val = $.trim(tb.select('#createFolderInput').val());
     var parent = tb.multiselected()[0];
     if (!parent.open) {
          tb.updateFolder(null, parent);
     }
-
-    // event.preventDefault();
     if (val.length < 1) {
-        tb.select('#createFolderError').text('Please enter a folder name.').show();
+        helpText('Please enter a folder name.');
         return;
     }
     if (val.indexOf('/') !== -1) {
-        tb.select('#createFolderError').text('Folder name contains illegal characters.').show();
+        helpText('Folder name contains illegal characters.');
         return;
     }
-
     var path = (parent.data.path || '/') + val + '/';
 
     m.request({
@@ -573,13 +570,14 @@ function _createFolder(event) {
         item = tb.createItem(item, parent.id);
         _fangornOrderFolder.call(tb, parent);
         item.notify.update('New folder created!', 'success', undefined, 1000);
-        tb.options.fgIconState.mode = 'bar';
-        tb.select('#createFolderError').text('').hide();
+        if(dismissCallback) {
+            dismissCallback();
+        }
     }, function(data) {
         if (data && data.code === 409) {
-            tb.select('#createFolderError').text(data.message).show();
+            helpText(data.message);
         } else {
-            tb.select('#createFolderError').text('Folder creation failed.').show();
+            helpText('Folder creation failed.');
         }
     });
 }
