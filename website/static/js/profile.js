@@ -270,7 +270,7 @@ BaseViewModel.prototype.handleError = function(response) {
         msg = defaultMsg;
     }
     else {
-        msg = response.responseJSON.message_long        
+        msg = response.responseJSON.message_long;
     }
      this.changeMessage(
          msg,
@@ -500,17 +500,14 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
     
-    self.hasMultiple = ko.computed(function() {
+    self.canRemove = ko.computed(function () {
         if (self.profileWebsites()) {
             return self.profileWebsites().length > 1;
         }
-        else return false
-    });
-    
-    self.canRemove = ko.computed(function () {
-        if (self.profileWebsites())
-        return self.profileWebsites().length > 1;
-        else return false
+        
+        else { 
+            return false
+        }
     });
     
     self.orcid = extendLink(
@@ -635,7 +632,7 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this, websiteValue = [];
     var websiteValue;
     $.each(data || {}, function(key, value) {
-         if (ko.isObservable(self[key]) && key == "profileWebsites") {
+         if (ko.isObservable(self[key]) && key === "profileWebsites") {
             for (var i = 0; i < value.length; i++) {
                 websiteValue[i] = ko.observable(value[i]).extend({
                         trimmedURL: true
@@ -872,7 +869,7 @@ module.exports = {
     Social: Social,
     Jobs: Jobs,
     Schools: Schools,
- //   PersonalWebsites: PersonalWebsites,
+
     // Expose private viewmodels
     _NameViewModel: NameViewModel
 };

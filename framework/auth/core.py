@@ -357,7 +357,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # Social links
     social = fields.DictionaryField(validate=validate_social)
     # Format: {
-    #     'profileWebsites': <profile website>,
+    #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
     # }
 
