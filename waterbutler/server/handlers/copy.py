@@ -19,7 +19,7 @@ class CopyHandler(core.BaseCrossProviderHandler):
     @utils.coroutine
     def post(self):
         if not self.source_provider.can_intra_copy(self.destination_provider, self.json['source']['path']):
-            resp = yield from tasks.copy.adelay({
+            result = yield from tasks.copy.adelay({
                 'path': self.json['source']['path'],
                 'provider': self.source_provider.serialized()
             }, {
@@ -32,8 +32,7 @@ class CopyHandler(core.BaseCrossProviderHandler):
                 conflict=self.json.get('conflict', 'replace'),
             )
 
-            metadata, created = yield from tasks.wait_on_celery(resp)
-
+            metadata, created = yield from tasks.wait_on_celery(result)
         else:
             metadata, created = (
                 yield from tasks.backgrounded(
