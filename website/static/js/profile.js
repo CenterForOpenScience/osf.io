@@ -115,7 +115,7 @@ var DateMixin = function() {
             return new Date(self.endYear(), '0', '1');
         }
     }, self).extend({
-        notInFuture:true,
+        notInFuture: true,
         minDate: self.start
     });
     self.clearEnd = function() {
@@ -202,7 +202,6 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     self.editAllowed = $.inArray('edit', self.modes) >= 0;
     self.editable = ko.observable(self.editAllowed);
     self.mode = ko.observable(self.editable() ? 'edit' : 'view');
-
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
 
@@ -481,9 +480,14 @@ var SocialViewModel = function(urls, modes) {
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
     var i;
-
     self.addons = ko.observableArray();
-  
+
+    self.canEditWebsite = ko.observable(false);
+
+    self.editWebsiteButton =  function(){
+        self.canEditWebsite(!self.canEditWebsite());
+    }
+
     self.profileWebsites = ko.observableArray();
                 
     self.hasProfileWebsites = ko.computed(function() {
@@ -502,14 +506,6 @@ var SocialViewModel = function(urls, modes) {
         }
         else return false
     });
-
-    self.canEditWebsites = ko.computed(function() {
-        if (self.profileWebsites()) {
-            return self.profileWebsites().length > 1;
-        }
-        else return false
-    });
-
     
     self.canRemove = ko.computed(function () {
         if (self.profileWebsites())
@@ -598,7 +594,7 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
-    self.addWebsite = function(profileWebsite) {
+    self.addWebsite = function() {
         this.profileWebsites.push(ko.observable().extend({
             trimmedURL: true
             }));
@@ -613,6 +609,7 @@ var SocialViewModel = function(urls, modes) {
     if (self.profileWebsites().length == 0) {
         self.addWebsite();
     }
+
     self.fetch();
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
