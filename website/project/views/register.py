@@ -93,41 +93,52 @@ def node_registration_retraction_post(auth, **kwargs):
     except ValidationValueError:
         raise HTTPError(http.BAD_REQUEST)
 
-    # Email project admins
-    admins = [contrib for contrib in node.contributors if node.has_permission(contrib, 'admin')]
-    for admin in admins:
-        _send_retraction_email(
-            node,
-            admin,
-            node.retraction.approval_state[admin._id]['approval_token'],
-            node.retraction.approval_state[admin._id]['disapproval_token'],
-        )
+    for contributor in node.contributors:
+        _send_retraction_email(node, contributor)
 
     return {'redirectUrl': node.web_url_for('view_project')}
 
-def _send_retraction_email(node, user, approval_token, disapproval_token):
+def _send_retraction_email(node, user):
     """ Sends Approve/Disapprove email for retraction of a public registration to user
         :param node: Node being retracted
         :param user: Admin user to be emailed
-        :param approval_token: token `user` needs to approve retraction
-        :param disapproval_token: token `user` needs to disapprove retraction
     """
 
     registration_link = node.web_url_for('view_project', _absolute=True)
-    approval_link = node.web_url_for('node_registration_retraction_approve', token=approval_token, _absolute=True)
-    disapproval_link = node.web_url_for('node_registration_retraction_disapprove', token=disapproval_token, _absolute=True)
     approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+    initiators_fullname = node.retraction.initiated_by.fullname
 
-    mails.send_mail(
-        user.username,
-        mails.PENDING_RETRACTION,
-        'plain',
-        user=user,
-        approval_link=approval_link,
-        disapproval_link=disapproval_link,
-        registration_link=registration_link,
-        approval_time_span=approval_time_span
-    )
+    if node.has_permission(user, 'admin'):
+        approval_token = node.retraction.approval_state[user._id]['approval_token']
+        disapproval_token = node.retraction.approval_state[user._id]['disapproval_token']
+        approval_link = node.web_url_for(
+            'node_registration_retraction_approve',
+            token=approval_token,
+            _absolute=True)
+        disapproval_link = node.web_url_for(
+            'node_registration_retraction_disapprove',
+            token=disapproval_token,
+            _absolute=True)
+
+        mails.send_mail(
+            user.username,
+            mails.PENDING_RETRACTION_ADMIN,
+            'plain',
+            user=user,
+            initiated_by=initiators_fullname,
+            approval_link=approval_link,
+            disapproval_link=disapproval_link,
+            registration_link=registration_link,
+            approval_time_span=approval_time_span,
+        )
+    else:
+        mails.send_mail(
+            user.username,
+            mails.PENDING_RETRACTION_NON_ADMIN,
+            user=user,
+            initiated_by=initiators_fullname,
+            registration_link=registration_link
+        )
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

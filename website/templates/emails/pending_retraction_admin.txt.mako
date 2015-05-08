@@ -1,6 +1,7 @@
 Hello ${user.fullname},
 
-I just wanted to let you know, another administrator has initiated a retraction for your registration: ${registration_link}
+
+I just wanted to let you know, ${initiated_by} has initiated a retraction for the following registration: ${registration_link}
 
 To approve this action click the following link: ${approval_link}
 
