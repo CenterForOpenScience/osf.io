@@ -253,4 +253,4 @@ SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
 
 # Date which registrations created after cannot be made public
-REGISTRATION_CUTOFF_DATE = datetime.datetime(2015, 5, 10)
+REGISTRATION_CUTOFF_DATE = datetime.datetime(2015, 5, 22)
