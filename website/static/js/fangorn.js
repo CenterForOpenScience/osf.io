@@ -1240,13 +1240,13 @@ var FGToolbar = {
                     helpTextId : 'createFolderHelp',
                     placeholder : 'New folder name',
                     tooltip: 'Enter a name for the new folder'
-                })
+                }, ctrl.helpText())
             ]),
             m('.col-xs-3.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
                     [
                         m.component(FGButton, {
-                            onclick: function(event){ _createFolder.call(ctrl.tb, event); },
+                            onclick: ctrl.createFolder,
                             tooltip: 'Create Folder',
                             icon : 'fa fa-plus'
                         }, 'Create'),
