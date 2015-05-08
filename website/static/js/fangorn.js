@@ -348,8 +348,16 @@ function doItemOp(isMove, to, from, rename, conflict) {
 
         inheritFromParent(from, from.parent());
 
-        if (from.data.kind === 'folder' && from.data.open) {
-            tb.updateFolder(from.children, from);
+        if (from.data.kind === 'folder' && from.data.children) {
+            from.children = [];
+            var child;
+            from.data.children.forEach(function(item) {
+                child = tb.buildTree(item, from);
+                inheritFromParent(child, from);
+                from.add(child);
+            });
+            from.open = true;
+            from.load = true;
         }
 
         tb.redraw();
