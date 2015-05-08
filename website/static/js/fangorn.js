@@ -1148,15 +1148,27 @@ function scrollToFile(fileID) {
     }
 }
 
-/// Mithril Component
-
-var Toolbar = {
-    controller : function(args){
-        this.message = args.message;
+// A fangorn-styled button; addons can reuse this
+var FGButton = {
+    controller: function(args) {
+        var noop = function() {};
+        this.onclick = args.onclick || noop;
     },
-    view : function(ctrl) {
-        return m('p', ctrl.message);
+    view: function(ctrl, args, children) {
+        var extraCSS = args.className || '';
+        var tooltipText = args.tooltip || '';
+        var iconCSS = args.icon;
+        return m('div', {
+            className: 'fangorn-toolbar-icon' + extraCSS,
+            onclick: ctrl.onclick,
+            'data-toggle': tooltipText ? 'tooltip' : '',
+            'data-placement' : 'bottom',
+            'title':  tooltipText}, [
+            m('i', {className: iconCSS}),
+            m('span.hidden-sx', children)
+        ]);
     }
+}
 
 }
 
