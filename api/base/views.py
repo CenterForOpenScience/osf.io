@@ -7,7 +7,12 @@ from api.users.serializers import UserSerializer
 @api_view(('GET',))
 def root(request, format=None):
     """
-    Welcome to the V2 Open Science Framework API.
+    Welcome to the V2 Open Science Framework API. Once this clause disappears from this sentence, the V2 API will be
+    the first supported, public REST API for the Open Science Framework. We will define what the expected limits of the
+    support are before this goes live, but for now I expect that this will be functional until we have at least the V3
+    API in place and possibly the V4. There may be additions to the V2 API, but no changes or deletions to the routes
+    and returns. Links to services external to the OSF may change (see below), so following our development guidelines
+    will be useful for maintaining compatibility.
 
     Each endpoint will have its own documentation, but there are some general things that should work
     pretty much everywhere.
@@ -32,7 +37,7 @@ def root(request, format=None):
     URLs in your code or by hand. If you know the route to a high-level resource, then feel free to just go to that
     route. For example, going to:
 
-    <pre>/nodes/<node_id></pre>
+    <pre>/nodes/&lt;node_id&gt;</pre>
 
     is a perfectly good route to create rather than going to /nodes/ and navigating from there by filtering by id
      (which would be ridiculous). However, if you are creating something that crawls the structure of a node
@@ -47,7 +52,8 @@ def root(request, format=None):
     <li> Pagination links such as 'next', 'prev', 'first', and 'last'. These are great for navigating long lists
     of information.</li>
     </ol>
-    Some routes may have extra rules for links, especially if those links work with external services.
+    Some routes may have extra rules for links, especially if those links work with external services. Collections
+    may have counts with them to indicate how many items are in that collection.
     """
     if request.user and not request.user.is_anonymous():
         user = request.user
