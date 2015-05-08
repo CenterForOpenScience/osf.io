@@ -6,7 +6,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('bootstrap-editable');
 
 var oop = require('./oop');
 var $osf = require('./osfHelpers');
@@ -271,7 +270,17 @@ var AddContributorViewModel = oop.extend(Paginator, {
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
     add: function(data) {
+        var self = this;
         data.permission = ko.observable('write'); //default permission
+        data.curPermission = ko.observable();
+        data.change = ko.computed( function() {
+            var permission = data.permission();
+            for(var i=0; i<self.permissionList.length; i++) {
+                if (self.permissionList[i].value == permission) {
+                    data.curPermission(self.permissionList[i]);
+                }
+            }
+        });
         // All manually added contributors are visible
         data.visible = true;
         this.selection.push(data);
