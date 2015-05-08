@@ -202,14 +202,12 @@ class GitHubProvider(provider.BaseProvider):
         keep_path = path.child('.gitkeep')
 
         data = {
-            'path': keep_path,
-            'message': message,
             'content': '',
+            'path': keep_path.path,
             'committer': self.committer,
+            'branch': path.identifier[0],
+            'message': message or settings.UPLOAD_FILE_MESSAGE
         }
-
-        if path.identifier and not GitHubProvider.is_sha(path.identifier):
-            data['branch'] = path.identifier
 
         resp = yield from self.make_request(
             'PUT',
