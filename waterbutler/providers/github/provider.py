@@ -95,20 +95,15 @@ class GitHubProvider(provider.BaseProvider):
     #     )
 
     @asyncio.coroutine
-    def download(self, path, ref=None, **kwargs):
+    def download(self, path, **kwargs):
         '''Get the stream to the specified file on github
         :param str path: The path to the file on github
         :param str ref: The git 'ref' a branch or commit sha at which to get the file from
         :param str fileSha: The sha of file to be downloaded if specifed path will be ignored
         :param dict kwargs: Ignored
         '''
-        file_sha = path.identifier
-
-        if not GitHubProvider.is_sha(file_sha):
-            data = yield from self.metadata(path)
-            file_sha = data['extra']['fileSha']
-
         data = yield from self.metadata(path)
+        file_sha = path.identifier[1] or data['extra']['fileSha']
 
         resp = yield from self.make_request(
             'GET',
