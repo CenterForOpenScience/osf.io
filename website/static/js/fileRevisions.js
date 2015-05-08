@@ -123,11 +123,12 @@ var RevisionsViewModel = function(node, file, editable) {
     });
 
     var notificationsURL = self.node.urls.api + 'file_subscriptions/';
+    var path = self.file.path;
+    path = path.replace('\/', '');
     var payload = {
-        node_id: self.node.id,
-        path: self.file.path
+        node_id: node.id,
+        path: path
     };
-    var load = 2;
     self.subscription = ko.observable();
     self.curSubscription = ko.observable();
 
@@ -138,34 +139,31 @@ var RevisionsViewModel = function(node, file, editable) {
         data: payload
     }).done(function (response) {
         self.curSubscription(self.getSub(response.event.notificationType));
-        load = 0;
+        self.subscription(self.curSubscription().value);
+        self.change = ko.computed(function () {
+            var notification_type = self.curSubscription();
+            if(self.subscription() === notification_type.value) {
+                return null;
+            }
+            self.subscription(notification_type.value);
+            var id = node.id;
+            var event = path + "_file_updated";
+            var payload = {
+                'id': id,
+                'event': event,
+                'notification_type': notification_type.value
+            };
+            $osf.postJSON(
+                '/api/v1/subscriptions/',
+                payload
+            ).done(function () {
+                    console.log("success");
+                }).fail(function () {
+                    console.log("failure");
+                });
+        });
     }).fail(function (xhr, status, error) {
         console.log(error);
-    });
-
-    self.change = ko.computed(function () {
-        var notification_type = self.curSubscription();
-        console.log(load);
-        if (load !== 0) {
-            load = 0;
-            return null;
-        }
-        self.subscription(notification_type.value);
-        var id = self.node.id;
-        var event = self.file.path + "_file_updated";
-        var payload = {
-            'id': id,
-            'event': event,
-            'notification_type': notification_type.value
-        };
-        $osf.postJSON(
-            '/api/v1/subscriptions/',
-            payload
-        ).done(function () {
-                console.log("success");
-            }).fail(function () {
-                console.log("failure");
-            });
     });
 
     self.hasDate = ko.computed(function() {
@@ -235,6 +233,8 @@ RevisionsViewModel.prototype.fetch = function() {
             }
         });
     });
+
+    console.log(self);
 };
 
 RevisionsViewModel.prototype.delete = function() {
