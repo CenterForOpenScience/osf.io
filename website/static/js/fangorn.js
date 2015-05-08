@@ -1200,6 +1200,93 @@ var FGInput = {
     }
 }
 
+var FGToolbar = {
+    controller : function(args) {
+        this.tb = args.treebeard;
+        this.items = args.treebeard.multiselected;
+        this.mode = m.prop('bar');
+        this.onClickCreateFolder = function(evt) {
+            console.log('folder');
+        }
+    },
+    view : function(ctrl) {
+        var templates = {};
+        var buttons = [];
+        templates.search =  [
+            m('.col-xs-9', [
+                    m.component(FGInput, {
+                        onkeydown: function(event){ console.log('Key down', event) },
+                        id : 'searchInput',
+                        helpTextId : 'searchHelp',
+                        placeholder : 'Search',
+                        tooltip: 'Enter your search term here'
+                    })
+                ]),
+                m('.col-xs-3.tb-buttons-col',
+                    m('.fangorn-toolbar.pull-right',
+                        [
+                            m.component(FGButton, {
+                                onclick: function(event){ ctrl.mode('bar'); },
+                                tooltip: 'Close Search',
+                                icon : 'fa fa-times'
+                            }, 'Close'),
+                        ]
+                    )
+                )
+            ];
+        templates.createFolder = [
+            m('.col-xs-9', [
+                m.component(FGInput, {
+                    onkeydown: function(event){ console.log('Key down', event) },
+                    id : 'createFolderInput',
+                    helpTextId : 'createFolderHelp',
+                    placeholder : 'New folder name',
+                    tooltip: 'Enter a name for the new folder'
+                })
+            ]),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(FGButton, {
+                            onclick: function(event){ _createFolder.call(ctrl.tb, event); },
+                            tooltip: 'Create Folder',
+                            icon : 'fa fa-plus'
+                        }, 'Create'),
+                        m.component(FGButton, {
+                            onclick: function(event){ ctrl.mode('bar'); },
+                            tooltip: 'Close Search',
+                            icon : 'fa fa-times'
+                        }, 'Close')
+                    ]
+                )
+            )
+        ]
+        // Bar mode
+        buttons.push(m.component(FGButton, {
+                onclick: function(event){ ctrl.mode('search'); },
+                tooltip: 'Search this'
+            }, 'Search')
+        );
+        if(ctrl.items().length === 1){
+            var item = ctrl.items()[0];
+            if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
+                buttons.push(m.component(FGButton, {
+                    onclick: function() {ctrl.mode('createFolder'); },
+                    tooltip: 'Create a new folder inside curently selected folder.',
+                    icon: 'fa fa-folder'
+                }, 'Create Folder'))
+            }
+        }
+        templates.bar =  m('.col-xs-12',buttons);
+        return m('.row.tb-header-row', [
+            m('#folderRow', { config : function () {
+                $('#folderRow input').focus();
+            }}, [
+                templates[ctrl.mode()]
+            ])
+        ]);
+    }
+}
 
 function _fangornToolbar () {
     var tb = this;
