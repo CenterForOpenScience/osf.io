@@ -32,4 +32,3 @@ def spam_admin_active(func):
             return redirect('/login/')
 
     return wrapped
-

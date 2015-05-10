@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from modularodm import Q
 from framework.exceptions import HTTPError
-from .exceptions import SpamAdminException,SpamAssassinUnactiveException
 from website.models import Node
 from website.models import Comment
 from framework.auth.decorators import must_be_logged_in
