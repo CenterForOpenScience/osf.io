@@ -458,7 +458,7 @@ def project_statistics(auth, node, **kwargs):
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
 
-    if not node.spam_status == node.HAM and _project_is_spam(node):
+    if (not node.spam_status == node.HAM) and _project_is_spam(node):
         node.mark_as_possible_spam(save=True)
         is_spam = True
     else:

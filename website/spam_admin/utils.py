@@ -45,6 +45,8 @@ def serialize_comments(comments, amount):
 def train_spam(comment, is_spam):
     """ Serialize and send request to spam assassin
     """
+    if not settings.SPAM_ASSASSIN:
+            return False
     try:
         data = {
             'message': comment.content,
@@ -168,6 +170,8 @@ def _format_spam_node_data(node):
     return data
 
 def _project_is_spam(node):
+    if not settings.SPAM_ASSASSIN:
+            return False
     try:
         data = _format_spam_node_data(node)
         res = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
@@ -178,6 +182,8 @@ def _project_is_spam(node):
         return False
 
 def train_spam_project(project, is_spam):
+    if not settings.SPAM_ASSASSIN:
+            return False
     try:
         serialized_project = _format_spam_node_data(project)
         serialized_project['is_spam'] = is_spam

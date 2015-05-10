@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 from modularodm import Q
 from framework.exceptions import HTTPError
+from .exceptions import SpamAdminException,SpamAssassinUnactiveException
 from website.models import Node
 from website.models import Comment
 from framework.auth.decorators import must_be_logged_in
-from .decorators import must_be_spam_admin
+from .decorators import must_be_spam_admin, spam_admin_active
 from .utils import serialize_comments, serialize_projects, train_spam_project, train_spam
 from flask import request
 import logging
 import httplib as http
+from website.settings import SPAM_ASSASSIN as spam_assassin_active
 logger = logging.getLogger(__name__)
 
 @must_be_logged_in
 @must_be_spam_admin
+@spam_admin_active
 def init_spam_admin_page(**kwargs):
     """
     determine whether use is on comments page or projects page
@@ -23,6 +26,7 @@ def init_spam_admin_page(**kwargs):
 
 @must_be_logged_in
 @must_be_spam_admin
+@spam_admin_active
 def init_spam_admin_comments_page(**kwargs):
     """
     determine whether use is on comments page or projects page
@@ -35,6 +39,11 @@ def list_comment_page(**kwargs):
     """
     make a list of comments that are marked as possibleSpam
     """
+    if not spam_assassin_active:
+        return {
+            'comments': list([]),
+            'total': 0
+        }
     try:
         amount = 30
         if 'amount' in kwargs:
@@ -48,13 +57,15 @@ def list_comment_page(**kwargs):
         }
     except:
         return {
-            'comments': 0,
+            'comments': list([]),
             'total': 0
         }
 
 @must_be_logged_in
 @must_be_spam_admin
 def mark_comment_as_spam(**kwargs):
+    if not spam_assassin_active:
+        raise HTTPError(http.BAD_REQUEST)
     try:
 
         cid = request.json.get('cid')
@@ -75,6 +86,8 @@ def mark_comment_as_spam(**kwargs):
 @must_be_logged_in
 @must_be_spam_admin
 def mark_comment_as_ham(**kwargs):
+    if not spam_assassin_active:
+        raise HTTPError(http.BAD_REQUEST)
     try:
         cid = request.json.get('cid')
         comment = Comment.load(cid)
@@ -94,6 +107,11 @@ def list_projects_page(**kwargs):
     """
     make a list of projects that are marked as possibleSpam
     """
+    if not spam_assassin_active:
+        return {
+            'projects': list([]),
+            'total': 0
+        }
     try:
         amount = 10
         if 'amount' in kwargs:
@@ -109,13 +127,15 @@ def list_projects_page(**kwargs):
         }
     except:
         return {
-            'projects': 0,
+            'projects': list([]),
             'total': 0
         }
 
 @must_be_logged_in
 @must_be_spam_admin
 def mark_project_as_spam(**kwargs):
+    if not spam_assassin_active:
+        raise HTTPError(http.BAD_REQUEST)
     try:
         pid = request.json.get('pid')
         project = Node.load(pid)
@@ -132,6 +152,8 @@ def mark_project_as_spam(**kwargs):
 @must_be_logged_in
 @must_be_spam_admin
 def mark_project_as_ham(**kwargs):
+    if not spam_assassin_active:
+        raise HTTPError(http.BAD_REQUEST)
     try:
         pid = request.json.get('pid')
 
