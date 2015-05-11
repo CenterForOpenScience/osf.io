@@ -36,7 +36,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
     project, and children nodes may have a category of project.
 
-    By default, a GET will return a list of public nodes, sorted by date_modified.
+    By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Nodes by their title,
+    description, and public fields.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
