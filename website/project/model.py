@@ -2536,15 +2536,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.initiated_by = user
         if justification:
             retraction.justification = justification
-        # retraction.initiation_date = datetime.datetime.utcnow()
         retraction.state = 'pending'
 
-        # @todo(hrybacki) investigate why Node#admin_contributors isn't working
-        # Collect list of admins for registration
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
 
-        approval_state = {}  # {'num_of_approvals': 0}
-        # Create approve/disapprove keys
+        approval_state = {}
+        # Create approve/disapprove tokens
         for admin in admins:
             approval_state[admin._id] = {
                 'approval_token': security.random_string(30),
