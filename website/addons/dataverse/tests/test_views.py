@@ -11,11 +11,9 @@ from dataverse.exceptions import UnauthorizedError
 
 from framework.auth.decorators import Auth
 
-from website.util import api_url_for, web_url_for
-from website.addons.dataverse.settings import HOST
-from website.addons.dataverse.views.config import serialize_settings
+from website.util import api_url_for
 from website.addons.dataverse.tests.utils import (
-    create_mock_connection, DataverseAddonTestCase,
+    create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
 
 
@@ -41,130 +39,25 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(log_params['project'], None)
 
-    def test_delete_user(self):
-        url = api_url_for('dataverse_delete_user')
-
-        # User without add-on can't delete
-        user2 = AuthUserFactory()
-        res = self.app.delete_json(url, auth=user2.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        self.user_settings.reload()
-        assert_true(self.user_settings.api_token)
-
-        # Aurthoized user can delete
-        self.app.delete_json(url, auth=self.user.auth)
-
-        # User is no longer authorized
-        self.user_settings.reload()
-        assert_false(self.user_settings.api_token)
-
-        # User's authorized nodes are now deauthorized
-        self.node_settings.reload()
-        assert_false(self.node_settings.dataverse_alias)
-        assert_false(self.node_settings.dataverse)
-        assert_false(self.node_settings.dataset_doi)
-        assert_false(self.node_settings.dataset)
-        assert_false(self.node_settings.user_settings)
-
-    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings_or_401')
-    def test_user_config_get(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
+    def test_user_config_get(self):
         url = api_url_for('dataverse_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
 
         result = res.json.get('result')
-        assert_true(result['connected'])
-        assert_true(result['userHasAuth'])
-        assert_equal(result['apiToken'], self.user_settings.api_token)
+        assert_false(result['userHasAuth'])
+        assert_in('hosts', result)
         assert_in('create', result['urls'])
-        assert_in('delete', result['urls'])
 
-    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings_or_401')
-    def test_user_config_get_no_connection(self, mock_connection):
-        mock_connection.return_value = None
-
-        url = api_url_for('dataverse_user_config_get')
+        # userHasAuth is true with external accounts
+        self.user.external_accounts.append(create_external_account())
+        self.user.save()
         res = self.app.get(url, auth=self.user.auth)
 
         result = res.json.get('result')
-        assert_false(result['connected'])
         assert_true(result['userHasAuth'])
-        assert_equal(result['apiToken'], self.user_settings.api_token)
-        assert_in('create', result['urls'])
-        assert_in('delete', result['urls'])
 
 
 class TestDataverseViewsConfig(DataverseAddonTestCase):
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_returns_correct_auth_info(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        result = serialize_settings(self.node_settings, self.user)
-        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_true(result['userHasAuth'])
-        assert_true(result['userIsOwner'])
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_non_owner(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        # Non-owner user without add-on
-        stranger = AuthUserFactory()
-        result = serialize_settings(self.node_settings, stranger)
-        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_false(result['userHasAuth'])
-        assert_false(result['userIsOwner'])
-
-        # Non-owner user with add-on
-        stranger.add_addon('dataverse')
-        stranger_settings = stranger.get_addon('dataverse')
-        stranger_settings.api_token = 'foo-bar'
-        stranger_settings.save()
-        result = serialize_settings(self.node_settings, stranger)
-        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_true(result['userHasAuth'])
-        assert_false(result['userIsOwner'])
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_returns_correct_urls(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        result = serialize_settings(self.node_settings, self.user)
-        urls = result['urls']
-
-        assert_equal(urls['set'], self.project.api_url_for('set_dataverse_and_dataset'))
-        assert_equal(urls['importAuth'], self.project.api_url_for('dataverse_import_user_auth'))
-        assert_equal(urls['deauthorize'], self.project.api_url_for('deauthorize_dataverse'))
-        assert_equal(urls['getDatasets'], self.project.api_url_for('dataverse_get_datasets'))
-        assert_equal(urls['datasetPrefix'], 'http://dx.doi.org/')
-        assert_equal(urls['dataversePrefix'], 'http://{0}/dataverse/'.format(HOST))
-        assert_equal(urls['owner'], web_url_for('profile_view_id', uid=self.user._primary_key))
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_returns_dv_info(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        result = serialize_settings(self.node_settings, self.user)
-
-        assert_equal(len(result['dataverses']), 3)
-        assert_equal(result['savedDataverse']['title'], self.node_settings.dataverse)
-        assert_equal(result['savedDataverse']['alias'], self.node_settings.dataverse_alias)
-        assert_equal(result['savedDataset']['title'], self.node_settings.dataset)
-        assert_equal(result['savedDataset']['doi'], self.node_settings.dataset_doi)
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_no_connection(self, mock_connection):
-        mock_connection.return_value = None
-
-        result = serialize_settings(self.node_settings, self.user)
-
-        assert_false(result['dataverses'])
-        assert_equal(result['savedDataverse']['title'], self.node_settings.dataverse)
-        assert_equal(result['savedDataverse']['alias'], self.node_settings.dataverse_alias)
-        assert_equal(result['savedDataset']['title'], self.node_settings.dataset)
-        assert_equal(result['savedDataset']['doi'], self.node_settings.dataset_doi)
 
     @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_dataverse_get_datasets(self, mock_connection):
@@ -299,6 +192,15 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         self.project.set_privacy('public')
         self.project.save()
 
+        alias = self.node_settings.dataverse_alias
+        doi = self.node_settings.dataset_doi
+        external_account = create_external_account()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+        self.node_settings.dataverse_alias = alias
+        self.node_settings.dataset_doi = doi
+        self.node_settings.save()
+
         url = api_url_for('dataverse_root_folder_public',
                           pid=self.project._primary_key)
 
@@ -323,6 +225,15 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
         self.project.set_privacy('public')
         self.project.save()
+
+        alias = self.node_settings.dataverse_alias
+        doi = self.node_settings.dataset_doi
+        external_account = create_external_account()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+        self.node_settings.dataverse_alias = alias
+        self.node_settings.dataset_doi = doi
+        self.node_settings.save()
 
         url = api_url_for('dataverse_root_folder_public',
                           pid=self.project._primary_key)

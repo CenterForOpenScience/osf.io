@@ -40,6 +40,7 @@ class DataverseSerializer(OAuthAddonSerializer):
         ret = {
             'settings': web_url_for('user_addons'),  # TODO: Is this needed?
         }
+        # Dataverse users do not currently have profile URLs
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
 
@@ -64,8 +65,6 @@ class DataverseSerializer(OAuthAddonSerializer):
             'getDatasets': node.api_url_for('dataverse_get_datasets'),
             'datasetPrefix': 'http://dx.doi.org/',
             'dataversePrefix': 'http://{0}/dataverse/'.format(host),
-            'apiToken': 'https://{0}/account/apitoken'.format(host),  # TODO: Duplicated in JS
-            'settings': web_url_for('user_addons'),
             'accounts': api_url_for('dataverse_get_user_accounts'),
         }
 
@@ -78,9 +77,8 @@ class DataverseSerializer(OAuthAddonSerializer):
         if self.node_settings.has_auth:
             external_account = self.node_settings.external_account
             dataverse_host = external_account.oauth_key
-            api_token = external_account.oauth_secret
 
-            connection = client._connect(dataverse_host, api_token)
+            connection = client.connect_from_settings(self.node_settings)
             dataverses = client.get_dataverses(connection)
             result.update({
                 'dataverseHost': dataverse_host,
