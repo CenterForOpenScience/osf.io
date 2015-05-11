@@ -1211,10 +1211,10 @@ var FGToolbar = {
         var items = ctrl.items();
         var item = items[0];
         templates.search =  [
-            m('.col-xs-9', [
+            m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
-                m('.col-xs-3.tb-buttons-col',
+                m('.col-xs-2.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right',
                         [
                             m.component(FGButton, {
@@ -1464,7 +1464,6 @@ function _fangornResetToolbar () {
     if (tb.options.fgIconState.mode === 'search') {
         tb.options.fgIconState = _defaultIconState();
         tb.resetFilter();
-
     }
     tb.options.fgIconState.mode = 'bar';
     m.redraw();
