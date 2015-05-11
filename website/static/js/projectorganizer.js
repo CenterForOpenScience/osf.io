@@ -460,7 +460,7 @@ function _poMultiselect(event, tree) {
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected()),
         someItemsAreFolders,
         pointerIds;
-    Fangorn.dismissToolbar.call(tb);
+    Fangorn.Utils.dismissToolbar.call(tb);
     if (!tb.filterOn) {
         tb.toolbarMode('bar');
     }
