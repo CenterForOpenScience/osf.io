@@ -16,6 +16,7 @@ from website.addons.dataverse.serializer import DataverseSerializer
 from website.addons.dataverse.tests.utils import (
     create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
+from website.oauth.models import ExternalAccount
 
 
 class TestDataverseViewsAuth(DataverseAddonTestCase):
@@ -128,6 +129,55 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
 
         assert_equal(len(self.user.external_accounts), 0)
         assert_equal(res.status_code, http.UNAUTHORIZED)
+
+    @mock.patch('website.addons.dataverse.views.config.client._connect')
+    def test_dataverse_add_external_account_twice(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        host = 'myfakehost.data.verse'
+        token = 'api-token-here'
+
+        url = api_url_for('dataverse_add_external_account')
+        params = {'host': host, 'api_token': token}
+        self.app.post_json(url, params, auth=self.user.auth)
+        self.app.post_json(url, params, auth=self.user.auth)
+        self.user.reload()
+
+        assert_equal(len(self.user.external_accounts), 1)
+        external_account = self.user.external_accounts[0]
+        assert_equal(external_account.provider, 'dataverse')
+        assert_equal(external_account.oauth_key, host)
+        assert_equal(external_account.oauth_secret, token)
+
+    @mock.patch('website.addons.dataverse.views.config.client._connect')
+    def test_dataverse_add_external_account_existing(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        host = 'myfakehost.data.verse'
+        token = 'api-token-here'
+        display_name = 'loaded_version'
+
+        # Save an existing version
+        external_account = ExternalAccount(
+            provider='dataverse',
+            provider_name='Dataverse',
+            display_name=display_name,
+            oauth_key=host,
+            oauth_secret=token,
+            provider_id=token,
+        )
+        external_account.save()
+
+        url = api_url_for('dataverse_add_external_account')
+        params = {'host': host, 'api_token': token}
+        self.app.post_json(url, params, auth=self.user.auth)
+        self.user.reload()
+
+        assert_equal(len(self.user.external_accounts), 1)
+        external_account = self.user.external_accounts[0]
+        assert_equal(external_account.provider, 'dataverse')
+        assert_equal(external_account.oauth_key, host)
+        assert_equal(external_account.oauth_secret, token)
+        # Ensure we got the loaded version
+        assert_equal(external_account.display_name, display_name)
 
     @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_set_dataverse_and_dataset(self, mock_connection):
