@@ -148,22 +148,34 @@ class ListFilterMixin(FilterMixin):
     def param_queryset(self, query_params, default_queryset):
         """filters default queryset based on query parameters"""
         fields_dict = query_params_to_fields(query_params)
-        return_val = default_queryset
+        queryset = set(default_queryset)
         if fields_dict:
             for field_name, value in fields_dict.items():
                 if self.is_filterable_field(key=field_name):
-                    if isinstance(self.serializer_class._declared_fields[field_name], ser.SerializerMethodField):
-                        return_val = self.get_serializer_field_value(field_name, value, default_queryset)
-                    elif isinstance(self.serializer_class._declared_fields[field_name], ser.BooleanField):
-                        return_val = [item for item in default_queryset if item.get('key', None) == value]
-                    else:
-                        # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
-                        return_val = [item for item in default_queryset if value in item.get('key', None)]
+                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, value, default_queryset)))
+        return list(queryset)
+
+    def get_filtered_queryset(self, field_name, value, default_queryset):
+        """filters default queryset based on the serializer field type"""
+        field = self.serializer_class._declared_fields[field_name]
+
+        if isinstance(field, ser.SerializerMethodField):
+            return_val = [item for item in default_queryset if self.get_serializer_method(field_name)(item) == self.convert_value(value)]
+        elif isinstance(field, ser.BooleanField):
+            return_val = [item for item in default_queryset if getattr(item, field_name, None) == self.convert_value(value)]
+        elif isinstance(field, ser.CharField):
+            return_val = [item for item in default_queryset if value.lower() in getattr(item, field_name, None).lower()]
+        else:
+            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
+            return_val = [item for item in default_queryset if value in getattr(item, field_name, None)]
+
         return return_val
 
-    def get_serializer_field_value(self, key, value, default_queryset):
+    def get_serializer_method(self, field_name):
+        """
+        :param field_name: The name of a SerializerMethodField
+        :return: The function attached to the SerializerMethodField to get its value
+        """
         serializer = self.get_serializer()
-        serializer_function = {
-            'bibliographic': serializer.get_bibliographic
-        }
-        return [item for item in default_queryset if serializer_function[key](item) == self.convert_value(value)]
+        serializer_method_name = 'get_' + field_name
+        return getattr(serializer, serializer_method_name)
