@@ -20,9 +20,9 @@ class FigshareProvider:
 
     def __new__(cls, auth, credentials, settings):
         if settings['container_type'] == 'project':
-            return FigshareProjectProvider(auth, credentials, {'project_id': settings['container_id']})
-        if settings['container_type'] in ['article', 'fileset']:
-            return FigshareArticleProvider(auth, credentials, {'article_id': settings['container_id']})
+            return FigshareProjectProvider(auth, credentials, dict(settings, project_id=settings['container_id']))
+        if settings['container_type'] in ('article', 'fileset'):
+            return FigshareArticleProvider(auth, credentials, dict(settings, article_id=settings['container_id']))
         raise exceptions.ProviderError('Invalid "container_type" {0}'.format(settings['container_type']))
 
 
@@ -154,9 +154,8 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def download(self, path, **kwargs):
-        figshare_path = FigshareProjectPath(path)
-        provider = yield from self._make_article_provider(figshare_path.article_id)
-        return (yield from provider.download(str(figshare_path.child), **kwargs))
+        provider = yield from self._make_article_provider(path.parts[1].identifier)
+        return (yield from provider.download(path.identifier, **kwargs))
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
