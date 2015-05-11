@@ -100,7 +100,7 @@ function cancelUploads (row) {
             }
         }
     }
-    tb.options.uploadState(false);
+    tb.isUploading(false);
 }
 
 var cancelUploadTemplate = function(row){
@@ -322,12 +322,6 @@ function _fangornSending(treebeard, file, xhr, formData) {
     xhr.send = function() {
         _send.call(xhr, file);
     };
-    var filesArr = treebeard.dropzone.getQueuedFiles();
-    if (filesArr.length  > 0) {
-        treebeard.options.uploadState(true);
-    } else {
-        treebeard.options.uploadState(false);
-    }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
 }
@@ -1170,7 +1164,6 @@ var FGButton = {
 var FGInput = {
     controller : function(args) {
         var noop = function() {};
-        this.onkeydown = args.onkeydown || noop;
     },
     view : function(ctrl, args, helpText) {
         var extraCSS = args.className || '';
@@ -1183,7 +1176,7 @@ var FGInput = {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
                 onclick: args.onclick,
-                onkeydown: ctrl.onkeydown,
+                onkeydown: args.onkeydown,
                 'data-toggle': tooltipText,
                 'title':  tooltipText,
                 'placeholder' : placeholder
@@ -1201,7 +1194,7 @@ var FGToolbar = {
         self.tb = args.treebeard;
         self.items = args.treebeard.multiselected;
         self.mode = m.prop('bar');
-        self.uploadState = args.treebeard.options.uploadState;
+        self.uploadState = args.treebeard.isUploading;
         self.helpText = m.prop('');
         self.dismissToolbar = function(){ self.mode('bar');}
         self.createFolder = function(event){ _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText ); }
@@ -1255,30 +1248,6 @@ var FGToolbar = {
             )
         ]
         // Bar mode
-        buttons.push(
-            m.component(FGButton, {
-                onclick: function(event){ ctrl.mode('search'); },
-                tooltip: 'Search this',
-                icon: 'fa fa-search'
-
-            }, 'Search'),
-            m.component(FGButton, {
-                onclick: function(event){
-                    var mithrilContent = m('div', [
-                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
-                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
-                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
-                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
-                    ]);
-                    var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { ctrl.tb.modal.dismiss(); } }, 'Close'),
-                    ]);
-                    ctrl.tb.modal.update(mithrilContent, mithrilButtons);
-                },
-                tooltip: 'Learn more about how to use the file browser.',
-                icon: 'fa fa-info'
-            }, '')
-        );
         // Which buttons should show?
         if(items.length === 1){
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
@@ -1286,19 +1255,22 @@ var FGToolbar = {
                     m.component(FGButton, {
                         onclick: function() {_uploadEvent.call(ctrl.tb, event, item); },
                         tooltip: 'Select files to upload from your computer.',
-                        icon: 'fa fa-upload'
+                        icon: 'fa fa-upload',
+                        className : 'text-primary'
                     }, 'Upload'),
                     m.component(FGButton, {
                     onclick: function() {ctrl.mode('createFolder'); },
                     tooltip: 'Create a new folder inside curently selected folder.',
-                    icon: 'fa fa-folder'
+                    icon: 'fa fa-plus',
+                    className : 'text-primary'
                 }, 'Create Folder'));
                 if(item.data.path){
                     buttons.push(
                         m.component(FGButton, {
                             onclick: function() {_removeEvent.call(ctrl.tb, event, [item]); },
                             tooltip: 'Delete this folder and all its contents.',
-                            icon: 'fa fa-trash'
+                            icon: 'fa fa-trash',
+                            className : 'text-danger'
                         }, 'Delete Folder'));
                 }
             }
@@ -1307,18 +1279,34 @@ var FGToolbar = {
                     m.component(FGButton, {
                         onclick: function() { _downloadEvent.call(ctrl.tb, event, item); },
                         tooltip: 'Download this file to your computer.',
-                        icon: 'fa fa-download'
-                    }, 'Download'));
+                        icon: 'fa fa-download',
+                        className : 'text-success'
+                    }, 'Download')
+                );
+                if (item.data.permissions && item.data.permissions.edit) {
+                    buttons.push(
+                        m.component(FGButton, {
+                            onclick: function() { _removeEvent.call(ctrl.tb, event, [item]); },
+                            tooltip: 'Permanently delete this file.',
+                            icon: 'fa fa-trash',
+                            className : 'text-danger'
+                        }, 'Delete'));
+
+                }
             }
-            if (item.data.permissions && item.data.permissions.edit) {
+
+            if(ctrl.uploadState()){
                 buttons.push(
                     m.component(FGButton, {
-                        onclick: function() { _removeEvent.call(ctrl.tb, event, [item]); },
-                        tooltip: 'Permanently delete this file.',
-                        icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, 'Delete'));
-
+                        onclick: function() {
+                            console.log('hello');
+                            cancelUploads.call(ctrl.tb);
+                        },
+                        tooltip: 'Cancel currently pending downloads.',
+                        icon: 'fa fa-time-circle',
+                        className : 'text-warning'
+                    }, 'Cancel All Uploads')
+                );
             }
 
         }
@@ -1335,20 +1323,32 @@ var FGToolbar = {
                     className : 'text-danger'
                 }, 'Delete Multiple')
             );
-            if(ctrl.uploadState()){
-                buttons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            console.log('hello');
-                            cancelUploads.call(ctrl.tb);
-                        },
-                        tooltip: 'Cancel currently pending downloads.',
-                        icon: 'fa fa-time-circle',
-                        className : 'text-warning'
-                    }, 'Cancel All Uploads')
-                );
-            }
         }
+        buttons.push(
+            m.component(FGButton, {
+                onclick: function(event){ ctrl.mode('search'); },
+                tooltip: 'Search this',
+                icon: 'fa fa-search',
+                className : 'text-primary'
+            }, 'Search'),
+            m.component(FGButton, {
+                onclick: function(event){
+                    var mithrilContent = m('div', [
+                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
+                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
+                    ]);
+                    var mithrilButtons = m('div', [
+                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { ctrl.tb.modal.dismiss(); } }, 'Close'),
+                    ]);
+                    ctrl.tb.modal.update(mithrilContent, mithrilButtons);
+                },
+                tooltip: 'Learn more about how to use the file browser.',
+                icon: 'fa fa-info',
+                className : 'text-info'
+            }, '')
+        );
 
         templates.bar =  m('.col-xs-12',m('.pull-right', buttons));
         return m('.row.tb-header-row', [
@@ -2012,7 +2012,6 @@ tbOptions = {
     },
     toolbarComponent : FGToolbar,
     // Not treebeard options, specific to Fangorn
-    uploadState : m.prop(false),
     fgIconState  : _defaultIconState(),
     defineToolbar : _fangornDefineToolbar,
     onselectrow : function(row) {
