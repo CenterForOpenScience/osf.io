@@ -53,13 +53,16 @@ class FilterMixin(object):
         return key
 
     # Used to convert string values from query params to Python booleans when necessary
-    def convert_value(self, value):
+    def convert_value(self, value, field):
+        field_type = type(self.serializer_class._declared_fields[field])
         value = value.strip()
-        if value in self.TRUTHY:
-            return True
-        elif value in self.FALSY:
-            return False
+        if field_type == ser.BooleanField:
+            if value in self.TRUTHY:
+                return True
+            elif value in self.FALSY:
+                return False
         # Convert me to current user's pk
+        # TODO: this will still change me to the user id no matter what kind of field it is. Fix that.
         elif value == 'me' and not self.request.user.is_anonymous():
             return self.request.user.pk
         else:
@@ -85,11 +88,11 @@ class ODMFilterMixin(FilterMixin):
     }
 
     def get_comparison_operator(self, key):
-        for field_type, comparison_operator in self.field_comparison_operators.items():
-            if isinstance(self.serializer_class._declared_fields[key], field_type):
-                return comparison_operator
-
-        return self.DEFAULT_OPERATOR
+        field_type = type(self.serializer_class._declared_fields[key])
+        if field_type in self.field_comparison_operators:
+            return self.field_comparison_operators[field_type]
+        else:
+            return self.DEFAULT_OPERATOR
 
     def get_default_odm_query(self):
         raise NotImplementedError('Must define get_default_odm_query')
@@ -111,7 +114,7 @@ class ODMFilterMixin(FilterMixin):
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
             query_parts = [
-                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value))
+                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
                 for key, value in fields_dict.items() if self.is_filterable_field(key=key)
             ]
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.

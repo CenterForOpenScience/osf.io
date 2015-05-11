@@ -7,7 +7,7 @@ from framework.auth.core import Auth
 
 class NodeSerializer(JSONAPISerializer):
 
-    filterable_fields = frozenset(['title', 'description'])
+    filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
