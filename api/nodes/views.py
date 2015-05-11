@@ -188,8 +188,6 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             return valid_methods
 
         permissions = self.get_node().get_permissions(user)
-        if 'read' in permissions:
-            valid_methods['file'].append('GET')
         if 'write' in permissions:
             valid_methods['file'].append('POST')
             valid_methods['file'].append('DELETE')

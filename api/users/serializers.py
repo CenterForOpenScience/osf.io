@@ -43,7 +43,8 @@ class UserSerializer(JSONAPISerializer):
 
 class ContributorSerializer(UserSerializer):
 
-    filterable_fields = frozenset(['bibliographic'])
+    local_filterable = frozenset(['bibliographic'])
+    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
     bibliographic = ser.SerializerMethodField()
 
