@@ -1188,19 +1188,23 @@ var FGInput = {
     }
 }
 
+var _dismissToolbar = function(){
+    var tb = this;
+    tb.toolbarMode('bar');
+    tb.resetFilter();
+    tb.filterText('');
+};
+
 var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
+        self.tb.toolbarMode = m.prop('bar');
         self.items = args.treebeard.multiselected;
-        self.mode = m.prop('bar');
+        self.mode = self.tb.toolbarMode;
         self.uploadState = args.treebeard.isUploading;
         self.helpText = m.prop('');
-        self.dismissToolbar = function(){
-            self.mode('bar');
-            self.tb.resetFilter();
-            self.tb.filterText('');
-        };
+        self.dismissToolbar = _dismissToolbar.bind(self.tb);
         self.createFolder = function(event){
             _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText );
         };
