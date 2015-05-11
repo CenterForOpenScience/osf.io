@@ -427,7 +427,7 @@ function expandStateLoad(item) {
             if (item.children[i].data.expand) {
                 tb.updateFolder(null, item.children[i]);
             }
-            if (tb.multiselected[0] && item.children[i].data.node_id === tb.multiselected[0].data.node_id) {
+            if (tb.multiselected()[0] && item.children[i].data.node_id === tb.multiselected()[0].data.node_id) {
                 triggerClickOnItem.call(tb, item.children[i], true);
             }
         }
@@ -458,7 +458,7 @@ function _poLoadOpenChildren() {
 // TODO : Cleanup
 function _poMultiselect(event, tree) {
     var tb = this,
-        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
+        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected()),
         someItemsAreFolders,
         pointerIds;
     _toolbarDismissEvent.call(tb);
@@ -466,7 +466,7 @@ function _poMultiselect(event, tree) {
     if (!tb.filterOn) {
         tb.options.iconState.mode = 'bar';
     }
-    if (tb.multiselected.length === 1) {
+    if (tb.multiselected().length === 1) {
         // empty row icons and assign row icons from item information
         tb.options.iconState.rowIcons = tree.icons;
         //tb.options.iconState.title = tree.data.name;
@@ -566,11 +566,11 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRowsNotInParent(rows) {
-    if (this.multiselected.length < 2) {
-        return this.multiselected;
+    if (this.multiselected().length < 2) {
+        return this.multiselected();
     }
     var i, newRows = [],
-        originalRow = this.find(this.multiselected[0].id),
+        originalRow = this.find(this.multiselected()[0].id),
         originalParent,
         currentItem;
     if (typeof originalRow !== 'undefined') {
@@ -584,7 +584,7 @@ function filterRowsNotInParent(rows) {
             }
         }
     }
-    this.multiselected = newRows;
+    this.multiselected(newRows);
     this.highlightMultiselect();
     return newRows;
 }
@@ -598,8 +598,8 @@ function filterRowsNotInParent(rows) {
 function _poDragStart(event, ui) {
     var itemID = $(event.target).attr('data-id'),
         item = this.find(itemID);
-    if (this.multiselected.length < 2) {
-        this.multiselected = [item];
+    if (this.multiselected().length < 2) {
+        this.multiselected([item]);
     }
 }
 
@@ -610,7 +610,7 @@ function _poDragStart(event, ui) {
  * @private
  */
 function _poDrop(event, ui) {
-    var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
+    var items = this.multiselected().length === 0 ? [this.find(this.selected)] : this.multiselected(),
         folder = this.find($(event.target).attr('data-id'));
     dropLogic.call(this, event, items, folder);
 }
@@ -622,7 +622,7 @@ function _poDrop(event, ui) {
  * @private
  */
 function _poOver(event, ui) {
-    var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
+    var items = this.multiselected().length === 0 ? [this.find(this.selected)] : this.multiselected(),
         folder = this.find($(event.target).attr('data-id')),
         dragState = dragLogic.call(this, event, items, ui);
     $('.tb-row').removeClass('tb-h-success po-hover');
@@ -939,11 +939,11 @@ function searchButton() {
 function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
-    if (tb.multiselected.length !== 1 || val.length < 1) {
+    if (tb.multiselected().length !== 1 || val.length < 1) {
         tb.options.iconState.mode = 'bar';
         return;
     }
-    var item = tb.multiselected[0];
+    var item = tb.multiselected()[0];
     var theItem = item.data;
     var url = '/api/v1/folder/';
     var postData = {
@@ -977,11 +977,11 @@ function addFolderButton() {
 function _renameEvent() {
     var tb = this;
     var val = $.trim($('#renameInput').val());
-    if (tb.multiselected.length !== 1 || val.length < 1) {
+    if (tb.multiselected().length !== 1 || val.length < 1) {
         tb.options.iconState.mode = 'bar';
         return;
     }
-    var item = tb.multiselected[0];
+    var item = tb.multiselected()[0];
     var theItem = item.data;
     var url = theItem.apiURL + 'edit/';
     var postAction;
@@ -1011,7 +1011,7 @@ function renameButton() {
 
 function applyTypeahead() {
     var tb = this;
-    var item = tb.multiselected[0];
+    var item = tb.multiselected()[0];
     var theItem = item.data;
     projectOrganizer.myProjects.initialize();
     projectOrganizer.publicProjects.initialize();
@@ -1113,7 +1113,7 @@ function applyTypeahead() {
 
 function addProjectButton() {
     var tb = this;
-    var item = tb.multiselected[0];
+    var item = tb.multiselected()[0];
     var theItem = item.data;
 
     return m('#add-link-button.fangorn-toolbar-icon.text-info.tb-disabled', {
@@ -1249,7 +1249,7 @@ function _poToolbar() {
     if (tb.options.iconState.mode === 'rename') {
         return m('.row.tb-header-row', [
             m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
-                m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected[0].data.name })),
+                m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected()[0].data.name })),
                 m('.col-xs-3.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right',
                         [
