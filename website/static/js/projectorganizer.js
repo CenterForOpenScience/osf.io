@@ -1392,13 +1392,10 @@ var tbOptions = {
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,
-    resolveRefreshIcon : function() {
+    resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar,
-    onselectrow : function (row) {
-        console.log(row);
-    }
+    toolbarComponent : POToolbar
 };
 
 /**

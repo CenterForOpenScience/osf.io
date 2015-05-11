@@ -1630,10 +1630,6 @@ tbOptions = {
         return m.trust('&times;');
     },
     toolbarComponent : FGToolbar,
-    // Not treebeard options, specific to Fangorn
-    onselectrow : function(row) {
-        console.log(row);
-    },
     // DRAG AND DROP RELATED OPTIONS
     dragOptions : {},
     dropOptions : {},
