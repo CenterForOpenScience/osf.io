@@ -248,6 +248,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'NRAO2015': {
+        'name': 'National Radio Astronomy Observatory Accretion 2015',
+        'info_url': 'https://science.nrao.edu/science/meetings/2015/accretion2015/posters',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 

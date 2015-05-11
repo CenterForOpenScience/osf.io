@@ -28,6 +28,8 @@ if (node.isPublic && node.piwikSiteID) {
 $(window).unload(function(){
     return 'Unload';
 });
-$.getJSON(node.urls.api, function(data) {
-    $('body').trigger('nodeLoad', data);
-});
+$(document).ready(function() {
+    $.getJSON(node.urls.api, function(data) {    
+        $('body').trigger('nodeLoad', data);
+    });
+})
