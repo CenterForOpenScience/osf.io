@@ -52,13 +52,11 @@ function _figshareDefineToolbar (item) {
         );
     }
 
-    item.icons = buttons;
-
-    return true; // Tell fangorn this function is used. 
+    return buttons; // Tell fangorn this function is used.
 }
 
 
 Fangorn.config.figshare = {
     // Fangorn options are called if functions, so return a thunk that returns the column builder
-    defineToolbar: _figshareDefineToolbar,
+    defineToolbar: _figshareDefineToolbar
 };
