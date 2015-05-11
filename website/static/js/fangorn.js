@@ -1150,7 +1150,6 @@ function scrollToFile(fileID) {
 var FGButton = {
     controller: function(args) {
         var noop = function() {};
-        this.onclick = args.onclick || noop;
     },
     view: function(ctrl, args, children) {
         var extraCSS = args.className || '';
@@ -1158,7 +1157,7 @@ var FGButton = {
         var iconCSS = args.icon;
         return m('div', {
             className: 'fangorn-toolbar-icon ' + extraCSS,
-            onclick: ctrl.onclick,
+            onclick: args.onclick,
             'data-toggle': tooltipText ? 'tooltip' : '',
             'data-placement' : 'bottom',
             'title':  tooltipText}, [
@@ -1172,7 +1171,6 @@ var FGInput = {
     controller : function(args) {
         var noop = function() {};
         this.onkeydown = args.onkeydown || noop;
-        this.onclick = args.onclick || noop;
     },
     view : function(ctrl, args, helpText) {
         var extraCSS = args.className || '';
@@ -1184,14 +1182,14 @@ var FGInput = {
             m('input', {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
-                onclick: ctrl.onclick,
+                onclick: args.onclick,
                 onkeydown: ctrl.onkeydown,
                 'data-toggle': tooltipText,
                 'title':  tooltipText,
                 'placeholder' : placeholder
                 }),
             m('.text-danger', {
-                'id' : helpTextId,
+                'id' : helpTextId
             }, helpText)
         ]);
     }
