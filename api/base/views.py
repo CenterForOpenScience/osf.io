@@ -30,7 +30,7 @@ def root(request, format=None):
 
     You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.
 
-    <pre>/users?filter[fullname]=lise&family_name=mei</pre>
+    <pre>/users?filter[fullname]=lise&filter[family_name]=mei</pre>
 
     <h2>Links</h2>
     Responses will generally have associated links. These are helpers to keep you from having to construct
