@@ -12,7 +12,7 @@ from website.project import decorators
 from website.util.sanitize import assert_clean
 
 from website.addons.dataverse import client
-from website.addons.dataverse.model import DataverseProvider
+from website.addons.dataverse.provider import DataverseProvider
 from website.addons.dataverse.serializer import DataverseSerializer
 from website.oauth.models import ExternalAccount
 

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import httplib as http
 import urlparse
 
 import pymongo
@@ -8,75 +7,12 @@ from modularodm import fields
 
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
-from framework.exceptions import HTTPError
-from framework.exceptions import PermissionsError
-
 from website.addons.base import (
     AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile, exceptions,
 )
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse import serializer
-
-from website.oauth.models import ExternalAccount
-
-
-class DataverseProvider(object):
-    """An alternative to `ExternalProvider` not tied to OAuth"""
-
-    name = 'Dataverse'
-    short_name = 'dataverse'
-    provider_name = 'dataverse'
-    serializer = serializer.DataverseSerializer
-
-    def __init__(self):
-        super(DataverseProvider, self).__init__()
-
-        # provide an unauthenticated session by default
-        self.account = None
-
-    def __repr__(self):
-        return '<{name}: {status}>'.format(
-            name=self.__class__.__name__,
-            status=self.account.provider_id if self.account else 'anonymous'
-        )
-
-    def add_user_auth(self, node_addon, user, external_account_id):
-
-        external_account = ExternalAccount.load(external_account_id)
-
-        if external_account not in user.external_accounts:
-            raise HTTPError(http.FORBIDDEN)
-
-        try:
-            node_addon.set_auth(external_account, user)
-        except PermissionsError:
-            raise HTTPError(http.FORBIDDEN)
-
-        node = node_addon.owner
-        node.add_log(
-            action='dataverse_node_authorized',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-            },
-            auth=Auth(user=user),
-        )
-
-        result = self.serializer(
-            node_settings=node_addon,
-            user_settings=user.get_addon(self.provider_name),
-        ).serialized_node_settings
-        return {'result': result}
-
-    def remove_user_auth(self, node_addon, user):
-
-        node_addon.deauthorize(Auth(user=user))
-        node_addon.reload()
-        result = self.serializer(
-            node_settings=node_addon,
-            user_settings=user.get_addon(self.provider_name),
-        ).serialized_node_settings
-        return {'result': result}
+from website.addons.dataverse.provider import DataverseProvider
 
 
 class DataverseFile(GuidFile):

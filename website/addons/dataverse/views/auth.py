@@ -1,7 +1,7 @@
 import httplib as http
 
 from framework.auth.decorators import must_be_logged_in
-from website.addons.dataverse.model import DataverseProvider
+from website.addons.dataverse.provider import DataverseProvider
 from website.addons.dataverse.settings import DEFAULT_HOSTS
 from website.project import decorators
 from website.util import api_url_for
