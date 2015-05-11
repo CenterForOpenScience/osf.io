@@ -1307,7 +1307,7 @@ var FGToolbar = {
             if (item.kind === 'file'){
                 buttons.push(
                     m.component(FGButton, {
-                        onclick: function() { _downloadEvent.call(ctrl.tb, event, [item]); },
+                        onclick: function() { _downloadEvent.call(ctrl.tb, event, item); },
                         tooltip: 'Download this file to your computer.',
                         icon: 'fa fa-download'
                     }, 'Download'));
