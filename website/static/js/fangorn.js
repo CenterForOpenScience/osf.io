@@ -1538,7 +1538,7 @@ tbOptions = {
                 return;
             }
             tb.clearMultiselect();
-            _fangornResetToolbar.call(tb);
+            _dismissToolbar(tb);
         })
 
         $(window).on('beforeunload', function() {
@@ -1554,12 +1554,12 @@ tbOptions = {
         }
         $(window).on('keydown', function(event){
             if (event.keyCode === ESCAPE_KEY) {
-                _fangornResetToolbar.call(tb);
+                _dismissToolbar(tb);
             }
         });
         $(document).on('keypress', '#createFolderInput', function () {
             if (tb.pressedKey === ENTER_KEY) {
-                _createFolder.call(tb);
+                _createFolder.call(tb, _dismissToolbar.bind(tb));
             }
         });
     },
