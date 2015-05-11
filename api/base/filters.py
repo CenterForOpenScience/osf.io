@@ -152,18 +152,22 @@ class ListFilterMixin(FilterMixin):
         if fields_dict:
             for field_name, value in fields_dict.items():
                 if self.is_filterable_field(key=field_name):
-                    if isinstance(self.serializer_class._declared_fields[field_name], ser.SerializerMethodField):
-                        return_val = self.get_serializer_field_value(field_name, value, default_queryset)
-                    elif isinstance(self.serializer_class._declared_fields[field_name], ser.BooleanField):
-                        return_val = [item for item in default_queryset if item.get('key', None) == value]
-                    else:
-                        # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
-                        return_val = [item for item in default_queryset if value in item.get('key', None)]
+                    return_val = self.get_serializer_field_value(field_name, value, default_queryset)
         return return_val
 
-    def get_serializer_field_value(self, key, value, default_queryset):
+    def get_serializer_field_value(self, field_name, value, default_queryset):
         serializer = self.get_serializer()
+        field = self.serializer_class._declared_fields[field_name]
         serializer_function = {
             'bibliographic': serializer.get_bibliographic
         }
-        return [item for item in default_queryset if serializer_function[key](item) == self.convert_value(value)]
+
+        if isinstance(field, ser.SerializerMethodField):
+            return_val = [item for item in default_queryset if serializer_function[field_name](item) == self.convert_value(value)]
+        elif isinstance(field, ser.BooleanField):
+            return_val = [item for item in default_queryset if item.get(field_name, None) == value]
+        else:
+            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
+            return_val = [item for item in default_queryset if value in item.get(field_name, None)]
+
+        return return_val
