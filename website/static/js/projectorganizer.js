@@ -1062,94 +1062,134 @@ function showLegend() {
     tb.modal.show();
 }
 
-function _poToolbar() {
-    var tb = this;
-    var generalButtons = [];
-    var generalIcons = tb.options.iconState.generalIcons;
-    if (generalIcons.search.on) {
-        generalButtons.push(generalIcons.search.template.call(tb));
-    }
-
-    generalButtons.push(generalIcons.info.template.call(tb));
-
-    if (tb.options.iconState.mode === 'bar') {
-        return m('.row.tb-header-row', [
-            m('.col-xs-12.tb-buttons-col', [
+var POToolbar = {
+    controller: function (args) {
+        var self = this;
+        self.tb = args.treebeard;
+        self.tb.toolbarMode = m.prop('bar');
+        self.items = args.treebeard.multiselected;
+        self.mode = self.tb.toolbarMode;
+        self.helpText = m.prop('');
+        self.dismissToolbar = Fangorn.Utils.dismissToolbar.bind(self.tb);
+    },
+    view: function (ctrl) {
+        var templates = {};
+        var generalButtons = [];
+        var rowButtons = _poDefineToolbar.call(ctrl.tb);
+        var dismissIcon = m.component(Fangorn.Components.button, {
+            onclick: ctrl.dismissToolbar,
+            tooltip: 'Close Search',
+            icon : 'fa fa-times'
+        }, 'Close');
+        templates.search =  [
+            m('.col-xs-10', [
+                ctrl.tb.options.filterTemplate.call(ctrl.tb)
+            ]),
+            m('.col-xs-2.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
                     [
-                        tb.options.iconState.rowIcons.map(function (icon) {
-                            if (icon.template) {
-                                return icon.template.call(tb);
-                            }
-                        }),
-                        generalButtons
+                        m.component(Fangorn.Components.button, {
+                            onclick: ctrl.dismissToolbar,
+                            tooltip: 'Close Search',
+                            icon : 'fa fa-times'
+                        }, 'Close')
                     ]
-                        )
-            ])
-        ]);
-    }
-    if (tb.options.iconState.mode === 'search') {
-        return m('.row.tb-header-row', [
-            m('#searchRow', { config : function () { $('#searchRow input').focus(); }}, [
-                m('.col-xs-11', tb.options.filterTemplate.call(tb)),
-                m('.col-xs-1.tb-buttons-col',
-                    m('.fangorn-toolbar.pull-right',
-                        toolbarDismissIcon.call(tb)
-                        )
                     )
-            ])
-        ]);
-    }
-    if (tb.options.iconState.mode === 'addFolder') {
-        return m('.row.tb-header-row', [
-            m('#collRow', { config : function () { $('#collRow input').focus(); }}, [
-                m('.col-xs-9', m('input#addNewFolder.tb-header-input', { 'placeholder' : 'Collection name'})),
-                m('.col-xs-3.tb-buttons-col',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            addFolderButton.call(tb),
-                            toolbarDismissIcon.call(tb)
-                        ]
-                        )
+                )
+        ];
+        templates.addFolder  = [
+            m('.col-xs-9', m('input#addNewFolder.tb-header-input', { 'placeholder' : 'Collection name'})),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                _addFolderEvent.call(ctrl.tb);
+                            },
+                            tooltip: 'Add folder',
+                            icon : 'fa fa-plus',
+                            className : 'text-info'
+                        }, 'Add'),
+                        dismissIcon
+                    ]
                     )
-            ])
-        ]);
-    }
-    if (tb.options.iconState.mode === 'rename') {
-        return m('.row.tb-header-row', [
-            m('#renameRow', { config : function () { $('#renameRow input').focus(); }}, [
-                m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected()[0].data.name })),
-                m('.col-xs-3.tb-buttons-col',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            renameButton.call(tb),
-                            toolbarDismissIcon.call(tb)
-                        ]
-                        )
+                )
+        ];
+        templates.rename = [
+            m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected()[0].data.name })),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                _renameEvent.call(ctrl.tb);
+                            },
+                            tooltip: 'Rename collection or project',
+                            icon : 'fa fa-pencil',
+                            className : 'text-info'
+                        }, 'Rename'),
+                        dismissIcon
+                    ]
                     )
-            ])
-        ]);
-    }
-    if (tb.options.iconState.mode === 'addProject') {
-        return m('.row.tb-header-row', [
-            m('#projRow', { config : function () { $('#projRow input').focus(); }}, [
-                m('.col-xs-9', [
-                    m('input#addprojectInput.tb-header-input', { config : function () { applyTypeahead.call(tb);}, type : 'text', placeholder : 'Name of the project to find'}),
-                    m('#add-link-warning.text-warning.p-sm')
-                ]
-                    ),
-                m('.col-xs-3.tb-buttons-col',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            addProjectButton.call(tb),
-                            toolbarDismissIcon.call(tb)
-                        ]
-                        )
+                )
+        ];
+        templates.addProject = [
+            m('.col-xs-9', [
+                m('input#addprojectInput.tb-header-input', {
+                    config : function () {
+                        applyTypeahead.call(ctrl.tb);
+                    },
+                    type : 'text',
+                    placeholder : 'Name of the project to find'
+                }),
+                m('#add-link-warning.text-warning.p-sm')
+            ]
+                ),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                addProjectEvent.call(ctrl.tb);
+                            },
+                            tooltip: 'Add project',
+                            icon : 'fa fa-plus',
+                            className : 'text-info'
+                        }, 'Add'),
+                        dismissIcon
+                    ]
                     )
+                )
+        ];
+        generalButtons.push(
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    ctrl.mode('search');
+                    ctrl.tb.clearMultiselect();
+                },
+                tooltip: 'Filter visible items',
+                icon: 'fa fa-search',
+                className : 'text-primary'
+            }, 'Search'),
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    showLegend.call(ctrl.tb);
+                },
+                tooltip: 'Learn more about how to use the project organizer.',
+                icon: 'fa fa-info',
+                className : 'text-info'
+            }, '')
+        );
+        templates.bar = m('.col-xs-12',m('.pull-right', [rowButtons, generalButtons]));
+        return m('.row.tb-header-row', [
+            m('#headerRow', { config : function () {
+                $('#headerRow input').focus();
+            }}, [
+                templates[ctrl.mode()]
             ])
         ]);
     }
-}
+};
 
 function _poDefineToolbar(item) {
     var tb = this;
