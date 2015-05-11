@@ -141,16 +141,14 @@ var ProjectViewModel = function(data) {
     });
 
     // Add icon to title
-    var icon = '';
+    self.icon = '';
     var category = data.node.category_short;
     if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-        icon = iconmap.componentIcons[category];        
+        self.icon = iconmap.componentIcons[category];        
     }
     else {
-        icon = iconmap.projectIcons[category];
+        self.icon = iconmap.projectIcons[category];
     }
-    icon = $('<span>').addClass(icon);
-    $('#nodeTitleEditable').parent().prepend(icon);
 
     // Editable Title and Description
     if (self.userCanEdit) {
