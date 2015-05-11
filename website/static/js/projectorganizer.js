@@ -14,6 +14,7 @@ require('css/projectorganizer.css');
 var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
+var Fangorn = require('js/fangorn');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
