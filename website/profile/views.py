@@ -25,8 +25,9 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import User
-from website.models import ApiKey
+from website.models import (User,
+                            ApiKey,
+                            ApiApp)
 from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
@@ -355,6 +356,37 @@ def user_notifications(auth, **kwargs):
     return {
         'mailing_lists': auth.user.mailing_lists
     }
+
+@must_be_logged_in
+def oauth_application_config(auth, **kwargs):
+    """Return app creation page with list of known apps"""
+    user_apps = ApiApp.find(Q('owner', 'eq', auth.user))
+    # TODO: Populate the request context with API keys, user info, or other relevant information for developer account authorization.
+    return {
+        "known_apps": user_apps
+    }
+
+@must_be_logged_in
+def oauth_application_register(auth, **kwargs):
+    """Register an API application"""
+    # TODO: Maybe something JSON based would be easier to work with?
+    app_name = request.form['appName']
+    home_url = request.form['appHomeURL']
+    app_desc = request.form['appDesc']
+    app_callback_url = request.form['appCallbackURL']
+
+    owner = auth.user
+
+    new_reg = ApiApp(name=app_name,
+                     home_url=home_url,
+                     callback_url=app_callback_url,
+                     desc=app_desc)
+    new_reg.owner = owner
+
+    new_reg.save()
+
+    # TODO: Tighten up submission view later
+    return redirect(web_url_for('oauth_application_config'))
 
 
 def collect_user_config_js(addons):

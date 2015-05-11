@@ -523,6 +523,21 @@ def make_url_map(app):
             OsfWebRenderer('profile/notifications.mako'),
         ),
 
+        Rule(
+            '/settings/applications',
+            'get',
+            profile_views.oauth_application_config,
+            OsfWebRenderer('profile/oauth_app.mako')
+        ),
+
+        Rule(
+            '/settings/applications/create',
+            'post',
+            # TODO: Why does a post view need a template?
+            profile_views.oauth_application_register,
+            OsfWebRenderer('profile/oauth_app.mako')
+        ),
+
     ])
 
     # API
