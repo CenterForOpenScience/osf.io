@@ -1075,7 +1075,7 @@ var POToolbar = {
     view: function (ctrl) {
         var templates = {};
         var generalButtons = [];
-        var rowButtons = _poDefineToolbar.call(ctrl.tb);
+        var rowButtons = [];
         var dismissIcon = m.component(Fangorn.Components.button, {
             onclick: ctrl.dismissToolbar,
             tooltip: 'Close Search',
@@ -1180,6 +1180,9 @@ var POToolbar = {
                 className : 'text-info'
             }, '')
         );
+        if (ctrl.items().length === 1) {
+            rowButtons = _poDefineToolbar.call(ctrl.tb, ctrl.items()[0]);
+        }
         templates.bar = m('.col-xs-12',m('.pull-right', [rowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#headerRow', { config : function () {
@@ -1237,7 +1240,7 @@ function _poDefineToolbar(item) {
     if (!item.data.isFolder && item.data.parentIsFolder && !item.parent().data.isSmartFolder) {
         buttons.push(
             m.component(Fangorn.Components.button, {
-                onclick: function(event) {
+                onclick: function (event) {
                     url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
                     var deleteAction = $.ajax({
                         type: 'DELETE',
