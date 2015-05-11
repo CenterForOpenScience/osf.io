@@ -148,12 +148,12 @@ class ListFilterMixin(FilterMixin):
     def param_queryset(self, query_params, default_queryset):
         """filters default queryset based on query parameters"""
         fields_dict = query_params_to_fields(query_params)
-        return_val = default_queryset
+        queryset = set(default_queryset)
         if fields_dict:
             for field_name, value in fields_dict.items():
                 if self.is_filterable_field(key=field_name):
-                    return_val = self.get_filtered_queryset(field_name, value, default_queryset)
-        return return_val
+                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, value, default_queryset)))
+        return list(queryset)
 
     def get_filtered_queryset(self, field_name, value, default_queryset):
         """filters default queryset based on the serializer field type"""
