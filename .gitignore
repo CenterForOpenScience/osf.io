@@ -58,7 +58,7 @@ website/static/robots.local.txt
 # OSF-specific
 ##############
 
-api/static/
+api/static/vendor
 
 # Local settings files
 local.py
