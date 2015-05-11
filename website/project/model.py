@@ -1690,14 +1690,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.piwik_site_id = None
 
         registered.save()
-        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
-
         registered.nodes = []
 
         for node_contained in original.nodes:
@@ -1724,6 +1722,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
+        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
         project_signals.after_register_node.send(original, dst=registered, user=auth.user)
         return registered
 
