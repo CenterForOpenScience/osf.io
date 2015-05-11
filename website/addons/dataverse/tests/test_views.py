@@ -12,6 +12,7 @@ from dataverse.exceptions import UnauthorizedError
 from framework.auth.decorators import Auth
 
 from website.util import api_url_for
+from website.addons.dataverse.serializer import DataverseSerializer
 from website.addons.dataverse.tests.utils import (
     create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
@@ -72,56 +73,61 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(first['title'], 'Example (DVN/00001)')
         assert_equal(first['doi'], 'doi:12.3456/DVN/00001')
 
-    @mock.patch('website.addons.dataverse.views.config.client._connect')
-    def test_set_user_config(self, mock_connection):
+    def test_dataverse_get_user_accounts(self):
+        external_account = create_external_account()
+        self.user.external_accounts.append(external_account)
+        self.user.external_accounts.append(create_external_account())
+        self.user.save()
 
+        url = api_url_for('dataverse_get_user_accounts')
+        res = self.app.get(url, auth=self.user.auth)
+        accounts = res.json['accounts']
+
+        assert_equal(len(accounts), 2)
+        serializer = DataverseSerializer(user_settings=self.user_settings)
+        assert_equal(
+            accounts[0], serializer.serialize_account(external_account),
+        )
+
+    def test_dataverse_get_user_accounts_no_accounts(self):
+        url = api_url_for('dataverse_get_user_accounts')
+        res = self.app.get(url, auth=self.user.auth)
+        accounts = res.json['accounts']
+
+        assert_equal(len(accounts), 0)
+
+    @mock.patch('website.addons.dataverse.views.config.client._connect')
+    def test_dataverse_add_external_account(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
+        host = 'myfakehost.data.verse'
+        token = 'api-token-here'
 
-        # Create a user with no settings
-        user = AuthUserFactory()
-        user.add_addon('dataverse')
-        user_settings = user.get_addon('dataverse')
+        url = api_url_for('dataverse_add_external_account')
+        params = {'host': host, 'api_token': token}
+        self.app.post_json(url, params, auth=self.user.auth)
+        self.user.reload()
 
-        url = api_url_for('dataverse_set_user_config')
-        params = {'api_token': 'snowman-frosty'}
-
-        # Post dataverse credentials
-        self.app.post_json(url, params, auth=user.auth)
-        user_settings.reload()
-
-        # User settings have updated correctly
-        assert_equal(user_settings.api_token, 'snowman-frosty')
+        assert_equal(len(self.user.external_accounts), 1)
+        external_account = self.user.external_accounts[0]
+        assert_equal(external_account.provider, 'dataverse')
+        assert_equal(external_account.oauth_key, host)
+        assert_equal(external_account.oauth_secret, token)
 
     @mock.patch('website.addons.dataverse.views.config.client._connect')
-    def test_set_user_config_fail(self, mock_connection):
-
+    def test_dataverse_add_external_account_fail(self, mock_connection):
         mock_connection.side_effect = UnauthorizedError('Bad credentials!')
+        host = 'myfakehost.data.verse'
+        token = 'api-token-here'
 
-        # Create a user with no settings
-        user = AuthUserFactory()
-        user.add_addon('dataverse')
-        user_settings = user.get_addon('dataverse')
+        url = api_url_for('dataverse_add_external_account')
+        params = {'host': host, 'api_token': token}
+        res = self.app.post_json(
+            url, params, auth=self.user.auth, expect_errors=True,
+        )
+        self.user.reload()
 
-        url = api_url_for('dataverse_set_user_config')
-        params = {'api_token': 'wrong-info'}
-
-        # Post incorrect credentials to existing user
-        res = self.app.post_json(url, params, auth=self.user.auth,
-                                 expect_errors=True)
-        self.user_settings.reload()
-
-        # Original user's info has not changed
+        assert_equal(len(self.user.external_accounts), 0)
         assert_equal(res.status_code, http.UNAUTHORIZED)
-        assert_equal(self.user_settings.api_token, 'snowman-frosty')
-
-        # Post incorrect credentials to new user
-        res = self.app.post_json(url, params, auth=user.auth,
-                                 expect_errors=True)
-        user_settings.reload()
-
-        # New user's incorrect credentials were not saved
-        assert_equal(res.status_code, http.UNAUTHORIZED)
-        assert_equal(user_settings.api_token, None)
 
     @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
     def test_set_dataverse_and_dataset(self, mock_connection):
