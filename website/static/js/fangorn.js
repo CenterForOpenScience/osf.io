@@ -1099,20 +1099,17 @@ var FGToolbar = {
         var rowButtons = [];
         var items = ctrl.items();
         var item = items[0];
+        var dismissIcon = m.component(FGButton, {
+                onclick: ctrl.dismissToolbar,
+                tooltip: 'Close Search',
+                icon : 'fa fa-times'
+            }, 'Close');
         templates.search =  [
             m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
                 m('.col-xs-2.tb-buttons-col',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            m.component(FGButton, {
-                                onclick: ctrl.dismissToolbar,
-                                tooltip: 'Close Search',
-                                icon : 'fa fa-times'
-                            }, 'Close'),
-                        ]
-                    )
+                    m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
         templates.createFolder = [
@@ -1134,11 +1131,7 @@ var FGToolbar = {
                             icon : 'fa fa-plus',
                             className : 'text-success'
                         }, 'Create'),
-                        m.component(FGButton, {
-                            onclick: ctrl.dismissToolbar,
-                            tooltip: 'Close Search',
-                            icon : 'fa fa-times'
-                        }, 'Close')
+                        dismissIcon
                     ]
                 )
             )
