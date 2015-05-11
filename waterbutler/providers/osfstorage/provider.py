@@ -154,9 +154,9 @@ class OSFStorageProvider(provider.BaseProvider):
         data = yield from resp.json()
 
         if data['kind'] == 'file':
-            return OsfStorageFileMetadata(data).serialized(), resp.status == 201
+            return OsfStorageFileMetadata(data, str(dest_path)).serialized(), resp.status == 201
 
-        return OsfStorageFolderMetadata(data).serialized(), resp.status == 201
+        return OsfStorageFolderMetadata(data, str(dest_path)).serialized(), resp.status == 201
 
     @asyncio.coroutine
     def make_signed_request(self, method, url, data=None, params=None, ttl=100, **kwargs):
