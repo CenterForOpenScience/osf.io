@@ -1324,6 +1324,34 @@ var FGToolbar = {
             }
 
         }
+        //multiple selection icons
+        if(items.length > 1) {
+            buttons.push(
+                m.component(FGButton, {
+                    onclick: function() {
+                        var configOption = resolveconfigOption.call(ctrl.tb, ctrl.tb.multiselected()[0], 'removeEvent', [event, ctrl.tb.multiselected()]); // jshint ignore:line
+                        if(!configOption){ _removeEvent.call(ctrl.tb, null, ctrl.tb.multiselected()); }
+                    },
+                    tooltip: 'Delete all of the currently selected items.',
+                    icon: 'fa fa-trash',
+                    className : 'text-danger'
+                }, 'Delete Multiple')
+            );
+            if(ctrl.uploadState()){
+                buttons.push(
+                    m.component(FGButton, {
+                        onclick: function() {
+                            console.log('hello');
+                            cancelUploads.call(ctrl.tb);
+                        },
+                        tooltip: 'Cancel currently pending downloads.',
+                        icon: 'fa fa-time-circle',
+                        className : 'text-warning'
+                    }, 'Cancel All Uploads')
+                );
+            }
+        }
+
         templates.bar =  m('.col-xs-12',m('.pull-right', buttons));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
