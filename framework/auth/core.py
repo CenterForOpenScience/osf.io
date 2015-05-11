@@ -7,6 +7,7 @@ import datetime as dt
 
 import bson
 import pytz
+import itsdangerous
 
 from modularodm import fields, Q
 from modularodm.validators import URLValidator
@@ -19,6 +20,7 @@ from framework.sessions import session
 from framework.auth import exceptions, utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
+from framework.sessions.model import Session
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -428,6 +430,55 @@ class User(GuidStoredObject, AddonModelMixin):
         user.date_confirmed = user.date_registered
         return user
 
+    @classmethod
+    def from_cookie(cls, cookie, secret=None):
+        """Attempt to load a user from their signed cookie
+        :returns: None if a user cannot be loaded else User
+        """
+        if not cookie:
+            return None
+
+        secret = secret or settings.SECRET_KEY
+
+        try:
+            token = itsdangerous.Signer(secret).unsign(cookie)
+        except itsdangerous.BadSignature:
+            return None
+
+        user_session = Session.load(token)
+
+        if user_session is None:
+            return None
+
+        return cls.load(user_session.data.get('auth_user_id'))
+
+    def get_or_create_cookie(self, secret=None):
+        """Find the cookie for the given user
+        Create a new session if no cookie is found
+
+        :param str secret: The key to sign the cookie with
+        :returns: The signed cookie
+        """
+        secret = secret or settings.SECRET_KEY
+        sessions = Session.find(
+            Q('data.auth_user_id', 'eq', self._id)
+        ).sort(
+            '-date_modified'
+        ).limit(1)
+
+        if sessions.count() > 0:
+            user_session = sessions[0]
+        else:
+            user_session = Session(data={
+                'auth_user_id': self._id,
+                'auth_user_username': self.username,
+                'auth_user_fullname': self.fullname,
+            })
+            user_session.save()
+
+        signer = itsdangerous.Signer(secret)
+        return signer.sign(user_session._id)
+
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
         """
@@ -716,13 +767,24 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return record['token'] == token
 
-    def confirm_email(self, token):
+    def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self._get_unconfirmed_email_for_token(token)
 
         # If this email is confirmed on another account, abort
-        if User.find(Q('emails', 'iexact', email)).count() > 0:
-            raise exceptions.DuplicateEmailError()
+        try:
+            user_to_merge = User.find_one(Q('emails', 'iexact', email))
+        except NoResultsFound:
+            user_to_merge = None
+
+        if user_to_merge and merge:
+            self.merge_user(user_to_merge)
+        elif user_to_merge:
+            raise exceptions.MergeConfirmedRequiredError(
+                'Merge requires confirmation',
+                user=self,
+                user_to_merge=user_to_merge,
+            )
 
         # If another user has this email as its username, get it
         try:
@@ -736,7 +798,9 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
             unregistered_user.username = None
 
-        self.emails.append(email)
+        if email not in self.emails:
+            self.emails.append(email)
+
         # Complete registration if primary email
         if email.lower() == self.username.lower():
             self.register(self.username)
@@ -1000,10 +1064,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return (
-            self.is_confirmed is False and
-            self.get_addons() == []
-        )
+        return all((addon.can_be_merged for addon in self.get_addons()))
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
@@ -1011,15 +1072,16 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :param user: A User object to be merged.
         """
-
+        # Fail if the other user has conflicts.
+        if not user.can_be_merged:
+            raise exceptions.MergeConflictError("Users cannot be merged")
         # Move over the other user's attributes
-
         # TODO: confirm
         for system_tag in user.system_tags:
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
 
-        self.aka = list(set(self.aka + user.aka))
+        [self.aka.append(each) for each in user.aka if each not in self.aka]
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
@@ -1046,11 +1108,23 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = self.mailing_lists.get(key, value)
+            self.mailing_lists[key] = value or self.mailing_lists.get(key)
         # - clear subscriptions for merged user
         user.mailing_lists = {}
 
+        for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(node_id):
+                self.comments_viewed_timestamp[node_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[node_id]:
+                self.comments_viewed_timestamp[node_id] = timestamp
+
         self.emails.extend(user.emails)
+
+        for k, v in user.email_verifications.iteritems():
+            email_to_confirm = v['email']
+            if k not in self.email_verifications and email_to_confirm != user.username:
+                self.email_verifications[k] = v
+        user.email_verifications = {}
 
         # FOREIGN FIELDS
         for watched in user.watched:
@@ -1063,7 +1137,8 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.external_accounts.append(account)
         user.external_accounts = []
 
-        self.api_keys += user.api_keys
+        for api_key in user.api_keys:
+            self.api_keys.append(api_key)
         user.api_keys = []
 
         # - projects where the user was a contributor
@@ -1094,13 +1169,18 @@ class User(GuidStoredObject, AddonModelMixin):
             node.creator = self
             node.save()
 
+        # - addons
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
+
         # finalize the merge
 
         # - username is set to None so the resultant user can set it primary
         #   in the future.
         user.username = None
         user.password = None
-        user.email_verifications = {}
         user.verification_key = None
         user.merged_by = self
 

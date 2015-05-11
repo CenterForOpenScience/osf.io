@@ -10,9 +10,11 @@ var Paginator = require('js/paginator');
 var oop = require('js/oop');
 require('knockout.punches');
 
-var $osf = require('./osfHelpers');
+var $osf = require('js/osfHelpers');  // Injects 'listing' binding hanlder to to Knockout
+var nodeCategories = require('json!built/nodeCategories.json');
 
 ko.punches.enableAll();  // Enable knockout punches
+
 /**
   * Log model.
   */
@@ -42,6 +44,14 @@ var Log = function(params) {
         return $('script#' + self.action).length > 0;
     });
 
+    self.mapUpdates = function(key, item) {
+        if (key === 'category') {
+            return key + ' to ' + nodeCategories[item['new']];
+        }
+        else {
+            return key + ' to ' + item;
+        }
+    };
 
     /**
       * Return the html for a comma-delimited list of contributor links, formatted
@@ -136,21 +146,22 @@ var LogsViewModel = oop.extend(Paginator, {
 var createLogs = function(logData){
     var mappedLogs = $.map(logData, function(item) {
         return new Log({
-            'anonymous': item.anonymous,
-            'action': item.action,
-            'date': item.date,
+            anonymous: item.anonymous,
+            action: item.action,
+            date: item.date,
             // The node type, either 'project' or 'component'
             // NOTE: This is NOT the component category (e.g. 'hypothesis')
-            'nodeType': item.node.is_registration ? 'registration': item.node.node_type,
-            'nodeCategory': item.node.category,
-            'contributors': item.contributors,
-            'nodeUrl': item.node.url,
-            'userFullName': item.user.fullname,
-            'userURL': item.user.url,
-            'apiKey': item.api_key,
-            'params': item.params,
-            'nodeTitle': item.node.title,
-            'nodeDescription': item.params.description_new
+            nodeType: item.node.is_registration ? 'registration': item.node.node_type,
+            nodeCategory: item.node.category,
+            contributors: item.contributors,
+            nodeUrl: item.node.url,
+            userFullName: item.user.fullname,
+            userURL: item.user.url,
+            apiKey: item.api_key,
+            params: item.params,
+            nodeTitle: item.node.title,
+            nodeDescription: item.params.description_new,
+            nodePath: item.node.path
         });
     });
     return mappedLogs;

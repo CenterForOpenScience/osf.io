@@ -15,7 +15,7 @@ from website import settings
 from website.app import init_app
 from website.models import User, Node, PrivateLink
 from website.addons.dropbox.model import DropboxUserSettings
-from website.addons.osfstorage.model import OsfStorageFileRecord
+from website.addons.osfstorage.model import OsfStorageFileNode
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
 
@@ -96,8 +96,8 @@ def count_at_least(counts, at_least):
 
 def count_file_downloads():
     downloads_unique, downloads_total = 0, 0
-    for record in OsfStorageFileRecord.find():
-        page = ':'.join(['download', record.node._id, record.path])
+    for record in OsfStorageFileNode.find():
+        page = ':'.join(['download', record.node._id, record._id])
         unique, total = get_basic_counters(page)
         downloads_unique += unique or 0
         downloads_total += total or 0
