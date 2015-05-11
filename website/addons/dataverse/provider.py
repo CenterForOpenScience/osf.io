@@ -50,7 +50,7 @@ class DataverseProvider(object):
 
         result = self.serializer(
             node_settings=node_addon,
-            user_settings=user.get_addon(self.provider_name),
+            user_settings=user.get_addon('dataverse'),
         ).serialized_node_settings
         return {'result': result}
 
