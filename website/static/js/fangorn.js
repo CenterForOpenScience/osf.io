@@ -1157,13 +1157,13 @@ var FGButton = {
         var tooltipText = args.tooltip || '';
         var iconCSS = args.icon;
         return m('div', {
-            className: 'fangorn-toolbar-icon' + extraCSS,
+            className: 'fangorn-toolbar-icon ' + extraCSS,
             onclick: ctrl.onclick,
             'data-toggle': tooltipText ? 'tooltip' : '',
             'data-placement' : 'bottom',
             'title':  tooltipText}, [
             m('i', {className: iconCSS}),
-            m('span.hidden-sx', children)
+            m('span.hidden-xs', children)
         ]);
     }
 }
@@ -1210,6 +1210,8 @@ var FGToolbar = {
     view : function(ctrl) {
         var templates = {};
         var buttons = [];
+        var items = ctrl.items();
+        var item = items[0];
         templates.search =  [
             m('.col-xs-9', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
@@ -1260,10 +1262,8 @@ var FGToolbar = {
             }, 'Search')
         );
         // Which buttons should show?
-        if(ctrl.items().length === 1){
-            var item = ctrl.items()[0];
+        if(items.length === 1){
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
-
                 buttons.push(
                     m.component(FGButton, {
                         onclick: function() {_uploadEvent.call(ctrl.tb, event, item); },
@@ -1275,7 +1275,7 @@ var FGToolbar = {
                     tooltip: 'Create a new folder inside curently selected folder.',
                     icon: 'fa fa-folder'
                 }, 'Create Folder'));
-                if(ctrl.items()[0].data.path){
+                if(item.data.path){
                     buttons.push(
                         m.component(FGButton, {
                             onclick: function() {_removeEvent.call(ctrl.tb, event, [item]); },
@@ -1284,7 +1284,24 @@ var FGToolbar = {
                         }, 'Delete Folder'));
                 }
             }
+            if (item.kind === 'file'){
+                buttons.push(
+                    m.component(FGButton, {
+                        onclick: function() { _downloadEvent.call(ctrl.tb, event, [item]); },
+                        tooltip: 'Download this file to your computer.',
+                        icon: 'fa fa-download'
+                    }, 'Download'));
+            }
+            if (item.data.permissions && item.data.permissions.edit) {
+                buttons.push(
+                    m.component(FGButton, {
+                        onclick: function() { _removeEvent.call(ctrl.tb, event, [item]); },
+                        tooltip: 'Permanently delete this file.',
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete'));
 
+            }
 
         }
         templates.bar =  m('.col-xs-12',m('.pull-right', buttons));
