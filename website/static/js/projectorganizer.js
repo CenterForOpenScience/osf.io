@@ -255,8 +255,7 @@ function _poResolveRows(item) {
     if (draggable) {
         css = 'po-draggable';
     }
-    // define the toolbar icons for this item
-    _poDefineToolbar.call(this, item);
+
 
     item.css = '';
     default_columns = [{
@@ -1420,17 +1419,7 @@ var tbOptions = {
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    headerTemplate : _poToolbar,
-    // Not treebeard options, specific to Fangorn
-    iconState : {
-        mode : 'bar',
-        generalIcons : {
-            search : { on : true, template : searchButton },
-            info : { on : true, template : infoIcon }
-        },
-        rowIcons : [{}]
-    },
-    defineToolbar : _poDefineToolbar,
+    toolbarComponent : POToolbar,
     onselectrow : function (row) {
         console.log(row);
     }
