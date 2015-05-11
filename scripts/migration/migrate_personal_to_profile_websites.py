@@ -14,14 +14,7 @@ from scripts import utils as scripts_utils
 
 logger = logging.getLogger(__name__)
 
-
-#def main(dry=True):
-#    init_app(set_backends=True, routes=False, mfr=False)  # Sets the storage backends on all models
-#    do_migration(get_targets(), dry=dry)
-
-    
 def main():
-    # Set up storage backends
     init_app(routes=False)
     dry_run = 'dry' in sys.argv
     if not dry_run:

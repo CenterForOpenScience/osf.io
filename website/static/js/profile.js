@@ -482,12 +482,6 @@ var SocialViewModel = function(urls, modes) {
     TrackedMixin.call(self);
     self.addons = ko.observableArray();
 
-    self.canEditWebsite = ko.observable(false);
-
-    self.editWebsiteButton =  function(){
-        self.canEditWebsite(!self.canEditWebsite());
-    };
-
     self.profileWebsites = ko.observableArray();
                 
     self.hasProfileWebsites = ko.computed(function() {
@@ -569,18 +563,7 @@ var SocialViewModel = function(urls, modes) {
             {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()}
         ];
     });
-        
-    self.profileWebsiteEmpty = ko.computed(function() {
-        if (self.profileWebsites()) {
-            for (var i=0; i < self.profileWebsites().length; i++) {
-                if (ko.toJS(self.profileWebsites()[i]) === '') {
-                    return true;
-                }
-            }
-        }
-        return false;
-    });
-    
+
     self.hasValues = ko.computed(function() {
         var values = self.values();
         if (self.hasProfileWebsites()) {
