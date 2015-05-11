@@ -69,8 +69,6 @@ class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
     dataverse_username = fields.StringField()
     encrypted_password = fields.StringField()
 
-    # TODO: Verify auth?
-
 
 class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
 
@@ -114,16 +112,29 @@ class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
         file_id = path.strip('/') if path else ''
         return DataverseFile.get_or_create(node=self.owner, file_id=file_id)
 
-    def deauthorize(self, auth, add_log=True):
-        """Remove user authorization from this node and log the event."""
+    def delete(self, save=True):
+        self.deauthorize(add_log=False)
+        super(AddonDataverseNodeSettings, self).delete(save)
+
+    def set_auth(self, *args, **kwargs):
+        self.clear_settings()
+        return super(AddonDataverseNodeSettings, self).set_auth(*args, **kwargs)
+
+    def clear_settings(self):
+        """Clear selected Dataverse and dataset"""
         self.dataverse_alias = None
         self.dataverse = None
         self.dataset_doi = None
         self.dataset_id = None
         self.dataset = None
+
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        self.clear_settings()
         self.clear_auth()  # Also performs a save
 
-        if add_log:
+        # Log can't be added without auth
+        if add_log and auth:
             node = self.owner
             self.owner.add_log(
                 action='dataverse_node_deauthorized',
