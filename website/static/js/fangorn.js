@@ -100,7 +100,7 @@ function cancelUploads (row) {
             }
         }
     }
-    tb.options.fgIconState.generalIcons.cancelUploads.on = false;
+    tb.options.uploadState(false);
 }
 
 var cancelUploadTemplate = function(row){
@@ -324,9 +324,9 @@ function _fangornSending(treebeard, file, xhr, formData) {
     };
     var filesArr = treebeard.dropzone.getQueuedFiles();
     if (filesArr.length  > 0) {
-        treebeard.options.fgIconState.generalIcons.cancelUploads.on = true;
+        treebeard.options.uploadState(true);
     } else {
-        treebeard.options.fgIconState.generalIcons.cancelUploads.on = false;
+        treebeard.options.uploadState(false);
     }
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
     return configOption || null;
@@ -1203,6 +1203,7 @@ var FGToolbar = {
         self.tb = args.treebeard;
         self.items = args.treebeard.multiselected;
         self.mode = m.prop('bar');
+        self.uploadState = args.treebeard.options.uploadState;
         self.helpText = m.prop('');
         self.dismissToolbar = function(){ self.mode('bar');}
         self.createFolder = function(event){ _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText ); }
@@ -1985,6 +1986,7 @@ tbOptions = {
     },
     toolbarComponent : FGToolbar,
     // Not treebeard options, specific to Fangorn
+    uploadState : m.prop(false),
     fgIconState  : _defaultIconState(),
     defineToolbar : _fangornDefineToolbar,
     onselectrow : function(row) {
