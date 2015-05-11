@@ -224,8 +224,7 @@ function resolveconfigOption(item, option, args) {
  */
 var inheritedFields = ['nodeId', 'nodeUrl', 'nodeApiUrl', 'permissions', 'provider', 'accept'];
 function inheritFromParent(item, parent, fields) {
-    fields = fields || inheritedFields;
-    fields.forEach(function(field) {
+    inheritedFields.concat(fields || []).forEach(function(field) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 }
@@ -372,8 +371,13 @@ function doItemOp(isMove, to, from, rename, conflict) {
 
         tb.redraw();
     }).fail(function() {
-        from.move(ogParent);
-        from.data.status = undefined;
+        if (isMove) {
+            from.move(ogParent);
+            from.data.status = undefined;
+        } else {
+            from.removeSelf();
+        }
+
         $osf.growl('Error', (isMove ? 'Move' : 'Copy') + ' failed.');
 
         tb.redraw();
@@ -640,7 +644,7 @@ function _fangornDropzoneError(treebeard, file, message) {
         }
     }
     $osf.growl('Error', msgText);
-    treebeardParent.options.uploadInProgress = false;
+    treebeard.options.uploadInProgress = false;
 }
 
 /**
@@ -699,14 +703,19 @@ function _createFolder(event) {
         return;
     }
 
+    var extra = {};
     var path = (parent.data.path || '/') + val + '/';
+
+    if (parent.data.provider === 'github') {
+        extra.branch = parent.data.branch;
+    }
 
     m.request({
         method: 'POST',
         background: true,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, extra)
     }).then(function(item) {
-        inheritFromParent({data: item}, parent);
+        inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
         _fangornOrderFolder.call(tb, parent);
         item.notify.update('New folder created!', 'success', undefined, 1000);
@@ -1700,6 +1709,10 @@ function _dragLogic(event, items, ui) {
         isSelf = false,
         isParent  = false,
         dragGhost = $('.tb-drag-ghost');
+
+    if (folder.data.status) {
+        copyMode = 'forbidden';
+    }
 
     if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) != -1) {
         copyMode = 'forbidden';
