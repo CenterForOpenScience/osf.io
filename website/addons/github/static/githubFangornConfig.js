@@ -146,10 +146,12 @@ function _githubDefineToolbar(item) {
                     className : 'text-success'
                 }, 'Upload'),
                 m.component(Fangorn.Components.button, {
-                    onclick: function(event) {tb.toolbarMode('createFolder'); },
+                    onclick: function(event) {
+                        tb.toolbarMode('createFolder');
+                    },
                     tooltip: 'Create a new folder.',
                     icon: 'fa fa-plus',
-                    className : 'text-success'
+                    className : 'text-primary'
                 }, 'Create Folder')
 
             );
