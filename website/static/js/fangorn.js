@@ -944,6 +944,9 @@ function expandStateLoad(item) {
  */
 function setCurrentFileID(tree, nodeID, file) {
     var tb = this;
+    if(!file){
+        return;
+    }
     if (file.provider === 'figshare') {
         for (var i = 0; i < tree.children.length; i++) {
             var child = tree.children[i];
