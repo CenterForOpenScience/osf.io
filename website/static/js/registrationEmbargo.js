@@ -2,6 +2,8 @@ var ko = require('knockout');
 
 var RegistrationEmbargoViewModel = function() {
 
+    var MAKE_PUBLIC = 'Make registration public immediately';
+    var MAKE_EMBARGO = 'Enter registration into embargo';
     var self = this;
 
     var today = new Date();
@@ -13,10 +15,10 @@ var RegistrationEmbargoViewModel = function() {
     self.yearChoice = ko.observable();
 
     self.registrationOptions = ko.observableArray([
-        'Make registration public immediately',
-        'Enter registration into embargo'
+        MAKE_PUBLIC,
+        MAKE_EMBARGO
     ]);
-    self.registrationChoice = ko.observable(self.registrationOptions()[0]);
+    self.registrationChoice = ko.observable(MAKE_PUBLIC);
 
     self.dayOptions = ko.computed(function() {
         var num_of_days;
@@ -52,7 +54,7 @@ var RegistrationEmbargoViewModel = function() {
     });
     self.showEmbargoDatePicker = ko.observable(false);
     self.checkShowEmbargoDatePicker = function() {
-        if (self.registrationChoice()[0] === 'Enter registration into embargo') {
+        if (self.registrationChoice()[0] === MAKE_EMBARGO) {
             self.showEmbargoDatePicker(true);
         } else {
             self.showEmbargoDatePicker(false);
@@ -72,7 +74,7 @@ var RegistrationEmbargoViewModel = function() {
     });
     self.requestingEmbargo = ko.computed(function() {
         var choice = self.registrationChoice();
-        if (choice) { return choice[0] === 'Enter registration into embargo'; }
+        if (choice) { return choice[0] === MAKE_EMBARGO; }
     });
 };
 
