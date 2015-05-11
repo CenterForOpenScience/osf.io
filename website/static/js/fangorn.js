@@ -1317,7 +1317,7 @@ function _openParentFolders (item) {
     var scrollToItem = false;
     var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'search') {
-        _dismissToolbar(tb);
+        _dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         _openParentFolders.call(tb, row);
@@ -1538,7 +1538,7 @@ tbOptions = {
                 return;
             }
             tb.clearMultiselect();
-            _dismissToolbar(tb);
+            _dismissToolbar.call(tb);
         })
 
         $(window).on('beforeunload', function() {
@@ -1554,7 +1554,7 @@ tbOptions = {
         }
         $(window).on('keydown', function(event){
             if (event.keyCode === ESCAPE_KEY) {
-                _dismissToolbar(tb);
+                _dismissToolbar.call(tb);
             }
         });
         $(document).on('keypress', '#createFolderInput', function () {
