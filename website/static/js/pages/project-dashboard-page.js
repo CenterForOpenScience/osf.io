@@ -81,7 +81,6 @@ $(document).ready(function() {
                     filter: true,
                     custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }];
-                this.options.defineToolbar.call(this,item);
                 if (item.parentID) {
                     item.data.permissions = item.data.permissions || item.parent().data.permissions;
                     if (item.data.kind === 'folder') {
