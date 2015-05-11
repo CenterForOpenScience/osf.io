@@ -103,6 +103,10 @@ var RevisionsViewModel = function(node, file, editable) {
             self.revisions()[0].extra &&
             self.revisions()[0].extra.user;
     });
+
+    self.hasDate = ko.computed(function() {
+        return self.file.provider !== 'dataverse';
+    });
 };
 
 RevisionsViewModel.prototype.fetch = function() {
@@ -133,11 +137,7 @@ RevisionsViewModel.prototype.fetch = function() {
             self.currentVersion(self.revisions()[0]);
         }
 
-        // Use tableResize to make table rows size correctly when there is a scrollbar
-        // for versions. We skip this step for Dataverse, which doesn't have file versions
-        if (self.file.provider !== 'dataverse') {
-            $osf.tableResize('#fileRevisions', 4);
-        }
+        $osf.tableResize('#fileRevisions', 4);
     });
 
     request.fail(function(response) {

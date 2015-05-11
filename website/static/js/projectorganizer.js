@@ -55,7 +55,7 @@ projectOrganizer.publicProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -79,7 +79,7 @@ projectOrganizer.myProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -420,6 +420,10 @@ function expandStateLoad(item) {
     if (item.children.length === 0 && item.data.childrenCount > 0){
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
+    }
+
+    if (item.data.isPointer && !item.data.parentIsFolder) {
+        item.data.expand = false;
     }
     if (item.children.length > 0 && item.depth > 0) {
         for (i = 0; i < item.children.length; i++) {

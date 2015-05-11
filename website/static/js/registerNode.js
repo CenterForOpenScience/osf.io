@@ -10,13 +10,13 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
     if (parentUrl) {
         return 'You are about to register the ' + category + ' <b>' + title +
             '</b> and everything that is inside it. This will <b>not</b> register' +
-            ' its parent, "' + parentTitle + '".' +
+            ' its parent, <b>' + parentTitle + '</b>.' +
             ' If you want to register the parent, please go <a href="' +
             parentUrl + '">here.</a>';
     } else {
         return 'You are about to register <b>' + title +
             '</b> and everything that is inside it. If you would prefer to register ' +
-            'just a particular component within "' + title + '", please ' +
+            'a particular component, please ' +
             'navigate to that component and then initiate registration.';
     }
 };

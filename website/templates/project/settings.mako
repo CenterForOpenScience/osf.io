@@ -50,7 +50,6 @@
                     <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                 </div>
                 <div id="nodeCategorySettings" class="panel-body">
-                  <div data-bind="css: {disabled: disabled}">
                   <h5>
                     Category: <select data-bind="attr.disabled: disabled,
                                                  options: categories,
@@ -58,16 +57,15 @@
                                                  optionsText: 'label',
                                                  value: selectedCategory"></select>
                   </h5>
-                  <p>
-                    <button data-bind="css: {disabled: !dirty()}, 
-                                       click: updateCategory" 
+                  <p data-bind="if: !disabled">
+                    <button data-bind="css: {disabled: !dirty()},
+                                       click: updateCategory"
                             class="btn btn-primary">Change</button>
                     <button data-bind="css: {disabled: !dirty()},
                                        click: cancelUpdateCategory"
-                            class="btn btn-default">Cancel</button>                
+                            class="btn btn-default">Cancel</button>
                   </p>
                   <span data-bind="css: messageClass, html: message"></span>
-                  </div>
                   <span data-bind="if: disabled" class="help-block">
                     A top-level project's category cannot be changed
                   </span>

@@ -16,7 +16,7 @@ deleted
 
 <script type="text/html" id="created_from">
 created 
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another </a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another</a>
 </script>
 
 <script type="text/html" id="node_created">
@@ -95,8 +95,11 @@ edited description of  <a class="log-node-title-link" data-bind="attr: {href: no
 </script>
 
 <script type="text/html" id="updated_fields">
-updated the <span data-bind="listing: params.updated_fields"></span> of 
-<a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+  changed the <span data-bind="listing: {
+                                 data: params.updated_fields,
+                                 map: mapUpdates
+                               }"></span> for
+  <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="pointer_created">
