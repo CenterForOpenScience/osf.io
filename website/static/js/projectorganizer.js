@@ -1293,10 +1293,10 @@ function _poDefineToolbar(item) {
                 onclick: function (event) {
                     _deleteFolder.call(tb, item, theItem);
                 },
-                tooltip: 'Deletes a collection.',
+                tooltip: 'Deletes the collection.',
                 icon : 'fa fa-trash',
                 className : 'text-danger'
-            }, 'Delete a Collection')
+            }, 'Delete')
         );
     }
     return buttons;

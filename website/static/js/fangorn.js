@@ -1003,7 +1003,7 @@ var FGButton = {
     },
     view: function(ctrl, args, children) {
         var extraCSS = args.className || '';
-        var tooltipText = args.tooltip || '';
+        var tooltipText = args.tooltip;
         var iconCSS = args.icon;
         return m('div', {
             className: 'fangorn-toolbar-icon ' + extraCSS,
@@ -1033,7 +1033,7 @@ var FGInput = {
                 className: 'tb-header-input' + extraCSS,
                 onclick: args.onclick,
                 onkeydown: args.onkeydown,
-                'data-toggle': tooltipText,
+                'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,
                 'data-placement' : 'bottom',
                 'placeholder' : placeholder
@@ -1063,7 +1063,7 @@ var FGDropdown = {
                     'name' : name,
                     'id' : id,
                     onchange: args.onchange,
-                    'data-toggle': tooltipText,
+                    'data-toggle':  tooltipText ? 'tooltip' : '',
                     'title':  tooltipText,
                     'data-placement' : 'bottom'
                 },children)
