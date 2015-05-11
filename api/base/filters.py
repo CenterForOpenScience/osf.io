@@ -162,10 +162,10 @@ class ListFilterMixin(FilterMixin):
         if isinstance(field, ser.SerializerMethodField):
             return_val = [item for item in default_queryset if self.get_serializer_method(field_name)(item) == self.convert_value(value)]
         elif isinstance(field, ser.BooleanField):
-            return_val = [item for item in default_queryset if item.get(field_name, None) == value]
+            return_val = [item for item in default_queryset if getattr(item, field_name, None) == value]
         else:
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
-            return_val = [item for item in default_queryset if value in item.get(field_name, None)]
+            return_val = [item for item in default_queryset if value in getattr(item, field_name, None)]
 
         return return_val
 
