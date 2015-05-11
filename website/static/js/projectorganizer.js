@@ -1116,7 +1116,7 @@ var POToolbar = {
                 )
         ];
         templates.rename = [
-            m('.col-xs-9', m('input#renameInput.tb-header-input', { value : tb.multiselected()[0].data.name })),
+            m('.col-xs-9', m('input#renameInput.tb-header-input', { value : ctrl.items()[0] ? ctrl.items()[0].data.name : '' })),
             m('.col-xs-3.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
                     [
