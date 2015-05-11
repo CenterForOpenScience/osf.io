@@ -1212,13 +1212,7 @@ var FGToolbar = {
         var buttons = [];
         templates.search =  [
             m('.col-xs-9', [
-                    m.component(FGInput, {
-                        onkeydown: function(event){ console.log('Key down', event) },
-                        id : 'searchInput',
-                        helpTextId : 'searchHelp',
-                        placeholder : 'Search',
-                        tooltip: 'Enter your search term here'
-                    })
+                ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
                 m('.col-xs-3.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right',
