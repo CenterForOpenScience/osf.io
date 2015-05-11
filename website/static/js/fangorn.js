@@ -1251,7 +1251,7 @@ var FGToolbar = {
 
         var finalRowButtons = resolveconfigOption.call(ctrl.tb, item, 'defineToolbar', [item]) || rowButtons; // jshint ignore:line
 
-        templates.bar =  m('.col-xs-12',m('.pull-right', [generalButtons, finalRowButtons]));
+        templates.bar =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
