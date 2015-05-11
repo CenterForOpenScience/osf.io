@@ -152,18 +152,15 @@ class ListFilterMixin(FilterMixin):
         if fields_dict:
             for field_name, value in fields_dict.items():
                 if self.is_filterable_field(key=field_name):
-                    return_val = self.get_serializer_field_value(field_name, value, default_queryset)
+                    return_val = self.get_filtered_queryset(field_name, value, default_queryset)
         return return_val
 
-    def get_serializer_field_value(self, field_name, value, default_queryset):
-        serializer = self.get_serializer()
+    def get_filtered_queryset(self, field_name, value, default_queryset):
+        """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
-        serializer_function = {
-            'bibliographic': serializer.get_bibliographic
-        }
 
         if isinstance(field, ser.SerializerMethodField):
-            return_val = [item for item in default_queryset if serializer_function[field_name](item) == self.convert_value(value)]
+            return_val = [item for item in default_queryset if self.get_serializer_method(field_name)(item) == self.convert_value(value)]
         elif isinstance(field, ser.BooleanField):
             return_val = [item for item in default_queryset if item.get(field_name, None) == value]
         else:
@@ -171,3 +168,12 @@ class ListFilterMixin(FilterMixin):
             return_val = [item for item in default_queryset if value in item.get(field_name, None)]
 
         return return_val
+
+    def get_serializer_method(self, field_name):
+        """
+        :param field_name: The name of a SerializerMethodField
+        :return: The function attached to the SerializerMethodField to get its value
+        """
+        serializer = self.get_serializer()
+        serializer_method_name = 'get_' + field_name
+        return getattr(serializer, serializer_method_name)
