@@ -1,7 +1,13 @@
+import copy
 import asyncio
+from unittest import mock
 
 from waterbutler.core import provider
 from waterbutler.core.path import WaterButlerPath
+
+
+MockCoroutine = copy.copy(mock.Mock)
+MockCoroutine.__call__ = asyncio.coroutine(MockCoroutine.__call__)
 
 
 class MockProvider1(provider.BaseProvider):
