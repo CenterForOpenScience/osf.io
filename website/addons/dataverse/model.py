@@ -52,6 +52,16 @@ class DataverseProvider(object):
         except PermissionsError:
             raise HTTPError(http.FORBIDDEN)
 
+        node = node_addon.owner
+        node.add_log(
+            action='dataverse_node_authorized',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+            },
+            auth=Auth(user=user),
+        )
+
         result = self.serializer(
             node_settings=node_addon,
             user_settings=user.get_addon(self.provider_name),
@@ -60,7 +70,7 @@ class DataverseProvider(object):
 
     def remove_user_auth(self, node_addon, user):
 
-        node_addon.clear_auth()
+        node_addon.deauthorize(Auth(user=user))
         node_addon.reload()
         result = self.serializer(
             node_settings=node_addon,
@@ -168,14 +178,14 @@ class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
         file_id = path.strip('/') if path else ''
         return DataverseFile.get_or_create(node=self.owner, file_id=file_id)
 
-    def deauthorize(self, auth=None, add_log=True):
+    def deauthorize(self, auth, add_log=True):
         """Remove user authorization from this node and log the event."""
         self.dataverse_alias = None
         self.dataverse = None
         self.dataset_doi = None
         self.dataset_id = None
         self.dataset = None
-        self.user_settings = None
+        self.clear_auth()  # Also performs a save
 
         if add_log:
             node = self.owner
