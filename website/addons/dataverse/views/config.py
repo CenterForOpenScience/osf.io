@@ -46,7 +46,7 @@ def dataverse_add_external_account(auth, **kwargs):
             display_name=host,       # no username; show host
             oauth_key=host,          # hijacked; now host
             oauth_secret=api_token,  # hijacked; now api_token
-            provider_id=api_token,   # THIS IS BAD
+            provider_id=api_token,   # Change to username if Dataverse allows
         )
         provider.account.save()
     except KeyExistsException:
