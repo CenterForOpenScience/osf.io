@@ -460,17 +460,12 @@ function _poMultiselect(event, tree) {
         selectedRows = filterRowsNotInParent.call(tb, tb.multiselected()),
         someItemsAreFolders,
         pointerIds;
-    _toolbarDismissEvent.call(tb);
-    tb.options.iconState.rowIcons = [];
+    Fangorn.dismissToolbar.call(tb);
     if (!tb.filterOn) {
-        tb.options.iconState.mode = 'bar';
+        tb.toolbarMode('bar');
     }
     if (tb.multiselected().length === 1) {
-        // empty row icons and assign row icons from item information
-        tb.options.iconState.rowIcons = tree.icons;
-        //tb.options.iconState.title = tree.data.name;
-
-        // temporarily remove classes until mithril redraws raws with another hover. 
+        // temporarily remove classes until mithril redraws raws with another hover.
         tb.select('#tb-tbody').removeClass('unselectable');
     } else {
         tb.select('#tb-tbody').addClass('unselectable');
@@ -860,7 +855,7 @@ function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.options.iconState.mode = 'bar';
+        tb.toolbarMode('bar');
         return;
     }
     var item = tb.multiselected()[0];
@@ -879,26 +874,14 @@ function _addFolderEvent() {
         }).fail($osf.handleJSONError);
 
     });
-    tb.options.iconState.mode = 'bar';
-}
-
-function addFolderButton() {
-    var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', {
-        onclick : function () {
-            _addFolderEvent.call(tb);
-        }
-    }, [
-        m('i.fa.fa-plus'),
-        m('span.hidden-xs', 'Add')
-    ]);
+    tb.toolbarMode('bar');
 }
 
 function _renameEvent() {
     var tb = this;
     var val = $.trim($('#renameInput').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.options.iconState.mode = 'bar';
+        tb.toolbarMode('bar');
         return;
     }
     var item = tb.multiselected()[0];
@@ -914,19 +897,7 @@ function _renameEvent() {
         tb.updateFolder(null, tb.find(1));
         // Also update every
     }).fail($osf.handleJSONError);
-    tb.options.iconState.mode = 'bar';
-}
-
-function renameButton() {
-    var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', {
-        onclick : function () {
-            _renameEvent.call(tb);
-        }
-    }, [
-        m('i.fa.fa-pencil'),
-        m('span.hidden-xs', 'Rename')
-    ]);
+    tb.toolbarMode('bar');
 }
 
 function applyTypeahead() {
