@@ -137,7 +137,12 @@ class DropboxProvider(provider.BaseProvider):
             throws=exceptions.DownloadError,
         )
 
-        return streams.ResponseStreamReader(resp, size=json.loads(resp.headers['X-DROPBOX-METADATA'])['bytes'])
+        if 'Content-Length' not in resp.headers:
+            size = json.loads(resp.headers['X-DROPBOX-METADATA'])['bytes']
+        else:
+            size = None
+
+        return streams.ResponseStreamReader(resp, size=size)
 
     @asyncio.coroutine
     def upload(self, stream, path, conflict='replace', **kwargs):
