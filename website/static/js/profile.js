@@ -483,7 +483,7 @@ var SocialViewModel = function(urls, modes) {
     self.addons = ko.observableArray();
 
     self.profileWebsites = ko.observableArray();
-                
+
     self.hasProfileWebsites = ko.computed(function() {
         if (self.profileWebsites()) {
             for (var i=0; i<self.profileWebsites().length; i++) {
@@ -494,7 +494,7 @@ var SocialViewModel = function(urls, modes) {
         }
         return false;
     });
-    
+
     self.canRemove = ko.computed(function () {
         if (self.profileWebsites()) {
             return self.profileWebsites().length > 1;
