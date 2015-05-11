@@ -39,8 +39,8 @@ var linkID;
 var commandKeys = [224, 17, 91, 93];
 
 var projectOrganizerCategories = $.extend({}, {
-    folder: 'Collections',
-    smartFolder: 'Smart Collections',
+    collection: 'Collections',
+    smartCollection: 'Smart Collections',
     project: 'Project',
     link:  'Link'
 }, nodeCategories);
