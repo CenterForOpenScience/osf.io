@@ -687,6 +687,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return {p._id for p in parents}
 
+    # TODO(hrybacki): Remove once no public registrations can be made private
+    @property
+    def registered_before_cutoff_date(self):
+        if self.is_registration:
+            return self.registered_date < settings.REGISTRATION_CUTOFF_DATE
+        return False
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -2296,11 +2303,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
         elif permissions == 'private' and self.is_public:
+            # TODO(hrybacki): Remove 2nd antecedent once no public registrations can be made private
+            if self.is_registration and not self.registered_before_cutoff_date:
+                raise NodeStateError('Cannot make a public registration private')
             self.is_public = False
         else:
             return False
