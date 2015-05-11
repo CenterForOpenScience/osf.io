@@ -1196,8 +1196,14 @@ var FGToolbar = {
         self.mode = m.prop('bar');
         self.uploadState = args.treebeard.isUploading;
         self.helpText = m.prop('');
-        self.dismissToolbar = function(){ self.mode('bar');}
-        self.createFolder = function(event){ _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText ); }
+        self.dismissToolbar = function(){
+            self.mode('bar');
+            self.tb.resetFilter();
+            self.tb.filterText('');
+        };
+        self.createFolder = function(event){
+            _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText );
+        };
     },
     view : function(ctrl) {
         var templates = {};
