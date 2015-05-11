@@ -486,48 +486,9 @@ function _poMultiselect(event, tree) {
                                   !thisItem.permissions.movable;
             pointerIds.push(thisItem.node_id);
         });
-        var detailTemplateContext;
-        if (!selectedRows[0].parent().data.isFolder){
-            // detailTemplateContext = {
-            //     itemsCount: selectedRows.length
-            // };
-            // var theParentNode = selectedRows[0].parent();
-            // var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-            // $detailDiv.html(displayHTML).show();
-        } else {
-            if (!someItemsAreFolders) {
-                // detailTemplateContext = {
-                //     multipleItems: true,
-                //     itemsCount: selectedRows.length
-                // };
-                // var theParentNode = selectedRows[0].parent();
-                // var displayHTML = multiItemDetailTemplate(detailTemplateContext);
-                // $detailDiv.html(displayHTML).show();
-                // $('#remove-links-multiple').click(function () {
-                //     deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                //     createBlankProjectDetail();
-                // });
-                // $('#close-multi-select').click(function () {
-                //     createBlankProjectDetail();
-                //     return false;
-                // });
-            } else {
-                // detailTemplateContext = {
-                //     itemsCount: selectedRows.length
-                // };
-                // var theParentNode = selectedRows[0].parent();
-                // var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-                // $detailDiv.html(displayHTML).show();
-            }
-        }
-
-
-
     }
 
 }
-
-
 
 /**
  * Deletes pointers based on their ids from the folder specified
@@ -896,46 +857,6 @@ function _cleanupMithril() {
     });
 }
 
-/** 
- * Toolbar icon templates and click functions 
- *
- */
-
-function _toolbarDismissEvent() {
-    var tb = this;
-    $('.tb-header-row .twitter-typeahead').remove();
-    tb.options.iconState.mode = 'bar';
-    tb.resetFilter();
-    tb.filterText('');
-    m.redraw();
-}
-
-function toolbarDismissIcon() {
-    var tb = this;
-    return m('.fangorn-toolbar-icon', {
-        onclick : function () {
-            _toolbarDismissEvent.call(tb);
-        }
-    },
-        m('i.fa.fa-times')
-        );
-}
-function searchButton() {
-    var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', {
-        'data-toggle' : 'tooltip',
-        'title':  'Switch to search panel to filter rows below.',
-        'data-placement' : 'bottom',
-        onclick : function () {
-            tb.options.iconState.mode = 'search';
-            tb.clearMultiselect();
-        }
-    }, [
-        m('i.fa.fa-search'),
-        m('span.hidden-xs', 'Search')
-    ]);
-}
-
 function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
@@ -1177,20 +1098,6 @@ function showLegend() {
     };
     tb.modal.update(legendView(data, repr, opts));
     tb.modal.show();
-}
-
-function infoIcon() {
-    var tb = this;
-    return m('.fangorn-toolbar-icon.text-info', {
-        'data-toggle' : 'tooltip',
-        'title':  'Icon legend',
-        'data-placement' : 'bottom',
-        onclick : function () {
-            showLegend.call(tb);
-        }
-    }, [
-        m('i.fa.fa-info')
-    ]);
 }
 
 function _poToolbar() {
