@@ -1654,6 +1654,12 @@ Fangorn.prototype = {
     }
 };
 
+Fangorn.Components = {
+    button : FGButton,
+    input : FGInput,
+    toolbar : FGToolbar
+}
+
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
@@ -1670,7 +1676,7 @@ Fangorn.Utils = {
     resolveconfigOption: resolveconfigOption,
     reapplyTooltips : reapplyTooltips,
     setCurrentFileID: setCurrentFileID,
-    scrollToFile: scrollToFile,
+    scrollToFile: scrollToFile
 };
 
 Fangorn.DefaultOptions = tbOptions;
