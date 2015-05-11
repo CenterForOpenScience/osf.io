@@ -29,17 +29,18 @@ function _removeEvent (event, items) {
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
             type : 'DELETE'
-        })
-        .done(function(data) {
-            // delete view
-            tb.deleteNode(item.parentID, item.id);
-            Fangorn.Utils.resetToolbar.call(tb);
-            tb.modal.dismiss();
-        })
-        .fail(function(data){
-            tb.modal.dismiss();
-            Fangorn.Utils.resetToolbar.call(tb);
-            item.notify.update('Delete failed.', 'danger', undefined, 3000);
+        }).done(function (data) {
+                // delete view
+                tb.deleteNode(item.parentID, item.id);
+                Fangorn.Utils.dismissToolbar.call(tb);
+                tb.modal.dismiss();
+                tb.clearMultiselect();
+
+        }).fail(function (data) {
+                tb.modal.dismiss();
+                Fangorn.Utils.dismissToolbar.call(tb);
+                item.notify.update('Delete failed.', 'danger', undefined, 3000);
+                tb.clearMultiselect();
         });
     }
 
@@ -47,7 +48,6 @@ function _removeEvent (event, items) {
         items.forEach(function(item){
             runDelete(item);
         });
-        this.options.iconState.generalIcons.deleteMultiple.on = false;
     }
 
     // If there is only one item being deleted, don't complicate the issue:
@@ -138,83 +138,69 @@ function _githubDefineToolbar(item) {
         }
         // If File and FileRead are not defined dropzone is not supported and neither is uploads
         if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
-            buttons.push({ name : 'uploadFiles', template : function(){
-                return m('.fangorn-toolbar-icon.text-success', {
-                        onclick : function(event) { Fangorn.ButtonEvents._uploadEvent.call(tb, event, item); }
-                    },[
-                    m('i.fa.fa-upload'),
-                    m('span.hidden-xs','Upload')
-                ]);
-            }},
-            { name : 'createFolder', template : function(){
-                return m('.fangorn-toolbar-icon.text-info', {
-                        onclick : function(event) {
-                            tb.options.iconState.mode = 'createFolder';
-                            m.redraw(true);
-                        }
-                    },[
-                    m('span.osf-fa-stack', [ m('i.fa.fa-folder.osf-fa-stack-bottom.fa-stack-1x'),m('i.fa.fa-plus.fa-stack-1x.osf-fa-stack-top.text-white')]),
-                    m('span.hidden-xs','Create Folder')
-                ]);
-            }});
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {Fangorn.ButtonEvents._uploadEvent.call(tb, event, item); },
+                    tooltip: 'Upload files to Github folder',
+                    icon: 'fa fa-upload',
+                    className : 'text-success'
+                }, 'Upload'),
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {
+                        tb.toolbarMode('createFolder');
+                    },
+                    tooltip: 'Create a new folder.',
+                    icon: 'fa fa-plus',
+                    className : 'text-primary'
+                }, 'Create Folder')
+
+            );
         }
         if (item.data.addonFullname) {
             buttons.push(
-                { name : 'downloadFile', template : function(){
-                    return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { window.location = item.data.urls.zip; }
-                        },[
-                        m('i.fa.fa-download'),
-                        m('span.hidden-xs','Download')
-                    ]);
-                }},
-                { name : 'gotoRepo', template : function(){
-                    return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { window.open(item.data.urls.repo, '_blank');}
-                        },[
-                        m('i.fa.fa-external-link'),
-                        m('span.hidden-xs','Open')
-                    ]);
-                }},
-                {
-                    name : 'changeBranch', template : function(){
-                        return m('.fangorn-toolbar-icon.text-info',
-                            [
-                               m('span.hidden-xs','Branch :'),
-                               m('select[name=branch-selector].no-border', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
-                            ]
-                        );
-                    }
-                }
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {window.location = item.data.urls.zip;},
+                    tooltip: 'Download repository as a zip file',
+                    icon: 'fa fa-download',
+                    className : 'text-success'
+                }, 'Download'),
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {window.open(item.data.urls.repo, '_blank');},
+                    tooltip: 'Open repository in a new window.',
+                    icon: 'fa fa-external-link',
+                    className : 'text-info'
+                }, 'Open'),
+                m.component(Fangorn.Components.dropdown, {
+                    'label' : 'Branch: ',
+                    onchange: function(event) {changeBranch.call(tb, item, event.target.value );},
+                    tooltip: 'Change Branch',
+                    icon: 'fa fa-external-link',
+                    className : 'text-info'
+                },branchArray)
             );
         }
     } else if (item.kind === 'file') {
         buttons.push(
-                { name : 'downloadFile', template : function(){
-                    return m('.fangorn-toolbar-icon.text-info', {
-                            onclick : function(event) { _downloadEvent.call(tb, event, item); }
-                        },[
-                        m('i.fa.fa-download'),
-                        m('span.hidden-xs','Download')
-                    ]);
-                }}
-            );
-
+            m.component(Fangorn.Components.button, {
+                onclick: function(event) {_downloadEvent.call(tb, event, item);},
+                tooltip: 'Download file to your computer.',
+                icon: 'fa fa-download',
+                className : 'text-info'
+            }, 'Download')
+        );
         if (item.data.permissions && item.data.permissions.edit) {
             buttons.push(
-                { name : 'deleteFile', template : function(){
-                    return m('.fangorn-toolbar-icon.text-danger', {
-                            onclick : function(event) { _removeEvent.call(tb, event, [item]); }
-                        },[
-                        m('i.fa.fa-times'),
-                        m('span.hidden-xs','Delete')
-                    ]);
-                }}
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {_removeEvent.call(tb, event, [item]); },
+                    tooltip: 'Delete file.',
+                    icon: 'fa fa-trash',
+                    className : 'text-danger'
+                }, 'Delete')
             );
         }
     }
-    item.icons = buttons;
-    return true; // Tell fangorn this function is used.
+
+    return buttons; // Tell fangorn this function is used.
 }
 
 function changeBranch(item, ref){
