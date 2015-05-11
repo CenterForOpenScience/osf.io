@@ -1075,13 +1075,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise exceptions.MergeConflictError("Users cannot be merged")
-
-        # Fail if this user has conflicts, unless the other is unconfirmed.
-        if (not self.can_be_merged) and user.is_confirmed:
-            raise exceptions.MergeConflictError("Users cannot be merged")
-
         # Move over the other user's attributes
-
         # TODO: confirm
         for system_tag in user.system_tags:
             if system_tag not in self.system_tags:
@@ -1127,7 +1121,8 @@ class User(GuidStoredObject, AddonModelMixin):
         self.emails.extend(user.emails)
 
         for k, v in user.email_verifications.iteritems():
-            if k not in self.email_verifications:
+            email_to_confirm = v['email']
+            if k not in self.email_verifications and email_to_confirm != user.username:
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
