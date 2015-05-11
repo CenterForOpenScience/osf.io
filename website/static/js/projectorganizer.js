@@ -1002,38 +1002,30 @@ function applyTypeahead() {
 
 }
 
-function addProjectButton() {
+function addProjectEvent() {
     var tb = this;
     var item = tb.multiselected()[0];
     var theItem = item.data;
-
-    return m('#add-link-button.fangorn-toolbar-icon.text-info.tb-disabled', {
-        onclick : function () {
-            var url = '/api/v1/pointer/',
-                postData = JSON.stringify({
-                    pointerID: linkID,
-                    toNodeID: theItem.node_id
-                });
-            theItem.expand = false;
-            saveExpandState(theItem, function () {
-                var postAction = $.ajax({
-                        type: 'POST',
-                        url: url,
-                        data: postData,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    });
-                postAction.done(function () {
-                    tb.updateFolder(null, item);
-                });
-            });
-            triggerClickOnItem.call(tb, item);
-            tb.options.iconState.mode = 'bar';
-        }
-    }, [
-        m('i.fa.fa-plus'),
-        m('span.hidden-xs', 'Add')
-    ]);
+    var url = '/api/v1/pointer/',
+        postData = JSON.stringify({
+            pointerID: linkID,
+            toNodeID: theItem.node_id
+        });
+    theItem.expand = false;
+    saveExpandState(theItem, function () {
+        var postAction = $.ajax({
+            type: 'POST',
+            url: url,
+            data: postData,
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+        postAction.done(function () {
+            tb.updateFolder(null, item);
+        });
+    });
+    triggerClickOnItem.call(tb, item);
+    tb.toolbarMode('bar');
 }
 
 function showLegend() {
