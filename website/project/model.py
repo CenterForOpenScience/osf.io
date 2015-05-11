@@ -285,6 +285,27 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
+# TODO: WRITE THIS! WRITE TESTS!
+class ApiApp(StoredObject):
+    """Registration and primary key information for user-created OAuth API applications"""
+
+    _id = fields.StringField(
+        primary=True,
+        default=lambda: str(ObjectId()) + str(uuid.uuid4())
+    )
+
+    owner = fields.ForeignField('user', backref='created')
+
+    name = fields.StringField(index=True, required=True)
+    reg_date = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
+
+    # TODO: Add URL validation? (to what layer?)
+    home_url = fields.StringField(required=True)
+    callback_url = fields.StringField(required=True)
+
+    desc = fields.StringField(required=False)
+
+
 @unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
 

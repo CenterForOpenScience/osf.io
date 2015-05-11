@@ -14,6 +14,7 @@
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
                 <li><a href="#">Notifications</a></li>
+                <li><a href="${ web_url_for('oauth_application_config') }">Developer apps</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
