@@ -28,6 +28,7 @@ def dataverse_get_user_accounts(auth):
 
 @must_be_logged_in
 def dataverse_add_external_account(auth, **kwargs):
+    """Verifies new external account credentials and adds to user's list"""
     user = auth.user
     provider = DataverseProvider()
 
@@ -90,6 +91,7 @@ def dataverse_import_user_auth(auth, node_addon, **kwargs):
 @decorators.must_have_addon('dataverse', 'user')
 @decorators.must_have_addon('dataverse', 'node')
 def dataverse_get_datasets(node_addon, **kwargs):
+    """Get list of datasets from provided Dataverse alias"""
     alias = request.json.get('alias')
 
     connection = client.connect_from_settings(node_addon)
@@ -102,37 +104,11 @@ def dataverse_get_datasets(node_addon, **kwargs):
     return ret, http.OK
 
 
-@must_be_logged_in
-def dataverse_set_user_config(auth, **kwargs):
-
-    user = auth.user
-
-    try:
-        assert_clean(request.json)
-    except AssertionError:
-        # TODO: Test me!
-        raise HTTPError(http.NOT_ACCEPTABLE)
-
-    # Log in with Dataverse
-    token = request.json.get('api_token')
-    host = request.json.get('host')
-    client.connect_or_401(host, token)
-
-    user_addon = user.get_addon('dataverse')
-    if user_addon is None:
-        user.add_addon('dataverse')
-        user_addon = user.get_addon('dataverse')
-
-    user_addon.api_token = token
-    user_addon.save()
-
-    return {'token': token}, http.OK
-
-
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
 @decorators.must_have_addon('dataverse', 'node')
 def set_dataverse_and_dataset(node_addon, auth, **kwargs):
+    """Saves selected Dataverse and dataset to node settings"""
 
     user_settings = node_addon.user_settings
     user = auth.user

@@ -39,13 +39,7 @@ settings_routes = {
         Rule(
             '/settings/dataverse/',
             'post',
-            views.config.dataverse_set_user_config,
-            json_renderer,
-        ),
-        Rule(
-            '/settings/dataverse/',
-            'delete',
-            views.auth.dataverse_delete_user,
+            views.config.dataverse_add_external_account,
             json_renderer,
         ),
     ],
@@ -54,17 +48,10 @@ settings_routes = {
 
 api_routes = {
     'rules': [
-        # TODO: Prune unused routes
         Rule(
             '/settings/dataverse/accounts/',
             'get',
             views.config.dataverse_get_user_accounts,
-            json_renderer,
-        ),
-        Rule(
-            '/settings/addons/dataverse/',
-            'post',
-            views.config.dataverse_add_external_account,
             json_renderer,
         ),
         Rule(
