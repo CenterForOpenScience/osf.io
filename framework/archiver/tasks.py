@@ -1,16 +1,20 @@
 from urllib2 import urlopen
-from celery import chain, group
+from celery import group
+import requests
+import json
 
 from raven import Client
 from raven.conf import setup_logging
 from raven.handlers.logging import SentryHandler
 
 from framework.tasks import app as celery_app
+from framework.tasks.handlers import enqueue_task
 from framework.archiver.exceptions import (
     AddonFileSizeExceeded,
     AddonArchiveSizeExceeded,
 )
 from framework.auth.core import User
+from framework.transactions.context import TokuTransaction
 
 from framework.archiver import StatResult
 from framework.archiver import AggregateStatResult
@@ -34,13 +38,11 @@ if settings.SENTRY_DSN:
     setup_logging(raven_handler)
 
 
-def set_app_context(func):
-    def wrapper(*args, **kwargs):
-        from website.app import init_addons, do_set_backends
-        init_addons(settings)
-        do_set_backends(settings)
-        return func(*args, **kwargs)
-    return wrapper
+def set_app_context():
+    from website.app import init_addons, do_set_backends
+    init_addons(settings)
+    do_set_backends(settings)
+
 
 logger = get_task_logger(__name__)
 
@@ -57,7 +59,6 @@ def get_file_size(src_addon, file_metadata, user):
     """
     Download a file and get its size
     """
-    rdb.set_trace()
     download_url = waterbutler_url_for(
         'download',
         provider=src_addon.config.short_name,
@@ -110,8 +111,10 @@ def stat_file_tree(src_addon, fileobj_metadata, user):
         )
 
 @celery_app.task
-def stat_addon(Model, src_addon_pk, user_pk):
-    src_addon = Model.load(src_addon_pk)
+def stat_addon(addon_short_name, src_node_pk, user_pk, *args, **kwargs):
+    set_app_context()
+    src = Node.load(src_node_pk)
+    src_addon = src.get_addon(addon_short_name)
     user = User.load(user_pk)
     file_tree = src_addon._get_file_tree(user=user)
     result = AggregateStatResult(
@@ -130,52 +133,89 @@ def stat_addon(Model, src_addon_pk, user_pk):
         raise e
 
 @celery_app.task
-@set_app_context
-def stat_node(src_pk, user_pk):
+def stat_node(src_pk, user_pk, *args, **kwargs):
+    set_app_context()
     src = Node.load(src_pk)
     user = User.load(user_pk)
-    subtasks = []
-    # Get addons
-    for addon in src.get_addons():
-        if not isinstance(addon, StorageAddonBase):
-            continue
-        subtasks.append(
-            stat_addon(
-                type(addon),
-                addon._id,
-                user._id
-            )
+    tasks = group(
+        stat_addon.si(
+            addon.config.short_name,
+            src._id,
+            user._id,
         )
-    # TODO other subtasks?
-    return group(iter(subtasks)).apply_async()
+        for addon in src.get_addons()
+        if isinstance(addon, StorageAddonBase)
+    )
+    return tasks.apply_async()
 
 @celery_app.task
-def archive_addon(Model, src_addon_pk, dst_addon_pk, user):
-    src_addon = Model.load(src_addon_pk)
-    dst_addon = Model.load(dst_addon_pk)
-    root = dst_addon.root_node
-    parent = root.append_folder("Archive of {addon}".format(addon=src_addon.config.full_name))
-    src_addon._copy_files(dst_addon=dst_addon, dst_folder=parent)
-    return dst_addon
+def make_copy_request(url, data):
+    requests.post(url, data=json.dumps(data))
 
 @celery_app.task
-def archive_node(group_result, src_pk, dst_pk, user_pk):
-    stat_result = group_result.results[0].result
+def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, *args, **kwargs):
+    set_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
     user = User.load(user_pk)
-    subtasks = []
-    for result in stat_result.targets.values():
-        provider = result.target_name
-        if provider:
-            src_addon = src.get_addon(provider)
-            dst_addon = dst.get_or_add_addon(provider)
-            subtasks.append(archive_addon.s(type(src_addon), src_addon._id, dst_addon._id, user._id, result))
-    return group(iter(subtasks))
+    src_addon = src.get_addon(addon_short_name)
+    dst_addon = dst.get_addon(addon_short_name)
+    if not dst_addon.root_node:
+        dst_addon.on_add()
+    root = dst_addon.root_node
+    #    parent = root.append_folder("Archive of {addon}".format(addon=src_addon.config.full_name))
+    provider = src_addon.config.short_name
+    cookie = user.get_or_create_cookie()
+    data = dict(
+        source=dict(
+            cookie=cookie,
+            nid=src._id,
+            provider=provider,
+            path='/',
+        ),
+        destination=dict(
+            cookie=cookie,
+            nid=dst._id,
+            provider=provider,
+            path="/",  # parent.path.rstrip('/'),
+        ),
+        rename='Archive',
+    )
+    copy_url = settings.WATERBUTLER_URL + '/ops/copy'
+    return enqueue_task(make_copy_request.s(copy_url, data))
 
 @celery_app.task
-def archive(src_pk, dst_pk, user_pk):
-    return chain(stat_node.s(src_pk, user_pk), archive_node.s(src_pk, dst_pk, user_pk)).apply_async()
+def archive_node(group_result, src_pk, dst_pk, user_pk, *args, **kwargs):
+    set_app_context()
+    src = Node.load(src_pk)
+    dst = Node.load(dst_pk)
+    user = User.load(user_pk)
+    stat_result = AggregateStatResult(
+        src._id,
+        src.title,
+        targets=[result.result for result in group_result.results]
+    )
+    tasks = group(
+        archive_addon.si(
+            result.target_name,
+            src._id,
+            dst._id,
+            user._id,
+            result,
+        )
+        for result in stat_result.targets.values()
+    )
+    return tasks.apply_async()
+
+@celery_app.task
+def finish(result, dst_pk, user_pk, *args, **kwargs):
+    dst = Node.load(dst_pk)
+    dst.archiving = False
+    dst.save()
+
+@celery_app.task(bind=True)
+def archive(self, src_pk, dst_pk, user_pk, *args, **kwargs):
+    return (stat_node.s(src_pk, user_pk) | archive_node.s(src_pk, dst_pk, user_pk) | finish.s(dst_pk, user_pk)).apply_async()
 
 '''
 class ArchiveTask(ArchiverTaskBase):
