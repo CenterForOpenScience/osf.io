@@ -1256,10 +1256,29 @@ var FGToolbar = {
             )
         ]
         // Bar mode
-        buttons.push(m.component(FGButton, {
+        buttons.push(
+            m.component(FGButton, {
                 onclick: function(event){ ctrl.mode('search'); },
-                tooltip: 'Search this'
-            }, 'Search')
+                tooltip: 'Search this',
+                icon: 'fa fa-search'
+
+            }, 'Search'),
+            m.component(FGButton, {
+                onclick: function(event){
+                    var mithrilContent = m('div', [
+                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
+                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
+                    ]);
+                    var mithrilButtons = m('div', [
+                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { ctrl.tb.modal.dismiss(); } }, 'Close'),
+                    ]);
+                    ctrl.tb.modal.update(mithrilContent, mithrilButtons);
+                },
+                tooltip: 'Learn more about how to use the file browser.',
+                icon: 'fa fa-info'
+            }, '')
         );
         // Which buttons should show?
         if(items.length === 1){
