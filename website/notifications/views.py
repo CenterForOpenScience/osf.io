@@ -71,13 +71,16 @@ def configure_subscription(auth):
         if notification_type != 'adopt_parent':
             owner = node
         else:
-            parent = node.parent_node
-            if not parent:
-                sentry.log_message(
-                    '{!r} attempted to adopt_parent of '
-                    'the parentless project, {!r}'.format(user, node)
-                )
-                raise HTTPError(http.BAD_REQUEST)
+            if 'file_updated' in event and len(event) > len('file_updated'):
+                pass
+            else:
+                parent = node.parent_node
+                if not parent:
+                    sentry.log_message(
+                        '{!r} attempted to adopt_parent of '
+                        'the parentless project, {!r}'.format(user, node)
+                    )
+                    raise HTTPError(http.BAD_REQUEST)
 
             # If adopt_parent make sure that this subscription is None for the current User
             subscription = NotificationSubscription.load(event_id)

@@ -75,7 +75,7 @@ var RevisionsViewModel = function(node, file, editable) {
     self.subList = [
         {value: 'email_transactional', text: 'Emails'},
         {value: 'email_digest', text: 'Email Digest'},
-        {value: 'adopt_parent', text: 'Adopt from Parent'},
+        {value: 'adopt_parent', text: 'Adopt from Project'},
         {value: 'none', text: 'None'}
     ];
     self.getSub = function(sub) {

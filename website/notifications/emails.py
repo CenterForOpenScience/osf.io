@@ -85,53 +85,40 @@ def notify(uid, event, user, node, timestamp, **context):
         target_user: used with comment_replies
     :return:
     """
-    node_subscribers = []
-    subscriptions = []
-    subscriptions.append(NotificationSubscription.load(utils.to_subscription_key(uid, event)))
-    event = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
-    subscriptions.append(NotificationSubscription.load(utils.to_subscription_key(uid, event)))
-
-    for subscription in subscriptions:
+    subscriptions = {}
+    for notification_type in constants.NOTIFICATION_TYPES:
+        subscriptions[notification_type] = []
+    subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
+    if 'file_updated' in event:
         for notification_type in constants.NOTIFICATION_TYPES:
-            subscribed_users = getattr(subscription, notification_type, [])
+            subscriptions[notification_type] = getattr(subscription, notification_type, [])
+        event = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
+        subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
+    none_set = set(subscriptions['none'])
+    for notification_type in constants.NOTIFICATION_TYPES:
+        if notification_type != 'none':
+            subscriptions[notification_type].extend(getattr(subscription, notification_type, []))
+            subscriptions[notification_type].extend(check_parent(node, event, notification_type))
+            subscribed_users = list(set(subscriptions[notification_type]).difference(none_set))
+            send(subscribed_users, notification_type, uid, event, user, node, timestamp, **context)
 
-            node_subscribers.extend(subscribed_users)
 
-            if subscribed_users and notification_type != 'none':
-                for recipient in subscribed_users:
-                    event = 'comment_replies' if context.get('target_user') == recipient else event
-                    send([recipient._id], notification_type, uid, event, user, node, timestamp, **context)
-
-    return check_parent(uid, event, node_subscribers, user, node, timestamp, **context)
-
-
-def check_parent(uid, event, node_subscribers, user, orig_node, timestamp, **context):
+def check_parent(node, event, notification_type):
     """ Check subscription object for the event on the parent project
         and send transactional email to indirect subscribers.
     """
-    node = website_models.Node.load(uid)
-    target_user = context.get('target_user', None)
-
     if node and node.parent_id:
-        key = utils.to_subscription_key(node.parent_id, event)
-        subscription = NotificationSubscription.load(key)
+        parent = website_models.Node.load(node.parent_id)
+        subscription = NotificationSubscription.load(utils.to_subscription_key(parent._id, event))
 
         if not subscription:
-            return check_parent(node.parent_id, event, node_subscribers, user, orig_node, timestamp, **context)
+            return check_parent(parent, event, notification_type)
 
-        for notification_type in constants.NOTIFICATION_TYPES:
-            subscribed_users = getattr(subscription, notification_type, [])
+        subscribed_users = getattr(subscription, notification_type, [])
 
-            for u in subscribed_users:
-                if u not in node_subscribers and node.has_permission(u, 'read'):
-                    if notification_type != 'none':
-                        event = 'comment_replies' if target_user == u else event
-                        send([u._id], notification_type, uid, event, user, orig_node, timestamp, **context)
-                    node_subscribers.append(u)
+        return subscribed_users.extend(check_parent(parent, event, notification_type))
 
-        return check_parent(node.parent_id, event, node_subscribers, user, orig_node, timestamp, **context)
-
-    return node_subscribers
+    return []
 
 
 def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **context):
