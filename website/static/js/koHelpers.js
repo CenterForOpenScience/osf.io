@@ -80,7 +80,7 @@ addExtender('trimmedURLArray', function(values) {
             values[i] = cleanURL(values[i]);
             }
             return values;
-        }
+    }
 
     else return values;
 });

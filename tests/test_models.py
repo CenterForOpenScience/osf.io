@@ -71,16 +71,16 @@ class TestUserValidation(OsfTestCase):
         with assert_raises(ValidationValueError):
             self.user.save()
 
-    def test_validate_social_personal_empty(self):
-        self.user.social = {'personal': ''}
+    def test_validate_social_profile_websites_empty(self):
+        self.user.social = {'profileWebsites': ['']}
         self.user.save()
 
     def test_validate_social_valid(self):
-        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
 
-    def test_validate_social_personal_invalid(self):
-        self.user.social = {'personal': 'help computer'}
+    def test_validate_social_profile_websites_invalid(self):
+        self.user.social = {'profileWebsites': ['help computer']}
         with assert_raises(ValidationError):
             self.user.save()
 
@@ -88,21 +88,21 @@ class TestUserValidation(OsfTestCase):
         assert_equal(self.user.social_links, {})
         assert_equal(len(self.user.social_links), 0)
 
-    def test_personal_site_unchanged(self):
-        self.user.social = {'personal': 'http://cos.io/'}
+    def test_profile_website_site_unchanged(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
-        assert_equal(self.user.social_links['personal'], 'http://cos.io/')
+        assert_equal(self.user.social_links['profileWebsites'], ['http://cos.io/'])
         assert_equal(len(self.user.social_links), 1)
 
     def test_various_social_handles(self):
         self.user.social = {
-            'personal': 'http://cos.io/',
+            'profileWebsites': ['http://cos.io/'],
             'twitter': 'OSFramework',
             'github': 'CenterForOpenScience'
         }
         self.user.save()
         assert_equal(self.user.social_links, {
-            'personal': 'http://cos.io/',
+            'profileWebsites': ['http://cos.io/'],
             'twitter': 'http://twitter.com/OSFramework',
             'github': 'http://github.com/CenterForOpenScience'
         })

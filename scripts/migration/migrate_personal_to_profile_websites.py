@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
     
 def main():
-    print "in main"
     # Set up storage backends
     init_app(routes=False)
     dry_run = 'dry' in sys.argv
@@ -33,7 +32,7 @@ def main():
         logger.info(repr(user))
         logger.info(repr(user.social))
         if not user.social.get('profileWebsites'):
-            user.social['profileWebsites'] = [u'']
+            user.social['profileWebsites'] = []
             if user.social.get('personal'):
                 migrate_personal_to_profile_websites(user)
         logger.info(repr(user.social))

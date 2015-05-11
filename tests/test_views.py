@@ -950,7 +950,7 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_social')
         # personal URL is invalid
         payload = {
-            'personal': 'http://invalidurl',
+            'profileWebsites': '[http://invalidurl]',
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }

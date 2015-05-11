@@ -486,15 +486,16 @@ var SocialViewModel = function(urls, modes) {
 
     self.editWebsiteButton =  function(){
         self.canEditWebsite(!self.canEditWebsite());
-    }
+    };
 
     self.profileWebsites = ko.observableArray();
                 
     self.hasProfileWebsites = ko.computed(function() {
-        if (self.profileWebsites())      
-        for (var i=0; i<self.profileWebsites().length; i++) {
-            if (self.profileWebsites()[i]) {
-                return true;
+        if (self.profileWebsites()) {
+            for (var i=0; i<self.profileWebsites().length; i++) {
+                if (self.profileWebsites()[i]) {
+                    return true;
+                }
             }
         }
         return false;
@@ -506,7 +507,7 @@ var SocialViewModel = function(urls, modes) {
         }
         
         else { 
-            return false
+            return false;
         }
     });
     
@@ -570,19 +571,21 @@ var SocialViewModel = function(urls, modes) {
     });
         
     self.profileWebsiteEmpty = ko.computed(function() {
-        if (self.profileWebsites())
+        if (self.profileWebsites()) {
             for (var i=0; i < self.profileWebsites().length; i++) {
-                if (ko.toJS(self.profileWebsites()[i]) == "") {
+                if (ko.toJS(self.profileWebsites()[i]) === '') {
                     return true;
                 }
             }
+        }
         return false;
     });
     
     self.hasValues = ko.computed(function() {
         var values = self.values();
-        if (self.hasProfileWebsites())
+        if (self.hasProfileWebsites()) {
             return true;
+        }
         for (var i=0; i<self.values().length; i++) {
             if (values[i].value) {
                 return true;
@@ -595,17 +598,17 @@ var SocialViewModel = function(urls, modes) {
         this.profileWebsites.push(ko.observable().extend({
             trimmedURL: true
             }));
-    }
+    };
     
     self.removeWebsite = function(profileWebsite) {
         for (var i=0; i < self.profileWebsites().length; i++) {
-            if (profileWebsite == ko.toJS(self.profileWebsites()[i]))
+            if (profileWebsite === ko.toJS(self.profileWebsites()[i])) {
                 self.profileWebsites.splice(i, 1);
+            }
         }
-    }
+    };
 
-
-    if (self.profileWebsites().length == 0) {
+    if (self.profileWebsites().length === 0) {
         self.addWebsite();
     }
 
@@ -619,7 +622,7 @@ SocialViewModel.prototype.serialize = function() {
     var profileWebsites = serializedData.profileWebsites;
     
     function removeBlankValues(value) {
-        return value != "";
+        return value !== '';
     }
     
     if (profileWebsites.length > 1) {
@@ -629,10 +632,10 @@ SocialViewModel.prototype.serialize = function() {
 };
 
 SocialViewModel.prototype.unserialize = function(data) {
-    var self = this, websiteValue = [];
-    var websiteValue;
+    var self = this,
+        websiteValue = [];
     $.each(data || {}, function(key, value) {
-         if (ko.isObservable(self[key]) && key === "profileWebsites") {
+         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
             for (var i = 0; i < value.length; i++) {
                 websiteValue[i] = ko.observable(value[i]).extend({
                         trimmedURL: true
