@@ -1266,7 +1266,7 @@ function _poDefineToolbar(item) {
                     });
                     deleteAction.done(function () {
                         tb.updateFolder(null, theParentNode);
-
+                        tb.clearMultiselect();
                     });
                 },
                 tooltip: 'Removes the selected row from the Collection. This action does NOT delete the project.',
