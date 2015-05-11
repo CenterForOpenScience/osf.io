@@ -476,10 +476,10 @@ var extendLink = function(obs, $parent, label, baseUrl) {
 };
 
 var SocialViewModel = function(urls, modes) {
-    var self = this;
+    var self = this,
+        i;
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
-    var i;
     self.addons = ko.observableArray();
 
     self.canEditWebsite = ko.observable(false);
@@ -601,10 +601,11 @@ var SocialViewModel = function(urls, modes) {
     };
     
     self.removeWebsite = function(profileWebsite) {
-        for (var i=0; i < self.profileWebsites().length; i++) {
-            if (profileWebsite === ko.toJS(self.profileWebsites()[i])) {
-                self.profileWebsites.splice(i, 1);
-            }
+        var profileWebsites = ko.toJS(self.profileWebsites()),
+            idx = profileWebsites.indexOf(profileWebsite);
+            self.profileWebsites.splice(idx, 1);
+        if (self.profileWebsites().length === 0) {
+            self.addWebsite();
         }
     };
 
@@ -660,10 +661,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
     self.contents = ko.observableArray();
 
     self.tracked = self.contents;
-
-    self.canRemove = ko.computed(function() {
-        return self.contents().length > 1;
-    });
 
     self.isValid = ko.computed(function() {
         for (var i=0; i<self.contents().length; i++) {

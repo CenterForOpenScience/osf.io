@@ -15,7 +15,7 @@
                     <div class="sort-handle">
                         <i title="Click to Remove" class="btn text-danger pull-right  fa fa-times fa" data-bind="click: $parent.removeWebsite"></i>
                         <div class="input-group" >
-                            <span class="input-group-addon"><i title="Drag to Reorder"  class="glyphicon glyphicon-menu-hamburger"></i></span>
+                            <span class="input-group-addon"><i title="Drag to Reorder"  class="fa fa-bars"></i></span>
                             <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
                         </div>
                     </div>
