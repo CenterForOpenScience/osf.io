@@ -151,7 +151,8 @@ class NodeFilesSerializer(JSONAPISerializer):
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
     })
 
-    def valid_self_link_methods(self, obj):
+    @staticmethod
+    def valid_self_link_methods(obj):
         return obj['valid_self_link_methods']
 
     def create(self, validated_data):
