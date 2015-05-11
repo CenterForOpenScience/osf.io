@@ -1042,6 +1042,41 @@ var FGInput = {
     }
 }
 
+var FGDropdown = {
+    controller : function(args) {
+        var noop = function() {};
+    },
+    view : function(ctrl, args, children) {
+        var extraCSS = args.className || '';
+        var tooltipText = args.tooltip || '';
+        var id = args.id || '';
+        var name = args.name || '';
+        var label = args.label || '';
+        return m('div', {
+                className: 'fangorn-toolbar-icon ' + extraCSS,
+            },[
+                m('span.hidden-xs',label),
+                m('select.no-border', {
+                    'name' : name,
+                    'id' : id,
+                    onchange: args.onchange,
+                    'data-toggle': tooltipText,
+                    'title':  tooltipText,
+                    'data-placement' : 'bottom'
+                },children)
+        ]);
+    }
+}
+
+
+
+//m('.fangorn-toolbar-icon.text-info',
+//    [
+//        m('span.hidden-xs','Branch :'),
+//        m('select[name=branch-selector].no-border', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
+//    ]
+//);
+
 var _dismissToolbar = function(){
     var tb = this;
     tb.toolbarMode('bar');
@@ -1657,7 +1692,8 @@ Fangorn.prototype = {
 Fangorn.Components = {
     button : FGButton,
     input : FGInput,
-    toolbar : FGToolbar
+    toolbar : FGToolbar,
+    dropdown : FGDropdown
 }
 
 Fangorn.ButtonEvents = {
