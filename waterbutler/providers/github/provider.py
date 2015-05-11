@@ -53,6 +53,7 @@ class GitHubProvider(provider.BaseProvider):
 
         path = WaterButlerPath(path)
 
+        #TODO Validate that filesha is a valid sha
         path.parts[-1]._id = (
             next(
                 (kwargs[key] for key in
@@ -154,15 +155,13 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, sha=None, message=None, branch=None, **kwargs):
-        path = GitHubPath(path)
-
         assert self.name is not None
         assert self.email is not None
 
         if path.is_dir:
-            yield from self._delete_folder(path, message, branch, **kwargs)
+            yield from self._delete_folder(path, message, **kwargs)
         else:
-            yield from self._delete_file(path, sha, message, branch, **kwargs)
+            yield from self._delete_file(path, message, **kwargs)
 
     @asyncio.coroutine
     def metadata(self, path, ref=None, recursive=False, **kwargs):
@@ -230,18 +229,22 @@ class GitHubProvider(provider.BaseProvider):
         return GitHubFolderContentMetadata(data['content'], commit=data['commit']).serialized()
 
     @asyncio.coroutine
-    def _delete_file(self, path, sha=None, message=None, branch=None, **kwargs):
+    def _delete_file(self, path, message=None, **kwargs):
+        if path.identifier[1]:
+            sha = path.identifier
+        else:
+            sha = (yield from self.metadata(path))['extra']['fileSha']
+
         if not sha:
             raise exceptions.MetadataError('A sha is required for deleting')
 
-        message = message or settings.DELETE_FILE_MESSAGE
         data = {
-            'message': message,
             'sha': sha,
+            'branch': path.identifier[0],
             'committer': self.committer,
+            'message': message or settings.DELETE_FILE_MESSAGE,
         }
-        if branch:
-            data['branch'] = branch
+
         yield from self.make_request(
             'DELETE',
             self.build_repo_url('contents', path.path),
@@ -252,7 +255,7 @@ class GitHubProvider(provider.BaseProvider):
         )
 
     @asyncio.coroutine
-    def _delete_folder(self, path, message=None, branch=None, **kwargs):
+    def _delete_folder(self, path, message=None, **kwargs):
         if not branch:
             repo = yield from self._fetch_repo()
             branch = repo['default_branch']
@@ -432,8 +435,8 @@ class GitHubProvider(provider.BaseProvider):
             self.build_repo_url('git', 'blobs'),
             data=blob_stream,
             headers={
-                'Content-Length': blob_stream.size,
                 'Content-Type': 'application/json',
+                'Content-Length': str(blob_stream.size),
             },
             expects=(201, ),
             throws=exceptions.UploadError,
@@ -456,8 +459,8 @@ class GitHubProvider(provider.BaseProvider):
         # if we have a sha or recursive lookup specified we'll need to perform
         # the operation using the git/trees api which requires a sha.
 
-        if not (self._is_sha(path.identifier) or recursive):
-            data = yield from self._fetch_contents(path, ref=path.identifier)
+        if not (self._is_sha(path.identifier[0]) or recursive):
+            data = yield from self._fetch_contents(path, ref=path.identifier[0])
 
             ret = []
             for item in data:
@@ -495,15 +498,24 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _metadata_file(self, path, ref=None, **kwargs):
-        data = yield from self._fetch_contents(path, ref)
+        latest = yield from self._get_latest_sha(ref=path.identifier[0])
+        tree = yield from self._fetch_tree(latest, recursive=True)
+
+        try:
+            data = next(
+                x for x in tree['tree']
+                if x['path'] == path.path
+            )
+        except StopIteration:
+            raise exceptions.MetadataError(';', code=404)
 
         if isinstance(data, list):
             raise exceptions.MetadataError(
-                'Could not retrieve file \'{0}\''.format(path),
+                'Could not retrieve file "{0}"'.format(str(path)),
                 code=404,
             )
 
-        return GitHubFileContentMetadata(data).serialized()
+        return GitHubFileTreeMetadata(data).serialized()
 
     @asyncio.coroutine
     def _get_latest_sha(self, ref='master'):
@@ -522,7 +534,7 @@ class GitHubProvider(provider.BaseProvider):
             'POST',
             self.build_repo_url('git', 'refs', 'heads', ref),
             data=json.dumps({
-                'sha': sha
+                'sha': sha,
             }),
             expects=(200, ),
             throws=exceptions.ProviderError
