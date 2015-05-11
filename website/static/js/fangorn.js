@@ -1269,7 +1269,7 @@ var FGToolbar = {
                 }, 'Create Folder'))
             }
         }
-        templates.bar =  m('.col-xs-12',buttons);
+        templates.bar =  m('.col-xs-12',m('.pull-right', buttons));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
