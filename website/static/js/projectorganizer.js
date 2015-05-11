@@ -1172,113 +1172,83 @@ function _poDefineToolbar(item) {
     if (!item.data.isSmartFolder) {
         if (url !== null) {
             buttons.push(
-                { name : 'gotoEvent', template : function () {
-                    return m('.fangorn-toolbar-icon.text-primary', {
-                        'data-toggle' : 'tooltip',
-                        'title':  'Opens the project in same window. Use Command + Click to open in new window.',
-                        'data-placement' : 'bottom',
-                        onclick : function (event) { _gotoEvent.call(tb, event, item); }
-                    }, [
-                        m('i.fa.fa-external-link'),
-                        m('span.hidden-xs', 'Open')
-                    ]);
-                }}
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) { _gotoEvent.call(tb, event, item); },
+                    tooltip: 'Opens the project in same window. Use Command + Click to open in new window.',
+                    icon : 'fa fa-external-link',
+                    className : 'text-primary'
+                }, 'Open')
             );
         }
     }
 
     if (!item.data.isSmartFolder && (item.data.isDashboard || item.data.isFolder)) {
         buttons.push(
-            { name : 'addFolder', template : function () {
-                return m('.fangorn-toolbar-icon.text-primary', {
-                    'data-toggle' : 'tooltip',
-                    'title':  'Adds a Collection to visually organize your projects or components.',
-                    'data-placement' : 'bottom',
-                    onclick : function (event) {
-                        tb.options.iconState.mode = 'addFolder';
-                    }
-                }, [
-                    m('i.fa.fa-cubes'),
-                    m('span', 'Add Collection')
-                ]);
-            }},
-            { name : 'addExistingProject', template : function () {
-                return m('.fangorn-toolbar-icon.text-primary', {
-                    'data-toggle' : 'tooltip',
-                    'title':  'Adds an existing project or component to the Collection.',
-                    'data-placement' : 'bottom',
-                    onclick : function (event) {
-                        tb.options.iconState.mode = 'addProject';
-                    }
-                }, [
-                    m('i.fa.fa-cube'),
-                    m('span', 'Add Existing Project')
-                ]);
-            }}
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    tb.toolbarMode('addFolder');
+                },
+                tooltip: 'Adds a Collection to visually organize your projects or components.',
+                icon : 'fa fa-cubes',
+                className : 'text-primary'
+            }, 'Add Collection'),
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    tb.toolbarMode('addProject');
+                },
+                tooltip: 'Adds an existing project or component to the Collection.',
+                icon : 'fa fa-cube',
+                className : 'text-primary'
+            }, 'Add Existing Project')
         );
     }
     if (!item.data.isFolder && item.data.parentIsFolder && !item.parent().data.isSmartFolder) {
         buttons.push(
-            { name : 'removeFromFolder', template : function () {
-                return m('.fangorn-toolbar-icon.text-primary', {
-                    'data-toggle' : 'tooltip',
-                    'title':  'Removes the selected row from the Collection. This action does NOT delete the project.',
-                    'data-placement' : 'bottom',
-                    onclick : function(event) {
-                        url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
-                        var deleteAction = $.ajax({
-                                type: 'DELETE',
-                                url: url,
-                                contentType: 'application/json',
-                                dataType: 'json'
-                            });
-                        deleteAction.done(function () {
-                            tb.updateFolder(null, theParentNode);
+            m.component(Fangorn.Components.button, {
+                onclick: function(event) {
+                    url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
+                    var deleteAction = $.ajax({
+                        type: 'DELETE',
+                        url: url,
+                        contentType: 'application/json',
+                        dataType: 'json'
+                    });
+                    deleteAction.done(function () {
+                        tb.updateFolder(null, theParentNode);
 
-                        });
-                    }
-                }, [
-                    m('i.fa.fa-minus'),
-                    m('span', 'Remove From Folder')
-                ]);
-            }}
+                    });
+                },
+                tooltip: 'Removes the selected row from the Collection. This action does NOT delete the project.',
+                icon : 'fa fa-minus',
+                className : 'text-primary'
+            }, 'Remove from Collection')
         );
     }
     if (!item.data.isDashboard && !item.data.isRegistration && item.data.permissions && item.data.permissions.edit) {
         buttons.push(
-            { name : 'renameItem', template : function () {
-                return m('.fangorn-toolbar-icon.text-primary', {
-                    'data-toggle' : 'tooltip',
-                    'title':  'Change the name of the Collection or project',
-                    'data-placement' : 'bottom',
-                    onclick : function (event) {
-                        tb.options.iconState.mode = 'rename';
-                    }
-                }, [
-                    m('i.fa.fa-font'),
-                    m('span', 'Rename')
-                ]);
-            }}
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    tb.toolbarMode('rename');
+                },
+                tooltip: 'Change the name of the Collection or project.',
+                icon : 'fa fa-font',
+                className : 'text-primary'
+            }, 'Rename')
         );
     }
     if (item.data.isFolder && !item.data.isDashboard && !item.data.isSmartFolder) {
         buttons.push(
-            { name : 'deleteFolder', template : function () {
-                return m('#deleteFolder.fangorn-toolbar-icon.text-primary', {
-                    'data-toggle' : 'tooltip',
-                    'title':  'Deletes a collection.',
-                    'data-placement' : 'bottom',
-                    onclick : function (event) {
-                        _deleteFolder.call(tb, item, theItem);
-                    }
-                }, [
-                    m('i.fa.fa-trash'),
-                    m('span', 'Delete Collection')
-                ]);
-            }}
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    _deleteFolder.call(tb, item, theItem);
+                },
+                tooltip: 'Deletes a collection.',
+                icon : 'fa fa-trash',
+                className : 'text-danger'
+            }, 'Delete a Collection')
         );
     }
-    item.icons = buttons;
+    return buttons;
 }
 
 function _deleteFolder(item) {
