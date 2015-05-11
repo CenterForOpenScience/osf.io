@@ -1337,7 +1337,7 @@ var FGToolbar = {
         buttons.push(
             m.component(FGButton, {
                 onclick: function(event){ ctrl.mode('search'); },
-                tooltip: 'Search this',
+                tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, 'Search'),
