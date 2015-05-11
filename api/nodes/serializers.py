@@ -139,7 +139,6 @@ class NodeFilesSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
-    valid_self_link_methods = ser.ListField(read_only=True)
     metadata = ser.DictField(read_only=True)
 
     class Meta:
@@ -147,9 +146,13 @@ class NodeFilesSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
+        'self_methods': 'valid_self_link_methods',
         'related': Link('nodes:node-files', kwargs={'pk': '<node_id>'},
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
     })
+
+    def valid_self_link_methods(self, obj):
+        return obj['valid_self_link_methods']
 
     def create(self, validated_data):
         # TODO
