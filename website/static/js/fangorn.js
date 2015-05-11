@@ -18,6 +18,8 @@ require('css/fangorn.css');
 
 var tbOptions;
 
+var noop = function () { };
+
 var tempCounter = 1;
 
 var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
@@ -999,15 +1001,15 @@ function scrollToFile(fileID) {
 // A fangorn-styled button; addons can reuse this
 var FGButton = {
     controller: function(args) {
-        var noop = function() {};
     },
     view: function(ctrl, args, children) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip;
         var iconCSS = args.icon;
+        var onclick = args.onclick || noop;
         return m('div', {
             className: 'fangorn-toolbar-icon ' + extraCSS,
-            onclick: args.onclick,
+            onclick: onclick,
             'data-toggle': tooltipText ? 'tooltip' : '',
             'data-placement' : 'bottom',
             'title':  tooltipText}, [
@@ -1019,7 +1021,6 @@ var FGButton = {
 
 var FGInput = {
     controller : function(args) {
-        var noop = function() {};
     },
     view : function(ctrl, args, helpText) {
         var extraCSS = args.className || '';
@@ -1027,12 +1028,14 @@ var FGInput = {
         var placeholder = args.placeholder || '';
         var id = args.id || '';
         var helpTextId = args.helpTextId || '';
+        var onclick = args.onclick || noop;
+        var onkeydown = args.onkeydown || noop;
         return m('span', [
             m('input', {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
-                onclick: args.onclick,
-                onkeydown: args.onkeydown,
+                onclick: onclick,
+                onkeydown: onkeydown,
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,
                 'data-placement' : 'bottom',
@@ -1047,7 +1050,6 @@ var FGInput = {
 
 var FGDropdown = {
     controller : function(args) {
-        var noop = function() {};
     },
     view : function(ctrl, args, children) {
         var extraCSS = args.className || '';
@@ -1055,6 +1057,7 @@ var FGDropdown = {
         var id = args.id || '';
         var name = args.name || '';
         var label = args.label || '';
+        var onchange = args.onchange || noop;
         return m('div', {
                 className: 'fangorn-toolbar-icon ' + extraCSS
             },[
@@ -1062,7 +1065,7 @@ var FGDropdown = {
                 m('select.no-border', {
                     'name' : name,
                     'id' : id,
-                    onchange: args.onchange,
+                    onchange: onchange,
                     'data-toggle':  tooltipText ? 'tooltip' : '',
                     'title':  tooltipText,
                     'data-placement' : 'bottom'
