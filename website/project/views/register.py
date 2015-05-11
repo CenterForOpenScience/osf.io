@@ -58,14 +58,14 @@ def node_register_page(auth, node, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_be_public_registration
-def node_registration_retraction_get(auth, **kwargs):
+def node_registration_retraction_get(auth, node, **kwargs):
     """Prepares node object for registration retraction page.
 
     :return: serialized Node to be retracted
     :raises: 400: BAD_REQUEST if registration already pending retraction
     """
 
-    node = kwargs['node'] or kwargs['project']
+    # node = kwargs['node'] or kwargs['project']
     if node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
@@ -77,16 +77,14 @@ def node_registration_retraction_get(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_be_public_registration
-def node_registration_retraction_post(auth, **kwargs):
+def node_registration_retraction_post(auth, node, **kwargs):
     """Handles retraction of public registrations
 
     :param auth: Authentication object for User
     :return: Redirect URL for successful POST
     """
 
-    node = kwargs['node'] or kwargs['project']
     data = request.get_json()
-
     try:
         node.retract_registration(auth.user, data['justification'])
         node.save()
@@ -143,14 +141,12 @@ def _send_retraction_email(node, user):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_be_public_registration
-def node_registration_retraction_approve(auth, token, **kwargs):
+def node_registration_retraction_approve(auth, node, token, **kwargs):
     """Handles disapproval of registration retractions
     :param auth: User wanting to disapprove retraction
     :return: Redirect to registration or
     :raises: HTTPError if invalid token or user is not admin
     """
-
-    node = kwargs['node'] or kwargs['project']
 
     if not node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -179,15 +175,13 @@ def node_registration_retraction_approve(auth, token, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_be_public_registration
-def node_registration_retraction_disapprove(auth, token, **kwargs):
+def node_registration_retraction_disapprove(auth, node, token, **kwargs):
     """Handles approval of registration retractions
     :param auth: User wanting to approve retraction
     :param kwargs:
     :return: Redirect to registration or
     :raises: HTTPError if invalid token or user is not admin
     """
-
-    node = kwargs['node'] or kwargs['project']
 
     if not node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
