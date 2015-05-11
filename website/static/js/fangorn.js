@@ -1321,7 +1321,7 @@ var FGToolbar = {
 
         }
         //multiple selection icons
-        if(items.length > 1) {
+        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
             buttons.push(
                 m.component(FGButton, {
                     onclick: function() {
