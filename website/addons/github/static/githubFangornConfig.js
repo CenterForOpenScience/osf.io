@@ -32,14 +32,14 @@ function _removeEvent(event, items) {
             .done(function (data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
-                Fangorn.Utils.dismissToolbar(tb);
+                Fangorn.Utils.dismissToolbar.call(tb);
                 tb.modal.dismiss();
                 tb.clearMultiselect();
 
             })
             .fail(function (data) {
                 tb.modal.dismiss();
-                Fangorn.Utils.dismissToolbar(tb);
+                Fangorn.Utils.dismissToolbar.call(tb);
                 item.notify.update('Delete failed.', 'danger', undefined, 3000);
                 tb.clearMultiselect();
             });
