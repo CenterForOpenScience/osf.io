@@ -1004,8 +1004,8 @@ var FGButton = {
     },
     view: function(ctrl, args, children) {
         var extraCSS = args.className || '';
-        var tooltipText = args.tooltip;
-        var iconCSS = args.icon;
+        var tooltipText = args.tooltip || '';
+        var iconCSS = args.icon || '';
         var onclick = args.onclick || noop;
         return m('div', {
             className: 'fangorn-toolbar-icon ' + extraCSS,
