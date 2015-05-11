@@ -1057,7 +1057,7 @@ var FGDropdown = {
         var name = args.name || '';
         var label = args.label || '';
         return m('div', {
-                className: 'fangorn-toolbar-icon ' + extraCSS,
+                className: 'fangorn-toolbar-icon ' + extraCSS
             },[
                 m('span.hidden-xs',label),
                 m('select.no-border', {
@@ -1071,15 +1071,6 @@ var FGDropdown = {
         ]);
     }
 }
-
-
-
-//m('.fangorn-toolbar-icon.text-info',
-//    [
-//        m('span.hidden-xs','Branch :'),
-//        m('select[name=branch-selector].no-border', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
-//    ]
-//);
 
 var _dismissToolbar = function(){
     var tb = this;
@@ -1127,7 +1118,7 @@ var FGToolbar = {
         templates.createFolder = [
             m('.col-xs-9', [
                 m.component(FGInput, {
-                    onkeydown: function(event){ console.log('Key down', event) },
+                    onkeydown: function(event){ },
                     id : 'createFolderInput',
                     helpTextId : 'createFolderHelp',
                     placeholder : 'New folder name',
@@ -1140,7 +1131,8 @@ var FGToolbar = {
                         m.component(FGButton, {
                             onclick: ctrl.createFolder,
                             tooltip: 'Create Folder',
-                            icon : 'fa fa-plus'
+                            icon : 'fa fa-plus',
+                            className : 'text-success'
                         }, 'Create'),
                         m.component(FGButton, {
                             onclick: ctrl.dismissToolbar,
@@ -1228,7 +1220,9 @@ var FGToolbar = {
         }
         generalButtons.push(
             m.component(FGButton, {
-                onclick: function(event){ ctrl.mode('search'); },
+                onclick: function(event){
+                    ctrl.mode('search');
+                },
                 tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
                 className : 'text-primary'
