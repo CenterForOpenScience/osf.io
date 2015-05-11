@@ -1712,7 +1712,8 @@ Fangorn.Utils = {
     resolveconfigOption: resolveconfigOption,
     reapplyTooltips : reapplyTooltips,
     setCurrentFileID: setCurrentFileID,
-    scrollToFile: scrollToFile
+    scrollToFile: scrollToFile,
+    dismissToolbar : _dismissToolbar
 };
 
 Fangorn.DefaultOptions = tbOptions;
