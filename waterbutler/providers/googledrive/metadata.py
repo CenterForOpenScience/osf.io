@@ -1,5 +1,4 @@
 import os
-from urllib import parse
 
 from waterbutler.core import metadata
 
@@ -19,11 +18,11 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
     @property
     def path(self):
         #TODO Address this
-        return os.path.join(parse.quote(str(self._path)), parse.quote(self.raw['title'], safe=''))
+        return '/' + '/'.join([x.raw for x in self._path.parts])
 
     @property
     def materialized_path(self):
-        return os.path.join(str(self._path), self.raw['title'])
+        return str(self._path)
 
     @property
     def extra(self):
