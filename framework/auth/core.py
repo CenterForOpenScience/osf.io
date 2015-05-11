@@ -847,7 +847,6 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def social_links(self):
         social_user_fields = {}
-        #import ipdb;ipdb.set_trace()
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS.keys():
                 if isinstance(val, list):

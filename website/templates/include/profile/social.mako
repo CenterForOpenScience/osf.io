@@ -24,9 +24,9 @@
                 </div>
             </div>
 
-            <div class="padded" data-bind="visible: !profileWebsiteEmpty()">
+            <div class="padded">
                 <a class="btn btn-default" data-bind="click: addWebsite">
-                    Add another
+                    Add Website
                 </a>
             </div>
 
