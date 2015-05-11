@@ -12,6 +12,7 @@ from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.cloudfiles import settings
 from waterbutler.providers.cloudfiles.metadata import CloudFilesFileMetadata
@@ -62,6 +63,8 @@ class CloudFilesProvider(provider.BaseProvider):
     @asyncio.coroutine
     def intra_copy(self, dest_provider, source_path, dest_path):
         url = dest_provider.build_url(dest_path.path)
+        exists = yield from dest_provider.exists(dest_path)
+
         yield from self.make_request(
             'PUT',
             url,
@@ -71,7 +74,7 @@ class CloudFilesProvider(provider.BaseProvider):
             expects=(201, ),
             throws=exceptions.IntraCopyError,
         )
-        return (yield from dest_provider.metadata(dest_path))
+        return (yield from dest_provider.metadata(dest_path)), not exists
 
     @ensure_connection
     @asyncio.coroutine
@@ -104,15 +107,8 @@ class CloudFilesProvider(provider.BaseProvider):
         :param str path: The full path of the object to upload to/into
         :rtype ResponseStreamReader:
         """
-        path = CloudFilesPath(path)
-
         if check_created:
-            try:
-                yield from self.metadata(str(path), **kwargs)
-            except exceptions.MetadataError:
-                created = True
-            else:
-                created = False
+            created = yield from self.exists(path)
         else:
             created = None
 
@@ -131,7 +127,7 @@ class CloudFilesProvider(provider.BaseProvider):
         assert resp.headers['ETag'].replace('"', '') == stream.writers['md5'].hexdigest
 
         if fetch_metadata:
-            metadata = yield from self.metadata(str(path))
+            metadata = yield from self.metadata(path)
         else:
             metadata = None
 
@@ -144,14 +140,15 @@ class CloudFilesProvider(provider.BaseProvider):
         :param str path: The path of the key to delete
         :rtype ResponseStreamReader:
         """
-        path = CloudFilesPath(path)
         if path.is_dir:
-            metadata = yield from self.metadata(str(path), recursive=True)
+            metadata = yield from self.metadata(path, recursive=True)
+
             delete_files = [
-                os.path.join('/', self.container, CloudFilesPath(item['path'], suffix=False).path)
+                os.path.join('/', self.container, path.child(item['name']).path)
                 for item in metadata
             ]
-            delete_files.append(os.path.join('/', self.container, CloudFilesPath(str(path), suffix=False).path))
+
+            delete_files.append(os.path.join('/', self.container, path.path))
 
             query = {'bulk-delete': ''}
             yield from self.make_request(
@@ -180,7 +177,6 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype dict:
         :rtype list:
         """
-        path = CloudFilesPath(path)
         if path.is_dir:
             return (yield from self._metadata_folder(path, recursive=recursive, **kwargs))
         else:
@@ -195,11 +191,11 @@ class CloudFilesProvider(provider.BaseProvider):
         endpoint = _endpoint or self.endpoint
         return provider.build_url(endpoint, self.container, *segments, **query)
 
-    def can_intra_copy(self, dest_provider):
-        return self is dest_provider
+    def can_intra_copy(self, dest_provider, path=None):
+        return type(self) == type(dest_provider) and not getattr(path, 'is_dir', False)
 
-    def can_intra_move(self, dest_provider):
-        return self.can_intra_copy(dest_provider)
+    def can_intra_move(self, dest_provider, path=None):
+        return type(self) == type(dest_provider) and not getattr(path, 'is_dir', False)
 
     def sign_url(self, path, method='GET', endpoint=None, seconds=settings.TEMP_URL_SECS):
         """Sign a temp url for the specified stream
@@ -298,7 +294,7 @@ class CloudFilesProvider(provider.BaseProvider):
 
         if (resp.headers['Content-Type'] == 'application/directory' and not is_folder):
             raise exceptions.MetadataError(
-                'Could not retrieve file \'{0}\''.format(path),
+                'Could not retrieve file \'{0}\''.format(str(path)),
                 code=404,
             )
 
@@ -325,11 +321,11 @@ class CloudFilesProvider(provider.BaseProvider):
         # no data and the provider path is not root, we are left with either a file or a directory marker
         if not data and not path.is_root:
             # Convert the parent path into a directory marker (file) and check for an empty folder
-            dir_marker = CloudFilesPath(str(path).rstrip('/'))
+            dir_marker = path.parent.child(path.name, folder=False)
             metadata = yield from self._metadata_file(dir_marker, is_folder=True, **kwargs)
             if not metadata:
                 raise exceptions.MetadataError(
-                    'Could not retrieve folder \'{0}\''.format(path),
+                    'Could not retrieve folder \'{0}\''.format(str(path)),
                     code=404,
                 )
 
