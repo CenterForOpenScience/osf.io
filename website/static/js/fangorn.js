@@ -1259,15 +1259,33 @@ var FGToolbar = {
                 tooltip: 'Search this'
             }, 'Search')
         );
+        // Which buttons should show?
         if(ctrl.items().length === 1){
             var item = ctrl.items()[0];
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
-                buttons.push(m.component(FGButton, {
+
+                buttons.push(
+                    m.component(FGButton, {
+                        onclick: function() {_uploadEvent.call(ctrl.tb, event, item); },
+                        tooltip: 'Select files to upload from your computer.',
+                        icon: 'fa fa-upload'
+                    }, 'Upload'),
+                    m.component(FGButton, {
                     onclick: function() {ctrl.mode('createFolder'); },
                     tooltip: 'Create a new folder inside curently selected folder.',
                     icon: 'fa fa-folder'
-                }, 'Create Folder'))
+                }, 'Create Folder'));
+                if(ctrl.items()[0].data.path){
+                    buttons.push(
+                        m.component(FGButton, {
+                            onclick: function() {_removeEvent.call(ctrl.tb, event, [item]); },
+                            tooltip: 'Delete this folder and all its contents.',
+                            icon: 'fa fa-trash'
+                        }, 'Delete Folder'));
+                }
             }
+
+
         }
         templates.bar =  m('.col-xs-12',m('.pull-right', buttons));
         return m('.row.tb-header-row', [
