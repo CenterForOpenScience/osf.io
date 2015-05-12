@@ -21,6 +21,7 @@ from framework.auth import exceptions, utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
 from framework.sessions.model import Session
+from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -1177,6 +1178,8 @@ class User(GuidStoredObject, AddonModelMixin):
             user_settings.save()
 
         # finalize the merge
+
+        remove_sessions_for_user(user)
 
         # - username is set to None so the resultant user can set it primary
         #   in the future.
