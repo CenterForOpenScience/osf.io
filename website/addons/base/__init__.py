@@ -19,13 +19,11 @@ from framework.exceptions import PermissionsError
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
-from framework import status
 
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
-from website.project import signals as project_signals
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
@@ -825,13 +823,16 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 ############
 # Archiver #
 ############
+class GenericRootNode(object):
+    path = '/'
+    name = ''
+
 class StorageAddonBase(object):
 
     MAX_ARCHIVE_SIZE = math.pow(1024, 3)  # 1 GB
     MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
-    def _copy_files(self, dst_addon, dst_folder=None, user=None):
-        raise NotImplementedError
+    root_node = GenericRootNode()
 
     def _get_fileobj_child_metadata(self, node, user):
         metadata_url = waterbutler_url_for(
@@ -852,8 +853,8 @@ class StorageAddonBase(object):
         Recursively get file metadata
         """
         node = node or {
-            'path': self.root_node_path,
-            'name': self.root_node_name,
+            'path': self.root_node.path,
+            'name': self.root_node.name,
             'kind': 'folder',
         }
         if node.get('kind') == 'file':
