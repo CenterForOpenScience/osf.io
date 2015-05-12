@@ -22,7 +22,7 @@ from website.oauth.models import ExternalAccount
 class TestDataverseViewsAuth(DataverseAddonTestCase):
 
     def test_deauthorize(self):
-        url = api_url_for('deauthorize_dataverse',
+        url = api_url_for('dataverse_remove_user_auth',
                           pid=self.project._primary_key)
         self.app.delete(url, auth=self.user.auth)
 
@@ -103,7 +103,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         host = 'myfakehost.data.verse'
         token = 'api-token-here'
 
-        url = api_url_for('dataverse_add_external_account')
+        url = api_url_for('dataverse_add_user_account')
         params = {'host': host, 'api_token': token}
         self.app.post_json(url, params, auth=self.user.auth)
         self.user.reload()
@@ -120,7 +120,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         host = 'myfakehost.data.verse'
         token = 'api-token-here'
 
-        url = api_url_for('dataverse_add_external_account')
+        url = api_url_for('dataverse_add_user_account')
         params = {'host': host, 'api_token': token}
         res = self.app.post_json(
             url, params, auth=self.user.auth, expect_errors=True,
@@ -136,7 +136,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         host = 'myfakehost.data.verse'
         token = 'api-token-here'
 
-        url = api_url_for('dataverse_add_external_account')
+        url = api_url_for('dataverse_add_user_account')
         params = {'host': host, 'api_token': token}
         self.app.post_json(url, params, auth=self.user.auth)
         self.app.post_json(url, params, auth=self.user.auth)
@@ -166,7 +166,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         )
         external_account.save()
 
-        url = api_url_for('dataverse_add_external_account')
+        url = api_url_for('dataverse_add_user_account')
         params = {'host': host, 'api_token': token}
         self.app.post_json(url, params, auth=self.user.auth)
         self.user.reload()
@@ -183,7 +183,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
     def test_set_dataverse_and_dataset(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = api_url_for('set_dataverse_and_dataset',
+        url = api_url_for('dataverse_set_config',
                           pid=self.project._primary_key)
         params = {
             'dataverse': {'alias': 'ALIAS3'},
@@ -214,7 +214,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         mock_connection.return_value = create_mock_connection()
         num_old_logs = len(self.project.logs)
 
-        url = api_url_for('set_dataverse_and_dataset',
+        url = api_url_for('dataverse_set_config',
                           pid=self.project._primary_key)
         params = {
             'dataverse': {'alias': 'ALIAS3'},
@@ -375,7 +375,7 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         self.contrib.add_addon('dataverse')
         self.contrib.save()
 
-        url = api_url_for('set_dataverse_and_dataset', pid=self.project._primary_key)
+        url = api_url_for('dataverse_set_config', pid=self.project._primary_key)
         params = {
             'dataverse': {'alias': 'ALIAS1'},
             'dataset': {'doi': 'doi:12.3456/DVN/00002'},

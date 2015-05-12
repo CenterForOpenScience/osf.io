@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
+
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-
 from website.project import decorators
 from website.util.sanitize import assert_clean
-
 from website.addons.dataverse import client
 from website.addons.dataverse.provider import DataverseProvider
 from website.addons.dataverse.serializer import DataverseSerializer
@@ -27,7 +26,7 @@ def dataverse_get_user_accounts(auth):
 
 
 @must_be_logged_in
-def dataverse_add_external_account(auth, **kwargs):
+def dataverse_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     user = auth.user
     provider = DataverseProvider()
@@ -67,24 +66,13 @@ def dataverse_add_external_account(auth, **kwargs):
 @must_be_logged_in
 @decorators.must_be_valid_project
 @decorators.must_have_addon('dataverse', 'node')
-def dataverse_config_get(node_addon, auth, **kwargs):
+def dataverse_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     result = DataverseSerializer(
         user_settings=auth.user.get_addon('dataverse'),
         node_settings=node_addon,
     ).serialized_node_settings
     return {'result': result}, http.OK
-
-
-@decorators.must_have_permission('write')
-@decorators.must_have_addon('dataverse', 'user')
-@decorators.must_have_addon('dataverse', 'node')
-def dataverse_import_user_auth(auth, node_addon, **kwargs):
-    """Import dataverse credentials from the currently logged-in user to a node.
-    """
-    provider = DataverseProvider()
-    external_account_id = request.get_json().get('external_account_id')
-    return provider.add_user_auth(node_addon, auth.user, external_account_id)
 
 
 @decorators.must_have_permission('write')
@@ -107,7 +95,7 @@ def dataverse_get_datasets(node_addon, **kwargs):
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
 @decorators.must_have_addon('dataverse', 'node')
-def set_dataverse_and_dataset(node_addon, auth, **kwargs):
+def dataverse_set_config(node_addon, auth, **kwargs):
     """Saves selected Dataverse and dataset to node settings"""
 
     user_settings = node_addon.user_settings

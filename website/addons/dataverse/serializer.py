@@ -58,10 +58,10 @@ class DataverseSerializer(OAuthAddonSerializer):
         host = external_account.oauth_key if external_account else ''
 
         return {
-            'create': api_url_for('dataverse_add_external_account'),
-            'set': node.api_url_for('set_dataverse_and_dataset'),
-            'importAuth': node.api_url_for('dataverse_import_user_auth'),
-            'deauthorize': node.api_url_for('deauthorize_dataverse'),
+            'create': api_url_for('dataverse_add_user_account'),
+            'set': node.api_url_for('dataverse_set_config'),
+            'importAuth': node.api_url_for('dataverse_add_user_auth'),
+            'deauthorize': node.api_url_for('dataverse_remove_user_auth'),
             'getDatasets': node.api_url_for('dataverse_get_datasets'),
             'datasetPrefix': 'http://dx.doi.org/',
             'dataversePrefix': 'http://{0}/dataverse/'.format(host),

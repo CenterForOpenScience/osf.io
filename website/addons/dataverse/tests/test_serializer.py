@@ -88,10 +88,10 @@ class TestDataverseSerializerConfig(DataverseAddonTestCase):
         # result =
         urls = self.serializer.serialized_urls
 
-        assert_equal(urls['create'], api_url_for('dataverse_add_external_account'))
-        assert_equal(urls['set'], self.project.api_url_for('set_dataverse_and_dataset'))
-        assert_equal(urls['importAuth'], self.project.api_url_for('dataverse_import_user_auth'))
-        assert_equal(urls['deauthorize'], self.project.api_url_for('deauthorize_dataverse'))
+        assert_equal(urls['create'], api_url_for('dataverse_add_user_account'))
+        assert_equal(urls['set'], self.project.api_url_for('dataverse_set_config'))
+        assert_equal(urls['importAuth'], self.project.api_url_for('dataverse_add_user_auth'))
+        assert_equal(urls['deauthorize'], self.project.api_url_for('dataverse_remove_user_auth'))
         assert_equal(urls['getDatasets'], self.project.api_url_for('dataverse_get_datasets'))
         assert_equal(urls['datasetPrefix'], 'http://dx.doi.org/')
         assert_equal(urls['dataversePrefix'], 'http://{0}/dataverse/'.format(self.host))

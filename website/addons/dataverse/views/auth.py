@@ -1,4 +1,5 @@
 import httplib as http
+from flask import request
 
 from framework.auth.decorators import must_be_logged_in
 from website.addons.dataverse.provider import DataverseProvider
@@ -7,16 +8,25 @@ from website.project import decorators
 from website.util import api_url_for
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'node')
 @decorators.must_not_be_registration
-def deauthorize_dataverse(auth, node_addon, **kwargs):
+def dataverse_add_user_auth(auth, node_addon, **kwargs):
+    """Allows for importing existing auth to AddonDataverseNodeSettings"""
+
+    provider = DataverseProvider()
+    external_account_id = request.get_json().get('external_account_id')
+    return provider.add_user_auth(node_addon, auth.user, external_account_id)
+
+
+@decorators.must_have_permission('write')
+@decorators.must_have_addon('dataverse', 'node')
+@decorators.must_not_be_registration
+def dataverse_remove_user_auth(auth, node_addon, **kwargs):
     """Remove Dataverse authorization and settings from node"""
 
     provider = DataverseProvider()
-    provider.remove_user_auth(node_addon, auth.user)
-
-    return {}
+    return provider.remove_user_auth(node_addon, auth.user)
 
 
 @must_be_logged_in
@@ -29,9 +39,10 @@ def dataverse_user_config_get(user_addon, **kwargs):
         'result': {
             'userHasAuth': user_addon.has_auth,
             'urls': {
-                'create': api_url_for('dataverse_add_external_account'),
+                'create': api_url_for('dataverse_add_user_account'),
                 'accounts': api_url_for('dataverse_get_user_accounts'),
             },
             'hosts': DEFAULT_HOSTS,
         },
     }, http.OK
+

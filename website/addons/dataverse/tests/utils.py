@@ -32,7 +32,7 @@ class DataverseAddonTestCase(AddonTestCase):
 
 def create_external_account(host='foo.bar.baz', token='doremi-abc-123'):
     """Creates external account for Dataverse with fields populated the same
-    way as `dataverse_add_external_account`"""
+    way as `dataverse_add_user_account`"""
 
     return ExternalAccountFactory(
         provider='dataverse',
