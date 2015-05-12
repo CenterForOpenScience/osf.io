@@ -11,10 +11,12 @@ var ChangeMessageMixin = require('js/changeMessage');
 var NodeCategorySettings = oop.extend(
     ChangeMessageMixin,
     {
-        constructor: function(category, categories, updateUrl) {
+        constructor: function(category, categories, updateUrl, disabled) {
             this.super.constructor.call(this);
 
             var self = this;
+
+            self.disabled = disabled || false;
 
             self.UPDATE_SUCCESS_MESSAGE = 'Category updated successfully';
             self.UPDATE_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +

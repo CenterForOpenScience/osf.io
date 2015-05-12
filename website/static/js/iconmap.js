@@ -1,6 +1,4 @@
-// TODO Remove when @caneruguz's updates are in
-require('css/projectorganizer.css');
-///////////////////////////////////////////////
+require('css/iconmap.css');
 
 module.exports = {
     componentIcons: {
@@ -23,5 +21,7 @@ module.exports = {
         registeredComponent:  'fa fa-th-large text-muted',
         link:  'fa fa-link'
     },
-    info: 'fa fa-info-circle'
+    info: 'fa fa-info-circle',
+    smaller: 'iconmap-smaller',
+    clickable: 'iconmap-clickable'
 };

@@ -175,8 +175,14 @@
         </div>
 
     </script>
-    <script type="text/html" id="project">
-        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
+    <script type="text/html" id="node">
+      <!-- ko if: parent_url -->
+      <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
+        <!-- /ko -->
+        <!-- ko if: !parent_url -->        
+        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
+        <!-- /ko -->
+
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
@@ -188,18 +194,16 @@
                 <!-- ko ifnot: url -->
                     {{ fullname }}
                 <!-- /ko -->
-
-
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </span>
         </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
-                </span>
-            </span>
+          <span class="tag-cloud" data-bind="foreach: tags">
+              <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+              </span>
+          </span>
         </p>
         <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
@@ -207,69 +211,11 @@
         </p>
         <!-- /ko -->
     </script>
-    <script type="text/html" id="app">
-        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
-
-        <!-- ko if: contributors.length > 0 -->
-        <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
-                <!-- /ko-->
-                <!-- ko ifnot: url -->
-                    {{ fullname }}
-                <!-- /ko -->
-
-
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
-        <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
-                </span>
-            </span>
-        </p>
-        <!-- /ko -->
+    <script type="text/html" id="project">
+      <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="component">
-        <!-- ko if: parent_url -->
-            <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
-        <!-- /ko -->
-        <!-- ko if: !parent_url -->
-            <h4>{{ parent_title}} / <a data-bind="attr.href: url">{{title }}</a></h4>
-        <!-- /ko -->
-
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
-
-        <!-- ko if: contributors.length > 0 -->
-        <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
-                <!-- /ko-->
-                <!-- ko ifnot: url -->
-                    {{ fullname }}
-                <!-- /ko -->
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
-        <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
-                </span>
-            </span>
-        </p>
-        <p><strong>Jump to:</strong>
-            <a data-bind="attr.href: wikiUrl">Wiki</a> -
-            <a data-bind="attr.href: filesUrl">Files</a>
-        </p>
-        <!-- /ko -->
+      <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{ title }}</a>  (Registration)</h4>

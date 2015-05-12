@@ -53,7 +53,6 @@ var projectOrganizerCategories = $.extend({}, {
     folder: 'Folder',
     smartFolder: 'Smart Folder',
     project: 'Project',
-    registration:  'Registration',
     link:  'Link'
 }, nodeCategories);
 
@@ -68,7 +67,7 @@ projectOrganizer.publicProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -92,7 +91,7 @@ projectOrganizer.myProjects = new Bloodhound({
     },
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     remote: {
-        url: '/api/v1/search/projects/visible/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
+        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
         filter: function (projects) {
             return $.map(projects, function (project) {
                 return {
@@ -644,13 +643,17 @@ function _poToggleCheck(item) {
 function _poResolveIcon(item) {
     var icons = iconmap.projectIcons;
     var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
     var viewLink = item.data.urls.fetch;
     function returnView(type, category) {
         var iconType = icons[type];
         if (type === 'component' || type === 'registeredComponent') {
             iconType = componentIcons[category];
         }
-        if (type === 'registeredComponent') {
+        else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
             iconType += ' po-icon-registered';
         }
         else {
@@ -674,9 +677,9 @@ function _poResolveIcon(item) {
     }
     if (item.data.isProject) {
         if (item.data.isRegistration) {
-            return returnView('registration');
+            return returnView('registeredProject', item.data.category);
         } else {
-            return returnView('project');
+            return returnView('project', item.data.category);
         }
     }
 
@@ -738,6 +741,10 @@ function expandStateLoad(item) {
     if(item.children.length === 0 && item.data.childrenCount > 0){
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
+    }
+
+    if (item.data.isPointer && !item.data.parentIsFolder) {
+        item.data.expand = false;
     }
     if (item.children.length > 0 && item.depth > 0) {
         for (i = 0; i < item.children.length; i++) {
@@ -1331,7 +1338,7 @@ ProjectOrganizer.prototype = {
         return m.render(
             domNode,
             m('span', {
-                className: iconmap.info + ' smaller',
+                className: [iconmap.info, iconmap.smaller, iconmap.clickable].join(' '),
                 click: showLegend
             })
         );
