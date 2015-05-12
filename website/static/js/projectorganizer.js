@@ -1186,6 +1186,12 @@ var POItemButtons = {
     }
 };
 
+var _dismissToolbar = function () {
+    var tb = this;
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
+    tb.resetFilter();
+    tb.filterText('');
+};
 
 
 var POToolbar = {
@@ -1196,7 +1202,7 @@ var POToolbar = {
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
         self.helpText = m.prop('');
-        self.dismissToolbar = Fangorn.Utils.dismissToolbar.bind(self.tb);
+        self.dismissToolbar = _dismissToolbar.bind(self.tb);
     },
     view: function (ctrl) {
         var templates = {};
