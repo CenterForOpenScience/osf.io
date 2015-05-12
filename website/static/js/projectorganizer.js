@@ -1120,7 +1120,19 @@ var POToolbar = {
                 )
         ];
         templates[Fangorn.Components.toolbarModes.ADDFOLDER]  = [
-            m('.col-xs-9', m('input#addNewFolder.tb-header-input', { 'placeholder' : 'Collection name'})),
+            m('.col-xs-9',
+                m.component(Fangorn.Components.input, {
+                    onkeypress: function (event) {
+                        if (ctrl.tb.pressedKey === 13) {
+                            _addFolderEvent.call(ctrl.tb);
+                        }
+                    },
+                    id : 'addNewFolder',
+                    helpTextId : 'addFolderHelp',
+                    placeholder : 'New collection name',
+                    tooltip: 'Name your new collection'
+                }, ctrl.helpText())
+            ),
             m('.col-xs-3.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
                     [
