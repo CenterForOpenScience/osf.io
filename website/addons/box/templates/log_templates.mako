@@ -1,6 +1,7 @@
 <script type="text/html" id="box_file_added">
 added file
-<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.fullPath }}</a> to
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
+    {{ params.fullPath.startsWith('/') ? params.fullPath.replace('/', '', 1) : params.fullPath }}</a> to
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -14,14 +15,16 @@ Box in
 
 <script type="text/html" id="box_file_updated">
 updated file
-<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.fullPath }}</a> to
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
+    {{ params.fullPath.startsWith('/') ? params.fullPath.replace('/', '', 1) : params.fullPath }}</a> to
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 
 <script type="text/html" id="box_file_removed">
-removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow">{{ params.name }}</span> from
+removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow">
+    {{ params.name.startsWith('/') ? params.name.replace('/', '', 1) : params.name }}</span> from
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
