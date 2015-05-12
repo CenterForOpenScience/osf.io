@@ -1046,6 +1046,7 @@ function addProjectEvent() {
     });
     triggerClickOnItem.call(tb, item);
     tb.toolbarMode('bar');
+    tb.select('.tb-header-row .twitter-typeahead').remove();
 }
 
 function showLegend() {
@@ -1191,6 +1192,7 @@ var _dismissToolbar = function () {
     tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
     tb.resetFilter();
     tb.filterText('');
+    tb.select('.tb-header-row .twitter-typeahead').remove();
 };
 
 
