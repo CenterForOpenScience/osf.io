@@ -37,7 +37,10 @@ var linkName;
 var linkID;
 
 // Cross browser key codes for the Command key
-var commandKeys = [224, 17, 91, 93];
+var COMMAND_KEYS = [224, 17, 91, 93];
+var ESCAPE_KEY = 27;
+var ENTER_KEY = 13;
+
 
 var projectOrganizerCategories = $.extend({}, {
     collection: 'Collections',
@@ -116,7 +119,7 @@ function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     return m('span', { 'class' : css , ondblclick : function (event) {
-        if (commandKeys.indexOf(tb.pressedKey) !== -1) {
+        if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
             window.open(item.data.urls.fetch, '_blank');
         } else {
             window.open(item.data.urls.fetch, '_self');
@@ -135,7 +138,7 @@ function _poTitleColumn(item) {
  */
 function _gotoEvent(event, item) {
     var tb = this;
-    if (commandKeys.indexOf(tb.pressedKey) !== -1) {
+    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
         window.open(item.data.urls.fetch, '_blank');
     } else {
         window.open(item.data.urls.fetch, '_self');
