@@ -118,89 +118,107 @@ function _removeEvent(event, items) {
 
 
 // Define Fangorn Button Actions
-function _githubDefineToolbar(item) {
-    var tb = this;
-    var buttons = [];
+var _githubItemButtons = {
+    view: function (ctrl, args, children) {
+        var tb = args.treebeard;
+        var item = args.item;
+        var buttons = [];
 
-    function _downloadEvent(event, item, col) {
-        event.stopPropagation();
-        window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
-    }
-    // Download Zip File
-    if (item.kind === 'folder') {
-        var branchArray = [];
-        if (item.data.branches) {
-            item.data.branch = item.data.branch || item.data.defaultBranch;
-            for (var i = 0; i < item.data.branches.length; i++) {
-                var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
-                branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
+        function _downloadEvent(event, item, col) {
+            event.stopPropagation();
+            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
+        }
+
+        // Download Zip File
+        if (item.kind === 'folder') {
+            var branchArray = [];
+            if (item.data.branches) {
+                item.data.branch = item.data.branch || item.data.defaultBranch;
+                for (var i = 0; i < item.data.branches.length; i++) {
+                    var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
+                    branchArray.push(m('option', {
+                        selected: selected,
+                        value: item.data.branches[i]
+                    }, item.data.branches[i]));
+                }
+            }
+            // If File and FileRead are not defined dropzone is not supported and neither is uploads
+            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
+                        },
+                        tooltip: 'Upload files to Github folder',
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload'),
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            tb.toolbarMode('createFolder');
+                        },
+                        tooltip: 'Create a new folder.',
+                        icon: 'fa fa-plus',
+                        className: 'text-primary'
+                    }, 'Create Folder')
+                );
+            }
+            if (item.data.addonFullname) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            window.location = item.data.urls.zip;
+                        },
+                        tooltip: 'Download repository as a zip file',
+                        icon: 'fa fa-download',
+                        className: 'text-success'
+                    }, 'Download'),
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            window.open(item.data.urls.repo, '_blank');
+                        },
+                        tooltip: 'Open repository in a new window.',
+                        icon: 'fa fa-external-link',
+                        className: 'text-info'
+                    }, 'Open'),
+                    m.component(Fangorn.Components.dropdown, {
+                        'label': 'Branch: ',
+                        onchange: function (event) {
+                            changeBranch.call(tb, item, event.target.value);
+                        },
+                        tooltip: 'Change Branch',
+                        icon: 'fa fa-external-link',
+                        className: 'text-info'
+                    }, branchArray)
+                );
+            }
+        } else if (item.kind === 'file') {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        _downloadEvent.call(tb, event, item);
+                    },
+                    tooltip: 'Download file to your computer.',
+                    icon: 'fa fa-download',
+                    className: 'text-info'
+                }, 'Download')
+            );
+            if (item.data.permissions && item.data.permissions.edit) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _removeEvent.call(tb, event, [item]);
+                        },
+                        tooltip: 'Delete file.',
+                        icon: 'fa fa-trash',
+                        className: 'text-danger'
+                    }, 'Delete')
+                );
             }
         }
-        // If File and FileRead are not defined dropzone is not supported and neither is uploads
-        if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {Fangorn.ButtonEvents._uploadEvent.call(tb, event, item); },
-                    tooltip: 'Upload files to Github folder',
-                    icon: 'fa fa-upload',
-                    className : 'text-success'
-                }, 'Upload'),
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {
-                        tb.toolbarMode('createFolder');
-                    },
-                    tooltip: 'Create a new folder.',
-                    icon: 'fa fa-plus',
-                    className : 'text-primary'
-                }, 'Create Folder')
 
-            );
-        }
-        if (item.data.addonFullname) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {window.location = item.data.urls.zip;},
-                    tooltip: 'Download repository as a zip file',
-                    icon: 'fa fa-download',
-                    className : 'text-success'
-                }, 'Download'),
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {window.open(item.data.urls.repo, '_blank');},
-                    tooltip: 'Open repository in a new window.',
-                    icon: 'fa fa-external-link',
-                    className : 'text-info'
-                }, 'Open'),
-                m.component(Fangorn.Components.dropdown, {
-                    'label' : 'Branch: ',
-                    onchange: function(event) {changeBranch.call(tb, item, event.target.value );},
-                    tooltip: 'Change Branch',
-                    icon: 'fa fa-external-link',
-                    className : 'text-info'
-                },branchArray)
-            );
-        }
-    } else if (item.kind === 'file') {
-        buttons.push(
-            m.component(Fangorn.Components.button, {
-                onclick: function(event) {_downloadEvent.call(tb, event, item);},
-                tooltip: 'Download file to your computer.',
-                icon: 'fa fa-download',
-                className : 'text-info'
-            }, 'Download')
-        );
-        if (item.data.permissions && item.data.permissions.edit) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {_removeEvent.call(tb, event, [item]); },
-                    tooltip: 'Delete file.',
-                    icon: 'fa fa-trash',
-                    className : 'text-danger'
-                }, 'Delete')
-            );
-        }
+        return m('span', buttons); // Tell fangorn this function is used.
     }
-
-    return buttons; // Tell fangorn this function is used.
 }
 
 function changeBranch(item, ref){
@@ -311,7 +329,7 @@ Fangorn.config.github = {
     onUploadComplete: _fangornUploadComplete,
     lazyLoadOnLoad: _fangornLazyLoadOnLoad,
     uploadSuccess: _fangornUploadSuccess,
-    defineToolbar: _githubDefineToolbar,
+    itemButtons: _githubItemButtons,
     removeEvent : _removeEvent
 
 };
