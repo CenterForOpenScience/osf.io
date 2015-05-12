@@ -334,13 +334,17 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_401')
     @mock.patch('website.addons.dataverse.views.crud.publish_dataset')
-    def test_dataverse_publish_dataset(self, mock_publish, mock_connection):
+    @mock.patch('website.addons.dataverse.views.crud.publish_dataverse')
+    def test_dataverse_publish_dataset(self, mock_publish_dv, mock_publish_ds, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
         url = api_url_for('dataverse_publish_dataset',
                           pid=self.project._primary_key)
-        self.app.put(url, auth=self.user.auth)
-        assert_true(mock_publish.called)
+        self.app.put_json(url, params={'publish_both': False}, auth=self.user.auth)
+
+        # Only dataset was published
+        assert_false(mock_publish_dv.called)
+        assert_true(mock_publish_ds.called)
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_401')
     @mock.patch('website.addons.dataverse.views.crud.publish_dataset')
@@ -348,9 +352,11 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     def test_dataverse_publish_both(self, mock_publish_dv, mock_publish_ds, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = api_url_for('dataverse_publish_both',
+        url = api_url_for('dataverse_publish_dataset',
                           pid=self.project._primary_key)
-        self.app.put(url, auth=self.user.auth)
+        self.app.put_json(url, params={'publish_both': True}, auth=self.user.auth)
+
+        # Both Dataverse and dataset were published
         assert_true(mock_publish_dv.called)
         assert_true(mock_publish_ds.called)
 
