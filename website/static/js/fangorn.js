@@ -845,7 +845,6 @@ function _fangornResolveRows(item) {
         }
         ];
     }
-
     if (item.parentID) {
         item.data.permissions = item.data.permissions || item.parent().data.permissions;
         if (item.data.kind === 'folder') {
