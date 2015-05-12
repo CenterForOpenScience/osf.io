@@ -47,26 +47,29 @@
             </div>
         </form>
 
-        <!-- TODO: Add list of known registered apps below -->
-        <div id="placeholder">Empty placeholder for registered apps</div>
-        <table>
+        <table class="table table-condensed">
             <tr>
-                <th>App name</th>
-                <th>Reg date</th>
-                <th><!-- Show key --></th>
-                <th><!-- Delete button --></th>
+                <th>Application</th>
+                <th>
+                    <span class="pull-right">
+                        Delete <span class="glyphicon glyphicon-info-sign" aria-hidden="true"
+                                     title="Deleting this API key will de-authorize any external applications that use it to connect to the OSF"></span>
+                    </span>
+                </th>
             </tr>
-            %for a in known_apps:
+            %for reg_app in known_apps:
                 <tr>
-                    <td>${a.name}</td>
-                    <td>${a.reg_date}</td>
-                    <td>Show</td>
-                    <td>x</td>
+                    <td>
+                        <a href="${reg_app.home_url}">${reg_app.name}</a>
+                        <p>Key: <span class="text-muted">${reg_app._id} </span></p>
+                    </td>
+                    <!-- TODO: Add error message for when button deleted -->
+                    <td>
+                        <button type="button" class="btn btn-danger pull-right">Delete</button>
+                    </td>
                 </tr>
             %endfor
         </table>
-
-        Known apps: ${known_apps} .
     </div>
 </div>
 
