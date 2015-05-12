@@ -96,7 +96,7 @@ var cancelUploadTemplate = function(row){
             'onclick' : function (e) {
                 cancelUploads.call(treebeard, row);
             }},
-        m('.fa.fa-times-circle.text-danger', { style : 'display:block;font-size:18px'}));
+        m('.fa.fa-times-circle.text-warning', { style : 'display:block;font-size:18px'}, m('span', { style : 'font-size: 14px;'}, ' Cancel')));
 };
 
 /**
