@@ -788,7 +788,7 @@ def make_url_map(app):
             OsfWebRenderer('project/retract_registration.mako')),
         Rule([
             '/project/<pid>/retraction/approve/<token>/',
-            '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
+            '/project/<pid>/node/<nid>/retraction/approve/<token>/',
         ], 'get', project_views.register.node_registration_retraction_approve,
             OsfWebRenderer('error.mako', render_mako_string)),
         Rule([

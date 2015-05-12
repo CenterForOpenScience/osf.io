@@ -2526,7 +2526,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'is_registration': self.is_registration,
         }
 
-    def _initiate_retraction(self, user, justification):
+    def _initiate_retraction(self, user, justification=None):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
