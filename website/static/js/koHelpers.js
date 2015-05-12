@@ -78,11 +78,9 @@ addExtender('trimmedURLArray', function(values) {
     if (values) {
         for (var i = 0; i < values.length; i++) {   
             values[i] = cleanURL(values[i]);
-            }
-            return values;
-    }
-
-    else {
+        }
+        return values;
+    } else {
         return values;
     }
 });
