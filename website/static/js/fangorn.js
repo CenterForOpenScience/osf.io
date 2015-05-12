@@ -90,15 +90,6 @@ function cancelUploads (row) {
     tb.isUploading(false);
 }
 
-var cancelUploadTemplate = function(row){
-    var treebeard = this;
-    return m('.btn.m-l-sm.text-muted', {
-            'onclick' : function (e) {
-                cancelUploads.call(treebeard, row);
-            }},
-        m('.fa.fa-times-circle.text-danger', { style : 'display:block;font-size:18px'}));
-};
-
 /**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
@@ -802,7 +793,7 @@ function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
-            onclick: function() {
+            ondblclick: function() {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 var fileurl  = redir.toString() + '/';

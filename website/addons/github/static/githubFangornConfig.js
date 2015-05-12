@@ -251,7 +251,7 @@ function _fangornGithubTitle(item, col)  {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
                 m('github-name.fg-file-links', {
-                    onclick: function() {
+                    ondblclick: function() {
                         var redir = new URI(item.data.nodeUrl);
                         var fileurl = new URI(item.data.nodeUrl)
                             .segment('files')
