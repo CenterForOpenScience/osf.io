@@ -85,12 +85,21 @@ class GitHubProvider(provider.BaseProvider):
         segments = ('repos', self.owner, self.repo) + segments
         return self.build_url(*segments, **query)
 
-    # def can_intra_move(self, other):
-    #     return (
-    #         type(self) == type(other) and
-    #         self.repo == other.repo and
-    #         self.owner == other.owner
-    #     )
+    def can_intra_move(self, other, path=None):
+        return self.can_intra_copy(other, path=path)
+
+    def can_intra_copy(self, other, path=None):
+        return (
+            type(self) == type(other) and
+            self.repo == other.repo and
+            self.owner == other.owner
+        )
+
+    def intra_copy(self, dest_provider, src_path, dest_path):
+        return (yield from self._do_intra_move_or_copy(src_path, dest_path, True))
+
+    def intra_move(self, dest_provider, src_path, dest_path):
+        return (yield from self._do_intra_move_or_copy(src_path, dest_path, False))
 
     @asyncio.coroutine
     def download(self, path, **kwargs):
