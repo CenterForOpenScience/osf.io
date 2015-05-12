@@ -33,13 +33,17 @@ var filePage = new FilePage('#filePageContext', filePageOptions);
 $(document).ready(function () {
     var bodyElement = $('body');
 
+    var view = $('[data-osf-panel="View"]');
+    view.hide();
+
+
     $('*[data-osf-panel]').osfPanel({
-        buttonElement : '.switch',
+//        buttonElement : '.switch',
         onSize : 'xs',
-        'onclick' : function (event, title, buttonState, thisbtn, col) {
+        onclick : function (event, title, buttonState, thisbtn, col) {
             // this = all the column elements; an array
             // title = Text of the button
-            // buttonState = the visibility of column after click, taen from data-osf-toggle attribute,
+            // buttonState = the visibility of column after click, taken from data-osf-toggle attribute,
             // thisbtn = $(this);
             // col = the $() for the column this button links to
             
@@ -53,10 +57,6 @@ $(document).ready(function () {
                 return;
             }
 
-            bodyElement.trigger('togglePanel', [
-                title.toLowerCase(),
-                buttonState
-            ]);
             ace.edit(editor).resize();  // jshint ignore: line
         }
     });

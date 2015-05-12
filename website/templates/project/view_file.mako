@@ -131,23 +131,6 @@
                     <div class="col-sm-6">
                         <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
                     </div>
-                    <div class="col-sm-6">
-                        <div class="pull-right">
-                            <!-- Version Picker -->
-##                            <select data-bind="value:viewVersion" id="viewVersionSelect">
-##                                % if user['can_edit']:
-##                                    <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
-##                                % endif
-##                                <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
-##                                % if len(versions) > 1:
-##                                    <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
-##                                % endif
-##                                % for version in versions[2:]:
-##                                    <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
-##                                % endfor
-##                            </select>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -359,6 +342,9 @@
                 panelsUsed: ${json.dumps(panels_used) | n},
                 isEditable: isEditable,
                 urls: {
+
+##                  TODO: @caseyrollins refactor these URLs and determine which are necessary
+
                     draft: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     content: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     rename: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
