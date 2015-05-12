@@ -70,6 +70,20 @@ def must_not_be_registration(func):
 
     return wrapped
 
+def must_be_registration(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        if not node.is_registration:
+            raise HTTPError(http.BAD_REQUEST)
+        return func(*args, **kwargs)
+
+    return wrapped
+
 
 def check_can_access(node, user, key=None, api_node=None):
     """View helper that returns whether a given user can access a node.
