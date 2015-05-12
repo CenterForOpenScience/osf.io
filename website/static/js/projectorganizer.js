@@ -1123,7 +1123,7 @@ var POToolbar = {
             m('.col-xs-9',
                 m.component(Fangorn.Components.input, {
                     onkeypress: function (event) {
-                        if (ctrl.tb.pressedKey === 13) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
                             _addFolderEvent.call(ctrl.tb);
                         }
                     },
@@ -1132,7 +1132,7 @@ var POToolbar = {
                     placeholder : 'New collection name',
                     tooltip: 'Name your new collection'
                 }, ctrl.helpText())
-            ),
+                ),
             m('.col-xs-3.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
                     [
@@ -1150,7 +1150,20 @@ var POToolbar = {
                 )
         ];
         templates[Fangorn.Components.toolbarModes.RENAME] = [
-            m('.col-xs-9', m('input#renameInput.tb-header-input', { value : ctrl.items()[0] ? ctrl.items()[0].data.name : '' })),
+            m('.col-xs-9',
+                m.component(Fangorn.Components.input, {
+                    onkeypress: function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            _renameEvent.call(ctrl.tb);
+                        }
+                    },
+                    id : 'renameInput',
+                    helpTextId : 'renameHelpText',
+                    placeholder : null,
+                    value : ctrl.items()[0] ? ctrl.items()[0].data.name : '',
+                    tooltip: 'Rename this item'
+                }, ctrl.helpText())
+                ),
             m('.col-xs-3.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
                     [
@@ -1390,16 +1403,6 @@ var tbOptions = {
 
         $('.gridWrapper').on('mouseout', function () {
             rowDiv.removeClass('po-hover');
-        });
-        $(document).on('keypress', '#renameInput', function () {
-            if (tb.pressedKey === 13) {
-                _renameEvent.call(tb);
-            }
-        });
-        $(document).on('keypress', '#addNewFolder', function () {
-            if (tb.pressedKey === 13) {
-                _addFolderEvent.call(tb);
-            }
         });
     },
     createcheck : function (item, parent) {
