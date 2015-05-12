@@ -248,9 +248,11 @@
 }
 .swagger-ui-wrap pre {
   font-family: "Anonymous Pro", "Menlo", "Consolas", "Bitstream Vera Sans Mono", "Courier New", monospace;
+  font-size: 12px;
   background-color: #fcf6db;
   border: 1px solid #e5e0c6;
   padding: 10px;
+  margin-bottom: 10px;
 }
 .swagger-ui-wrap pre code {
   line-height: 1.6em;
