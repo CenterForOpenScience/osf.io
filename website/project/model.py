@@ -286,24 +286,31 @@ class ApiKey(StoredObject):
 
 
 # TODO: WRITE THIS! WRITE TESTS!
-class ApiApp(StoredObject):
-    """Registration and primary key information for user-created OAuth API applications"""
+class OAuth2App(StoredObject):
+    """Registration and key for user-created OAuth API applications"""
 
+    # Client ID
     _id = fields.StringField(
         primary=True,
-        default=lambda: str(ObjectId()) + str(uuid.uuid4())
+        default=lambda: str(ObjectId())
     )
+
+    # Client secret
+    secret = fields.StringField(default=lambda: str(uuid.uuid4()))
+
+    _destroy = fields.BooleanField(default=False)  # Has this application been deactivated for users?
 
     owner = fields.ForeignField('user', backref='created')
 
+    # User-specified application descriptors
     name = fields.StringField(index=True, required=True)
+    desc = fields.StringField(required=False)
+
     reg_date = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
 
     # TODO: Add URL validation? (to what layer?)
     home_url = fields.StringField(required=True)
     callback_url = fields.StringField(required=True)
-
-    desc = fields.StringField(required=False)
 
 
 @unique_on(['params.node', '_id'])
