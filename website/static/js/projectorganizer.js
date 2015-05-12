@@ -1081,6 +1081,109 @@ function showLegend() {
     tb.modal.show();
 }
 
+var POItemButtons = {
+    view : function (ctrl, args, children) {
+        var tb = args.treebeard;
+        var item = args.item;
+        var buttons = [];
+        if (!item.data.urls) {
+            return m('div');
+        }
+        var url = item.data.urls.fetch;
+        var theItem = item.data;
+        var theParentNode = item.parent();
+        var theParentNodeID = theParentNode.data.node_id;
+        $('.fangorn-toolbar-icon').tooltip('destroy');
+        if (!item.data.isSmartFolder) {
+            if (url !== null) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _gotoEvent.call(tb, event, item);
+                        },
+                        tooltip: 'Opens the project in same window. Use Command + Click to open in new window.',
+                        icon: 'fa fa-external-link',
+                        className: 'text-primary'
+                    }, 'Open')
+                );
+            }
+        }
+        if (!item.data.isSmartFolder && (item.data.isDashboard || item.data.isFolder)) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        tb.toolbarMode('addFolder');
+                    },
+                    tooltip: 'Adds a Collection to visually organize your projects or components.',
+                    icon: 'fa fa-cubes',
+                    className: 'text-primary'
+                }, 'Add Collection'),
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        tb.toolbarMode('addProject');
+                    },
+                    tooltip: 'Adds an existing project or component to the Collection.',
+                    icon: 'fa fa-cube',
+                    className: 'text-primary'
+                }, 'Add Existing Project')
+            );
+        }
+        if (!item.data.isFolder && item.data.parentIsFolder && !item.parent().data.isSmartFolder) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
+                        var deleteAction = $.ajax({
+                            type: 'DELETE',
+                            url: url,
+                            contentType: 'application/json',
+                            dataType: 'json'
+                        });
+                        deleteAction.done(function () {
+                            tb.updateFolder(null, theParentNode);
+                            tb.clearMultiselect();
+                        });
+                        deleteAction.fail(function (xhr, status, error) {
+                            Raven.captureMessage('Remove from collection in PO failed.', {
+                                url: url,
+                                textStatus: status,
+                                error: error
+                            });
+                        });
+                    },
+                    tooltip: 'Removes the selected row from the Collection. This action does NOT delete the project.',
+                    icon: 'fa fa-minus',
+                    className: 'text-primary'
+                }, 'Remove from Collection')
+            );
+        }
+        if (!item.data.isDashboard && !item.data.isRegistration && item.data.permissions && item.data.permissions.edit) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        tb.toolbarMode('rename');
+                    },
+                    tooltip: 'Change the name of the Collection or project.',
+                    icon: 'fa fa-font',
+                    className: 'text-primary'
+                }, 'Rename')
+            );
+        }
+        if (item.data.isFolder && !item.data.isDashboard && !item.data.isSmartFolder) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        _deleteFolder.call(tb, item, theItem);
+                    },
+                    tooltip: 'Deletes the collection.',
+                    icon: 'fa fa-trash',
+                    className: 'text-danger'
+                }, 'Delete')
+            );
+        }
+        return m('span', buttons);
+    }
+};
 
 
 
@@ -1119,7 +1222,7 @@ var POToolbar = {
                     )
                 )
         ];
-        templates[Fangorn.Components.toolbarModes.ADDFOLDER]  = [
+        templates[Fangorn.Components.toolbarModes.ADDFOLDER] = [
             m('.col-xs-9',
                 m.component(Fangorn.Components.input, {
                     onkeypress: function (event) {
@@ -1228,7 +1331,7 @@ var POToolbar = {
             }, '')
         );
         if (ctrl.items().length === 1) {
-            rowButtons = _poDefineToolbar.call(ctrl.tb, ctrl.items()[0]);
+            rowButtons = m.component(POItemButtons, {treebeard : ctrl.tb, item : ctrl.items()[0]});
         }
         templates[Fangorn.Components.toolbarModes.DEFAULT] = m('.col-xs-12',m('.pull-right', [rowButtons, generalButtons]));
         return m('.row.tb-header-row', [
@@ -1241,97 +1344,6 @@ var POToolbar = {
     }
 };
 
-function _poDefineToolbar(item) {
-    var tb = this;
-    var buttons = [];
-    if (!item.data.urls) { return; }
-    var url = item.data.urls.fetch;
-    var theItem = item.data;
-    var theParentNode = item.parent();
-    var theParentNodeID = theParentNode.data.node_id;
-    $('.fangorn-toolbar-icon').tooltip('destroy');
-
-    if (!item.data.isSmartFolder) {
-        if (url !== null) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) { _gotoEvent.call(tb, event, item); },
-                    tooltip: 'Opens the project in same window. Use Command + Click to open in new window.',
-                    icon : 'fa fa-external-link',
-                    className : 'text-primary'
-                }, 'Open')
-            );
-        }
-    }
-
-    if (!item.data.isSmartFolder && (item.data.isDashboard || item.data.isFolder)) {
-        buttons.push(
-            m.component(Fangorn.Components.button, {
-                onclick: function (event) {
-                    tb.toolbarMode('addFolder');
-                },
-                tooltip: 'Adds a Collection to visually organize your projects or components.',
-                icon : 'fa fa-cubes',
-                className : 'text-primary'
-            }, 'Add Collection'),
-            m.component(Fangorn.Components.button, {
-                onclick: function (event) {
-                    tb.toolbarMode('addProject');
-                },
-                tooltip: 'Adds an existing project or component to the Collection.',
-                icon : 'fa fa-cube',
-                className : 'text-primary'
-            }, 'Add Existing Project')
-        );
-    }
-    if (!item.data.isFolder && item.data.parentIsFolder && !item.parent().data.isSmartFolder) {
-        buttons.push(
-            m.component(Fangorn.Components.button, {
-                onclick: function (event) {
-                    url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
-                    var deleteAction = $.ajax({
-                        type: 'DELETE',
-                        url: url,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    });
-                    deleteAction.done(function () {
-                        tb.updateFolder(null, theParentNode);
-                        tb.clearMultiselect();
-                    });
-                },
-                tooltip: 'Removes the selected row from the Collection. This action does NOT delete the project.',
-                icon : 'fa fa-minus',
-                className : 'text-primary'
-            }, 'Remove from Collection')
-        );
-    }
-    if (!item.data.isDashboard && !item.data.isRegistration && item.data.permissions && item.data.permissions.edit) {
-        buttons.push(
-            m.component(Fangorn.Components.button, {
-                onclick: function (event) {
-                    tb.toolbarMode('rename');
-                },
-                tooltip: 'Change the name of the Collection or project.',
-                icon : 'fa fa-font',
-                className : 'text-primary'
-            }, 'Rename')
-        );
-    }
-    if (item.data.isFolder && !item.data.isDashboard && !item.data.isSmartFolder) {
-        buttons.push(
-            m.component(Fangorn.Components.button, {
-                onclick: function (event) {
-                    _deleteFolder.call(tb, item, theItem);
-                },
-                tooltip: 'Deletes the collection.',
-                icon : 'fa fa-trash',
-                className : 'text-danger'
-            }, 'Delete')
-        );
-    }
-    return buttons;
-}
 
 function _deleteFolder(item) {
     var tb = this;
