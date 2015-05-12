@@ -51,7 +51,7 @@ var cleanURL = function(value) {
     }
     return 'http://' + value;
 
-    }
+    };
 
 
 addExtender('cleanup', function(value, cleaner) {
@@ -82,7 +82,9 @@ addExtender('trimmedURLArray', function(values) {
             return values;
     }
 
-    else return values;
+    else {
+        return values;
+    }
 });
 
 var sanitize = function(value) {

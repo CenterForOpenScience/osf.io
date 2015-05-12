@@ -79,8 +79,17 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
 
+    def test_validate_multiple_profile_websites_valid(self):
+        self.user.social = {'profileWebsites': }
+        self.user.save()
+
     def test_validate_social_profile_websites_invalid(self):
         self.user.social = {'profileWebsites': ['help computer']}
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_multiple_profile_social_profile_websites_invalid(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/', 'help computer', 'http://dinosaurs.com']}
         with assert_raises(ValidationError):
             self.user.save()
 
@@ -103,6 +112,19 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social_links, {
             'profileWebsites': ['http://cos.io/'],
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        })
+
+    def test_multiple_profile_websites(self):
+        self.user.social = {
+            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {
+            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'http://twitter.com/OSFramework',
             'github': 'http://github.com/CenterForOpenScience'
         })

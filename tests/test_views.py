@@ -932,7 +932,24 @@ class TestUserProfile(OsfTestCase):
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
         payload = {
-            'personal': 'http://frozen.pizza.com/reviews',
+            'profileWebsites': ['http://frozen.pizza.com/reviews'],
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+        for key, value in payload.iteritems():
+            assert_equal(self.user.social[key], value)
+        assert_true(self.user.social['researcherId'] is None)
+
+    def test_unserialize_multiple_websites_social(self):
+        url = api_url_for('unserialize_social')
+        payload = {
+            'profileWebsites': ['http://frozen.pizza.com/reviews', 'http://www.whodat.com', 'http://www.rapdictionary.com'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
@@ -948,9 +965,26 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')
-        # personal URL is invalid
+        # profileWebsits URL is invalid
         payload = {
-            'profileWebsites': '[http://invalidurl]',
+            'profileWebsites': ['http://invalidurl'],
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        res = self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Invalid personal URL.')
+
+    def test_unserialize_social_multiple_websites_validation_failure(self):
+        url = api_url_for('unserialize_social')
+        # profileWebsits URL is invalid
+        payload = {
+            'profileWebsites': ['http://goodurl.com', 'http://invalidurl'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }

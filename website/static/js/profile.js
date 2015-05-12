@@ -609,9 +609,7 @@ SocialViewModel.prototype.serialize = function() {
         return value !== '';
     }
     
-    if (profileWebsites.length > 1) {
-        serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
-    }     
+    serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
     return serializedData;
 };
 
@@ -619,8 +617,12 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this,
         websiteValue = [];
     $.each(data || {}, function(key, value) {
-         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
-            for (var i = 0; i < value.length; i++) {
+        if (ko.isObservable(self[key]) && key === 'profileWebsites') {
+            if (!value.length) {
+                value.push('');
+            }
+
+        for (var i = 0; i < value.length; i++) {
                 websiteValue[i] = ko.observable(value[i]).extend({
                         trimmedURL: true
                 });                 
