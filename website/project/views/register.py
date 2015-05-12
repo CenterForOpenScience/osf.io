@@ -209,15 +209,13 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-def node_registration_embargo_approve(auth, token, **kwargs):
+def node_registration_embargo_approve(auth, node, token, **kwargs):
     """Handles approval of registration embargoes
     :param auth: User wanting to approve the embargo
     :param kwargs:
     :return: Redirect to registration or
     :raises: HTTPError if invalid token or user is not admin
     """
-
-    node = kwargs['node'] or kwargs['project']
 
     if not node.pending_embargo:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -244,14 +242,12 @@ def node_registration_embargo_approve(auth, token, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-def node_registration_embargo_disapprove(auth, token, **kwargs):
+def node_registration_embargo_disapprove(auth, node, token, **kwargs):
     """Handles disapproval of registration embargoes
     :param auth: User wanting to disapprove the embargo
     :return: Redirect to registration or
     :raises: HTTPError if invalid token or user is not admin
     """
-
-    node = kwargs['node'] or kwargs['project']
 
     if not node.pending_embargo:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -442,7 +438,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         embargo_end_date = datetime.datetime.strptime(
             data['embargoEndDate'],
             "%a, %d %b %Y %H:%M:%S %Z"
-        ).date()  # TODO(hryabcki) clean this up
+        ).date()
 
         # Initiate embargo
         try:

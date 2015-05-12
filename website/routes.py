@@ -788,7 +788,6 @@ def make_url_map(app):
             OsfWebRenderer('project/retract_registration.mako')),
         Rule([
             '/project/<pid>/retraction/approve/<token>/',
-            # FIXME(hrybacki) should be /retraction/approve/...
             '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
         ], 'get', project_views.register.node_registration_retraction_approve,
             OsfWebRenderer('error.mako', render_mako_string)),

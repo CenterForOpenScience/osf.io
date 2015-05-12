@@ -2584,10 +2584,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.retraction = retraction
 
     def _is_embargo_date_valid(self, end_date):
-        # TODO(hrybacki) make these dates use constants set in default.py
         today = datetime.date.today()
-        if (end_date - today).days >= 2:
-            if (end_date - today).days <= 366:
+        if (end_date - today) >= settings.EMBARGO_END_DATE_MIN:
+            if (end_date - today) <= settings.EMBARGO_END_DATE_MAX:
                 return True
         return False
 

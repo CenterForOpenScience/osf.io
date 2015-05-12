@@ -182,7 +182,7 @@ class TestProject(SearchTestCase):
 
 @requires_search
 class TestRegistrationRetractions(SearchTestCase):
-#
+
     def setUp(self):
         super(TestRegistrationRetractions, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
