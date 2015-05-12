@@ -1119,6 +1119,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.comments_viewed_timestamp[node_id] = timestamp
 
         self.emails.extend(user.emails)
+        user.emails = []
 
         for k, v in user.email_verifications.iteritems():
             email_to_confirm = v['email']
