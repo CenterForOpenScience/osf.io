@@ -27,7 +27,7 @@ from website import mailchimp_utils
 from website import settings
 from website.models import (User,
                             ApiKey,
-                            ApiApp)
+                            OAuth2App)
 from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
@@ -357,13 +357,28 @@ def user_notifications(auth, **kwargs):
         'mailing_lists': auth.user.mailing_lists
     }
 
+
+# @must_be_logged_in
+# def oauth_application_config(auth, **kwargs):
+#     user = auth.user
+#     return {
+#         'user_id': user._primary_key,
+#     }
+
 @must_be_logged_in
 def oauth_application_config(auth, **kwargs):
     """Return app creation page with list of known apps"""
-    user_apps = ApiApp.find(Q('owner', 'eq', auth.user))
-    # TODO: Populate the request context with API keys, user info, or other relevant information for developer account authorization.
+    user_apps = OAuth2App.find(Q('owner', 'eq', auth.user))
+    user_apps_dict = [{"id": ua._id,
+                       "owner": ua.owner,
+                       "name": ua.name,
+                       "description": ua.desc,
+                       "reg_date": ua.reg_date,
+                       "home_url": ua.home_url,
+                       "callback_url": ua.callback_url}
+                      for ua in user_apps]
     return {
-        "known_apps": user_apps
+        "known_apps": user_apps_dict
     }
 
 @must_be_logged_in
@@ -377,7 +392,7 @@ def oauth_application_register(auth, **kwargs):
 
     owner = auth.user
 
-    new_reg = ApiApp(name=app_name,
+    new_reg = OAuth2App(name=app_name,
                      home_url=home_url,
                      callback_url=app_callback_url,
                      desc=app_desc)
