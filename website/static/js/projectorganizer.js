@@ -475,7 +475,7 @@ function _poMultiselect(event, tree) {
         someItemsAreFolders,
         pointerIds;
     var scrollToItem = false;
-    Fangorn.Utils.dismissToolbar.call(tb);
+    _dismissToolbar.call(tb);
     if (!tb.filterOn) {
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
@@ -1193,6 +1193,8 @@ var _dismissToolbar = function () {
     tb.resetFilter();
     tb.filterText('');
     tb.select('.tb-header-row .twitter-typeahead').remove();
+    m.redraw();
+
 };
 
 

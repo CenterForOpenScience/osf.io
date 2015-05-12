@@ -1143,6 +1143,7 @@ var _dismissToolbar = function(){
     tb.toolbarMode(toolbarModes.DEFAULT);
     tb.resetFilter();
     tb.filterText('');
+    m.redraw();
 };
 
 var FGToolbar = {
