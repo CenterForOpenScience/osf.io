@@ -98,8 +98,7 @@
     </div>
 </div>
 % endif
-
-    <%include file="footer.mako"/>
+        ${self.footer()}
         % if settings.PINGDOM_ID:
             <script>
             var _prum = [['id', '${settings.PINGDOM_ID}'],
@@ -216,6 +215,9 @@
     ### Javascript loaded at the bottom of the page ###
 </%def>
 
+<%def name="footer()">
+    ### Footer for the pages ###
+</%def>
 
 <%def name="includes_top()">
 

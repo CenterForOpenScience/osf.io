@@ -49,12 +49,11 @@ if (!ctx.node.anonymous) {
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     // Treebeard Files view
     $.ajax({
         url:  nodeApiUrl + 'files/grid/'
-    })
-    .done(function( data ) {
+    }).done(function (data) {
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
@@ -63,7 +62,7 @@ $(document).ready(function() {
             placement: 'dashboard',
             title : undefined,
             filterFullWidth : true, // Make the filter span the entire row for this view
-            columnTitles : function(){
+            columnTitles : function () {
                 return [
                     {
                     title: 'Name',
@@ -73,7 +72,7 @@ $(document).ready(function() {
                     }
                 ];
             },
-            resolveRows : function(item){
+            resolveRows : function (item) {
                 var defaultColumns = [{
                     data: 'name',
                     folderIcons: true,
@@ -87,14 +86,13 @@ $(document).ready(function() {
                         item.data.accept = item.data.accept || item.parent().data.accept;
                     }
                 }
-
-                if(item.data.tmpID){
+                if (item.data.tmpID) {
                     defaultColumns = [
                         {
                             data : 'name',  // Data field name
                             folderIcons : true,
                             filter : true,
-                            custom : function(){ return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
+                            custom : function () { return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
                         }
                     ];
                 }
@@ -114,20 +112,23 @@ $(document).ready(function() {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
-        onAddTag: function(tag){
+        onAddTag: function (tag) {
             var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',
                 contentType: 'application/json'
             });
-            request.fail(function(xhr, textStatus, error) {
+            request.fail(function (xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    tag: tag,
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
                 });
             });
         },
-        onRemoveTag: function(tag){
+        onRemoveTag: function (tag) {
             var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
             var request = $.ajax({
                 url: url,
@@ -136,7 +137,10 @@ $(document).ready(function() {
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    tag: tag,
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
                 });
             });
         }
@@ -169,7 +173,7 @@ $(document).ready(function() {
     // Remove delete UI if not contributor
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
         $('a[title="Removing tag"]').remove();
-        $('span.tag span').each(function(idx, elm) {
+        $('span.tag span').each(function (idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
     }

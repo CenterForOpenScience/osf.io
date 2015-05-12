@@ -100,4 +100,7 @@ $(function() {
         $osf.applyBindings(new SlideInViewModel(), sliderSelector);
     }
     new NavbarControl('.osf-nav-wrapper');
+    $('.js-scrollTop').click(function () {
+        $(window).scrollTop(0);
+    });
 });

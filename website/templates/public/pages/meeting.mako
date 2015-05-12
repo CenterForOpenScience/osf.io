@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="/static/vendor/bower_components/hgrid/dist/hgrid.min.css" />
 </%def>
 
+<%def name="footer()">
+    <%include file="footer.mako" args="placement='presentationsPage'"/>
+</%def>
+
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script type="text/javascript">
@@ -24,3 +28,4 @@
     </script>
     <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
 </%def>
+

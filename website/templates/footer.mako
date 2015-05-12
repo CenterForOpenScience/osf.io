@@ -1,8 +1,10 @@
+<%page args="placement"/>
+%if placement != 'projectPage':
 <footer class="footer">
     <div class="container">
         <div class="row">
             <div class="col-sm-2 col-md-2 col-md-offset-1">
-                <h4>OSF</h4>
+                <h4>OSF ${placement}</h4>
                 <ul>
                     <li><a href="/4znzp/wiki/home">About</a></li>
                     <li><a href="/faq">FAQ</a></li>
@@ -36,13 +38,23 @@
         </div>
     </div>
 </footer><!-- end footer -->
+% endif
+
+%if placement == 'projectPage':
+<div class="container alternate-copyright copyright">
+% endif
+% if placement != 'projectPage':
 <div class="container copyright">
+% endif
+
     <div class="row">
         <div class="col-md-12">
             <p>Copyright &copy; 2011-2015 <a href="http://centerforopenscience.org">Center for Open Science</a> |
                 <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms of Use</a> |
-                <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
+                <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a> |
+                <a href="#" class="js-scrollTop">Scroll to Top</a>
             </p>
         </div>
     </div>
 </div><!-- end container copyright -->
+

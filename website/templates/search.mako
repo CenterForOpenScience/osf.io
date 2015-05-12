@@ -262,3 +262,7 @@
 
 
 </%def>
+
+<%def name="footer()">
+    <%include file="footer.mako" args="placement='searchPage'"/>
+</%def>

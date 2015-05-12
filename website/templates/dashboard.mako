@@ -111,3 +111,7 @@
 <script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
 
 </%def>
+
+<%def name="footer()">
+    <%include file="footer.mako" args="placement='dashboardPage'"/>
+</%def>

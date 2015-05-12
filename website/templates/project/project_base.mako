@@ -16,6 +16,7 @@
 
 <%include file="modal_show_links.mako"/>
 
+
 ${next.body()}
 
 ## % if node['node_type'] == 'project':
@@ -23,6 +24,11 @@ ${next.body()}
 ## % endif
 
 </%def>
+
+<%def name="footer()">
+    <%include file="../footer.mako" args="placement='projectPage'"/>
+</%def>
+
 
 <%def name="javascript_bottom()">
 
@@ -101,3 +107,4 @@ ${next.body()}
 ## NOTE: window.contextVars must be set before loading this script
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>
+
