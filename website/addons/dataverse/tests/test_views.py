@@ -152,7 +152,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
     def test_dataverse_add_external_account_existing(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
         host = 'myfakehost.data.verse'
-        token = 'api-token-here'
+        token = 'dont-use-this-token-in-other-tests'
         display_name = 'loaded_version'
 
         # Save an existing version
