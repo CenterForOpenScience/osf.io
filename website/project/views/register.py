@@ -14,7 +14,7 @@ from framework.forms.utils import process_payload, unprocess_payload
 from website import settings
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
-    must_have_permission, must_not_be_registration
+    must_have_permission, must_not_be_registration, must_be_registration
 )
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
@@ -254,3 +254,7 @@ def get_referent_by_identifier(category, value):
     if identifier.referent.url:
         return redirect(identifier.referent.url)
     raise HTTPError(http.NOT_FOUND)
+
+@must_be_registration
+def registration_callbacks():
+    import ipdb; ipdb.set_trace()
