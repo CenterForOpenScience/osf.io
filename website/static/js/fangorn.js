@@ -801,8 +801,8 @@ function _fangornUploadMethod(item) {
 function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
-        return m('span',{
-            ondblclick: function() {
+        return m('span.fg-file-links',{
+            onclick: function() {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                 var fileurl  = redir.toString() + '/';
