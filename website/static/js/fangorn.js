@@ -660,7 +660,7 @@ function _removeEvent (event, items, col) {
                 deleteList.push(item);
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
-                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'))
+                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'));
             }
         });
         // If all items can be deleted
@@ -948,26 +948,28 @@ function setCurrentFileID(tree, nodeID, file) {
     if(!file){
         return;
     }
+    var child;
+    var i;
     if (file.provider === 'figshare') {
-        for (var i = 0; i < tree.children.length; i++) {
-            var child = tree.children[i];
+        for (i = 0; i < tree.children.length; i++) {
+            child = tree.children[i];
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path) {
                 tb.currentFileID = child.id;
             }
         }
     } else if (file.provider === 'dataverse') {
         // Only highlight file in correct dataset version, since paths persist across versions
-        for (var i = 0; i < tree.children.length; i++) {
-            var child = tree.children[i];
+        for (i = 0; i < tree.children.length; i++) {
+            child = tree.children[i];
             var urlParams = $osf.urlParams();
-            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path
-                && child.data.extra.datasetVersion === urlParams.version) {
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path &&
+                child.data.extra.datasetVersion === urlParams.version) {
                 tb.currentFileID = child.id;
             }
         }
     } else if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
         for (var j = 0; j < tree.children.length; j++) {
-            var child = tree.children[j];
+            child = tree.children[j];
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.name === tb.fangornFolderArray[tb.fangornFolderIndex]) {
                 tb.fangornFolderIndex++;
                 if (child.data.kind === 'folder') {
@@ -1009,8 +1011,6 @@ var toolbarModes = {
 
 // A fangorn-styled button; addons can reuse this
 var FGButton = {
-    controller: function(args) {
-    },
     view: function(ctrl, args, children) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip || '';
@@ -1026,11 +1026,9 @@ var FGButton = {
             m('span.hidden-xs', children)
         ]);
     }
-}
+};
 
 var FGInput = {
-    controller : function(args) {
-    },
     view : function(ctrl, args, helpText) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip || '';
@@ -1056,7 +1054,7 @@ var FGInput = {
             }, helpText)
         ]);
     }
-}
+};
 
 var FGDropdown = {
     view : function(ctrl, args, children) {
@@ -1080,7 +1078,7 @@ var FGDropdown = {
                 }, children)
         ]);
     }
-}
+};
 
 var FGItemButtons = {
     view : function(ctrl, args, children) {
@@ -1136,7 +1134,7 @@ var FGItemButtons = {
         }
         return m('span', rowButtons);
     }
-}
+};
 
 var _dismissToolbar = function(){
     var tb = this;
@@ -1206,7 +1204,7 @@ var FGToolbar = {
                     ]
                 )
             )
-        ]
+        ];
         // Bar mode
         // Which buttons should show?
         if(items.length === 1){
@@ -1280,7 +1278,7 @@ var FGToolbar = {
             ])
         ]);
     }
-}
+};
 
 /**
  * When multiple rows are selected remove those that are not in the parent
@@ -1295,14 +1293,16 @@ function filterRowsNotInParent(rows) {
         originalRow = this.find(this.multiselected()[0].id),
         originalParent,
         currentItem;
-    if (typeof originalRow !== "undefined") {
+    function changeColor() { $(this).css('background-color', ''); }
+    if (originalRow !== undefined) {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
             } else {
-                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, function() { $(this).css('background-color', ''); });
+                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93')
+                    .animate({ backgroundColor: '#fff'}, 500, changeColor);
             }
         }
     }
@@ -1566,7 +1566,7 @@ tbOptions = {
             }
             tb.clearMultiselect();
             _dismissToolbar.call(tb);
-        })
+        });
 
         $(window).on('beforeunload', function() {
             if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
@@ -1577,19 +1577,13 @@ tbOptions = {
             _resizeHeight.call(tb);
             $(window).resize(function(){
                 _resizeHeight.call(tb);
-            })
+            });
         }
         $(window).on('keydown', function(event){
             if (event.keyCode === ESCAPE_KEY) {
                 _dismissToolbar.call(tb);
             }
         });
-    },
-    createcheck : function (item, parent) {
-        return true;
-    },
-    deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
-        return true;
     },
     movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
         return true;
@@ -1710,7 +1704,7 @@ Fangorn.Components = {
     toolbar : FGToolbar,
     dropdown : FGDropdown,
     toolbarModes : toolbarModes
-}
+};
 
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
