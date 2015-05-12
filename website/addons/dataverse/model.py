@@ -116,10 +116,6 @@ class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
         self.deauthorize(add_log=False)
         super(AddonDataverseNodeSettings, self).delete(save)
 
-    def set_auth(self, *args, **kwargs):
-        self.clear_settings()
-        return super(AddonDataverseNodeSettings, self).set_auth(*args, **kwargs)
-
     def clear_settings(self):
         """Clear selected Dataverse and dataset"""
         self.dataverse_alias = None

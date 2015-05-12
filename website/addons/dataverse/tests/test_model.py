@@ -219,8 +219,8 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         self.user.external_accounts.append(external_account)
         self.user.save()
 
-        # this should be reset after the call
-        self.node_settings.dataset_doi = 'anything'
+        # this should not affect settings implicitly
+        original_doi = self.node_settings.dataset_doi
 
         self.node_settings.set_auth(
             external_account=external_account,
@@ -236,8 +236,9 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
             self.node_settings.user_settings,
             self.user_settings
         )
-        assert_is_none(
-            self.node_settings.dataset_doi
+        assert_equal(
+            self.node_settings.dataset_doi,
+            original_doi
         )
 
         # user_settings was updated
