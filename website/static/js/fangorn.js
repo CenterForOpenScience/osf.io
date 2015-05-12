@@ -1038,13 +1038,13 @@ var FGInput = {
         var id = args.id || '';
         var helpTextId = args.helpTextId || '';
         var onclick = args.onclick || noop;
-        var onkeydown = args.onkeydown || noop;
+        var onkeypress = args.onkeypress || noop;
         return m('span', [
             m('input', {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
                 onclick: onclick,
-                onkeydown: onkeydown,
+                onkeypress: onkeypress,
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,
                 'data-placement' : 'bottom',
@@ -1126,7 +1126,11 @@ var FGToolbar = {
         templates[toolbarModes.ADDFOLDER] = [
             m('.col-xs-9', [
                 m.component(FGInput, {
-                    onkeydown: function(event){ },
+                    onkeypress: function(event){
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            _createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
+                        }
+                    },
                     id : 'createFolderInput',
                     helpTextId : 'createFolderHelp',
                     placeholder : 'New folder name',
@@ -1563,11 +1567,6 @@ tbOptions = {
         $(window).on('keydown', function(event){
             if (event.keyCode === ESCAPE_KEY) {
                 _dismissToolbar.call(tb);
-            }
-        });
-        $(document).on('keypress', '#createFolderInput', function () {
-            if (tb.pressedKey === ENTER_KEY) {
-                _createFolder.call(tb, _dismissToolbar.bind(tb));
             }
         });
     },
