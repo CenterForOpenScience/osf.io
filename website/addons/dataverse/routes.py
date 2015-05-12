@@ -96,16 +96,6 @@ api_routes = {
             views.crud.dataverse_publish_dataset,
             json_renderer,
         ),
-        # TODO: Combine with publish
-        Rule(
-            [
-                '/project/<pid>/dataverse/publish-both/',
-                '/project/<pid>/node/<nid>/dataverse/publish-both/',
-            ],
-            'put',
-            views.crud.dataverse_publish_both,
-            json_renderer,
-        ),
         Rule(
             [
                 '/project/<pid>/dataverse/widget/',

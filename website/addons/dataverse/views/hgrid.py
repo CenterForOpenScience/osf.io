@@ -43,7 +43,6 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
 
     urls = {
         'publish': node.api_url_for('dataverse_publish_dataset'),
-        'publishBoth': node.api_url_for('dataverse_publish_both')
     }
 
     return [rubeus.build_addon_root(

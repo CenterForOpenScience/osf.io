@@ -26,7 +26,7 @@ function _fangornActionColumn (item, col) {
     function dataversePublish(event, item, col) {
         var self = this; // treebeard
         var both = !item.data.dataverseIsPublished;
-        var url = both ? item.data.urls.publishBoth : item.data.urls.publish;
+        var url = item.data.urls.publish;
         var toPublish = both ? 'Dataverse and dataset' : 'dataset';
         var modalContent = [
             m('h3', 'Publish this ' + toPublish + '?'),
@@ -46,7 +46,7 @@ function _fangornActionColumn (item, col) {
             item.notify.update('Publishing ' + toPublish, 'info', 1, 1);
             $.osf.putJSON(
                 url,
-                {}
+                {'publish_both': both}
             ).done(function(data) {
                 item.notify.update();
                 var modalContent = [
@@ -56,6 +56,7 @@ function _fangornActionColumn (item, col) {
                     m('button.btn.btn-primary.m-sm', { 'onclick' : function() { self.modal.dismiss(); } }, 'Okay')
                 ];
                 self.modal.update(modalContent, modalActions);
+                item.data.dataverseIsPublished = true;
                 item.data.hasPublishedFiles = item.children.length > 0;
                 item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
             }).fail(function(xhr, status, error) {

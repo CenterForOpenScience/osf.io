@@ -111,7 +111,6 @@ function ViewModel(url) {
         });
     };
 
-    // TODO: Should next two methods be inherited from js/addonSettings?
     self.askDisconnect = function(account) {
         var self = this;
         bootbox.confirm({

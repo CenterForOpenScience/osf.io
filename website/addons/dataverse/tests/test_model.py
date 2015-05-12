@@ -241,7 +241,6 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         )
 
         # user_settings was updated
-        # TODO: The call to grant_oauth_access in set_auth should be mocked
         assert_true(
             self.user_settings.verify_oauth_access(
                 node=self.project,

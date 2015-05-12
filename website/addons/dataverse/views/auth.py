@@ -45,4 +45,3 @@ def dataverse_user_config_get(user_addon, **kwargs):
             'hosts': DEFAULT_HOSTS,
         },
     }, http.OK
-
