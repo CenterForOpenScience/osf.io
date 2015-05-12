@@ -25,9 +25,14 @@
                             </div>
 
                             <!-- Custom input -->
-                            <div class="input-group" data-bind="if: useCustomHost">
-                                <div class="input-group-addon">https://</div>
-                                <input type="text" class="form-control" name="customHost" data-bind="value: customHost">
+                            <div data-bind="if: useCustomHost">
+                                <div class="input-group">
+                                    <div class="input-group-addon">https://</div>
+                                    <input type="text" class="form-control" name="customHost" data-bind="value: customHost">
+                                </div>
+                                <div class="text-info" style="text-align: center">
+                                    <em>Only Dataverse repositories v4.0 or higher are supported.</em>
+                                </div>
                             </div>
 
                         </div>
