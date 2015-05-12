@@ -1153,7 +1153,7 @@ var FGToolbar = {
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
-        self.uploadState = args.treebeard.isUploading;
+        self.isUploading = args.treebeard.isUploading;
         self.helpText = m.prop('');
         self.dismissToolbar = _dismissToolbar.bind(self.tb);
         self.createFolder = function(event){
@@ -1217,7 +1217,7 @@ var FGToolbar = {
                 finalRowButtons = m.component(FGItemButtons, {treebeard : ctrl.tb, mode : ctrl.mode, item : item }); // jshint ignore:line
             }
         }
-        if(ctrl.uploadState()){
+        if(ctrl.isUploading()){
             generalButtons.push(
                 m.component(FGButton, {
                     onclick: function() {
