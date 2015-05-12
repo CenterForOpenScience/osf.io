@@ -1085,22 +1085,23 @@ var FGDropdown = {
 }
 
 var FGItemButtons = {
-    controller : function(args) {
-        self.tb = args.treebeard;
-    },
     view : function(ctrl, args, children) {
+        var tb = args.treebeard;
         var item = args.item;
         var rowButtons = [];
+        var mode = args.mode;
         if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
             rowButtons.push(
                 m.component(FGButton, {
-                    onclick: function() {_uploadEvent.call(ctrl.tb, event, item); },
+                    onclick: function() {_uploadEvent.call(tb, event, item); },
                     tooltip: 'Select files to upload from your computer.',
                     icon: 'fa fa-upload',
                     className : 'text-primary'
                 }, 'Upload'),
                 m.component(FGButton, {
-                    onclick: function() {ctrl.mode(toolbarModes.ADDFOLDER); },
+                    onclick: function() {
+                        mode(toolbarModes.ADDFOLDER);
+                    },
                     tooltip: 'Create a new folder inside curently selected folder.',
                     icon: 'fa fa-plus',
                     className : 'text-primary'
@@ -1108,7 +1109,7 @@ var FGItemButtons = {
             if(item.data.path){
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function() {_removeEvent.call(ctrl.tb, event, [item]); },
+                        onclick: function() {_removeEvent.call(tb, event, [item]); },
                         tooltip: 'Delete this folder and all its contents.',
                         icon: 'fa fa-trash',
                         className : 'text-danger'
@@ -1118,7 +1119,7 @@ var FGItemButtons = {
         if (item.kind === 'file'){
             rowButtons.push(
                 m.component(FGButton, {
-                    onclick: function() { _downloadEvent.call(ctrl.tb, event, item); },
+                    onclick: function() { _downloadEvent.call(tb, event, item); },
                     tooltip: 'Download this file to your computer.',
                     icon: 'fa fa-download',
                     className : 'text-success'
@@ -1127,7 +1128,7 @@ var FGItemButtons = {
             if (item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function() { _removeEvent.call(ctrl.tb, event, [item]); },
+                        onclick: function() { _removeEvent.call(tb, event, [item]); },
                         tooltip: 'Permanently delete this file.',
                         icon: 'fa fa-trash',
                         className : 'text-danger'
@@ -1214,7 +1215,7 @@ var FGToolbar = {
             if (addonButtons) {
                 finalRowButtons = m.component(addonButtons, { treebeard : ctrl.tb, item : item }); // jshint ignore:line
             } else {
-                finalRowButtons = m.component(FGItemButtons, { item : item }); // jshint ignore:line
+                finalRowButtons = m.component(FGItemButtons, {treebeard : ctrl.tb, mode : ctrl.mode, item : item }); // jshint ignore:line
             }
         }
         if(ctrl.uploadState()){
