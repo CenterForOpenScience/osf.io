@@ -1039,6 +1039,7 @@ var FGInput = {
         var helpTextId = args.helpTextId || '';
         var onclick = args.onclick || noop;
         var onkeypress = args.onkeypress || noop;
+        var value = args.value || '';
         return m('span', [
             m('input', {
                 'id' : id,
@@ -1048,7 +1049,8 @@ var FGInput = {
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,
                 'data-placement' : 'bottom',
-                'placeholder' : placeholder
+                'placeholder' : placeholder,
+                'value' : value
                 }),
             m('.text-danger', {
                 'id' : helpTextId
