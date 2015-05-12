@@ -190,7 +190,6 @@ def osf_storage_create_child(fid, payload, node_addon, **kwargs):
     user = User.load(payload['user'])
     is_folder = payload.get('kind') == 'folder'
     parent = model.OsfStorageFileNode.get_folder(fid, node_addon)
-
     try:
         if is_folder:
             created, file_node = True, parent.append_folder(name)

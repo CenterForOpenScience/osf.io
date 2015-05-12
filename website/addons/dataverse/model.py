@@ -7,10 +7,14 @@ from modularodm import fields
 
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
+
 from website.security import encrypt, decrypt
+
 from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
+from website.addons.base import StorageAddonBase
+
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse.settings import HOST
 
@@ -102,7 +106,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
         return self
 
 
-class AddonDataverseNodeSettings(AddonNodeSettingsBase):
+class AddonDataverseNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
