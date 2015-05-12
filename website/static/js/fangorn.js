@@ -1058,8 +1058,6 @@ var FGInput = {
 }
 
 var FGDropdown = {
-    controller : function(args) {
-    },
     view : function(ctrl, args, children) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip || '';
@@ -1702,8 +1700,6 @@ Fangorn.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     },
-    tests : {
-    }
 };
 
 Fangorn.Components = {

@@ -6,7 +6,7 @@ var $ = require('jquery');
 // var m = require('mithril');
 // var URI = require('URIjs');
 // var Treebeard = require('treebeard');
-var Fangorn = require('js/fangorn');
+//var Fangorn = require('js/fangorn');
 
 //// Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 //sinon.assert.expose(assert, {prefix: ''});
