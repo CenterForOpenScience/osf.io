@@ -1078,11 +1078,14 @@ function showLegend() {
     tb.modal.show();
 }
 
+
+
+
 var POToolbar = {
     controller: function (args) {
         var self = this;
         self.tb = args.treebeard;
-        self.tb.toolbarMode = m.prop('bar');
+        self.tb.toolbarMode = m.prop(Fangorn.Components.toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
         self.helpText = m.prop('');
@@ -1097,7 +1100,7 @@ var POToolbar = {
             tooltip: 'Close Search',
             icon : 'fa fa-times'
         }, '');
-        templates.search =  [
+        templates[Fangorn.Components.toolbarModes.SEARCH] =  [
             m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
             ]),
@@ -1113,7 +1116,7 @@ var POToolbar = {
                     )
                 )
         ];
-        templates.addFolder  = [
+        templates[Fangorn.Components.toolbarModes.ADDFOLDER]  = [
             m('.col-xs-9', m('input#addNewFolder.tb-header-input', { 'placeholder' : 'Collection name'})),
             m('.col-xs-3.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
@@ -1131,7 +1134,7 @@ var POToolbar = {
                     )
                 )
         ];
-        templates.rename = [
+        templates[Fangorn.Components.toolbarModes.RENAME] = [
             m('.col-xs-9', m('input#renameInput.tb-header-input', { value : ctrl.items()[0] ? ctrl.items()[0].data.name : '' })),
             m('.col-xs-3.tb-buttons-col',
                 m('.fangorn-toolbar.pull-right',
@@ -1149,7 +1152,7 @@ var POToolbar = {
                     )
                 )
         ];
-        templates.addProject = [
+        templates[Fangorn.Components.toolbarModes.ADDPROJECT] = [
             m('.col-xs-9', [
                 m('input#addprojectInput.tb-header-input', {
                     config : function () {
@@ -1180,7 +1183,7 @@ var POToolbar = {
         generalButtons.push(
             m.component(Fangorn.Components.button, {
                 onclick: function (event) {
-                    ctrl.mode('search');
+                    ctrl.mode(Fangorn.Components.toolbarModes.SEARCH);
                     ctrl.tb.clearMultiselect();
                 },
                 tooltip: 'Filter visible items',
@@ -1199,7 +1202,7 @@ var POToolbar = {
         if (ctrl.items().length === 1) {
             rowButtons = _poDefineToolbar.call(ctrl.tb, ctrl.items()[0]);
         }
-        templates.bar = m('.col-xs-12',m('.pull-right', [rowButtons, generalButtons]));
+        templates[Fangorn.Components.toolbarModes.DEFAULT] = m('.col-xs-12',m('.pull-right', [rowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#headerRow', { config : function () {
                 $('#headerRow input').focus();
