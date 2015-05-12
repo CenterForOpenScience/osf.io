@@ -1080,8 +1080,63 @@ var FGDropdown = {
                     'data-toggle':  tooltipText ? 'tooltip' : '',
                     'title':  tooltipText,
                     'data-placement' : 'bottom'
-                },children)
+                }, children)
         ]);
+    }
+}
+
+var FGItemButtons = {
+    controller : function(args) {
+        self.tb = args.treebeard;
+    },
+    view : function(ctrl, args, children) {
+        var item = args.item;
+        var rowButtons = [];
+        if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function() {_uploadEvent.call(ctrl.tb, event, item); },
+                    tooltip: 'Select files to upload from your computer.',
+                    icon: 'fa fa-upload',
+                    className : 'text-primary'
+                }, 'Upload'),
+                m.component(FGButton, {
+                    onclick: function() {ctrl.mode(toolbarModes.ADDFOLDER); },
+                    tooltip: 'Create a new folder inside curently selected folder.',
+                    icon: 'fa fa-plus',
+                    className : 'text-primary'
+                }, 'Create Folder'));
+            if(item.data.path){
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() {_removeEvent.call(ctrl.tb, event, [item]); },
+                        tooltip: 'Delete this folder and all its contents.',
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete Folder'));
+            }
+        }
+        if (item.kind === 'file'){
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function() { _downloadEvent.call(ctrl.tb, event, item); },
+                    tooltip: 'Download this file to your computer.',
+                    icon: 'fa fa-download',
+                    className : 'text-success'
+                }, 'Download')
+            );
+            if (item.data.permissions && item.data.permissions.edit) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() { _removeEvent.call(ctrl.tb, event, [item]); },
+                        tooltip: 'Permanently delete this file.',
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete'));
+
+            }
+        }
+        return m('span', rowButtons);
     }
 }
 
@@ -1109,7 +1164,7 @@ var FGToolbar = {
     view : function(ctrl) {
         var templates = {};
         var generalButtons = [];
-        var rowButtons = [];
+        var finalRowButtons = [];
         var items = ctrl.items();
         var item = items[0];
         var dismissIcon = m.component(FGButton, {
@@ -1156,49 +1211,11 @@ var FGToolbar = {
         // Bar mode
         // Which buttons should show?
         if(items.length === 1){
-            if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {_uploadEvent.call(ctrl.tb, event, item); },
-                        tooltip: 'Select files to upload from your computer.',
-                        icon: 'fa fa-upload',
-                        className : 'text-primary'
-                    }, 'Upload'),
-                    m.component(FGButton, {
-                    onclick: function() {ctrl.mode(toolbarModes.ADDFOLDER); },
-                    tooltip: 'Create a new folder inside curently selected folder.',
-                    icon: 'fa fa-plus',
-                    className : 'text-primary'
-                }, 'Create Folder'));
-                if(item.data.path){
-                    rowButtons.push(
-                        m.component(FGButton, {
-                            onclick: function() {_removeEvent.call(ctrl.tb, event, [item]); },
-                            tooltip: 'Delete this folder and all its contents.',
-                            icon: 'fa fa-trash',
-                            className : 'text-danger'
-                        }, 'Delete Folder'));
-                }
-            }
-            if (item.kind === 'file'){
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() { _downloadEvent.call(ctrl.tb, event, item); },
-                        tooltip: 'Download this file to your computer.',
-                        icon: 'fa fa-download',
-                        className : 'text-success'
-                    }, 'Download')
-                );
-                if (item.data.permissions && item.data.permissions.edit) {
-                    rowButtons.push(
-                        m.component(FGButton, {
-                            onclick: function() { _removeEvent.call(ctrl.tb, event, [item]); },
-                            tooltip: 'Permanently delete this file.',
-                            icon: 'fa fa-trash',
-                            className : 'text-danger'
-                        }, 'Delete'));
-
-                }
+            var addonButtons = resolveconfigOption.call(ctrl.tb, item, 'itemButtons', [item]);
+            if (addonButtons) {
+                finalRowButtons = m.component(addonButtons, { treebeard : ctrl.tb, item : item }); // jshint ignore:line
+            } else {
+                finalRowButtons = m.component(FGItemButtons, { item : item }); // jshint ignore:line
             }
         }
         if(ctrl.uploadState()){
@@ -1227,7 +1244,6 @@ var FGToolbar = {
                 }, 'Delete Multiple')
             );
         }
-
         generalButtons.push(
             m.component(FGButton, {
                 onclick: function(event){
@@ -1255,8 +1271,6 @@ var FGToolbar = {
                 className : 'text-info'
             }, '')
         );
-
-        var finalRowButtons = resolveconfigOption.call(ctrl.tb, item, 'defineToolbar', [item]) || rowButtons; // jshint ignore:line
 
         templates[toolbarModes.DEFAULT] =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
         return m('.row.tb-header-row', [
