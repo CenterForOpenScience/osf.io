@@ -412,7 +412,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     def _handle_docs_versioning(self, path, item, raw=True):
         revisions_response = yield from self.make_request(
             'GET',
-            self.build_url('files', data['id'], 'revisions'),
+            self.build_url('files', item['id'], 'revisions'),
             expects=(200, ),
             throws=exceptions.RevisionsError,
         )
@@ -459,6 +459,6 @@ class GoogleDriveProvider(provider.BaseProvider):
         data = yield from resp.json()
 
         if drive_utils.is_docs_file(data):
-            return (yield from self._handle_docs_versioning(data))
+            return (yield from self._handle_docs_versioning(path, data, raw=raw))
 
         return self._serialize_item(path, data, raw=raw)
