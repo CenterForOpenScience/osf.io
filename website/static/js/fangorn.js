@@ -90,6 +90,15 @@ function cancelUploads (row) {
     tb.isUploading(false);
 }
 
+var cancelUploadTemplate = function(row){
+    var treebeard = this;
+    return m('.btn.m-l-sm.text-muted', {
+            'onclick' : function (e) {
+                cancelUploads.call(treebeard, row);
+            }},
+        m('.fa.fa-times-circle.text-danger', { style : 'display:block;font-size:18px'}));
+};
+
 /**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
