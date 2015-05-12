@@ -80,7 +80,7 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
 
     def test_validate_multiple_profile_websites_valid(self):
-        self.user.social = {'profileWebsites': }
+        self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
         self.user.save()
 
     def test_validate_social_profile_websites_invalid(self):
