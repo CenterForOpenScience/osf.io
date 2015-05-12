@@ -16,8 +16,7 @@ function ViewModel(url) {
     var self = this;
     self.url = url;
     self.urls = ko.observable();
-    self.dataverseUsername = ko.observable();
-    self.dataversePassword = ko.observable();
+    self.apiToken = ko.observable();
 
     self.ownerName = ko.observable();
     self.nodeHasAuth = ko.observable(false);
@@ -25,18 +24,17 @@ function ViewModel(url) {
     self.userIsOwner = ko.observable(false);
     self.connected = ko.observable(false);
     self.loadedSettings = ko.observable(false);
-    self.loadedStudies = ko.observable(false);
+    self.loadedDatasets = ko.observable(false);
     self.submitting = ko.observable(false);
 
     self.dataverses = ko.observableArray([]);
-    self.studies = ko.observableArray([]);
-    self.badStudies = ko.observableArray([]);
+    self.datasets = ko.observableArray([]);
 
-    self.savedStudyHdl = ko.observable();
-    self.savedStudyTitle = ko.observable();
+    self.savedDatasetDoi = ko.observable();
+    self.savedDatasetTitle = ko.observable();
     self.savedDataverseAlias = ko.observable();
     self.savedDataverseTitle = ko.observable();
-    self.studyWasFound = ko.observable(false);
+    self.datasetWasFound = ko.observable(false);
 
     self.messages = {
         userSettingsError: ko.pureComputed(function() {
@@ -47,7 +45,7 @@ function ViewModel(url) {
         confirmNodeDeauth: ko.pureComputed(function() {
             return 'Are you sure you want to unlink this Dataverse account? This will ' +
                 'revoke the ability to view, download, modify, and upload files ' +
-                'to studies on the Dataverse from the OSF. This will not remove your ' +
+                'to datasets on the Dataverse from the OSF. This will not remove your ' +
                 'Dataverse authorization from your <a href="' + self.urls().settings + '">user settings</a> ' +
                 'page.';
         }),
@@ -63,7 +61,7 @@ function ViewModel(url) {
             return 'Successfully unlinked your Dataverse account.';
         }),
         authInvalid: ko.pureComputed(function() {
-            return 'Your Dataverse username or password is invalid.';
+            return 'Your Dataverse API token is invalid.';
         }),
         authError: ko.pureComputed(function() {
             return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
@@ -78,41 +76,41 @@ function ViewModel(url) {
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        studyDeaccessioned: ko.pureComputed(function() {
-            return 'This study has already been deaccessioned on the Dataverse ' +
+        datasetDeaccessioned: ko.pureComputed(function() {
+            return 'This dataset has already been deaccessioned on the Dataverse ' +
                 'and cannot be connected to the OSF.';
         }),
         forbiddenCharacters: ko.pureComputed(function() {
-            return 'This study cannot be connected due to forbidden characters ' +
-                'in one or more of the study\'s file names. This issue has been forwarded to our ' +
+            return 'This dataset cannot be connected due to forbidden characters ' +
+                'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
                 'development team.';
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked study \'' + self.savedStudyTitle() + '\'. Go to the <a href="' +
+            return 'Successfully linked dataset \'' + self.savedDatasetTitle() + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
-        setStudyError: ko.pureComputed(function() {
-            return 'Could not connect to this study. Please refresh the page or ' +
+        setDatasetError: ko.pureComputed(function() {
+            return 'Could not connect to this dataset. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        getStudiesError: ko.pureComputed(function() {
-            return 'Could not load studies. Please refresh the page or ' +
+        getDatasetsError: ko.pureComputed(function() {
+            return 'Could not load datasets. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         })
     };
 
-    self.savedStudyUrl = ko.pureComputed(function() {
-        return (self.urls()) ? self.urls().studyPrefix + self.savedStudyHdl() : null;
+    self.savedDatasetUrl = ko.pureComputed(function() {
+        return (self.urls()) ? self.urls().datasetPrefix + self.savedDatasetDoi() : null;
     });
     self.savedDataverseUrl = ko.pureComputed(function() {
         return (self.urls()) ? self.urls().dataversePrefix + self.savedDataverseAlias() : null;
     });
 
     self.selectedDataverseAlias = ko.observable();
-    self.selectedStudyHdl = ko.observable();
+    self.selectedDatasetDoi = ko.observable();
     self.selectedDataverseTitle = ko.pureComputed(function() {
         for (var i = 0; i < self.dataverses().length; i++) {
             var data = self.dataverses()[i];
@@ -122,27 +120,27 @@ function ViewModel(url) {
         }
         return null;
     });
-    self.selectedStudyTitle = ko.pureComputed(function() {
-        for (var i = 0; i < self.studies().length; i++) {
-            var data = self.studies()[i];
-            if (data.hdl === self.selectedStudyHdl()) {
+    self.selectedDatasetTitle = ko.pureComputed(function() {
+        for (var i = 0; i < self.datasets().length; i++) {
+            var data = self.datasets()[i];
+            if (data.doi === self.selectedDatasetDoi()) {
                 return data.title;
             }
         }
         return null;
     });
-    self.dataverseHasStudies = ko.pureComputed(function() {
-        return self.studies().length > 0;
+    self.dataverseHasDatasets = ko.pureComputed(function() {
+        return self.datasets().length > 0;
     });
 
-    self.showStudySelect = ko.pureComputed(function() {
-        return self.loadedStudies() && self.dataverseHasStudies();
+    self.showDatasetSelect = ko.pureComputed(function() {
+        return self.loadedDatasets() && self.dataverseHasDatasets();
     });
-    self.showNoStudies = ko.pureComputed(function() {
-        return self.loadedStudies() && !self.dataverseHasStudies();
+    self.showNoDatasets = ko.pureComputed(function() {
+        return self.loadedDatasets() && !self.dataverseHasDatasets();
     });
-    self.showLinkedStudy = ko.pureComputed(function() {
-        return self.savedStudyHdl();
+    self.showLinkedDataset = ko.pureComputed(function() {
+        return self.savedDatasetDoi();
     });
     self.showLinkDataverse = ko.pureComputed(function() {
         return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
@@ -157,18 +155,15 @@ function ViewModel(url) {
     self.hasDataverses = ko.pureComputed(function() {
         return self.dataverses().length > 0;
     });
-    self.hasBadStudies = ko.pureComputed(function() {
-        return self.badStudies().length > 0;
-    });
     self.showNotFound = ko.pureComputed(function() {
-        return self.savedStudyHdl() && self.loadedStudies() && !self.studyWasFound();
+        return self.savedDatasetDoi() && self.loadedDatasets() && !self.datasetWasFound();
     });
-    self.showSubmitStudy = ko.pureComputed(function() {
+    self.showSubmitDataset = ko.pureComputed(function() {
         return self.nodeHasAuth() && self.connected() && self.userIsOwner();
     });
-    self.enableSubmitStudy = ko.pureComputed(function() {
-        return !self.submitting() && self.dataverseHasStudies() &&
-            self.savedStudyHdl() !== self.selectedStudyHdl();
+    self.enableSubmitDataset = ko.pureComputed(function() {
+        return !self.submitting() && self.dataverseHasDatasets() &&
+            self.savedDatasetDoi() !== self.selectedDatasetDoi();
     });
 
     // Flashed messages
@@ -200,7 +195,6 @@ function ViewModel(url) {
 ViewModel.prototype.updateFromData = function(data) {
     var self = this;
     self.urls(data.urls);
-    self.dataverseUsername(data.dataverseUsername);
     self.ownerName(data.ownerName);
     self.nodeHasAuth(data.nodeHasAuth);
     self.userHasAuth(data.userHasAuth);
@@ -211,11 +205,11 @@ ViewModel.prototype.updateFromData = function(data) {
         self.savedDataverseAlias(data.savedDataverse.alias);
         self.savedDataverseTitle(data.savedDataverse.title);
         self.selectedDataverseAlias(data.savedDataverse.alias);
-        self.savedStudyHdl(data.savedStudy.hdl);
-        self.savedStudyTitle(data.savedStudy.title);
+        self.savedDatasetDoi(data.savedDataset.doi);
+        self.savedDatasetTitle(data.savedDataset.title);
         self.connected(data.connected);
         if (self.userIsOwner()) {
-            self.getStudies(); // Sets studies, selectedStudyHdl
+            self.getDatasets(); // Sets datasets, selectedDatasetDoi
         }
     }
 };
@@ -229,23 +223,23 @@ ViewModel.prototype.setInfo = function() {
             dataverse: {
                 alias: self.selectedDataverseAlias
             },
-            study: {
-                hdl: self.selectedStudyHdl
+            dataset: {
+                doi: self.selectedDatasetDoi
             }
         })
     ).done(function() {
         self.submitting(false);
         self.savedDataverseAlias(self.selectedDataverseAlias());
         self.savedDataverseTitle(self.selectedDataverseTitle());
-        self.savedStudyHdl(self.selectedStudyHdl());
-        self.savedStudyTitle(self.selectedStudyTitle());
-        self.studyWasFound(true);
+        self.savedDatasetDoi(self.selectedDatasetDoi());
+        self.savedDatasetTitle(self.selectedDatasetTitle());
+        self.datasetWasFound(true);
         self.changeMessage(self.messages.setInfoSuccess, 'text-success');
     }).fail(function(xhr, textStatus, error) {
         self.submitting(false);
-        var errorMessage = (xhr.status === 410) ? self.messages.studyDeaccessioned :
-            (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setStudyError;
- self.changeMessage(errorMessage, 'text-danger');
+        var errorMessage = (xhr.status === 410) ? self.messages.datasetDeaccessioned :
+            (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
+        self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
             url: self.urls().set,
             textStatus: textStatus,
@@ -255,37 +249,40 @@ ViewModel.prototype.setInfo = function() {
 };
 
 /**
- * Looks for study in list of studies when first loaded.
+ * Looks for dataset in list of datasets when first loaded.
  * This prevents an additional request to the server, but requires additional logic.
  */
-ViewModel.prototype.findStudy = function() {
+ViewModel.prototype.findDataset = function() {
     var self = this;
-    for (var i in self.studies()) {
-        if (self.studies()[i].hdl === self.savedStudyHdl()) {
-            self.studyWasFound(true);
+    for (var i in self.datasets()) {
+        if (self.datasets()[i].doi === self.savedDatasetDoi()) {
+            self.datasetWasFound(true);
             return;
         }
     }
 };
 
-ViewModel.prototype.getStudies = function() {
+ViewModel.prototype.getDatasets = function() {
     var self = this;
-    self.studies([]);
-    self.badStudies([]);
-    self.loadedStudies(false);
+    self.datasets([]);
+    self.loadedDatasets(false);
     return osfHelpers.postJSON(
-        self.urls().getStudies,
+        self.urls().getDatasets,
         ko.toJS({
             alias: self.selectedDataverseAlias
         })
     ).done(function(response) {
-        self.studies(response.studies);
-        self.badStudies(response.badStudies);
-        self.loadedStudies(true);
-        self.selectedStudyHdl(self.savedStudyHdl());
-        self.findStudy();
-    }).fail(function() {
-        self.changeMessage(self.messages.getStudiesError, 'text-danger');
+        self.datasets(response.datasets);
+        self.loadedDatasets(true);
+        self.selectedDatasetDoi(self.savedDatasetDoi());
+        self.findDataset();
+    }).fail(function(xhr, status, error) {
+        self.changeMessage(self.messages.getDatasetsError, 'text-danger');
+        Raven.captureMessage('Could not GET datasets', {
+            url: self.urls().getDatasets,
+            textStatus: status,
+            error: error
+        });
     });
 };
 
@@ -296,8 +293,13 @@ ViewModel.prototype.authorizeNode = function() {
     ).done(function(response) {
         self.updateFromData(response.result);
         self.changeMessage(self.messages.importAuthSuccess, 'text-success', 3000);
-    }).fail(function() {
+    }).fail(function(xhr, status, error) {
         self.changeMessage(self.messages.importAuthError, 'text-danger');
+        Raven.captureMessage('Could not import Dataverse node auth', {
+            url: self.urls().importAuth,
+            textStatus: status,
+            error: error
+        });
     });
 };
 
@@ -306,10 +308,7 @@ ViewModel.prototype.sendAuth = function() {
     var self = this;
     return osfHelpers.postJSON(
         self.urls().create,
-        ko.toJS({
-            dataverse_username: self.dataverseUsername,
-            dataverse_password: self.dataversePassword
-        })
+        ko.toJS({api_token: self.apiToken})
     ).done(function() {
         // User now has auth
         self.authorizeNode();

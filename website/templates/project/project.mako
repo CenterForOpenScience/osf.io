@@ -9,7 +9,7 @@
     <header class="subhead" id="overview">
         <div class="row">
             <div class="col-sm-6 col-md-7 cite-container">
-                % if parent_node['id']:
+                % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
                             <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
@@ -71,10 +71,11 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a rel="tooltip" title="Duplicate" data-placement="bottom"
-                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
-                            data-toggle="modal" data-target="#duplicateModal">
-                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                        <a class="btn btn-default"
+                           data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                           data-target="#duplicateModal" data-toggle="modal"
+                           href="#">
+                          <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
@@ -133,9 +134,10 @@
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
                   <!-- /ko -->
                 </span>
-                % if parent_node['id']:
-                    <br />Category: <span class="node-category">${node['category']}</span>
-                % elif node['description'] or 'write' in user['permissions']:
+                <br />Category: <span class="node-category">${node['category']}</span>
+                &nbsp;
+                <span data-bind="css: icon"></span>
+                % if node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
             </div>
@@ -149,9 +151,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if node['node_type'] == 'project':
-    <%include file="project/modal_add_component.mako"/>
-% endif
+<%include file="project/modal_add_component.mako"/>
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako"/>
@@ -261,35 +261,34 @@
 </div>
 
 <%def name="children()">
-% if node['node_type'] == 'project':
-     <div class="components addon-widget-container">
-        <div class="addon-widget-header clearfix">
-            <h4>Components </h4>
-            <div class="pull-right">
-              % if 'write' in user['permissions'] and not node['is_registration']:
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-                % endif
-
-            </div>
+<div class="components addon-widget-container">
+    <div class="addon-widget-header clearfix">
+        <h4>Components </h4>
+        <div class="pull-right">
+            % if 'write' in user['permissions'] and not node['is_registration']:
+                <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+            % endif
         </div>
-        <div class="addon-widget-body">
-              % if node['children']:
-                  <div id="containment">
-                      <div mod-meta='{
-                              "tpl": "util/render_nodes.mako",
-                              "uri": "${node["api_url"]}get_children/",
-                              "replace": true,
-                      "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
-                          }'></div>
-                  </div>
-              % else:
-                <p>No components have been added to this project.</p>
-              % endif
-
-        </div>
-    </div>
-% endif
+    </div><!-- end addon-widget-header -->
+    <div class="addon-widget-body">
+        % if node['children']:
+            <div id="containment">
+                <div mod-meta='{
+                    "tpl": "util/render_nodes.mako",
+                    "uri": "${node["api_url"]}get_children/",
+                    "replace": true,
+                    "kwargs": {
+                      "sortable" : ${'true' if not node['is_registration'] else 'false'},
+                      "pluralized_node_type": "components"
+                    }
+                  }'></div>
+            </div><!-- end containment -->
+        % else:
+          <p>No components have been added to this project.</p>
+        % endif
+    </div><!-- end addon-widget-body -->
+</div><!-- end components -->
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>

@@ -1,2 +1,1 @@
--e git+https://github.com/rliebz/python-client-sword2.git#egg=sword2
--e git+https://github.com/rliebz/dvn-client-python.git@0fe9ae12d86a5bee697ae51b094cc47f75d45866#egg=dataverse
+-e git+https://github.com/IQSS/dataverse-client-python.git@b6aec5bc3fd1cc3199e3c97ac9c71705b54c3d11#egg=dataverse

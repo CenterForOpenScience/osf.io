@@ -39,26 +39,30 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes([
-        node
-        for node in user.node__contributed
-        if node.category == 'project'
-        and node.is_public
-        and not node.is_registration
-        and not node.is_deleted
-    ])
+    return _render_nodes(
+        list(user.node__contributed.find(
+            (
+                Q('category', 'eq', 'project') &
+                Q('is_public', 'eq', True) &
+                Q('is_registration', 'eq', False) &
+                Q('is_deleted', 'eq', False)
+            )
+        ))
+    )
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes([
-        node
-        for node in user.node__contributed
-        if node.category != 'project'
-        and node.is_public
-        and not node.is_registration
-        and not node.is_deleted
-    ])
+    return _render_nodes(
+        list(user.node__contributed.find(
+            (
+                Q('category', 'ne', 'project') &
+                Q('is_public', 'eq', True) &
+                Q('is_registration', 'eq', False) &
+                Q('is_deleted', 'eq', False)
+            )
+        ))
+    )
 
 
 @must_be_logged_in
@@ -87,6 +91,14 @@ def update_user(auth):
     user = auth.user
 
     data = request.get_json()
+
+    # check if the user in request is the user who log in
+    if 'id' in data:
+        if data['id'] != user._id:
+            raise HTTPError(httplib.FORBIDDEN)
+    else:
+        # raise an error if request doesn't have user id
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
 
     # TODO: Expand this to support other user attributes
 
@@ -722,3 +734,23 @@ def unserialize_schools(auth, **kwargs):
     verify_user_match(auth, **kwargs)
     unserialize_contents('schools', unserialize_school, auth)
     # TODO: Add return value
+
+
+@must_be_logged_in
+def request_export(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_EXPORT,
+        user=auth.user,
+    )
+    return {'message': 'Sent account export request'}
+
+
+@must_be_logged_in
+def request_deactivation(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_DEACTIVATION,
+        user=auth.user,
+    )
+    return {'message': 'Sent account deactivation request'}

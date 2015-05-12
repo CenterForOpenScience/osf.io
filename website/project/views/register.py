@@ -33,9 +33,7 @@ from .. import clean_template_name
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def node_register_page(auth, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
+def node_register_page(auth, node, **kwargs):
 
     ret = {
         'options': [
@@ -52,9 +50,7 @@ def node_register_page(auth, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def node_register_template_page(auth, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
+def node_register_template_page(auth, node, **kwargs):
 
     template_name = kwargs['template'].replace(' ', '_')
     # Error to raise if template can't be found
@@ -118,8 +114,7 @@ def node_register_template_page(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_before_register(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def project_before_register(auth, node, **kwargs):
     user = auth.user
 
     prompts = node.callback('before_register', user=user)
@@ -137,9 +132,14 @@ def project_before_register(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def node_register_template_page_post(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def node_register_template_page_post(auth, node, **kwargs):
     data = request.json
+
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
 
     # Sanitize payload data
     clean_data = process_payload(data)
@@ -201,10 +201,9 @@ def _get_or_create_identifiers(node):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def node_identifiers_get(**kwargs):
+def node_identifiers_get(node, **kwargs):
     """Retrieve identifiers for a node. Node must be a public registration.
     """
-    node = kwargs['node'] or kwargs['project']
     if not node.is_registration or not node.is_public:
         raise HTTPError(http.BAD_REQUEST)
     return {
@@ -215,10 +214,9 @@ def node_identifiers_get(**kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-def node_identifiers_post(auth, **kwargs):
+def node_identifiers_post(auth, node, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
     """
-    node = kwargs['node'] or kwargs['project']
     # TODO: Fail if `node` is retracted
     if not node.is_registration or not node.is_public:  # or node.is_retracted:
         raise HTTPError(http.BAD_REQUEST)
@@ -233,7 +231,7 @@ def node_identifiers_post(auth, **kwargs):
     node.add_log(
         NodeLog.EXTERNAL_IDS_ADDED,
         params={
-            'project': node.parent_id,
+            'parent_node': node.parent_id,
             'node': node._id,
             'identifiers': identifiers,
         },
