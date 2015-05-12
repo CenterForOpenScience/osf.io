@@ -1194,19 +1194,18 @@ var FGToolbar = {
 
                 }
             }
-            if(ctrl.uploadState()){
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            cancelUploads.call(ctrl.tb);
-                        },
-                        tooltip: 'Cancel currently pending downloads.',
-                        icon: 'fa fa-time-circle',
-                        className : 'text-warning'
-                    }, 'Cancel All Uploads')
-                );
-            }
-
+        }
+        if(ctrl.uploadState()){
+            generalButtons.push(
+                m.component(FGButton, {
+                    onclick: function() {
+                        cancelUploads.call(ctrl.tb);
+                    },
+                    tooltip: 'Cancel currently pending uploads.',
+                    icon: 'fa fa-time-circle',
+                    className : 'text-warning'
+                }, 'Cancel All Uploads')
+            );
         }
         //multiple selection icons
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
