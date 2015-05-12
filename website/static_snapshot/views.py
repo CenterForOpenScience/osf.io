@@ -47,4 +47,5 @@ def get_static_snapshot(cache):
         return response
 
     else:
+        logger.warn("Is Celery turned ON?")
         return None

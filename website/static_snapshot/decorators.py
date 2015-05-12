@@ -47,6 +47,7 @@ def gets_static_snapshot(page_name):
                                 id = kwargs.get('pid') or kwargs.get('nid')
                                 category = 'node'
                             else:
+                                cache.clear()
                                 logger.warn('Private Projects are not exposed for SEO')
                                 return func(*args, **kwargs)
 
@@ -68,6 +69,8 @@ def gets_static_snapshot(page_name):
                             with open(path['full_path'], 'r') as fp:
                                 file_content = fp.read().decode('utf-8')
                                 cache.set('cached_content', file_content)
+                else:
+                    logger.warn("Is Celery turned ON?")
 
             return func(*args, **kwargs)
 
