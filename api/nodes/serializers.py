@@ -44,15 +44,15 @@ class NodeSerializer(JSONAPISerializer):
         },
     })
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
-                                                     'and dashboard. Collections are special nodes used by the Project'
+                                                     'and dashboard. Collections are special nodes used by the Project '
                                                      'Organizer to, as you would imagine, organize projects. '
-                                                     'A dashboard is a collection node that serves as the root of'
+                                                     'A dashboard is a collection node that serves as the root of '
                                                      'Project Organizer collections. Every user will always have '
-                                                     'one Dashboard.')
-    public = ser.BooleanField(source='is_public', help_text='Nodes that are made public will give read-only access'
-                                                            'to everyone. Private nodes require explicit read'
-                                                            'permission. Write and admin access are the same for'
-                                                            'public and private nodes.')
+                                                     'one Dashboard')
+    public = ser.BooleanField(source='is_public', help_text='Nodes that are made public will give read-only access '
+                                                            'to everyone. Private nodes require explicit read '
+                                                            'permission. Write and admin access are the same for '
+                                                            'public and private nodes')
     # TODO: finish me
 
     class Meta:
