@@ -1,6 +1,6 @@
 import datetime
 
-from nose.tools import *
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework import auth
 from framework.auth import exceptions
@@ -366,6 +366,7 @@ class TestUserMerging(base.OsfTestCase):
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
+        unconfirmed_username = self.unconfirmed.username
         self.user.merge_user(self.unconfirmed)
 
         assert_true(self.unconfirmed.is_merged)
@@ -390,6 +391,9 @@ class TestUserMerging(base.OsfTestCase):
         assert_is_none(self.unconfirmed.username)
         assert_is_none(self.unconfirmed.password)
         assert_is_none(self.unconfirmed.verification_key)
+        # The mergee's email no longer needs to be confirmed by merger
+        unconfirmed_emails = [record['email'] for record in self.user.email_verifications.values()]
+        assert_not_in(unconfirmed_username, unconfirmed_emails)
 
     def test_merge_unregistered(self):
         # test only those behaviors that are not tested with unconfirmed users
