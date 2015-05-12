@@ -546,3 +546,81 @@ class GitHubProvider(provider.BaseProvider):
             throws=exceptions.ProviderError
         )
         return (yield from resp.json())
+
+    @asyncio.coroutine
+    def _do_intra_move_or_copy(self, src_path, dest_path, is_copy):
+        branch_data = yield from self._fetch_branch(src_path.identifier[0])
+
+        old_commit_sha = branch_data['commit']['sha']
+        old_commit_tree_sha = branch_data['commit']['commit']['tree']['sha']
+
+        tree = yield from self._fetch_tree(old_commit_tree_sha, recursive=True)
+        exists = bool(list(filter(lambda x: x['path'] == dest_path.path, tree['tree'])))
+
+        targets = list(filter(lambda x: x['path'].startswith(src_path.path), tree['tree']))
+
+        if src_path.is_file and len(targets) != 1:
+            raise Exception
+
+        if src_path.is_dir:
+            try:
+                folder = next(x for x in tree['tree'] if x['path'] == src_path.path.strip('/') and x['type'] == 'tree')
+            except StopIteration:
+                raise Exception
+
+            tree['tree'].remove(folder)
+
+        if is_copy:
+            targets = copy.deepcopy(targets)
+            tree['tree'].extend(targets)
+
+        for target in targets:
+            target['path'] = target['path'].replace(src_path.path, dest_path.path, 1)
+
+        new_tree_data = yield from self._create_tree({'tree': tree['tree']})
+        new_tree_sha = new_tree_data['sha']
+
+        # Create a new commit which references our top most tree change.
+        commit_resp = yield from self.make_request(
+            'POST',
+            self.build_repo_url('git', 'commits'),
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps({
+                'tree': new_tree_sha,
+                'parents': [old_commit_sha],
+                'committer': self.committer,
+                'message': 'Moved on behalf of WaterButler'  # TODO
+            }),
+            expects=(201, ),
+            throws=exceptions.DeleteError,
+        )
+
+        commit = yield from commit_resp.json()
+
+        # Update repository reference, point to the newly created commit.
+        # No need to store data, rely on expects to raise exceptions
+        resp = yield from self.make_request(
+            'PATCH',
+            self.build_repo_url('git', 'refs', 'heads', src_path.identifier[0]),
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps({'sha': commit['sha']}),
+            expects=(200, ),
+            throws=exceptions.DeleteError,
+        )
+
+        if dest_path.is_file:
+            return GitHubFileTreeMetadata(targets[0], commit=commit).serialized(), not exists
+
+        folder = GitHubFolderTreeMetadata({
+            'path': dest_path.path
+        }, commit=commit).serialized()
+
+        folder['children'] = []
+
+        for item in targets:
+            if item['type'] == 'tree':
+                folder['children'].append(GitHubFolderTreeMetadata(item).serialized())
+            else:
+                folder['children'].append(GitHubFileTreeMetadata(item).serialized())
+
+        return folder, exists
