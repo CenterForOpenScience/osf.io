@@ -1,5 +1,5 @@
 <!-- Authorization -->
-<div id='dataverseAddonScope' class='addon-settings scripted'
+<div id='dataverseAddonScope' class='addon-settings addon-generic scripted'
      data-addon-short-name="${ addon_short_name }"
      data-addon-name="${ addon_full_name }">
 

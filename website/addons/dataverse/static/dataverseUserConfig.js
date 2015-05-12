@@ -14,7 +14,6 @@ var language = require('js/osfLanguage').Addons.dataverse;
 var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('js/addonSettings');
 
-var ConnectedProject = addonSettings.ConnectedProject; // TODO
 var ExternalAccount = addonSettings.ExternalAccount;
 
 var modal = $('#dataverseInputCredentials');
