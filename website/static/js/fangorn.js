@@ -998,6 +998,15 @@ function scrollToFile(fileID) {
     }
 }
 
+var toolbarModes = {
+    'DEFAULT' : 'bar',
+    'SEARCH' : 'search',
+    'ADDFOLDER' : 'addFolder',
+    'RENAME' : 'rename',
+    'ADDPROJECT' : 'addProject'
+};
+
+
 // A fangorn-styled button; addons can reuse this
 var FGButton = {
     controller: function(args) {
@@ -1076,7 +1085,7 @@ var FGDropdown = {
 
 var _dismissToolbar = function(){
     var tb = this;
-    tb.toolbarMode('bar');
+    tb.toolbarMode(toolbarModes.DEFAULT);
     tb.resetFilter();
     tb.filterText('');
 };
@@ -1085,7 +1094,7 @@ var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
-        self.tb.toolbarMode = m.prop('bar');
+        self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
         self.uploadState = args.treebeard.isUploading;
@@ -1106,7 +1115,7 @@ var FGToolbar = {
                 tooltip: 'Close Search',
                 icon : 'fa fa-times'
             }, '');
-        templates.search =  [
+        templates[toolbarModes.SEARCH] =  [
             m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
@@ -1114,7 +1123,7 @@ var FGToolbar = {
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
-        templates.createFolder = [
+        templates[toolbarModes.ADDFOLDER] = [
             m('.col-xs-9', [
                 m.component(FGInput, {
                     onkeydown: function(event){ },
@@ -1150,7 +1159,7 @@ var FGToolbar = {
                         className : 'text-primary'
                     }, 'Upload'),
                     m.component(FGButton, {
-                    onclick: function() {ctrl.mode('createFolder'); },
+                    onclick: function() {ctrl.mode(toolbarModes.ADDFOLDER); },
                     tooltip: 'Create a new folder inside curently selected folder.',
                     icon: 'fa fa-plus',
                     className : 'text-primary'
@@ -1213,10 +1222,11 @@ var FGToolbar = {
                 }, 'Delete Multiple')
             );
         }
+
         generalButtons.push(
             m.component(FGButton, {
                 onclick: function(event){
-                    ctrl.mode('search');
+                    ctrl.mode(toolbarModes.SEARCH);
                 },
                 tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
@@ -1243,7 +1253,7 @@ var FGToolbar = {
 
         var finalRowButtons = resolveconfigOption.call(ctrl.tb, item, 'defineToolbar', [item]) || rowButtons; // jshint ignore:line
 
-        templates.bar =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
+        templates[toolbarModes.DEFAULT] =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1687,7 +1697,8 @@ Fangorn.Components = {
     button : FGButton,
     input : FGInput,
     toolbar : FGToolbar,
-    dropdown : FGDropdown
+    dropdown : FGDropdown,
+    toolbarModes : toolbarModes
 }
 
 Fangorn.ButtonEvents = {
