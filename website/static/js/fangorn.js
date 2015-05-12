@@ -1039,9 +1039,9 @@ var FGInput = {
         var helpTextId = args.helpTextId || '';
         var onclick = args.onclick || noop;
         var onkeypress = args.onkeypress || noop;
-        var value = args.value || '';
+        var value = args.value ? '[value="' + args.value + '"]' : '';
         return m('span', [
-            m('input', {
+            m('input' + value, {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
                 onclick: onclick,
@@ -1049,8 +1049,7 @@ var FGInput = {
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,
                 'data-placement' : 'bottom',
-                'placeholder' : placeholder,
-                'value' : value
+                'placeholder' : placeholder
                 }),
             m('.text-danger', {
                 'id' : helpTextId
