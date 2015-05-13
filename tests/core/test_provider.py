@@ -1,7 +1,7 @@
 import pytest
 
+from tests import utils
 from unittest import mock
-from tests.core import utils
 from tests.utils import async
 from waterbutler.core import exceptions
 
@@ -87,7 +87,7 @@ class TestBaseProvider:
     @async
     def test_create_folder_raises(self, provider1):
         with pytest.raises(exceptions.ProviderError) as e:
-            provider1.create_folder('Doesnt matter')
+            yield from provider1.create_folder('Doesnt matter')
 
         assert e.value.code == 405
         assert e.value.data == {
