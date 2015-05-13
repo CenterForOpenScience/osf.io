@@ -36,12 +36,12 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         """The provider from which this resource
         originated.
         """
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def kind(self):
         """`file` or `folder`"""
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def name(self):
@@ -50,7 +50,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             /bar/foo.txt -> foo.txt
             /<someid> -> whatever.png
         """
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def path(self):
@@ -61,7 +61,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             All paths MUST start with a `/`
             All Folders MUST end with a `/`
         """
-        pass
+        raise NotImplementedError
 
     @property
     def materialized_path(self):
@@ -100,15 +100,15 @@ class BaseFileMetadata(BaseMetadata):
 
     @abc.abstractproperty
     def content_type(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def modified(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def size(self):
-        pass
+        raise NotImplementedError
 
 
 class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
@@ -125,15 +125,15 @@ class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
 
     @abc.abstractproperty
     def modified(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def version(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def version_identifier(self):
-        pass
+        raise NotImplementedError
 
     @property
     def extra(self):
