@@ -151,8 +151,8 @@ class BaseCrossProviderHandler(BaseHandler):
         self.source_provider = yield from self.make_provider(**self.json['source'])
         self.destination_provider = yield from self.make_provider(**self.json['destination'])
 
-        self.json['source']['path'] = yield from self.source_provider.validate_path(self.json['source']['path'])
-        self.json['destination']['path'] = yield from self.destination_provider.validate_path(self.json['destination']['path'])
+        self.json['source']['path'] = yield from self.source_provider.validate_path(**self.json['source'])
+        self.json['destination']['path'] = yield from self.destination_provider.validate_path(**self.json['destination'])
 
     @asyncio.coroutine
     def make_provider(self, provider, **kwargs):
