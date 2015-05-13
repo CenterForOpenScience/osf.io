@@ -81,7 +81,6 @@ class ODMFilterMixin(FilterMixin):
 
     # TODO Handle simple and complex non-standard fields
 
-    # For the field_comparison_operators, instances can be a class or a tuple of classes
     field_comparison_operators = {
         ser.CharField: 'icontains',
         ser.ListField: 'in',
