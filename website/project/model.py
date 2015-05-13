@@ -299,6 +299,7 @@ class OAuth2App(StoredObject):
     client_id = fields.StringField(default=lambda: str(uuid.uuid4()))
     client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex))
 
+    # TODO: Rename to is_active and update serializers + michael CAS code
     active = fields.BooleanField(default=True)  # Set to False if application is deactivated for users
 
     owner = fields.ForeignField('user', backref='created')

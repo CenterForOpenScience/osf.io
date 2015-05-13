@@ -107,15 +107,13 @@ class ApplicationList(generics.ListAPIView, ODMFilterMixin):
     #TODO: need to get logged in user
     def get_default_odm_query(self):
 
-        print "-------- Debugging statement!", self.request.user
         return (
-            #Q('owner', 'eq', self.request.user) &
+            Q('owner', 'eq', self.request.user) &
             Q('active', 'eq', True)
         )
 
     # overrides ListAPIView
     def get_queryset(self):
-        # TODO: sort
         query = self.get_query_from_request()
         return OAuth2App.find(query)
 
