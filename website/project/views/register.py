@@ -10,6 +10,10 @@ from modularodm.exceptions import NoResultsFound
 from framework.exceptions import HTTPError
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
+from framework.auth.decorators import must_be_signed
+from framework.archiver.utils import catch_archive_addon_error
+from framework.archiver import ARCHIVER_SUCCESS, ARCHIVER_PENDING
+from framework.archiver.exceptions import ArchiverCopyError
 
 from website import settings
 from website.project.decorators import (
@@ -23,6 +27,7 @@ from website.util.permissions import ADMIN
 from website.models import MetaSchema
 from website.models import NodeLog
 from website import language
+
 
 from website.identifiers.client import EzidClient
 
@@ -156,7 +161,7 @@ def node_register_template_page_post(auth, node, **kwargs):
     )
 
     return {
-        'status': 'success',
+        'status': 'initiated',
         'result': register.url,
     }, http.CREATED
 
@@ -255,6 +260,20 @@ def get_referent_by_identifier(category, value):
         return redirect(identifier.referent.url)
     raise HTTPError(http.NOT_FOUND)
 
+@must_be_signed
 @must_be_registration
-def registration_callbacks():
-    import ipdb; ipdb.set_trace()
+def registration_callbacks(registration, payload, *args, **kwargs):
+    errors = payload.get('errors')
+    src_provider = payload['source']['provider']
+    pending = {key: value for key, value in registration.archived_providers.iteritems() if value['status'] == ARCHIVER_PENDING}
+    if not len(pending):
+        registration.archiving = False
+        registration.save()
+    if errors:
+        catch_archive_addon_error(registration, src_provider, errors)
+        if not len(pending):
+            raise ArchiverCopyError(registration.registered_from, registration, registration.owner, registration.archived_providers)
+    else:
+        registration.archived_providers[src_provider].update({
+            'status': ARCHIVER_SUCCESS,
+        })

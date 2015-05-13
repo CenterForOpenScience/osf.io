@@ -592,6 +592,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     archiving = fields.BooleanField(default=False)
     archive_task_id = fields.StringField()
+    archived_providers = fields.DictionaryField()
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
