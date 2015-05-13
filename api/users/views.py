@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import PermissionDenied
 from modularodm import Q
 
 from website.models import User, Node, OAuth2App
@@ -91,20 +92,21 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
         return nodes
 
 
+# TODO: Needs to also handle a PUT or POST request for creating new single instances via this url:
+#       Possible alternate parent classes in http://www.django-rest-framework.org/api-guide/generic-views/#listapiview
 class ApplicationList(generics.ListAPIView, ODMFilterMixin):
     """
     Get a list of API applications (eg OAuth2) that the user has registered
 
     Will only return success if logged in as that specified user
     """
-    # TODO: What are the appropriate permissions classes to see a list of applications only if logged in as the SPECIFIED user?
-    # permission_classes = (
-    #     drf_permissions.IsAuthenticated,  # TODO: This authentication check asks for separate credentials...?!
-    # )
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+    )
 
     serializer_class = OAuth2AppSerializer
 
-    #TODO: need to get logged in user
+    # Revisit whether this is the best way to enforce user = logged in user
     def get_default_odm_query(self):
 
         return (
@@ -117,3 +119,29 @@ class ApplicationList(generics.ListAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         return OAuth2App.find(query)
 
+
+class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ):
+    """
+    Get information about a specific API application (eq OAuth2) that the user has registered
+
+    Will only return success if logged in as that specified user
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+    )
+
+    serializer_class = OAuth2AppSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        id_url_kwarg = 'client_id'
+        print "---- DEBUGGING   ", self.kwargs[id_url_kwarg], "KW", self.kwargs
+        query = Q('client_id', 'eq', self.kwargs[id_url_kwarg])
+        obj = get_object_or_404(OAuth2App, query)
+
+        # TODO: Write test for case where user is not logged in, or wrong user requests resource
+        if obj.owner._id != self.request.user._id:
+            raise PermissionDenied
+
+        return obj

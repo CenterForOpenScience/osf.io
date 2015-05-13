@@ -296,7 +296,7 @@ class OAuth2App(StoredObject):
     )
 
     # Client ID and secret
-    client_id = fields.StringField(default=lambda: str(uuid.uuid4()))
+    client_id = fields.StringField(default=lambda: uuid.uuid4().hex)
     client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex))
 
     # TODO: Rename to is_active and update serializers + michael CAS code

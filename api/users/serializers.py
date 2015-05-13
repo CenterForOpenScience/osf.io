@@ -54,12 +54,12 @@ class ContributorSerializer(UserSerializer):
 
 
 class OAuth2AppSerializer(JSONAPISerializer):
-    """Serialize OAuth2 apps"""
-    id =  ser.CharField(read_only=True, source='_id')
-    # TODO: Should we be displaying secret key in return of API call from logged in user?
+    """Serialize data about a registered OAuth2 application"""
+    id = ser.CharField(read_only=True, source='_id')
+
+    client_id = ser.CharField(read_only=True)
     client_secret = ser.CharField(read_only=True) # TODO: May change this later
 
-    # TODO: Don't serialize active field- list query object filters out on its end
     owner = ser.CharField() # TODO: How is owner represented when we do this?
 
     name = ser.CharField()
