@@ -22,27 +22,6 @@ def async(func, *args, **kwargs):
     asyncio.get_event_loop().run_until_complete(future)
 
 
-class HandlerTestCase(testing.AsyncHTTPTestCase):
-
-    def get_app(self):
-        return make_app(debug=False)
-
-    def get_new_ioloop(self):
-        return AsyncIOMainLoop()
-
-
-def mock_provider_method(mock_make_provider, method_name, return_value=None,
-                         side_effect=None, as_coro=True):
-    mock_provider = mock.Mock()
-    method = getattr(mock_provider, method_name)
-    coro = asyncio.coroutine(lambda: return_value)
-    method.return_value = coro() if as_coro else return_value
-    if side_effect:
-        method.side_effect = side_effect
-    mock_make_provider.return_value = mock_provider
-    return mock_provider
-
-
 class MockProvider1(provider.BaseProvider):
 
     NAME = 'MockProvider1'
@@ -78,3 +57,36 @@ class MockProvider2(MockProvider1):
 
     def can_intra_copy(self, other, path=None):
         return self.__class__ == other.__class__
+
+
+class HandlerTestCase(testing.AsyncHTTPTestCase):
+
+    def setUp(self):
+        super().setUp()
+        identity_future = asyncio.Future()
+        identity_future.set_result({
+            'auth': {},
+            'credentials': {},
+            'settings': {},
+        })
+        self.mock_identity = mock.Mock()
+        self.mock_identity.return_value = identity_future
+        self.identity_patcher = mock.patch('waterbutler.server.handlers.core.get_identity', self.mock_identity)
+
+        self.mock_provider = MockProvider1({}, {}, {})
+        self.mock_make_provider = mock.Mock(return_value=self.mock_provider)
+        self.make_provider_patcher = mock.patch('waterbutler.core.utils.make_provider', self.mock_make_provider)
+
+        self.identity_patcher.start()
+        self.make_provider_patcher.start()
+
+    def tearDown(self):
+        super().tearDown()
+        self.identity_patcher.stop()
+        self.make_provider_patcher.stop()
+
+    def get_app(self):
+        return make_app(debug=False)
+
+    def get_new_ioloop(self):
+        return AsyncIOMainLoop()
