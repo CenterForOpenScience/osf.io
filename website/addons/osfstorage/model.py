@@ -88,7 +88,7 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             'nid': self.owner._id,
             'rootId': self.root_node._id,
             'baseUrl': self.owner.api_url_for(
-                'osf_storage_get_metadata',
+                'osfstorage_get_metadata',
                 _absolute=True,
                 _offload=True
             )
@@ -211,6 +211,8 @@ class OsfStorageFileNode(StoredObject):
         Note: Possibly high complexity/ many database calls
         USE SPARINGLY
         """
+        if not self.parent:
+            return '/'
         # Note: ODM cache can be abused here
         # for highly nested folders calling
         # list(self.__class__.find(Q(nodesetting),Q(folder))
@@ -356,6 +358,7 @@ class OsfStorageFileNode(StoredObject):
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
+            'size': self.versions[0].size if self.versions else None,
             'version': len(self.versions),
             'downloads': self.get_download_count(),
         }

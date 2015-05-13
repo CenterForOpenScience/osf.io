@@ -49,12 +49,11 @@ if (!ctx.node.anonymous) {
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     // Treebeard Files view
     $.ajax({
         url:  nodeApiUrl + 'files/grid/'
-    })
-    .done(function( data ) {
+    }).done(function (data) {
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
@@ -63,43 +62,37 @@ $(document).ready(function() {
             placement: 'dashboard',
             title : undefined,
             filterFullWidth : true, // Make the filter span the entire row for this view
-            columnTitles : function(){
+            columnTitles : function () {
                 return [
                     {
-                    title: 'Name',
-                    width : '90%',
-                    sort : true,
-                    sortType : 'text'
+                        title: 'Name',
+                        width : '90%',
+                        sort : true,
+                        sortType : 'text'
                     }
                 ];
             },
-            resolveRows : function(item){
+            resolveRows : function (item) {
                 var defaultColumns = [
-                {
-                    data: 'name',
-                    folderIcons: true,
-                    filter: true,
-                    custom: Fangorn.DefaultColumns._fangornTitleColumn
-                }];
-                this.options.defineToolbar.call(this,item);
+                        {
+                            data: 'name',
+                            folderIcons: true,
+                            filter: true,
+                            custom: Fangorn.DefaultColumns._fangornTitleColumn
+                        }];
                 if (item.parentID) {
                     item.data.permissions = item.data.permissions || item.parent().data.permissions;
                     if (item.data.kind === 'folder') {
                         item.data.accept = item.data.accept || item.parent().data.accept;
                     }
                 }
-
-                if(item.data.tmpID){
+                if (item.data.tmpID) {
                     defaultColumns = [
-                        {   
-                            data : '',  // Data field name
-                            custom : function(){ return m('span', ''); }
-                        },
                         {
                             data : 'name',  // Data field name
                             folderIcons : true,
                             filter : true,
-                            custom : function(){ return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
+                            custom : function () { return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
                         }
                     ];
                 }

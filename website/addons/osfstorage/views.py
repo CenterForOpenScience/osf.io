@@ -9,7 +9,6 @@ from modularodm.storage.base import KeyExistsException
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
-from framework.transactions.handlers import no_auto_transaction
 
 from website.models import User
 from website.project.decorators import (
@@ -55,8 +54,7 @@ def make_error(code, message_short=None, message_long=None):
 
 
 @must_be_signed
-@must_have_addon('osfstorage', 'node')
-def osf_storage_update_metadata(node_addon, payload, **kwargs):
+def osfstorage_update_metadata(node_addon, payload, **kwargs):
     try:
         version_id = payload['version']
         metadata = payload['metadata']
@@ -73,123 +71,74 @@ def osf_storage_update_metadata(node_addon, payload, **kwargs):
     return {'status': 'success'}
 
 @must_be_signed
-@decorators.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_get_revisions(fid, node_addon, payload, **kwargs):
-    record = model.OsfStorageFileNode.get(fid, node_addon)
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=payload.get('view_only')))
-
-    if record.is_folder:
-        raise HTTPError(httplib.BAD_REQUEST)
 
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, record, version, index=len(record.versions) - idx - 1, anon=is_anon)
-            for idx, version in enumerate(reversed(record.versions))
+            utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1, anon=is_anon)
+            for idx, version in enumerate(reversed(file_node.versions))
         ]
     }
 
 
-@must_be_signed
-@decorators.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_create_folder(payload, node_addon, **kwargs):
-    path = payload.get('path')
-    user = User.load(payload.get('user'))
-
-    if not path or not user:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    created, folder = model.OsfStorageFileNode.create_child_by_path(path, node_addon)
-
-    if not created:
-        if folder.is_deleted:
-            folder.undelete(Auth(user), recurse=False)
-        else:
-            raise HTTPError(httplib.CONFLICT, data={
-                'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
-                    name=folder.name,
-                    path=folder.materialized_path(),
-                )
-            })
-
-    folder.log(Auth(user), NodeLog.FOLDER_CREATED)
-    return folder.serialized(), httplib.CREATED
-
-
 @decorators.waterbutler_opt_hook
-def osf_storage_copy_hook(source, destination, name=None, **kwargs):
+def osfstorage_copy_hook(source, destination, name=None, **kwargs):
     return source.copy_under(destination, name=name).serialized(), httplib.CREATED
 
 
 @decorators.waterbutler_opt_hook
-def osf_storage_move_hook(source, destination, name=None, **kwargs):
+def osfstorage_move_hook(source, destination, name=None, **kwargs):
     return source.move_under(destination, name=name).serialized(), httplib.OK
 
 
 @must_be_signed
-@decorators.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_get_lineage(node_addon, fid=None, **kwargs):
-    filenode = model.OsfStorageFileNode.get(fid or node_addon.root_node._id, node_addon)
-
+@decorators.autoload_filenode(default_root=True)
+def osfstorage_get_lineage(file_node, node_addon, **kwargs):
     #TODO Profile
     list(model.OsfStorageFileNode.find(Q('kind', 'eq', 'folder') & Q('node_settings', 'eq', node_addon)))
 
     lineage = []
 
-    while filenode:
-        lineage.append(filenode.serialized())
-        filenode = filenode.parent
+    while file_node:
+        lineage.append(file_node.serialized())
+        file_node = file_node.parent
 
     return {'data': lineage}
 
 
 @must_be_signed
-@decorators.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_get_metadata(node_addon, fid=None, **kwargs):
-    filenode = model.OsfStorageFileNode.get(
-        fid or node_addon.root_node._id,
-        node_addon
-    )
-
-    if filenode.is_deleted:
+@decorators.autoload_filenode(default_root=True)
+def osfstorage_get_metadata(file_node, **kwargs):
+    if file_node.is_deleted:
         raise HTTPError(httplib.GONE)
 
-    return filenode.serialized(include_full=True)
+    return file_node.serialized(include_full=True)
 
 
 @must_be_signed
-@decorators.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_get_children(node_addon, fid, **kwargs):
-    filenode = model.OsfStorageFileNode.get(fid, node_addon)
-
-    if not filenode:
-        raise HTTPError(httplib.NOT_FOUND)
-    if filenode.is_deleted:
+@decorators.autoload_filenode(must_be='folder')
+def osfstorage_get_children(file_node, **kwargs):
+    if file_node.is_deleted:
         raise HTTPError(httplib.GONE)
-
-    if filenode.is_file:
-        raise HTTPError(httplib.BAD_REQUEST)
 
     return [
         child.serialized()
-        for child in filenode.children
+        for child in file_node.children
         if not child.is_deleted
     ]
 
 
 @must_be_signed
-@decorators.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_create_child(fid, payload, node_addon, **kwargs):
-    name = payload['name']
-    user = User.load(payload['user'])
+@must_not_be_registration
+@decorators.autoload_filenode(must_be='folder')
+def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
+    parent = file_node  # Just for clarity
+    name = payload.get('name')
+    user = User.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
-    parent = model.OsfStorageFileNode.get_folder(fid, node_addon)
     try:
         if is_folder:
             created, file_node = True, parent.append_folder(name)
@@ -221,7 +170,7 @@ def osf_storage_create_child(fid, payload, node_addon, **kwargs):
                 dict(payload['settings'], **dict(
                     payload['worker'], **{
                         'object': payload['metadata']['name'],
-                        'service': payload['metadata']['provider'],
+                        'service': payload['metadata']['service'],
                     })
                 ),
                 dict(payload['metadata'], **payload['hashes'])
@@ -231,16 +180,18 @@ def osf_storage_create_child(fid, payload, node_addon, **kwargs):
             raise HTTPError(httplib.BAD_REQUEST)
         file_node.log(Auth(user), NodeLog.FILE_ADDED)
 
-    return file_node.serialized(), httplib.CREATED if created else httplib.OK
+    return {
+        'status': 'success',
+        'data': file_node.serialized(),
+        'version': None if is_folder else file_node.versions[-1]._id
+    }, httplib.CREATED if created else httplib.OK
 
 
 @must_be_signed
-@decorators.handle_odm_errors
 @must_not_be_registration
-@must_have_addon('osfstorage', 'node')
-def osf_storage_delete(fid, payload, node_addon, **kwargs):
+@decorators.autoload_filenode()
+def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     auth = Auth(User.load(payload['user']))
-    file_node = model.OsfStorageFileNode.get(fid, node_addon)
 
     if not auth:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -261,18 +212,15 @@ def osf_storage_delete(fid, payload, node_addon, **kwargs):
 
 
 @must_be_signed
-@decorators.handle_odm_errors
-@must_have_addon('osfstorage', 'node')
-def osf_storage_download(fid, payload, node_addon, **kwargs):
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_download(file_node, payload, node_addon, **kwargs):
+    if file_node.is_deleted:
+        raise HTTPError(httplib.GONE)
+
     try:
         version_id = int(payload.get('version', 0)) - 1
     except ValueError:
         raise make_error(httplib.BAD_REQUEST, 'Version must be an int or not specified')
-
-    file_node = model.OsfStorageFileNode.get_file(fid, node_addon)
-
-    if file_node.is_deleted:
-        raise HTTPError(httplib.GONE)
 
     version = file_node.get_version(version_id)
 
@@ -290,3 +238,9 @@ def osf_storage_download(fid, payload, node_addon, **kwargs):
             osf_storage_settings.WATERBUTLER_RESOURCE: version.location[osf_storage_settings.WATERBUTLER_RESOURCE],
         },
     }
+
+
+# lol
+for key, item in locals().items():
+    if callable(item) and key.startswith('osfstorage'):
+        locals()[key] = must_have_addon('osfstorage', 'node')(item)
