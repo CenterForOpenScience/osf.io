@@ -1,6 +1,7 @@
 import datetime
 
-from nose.tools import *
+from modularodm import Q
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework import auth
 from framework.auth import exceptions
@@ -19,6 +20,7 @@ class TestUser(base.OsfTestCase):
     def tearDown(self):
         models.Node.remove()
         models.User.remove()
+        models.Session.remove()
         super(TestUser, self).tearDown()
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
@@ -364,8 +366,16 @@ class TestUserMerging(base.OsfTestCase):
         # check fields set on merged user
         assert_equal(other_user.merged_by, self.user)
 
+        assert_equal(
+            0,
+            models.Session.find(
+                Q('data.auth_user_id', 'eq', other_user._id)
+            ).count()
+        )
+
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
+        unconfirmed_username = self.unconfirmed.username
         self.user.merge_user(self.unconfirmed)
 
         assert_true(self.unconfirmed.is_merged)
@@ -390,6 +400,9 @@ class TestUserMerging(base.OsfTestCase):
         assert_is_none(self.unconfirmed.username)
         assert_is_none(self.unconfirmed.password)
         assert_is_none(self.unconfirmed.verification_key)
+        # The mergee's email no longer needs to be confirmed by merger
+        unconfirmed_emails = [record['email'] for record in self.user.email_verifications.values()]
+        assert_not_in(unconfirmed_username, unconfirmed_emails)
 
     def test_merge_unregistered(self):
         # test only those behaviors that are not tested with unconfirmed users
