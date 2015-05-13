@@ -184,7 +184,11 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             raise HTTPError(httplib.BAD_REQUEST)
         file_node.log(Auth(user), NodeLog.FILE_ADDED)
 
-    return file_node.serialized(), httplib.CREATED if created else httplib.OK
+    return {
+        'status': 'success',
+        'data': file_node.serialized(),
+        'version': None if is_folder else file_node.versions[-1]._id
+    }, httplib.CREATED if created else httplib.OK
 
 
 @must_not_be_registration
