@@ -5,14 +5,12 @@ import logging
 import httplib as http
 from datetime import datetime
 
-import furl
 import pymongo
 import requests
 from flask import request, redirect
-from box import CredentialsV2, refresh_v2_token, BoxClient
+from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
-from modularodm import fields, Q, StoredObject
-from modularodm.exceptions import ModularOdmException
+from modularodm import fields
 from werkzeug.wrappers import BaseResponse
 
 from framework.auth import Auth
@@ -23,7 +21,6 @@ from framework.status import push_status_message as flash
 
 from website.util import api_url_for
 from website.util import web_url_for
-from website import security
 from website.project.model import Node
 from website.project.decorators import must_have_addon
 
@@ -31,7 +28,7 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase, GuidFile
 
 from website.addons.box import settings
-from website.addons.box.utils import BoxNodeLogger
+from website.addons.box.utils import BoxNodeLogger, refresh_oauth_key
 from website.addons.box.serializer import BoxSerializer
 from website.oauth.models import ExternalProvider
 from website.addons.box.utils import handle_box_error
@@ -256,6 +253,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
 
         if not self._folder_data:
             try:
+                refresh_oauth_key(self.external_account)
                 client = BoxClient(self.external_account.oauth_key)
                 self._folder_data = client.get_folder(self.folder_id)
             except BoxClientException:
@@ -312,6 +310,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
         try:
+            refresh_oauth_key(self.external_account)
             return {'token': self.external_account.oauth_key}
         except BoxClientException as error:
             return HTTPError(error.status_code)
