@@ -119,7 +119,12 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
 
     def get_default_queryset(self):
         node = self.get_node()
-        return node.contributors
+        visible_contributors = node.visible_contributor_ids
+        contributors = []
+        for contributor in node.contributors:
+            contributor.bibliographic = contributor._id in visible_contributors
+            contributors.append(contributor)
+        return contributors
 
     # overrides ListAPIView
     def get_queryset(self):

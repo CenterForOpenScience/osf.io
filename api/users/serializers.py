@@ -46,8 +46,4 @@ class ContributorSerializer(UserSerializer):
     local_filterable = frozenset(['bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
-    bibliographic = ser.SerializerMethodField()
-
-    def get_bibliographic(self, obj):
-        node = self.context['view'].get_node()
-        return obj._id in node.visible_contributor_ids
+    bibliographic = ser.BooleanField()
