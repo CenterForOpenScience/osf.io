@@ -49,17 +49,6 @@ var projectOrganizerCategories = $.extend({}, {
     link:  'Link'
 }, nodeCategories);
 
-var _defaultIconState = function () {
-    return {
-        mode : 'bar',
-        generalIcons : {
-            search : { on : true, template : searchButton },
-            info : { on : true, template : infoIcon }
-        },
-        rowIcons : [{}]
-    };
-};
-
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
