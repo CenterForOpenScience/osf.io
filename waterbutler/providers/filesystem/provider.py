@@ -52,7 +52,7 @@ class FileSystemProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
-        created = yield from self.exists(path)
+        created = not (yield from self.exists(path))
 
         os.makedirs(os.path.split(path.full_path)[0], exist_ok=True)
 
