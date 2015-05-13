@@ -53,14 +53,86 @@ var BoxNodeConfigViewModel = oop.extend(AddonNodeConfigViewModel, {
     },
     connectAccount: function() {
         var self = this;
-
         window.oauthComplete = function(res) {
             // Update view model based on response
             self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
             self.importAuth.call(self);
         };
         window.open(self.urls().auth);
-    },  
+    },
+    connectExistingAccount: function(account_id) {
+        var self = this;
+        return $osf.putJSON(
+            self.urls().importAuth, {
+                external_account_id: account_id
+            }
+        ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
+    },
+    importAuth: function() {
+        var self = this;
+        self.updateAccounts()
+            .then(function(){
+                if (self.accounts().length > 1) {
+                    bootbox.prompt({
+                        title: 'Choose ' + self.addonName + ' Access Token to Import',
+                        inputType: 'select',
+                        inputOptions: ko.utils.arrayMap(
+                            self.accounts(),
+                            function(item) {
+                                return {
+                                    text: item.name,
+                                    value: item.id
+                                };
+                            }
+                        ),
+                        value: self.accounts()[0].id,
+                        callback: (self.connectExistingAccount.bind(self))
+                    });
+                } else {
+                    bootbox.confirm({
+                        title: 'Import ' + self.addonName + ' Access Token?',
+                        message: self.messages.confirmAuth(),
+                        callback: function(confirmed) {
+                            if (confirmed) {
+                                self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                            }
+                        }
+                    });
+                }
+            });
+    },
+    fetchAccounts: function() {
+        var self = this;
+        var ret = $.Deferred();
+        var request = $.get(self.urls().accounts);
+        request.then(function(data) {
+            ret.resolve(data.accounts);
+        });
+        request.fail(function(xhr, textStatus, error) {
+            self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
+            Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
+                url: self.url,
+                textStatus: textStatus,
+                error: error
+            });
+            ret.reject(xhr, textStatus, error);
+        });
+        return ret.promise();
+    },
+    updateAccounts: function() {
+        var self = this;
+        return self.fetchAccounts()
+            .done(function(accounts) {
+                self.accounts(
+                    $.map(accounts, function(account) {
+                        return {
+                            name: account.display_name,
+                            id: account.id
+                        };
+                    })
+                );
+            });
+    },
 });
 
 function BoxNodeConfig(addonName, selector, url, folderPicker) {

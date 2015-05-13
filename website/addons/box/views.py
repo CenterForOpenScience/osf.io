@@ -7,8 +7,10 @@ from flask import request
 from box.client import BoxClient, BoxClientException
 from urllib3.exceptions import MaxRetryError
 
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.decorators import must_be_logged_in
+
+from website.oauth.models import ExternalAccount
 
 from website.util import permissions
 from website.project.decorators import (
@@ -68,6 +70,18 @@ def box_set_config(node_addon, user_addon, auth, **kwargs):
 def box_add_user_auth(auth, node_addon, user_addon, **kwargs):
     """Import box credentials from the currently logged-in user to a node.
     """
+    external_account = ExternalAccount.load(
+        request.json['external_account_id']
+    )
+
+    if external_account not in user_addon.external_accounts:
+        raise HTTPError(http.FORBIDDEN)
+
+    try:
+        node_addon.set_auth(external_account, user_addon.owner)
+    except PermissionsError:
+        raise HTTPError(http.FORBIDDEN)
+
     node_addon.set_user_auth(user_addon)
     node_addon.save()
 
@@ -133,7 +147,7 @@ def box_folder_list(node_addon, **kwargs):
         }]
 
     try:
-        client = BoxClient(node_addon.user_settings.external_accounts[0].oauth_key)  # get_node_client(node)
+        client = BoxClient(node_addon.external_account.oauth_key)
     except BoxClientException:
         raise HTTPError(http.FORBIDDEN)
 
