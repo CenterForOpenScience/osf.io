@@ -346,7 +346,6 @@ var applyBindings = function(viewModel, selector) {
         elem = $elem[0];
         cssSelector = selector;
     }
-    var $elem = $(selector);
     if ($elem.length === 0) {
         throw "No elements matching selector '" + selector + "'";  // jshint ignore: line
     }
@@ -360,7 +359,7 @@ var applyBindings = function(viewModel, selector) {
     // Also show any child elements that have the scripted class
     $(cssSelector + ' .scripted').each(function(elm) {
         $(this).show();
-    })
+    });
     ko.applyBindings(viewModel, $elem[0]);
 };
 
@@ -428,7 +427,7 @@ var tableResize = function(selector, checker) {
  * This handler should not be used for user inputs.
  *
  * Example use:
- * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'], 
+ * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'],
  *                            map: function(item) {return item.charAt(0) + '.';}}"></span>
  * yields
  * <span ...>A., B., and G.</span>
@@ -436,7 +435,7 @@ var tableResize = function(selector, checker) {
 ko.bindingHandlers.listing = {
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
         var value = valueAccessor();
-        var valueUnwrapped = ko.unwrap(value);       
+        var valueUnwrapped = ko.unwrap(value);
         var map = valueUnwrapped.map || function(item) {return item;};
         var data = valueUnwrapped.data || [];
         var keys = [];

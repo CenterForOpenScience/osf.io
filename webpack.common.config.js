@@ -67,7 +67,8 @@ var entry = {
         // Common internal modules
         'js/fangorn',
         'js/citations',
-        'js/osfHelpers'
+        'js/osfHelpers',
+        'mithril'
     ]
 };
 

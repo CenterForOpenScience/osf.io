@@ -1,5 +1,6 @@
 import datetime
 
+from modularodm import Q
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework import auth
@@ -19,6 +20,7 @@ class TestUser(base.OsfTestCase):
     def tearDown(self):
         models.Node.remove()
         models.User.remove()
+        models.Session.remove()
         super(TestUser, self).tearDown()
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
@@ -363,6 +365,13 @@ class TestUserMerging(base.OsfTestCase):
 
         # check fields set on merged user
         assert_equal(other_user.merged_by, self.user)
+
+        assert_equal(
+            0,
+            models.Session.find(
+                Q('data.auth_user_id', 'eq', other_user._id)
+            ).count()
+        )
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
