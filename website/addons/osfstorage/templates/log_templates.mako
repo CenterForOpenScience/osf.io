@@ -19,7 +19,7 @@ updated file
 </script>
 
 <script type="text/html" id="osf_storage_file_removed">
-  removed {{ params.path.math(/\/$/) ? 'folder' : 'file' }} <span class="overflow">
+  removed {{ params.path.match(/\/$/) ? 'folder' : 'file' }} <span class="overflow">
       {{ params.path.replace(/^\//, '') }}</span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
