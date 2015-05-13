@@ -948,7 +948,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.is_public or
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
-        return self.can_edit(auth)
+        return self.is_contributor(auth.user)
 
     def update(self, fields, auth=None, save=True):
         if self.is_registration:
