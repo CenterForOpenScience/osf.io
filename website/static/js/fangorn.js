@@ -18,6 +18,8 @@ require('css/fangorn.css');
 
 var tbOptions;
 
+var noop = function () { };
+
 var tempCounter = 1;
 
 var STATE_MAP = {
@@ -107,9 +109,10 @@ var cancelUploadTemplate = function(row){
     var treebeard = this;
     return m('.btn.m-l-sm.text-muted', {
             'onclick' : function (e) {
+                e.stopImmediatePropagation();
                 cancelUploads.call(treebeard, row);
             }},
-        m('.fa.fa-times-circle.text-danger', { style : 'display:block;font-size:18px'}));
+        m('.fa.fa-times-circle.text-warning', { style : 'display:block;font-size:18px'}, m('span', { style : 'font-size: 14px;'}, ' Cancel')));
 };
 
 /**
@@ -793,7 +796,7 @@ function _removeEvent (event, items, col) {
                 deleteList.push(item);
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
-                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'))
+                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'));
             }
         });
         // If all items can be deleted
@@ -935,7 +938,7 @@ function _fangornUploadMethod(item) {
 function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
-        return m('span',{
+        return m('span.fg-file-links',{
             ondblclick: function() {
                 var redir = new URI(item.data.nodeUrl);
                 redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
@@ -987,7 +990,6 @@ function _fangornResolveRows(item) {
             custom : function(){ return '';}
         }];
     }
-
     if (item.parentID) {
         item.data.permissions = item.data.permissions || item.parent().data.permissions;
         if (item.data.kind === 'folder') {
@@ -1090,26 +1092,28 @@ function setCurrentFileID(tree, nodeID, file) {
     if(!file){
         return;
     }
+    var child;
+    var i;
     if (file.provider === 'figshare') {
-        for (var i = 0; i < tree.children.length; i++) {
-            var child = tree.children[i];
+        for (i = 0; i < tree.children.length; i++) {
+            child = tree.children[i];
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path) {
                 tb.currentFileID = child.id;
             }
         }
     } else if (file.provider === 'dataverse') {
         // Only highlight file in correct dataset version, since paths persist across versions
-        for (var i = 0; i < tree.children.length; i++) {
-            var child = tree.children[i];
+        for (i = 0; i < tree.children.length; i++) {
+            child = tree.children[i];
             var urlParams = $osf.urlParams();
-            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path
-                && child.data.extra.datasetVersion === urlParams.version) {
+            if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path &&
+                child.data.extra.datasetVersion === urlParams.version) {
                 tb.currentFileID = child.id;
             }
         }
     } else if (tb.fangornFolderIndex !== undefined && tb.fangornFolderArray !== undefined && tb.fangornFolderIndex < tb.fangornFolderArray.length) {
         for (var j = 0; j < tree.children.length; j++) {
-            var child = tree.children[j];
+            child = tree.children[j];
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.name === tb.fangornFolderArray[tb.fangornFolderIndex]) {
                 tb.fangornFolderIndex++;
                 if (child.data.kind === 'folder') {
@@ -1140,18 +1144,25 @@ function scrollToFile(fileID) {
     }
 }
 
+var toolbarModes = {
+    'DEFAULT' : 'bar',
+    'SEARCH' : 'search',
+    'ADDFOLDER' : 'addFolder',
+    'RENAME' : 'rename',
+    'ADDPROJECT' : 'addProject'
+};
+
+
 // A fangorn-styled button; addons can reuse this
 var FGButton = {
-    controller: function(args) {
-        var noop = function() {};
-    },
     view: function(ctrl, args, children) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip || '';
-        var iconCSS = args.icon;
+        var iconCSS = args.icon || '';
+        var onclick = args.onclick || noop;
         return m('div', {
             className: 'fangorn-toolbar-icon ' + extraCSS,
-            onclick: args.onclick,
+            onclick: onclick,
             'data-toggle': tooltipText ? 'tooltip' : '',
             'data-placement' : 'bottom',
             'title':  tooltipText}, [
@@ -1159,25 +1170,25 @@ var FGButton = {
             m('span.hidden-xs', children)
         ]);
     }
-}
+};
 
 var FGInput = {
-    controller : function(args) {
-        var noop = function() {};
-    },
     view : function(ctrl, args, helpText) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip || '';
         var placeholder = args.placeholder || '';
         var id = args.id || '';
         var helpTextId = args.helpTextId || '';
+        var onclick = args.onclick || noop;
+        var onkeypress = args.onkeypress || noop;
+        var value = args.value ? '[value="' + args.value + '"]' : '';
         return m('span', [
-            m('input', {
+            m('input' + value, {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
-                onclick: args.onclick,
-                onkeydown: args.onkeydown,
-                'data-toggle': tooltipText,
+                onclick: onclick,
+                onkeypress: onkeypress,
+                'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,
                 'data-placement' : 'bottom',
                 'placeholder' : placeholder
@@ -1187,18 +1198,16 @@ var FGInput = {
             }, helpText)
         ]);
     }
-}
+};
 
 var FGDropdown = {
-    controller : function(args) {
-        var noop = function() {};
-    },
     view : function(ctrl, args, children) {
         var extraCSS = args.className || '';
         var tooltipText = args.tooltip || '';
         var id = args.id || '';
         var name = args.name || '';
         var label = args.label || '';
+        var onchange = args.onchange || noop;
         return m('div', {
                 className: 'fangorn-toolbar-icon ' + extraCSS
             },[
@@ -1206,30 +1215,87 @@ var FGDropdown = {
                 m('select.no-border', {
                     'name' : name,
                     'id' : id,
-                    onchange: args.onchange,
-                    'data-toggle': tooltipText,
+                    onchange: onchange,
+                    'data-toggle':  tooltipText ? 'tooltip' : '',
                     'title':  tooltipText,
                     'data-placement' : 'bottom'
-                },children)
+                }, children)
         ]);
     }
-}
+};
+
+var FGItemButtons = {
+    view : function(ctrl, args, children) {
+        var tb = args.treebeard;
+        var item = args.item;
+        var rowButtons = [];
+        var mode = args.mode;
+        if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function() {_uploadEvent.call(tb, event, item); },
+                    tooltip: 'Select files to upload from your computer.',
+                    icon: 'fa fa-upload',
+                    className : 'text-primary'
+                }, 'Upload'),
+                m.component(FGButton, {
+                    onclick: function() {
+                        mode(toolbarModes.ADDFOLDER);
+                    },
+                    tooltip: 'Create a new folder inside curently selected folder.',
+                    icon: 'fa fa-plus',
+                    className : 'text-primary'
+                }, 'Create Folder'));
+            if(item.data.path){
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() {_removeEvent.call(tb, event, [item]); },
+                        tooltip: 'Delete this folder and all its contents.',
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete Folder'));
+            }
+        }
+        if (item.kind === 'file'){
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function() { _downloadEvent.call(tb, event, item); },
+                    tooltip: 'Download this file to your computer.',
+                    icon: 'fa fa-download',
+                    className : 'text-success'
+                }, 'Download')
+            );
+            if (item.data.permissions && item.data.permissions.edit) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() { _removeEvent.call(tb, event, [item]); },
+                        tooltip: 'Permanently delete this file.',
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete'));
+
+            }
+        }
+        return m('span', rowButtons);
+    }
+};
 
 var _dismissToolbar = function(){
     var tb = this;
-    tb.toolbarMode('bar');
+    tb.toolbarMode(toolbarModes.DEFAULT);
     tb.resetFilter();
     tb.filterText('');
+    m.redraw();
 };
 
 var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
-        self.tb.toolbarMode = m.prop('bar');
+        self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
-        self.uploadState = args.treebeard.isUploading;
+        self.isUploading = args.treebeard.isUploading;
         self.helpText = m.prop('');
         self.dismissToolbar = _dismissToolbar.bind(self.tb);
         self.createFolder = function(event){
@@ -1239,15 +1305,15 @@ var FGToolbar = {
     view : function(ctrl) {
         var templates = {};
         var generalButtons = [];
-        var rowButtons = [];
+        var finalRowButtons = [];
         var items = ctrl.items();
         var item = items[0];
         var dismissIcon = m.component(FGButton, {
                 onclick: ctrl.dismissToolbar,
                 tooltip: 'Close Search',
                 icon : 'fa fa-times'
-            }, 'Close');
-        templates.search =  [
+            }, '');
+        templates[toolbarModes.SEARCH] =  [
             m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
@@ -1255,10 +1321,14 @@ var FGToolbar = {
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
-        templates.createFolder = [
+        templates[toolbarModes.ADDFOLDER] = [
             m('.col-xs-9', [
                 m.component(FGInput, {
-                    onkeydown: function(event){ },
+                    onkeypress: function(event){
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            _createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
+                        }
+                    },
                     id : 'createFolderInput',
                     helpTextId : 'createFolderHelp',
                     placeholder : 'New folder name',
@@ -1278,67 +1348,28 @@ var FGToolbar = {
                     ]
                 )
             )
-        ]
+        ];
         // Bar mode
         // Which buttons should show?
         if(items.length === 1){
-            if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {_uploadEvent.call(ctrl.tb, event, item); },
-                        tooltip: 'Select files to upload from your computer.',
-                        icon: 'fa fa-upload',
-                        className : 'text-primary'
-                    }, 'Upload'),
-                    m.component(FGButton, {
-                    onclick: function() {ctrl.mode('createFolder'); },
-                    tooltip: 'Create a new folder inside curently selected folder.',
-                    icon: 'fa fa-plus',
-                    className : 'text-primary'
-                }, 'Create Folder'));
-                if(item.data.path){
-                    rowButtons.push(
-                        m.component(FGButton, {
-                            onclick: function() {_removeEvent.call(ctrl.tb, event, [item]); },
-                            tooltip: 'Delete this folder and all its contents.',
-                            icon: 'fa fa-trash',
-                            className : 'text-danger'
-                        }, 'Delete Folder'));
-                }
+            var addonButtons = resolveconfigOption.call(ctrl.tb, item, 'itemButtons', [item]);
+            if (addonButtons) {
+                finalRowButtons = m.component(addonButtons, { treebeard : ctrl.tb, item : item }); // jshint ignore:line
+            } else {
+                finalRowButtons = m.component(FGItemButtons, {treebeard : ctrl.tb, mode : ctrl.mode, item : item }); // jshint ignore:line
             }
-            if (item.kind === 'file'){
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() { _downloadEvent.call(ctrl.tb, event, item); },
-                        tooltip: 'Download this file to your computer.',
-                        icon: 'fa fa-download',
-                        className : 'text-success'
-                    }, 'Download')
-                );
-                if (item.data.permissions && item.data.permissions.edit) {
-                    rowButtons.push(
-                        m.component(FGButton, {
-                            onclick: function() { _removeEvent.call(ctrl.tb, event, [item]); },
-                            tooltip: 'Permanently delete this file.',
-                            icon: 'fa fa-trash',
-                            className : 'text-danger'
-                        }, 'Delete'));
-
-                }
-            }
-            if(ctrl.uploadState()){
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            cancelUploads.call(ctrl.tb);
-                        },
-                        tooltip: 'Cancel currently pending downloads.',
-                        icon: 'fa fa-time-circle',
-                        className : 'text-warning'
-                    }, 'Cancel All Uploads')
-                );
-            }
-
+        }
+        if(ctrl.isUploading()){
+            generalButtons.push(
+                m.component(FGButton, {
+                    onclick: function() {
+                        cancelUploads.call(ctrl.tb);
+                    },
+                    tooltip: 'Cancel currently pending uploads.',
+                    icon: 'fa fa-time-circle',
+                    className : 'text-warning'
+                }, 'Cancel All Uploads')
+            );
         }
         //multiple selection icons
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
@@ -1357,7 +1388,7 @@ var FGToolbar = {
         generalButtons.push(
             m.component(FGButton, {
                 onclick: function(event){
-                    ctrl.mode('search');
+                    ctrl.mode(toolbarModes.SEARCH);
                 },
                 tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
@@ -1382,9 +1413,7 @@ var FGToolbar = {
             }, '')
         );
 
-        var finalRowButtons = resolveconfigOption.call(ctrl.tb, item, 'defineToolbar', [item]) || rowButtons; // jshint ignore:line
-
-        templates.bar =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
+        templates[toolbarModes.DEFAULT] =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1393,7 +1422,8 @@ var FGToolbar = {
             ])
         ]);
     }
-}
+};
+
  // function _renameEvent () {
  //    var tb = this;
  //    var item = tb.multiselected[0];
@@ -1429,14 +1459,16 @@ function filterRowsNotInParent(rows) {
         originalRow = this.find(this.multiselected()[0].id),
         originalParent,
         currentItem;
-    if (typeof originalRow !== "undefined") {
+    function changeColor() { $(this).css('background-color', ''); }
+    if (originalRow !== undefined) {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
             } else {
-                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, function() { $(this).css('background-color', ''); });
+                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93')
+                    .animate({ backgroundColor: '#fff'}, 500, changeColor);
             }
         }
     }
@@ -1722,7 +1754,7 @@ tbOptions = {
             }
             tb.clearMultiselect();
             _dismissToolbar.call(tb);
-        })
+        });
 
         $(window).on('beforeunload', function() {
             if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
@@ -1733,24 +1765,13 @@ tbOptions = {
             _resizeHeight.call(tb);
             $(window).resize(function(){
                 _resizeHeight.call(tb);
-            })
+            });
         }
         $(window).on('keydown', function(event){
             if (event.keyCode === ESCAPE_KEY) {
                 _dismissToolbar.call(tb);
             }
         });
-        $(document).on('keypress', '#createFolderInput', function () {
-            if (tb.pressedKey === ENTER_KEY) {
-                _createFolder.call(tb, _dismissToolbar.bind(tb));
-            }
-        });
-    },
-    createcheck : function (item, parent) {
-        return true;
-    },
-    deletecheck : function (item) {  // When user attempts to delete a row, allows for checking permissions etc.
-        return true;
     },
     movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
         return true;
@@ -1863,16 +1884,15 @@ Fangorn.prototype = {
         this.grid = new Treebeard(this.options);
         return this.grid;
     },
-    tests : {
-    }
 };
 
 Fangorn.Components = {
     button : FGButton,
     input : FGInput,
     toolbar : FGToolbar,
-    dropdown : FGDropdown
-}
+    dropdown : FGDropdown,
+    toolbarModes : toolbarModes
+};
 
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
