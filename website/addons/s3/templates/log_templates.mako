@@ -22,7 +22,7 @@ bucket
 </script>
 
 <script type="text/html" id="s3_file_removed">
-removed {{ params.path.lastIndexOf('/') == (params.path.length - 1) ? 'folder' : 'file' }} <span class="overflow" data-bind="text: params.path"></span> from
+removed {{ params.path.math(/\/$/) ? 'folder' : 'file' }} <span class="overflow" data-bind="text: params.path"></span> from
 bucket
 <span data-bind="text: params.bucket"></span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
