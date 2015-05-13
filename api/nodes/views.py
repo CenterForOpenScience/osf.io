@@ -283,7 +283,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
                         'node_id': node_id,
                         'cookie': cookie,
                         'args': obj_args,
-                        'waterbutler_type': 'data',
+                        'waterbutler_type': 'file',
                         'item_type': 'folder',
                         'metadata': {},
                     })
