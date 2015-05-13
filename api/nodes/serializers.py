@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 class NodeSerializer(JSONAPISerializer):
 
     category_choices = Node.CATEGORY_MAP.keys()
-    category_choices_string = ', '.join(["'" + choice + "'" for choice in category_choices])
+    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id')
