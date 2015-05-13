@@ -80,7 +80,7 @@ def is_json_request():
     return content_type and ('application/json' in content_type)
 
 
-def waterbutler_url_for(route, provider, path, node, user=None, use_request=True, **kwargs):
+def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
     """Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
     :param str provider: The name of the requested provider

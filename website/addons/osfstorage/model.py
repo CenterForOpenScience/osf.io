@@ -76,13 +76,6 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
         return clone, None
 
-    def _copy_files(self, clone, dst_path=None):
-        node = self.root_node
-        if dst_path:
-            node = OsfStorageFileNode.get(dst_path.strip('/'), self)
-        clone.root_node = utils.copy_files(node, clone)
-        clone.save()
-
     def serialize_waterbutler_settings(self):
         return dict(settings.WATERBUTLER_SETTINGS, **{
             'nid': self.owner._id,
