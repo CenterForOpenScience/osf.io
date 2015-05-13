@@ -136,9 +136,12 @@ def osfstorage_get_children(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
     parent = file_node  # Just for clarity
-    name = payload['name']
-    user = User.load(payload['user'])
+    name = payload.get('name')
+    user = User.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
+
+    if not (name or user) or '/' in name:
+        raise HTTPError(httplib.BAD_REQUEST)
 
     try:
         if is_folder:
