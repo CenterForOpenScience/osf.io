@@ -19,10 +19,9 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/<fid>/',
             ],
             'get',
-            views.osf_storage_get_metadata,
+            views.osfstorage_get_metadata,
             json_renderer,
         ),
-
 
         Rule(
             [
@@ -30,7 +29,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/<fid>/',
             ],
             'delete',
-            views.osf_storage_delete,
+            views.osfstorage_delete,
             json_renderer,
         ),
 
@@ -40,7 +39,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/<fid>/download/',
             ],
             'get',
-            views.osf_storage_download,
+            views.osfstorage_download,
             json_renderer,
         ),
 
@@ -50,7 +49,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/<fid>/revisions/',
             ],
             'get',
-            views.osf_storage_get_revisions,
+            views.osfstorage_get_revisions,
             json_renderer,
         ),
 
@@ -60,7 +59,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/<fid>/lineage/',
             ],
             'get',
-            views.osf_storage_get_lineage,
+            views.osfstorage_get_lineage,
             json_renderer,
         ),
 
@@ -70,7 +69,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/<fid>/children/',
             ],
             'post',
-            views.osf_storage_create_child,
+            views.osfstorage_create_child,
             json_renderer,
         ),
 
@@ -80,7 +79,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/<fid>/children/',
             ],
             'get',
-            views.osf_storage_get_children,
+            views.osfstorage_get_children,
             json_renderer,
         ),
 
@@ -90,7 +89,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/hooks/metadata/',
             ],
             'put',
-            views.osf_storage_update_metadata,
+            views.osfstorage_update_metadata,
             json_renderer,
         ),
 
@@ -100,7 +99,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/hooks/move',
             ],
             'post',
-            views.osf_storage_move_hook,
+            views.osfstorage_move_hook,
             json_renderer,
         ),
 
@@ -110,7 +109,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/hooks/copy/',
             ],
             'post',
-            views.osf_storage_copy_hook,
+            views.osfstorage_copy_hook,
             json_renderer,
         ),
     ],
