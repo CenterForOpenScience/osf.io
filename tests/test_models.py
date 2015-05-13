@@ -3598,6 +3598,15 @@ class TestComments(OsfTestCase):
         with assert_raises(ValidationValueError):
             self.comment.save()
 
+    def test_read_permission_contributor_can_comment(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        project.set_privacy('private')
+        project.add_contributor(user, 'read')
+        project.save()
+
+        assert_true(project.can_comment(Auth(user=user)))
+
 
 class TestPrivateLink(OsfTestCase):
 
