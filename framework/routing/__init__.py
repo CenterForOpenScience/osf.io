@@ -174,7 +174,11 @@ def process_rules(app, rules, prefix=''):
                     methods=rule.methods,
                 )
             except AssertionError:
-                raise AssertionError('URLRule({}, {})\'s view function name is overwriting an existing endpoint'.format(prefix + url, view_func.__name__))
+                for other_rule in app.url_map.iter_rules():
+                    if other_rule.rule == prefix + url and other_rule.methods == rule.methods:
+                        if endpoint + rule.endpoint_suffix != other_rule.endpoint:
+                            raise AssertionError('URLRule({}, {})\'s view function name is overwriting an existing endpoint'.format(prefix + url, view_func.__name__ + rule.endpoint_suffix))
+
 
 ### Renderer helpers ###
 
