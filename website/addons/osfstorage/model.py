@@ -81,7 +81,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
             'nid': self.owner._id,
             'rootId': self.root_node._id,
             'baseUrl': self.owner.api_url_for(
-                'osf_storage_get_metadata',
+                'osfstorage_get_metadata',
                 _absolute=True,
                 _offload=True
             )
