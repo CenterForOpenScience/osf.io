@@ -1,7 +1,7 @@
 <script type="text/html" id="osf_storage_file_added">
 added file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ params.path.startsWith('/') ? params.path.replace('/', '', 1) : params.path }}</a> in
+    {{ params.path.indexOf('/') == 0 ? params.path.replace('/', '', 1) : params.path }}</a> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
@@ -14,13 +14,13 @@ created folder
 <script type="text/html" id="osf_storage_file_updated">
 updated file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ params.path.startsWith('/') ? params.path.replace('/', '', 1) : params.path }}</a> in
+    {{ params.path.indexOf('/') == 0 ? params.path.replace('/', '', 1) : params.path }}</a> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 <script type="text/html" id="osf_storage_file_removed">
-  removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow">
-      {{ params.path.startsWith('/') ? params.path.replace('/', '', 1) : params.path }}</span> in
+  removed {{ params.path.lastIndexOf('/') == (params.path.length - 1) ? 'folder' : 'file' }} <span class="overflow">
+      {{ params.path.indexOf('/') == 0 ? params.path.replace('/', '', 1) : params.path }}</span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
