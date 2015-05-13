@@ -213,9 +213,9 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
     # Looks at only the types available. Deals with prepending file names.
         for sub_type in all_subs:
             if sub_type in event_description:
-                sub = sub_type
+                event_type = sub_type
     else:
-        sub = event_description
+        event_type = event_description
     if node and node.node__parent:
         notification_type = 'adopt_parent'
     else:
@@ -227,9 +227,9 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
     return {
         'event': {
             'title': event_description,
-            'description': all_subs[sub],
+            'description': all_subs[event_type],
             'notificationType': notification_type,
-            'parent_notification_type': get_parent_notification_type(node, sub, user)
+            'parent_notification_type': get_parent_notification_type(node, event_type, user)
         },
         'kind': 'event',
         'children': []
@@ -245,7 +245,7 @@ def get_parent_notification_type(node, event, user):
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    if node and node.node__parent and node.parent_node.has_permission(user, 'read'):
+    if node and isinstance(node, Node) and node.node__parent and node.parent_node.has_permission(user, 'read'):
         for parent in node.node__parent:
             key = to_subscription_key(parent._id, event)
             try:

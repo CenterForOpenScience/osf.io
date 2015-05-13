@@ -85,27 +85,29 @@ def notify(uid, event, user, node, timestamp, **context):
         target_user: used with comment_replies
     :return:
     """
-    subscriptions = {}
-    for notification_type in constants.NOTIFICATION_TYPES:
-        subscriptions[notification_type] = []
+    file_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
     subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
     if 'file_updated' in event:
         for notification_type in constants.NOTIFICATION_TYPES:
-            subscriptions[notification_type] = getattr(subscription, notification_type, [])
+            file_subscriptions[notification_type] = getattr(subscription, notification_type, [])
         event = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
         subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
-    none_set = set(subscriptions['none'])
+    subscriptions = file_subscriptions
     for notification_type in constants.NOTIFICATION_TYPES:
+        subscriptions[notification_type].extend(getattr(subscription, notification_type, []))
+        subscriptions[notification_type].extend(check_parent(node, event, notification_type))
+        for nt in constants.NOTIFICATION_TYPES:
+            if notification_type != nt:
+                subscriptions[notification_type] = \
+                    list(set(subscriptions[notification_type]).difference(set(file_subscriptions[nt])))
         if notification_type != 'none':
-            subscriptions[notification_type].extend(getattr(subscription, notification_type, []))
-            subscriptions[notification_type].extend(check_parent(node, event, notification_type))
-            subscribed_users = list(set(subscriptions[notification_type]).difference(none_set))
-            send(subscribed_users, notification_type, uid, event, user, node, timestamp, **context)
+            send(subscriptions[notification_type], notification_type, uid, event, user, node, timestamp, **context)
+    return subscriptions
 
 
 def check_parent(node, event, notification_type):
     """ Check subscription object for the event on the parent project
-        and send transactional email to indirect subscribers.
+        and return indirect subscribers.
     """
     if node and node.parent_id:
         parent = website_models.Node.load(node.parent_id)
@@ -115,8 +117,9 @@ def check_parent(node, event, notification_type):
             return check_parent(parent, event, notification_type)
 
         subscribed_users = getattr(subscription, notification_type, [])
+        subscribed_users.extend(check_parent(parent, event, notification_type))
 
-        return subscribed_users.extend(check_parent(parent, event, notification_type))
+        return subscribed_users
 
     return []
 
