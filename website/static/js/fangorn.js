@@ -262,22 +262,6 @@ function checkConflicts(tb, item, folder, cb) {
     cb('replace');
 }
 
-// function onItemDrop(e) {
-//     var tb = this;
-//     var folder = tb.find($(e.target).attr('data-id'));
-//     var items = tb.multiselected.length === 0 ? [tb.find(tb.selected)] : tb.multiselected;
-
-//     if (items.length < 1) return;
-//     if (items.indexOf(folder) > -1) return;
-//     if (!folder.open) {
-//         tb.updateFolder(null, folder, onItemDrop.apply(tb, arguments));
-//     }
-
-//     $.each(items, function(index, item) {
-//         checkMoveConflicts(tb, item, folder, moveItem.bind(tb, folder, item));
-//     });
-// }
-
 function doItemOp(isMove, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
@@ -318,7 +302,6 @@ function doItemOp(isMove, to, from, rename, conflict) {
             tb.modal.update(mithrilContent, mithrilButtons);
             return;
         }
-
         from.data = resp;
         from.data.status = undefined;
         from.notify.update('Successfully ' + (isMove ? 'moved.' : 'copied.'), 'success', null, 1000);
@@ -1424,39 +1407,18 @@ var FGToolbar = {
     }
 };
 
- // function _renameEvent () {
- //    var tb = this;
- //    var item = tb.multiselected[0];
- //    var val = $.trim($('#renameInput').val());
- //    var folder = item.parent();
-
- //    checkConflicts(tb, item, folder, doItemOp.bind(tb, true, folder, item, val));
- //    tb.options.iconState.mode = 'bar';
-    //
-    // if(tb.multiselected.length !== 1 || val.length < 1){
-    //     tb.options.iconState.mode = 'bar';
-    //     return;
-    // }
-    // var theItem = item.data;
-    // //var url = needs url here
-    // postAction = $osf.postJSON(url, postData);
-    // postAction.done(function () {
-    //     tb.updateFolder(null, tb.find(1));
-    //     // Also update every
-    // }).fail($osf.handleJSONError);
-    // tb.options.iconState.mode = 'bar';
-
 /**
  * When multiple rows are selected remove those that are not in the parent
  * @param {Array} rows List of item objects
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRowsNotInParent(rows) {
-    if (this.multiselected().length < 2) {
-        return this.multiselected();
+    var tb = this;
+    if (tb.multiselected().length < 2) {
+        return tb.multiselected();
     }
     var i, newRows = [],
-        originalRow = this.find(this.multiselected()[0].id),
+        originalRow = tb.find(tb.multiselected()[0].id),
         originalParent,
         currentItem;
     function changeColor() { $(this).css('background-color', ''); }
@@ -1472,8 +1434,8 @@ function filterRowsNotInParent(rows) {
             }
         }
     }
-    this.multiselected(newRows);
-    this.highlightMultiselect();
+    tb.multiselected(newRows);
+    tb.highlightMultiselect();
     return newRows;
 }
 
@@ -1608,10 +1570,10 @@ function _fangornOver(event, ui) {
 function _dropLogic(event, items, folder) {
     var tb = this;
 
-    if (items.length < 1) return;
-    if (items.indexOf(folder) > -1) return;
+    if (items.length < 1) { return; }
+    if (items.indexOf(folder) > -1) { return; }
 
-    if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) != -1) return;
+    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
     if (!folder.open) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
@@ -1642,7 +1604,7 @@ function _dragLogic(event, items, ui) {
         copyMode = 'forbidden';
     }
 
-    if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) != -1) {
+    if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
         copyMode = 'forbidden';
     }
 
