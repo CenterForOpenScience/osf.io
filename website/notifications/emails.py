@@ -85,51 +85,61 @@ def notify(uid, event, user, node, timestamp, **context):
         target_user: used with comment_replies
     :return:
     """
-    file_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
-    subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
-    if 'file_updated' in event:
-        for notification_type in constants.NOTIFICATION_TYPES:
-            file_subscriptions[notification_type] = getattr(subscription, notification_type, [])
-        event = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
-        subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
-    subscriptions = file_subscriptions
-    for notification_type in constants.NOTIFICATION_TYPES:
-        subscriptions[notification_type].extend(getattr(subscription, notification_type, []))
-        subscriptions[notification_type].extend(check_parent(node, event, notification_type))
-        for nt in constants.NOTIFICATION_TYPES:
-            if notification_type != nt:
-                subscriptions[notification_type] = \
-                    list(set(subscriptions[notification_type]).difference(set(file_subscriptions[nt])))
+    event_type = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
+    subscriptions = compile_subscriptions(node, event_type, event)
+    sent_users = []
+    target_user = context.get('target_user', None)
+    for notification_type in subscriptions:
         if notification_type != 'none':
-            send(subscriptions[notification_type], notification_type, uid, event, user, node, timestamp, **context)
-    return subscriptions
+            if target_user and target_user in subscriptions[notification_type]:
+                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user))
+                send(target_user, notification_type, uid, 'comment_replies', user, node, timestamp, **context)
+                sent_users.append(target_user)
+            send(subscriptions[notification_type], notification_type, uid, event_type, user, node, timestamp, **context)
+            sent_users.extend(subscriptions[notification_type])
+    return sent_users
 
 
-def check_parent(node, event, notification_type):
-    """ Check subscription object for the event on the parent project
-        and return indirect subscribers.
+def compile_subscriptions(node, event_type, event=None):
     """
-    if node and node.parent_id:
-        parent = website_models.Node.load(node.parent_id)
-        subscription = NotificationSubscription.load(utils.to_subscription_key(parent._id, event))
+    Recurse through node and parents for subscriptions.
+    :param node: current node
+    :param event_type: Generally node_subscriptions_available
+    :param event: Particular event such a file_updated that has specific file subs
+    :return: a dict of notification types with lists of users.
+    """
+    subscriptions = check_node(node, event_type)
+    if event:
+        subscriptions = check_node(node, event)  # Gets particular event subscriptions
+        parent_subscriptions = compile_subscriptions(node, event_type)  # get node and parent subs
+    elif node.parent_id:
+        parent_subscriptions = compile_subscriptions(website_models.Node.load(node.parent_id), event_type)
+    else:
+        parent_subscriptions = check_node(None, event_type)
+    for notification_type in parent_subscriptions:
+        parent_subscriptions[notification_type].extend(subscriptions[notification_type])
+        for nt in subscriptions:
+            if notification_type != nt:
+                parent_subscriptions[notification_type] = \
+                    list(set(parent_subscriptions[notification_type]).difference(set(subscriptions[nt])))
+    return parent_subscriptions
 
-        if not subscription:
-            return check_parent(parent, event, notification_type)
 
-        subscribed_users = getattr(subscription, notification_type, [])
-        subscribed_users.extend(check_parent(parent, event, notification_type))
-
-        return subscribed_users
-
-    return []
+def check_node(node, event):
+    """Return subscription for a particular node and event."""
+    node_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
+    if node:
+        subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
+        for notification_type in node_subscriptions:
+            users = getattr(subscription, notification_type, [])
+            for user in users:
+                if node.has_permission(user, 'read'):
+                    node_subscriptions[notification_type].append(user)
+    return node_subscriptions
 
 
 def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **context):
     """Dispatch to the handler for the provided notification_type"""
-
-    # Remove file path if it exists
-    event_type = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
-
     if notification_type == 'none':
         return
 
