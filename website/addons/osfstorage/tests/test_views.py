@@ -132,13 +132,17 @@ class TestUploadFileHook(HookTestCase):
             'user': self.user._id,
             'name': self.name,
             'hashes': {'base64': '=='},
-            'worker': '',
-            'settings': {storage_settings.WATERBUTLER_RESOURCE: 'osf'},
+            'worker': {
+                'uname': 'testmachine'
+            },
+            'settings': {
+                'provider': 'filesystem',
+                storage_settings.WATERBUTLER_RESOURCE: 'blah',
+            },
             'metadata': {
-                'provider': 'osfstorage',
-                'service': 'cloud',
-                'name': 'file',
                 'size': 123,
+                'name': 'file',
+                'provider': 'filesystem',
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
             },
         }
@@ -161,15 +165,16 @@ class TestUploadFileHook(HookTestCase):
 
         assert_equal(version.location, {
             'object': 'file',
-            'service': 'cloud',
-            'container': 'osf',
+            'uname': 'testmachine',
+            'service': 'filesystem',
+            'provider': 'filesystem',
+            storage_settings.WATERBUTLER_RESOURCE: 'blah',
         })
         assert_equal(version.metadata, {
             'size': 123,
             'name': 'file',
             'base64': '==',
-            'service': 'cloud',
-            'provider': 'osfstorage',
+            'provider': 'filesystem',
             'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
         })
 
