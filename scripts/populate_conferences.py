@@ -67,7 +67,6 @@ MEETING_DATA = {
         'active': False,
         'admins': [
             'lvonschi@nrao.edu',
-            'presentations@osf.io',
             # 'Dkim@nrao.edu',
         ],
         'public_projects': True,
@@ -84,7 +83,6 @@ MEETING_DATA = {
         'active': False,
         'admins': [
             'gkroll@berkeley.edu',
-            'presentations@osf.io',
             'awais@berkeley.edu',
         ],
         'public_projects': True,
@@ -96,7 +94,6 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'meetings@spsp.org',
-            'presentations@osf.io',
         ],
     },
     'aps2015': {
@@ -105,7 +102,6 @@ MEETING_DATA = {
         'logo_url': 'http://www.psychologicalscience.org/images/APS_2015_Banner_990x157.jpg',
         'active': True,
         'admins': [
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -115,7 +111,6 @@ MEETING_DATA = {
         'logo_url': 'http://icps.psychologicalscience.org/wp-content/themes/deepblue/images/ICPS_Website-header_990px.jpg',
         'active': True,
         'admins': [
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -126,7 +121,6 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'mpa@kent.edu',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -137,7 +131,6 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'aoverman@elon.edu',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -148,7 +141,6 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'director@vprsf.org',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -159,7 +151,6 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'mhurst@virginia.edu',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -170,7 +161,6 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'amorris.mtsu@gmail.com',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -180,7 +170,6 @@ MEETING_DATA = {
         'logo_url': None,
         'active': True,
         'admins': [
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
