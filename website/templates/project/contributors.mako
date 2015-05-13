@@ -101,7 +101,7 @@
     % if 'admin' in user['permissions']:
         <h3>View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-              <i class="fa fa-plus"> </i>Create
+              <i class="fa fa-plus"> </i>Add
             </a>
         </h3>
         <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
@@ -120,7 +120,7 @@
                     <th class="col-sm-0"></th>
                     </tr>
                 </thead>
-                
+
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: afterRenderLink}">
                     <tr>
                         <td class="col-sm-3">
