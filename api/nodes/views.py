@@ -127,7 +127,8 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
-    """Registrations  """
+    """Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
     permissions_classes = (
         ContributorOrPublic,
     )
