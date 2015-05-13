@@ -118,7 +118,7 @@
 <p>If the project is private, claim the account, and then follow the steps above.</p>
 
 <h3>What is the difference between a component and a folder?</h3>
-<p>A folder can be used to organize files within a project or component - just like a folder on your own computer groups files together. A component also groups files together, but has added functionality. Components have privacy and sharing settings independent of the overarching project's settings, their own unique, persistent identifiers for citation, and their own wiki and add-ons.</p>
+<p>A folder can be used to organize files within a project or component - just like a folder on your own computer groups files together. A component acts like a subproject. Components have privacy and sharing settings independent of the overarching project's settings, their own unique, persistent identifiers for citation, and their own wiki and add-ons.</p>
 
 <h3>I’m using the search function to find one of my projects, but it’s not showing up in the results. What’s wrong?</h3>
 <p>The search function only returns public projects, so if you’re searching for one of your own private projects, it won’t be returned in the results. To search for your own projects, go to your dashboard, and use the “Go to my project” widget on the top right.</p>
