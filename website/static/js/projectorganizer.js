@@ -41,7 +41,6 @@ var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
 
-
 var projectOrganizerCategories = $.extend({}, {
     collection: 'Collections',
     smartCollection: 'Smart Collections',
@@ -179,7 +178,7 @@ function saveExpandState(item, callback) {
         postAction = $osf.postJSON(collapseUrl, {});
         postAction.done(function () {
             item.expand = false;
-            if (typeof callback !== 'undefined') {
+            if (callback !== undefined) {
                 callback();
             }
         }).fail($osf.handleJSONError);
@@ -189,7 +188,7 @@ function saveExpandState(item, callback) {
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
             item.expand = false;
-            if (typeof callback !== 'undefined') {
+            if (callback !== undefined) {
                 callback();
             }
         }).fail($osf.handleJSONError);
@@ -259,8 +258,6 @@ function _poResolveRows(item) {
     if (draggable) {
         css = 'po-draggable';
     }
-
-
     item.css = '';
     default_columns = [{
         data : 'name',  // Data field name
@@ -335,8 +332,7 @@ function _poResolveIcon(item) {
         var iconType = icons[type];
         if (type === 'component' || type === 'registeredComponent') {
             iconType = componentIcons[category];
-        }
-        else if (type === 'project' || type === 'registeredProject') {
+        } else if (type === 'project' || type === 'registeredProject') {
             iconType = projectIcons[category];
         }
         if (type === 'registeredComponent' || type === 'registeredProject') {
@@ -448,7 +444,7 @@ function expandStateLoad(item) {
  */
 function _poLoadOpenChildren() {
     var tb = this;
-    this.treeData.children.map(function (item) {
+    tb.treeData.children.map(function (item) {
         if (item.data.expand) {
             tb.updateFolder(null, item);
         }
@@ -534,13 +530,15 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRowsNotInParent(rows) {
-    if (this.multiselected().length < 2) {
-        return this.multiselected();
+    var tb = this;
+    if (tb.multiselected().length < 2) {
+        return tb.multiselected();
     }
     var i, newRows = [],
-        originalRow = this.find(this.multiselected()[0].id),
+        originalRow = tb.find(tb.multiselected()[0].id),
         originalParent,
         currentItem;
+    var changeColor = function() { $(this).css('background-color', ''); };
     if (typeof originalRow !== 'undefined') {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
@@ -548,12 +546,12 @@ function filterRowsNotInParent(rows) {
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
             } else {
-                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, function() { $(this).css('background-color', ''); });
+                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, changeColor);
             }
         }
     }
-    this.multiselected(newRows);
-    this.highlightMultiselect();
+    tb.multiselected(newRows);
+    tb.highlightMultiselect();
     return newRows;
 }
 
@@ -564,10 +562,11 @@ function filterRowsNotInParent(rows) {
  * @private
  */
 function _poDragStart(event, ui) {
+    var tb = this;
     var itemID = $(event.target).attr('data-id'),
-        item = this.find(itemID);
-    if (this.multiselected().length < 2) {
-        this.multiselected([item]);
+        item = tb.find(itemID);
+    if (tb.multiselected().length < 2) {
+        tb.multiselected([item]);
     }
 }
 
@@ -578,9 +577,10 @@ function _poDragStart(event, ui) {
  * @private
  */
 function _poDrop(event, ui) {
-    var items = this.multiselected().length === 0 ? [this.find(this.selected)] : this.multiselected(),
-        folder = this.find($(event.target).attr('data-id'));
-    dropLogic.call(this, event, items, folder);
+    var tb = this;
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
+        folder = tb.find($(event.target).attr('data-id'));
+    dropLogic.call(tb, event, items, folder);
 }
 
 /**
@@ -590,9 +590,10 @@ function _poDrop(event, ui) {
  * @private
  */
 function _poOver(event, ui) {
-    var items = this.multiselected().length === 0 ? [this.find(this.selected)] : this.multiselected(),
-        folder = this.find($(event.target).attr('data-id')),
-        dragState = dragLogic.call(this, event, items, ui);
+    var tb = this;
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
+        folder = tb.find($(event.target).attr('data-id')),
+        dragState = dragLogic.call(tb, event, items, ui);
     $('.tb-row').removeClass('tb-h-success po-hover');
     if (dragState !== 'forbidden') {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
