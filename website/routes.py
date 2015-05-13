@@ -1194,10 +1194,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'post', project_views.register.node_register_template_page_post, json_renderer),
 
-        Rule([
-            '/registration/<pid>/register/<template>/',
-        ], 'post', project_views.register.node_register_template_page_post, json_renderer),
-
         Rule(
             [
                 '/project/<pid>/identifiers/',
@@ -1301,10 +1297,14 @@ def make_url_map(app):
             addon_views.create_waterbutler_log,
             json_renderer,
         ),
-        Rule([
-            '/registration/<nid>/callbacks/',
-        ], 'post', project_views.register.registration_callbacks, json_renderer),
-
+        Rule(
+            [
+                '/registration/<pid>/callbacks/',
+            ],
+            'put',
+            project_views.register.registration_callbacks,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/files/<provider>/<path:path>/',
