@@ -2,6 +2,8 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
+from website.models import OAuth2App
+
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -55,6 +57,7 @@ class ContributorSerializer(UserSerializer):
 
 class OAuth2AppSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
+
     id = ser.CharField(read_only=True, source='_id')
 
     client_id = ser.CharField(read_only=True)
@@ -69,6 +72,19 @@ class OAuth2AppSerializer(JSONAPISerializer):
 
     home_url = ser.CharField()
     callback_url = ser.CharField()
+
+    def create(self, validated_data):
+        node = OAuth2App(**validated_data)
+        node.save()
+        return node
+
+    def update(self, instance, validated_data):
+        assert isinstance(instance, OAuth2App), 'instance must be an OAuth2App'
+        print "--- CALLED", validated_data
+        for attr, value in validated_data.iteritems():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
     class Meta:
         type_ = 'applications'

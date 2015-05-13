@@ -136,7 +136,6 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ):
     # overrides RetrieveAPIView
     def get_object(self):
         id_url_kwarg = 'client_id'
-        print "---- DEBUGGING   ", self.kwargs[id_url_kwarg], "KW", self.kwargs
         query = Q('client_id', 'eq', self.kwargs[id_url_kwarg])
         obj = get_object_or_404(OAuth2App, query)
 
@@ -145,3 +144,14 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ):
             raise PermissionDenied
 
         return obj
+
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        # Node is not actually deleted- just flagged as inactive, which hides it from list views
+        obj = self.get_object()
+
+        if obj.owner._id != self.request.user._id:
+            raise PermissionDenied
+
+        obj.active = False
+        obj.save()
