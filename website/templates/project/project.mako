@@ -115,10 +115,8 @@
                 % if node['is_registration']:
                     <br />Date Registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
-                    <br />Date Parent Project Created:
-                % else:
-                    <br />Date Created:
                 % endif
+                    <br />Date Created:
                     <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 % if not node['is_registration']:
                     | Last Updated:
