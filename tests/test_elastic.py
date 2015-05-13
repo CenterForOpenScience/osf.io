@@ -216,9 +216,6 @@ class TestPublicNodes(SearchTestCase):
         self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
-        self.registration.set_privacy('private')
-        docs = query('category:registration AND ' + self.title)['results']
-        assert_equal(len(docs), 0)
 
     def test_public_parent_title(self):
         self.project.set_title('hello &amp; world', self.consolidate_auth)

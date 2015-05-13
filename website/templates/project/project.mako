@@ -33,7 +33,9 @@
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     % else:
-                        % if 'admin' in user['permissions']:
+                        ## TODO(hrybacki): Convert once no public registrations can be made private
+                        ## % if 'admin' in user['permissions'] and not node['is_registration']
+                        % if 'admin' in user['permissions'] and (not node['is_registration'] or node['registered_before_cutoff_date']):
                             <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
@@ -333,7 +335,9 @@ ${parent.javascript_bottom()}
         node: {
             hasChildren: ${json.dumps(node['has_children'])},
             isRegistration: ${json.dumps(node['is_registration'])},
-            tags: ${json.dumps(node['tags'])}
+            tags: ${json.dumps(node['tags'])},
+            // TODO(hrybacki): Remove once the hotifx is taken out
+            registeredBeforeCutoffDate: ${json.dumps(node['registered_before_cutoff_date'])}
         }
     });
 </script>

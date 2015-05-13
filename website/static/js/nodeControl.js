@@ -35,7 +35,15 @@ var MESSAGES = {
 
     makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?'
+                        'Would you like to continue?',
+
+    // TODO(hrybacki): Remove once the hotifx is taken out
+    makePostCutoffRegistrationPublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
+                        'access to the data it contains can be completely prevented. Users ' +
+                        'should assume that once a project is made public, it will always ' +
+                        'be public. Please note that his action is irreversible. Once this ' +
+                        'registration is made public, it cannot be made private. Are you ' +
+                        'absolutely sure you would like to continue?',
 };
 
 // TODO(sloria): Fix this external dependency on nodeApiUrl
@@ -48,12 +56,16 @@ var PRIVATE = 'private';
 var PROJECT = 'project';
 var COMPONENT = 'component';
 
-
 function setPermissions(permissions, nodeType) {
+
+    // TODO(hrybacki): Remove once the hotifx is taken out
+    var isRegistration = window.contextVars.node.isRegistration;
+    var registeredBeforeCutoffDate = window.contextVars.node.registeredBeforeCutoffDate;
 
     var msgKey;
 
-    if (permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+    if (permissions === PUBLIC && isRegistration && !registeredBeforeCutoffDate) { msgKey = 'makePostCutoffRegistrationPublicWarning'; }
+    else if (permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
     else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
     else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
     else { msgKey = 'makeComponentPrivateWarning'; }

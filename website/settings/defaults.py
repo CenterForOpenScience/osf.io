@@ -4,6 +4,7 @@ Base settings file, common to all environments.
 These settings can be overridden in local.py.
 """
 
+import datetime
 import os
 import json
 import hashlib
@@ -250,3 +251,7 @@ EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
+
+# TODO(hrybacki): Remove this and datetime import once no public registrations can be made private
+# Date which registrations created after cannot be made public
+REGISTRATION_CUTOFF_DATE = datetime.datetime(2015, 5, 22)
