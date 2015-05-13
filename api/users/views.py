@@ -25,7 +25,7 @@ class UserMixin(object):
 
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
-    """Return a list of registered users.
+    """Users registered on the OSF.
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
@@ -51,7 +51,8 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
 
 class UserDetail(generics.RetrieveAPIView, UserMixin):
-
+    """Details about a specific user.
+    """
     serializer_class = UserSerializer
 
     # overrides RetrieveAPIView
@@ -60,7 +61,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
 
 
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
-    """Get a user's nodes.
+    """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """
     serializer_class = NodeSerializer
