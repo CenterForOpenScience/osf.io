@@ -12,16 +12,19 @@ class UserSerializer(JSONAPISerializer):
         'id'
     ])
     id = ser.CharField(read_only=True, source='_id')
-    fullname = ser.CharField()
-    given_name = ser.CharField()
-    middle_name = ser.CharField(source='middle_names')
-    family_name = ser.CharField()
-    suffix = ser.CharField()
+    fullname = ser.CharField(help_text='Display name used in the general user interface')
+    given_name = ser.CharField(help_text='For bibliographic citations')
+    middle_name = ser.CharField(source='middle_names', help_text='For bibliographic citations')
+    family_name = ser.CharField(help_text='For bibliographic citations')
+    suffix = ser.CharField(help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField()
-    employment_institutions = ser.ListField(source='jobs')
-    educational_institutions = ser.ListField(source='schools')
-    social_accounts = ser.DictField(source='social')
+    gravatar_url = ser.CharField(help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+    employment_institutions = ser.ListField(source='jobs', help_text='An array of dictionaries representing the '
+                                                                     'places the user has worked')
+    educational_institutions = ser.ListField(source='schools', help_text='An array of dictionaries representing the '
+                                                                         'places the user has attended school')
+    social_accounts = ser.DictField(source='social', help_text='A dictionary of various social media account '
+                                                               'identifiers including an array of user-defined URLs')
 
     links = LinksField({
         'html': 'absolute_url',
@@ -46,4 +49,4 @@ class ContributorSerializer(UserSerializer):
     local_filterable = frozenset(['bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
-    bibliographic = ser.BooleanField()
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')

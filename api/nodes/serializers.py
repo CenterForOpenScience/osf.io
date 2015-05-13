@@ -52,7 +52,8 @@ class NodeSerializer(JSONAPISerializer):
     public = ser.BooleanField(source='is_public', help_text='Nodes that are made public will give read-only access '
                                                             'to everyone. Private nodes require explicit read '
                                                             'permission. Write and admin access are the same for '
-                                                            'public and private nodes')
+                                                            'public and private nodes. Administrators on a parent '
+                                                            'node have implicit read permissions for all child nodes')
     # TODO: finish me
 
     class Meta:

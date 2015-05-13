@@ -28,7 +28,7 @@ class NodeMixin(object):
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
-    """Return a list of nodes.
+    """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a category field
@@ -79,7 +79,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
 
 class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
-    """
+    """Projects and component details.
+
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a category field
     that includes the option of project. The categorization essentially determines which icon is displayed by the
@@ -103,7 +104,7 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
 
 
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
-    """Return the contributors (users) for a node.
+    """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
     have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
@@ -132,7 +133,9 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
-    """Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
      created for the current node."""
     permissions_classes = (
         ContributorOrPublic,
@@ -145,14 +148,33 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
+    """Children of the current node.
+
+    This will get the next level of child nodes for the selected node if the current user has read access for those
+    nodes. Currently, if there is a discrepancy between the children count and the number of children returned, it
+    probably indicates private nodes that aren't being returned. That discrepancy should disappear before everything
+    is finalized.
+    """
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
     serializer_class = NodeSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_node().nodes
+        nodes = self.get_node().nodes
+        auth = Auth(self.request.user)
+        children = [node for node in nodes if node.can_view(auth)]
+        return children
 
 
 class NodePointersList(generics.ListCreateAPIView, NodeMixin):
+    """Pointers to other nodes.
+
+    Pointers are essentially aliases or symlinks: All they do is point to another node.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
@@ -164,6 +186,10 @@ class NodePointersList(generics.ListCreateAPIView, NodeMixin):
 
 
 class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+    """Detail of a pointer to another node.
+
+    Pointers are essentially aliases or symlinks: All they do is point to another node.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
@@ -187,7 +213,8 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
 
 class NodeFilesList(generics.ListAPIView, NodeMixin):
-    """
+    """Files attached to a node.
+
     This gives a list of all of the files that are on your project. Because this works with external services, some
     ours and some not, there is some extra data that you need for how to interact with those services.
 
