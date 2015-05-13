@@ -1127,6 +1127,14 @@ function scrollToFile(fileID) {
     }
 }
 
+function _renameEvent () {
+    var tb = this;
+    var item = tb.multiselected()[0];
+    var val = $.trim($('#renameInput').val());
+    var folder = item.parent();
+    checkConflicts(tb, item, folder, doItemOp.bind(tb, true, folder, item, val));
+    tb.toolbarMode(toolbarModes.DEFAULT);
+}
 var toolbarModes = {
     'DEFAULT' : 'bar',
     'SEARCH' : 'search',
@@ -1259,6 +1267,18 @@ var FGItemButtons = {
 
             }
         }
+        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function() {
+                        mode(toolbarModes.RENAME);
+                    },
+                    tooltip: 'Change the name of the item',
+                    icon: 'fa fa-font',
+                    className : 'text-info'
+                }, 'Rename')
+            );
+        }
         return m('span', rowButtons);
     }
 };
@@ -1327,6 +1347,37 @@ var FGToolbar = {
                             icon : 'fa fa-plus',
                             className : 'text-success'
                         }, 'Create'),
+                        dismissIcon
+                    ]
+                )
+            )
+        ];
+        templates[toolbarModes.RENAME] = [
+            m('.col-xs-9',
+                m.component(FGInput, {
+                    onkeypress: function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            _renameEvent.call(ctrl.tb);
+                        }
+                    },
+                    id : 'renameInput',
+                    helpTextId : 'renameHelpText',
+                    placeholder : null,
+                    value : ctrl.items()[0] ? ctrl.items()[0].data.name : '',
+                    tooltip: 'Change the name of the item here'
+                }, ctrl.helpText())
+            ),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(FGButton, {
+                            onclick: function () {
+                                _renameEvent.call(ctrl.tb);
+                            },
+                            tooltip: 'Rename item',
+                            icon : 'fa fa-pencil',
+                            className : 'text-info'
+                        }, 'Rename'),
                         dismissIcon
                     ]
                 )
