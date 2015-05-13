@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 import glob
 import importlib
@@ -8,7 +7,6 @@ from bson import ObjectId
 from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
-import math
 
 import furl
 import requests
@@ -828,9 +826,6 @@ class GenericRootNode(object):
     name = ''
 
 class StorageAddonBase(object):
-
-    MAX_ARCHIVE_SIZE = math.pow(1024, 3)  # 1 GB
-    MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
     root_node = GenericRootNode()
 
