@@ -187,6 +187,31 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
 
 class NodeFilesList(generics.ListAPIView, NodeMixin):
+    """
+    This gives a list of all of the files that are on your project. Because this works with external services, some
+    ours and some not, there is some extra data that you need for how to interact with those services.
+
+    At the top level file list of your project you have a list of providers that are connected to this project. If you
+    want to add more, you will need to do that in the Open Science Framework front end for now. For everything in the
+    data.links dictionary, you'll have two types of fields: `self` and `related`. These are the same as everywhere else:
+    self links are what you use to manipulate the object itself with GET, POST, DELETE, and PUT requests, while
+    related links give you further data about that resource.
+
+    So if you GET a self link for a file, it will return the file itself for downloading. If you GET a related link for
+    a file, you'll get the metadata about the file. GETting a related link for a folder will get you the listing of
+    what's in that folder. GETting a folder's self link won't work, because there's nothing to get.
+
+    Which brings us to the other useful thing about the links here: there's a field called `self-methods`. This field
+    will tell you what the valid methods are for the self links given the kind of thing they are (file vs folder) and
+    given your permissions on the object.
+
+    NOTE: Most of the API will be stable as far as how the links work because the things they are accessing are fairly
+    stable and predictable, so if you felt the need, you could construct them in the normal REST way and they should
+    be fine.
+    The 'self' links from the NodeFilesList may have to change from time to time, so you are highly encouraged to use
+    the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
+    are at any given time.
+    """
     serializer_class = NodeFilesSerializer
 
     permission_classes = (
