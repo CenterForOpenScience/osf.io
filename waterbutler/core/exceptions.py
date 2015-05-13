@@ -24,6 +24,9 @@ class ProviderError(Exception):
             self.data = None
             self.message = message
 
+    def __repr__(self):
+        return '<{}({}, {})>'.format(self.__class__.__name__, self.code, self.message)
+
 
 class CopyError(ProviderError):
     pass
