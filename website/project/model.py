@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import os
 import re
 import uuid
@@ -285,7 +286,6 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
-# TODO: WRITE THIS! WRITE TESTS!
 class OAuth2App(StoredObject):
     """Registration and key for user-created OAuth API applications"""
 
@@ -295,20 +295,20 @@ class OAuth2App(StoredObject):
         default=lambda: str(ObjectId())
     )
 
-    # Client secret
-    secret = fields.StringField(default=lambda: str(uuid.uuid4()))
+    # Client ID and secret
+    client_id = fields.StringField(default=lambda: str(uuid.uuid4()))
+    client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex))
 
-    _destroy = fields.BooleanField(default=False)  # Has this application been deactivated for users?
+    active = fields.BooleanField(default=True)  # Set to False if application is deactivated for users
 
     owner = fields.ForeignField('user', backref='created')
 
     # User-specified application descriptors
     name = fields.StringField(index=True, required=True)
-    desc = fields.StringField(required=False)
+    description = fields.StringField(required=False)
 
     reg_date = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
 
-    # TODO: Add URL validation? (to what layer?)
     home_url = fields.StringField(required=True)
     callback_url = fields.StringField(required=True)
 

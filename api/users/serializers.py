@@ -51,3 +51,24 @@ class ContributorSerializer(UserSerializer):
     def get_bibliographic(self, obj):
         node = self.context['view'].get_node()
         return obj._id in node.visible_contributor_ids
+
+
+class OAuth2AppSerializer(JSONAPISerializer):
+    """Serialize OAuth2 apps"""
+    id =  ser.CharField(read_only=True, source='_id')
+    # TODO: Should we be displaying secret key in return of API call from logged in user?
+    client_secret = ser.CharField(read_only=True) # TODO: May change this later
+
+    # TODO: Don't serialize active field- list query object filters out on its end
+    owner = ser.CharField() # TODO: How is owner represented when we do this?
+
+    name = ser.CharField()
+    description = ser.CharField()
+
+    reg_date = ser.DateTimeField(read_only=True)
+
+    home_url = ser.CharField()
+    callback_url = ser.CharField()
+
+    class Meta:
+        type_ = 'applications'

@@ -369,10 +369,10 @@ def user_notifications(auth, **kwargs):
 def oauth_application_config(auth, **kwargs):
     """Return app creation page with list of known apps"""
     user_apps = OAuth2App.find(Q('owner', 'eq', auth.user))
-    user_apps_dict = [{"id": ua._id,
+    user_apps_dict = [{"id": ua.client_id,
                        "owner": ua.owner,
                        "name": ua.name,
-                       "description": ua.desc,
+                       "description": ua.description,
                        "reg_date": ua.reg_date,
                        "home_url": ua.home_url,
                        "callback_url": ua.callback_url}
@@ -393,9 +393,9 @@ def oauth_application_register(auth, **kwargs):
     owner = auth.user
 
     new_reg = OAuth2App(name=app_name,
-                     home_url=home_url,
-                     callback_url=app_callback_url,
-                     desc=app_desc)
+                        home_url=home_url,
+                        callback_url=app_callback_url,
+                        description=app_desc)
     new_reg.owner = owner
 
     new_reg.save()

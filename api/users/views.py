@@ -1,12 +1,12 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 
-from website.models import User, Node
+from website.models import User, Node, OAuth2App
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
-from .serializers import UserSerializer
+from .serializers import OAuth2AppSerializer, UserSerializer
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -89,3 +89,33 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
             if each.is_public or each.can_view(auth)
         ]
         return nodes
+
+
+class ApplicationList(generics.ListAPIView, ODMFilterMixin):
+    """
+    Get a list of API applications (eg OAuth2) that the user has registered
+
+    Will only return success if logged in as that specified user
+    """
+    # TODO: What are the appropriate permissions classes to see a list of applications only if logged in as the SPECIFIED user?
+    # permission_classes = (
+    #     drf_permissions.IsAuthenticated,  # TODO: This authentication check asks for separate credentials...?!
+    # )
+
+    serializer_class = OAuth2AppSerializer
+
+    #TODO: need to get logged in user
+    def get_default_odm_query(self):
+
+        print "-------- Debugging statement!", self.request.user
+        return (
+            #Q('owner', 'eq', self.request.user) &
+            Q('active', 'eq', True)
+        )
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        # TODO: sort
+        query = self.get_query_from_request()
+        return OAuth2App.find(query)
+
