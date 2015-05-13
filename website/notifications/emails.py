@@ -30,18 +30,17 @@ def email_transactional(recipient_ids, uid, event, user, node, timestamp, **cont
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
-        if user._id != recipient._id:
-            mails.send_mail(
-                to_addr=email,
-                mail=mails.TRANSACTIONAL,
-                mimetype='html',
-                name=recipient.fullname,
-                node_id=node._id,
-                node_title=node.title,
-                subject=subject,
-                message=message,
-                url=get_settings_url(uid, recipient)
-            )
+        mails.send_mail(
+            to_addr=email,
+            mail=mails.TRANSACTIONAL,
+            mimetype='html',
+            name=recipient.fullname,
+            node_id=node._id,
+            node_title=node.title,
+            subject=subject,
+            message=message,
+            url=get_settings_url(uid, recipient)
+        )
 
 
 def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
@@ -57,15 +56,14 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
-        if user._id != recipient._id:
-            digest = NotificationDigest(
-                timestamp=timestamp,
-                event=event,
-                user_id=recipient._id,
-                message=message,
-                node_lineage=node_lineage_ids
-            )
-            digest.save()
+        digest = NotificationDigest(
+            timestamp=timestamp,
+            event=event,
+            user_id=user_id,
+            message=message,
+            node_lineage=node_lineage_ids
+        )
+        digest.save()
 
 
 EMAIL_FUNCTION_MAP = {
@@ -90,13 +88,17 @@ def notify(uid, event, user, node, timestamp, **context):
     sent_users = []
     target_user = context.get('target_user', None)
     for notification_type in subscriptions:
-        if notification_type != 'none':
-            if target_user and target_user in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user))
-                send(target_user, notification_type, uid, 'comment_replies', user, node, timestamp, **context)
-                sent_users.append(target_user)
-            send(subscriptions[notification_type], notification_type, uid, event_type, user, node, timestamp, **context)
-            sent_users.extend(subscriptions[notification_type])
+        if notification_type != 'none' and subscriptions[notification_type]:
+            if user._id in subscriptions[notification_type]:
+                subscriptions[notification_type].pop(subscriptions[notification_type].index(user._id))
+            if target_user and target_user._id in subscriptions[notification_type]:
+                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user._id))
+                send([target_user._id], notification_type, uid, 'comment_replies', user, node, timestamp, **context)
+                sent_users.append(target_user._id)
+            if subscriptions[notification_type]:
+                send(subscriptions[notification_type], notification_type, uid, event_type, user, node,
+                     timestamp, **context)
+                sent_users.extend(subscriptions[notification_type])
     return sent_users
 
 
@@ -134,7 +136,7 @@ def check_node(node, event):
             users = getattr(subscription, notification_type, [])
             for user in users:
                 if node.has_permission(user, 'read'):
-                    node_subscriptions[notification_type].append(user)
+                    node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
 
 
@@ -147,7 +149,7 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
         EMAIL_FUNCTION_MAP[notification_type](
             recipient_ids=recipient_ids,
             uid=uid,
-            event=event_type,
+            event=event,
             user=user,
             node=node,
             timestamp=timestamp,
