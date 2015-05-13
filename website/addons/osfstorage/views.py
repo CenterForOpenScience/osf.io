@@ -174,7 +174,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                 dict(payload['settings'], **dict(
                     payload['worker'], **{
                         'object': payload['metadata']['name'],
-                        'service': payload['metadata']['provider'],
+                        'service': payload['metadata']['service'],
                     })
                 ),
                 dict(payload['metadata'], **payload['hashes'])
