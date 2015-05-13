@@ -84,32 +84,6 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     }
 
 
-# TODO
-@must_be_signed
-def osfstorage_create_folder(payload, node_addon, **kwargs):
-    path = payload.get('path')
-    user = User.load(payload.get('user'))
-
-    if not path or not user:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    created, folder = model.OsfStorageFileNode.create_child_by_path(path, node_addon)
-
-    if not created:
-        if folder.is_deleted:
-            folder.undelete(Auth(user), recurse=False)
-        else:
-            raise HTTPError(httplib.CONFLICT, data={
-                'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
-                    name=folder.name,
-                    path=folder.materialized_path(),
-                )
-            })
-
-    folder.log(Auth(user), NodeLog.FOLDER_CREATED)
-    return folder.serialized(), httplib.CREATED
-
-
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
     return source.copy_under(destination, name=name).serialized(), httplib.CREATED
