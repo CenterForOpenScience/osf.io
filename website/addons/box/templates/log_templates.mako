@@ -8,7 +8,7 @@ Box in
 
 <script type="text/html" id="box_folder_created">
 created folder
-<span class="overflow log-folder">{{ params.fullPath }}</span> in
+<span class="overflow log-folder">{{ params.fullPath.replace(/^\//, '') }}</span> in
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

@@ -7,7 +7,7 @@ Dropbox in
 
 <script type="text/html" id="dropbox_folder_created">
 created folder
-<span class="overflow log-folder">{{ params.path }}</span> in
+<span class="overflow log-folder">{{ params.path.replace(/^\//, '') }}</span> in
 Dropbox in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
