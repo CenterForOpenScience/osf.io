@@ -8,14 +8,11 @@
 <div class="row">
     <div class="col-sm-7">
         <div>
-          <h3>Projects &nbsp;&nbsp;<span id="projectOrganizerInfo"></span></h3>
+          <h3>Projects </h3>
             <hr />
         </div><!-- end div -->
 
         <div class="project-organizer" id="projectOrganizerScope">
-            <%include file="projectGridTemplates.html"/>
-            <div class="project-details">
-            </div>
             <div id="project-grid"></div>
         </div><!-- end project-organizer -->
     </div><!-- end col -->

@@ -87,7 +87,6 @@ $(document).ready(function() {
             filesData: data.data,
             multiselect : true
         });
-        po.legend($('#projectOrganizerInfo')[0]);
 
         ensureUserTimezone(data.timezone, data.locale, data.id);
     });

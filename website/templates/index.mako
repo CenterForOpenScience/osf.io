@@ -66,7 +66,7 @@
                     <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
                 </div>
                 <div class="text-right">
-                    <button type="submit" class="btn btn-danger" data-bind="visible: !submitted()">Sign up</button>
+                    <button type="submit" class="btn btn-danger" data-bind="visible: !submitted()" id="signupSubmit">Sign up</button>
                 </div>
             </form>
         </div><!-- end #signUpScope -->

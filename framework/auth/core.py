@@ -22,6 +22,7 @@ from framework.auth import exceptions, utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
 from framework.sessions.model import Session
+from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -1104,13 +1105,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise exceptions.MergeConflictError("Users cannot be merged")
-
-        # Fail if this user has conflicts, unless the other is unconfirmed.
-        if (not self.can_be_merged) and user.is_confirmed:
-            raise exceptions.MergeConflictError("Users cannot be merged")
-
         # Move over the other user's attributes
-
         # TODO: confirm
         for system_tag in user.system_tags:
             if system_tag not in self.system_tags:
@@ -1154,9 +1149,11 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.comments_viewed_timestamp[node_id] = timestamp
 
         self.emails.extend(user.emails)
+        user.emails = []
 
         for k, v in user.email_verifications.iteritems():
-            if k not in self.email_verifications:
+            email_to_confirm = v['email']
+            if k not in self.email_verifications and email_to_confirm != user.username:
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
@@ -1210,6 +1207,8 @@ class User(GuidStoredObject, AddonModelMixin):
             user_settings.save()
 
         # finalize the merge
+
+        remove_sessions_for_user(user)
 
         # - username is set to None so the resultant user can set it primary
         #   in the future.
