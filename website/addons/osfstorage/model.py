@@ -204,6 +204,8 @@ class OsfStorageFileNode(StoredObject):
         Note: Possibly high complexity/ many database calls
         USE SPARINGLY
         """
+        if not self.parent:
+            return '/'
         # Note: ODM cache can be abused here
         # for highly nested folders calling
         # list(self.__class__.find(Q(nodesetting),Q(folder))
