@@ -244,8 +244,9 @@ function _fangornLazyLoadOnLoad (tree, event) {
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     if (item.data.addonFullname) {
+        var branch = item.data.branch || item.data.defaultBranch;
         return m('span',[
-            m('github-name', item.data.name + ' (' + item.data.branch + ')')
+            m('github-name', item.data.name + ' (' + branch + ')')
         ]);
     } else {
         if (item.kind === 'file' && item.data.permissions.view) {
@@ -264,7 +265,7 @@ function _fangornGithubTitle(item, col)  {
                             } else {
                                 window.open(fileurl, '_self');
                             }
-                    },
+                    }
                 }, item.data.name)]);
         } else {
             return m('span', item.data.name);
