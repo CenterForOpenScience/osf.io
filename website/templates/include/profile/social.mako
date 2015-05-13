@@ -25,7 +25,7 @@
             </div>
 
             <div class="padded">
-                <a class="btn btn-default" data-bind="click: addWebsite">
+                <a class="btn btn-default" data-bind="click: addWebsiteInput">
                     Add Website
                 </a>
             </div>

@@ -89,7 +89,7 @@ def validate_profile_websites(profile_websites):
         return
     for profile_website in profile_websites:
         if profile_website:
-            if not profile_website.startswith("http://"):
+            if not profile_website.startswith("http://") or not profile_website.startswith("https://"):
                 profile_website = "http://" + profile_website
             try:
                 validate_url(profile_website)

@@ -577,10 +577,10 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
-    self.addWebsite = function() {
+    self.addWebsiteInput = function() {
         this.profileWebsites.push(ko.observable().extend({
             trimmedURL: true
-            }));
+        }));
     };
     
     self.removeWebsite = function(profileWebsite) {
@@ -588,12 +588,12 @@ var SocialViewModel = function(urls, modes) {
             idx = profileWebsites.indexOf(profileWebsite);
             self.profileWebsites.splice(idx, 1);
         if (self.profileWebsites().length === 0) {
-            self.addWebsite();
+            self.addWebsiteInput();
         }
     };
 
     if (self.profileWebsites().length === 0) {
-        self.addWebsite();
+        self.addWebsiteInput();
     }
 
     self.fetch();
