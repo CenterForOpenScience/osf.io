@@ -191,8 +191,9 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
     }, httplib.CREATED if created else httplib.OK
 
 
+@must_be_signed
 @must_not_be_registration
-@decorators.autoload_filenode
+@decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     auth = Auth(User.load(payload['user']))
 
