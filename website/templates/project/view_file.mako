@@ -80,7 +80,7 @@
                             </div>
                         </div>
 
-##                        <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
+                        <form id="file-edit-form" action="/api/v1${files_url | js_str}${provider | js_str}${file_path | js_str}/" method="POST">
                             <div class="wiki-panel-body" style="padding: 10px">
                                 <div class="row">
                                     <div class="col-xs-12">
@@ -103,10 +103,11 @@
                                 </div>
 
                                 <!-- Invisible textarea for form submission -->
-                                <textarea name="content" style="display: none;" data-bind="value: currentText"></textarea>
+                                <textarea name="original_content" style="display: none;">${content}</textarea>
+                                <textarea name="edit_content" style="display: none;" data-bind="value: currentText"></textarea>
 
                             </div>
-##                            </form>
+                            </form>
                     </div>
                 </div>
 
@@ -145,10 +146,9 @@
             </div>
         </div>
     </div>
-    </div>
 
     % endif
-
+    </div>
 
     <div class="modal fade" id="connectedModal" tabindex="-1">
         <div class="modal-dialog">

@@ -365,6 +365,34 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     ret.update(rubeus.collect_addon_assets(node))
     return ret
 
+@must_be_valid_project
+def addon_edit_file(**kwargs):
+    print 'in addon edit file'
+
+    extras = request.args.to_dict()
+    action = extras.get('action', 'view')
+    node = kwargs.get('node') or kwargs['project']
+    path = kwargs.get('path')
+    provider = kwargs.get('provider')
+
+    node_addon = node.get_addon(provider)
+
+    if not path or not node_addon:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    if not node_addon.has_auth:
+        raise HTTPError(httplib.FORBIDDEN)
+
+    if not path.startswith('/'):
+        path = '/' + path
+
+    file_guid, created = node_addon.find_or_create_file_guid(path)
+
+    original_content = request.form['original_content']
+    edit_content = request.form['edit_content']
+    print 'original content is: ' + original_content
+    print 'edited content is: ' + edit_content
+    return
 
 @must_be_valid_project
 @must_be_contributor_or_public

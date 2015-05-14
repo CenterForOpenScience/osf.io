@@ -69,7 +69,7 @@ def get_file_contents(download_url, cache_path, temp_path, public_download_url):
                 content = rendered_html
                 if get_file_extension(temp_path) == '.txt':
                     soup = BeautifulSoup(rendered_html)
-                    content = soup.find('pre').contents
+                    content = soup.find('pre').contents[0]
             except MFRError as err:
                 # Rendered MFR error
                 rendered = render_mfr_error(err)
