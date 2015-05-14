@@ -1136,6 +1136,18 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        tooltip: 'Open this file.',
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'Open'));
+
+            }
         }
         return m('span', rowButtons);
     }
