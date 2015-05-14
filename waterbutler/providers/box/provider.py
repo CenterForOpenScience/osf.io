@@ -235,7 +235,7 @@ class BoxProvider(provider.BaseProvider):
     @asyncio.coroutine
     def metadata(self, path, raw=False, folder=False, **kwargs):
         if path.identifier is None:
-            raise exceptions.MetadataError('{} not found'.format(str(path)), code=404)
+            raise exceptions.NotFoundError(str(path))
 
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
@@ -267,7 +267,7 @@ class BoxProvider(provider.BaseProvider):
         WaterButlerPath.validate_folder(path)
 
         if path.identifier is not None:
-            raise exceptions.CreateFolderError('Folder "{}" already exists.'.format(str(path)), code=409)
+            raise exceptions.FolderNamingConflict(str(path))
 
         resp = yield from self.make_request(
             'POST',
