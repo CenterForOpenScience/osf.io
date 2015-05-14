@@ -108,7 +108,7 @@ class CloudFilesProvider(provider.BaseProvider):
         :rtype ResponseStreamReader:
         """
         if check_created:
-            created = yield from self.exists(path)
+            created = not (yield from self.exists(path))
         else:
             created = None
 
