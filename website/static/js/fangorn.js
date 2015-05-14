@@ -268,8 +268,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     var item,
         child,
-        templateWithCancel;
-
+        templateWithCancel,
+        templateWithoutCancel;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -284,12 +284,13 @@ function _fangornUploadProgress(treebeard, file, progress) {
         m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
         cancelUploadTemplate.call(treebeard, item)
     ]);
-
-
+    templateWithoutCancel = m('span', [
+        m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
+    ]);
     if (progress < 100) {
         item.notify.update(templateWithCancel, 'success', null, 0);
     } else {
-        item.notify.update(templateWithCancel, 'success', null, 2000);
+        item.notify.update(templateWithoutCancel, 'success', null, 2000);
     }
 }
 
