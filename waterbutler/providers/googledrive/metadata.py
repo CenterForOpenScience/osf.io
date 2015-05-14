@@ -18,7 +18,7 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
     @property
     def path(self):
         #TODO Address this
-        return '/' + '/'.join([x.raw for x in self._path.parts])
+        return '/'.join([x.raw for x in self._path.parts])
 
     @property
     def materialized_path(self):
@@ -42,10 +42,6 @@ class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMeta
     @property
     def path(self):
         return super().path + '/'
-
-    @property
-    def materialized_path(self):
-        return super().materialized_path + '/'
 
 
 class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata):
