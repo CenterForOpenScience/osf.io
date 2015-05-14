@@ -7,7 +7,7 @@ Google Drive in
 
 <script type="text/html" id="googledrive_folder_created">
 created folder
-<span class="overflow log-folder">{{ decodeURIComponent(params.path).replace(/^\//, '') }}</span> in
+<span class="overflow log-folder">{{ stripLeadingSlash(decodeURIComponent(params.path)) }}</span> in
 Google Drive in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -21,7 +21,7 @@ Google Drive in
 
 
 <script type="text/html" id="googledrive_file_removed">
-removed {{ params.path.match(/\/$/) ? 'folder' : 'file' }} <span class="overflow ">{{ decodeURIComponent(params.path) }}</span> from
+removed {{ typeToRemove(params.path) }} <span class="overflow ">{{ decodeURIComponent(params.path) }}</span> from
 Google Drive in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
