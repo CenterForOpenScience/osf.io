@@ -16,7 +16,7 @@ var addonSettings = require('js/addonSettings');
 
 var ExternalAccount = addonSettings.ExternalAccount;
 
-var modal = $('#dataverseInputCredentials');
+var $modal = $('#dataverseInputCredentials');
 
 
 function ViewModel(url) {
@@ -46,10 +46,10 @@ function ViewModel(url) {
         return self.selectedHost() === otherString;
     });
     self.showApiTokenInput = ko.pureComputed(function() {
-        return typeof self.selectedHost() !== 'undefined';
+        return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-       return self.host() ? 'https://' + self.host() + '/account/apitoken' : undefined;
+       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
     });
 
     // Flashed messages
@@ -60,9 +60,9 @@ function ViewModel(url) {
     self.clearModal = function() {
         self.message('');
         self.messageClass('text-info');
-        self.apiToken(undefined);
-        self.selectedHost(undefined);
-        self.customHost(undefined);
+        self.apiToken(null);
+        self.selectedHost(null);
+        self.customHost(null);
     };
 
     self.updateAccounts = function() {
@@ -97,7 +97,7 @@ function ViewModel(url) {
             })
         ).done(function() {
             self.clearModal();
-            modal.modal('hide');
+            $modal.modal('hide');
             self.updateAccounts();
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;

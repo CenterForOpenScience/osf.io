@@ -10,7 +10,7 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
-var modal = $('#dataverseInputCredentials');
+var $modal = $('#dataverseInputCredentials');
 
 ko.punches.enableAll();
 
@@ -60,10 +60,10 @@ function ViewModel(url) {
         return self.selectedHost() === otherString;
     });
     self.showApiTokenInput = ko.pureComputed(function() {
-        return typeof self.selectedHost() !== 'undefined';
+        return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-       return self.host() ? 'https://' + self.host() + '/account/apitoken' : undefined;
+       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
     });
     self.savedHostUrl = ko.pureComputed(function() {
         return 'https://' + self.savedHost();
@@ -261,9 +261,9 @@ ViewModel.prototype.clearModal = function() {
     var self = this;
     self.message('');
     self.messageClass('text-info');
-    self.apiToken(undefined);
-    self.selectedHost(undefined);
-    self.customHost(undefined);
+    self.apiToken(null);
+    self.selectedHost(null);
+    self.customHost(null);
 };
 
 ViewModel.prototype.setInfo = function() {
@@ -353,7 +353,7 @@ ViewModel.prototype.sendAuth = function() {
         })
     ).done(function() {
         self.clearModal();
-        modal.modal('hide');
+        $modal.modal('hide');
         self.importAuth();
     }).fail(function(xhr, textStatus, error) {
         var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
