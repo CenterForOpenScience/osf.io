@@ -42,4 +42,5 @@ class FileStreamReader(BaseStream):
         try:
             return next(self.file_gen)
         except StopIteration:
+            self.feed_eof()
             return b''

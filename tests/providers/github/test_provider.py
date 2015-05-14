@@ -723,6 +723,7 @@ class TestZip:
         assert zip.open('test.rst').read() == b'rest'
         assert zip.open('level1/child.txt').read() == b'child'
 
+
 class TestMetadata:
 
     @async

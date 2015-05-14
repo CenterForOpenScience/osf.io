@@ -5,26 +5,33 @@ import time
 import zipfile
 import zlib
 
+from waterbutler.core.streams import BaseStream
 from waterbutler.core.streams import MultiStream
 from waterbutler.core.streams import StringStream
 
 
-class ZipLocalFileDescriptor:
+class ZipLocalFileDescriptor(BaseStream):
     """The descriptor (footer) for a local file in a zip archive
 
     Note: This class is tightly coupled to ZipStreamReader, and should not be
     used separately
     """
     def __init__(self, file):
+        super().__init__()
         self.file = file
 
+    @property
+    def size(self):
+        return 0
+
     @asyncio.coroutine
-    def read(self, *args, **kwargs):
+    def _read(self, *args, **kwargs):
         """Create 16 byte descriptor of file CRC, file size, and compress size"""
+        self._eof = True
         return self.file.descriptor
 
 
-class ZipLocalFileData:
+class ZipLocalFileData(BaseStream):
     """A thin stream wrapper, used to update a ZipLocalFile as chunks are read
 
     Note: This class is tightly coupled to ZipStreamReader, and should not be
@@ -33,25 +40,48 @@ class ZipLocalFileData:
     def __init__(self, file, stream, *args, **kwargs):
         self.file = file
         self.stream = stream
+        self._buffer = bytearray()
         super().__init__(*args, **kwargs)
 
-    @asyncio.coroutine
-    def read(self, n=-1, *args, **kwargs):
-        chunk = yield from self.stream.read(n, *args, **kwargs)
-
-        self.file.original_size += len(chunk)
-        self.file.zinfo.CRC = binascii.crc32(chunk, self.file.zinfo.CRC)
-
-        chunk = self.file.compressor.compress(chunk)
-        # TODO: Should flush get called every time, or only if we're out of chunks?
-        chunk += self.file.compressor.flush()
-        self.file.compressed_size += len(chunk)
-
-        return chunk
+    @property
+    def size(self):
+        return 0
 
     @asyncio.coroutine
-    def _read(self, *args, **kwargs):
-        return super()._read(*args, **kwargs)
+    def _read(self, n=-1, *args, **kwargs):
+        ret = self._buffer
+
+        while (n==-1 or len(ret) < n) and not self.stream.at_eof():
+            chunk = yield from self.stream.read(n, *args, **kwargs)
+
+            # Update file info
+            self.file.original_size += len(chunk)
+            self.file.zinfo.CRC = binascii.crc32(chunk, self.file.zinfo.CRC)
+
+            # compress
+            compressed = self.file.compressor.compress(chunk)
+            compressed += self.file.compressor.flush(
+                zlib.Z_FINISH if self.stream.at_eof() else zlib.Z_SYNC_FLUSH
+            )
+
+            # Update file info
+            self.file.compressed_size += len(compressed)
+            ret += compressed
+
+        # import ipdb; ipdb.set_trace()
+
+        # buffer any overages
+        if n != -1 and len(ret) > n:
+            self._buffer = ret[n:]
+            ret = ret[:n]
+        else:
+            self._buffer = bytearray()
+
+        # EOF is the buffer and stream are both empty
+        if not self._buffer and self.stream.at_eof():
+            self.feed_eof()
+
+        return bytes(ret)
 
 
 class ZipLocalFile(MultiStream):
@@ -162,17 +192,22 @@ class ZipLocalFile(MultiStream):
         )
 
 
-class ZipArchiveCentralDirectory:
+class ZipArchiveCentralDirectory(BaseStream):
     """The central directory for a zip archive
 
     Note: This class is tightly coupled to ZipStreamReader, and should not be
     used separately
     """
     def __init__(self, files, *args, **kwargs):
+        super().__init__()
         self.files = files
 
+    @property
+    def size(self):
+        return 0
+
     @asyncio.coroutine
-    def read(self, n=-1):
+    def _read(self, n=-1):
         file_headers = []
         cumulative_offset = 0
         for file in self.files:
@@ -195,6 +230,7 @@ class ZipArchiveCentralDirectory:
             cumulative_offset,
             0,
         )
+        self.feed_eof()
 
         return b''.join((file_headers, endrec))
 
