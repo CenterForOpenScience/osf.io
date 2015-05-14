@@ -2,10 +2,6 @@ from celery import group, chain
 import requests
 import json
 
-from raven import Client
-from raven.conf import setup_logging
-from raven.handlers.logging import SentryHandler
-
 from framework.tasks import app as celery_app
 from framework.auth.core import User
 from framework.archiver import mails
@@ -32,13 +28,6 @@ from framework.archiver.settings import (
     MAX_ARCHIVE_SIZE,
 )
 from framework.archiver.utils import catch_archive_addon_error
-
-raven_client = None
-raven_handler = None
-if settings.SENTRY_DSN:
-    raven_client = Client(settings.SENTRY_DSN)
-    raven_handler = SentryHandler(raven_client)
-    setup_logging(raven_handler)
 
 def stat_file_tree(addon_short_name, fileobj_metadata, user):
     """Traverse the addon's file tree and collect metadata in AggregateStatResult

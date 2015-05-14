@@ -12,12 +12,7 @@ from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
 from framework.archiver.utils import catch_archive_addon_error
-from framework.archiver import (
-    ARCHIVER_SUCCESS,
-    ARCHIVER_PENDING,
-    ARCHIVER_CHECKING,
-)
-from framework.archiver.exceptions import ArchiverCopyError
+from framework.archiver import ARCHIVER_SUCCESS
 
 from website import settings
 from website.project.decorators import (
