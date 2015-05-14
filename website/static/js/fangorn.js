@@ -1042,7 +1042,7 @@ var FGButton = {
         }
         return m('div', opts, [
             m('i', {className: iconCSS}),
-            m('span.hidden-xs', children)
+            m('span', children)
         ]);
     }
 };
