@@ -161,6 +161,16 @@ var _dataverseItemButtons = {
     }
 };
 
+function gotoFile (item) {
+    var redir = new URI(item.data.nodeUrl);
+    window.location = redir
+        .segment('files')
+        .segment(item.data.provider)
+        .segment(item.data.extra.fileId)
+        .query({version: item.data.extra.datasetVersion})
+        .toString();
+}
+
 function _fangornDataverseTitle(item, col) {
     var tb = this;
     if (item.data.addonFullname) {
@@ -202,13 +212,7 @@ function _fangornDataverseTitle(item, col) {
         return m('span', [
             m('dataverse-name.fg-file-links', {
                 onclick: function () {
-                    var redir = new URI(item.data.nodeUrl);
-                    window.location = redir
-                        .segment('files')
-                        .segment(item.data.provider)
-                        .segment(item.data.extra.fileId)
-                        .query({version: item.data.extra.datasetVersion})
-                        .toString();
+                    gotoFile(item);
                 },
                 'data-toggle': 'tooltip',
                 title: 'View file',
