@@ -18,7 +18,6 @@ var _figshareItemButtons = {
                     onclick: function (event) {
                         Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files to figshare.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload')
@@ -30,7 +29,6 @@ var _figshareItemButtons = {
                     onclick: function (event) {
                         Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Download file to your computer.',
                     icon: 'fa fa-download',
                     className: 'text-info'
                 }, 'Download')
@@ -45,7 +43,6 @@ var _figshareItemButtons = {
                     onclick: function (event) {
                         Fangorn.ButtonEvents._removeEvent.call(tb, event, tb.multiselected());
                     },
-                    tooltip: 'Delete file.',
                     icon: 'fa fa-trash',
                     className: 'text-danger'
                 }, 'Delete')

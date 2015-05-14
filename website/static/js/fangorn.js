@@ -1030,12 +1030,17 @@ var FGButton = {
         var tooltipText = args.tooltip || '';
         var iconCSS = args.icon || '';
         var onclick = args.onclick || noop;
-        return m('div', {
+        var opts = {
             className: 'fangorn-toolbar-icon ' + extraCSS,
-            onclick: onclick,
-            'data-toggle': tooltipText ? 'tooltip' : '',
-            'data-placement' : 'bottom',
-            'title':  tooltipText}, [
+            onclick: onclick
+        };
+        // Add tooltip if applicable
+        if (args.tooltip) {
+            opts['data-toggle'] = 'tooltip';
+            opts['data-placement'] = 'bottom';
+            opts.title = args.tooltip;
+        }
+        return m('div', opts, [
             m('i', {className: iconCSS}),
             m('span.hidden-xs', children)
         ]);
@@ -1104,7 +1109,6 @@ var FGItemButtons = {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function() {_uploadEvent.call(tb, event, item); },
-                    tooltip: 'Select files to upload from your computer.',
                     icon: 'fa fa-upload',
                     className : 'text-primary'
                 }, 'Upload'),
@@ -1112,7 +1116,6 @@ var FGItemButtons = {
                     onclick: function() {
                         mode(toolbarModes.ADDFOLDER);
                     },
-                    tooltip: 'Create a new folder inside curently selected folder.',
                     icon: 'fa fa-plus',
                     className : 'text-primary'
                 }, 'Create Folder'));
@@ -1120,7 +1123,6 @@ var FGItemButtons = {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function() {_removeEvent.call(tb, event, [item]); },
-                        tooltip: 'Delete this folder and all its contents.',
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete Folder'));
@@ -1130,7 +1132,6 @@ var FGItemButtons = {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function() { _downloadEvent.call(tb, event, item); },
-                    tooltip: 'Download this file to your computer.',
                     icon: 'fa fa-download',
                     className : 'text-success'
                 }, 'Download')
@@ -1139,7 +1140,6 @@ var FGItemButtons = {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function() { _removeEvent.call(tb, event, [item]); },
-                        tooltip: 'Permanently delete this file.',
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete'));
@@ -1151,7 +1151,6 @@ var FGItemButtons = {
                         onclick: function() {
                             gotoFileEvent.call(tb, item);
                         },
-                        tooltip: 'View this file.',
                         icon: 'fa fa-external-link',
                         className : 'text-info'
                     }, 'View'));
@@ -1192,7 +1191,6 @@ var FGToolbar = {
         var item = items[0];
         var dismissIcon = m.component(FGButton, {
                 onclick: ctrl.dismissToolbar,
-                tooltip: 'Close Search',
                 icon : 'fa fa-times'
             }, '');
         templates[toolbarModes.SEARCH] =  [
@@ -1214,7 +1212,6 @@ var FGToolbar = {
                     id : 'createFolderInput',
                     helpTextId : 'createFolderHelp',
                     placeholder : 'New folder name',
-                    tooltip: 'Enter a name for the new folder'
                 }, ctrl.helpText())
             ]),
             m('.col-xs-3.tb-buttons-col',
@@ -1222,7 +1219,6 @@ var FGToolbar = {
                     [
                         m.component(FGButton, {
                             onclick: ctrl.createFolder,
-                            tooltip: 'Create Folder',
                             icon : 'fa fa-plus',
                             className : 'text-success'
                         }, 'Create'),
@@ -1247,7 +1243,6 @@ var FGToolbar = {
                     onclick: function() {
                         cancelUploads.call(ctrl.tb);
                     },
-                    tooltip: 'Cancel currently pending uploads.',
                     icon: 'fa fa-time-circle',
                     className : 'text-warning'
                 }, 'Cancel Pending Uploads')
@@ -1271,7 +1266,6 @@ var FGToolbar = {
                             var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
                             if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
                         },
-                        tooltip: 'Delete all of the currently selected items.',
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete Multiple')
@@ -1283,7 +1277,6 @@ var FGToolbar = {
                 onclick: function(event){
                     ctrl.mode(toolbarModes.SEARCH);
                 },
-                tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, 'Search'),
@@ -1300,7 +1293,6 @@ var FGToolbar = {
                     ]);
                     ctrl.tb.modal.update(mithrilContent, mithrilButtons);
                 },
-                tooltip: 'Learn more about how to use the file browser.',
                 icon: 'fa fa-info',
                 className : 'text-info'
             }, '')

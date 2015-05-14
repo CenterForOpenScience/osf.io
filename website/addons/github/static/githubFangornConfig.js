@@ -149,7 +149,6 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
                         },
-                        tooltip: 'Upload files to Github folder',
                         icon: 'fa fa-upload',
                         className: 'text-success'
                     }, 'Upload'),
@@ -157,7 +156,6 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             tb.toolbarMode('createFolder');
                         },
-                        tooltip: 'Create a new folder.',
                         icon: 'fa fa-plus',
                         className: 'text-primary'
                     }, 'Create Folder')
@@ -169,7 +167,6 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             window.location = item.data.urls.zip;
                         },
-                        tooltip: 'Download repository as a zip file',
                         icon: 'fa fa-download',
                         className: 'text-success'
                     }, 'Download'),
@@ -177,7 +174,6 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             window.open(item.data.urls.repo, '_blank');
                         },
-                        tooltip: 'Open repository in a new window.',
                         icon: 'fa fa-external-link',
                         className: 'text-info'
                     }, 'Open'),
@@ -186,7 +182,6 @@ var _githubItemButtons = {
                         onchange: function (event) {
                             changeBranch.call(tb, item, event.target.value);
                         },
-                        tooltip: 'Change Branch',
                         icon: 'fa fa-external-link',
                         className: 'text-info'
                     }, branchArray)
@@ -198,7 +193,6 @@ var _githubItemButtons = {
                     onclick: function (event) {
                         _downloadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Download file to your computer.',
                     icon: 'fa fa-download',
                     className: 'text-info'
                 }, 'Download')
@@ -209,7 +203,6 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             _removeEvent.call(tb, event, [item]);
                         },
-                        tooltip: 'Delete file.',
                         icon: 'fa fa-trash',
                         className: 'text-danger'
                     }, 'Delete')

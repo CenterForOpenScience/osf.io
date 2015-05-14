@@ -1089,7 +1089,6 @@ var POItemButtons = {
                         onclick: function (event) {
                             _gotoEvent.call(tb, event, item);
                         },
-                        tooltip: 'Opens the project in same window. Use Command + Click to open in new window.',
                         icon: 'fa fa-external-link',
                         className: 'text-primary'
                     }, 'Open')
@@ -1102,7 +1101,6 @@ var POItemButtons = {
                     onclick: function (event) {
                         tb.toolbarMode('addFolder');
                     },
-                    tooltip: 'Adds a Collection to visually organize your projects or components.',
                     icon: 'fa fa-cubes',
                     className: 'text-primary'
                 }, 'Add Collection'),
@@ -1110,7 +1108,6 @@ var POItemButtons = {
                     onclick: function (event) {
                         tb.toolbarMode('addProject');
                     },
-                    tooltip: 'Adds an existing project or component to the Collection.',
                     icon: 'fa fa-cube',
                     className: 'text-primary'
                 }, 'Add Existing Project')
@@ -1139,7 +1136,6 @@ var POItemButtons = {
                             });
                         });
                     },
-                    tooltip: 'Removes the selected row from the Collection. This action does NOT delete the project.',
                     icon: 'fa fa-minus',
                     className: 'text-primary'
                 }, 'Remove from Collection')
@@ -1151,7 +1147,6 @@ var POItemButtons = {
                     onclick: function (event) {
                         tb.toolbarMode('rename');
                     },
-                    tooltip: 'Change the name of the Collection or project.',
                     icon: 'fa fa-font',
                     className: 'text-primary'
                 }, 'Rename')
@@ -1163,7 +1158,6 @@ var POItemButtons = {
                     onclick: function (event) {
                         _deleteFolder.call(tb, item, theItem);
                     },
-                    tooltip: 'Deletes the collection.',
                     icon: 'fa fa-trash',
                     className: 'text-danger'
                 }, 'Delete')
@@ -1201,7 +1195,6 @@ var POToolbar = {
         var rowButtons = [];
         var dismissIcon = m.component(Fangorn.Components.button, {
             onclick: ctrl.dismissToolbar,
-            tooltip: 'Close Search',
             icon : 'fa fa-times'
         }, '');
         templates[Fangorn.Components.toolbarModes.SEARCH] =  [
@@ -1213,7 +1206,6 @@ var POToolbar = {
                     [
                         m.component(Fangorn.Components.button, {
                             onclick: ctrl.dismissToolbar,
-                            tooltip: 'Close Search',
                             icon : 'fa fa-times'
                         }, 'Close')
                     ]
@@ -1241,7 +1233,6 @@ var POToolbar = {
                             onclick: function () {
                                 _addFolderEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Add folder',
                             icon : 'fa fa-plus',
                             className : 'text-info'
                         }, 'Add'),
@@ -1273,7 +1264,6 @@ var POToolbar = {
                             onclick: function () {
                                 _renameEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Rename collection or project',
                             icon : 'fa fa-pencil',
                             className : 'text-info'
                         }, 'Rename'),
@@ -1301,7 +1291,6 @@ var POToolbar = {
                             onclick: function () {
                                 addProjectEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Add project',
                             icon : 'fa fa-plus',
                             className : 'text-info'
                         }, 'Add'),
@@ -1316,7 +1305,6 @@ var POToolbar = {
                     ctrl.mode(Fangorn.Components.toolbarModes.SEARCH);
                     ctrl.tb.clearMultiselect();
                 },
-                tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, 'Search'),
@@ -1324,7 +1312,6 @@ var POToolbar = {
                 onclick: function (event) {
                     showLegend.call(ctrl.tb);
                 },
-                tooltip: 'Learn more about how to use the project organizer.',
                 icon: 'fa fa-info',
                 className : 'text-info'
             }, '')
@@ -1350,7 +1337,6 @@ var POToolbar = {
                         onclick: function (event) {
                             deleteMultiplePointersFromFolder.call(ctrl.tb, pointerIds, theParentNode);
                         },
-                        tooltip: 'Remove all from folder',
                         icon: 'fa fa-minus',
                         className : 'text-primary'
                     }, 'Remove All from Collection')

@@ -114,7 +114,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files from your computer.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload'),
@@ -122,7 +121,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         dataversePublish.call(tb, event, item);
                     },
-                    tooltip: 'Publish files.',
                     icon: 'fa fa-globe',
                     className: 'text-success'
                 }, 'Publish')
@@ -133,7 +131,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files from your computer.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload')
@@ -144,7 +141,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _downloadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Download file to your computer.',
                     icon: 'fa fa-download',
                     className: 'text-info'
                 }, 'Download')
@@ -155,7 +151,6 @@ var _dataverseItemButtons = {
                         onclick: function (event) {
                             Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
                         },
-                        tooltip: 'Delete file.',
                         icon: 'fa fa-trash',
                         className: 'text-danger'
                     }, 'Delete')
