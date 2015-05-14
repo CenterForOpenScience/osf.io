@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Script to migrate dataverse projects to accomodate changes in their 4.0 API.
-This assumes that the script `migrate_credentials_to_token` has been run.
+Script to migrate Dataverse credentials from user settings object to external
+account objects.
 
 Changes:
- - Rename node_addon.study to node_addon.dataset
- - Rename node_addon.study_hdl to node_addon.dataset_doi
+ - Include configurable `host` in Dataverse settings
+ - Create external account for authorized user settings
+ - Attach external account to user settings
+ - Attach external account to all node settings
 
 """
 
