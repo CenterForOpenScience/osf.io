@@ -286,6 +286,9 @@ class FigshareArticleProvider(BaseFigshareProvider):
         :param str path: Path to the key you want to download
         :rtype ResponseWrapper:
         """
+        if path.identifier is None:
+            raise exceptions.NotFoundError(str(path))
+
         file_metadata = yield from self.metadata(path)
         download_url = file_metadata['extra']['downloadUrl']
         if download_url is None:
