@@ -152,7 +152,7 @@ var _githubItemButtons = {
                     }, 'Upload'),
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            tb.toolbarMode('createFolder');
+                            tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                         },
                         icon: 'fa fa-plus',
                         className: 'text-primary'
