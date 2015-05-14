@@ -1254,7 +1254,7 @@ var FGToolbar = {
             // Only show delete button if user has edit permissions on at least one selected file
             for (var i = 0, len = items.length; i < len; i++) {
                 var each = items[i];
-                if (each.data.permissions.edit) {
+                if (each.data.permissions.edit && !each.data.isAddonRoot) {
                     showDelete = true;
                     break;
                 }
