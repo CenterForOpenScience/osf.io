@@ -669,7 +669,7 @@ function _removeEvent (event, items, col) {
                 deleteList.push(item);
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
-                deleteMessage.push(m('p.text-danger', 'Some items in this list are folders. This will delete ALL of their content.'));
+                deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
             }
         });
         // If all items can be deleted
@@ -1259,7 +1259,7 @@ var FGToolbar = {
             // Only show delete button if user has edit permissions on at least one selected file
             for (var i = 0, len = items.length; i < len; i++) {
                 var each = items[i];
-                if (each.data.permission.edit) {
+                if (each.data.permissions.edit) {
                     showDelete = true;
                     break;
                 }
