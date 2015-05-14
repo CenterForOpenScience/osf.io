@@ -203,7 +203,13 @@ class FigshareArticleProvider(BaseFigshareProvider):
         wbpath = parent or WaterButlerPath('/', _ids=(self.article_id, ), folder=True)
 
         if split:
-            fid = int(split.pop(0))
+            name = split.pop(0)
+
+            try:
+                fid = int(name)
+            except ValueError:
+                fid = name
+
             article_json = yield from self._get_article_json()
             try:
                 wbpath = wbpath.child(**next(
@@ -214,8 +220,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
                     if x['id'] == fid
                 ))
             except StopIteration:
-                raise exceptions.ProviderError('Path {} not found'.format(path), code=404)
-                pass
+                wbpath = wbpath.child(name)
 
         return wbpath
 
