@@ -221,6 +221,9 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
+        if not path.identifier: # TODO This should be abstracted
+            raise exceptions.NotFoundError(str(path))
+
         if path.is_file:
             url = self.build_url('files', path.identifier)
         else:
