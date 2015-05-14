@@ -1108,7 +1108,7 @@ var FGItemButtons = {
         if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
             rowButtons.push(
                 m.component(FGButton, {
-                    onclick: function() {_uploadEvent.call(tb, event, item); },
+                    onclick: function(event) {_uploadEvent.call(tb, event, item); },
                     icon: 'fa fa-upload',
                     className : 'text-primary'
                 }, 'Upload'),
@@ -1122,7 +1122,7 @@ var FGItemButtons = {
             if(item.data.path){
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function() {_removeEvent.call(tb, event, [item]); },
+                        onclick: function(event) {_removeEvent.call(tb, event, [item]); },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete Folder'));
@@ -1131,7 +1131,7 @@ var FGItemButtons = {
         if (item.kind === 'file'){
             rowButtons.push(
                 m.component(FGButton, {
-                    onclick: function() { _downloadEvent.call(tb, event, item); },
+                    onclick: function(event) { _downloadEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
                     className : 'text-success'
                 }, 'Download')
@@ -1139,7 +1139,7 @@ var FGItemButtons = {
             if (item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function() { _removeEvent.call(tb, event, [item]); },
+                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete'));
@@ -1148,7 +1148,7 @@ var FGItemButtons = {
             if (item.data.permissions && item.data.permissions.view) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function() {
+                        onclick: function(event) {
                             gotoFileEvent.call(tb, item);
                         },
                         icon: 'fa fa-external-link',
@@ -1262,7 +1262,7 @@ var FGToolbar = {
             if(showDelete){
                 generalButtons.push(
                     m.component(FGButton, {
-                        onclick: function() {
+                        onclick: function(event) {
                             var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
                             if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
                         },
@@ -1289,7 +1289,7 @@ var FGToolbar = {
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and double click a file name to open it in a new tab.')]),
                     ]);
                     var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { ctrl.tb.modal.dismiss(); } }, 'Close'),
+                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
                     ]);
                     ctrl.tb.modal.update(mithrilContent, mithrilButtons);
                 },
