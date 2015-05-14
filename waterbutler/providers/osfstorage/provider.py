@@ -167,7 +167,15 @@ class OSFStorageProvider(provider.BaseProvider):
         else:
             signed = signing.sign_data(signer, json.loads(data or {}), ttl=ttl)
             data = json.dumps(signed)
-        return (yield from self.make_request(method, url + '/', data=data, params=params, **kwargs))
+
+        # Ensure url ends with a /
+        if not url.endswith('/'):
+            if '?' not in url:
+                url += '/'
+            elif url[url.rfind('?') - 1] != '/':
+                url = url.replace('?', '/?')
+
+        return (yield from self.make_request(method, url, data=data, params=params, **kwargs))
 
     @asyncio.coroutine
     def download(self, path, version=None, **kwargs):
