@@ -6,6 +6,7 @@ import codecs
 import errno
 import httplib
 import functools
+import requests
 
 import furl
 from flask import request
@@ -25,7 +26,7 @@ from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
-from website.util import rubeus
+from website.util import rubeus, waterbutler_url_for
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
@@ -367,10 +368,8 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 
 @must_be_valid_project
 def addon_edit_file(**kwargs):
-    print 'in addon edit file'
 
     extras = request.args.to_dict()
-    action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']
     path = kwargs.get('path')
     provider = kwargs.get('provider')
@@ -386,12 +385,17 @@ def addon_edit_file(**kwargs):
     if not path.startswith('/'):
         path = '/' + path
 
-    file_guid, created = node_addon.find_or_create_file_guid(path)
+    upload_url = waterbutler_url_for('upload', provider, path, node)
 
     original_content = request.form['original_content']
     edit_content = request.form['edit_content']
-    print 'original content is: ' + original_content
-    print 'edited content is: ' + edit_content
+
+    if original_content != edit_content:
+        requests.put(
+            upload_url,
+            data=edit_content,
+        )
+
     return
 
 @must_be_valid_project
