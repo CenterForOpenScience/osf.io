@@ -88,11 +88,15 @@ text-align: center;
 .title-text {
     cursor: default;
 }
-.title-text:hover {
-    text-decoration: underline;
-}
 .fg-file-links  {
     cursor: pointer !important;
+    color: #333333;
+}
+.fg-file-links:hover {
+    text-decoration: underline;
+}
+.fangorn-selected .fg-file-links {
+    color: #FFFFFF;
 }
 .tb-row-titles {
 	height: 35px;
