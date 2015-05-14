@@ -269,8 +269,8 @@ class OSFStorageProvider(provider.BaseProvider):
 
         metadata.update({
             'name': name,
-            'version': data['version'],
             'path': data['data']['path'],
+            'version': data['data']['version'],
             'downloads': data['data']['downloads']
         })
 
