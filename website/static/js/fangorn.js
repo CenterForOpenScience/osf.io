@@ -800,6 +800,18 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
+
+function gotoFileEvent (item) {
+    var tb = this;
+    var redir = new URI(item.data.nodeUrl);
+    redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+    var fileurl  = redir.toString() + '/';
+    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+        window.open(fileurl, '_blank');
+    } else {
+        window.open(fileurl, '_self');
+    }
+}
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -813,14 +825,7 @@ function _fangornTitleColumn(item, col) {
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
             ondblclick: function() {
-                var redir = new URI(item.data.nodeUrl);
-                redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-                var fileurl  = redir.toString() + '/';
-                if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-                    window.open(fileurl, '_blank');
-                } else {
-                    window.open(fileurl, '_self');
-                }
+                gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
     }
@@ -1138,6 +1143,18 @@ var FGItemButtons = {
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete'));
+
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        tooltip: 'View this file.',
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
 
             }
         }
