@@ -70,9 +70,11 @@ text-align: center;
 	line-height: 23px;
 	padding: 3px 0px 7px 5px;
 	font-size: 14px;
-	border-left: none;
+    border-left: 1px solid #DDD;
 }
-
+.tb-th:first-of-type {
+    border-left: none;
+}
 .tb-td {
     height: inherit;
     padding-top: 6px;
