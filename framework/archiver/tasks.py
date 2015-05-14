@@ -8,7 +8,7 @@ from raven.handlers.logging import SentryHandler
 
 from framework.tasks import app as celery_app
 from framework.auth.core import User
-
+from framework.archiver import mails
 from framework.archiver import (
     StatResult,
     AggregateStatResult,
@@ -18,6 +18,7 @@ from framework.archiver.exceptions import ArchiverSizeExceeded
 from website.addons.base import StorageAddonBase
 from website.project.model import Node
 from website.project import signals as project_signals
+from website.mails import send_mail
 
 from website import settings
 
@@ -120,10 +121,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result, *args,
         'status': ARCHIVER_PENDING,
         'stat_result': str(stat_result),
     }
-    try:  # TODO why?
-        dst.save()
-    except Exception as e:
-        pass
+    dst.save()
     user = User.load(user_pk)
     src_provider = src.get_addon(addon_short_name)
     parent_name = "Archive of {addon}".format(addon=src_provider.config.full_name)
@@ -187,4 +185,12 @@ def archive(self, src_pk, dst_pk, user_pk, *args, **kwargs):
 
 @celery_app.task
 def send_success_message(dst_pk):
-    pass
+    dst = Node.load(dst_pk)
+    user = dst.creator
+
+    send_mail(
+        to_addr=user.username,
+        mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
+        user=user,
+        src=dst,
+    )
