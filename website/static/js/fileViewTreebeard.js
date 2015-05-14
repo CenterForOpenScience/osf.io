@@ -79,21 +79,17 @@ function FileViewTreebeard(data) {
             }
         },
         resolveRows: function (item) {
-            var selectClass = '';
             var tb = this;
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-                selectClass = 'fangorn-selected';
+                item.css = 'fangorn-selected';
             }
-
-            item.icons = []; // In this view there won't be toolbar items.
 
             var defaultColumns = [
                 {
                     data: 'name',
                     folderIcons: true,
                     filter: true,
-                    css: selectClass,
                     custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }
             ];
