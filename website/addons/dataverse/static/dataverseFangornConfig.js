@@ -180,6 +180,7 @@ function _fangornDataverseTitle(item, col) {
                     m('span', [
                         m('select', {
                             class: 'dataverse-state-select',
+                            style: { color : '#000000'},
                             onchange: function (e) {
                                 changeState(tb, item, e.target.value);
                             }
