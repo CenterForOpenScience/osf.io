@@ -304,6 +304,7 @@ class TestArchiverExceptions(ArchiverTestCase):
             src=self.src,
             dst=self.dst,
         ))
+        assert_true(self.dst.is_deleted)
 
     def test_ArchiverSizeExceeded(self):
         src_pk, dst_pk, user_pk = self.pks
@@ -332,21 +333,38 @@ class TestArchiverExceptions(ArchiverTestCase):
             src=self.src,
             dst=self.dst,
         ))
+        assert_true(self.dst.is_deleted)
 
 
 class TestArchiverUtils(ArchiverTestCase):
 
     def test_archive_provider_for(self):
-        pass
+        provider = self.src.get_addon(archiver_settings.ARCHIVE_PROVIDER)
+        assert_equal(archiver_utils.archive_provider_for(self.src, self.user)._id, provider._id)
 
     def test_has_archive_provider(self):
-        pass
+        assert_true(archiver_utils.has_archive_provider(self.src, self.user))
+        wo = factories.NodeFactory(user=self.user)
+        wo.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
+        assert_false(archiver_utils.has_archive_provider(wo, self.user))
 
     def test_link_archive_provider(self):
-        pass
+        wo = factories.NodeFactory(user=self.user)
+        wo.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
+        archiver_utils.link_archive_provider(wo, self.user)
+        assert_true(archiver_utils.has_archive_provider(wo, self.user))
 
     def test_catch_archive_addon_error(self):
-        pass
+        self.dst.archived_providers['dropbox'] = {
+            'status': ARCHIVER_PENDING,
+        }
+        self.dst.save()
+
+        errors = ['BAD REQUEST', 'BAD GATEWAY']
+        archiver_utils.catch_archive_addon_error(self.dst, 'dropbox', errors)
+        assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_FAILURE)
+        assert_equal(self.dst.archived_providers['dropbox']['errors'], errors)
+
 
 class TestArchiverListeners(ArchiverTestCase):
 
