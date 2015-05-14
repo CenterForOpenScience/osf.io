@@ -94,7 +94,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
 # TODO: Needs to also handle a PUT or POST request for creating new single instances via this url:
 #       Possible alternate parent classes in http://www.django-rest-framework.org/api-guide/generic-views/#listapiview
-class ApplicationList(generics.ListAPIView, ODMFilterMixin):
+class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     Get a list of API applications (eg OAuth2) that the user has registered
 
@@ -119,8 +119,13 @@ class ApplicationList(generics.ListAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         return OAuth2App.find(query)
 
+    def perform_create(self, serializer):
+        """Add user to the created object"""
+        serializer.validated_data['owner'] = self.request.user
+        serializer.save()
 
-class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ):
+
+class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Get information about a specific API application (eq OAuth2) that the user has registered
 
@@ -150,7 +155,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ):
         # Node is not actually deleted- just flagged as inactive, which hides it from list views
         obj = self.get_object()
 
-        if obj.owner._id != self.request.user._id:
+        if obj.owner._id != self.request.user._id:  # TODO: This check may be redundant with check in self.get_object
             raise PermissionDenied
 
         obj.active = False
