@@ -83,6 +83,7 @@ text-align: center;
 }
 .tb-row {
 	border-bottom: 1px solid #f5f5f5;
+    line-height: 30px;
 }
 .title-text {
     cursor: default;
