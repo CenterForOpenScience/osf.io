@@ -180,15 +180,20 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
+        if path.identifier is None:
+            raise exceptions.DownloadError('"{}" not found'.format(str(path)), code=404)
+
         query = {}
         if revision and revision != path.identifier:
             query['version'] = revision
+
         resp = yield from self.make_request(
             'GET',
             self.build_url('files', path.identifier, 'content', **query),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
+
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
@@ -287,7 +292,6 @@ class BoxProvider(provider.BaseProvider):
 
         # Catch 409s to avoid race conditions
         if resp.status == 409:
-            data = yield from self.metadata(str(path.parent), folder=True)
             raise exceptions.FolderNamingConflict(str(path))
 
         return BoxFolderMetadata(
