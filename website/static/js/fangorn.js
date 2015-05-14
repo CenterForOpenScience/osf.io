@@ -1229,13 +1229,16 @@ var FGToolbar = {
         }
         //multiple selection icons
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
-            var deleteList = [];
-            items.forEach(function(item, index, arr){
-                if(item.data.permissions.edit){
-                    deleteList.push(item);
+            var showDelete = false;
+            // Only show delete button if user has edit permissions on at least one selected file
+            for (var i = 0, len = items.length; i < len; i++) {
+                var each = items[i];
+                if (each.data.permission.edit) {
+                    showDelete = true;
+                    break;
                 }
-            });
-            if(deleteList.length > 0){
+            }
+            if(showDelete){
                 generalButtons.push(
                     m.component(FGButton, {
                         onclick: function() {
