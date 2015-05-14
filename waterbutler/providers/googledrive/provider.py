@@ -193,7 +193,7 @@ class GoogleDriveProvider(provider.BaseProvider):
 
         response = yield from self.make_request(
             'GET',
-            self.build_url('files', metadata['id'], 'revisions'),
+            self.build_url('files', path.identifier, 'revisions'),
             expects=(200, ),
             throws=exceptions.RevisionsError,
         )
@@ -203,6 +203,8 @@ class GoogleDriveProvider(provider.BaseProvider):
                 GoogleDriveRevision(item).serialized()
                 for item in reversed(data['items'])
             ]
+
+        metadata = yield from self.metadata(path, raw=True)
 
         # Use dummy ID if no revisions found
         return [GoogleDriveRevision({
