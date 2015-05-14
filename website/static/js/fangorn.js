@@ -1229,17 +1229,25 @@ var FGToolbar = {
         }
         //multiple selection icons
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
-            generalButtons.push(
-                m.component(FGButton, {
-                    onclick: function() {
-                        var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
-                        if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
-                    },
-                    tooltip: 'Delete all of the currently selected items.',
-                    icon: 'fa fa-trash',
-                    className : 'text-danger'
-                }, 'Delete Multiple')
-            );
+            var deleteList = [];
+            items.forEach(function(item, index, arr){
+                if(item.data.permissions.edit){
+                    deleteList.push(item);
+                }
+            });
+            if(deleteList.length > 0){
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() {
+                            var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
+                            if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
+                        },
+                        tooltip: 'Delete all of the currently selected items.',
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete Multiple')
+                );
+            }
         }
         generalButtons.push(
             m.component(FGButton, {
