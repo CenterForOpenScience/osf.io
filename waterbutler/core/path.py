@@ -175,6 +175,9 @@ class WaterButlerPath:
         self._parts[-1] = self._parts[-1].renamed(name)
         return self
 
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and str(self) == str(other)
+
     def __str__(self):
         return '/'.join([x.value for x in self.parts]) + ('/' if self.is_dir else '')
 
