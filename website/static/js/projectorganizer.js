@@ -512,6 +512,8 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
             $osf.growl('Error:', textStatus + '. ' + errorThrown);
         });
     }
+    _dismissToolbar.call(tb);
+
 }
 
 /**
