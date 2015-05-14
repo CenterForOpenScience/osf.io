@@ -11,7 +11,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Authorized on <a href="{{ dataverseUrl }}"><em>{{ dataverseHost }}</em></a></th>
+                <th>Authorized on <a data-bind="attr.href: dataverseUrl"><em>{{ dataverseHost }}</em></a></th>
                 <th><a data-bind="click: $root.askDisconnect" class="text-danger">Delete Access Token</a></th>
             </tr>
         </thead>
@@ -19,7 +19,7 @@
         <tbody data-bind="foreach: connectedNodes()">
             <tr>
                 <td class="authorized-nodes">
-                    <!-- ko if: title --><a href="{{ urls.view }}">{{ title }}</a><!-- /ko -->
+                    <!-- ko if: title --><a data-bind="attr.href: urls.view">{{ title }}</a><!-- /ko -->
                     <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                 </td>
                 <td>

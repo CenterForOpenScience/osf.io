@@ -40,7 +40,7 @@
         <!-- The linked Dataverse Host -->
         <p>
             <strong>Dataverse Repository:</strong>
-            <a href="{{savedHostUrl}}">{{ savedHost }}</a>
+            <a data-bind="attr.href: savedHostUrl()">{{ savedHost }}</a>
         </p>
 
         <!-- The linked dataset -->
