@@ -93,11 +93,20 @@ function cancelUploads (row) {
 var cancelUploadTemplate = function(row){
     var treebeard = this;
     return m('.btn.m-l-sm.text-muted', {
+            config : function() {
+                reapplyTooltips();
+            },
             'onclick' : function (e) {
                 e.stopImmediatePropagation();
                 cancelUploads.call(treebeard, row);
             }},
-        m('.fa.fa-times-circle.text-warning', { style : 'display:block;font-size:18px'}, m('span', { style : 'font-size: 14px;'}, ' Cancel')));
+        m('.fa.fa-times-circle.text-warning', {
+            style : 'display:block;font-size:18px; margin-top: -4px;',
+            'data-toggle': 'tooltip',
+            'data-placement' : 'bottom',
+            'title':  'Cancel upload'
+        }, '')
+    );
 };
 
 /**
