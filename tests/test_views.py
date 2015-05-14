@@ -1393,7 +1393,7 @@ class TestAddingContributorViews(OsfTestCase):
 
     def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
         unreg = UnregUserFactory()
-        from website.project.model import unreg_contributor_added
+        from website.project.signals import unreg_contributor_added
         serialized = [serialize_unregistered(fake.name(), unreg.username)]
         serialized[0]['visible'] = True
         with capture_signals() as mock_signals:
