@@ -1,6 +1,7 @@
 import os
 import logging
 
+
 from framework.render.tasks import ensure_path
 from website.static_snapshot import tasks
 from website import settings

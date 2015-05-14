@@ -375,7 +375,8 @@ def view_project(auth, node, **kwargs):
         Since this view function is called from all the pages for a public project,
         Google Bot request handler function is called here.
         """
-        get_static_snapshot(cache)
+        content = get_static_snapshot(cache)
+        return {'content': content}
 
     else:
         ret = _view_project(node, auth, primary=primary)
