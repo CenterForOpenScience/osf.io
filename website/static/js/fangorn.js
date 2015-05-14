@@ -100,7 +100,7 @@ var cancelUploadTemplate = function(row){
                 e.stopImmediatePropagation();
                 cancelUploads.call(treebeard, row);
             }},
-        m('.fa.fa-times-circle.text-warning', {
+        m('.fa.fa-times-circle.text-danger', {
             style : 'display:block;font-size:18px; margin-top: -4px;',
             'data-toggle': 'tooltip',
             'data-placement' : 'bottom',
