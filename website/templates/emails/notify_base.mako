@@ -44,9 +44,7 @@
                         <tr>
                             <td style="border-collapse: collapse;">
                                 <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
-                                <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you are subscribed to email notifications.
-                                    <br><a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;font-weight: bold;">Update Subscription Preferences</a>
-                                </p>
+                                ${footer()}
                             </td>
                         </tr>
                     </tbody>
@@ -58,5 +56,9 @@
 </html>
 
 <%def name="content()">
+
+</%def>
+
+<%def name="footer()">
 
 </%def>

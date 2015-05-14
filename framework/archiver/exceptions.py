@@ -5,6 +5,9 @@ from framework.archiver import mails
 from website import settings
 from website.mails import send_mail
 
+def send_archiver_mail(*args, **kwargs):
+    """A proxy to facilitate unit testing"""
+    send_mail(*args, **kwargs)
 
 class ArchiverError(Exception):
     pass
@@ -20,19 +23,20 @@ class ArchiverSizeExceeded(ArchiverError):
         :param stat_result: AggregateStatResult of Node addon metadata
         """
         super(ArchiverSizeExceeded, self).__init__(*args, **kwargs)
-        send_mail(
+        send_archiver_mail(
             to_addr=settings.SUPPORT_EMAIL,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
             user=user,
             src=src,
             stat_result=stat_result
         )
-        send_mail(
+        send_archiver_mail(
             to_addr=user.username,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
             user=user,
             src=src,
-            stat_result=stat_result
+            stat_result=stat_result,
+            mimetype='html',
         )
         dst.remove_node(Auth(user))
 
@@ -48,18 +52,19 @@ class ArchiverCopyError(ArchiverError):
         :param results: collected statuses and errors returned from the WaterButler API
         """
         super(ArchiverCopyError, self).__init__(*args, **kwargs)
-        send_mail(
+        send_archiver_mail(
             to_addr=settings.SUPPORT_EMAIL,
             mail=mails.ARCHIVE_COPY_ERROR_DESK,
             user=user,
             src=src,
             results=results,
         )
-        send_mail(
+        send_archiver_mail(
             to_addr=user.username,
             mail=mails.ARCHIVE_COPY_ERROR_USER,
             user=user,
             src=src,
             results=results,
+            mimetype='html',
         )
         dst.remove_node(Auth(user))
