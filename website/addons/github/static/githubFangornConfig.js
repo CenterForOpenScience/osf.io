@@ -123,12 +123,10 @@ var _githubItemButtons = {
         var tb = args.treebeard;
         var item = args.item;
         var buttons = [];
-
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
             window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
         }
-
         // Download Zip File
         if (item.kind === 'folder') {
             var branchArray = [];
@@ -207,6 +205,17 @@ var _githubItemButtons = {
                         className: 'text-danger'
                     }, 'Delete')
                 );
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile.call(tb, item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
+
             }
         }
 
