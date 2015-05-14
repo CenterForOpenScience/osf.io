@@ -1143,6 +1143,15 @@ class User(GuidStoredObject, AddonModelMixin):
             self.api_keys.append(api_key)
         user.api_keys = []
 
+        # - addons
+        # Note: This must occur before the merged user is removed as a
+        #       contributor on the nodes, as an event hook is otherwise fired
+        #       which removes the credentials.
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
+
         # - projects where the user was a contributor
         for node in user.node__contributed:
             # Skip dashboard node
@@ -1170,12 +1179,6 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in user.node__created:
             node.creator = self
             node.save()
-
-        # - addons
-        for addon in user.get_addons():
-            user_settings = self.get_or_add_addon(addon.config.short_name)
-            user_settings.merge(addon)
-            user_settings.save()
 
         # finalize the merge
 
