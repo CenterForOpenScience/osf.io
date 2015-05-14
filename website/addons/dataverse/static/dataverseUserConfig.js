@@ -21,7 +21,7 @@ var modal = $('#dataverseInputCredentials');
 
 function ViewModel(url) {
     var self = this;
-    var otherString = 'Other (Please Specify)';
+    const otherString = 'Other (Please Specify)';
 
     self.properName = 'Dataverse';
     self.apiToken = ko.observable();

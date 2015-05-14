@@ -16,7 +16,7 @@ ko.punches.enableAll();
 
 function ViewModel(url) {
     var self = this;
-    var otherString = 'Other (Please Specify)';
+    const otherString = 'Other (Please Specify)';
 
     self.addonName = 'Dataverse';
     self.url = url;
