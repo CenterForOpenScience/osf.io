@@ -161,24 +161,27 @@ function ViewModel(url) {
     };
 
     // Update observables with data from the server
-    $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        var data = response.result;
-        self.urls(data.urls);
-        self.hosts(data.hosts);
-        self.loaded(true);
-        self.updateAccounts();
-    }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(language.userSettingsError, 'text-warning');
-        Raven.captureMessage('Could not GET Dataverse settings', {
+    self.fetch = function() {
+        $.ajax({
             url: url,
-            textStatus: textStatus,
-            error: error
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (response) {
+            var data = response.result;
+            self.urls(data.urls);
+            self.hosts(data.hosts);
+            self.loaded(true);
+            self.updateAccounts();
+        }).fail(function (xhr, textStatus, error) {
+            self.changeMessage(language.userSettingsError, 'text-warning');
+            Raven.captureMessage('Could not GET Dataverse settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
         });
-    });
+    };
+
 }
 
 function DataverseUserConfig(selector, url) {
@@ -188,6 +191,10 @@ function DataverseUserConfig(selector, url) {
     self.url = url;
     // On success, instantiate and bind the ViewModel
     self.viewModel = new ViewModel(url);
-    osfHelpers.applyBindings(self.viewModel, '#dataverseAddonScope');
+    osfHelpers.applyBindings(self.viewModel, self.selector);
 }
-module.exports = DataverseUserConfig;
+
+module.exports = {
+    DataverseViewModel: ViewModel,
+    DataverseUserConfig: DataverseUserConfig    // for backwards-compat
+};
