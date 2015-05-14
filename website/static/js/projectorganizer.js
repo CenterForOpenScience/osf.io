@@ -480,17 +480,6 @@ function _poMultiselect(event, tree) {
         }
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
-        someItemsAreFolders = false;
-        pointerIds = [];
-        selectedRows.forEach(function (item) {
-            var thisItem = item.data;
-            someItemsAreFolders = someItemsAreFolders ||
-                                  thisItem.isFolder ||
-                                  thisItem.isSmartFolder ||
-                                  thisItem.parentIsSmartFolder ||
-                                  !thisItem.permissions.movable;
-            pointerIds.push(thisItem.node_id);
-        });
     }
 }
 
@@ -1338,6 +1327,32 @@ var POToolbar = {
                 className : 'text-info'
             }, '')
         );
+        if(ctrl.items().length > 0){
+            var someItemsAreFolders = false;
+            var pointerIds = [];
+            var theParentNode = ctrl.items()[0].parent();
+            ctrl.items().forEach(function (item) {
+                var thisItem = item.data;
+                someItemsAreFolders = someItemsAreFolders ||
+                thisItem.isFolder ||
+                thisItem.isSmartFolder ||
+                thisItem.parentIsSmartFolder ||
+                !thisItem.permissions.movable;
+                pointerIds.push(thisItem.node_id);
+            });
+            if(!someItemsAreFolders){
+                generalButtons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            deleteMultiplePointersFromFolder.call(ctrl.tb, pointerIds, theParentNode);
+                        },
+                        tooltip: 'Remove all from folder',
+                        icon: 'fa fa-minus',
+                        className : 'text-primary'
+                    }, 'Remove All from Collection')
+                );
+            }
+        }
         if (ctrl.items().length === 1) {
             rowButtons = m.component(POItemButtons, {treebeard : ctrl.tb, item : ctrl.items()[0]});
         }
