@@ -618,7 +618,7 @@ function _removeEvent (event, items, col) {
         if (folder.data.permissions.edit) {
                 var mithrilContent = m('div', [
                         m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
-                        m('p', 'This action is irreversible.')
+                        m('p.text-danger', 'ALL contents of this folder will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
@@ -669,7 +669,7 @@ function _removeEvent (event, items, col) {
                 deleteList.push(item);
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
-                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'));
+                deleteMessage.push(m('p.text-danger', 'Some items in this list are folders. This will delete ALL of their content.'));
             }
         });
         // If all items can be deleted
