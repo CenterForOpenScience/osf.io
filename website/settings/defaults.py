@@ -200,7 +200,7 @@ ADDONS_ARCHIVABLE = [
     'dropbox',
     'figshare',
     'googledrive',
-    'github'
+    'github',
     's3',
 ]
 

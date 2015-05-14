@@ -173,7 +173,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, *args, **kwargs):
+                template=None, data=None, send_signals=True, *args, **kwargs):
 
         save_kwargs(**kwargs)
 
@@ -195,6 +195,7 @@ class RegistrationFactory(AbstractNodeFactory):
             auth=auth,
             template=template,
             data=data,
+            send_signals=send_signals,
         )
 
 

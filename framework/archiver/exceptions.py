@@ -32,8 +32,7 @@ class ArchiverSizeExceeded(ArchiverError):
 class ArchiverCopyError(ArchiverError):
 
     def __init__(self, src, dst, user, results, *args, **kwargs):
-        super(ArchiverSizeExceeded, self).__init__(*args, **kwargs)
-
+        super(ArchiverCopyError, self).__init__(*args, **kwargs)
         send_mail(
             to_addr=settings.SUPPORT_EMAIL,
             mail=mails.ARCHIVE_COPY_ERROR_DESK,
@@ -46,5 +45,6 @@ class ArchiverCopyError(ArchiverError):
             mail=mails.ARCHIVE_COPY_ERROR_USER,
             user=user,
             src=src,
+            results=results,
         )
         dst.remove_node(Auth(user))

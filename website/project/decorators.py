@@ -64,7 +64,7 @@ def must_not_be_registration(func):
         _inject_nodes(kwargs)
         node = kwargs['node']
 
-        if node.is_registration:
+        if not node.archiving and node.is_registration:
             raise HTTPError(http.BAD_REQUEST)
         return func(*args, **kwargs)
 
@@ -74,7 +74,6 @@ def must_be_registration(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-
         _inject_nodes(kwargs)
         node = kwargs['node']
 

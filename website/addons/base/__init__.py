@@ -855,21 +855,26 @@ class StorageAddonBase(object):
 
     root_node = GenericRootNode()
 
-    def _get_fileobj_child_metadata(self, node, user):
-        metadata_url = waterbutler_url_for(
-            'metadata',
+    def _get_fileobj_child_metadata(self, node, user, cookie=None):
+        kwargs = dict(
             provider=self.config.short_name,
             path=node.get('path'),
             node=self.owner,
             user=user,
             view_only=True,
         )
+        if cookie:
+            kwargs['cookie'] = cookie
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            **kwargs
+        )
         res = requests.get(metadata_url)
         if res.status_code != 200:
             pass
         return res.json().get('data', [])
 
-    def _get_file_tree(self, node=None, user=None):
+    def _get_file_tree(self, node=None, user=None, cookie=None):
         """
         Recursively get file metadata
         """
@@ -880,7 +885,12 @@ class StorageAddonBase(object):
         }
         if node.get('kind') == 'file':
             return node
-        node['children'] = [self._get_file_tree(child, user) for child in self._get_fileobj_child_metadata(node, user)]
+        kwargs = {}
+        if cookie:
+            kwargs = {
+                'cookie': cookie,
+            }
+        node['children'] = [self._get_file_tree(child, user, cookie=cookie) for child in self._get_fileobj_child_metadata(node, user, **kwargs)]
         return node
 
 

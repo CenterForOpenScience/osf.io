@@ -1643,13 +1643,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data):
+    def register_node(self, schema, auth, template, data, send_signals=True):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
         :template: Template name
         :data: Form data
+        :send_signals: For testing only-- temporarily disables sendinging blinker signals
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
@@ -1723,8 +1724,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
-        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
-        project_signals.after_register_node.send(original, dst=registered, user=auth.user)
+        if send_signals:
+            project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
         return registered
 
     def remove_tag(self, tag, auth, save=True):

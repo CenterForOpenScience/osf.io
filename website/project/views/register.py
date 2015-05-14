@@ -12,7 +12,11 @@ from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
 from framework.archiver.utils import catch_archive_addon_error
-from framework.archiver import ARCHIVER_SUCCESS, ARCHIVER_PENDING
+from framework.archiver import (
+    ARCHIVER_SUCCESS,
+    ARCHIVER_PENDING,
+    ARCHIVER_CHECKING,
+)
 from framework.archiver.exceptions import ArchiverCopyError
 
 from website import settings
@@ -27,7 +31,7 @@ from website.util.permissions import ADMIN
 from website.models import MetaSchema
 from website.models import NodeLog
 from website import language
-
+from website.project import signals as project_signals
 
 from website.identifiers.client import EzidClient
 
@@ -262,18 +266,15 @@ def get_referent_by_identifier(category, value):
 
 @must_be_signed
 @must_be_registration
-def registration_callbacks(registration, payload, *args, **kwargs):
+def registration_callbacks(node, payload, *args, **kwargs):
+    registration = node
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
-    pending = {key: value for key, value in registration.archived_providers.iteritems() if value['status'] == ARCHIVER_PENDING}
-    if not len(pending):
-        registration.archiving = False
-        registration.save()
     if errors:
         catch_archive_addon_error(registration, src_provider, errors)
-        if not len(pending):
-            raise ArchiverCopyError(registration.registered_from, registration, registration.owner, registration.archived_providers)
     else:
         registration.archived_providers[src_provider].update({
             'status': ARCHIVER_SUCCESS,
         })
+    registration.save()
+    project_signals.archive_callback.send(node)
