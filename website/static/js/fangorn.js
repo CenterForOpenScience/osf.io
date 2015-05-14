@@ -1142,10 +1142,10 @@ var FGItemButtons = {
                         onclick: function() {
                             gotoFileEvent.call(tb, item);
                         },
-                        tooltip: 'Open this file.',
+                        tooltip: 'View this file.',
                         icon: 'fa fa-external-link',
                         className : 'text-info'
-                    }, 'Open'));
+                    }, 'View'));
 
             }
         }

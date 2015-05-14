@@ -1335,11 +1335,13 @@ var POToolbar = {
             var theParentNode = ctrl.items()[0].parent();
             ctrl.items().forEach(function (item) {
                 var thisItem = item.data;
-                someItemsAreFolders = someItemsAreFolders ||
-                thisItem.isFolder ||
-                thisItem.isSmartFolder ||
-                thisItem.parentIsSmartFolder ||
-                !thisItem.permissions.movable;
+                someItemsAreFolders = (
+                    someItemsAreFolders ||
+                    thisItem.isFolder ||
+                    thisItem.isSmartFolder ||
+                    thisItem.parentIsSmartFolder ||
+                    !thisItem.permissions.movable
+                );
                 pointerIds.push(thisItem.node_id);
             });
             if(!someItemsAreFolders){
