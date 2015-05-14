@@ -188,7 +188,9 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revisions(self, path, **kwargs):
-        metadata = yield from self.metadata(path, raw=True)
+        if path.identifier is None:
+            raise exceptions.NotFoundError(str(path))
+
         response = yield from self.make_request(
             'GET',
             self.build_url('files', metadata['id'], 'revisions'),
