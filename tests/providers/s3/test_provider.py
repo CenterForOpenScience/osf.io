@@ -510,25 +510,25 @@ class TestCreateFolder:
 
 class TestOperations:
 
-    @async
-    @pytest.mark.aiohttpretty
-    def test_copy(self, provider, file_metadata):
-        dest_path = WaterButlerPath('/dest')
-        source_path = WaterButlerPath('/source')
-        headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path.path)}
+    # @async
+    # @pytest.mark.aiohttpretty
+    # def test_copy(self, provider, file_metadata):
+    #     dest_path = WaterButlerPath('/dest')
+    #     source_path = WaterButlerPath('/source')
+    #     headers = {'x-amz-copy-source': '/{}/{}'.format(provider.settings['bucket'], source_path.path)}
 
-        metadata_url = provider.bucket.new_key(dest_path.path).generate_url(100, 'HEAD')
-        url = provider.bucket.new_key(dest_path.path).generate_url(100, 'PUT', headers=headers)
+    #     metadata_url = provider.bucket.new_key(dest_path.path).generate_url(100, 'HEAD')
+    #     url = provider.bucket.new_key(dest_path.path).generate_url(100, 'PUT', headers=headers)
 
-        aiohttpretty.register_uri('PUT', url, status=200)
-        aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
+    #     aiohttpretty.register_uri('PUT', url, status=200)
+    #     aiohttpretty.register_uri('HEAD', metadata_url, headers=file_metadata)
 
-        resp = yield from provider.copy(provider, source_path, dest_path)
+    #     resp = yield from provider.copy(provider, source_path, dest_path)
 
-        # TODO: matching url content for request
-        assert resp['kind'] == 'file'
-        assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
-        assert aiohttpretty.has_call(method='PUT', uri=url, headers=headers)
+    #     # TODO: matching url content for request
+    #     assert resp['kind'] == 'file'
+    #     assert aiohttpretty.has_call(method='HEAD', uri=metadata_url)
+    #     assert aiohttpretty.has_call(method='PUT', uri=url, headers=headers)
 
     @async
     @pytest.mark.aiohttpretty
