@@ -1372,7 +1372,7 @@ function _openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
-    var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected());
+    filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'search') {
         _dismissToolbar.call(tb);
         scrollToItem = true;
@@ -1380,19 +1380,15 @@ function _openParentFolders (item) {
         _openParentFolders.call(tb, row);
     }
 
-    if(tb.multiselected().length === 1){
+    if (tb.multiselected().length === 1){
         tb.select('#tb-tbody').removeClass('unselectable');
         if(scrollToItem) {
              scrollToFile.call(tb, tb.multiselected()[0].id);
         }
     } else if (tb.multiselected().length > 1) {
-            tb.select('#tb-tbody').addClass('unselectable');
+        tb.select('#tb-tbody').addClass('unselectable');
     }
-    tb.redraw();
-
-    if(tb.pressedKey === 'toggle') {
-        tb.pressedKey = undefined;
-    }
+    m.redraw();
     reapplyTooltips();
 }
 
