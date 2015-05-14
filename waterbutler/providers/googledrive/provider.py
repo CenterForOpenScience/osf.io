@@ -141,15 +141,8 @@ class GoogleDriveProvider(provider.BaseProvider):
         return streams.ResponseStreamReader(download_resp)
 
     @asyncio.coroutine
-    def upload(self, stream, path, conflict='replace', **kwargs):
+    def upload(self, stream, path, **kwargs):
         assert path.is_file
-
-        # path, exists = yield from self.handle_name_conflict(
-        #     GoogleDrivePath(self.folder['name'], name),
-        #     raw=True,
-        #     conflict=conflict,
-        #     parent_id=parent_id,
-        # )
 
         if path.identifier:
             segments = (path.identifier, )
@@ -160,7 +153,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         upload_id = yield from self._start_resumable_upload(not path.identifier, segments, stream.size, upload_metadata)
         data = yield from self._finish_resumable_upload(segments, stream, upload_id)
 
-        return GoogleDriveFileMetadata(data, path.parent).serialized(), path.identifier is None
+        return GoogleDriveFileMetadata(data, path).serialized(), path.identifier is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
