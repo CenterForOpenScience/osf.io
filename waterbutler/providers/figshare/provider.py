@@ -170,10 +170,10 @@ class FigshareProjectProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        figshare_path = FigshareProjectPath(path)
-        provider = yield from self._make_article_provider(figshare_path.article_id)
-        if figshare_path.file_id:
-            yield from provider.delete(str(figshare_path.child), **kwargs)
+        provider = yield from self._make_article_provider(path.parts[1].identifier)
+
+        if len(path.parts) == 3:
+            yield from provider.delete(path, **kwargs)
         else:
             yield from provider._remove_from_project(self.project_id)
 
@@ -298,10 +298,9 @@ class FigshareArticleProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        figshare_path = FigshareArticlePath(path)
         yield from self.make_request(
             'DELETE',
-            self.build_url('articles', self.article_id, 'files', figshare_path.file_id),
+            self.build_url('articles', str(self.article_id), 'files', str(path.identifier)),
             expects=(200, ),
             throws=exceptions.DeleteError,
         )
