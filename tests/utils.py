@@ -45,7 +45,7 @@ class MockProvider1(provider.BaseProvider):
         return {}
 
     @asyncio.coroutine
-    def download(self, path):
+    def download(self, path, **kwargs):
         return b''
 
 class MockProvider2(MockProvider1):
