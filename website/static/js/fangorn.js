@@ -279,10 +279,9 @@ function _fangornUploadProgress(treebeard, file, progress) {
             item = child;
         }
     }
-
     templateWithCancel = m('span', [
+        cancelUploadTemplate.call(treebeard, item),
         m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
-        cancelUploadTemplate.call(treebeard, item)
     ]);
     templateWithoutCancel = m('span', [
         m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
@@ -839,7 +838,7 @@ function _fangornResolveRows(item) {
         {
             data : '',  // Data field name
             css : 't-a-c',
-            custom : function(){ return m('span.text-muted', [m('span', ' Uploading:' + item.data.name), m('span', cancelUploadTemplate.call(this, item))]); }
+            custom : function(){ return m('span.text-muted', [m('span', cancelUploadTemplate.call(this, item)), m('span', item.data.name.slice(0,25) + '... : ' + 'Upload pending.')]); }
         },
         {
             data : '',  // Data field name
