@@ -38,6 +38,26 @@ class TestPath:
         assert WaterButlerPath('/this/is/file').is_dir is False
         assert WaterButlerPath('/this/is/file').is_file is True
 
+    def test_is_root(self):
+        assert WaterButlerPath('/').is_root is True
+        assert WaterButlerPath('/this/is/folder/').is_root is False
+
+    def test_child(self):
+        path = WaterButlerPath('/this/is/a/long/')
+
+        assert path.name == 'long'
+        assert path.child('path').name == 'path'
+
+    def test_rename(self):
+        path = WaterButlerPath('/this/is/a/long/path')
+
+        assert path.name == 'path'
+
+        path.rename('journey')
+
+        assert path.name == 'journey'
+
+
 class TestValidation:
 
     def test_double_slash_is_invalid(self):
@@ -55,4 +75,3 @@ class TestValidation:
     def test_cant_have_dotdot(self):
         with pytest.raises(exceptions.InvalidPathError):
             WaterButlerPath('/etc/nginx/../')
-
