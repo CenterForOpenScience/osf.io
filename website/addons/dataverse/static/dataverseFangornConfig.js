@@ -156,6 +156,17 @@ var _dataverseItemButtons = {
                     }, 'Delete')
                 );
             }
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile(item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
+
+            }
         }
         return m('span', buttons);
     }
