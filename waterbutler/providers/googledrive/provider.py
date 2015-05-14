@@ -158,8 +158,7 @@ class GoogleDriveProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         if not path.identifier:
-            # TODO Implement path not found error
-            raise exceptions.MetadataError('{} not found', code=404)
+            raise exceptions.NotFoundError(str(path))
 
         yield from self.make_request(
             'DELETE',
