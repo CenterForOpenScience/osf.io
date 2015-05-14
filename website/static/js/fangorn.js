@@ -102,9 +102,6 @@ var cancelUploadTemplate = function(row){
             }},
         m('.fa.fa-times-circle.text-danger', {
             style : 'display:block;font-size:18px; margin-top: -4px;',
-            'data-toggle': 'tooltip',
-            'data-placement' : 'bottom',
-            'title':  'Cancel upload'
         }, '')
     );
 };
