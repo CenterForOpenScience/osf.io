@@ -4,7 +4,7 @@ var m = require('mithril');
 function FileViewTreebeard(data) {
 
     // Set item.branch to show the branch of the rendered GitHub file instead of the default branch
-    var addonRootFolders = data['data'][0].children;
+    var addonRootFolders = data.data[0].children;
 
     if (window.contextVars.file.provider === 'github') {
         for (var i = 0; i < addonRootFolders.length; i++) {
@@ -22,10 +22,13 @@ function FileViewTreebeard(data) {
         showFilter: false,
         title: undefined,
         hideColumnTitles: true,
+        multiselect : false,
+        placement : 'fileview',
+        allowMove : false,
         filterTemplate: function () {
             var tb = this;
-            return m("input.pull-left.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
-                style: "width:100%;display:inline;",
+            return m('input.pull-left.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+                style: 'width:100%;display:inline;',
                 onkeyup: tb.filter,
                 value: tb.filterText()
             });
@@ -34,18 +37,24 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
             $('.osf-panel-header.osf-panel-header-flex').show();
+            tb.select('.tb-header-row').hide();
+
         },
         ondataload: function () {
             var tb = this;
+            var path = '';
             tb.fangornFolderIndex = 0;
+            tb.fangornFolderArray = [''];
             if (window.contextVars.file.path && window.contextVars.file.provider !== 'figshare') {
-                window.contextVars.file.path = decodeURIComponent(window.contextVars.file.path);
-                tb.fangornFolderArray = window.contextVars.file.path.split("/");
+                if (window.contextVars.file.provider === 'osfstorage' || window.contextVars.file.provider === 'box') {
+                    path = decodeURIComponent(window.contextVars.file.extra.fullPath);
+                } else {
+                    path = decodeURIComponent(window.contextVars.file.path);
+                }
+                tb.fangornFolderArray = path.split('/');
                 if (tb.fangornFolderArray.length > 1) {
                     tb.fangornFolderArray.splice(0, 1);
                 }
-            } else {
-                tb.fangornFolderArray = [''];
             }
             m.render($('#filesSearch').get(0), tb.options.filterTemplate.call(tb));
         },
@@ -74,8 +83,10 @@ function FileViewTreebeard(data) {
             var tb = this;
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-                selectClass = 'fangorn-hover';
+                selectClass = 'fangorn-selected';
             }
+
+            item.icons = []; // In this view there won't be toolbar items.
 
             var defaultColumns = [
                 {

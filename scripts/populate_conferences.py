@@ -92,7 +92,7 @@ MEETING_DATA = {
     'spsp2015': {
         'name': 'Society for Personality and Social Psychology 2015',
         'info_url': None,
-        'logo_url': 'http://spspmeeting.org/CMSPages/SPSPimages/spsp2015banner.jpg',
+        'logo_url': None,
         'active': True,
         'admins': [
             'meetings@spsp.org',
@@ -244,6 +244,22 @@ MEETING_DATA = {
         'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2015',
         'info_url': 'http://madssci.abrf.org',
         'logo_url': 'http://s24.postimg.org/qtc3baefp/2015madssci_seasr.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'NRAO2015': {
+        'name': 'National Radio Astronomy Observatory Accretion 2015',
+        'info_url': 'https://science.nrao.edu/science/meetings/2015/accretion2015/posters',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+     'ARCS2015': {
+        'name': 'Advancing Research Communication and Scholarship 2015',
+        'info_url': 'http://commons.pacificu.edu/arcs/',
+        'logo_url': 'http://commons.pacificu.edu/assets/md5images/4dfd167454e9f4745360a9550e189323.png',
         'active': True,
         'admins': [],
         'public_projects': True,
