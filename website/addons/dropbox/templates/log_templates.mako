@@ -7,7 +7,7 @@ Dropbox in
 
 <script type="text/html" id="dropbox_folder_created">
 created folder
-<span class="overflow log-folder">{{ params.path.replace(/^\//, '') }}</span> in
+<span class="overflow log-folder">{{ stripLeadingSlash(params.path) }}</span> in
 Dropbox in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -21,7 +21,7 @@ Dropbox in
 
 
 <script type="text/html" id="dropbox_file_removed">
-removed {{ params.path.match(/\/$/) ? 'folder' : 'file' }} <span class="overflow">{{ params.path }}</span> from
+removed {{ typeToRemove(params.path) }} <span class="overflow">{{ params.path }}</span> from
 Dropbox in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

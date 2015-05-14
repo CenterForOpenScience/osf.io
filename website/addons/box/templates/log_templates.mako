@@ -1,7 +1,7 @@
 <script type="text/html" id="box_file_added">
 added file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ params.fullPath.replace(/^\//, '') }}</a> to
+    {{ stripLeadingSlash(params.fullPath) }}</a> to
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -16,15 +16,15 @@ Box in
 <script type="text/html" id="box_file_updated">
 updated file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ params.fullPath.replace(/^\//, '') }}</a> to
+    {{ stripLeadingSlash(params.fullPath) }}</a> to
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 
 <script type="text/html" id="box_file_removed">
-removed {{ params.path.match(/\/$/) ? 'folder' : 'file' }} <span class="overflow">
-    {{ params.name.replace(/^\//, '') }}</span> from
+removed {{ typeToRemove(params.path) }} <span class="overflow">
+    {{ stripLeadingSlash(params.name) }}</span> from
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
