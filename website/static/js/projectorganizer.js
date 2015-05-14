@@ -251,6 +251,9 @@ function _poResolveRows(item) {
     if (item.data.permissions) {
         draggable = item.data.permissions.movable || item.data.permissions.copyable;
     }
+    if(this.isMultiselected(item.id)){
+        item.css = 'fangorn-selected';
+    }
     if (draggable) {
         css = 'po-draggable';
     }
