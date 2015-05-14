@@ -16,11 +16,15 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_retractions = models.Retraction.find(Q('state', 'eq', 'pending'))
+    pending_retractions = models.Retraction.find(Q('state', 'eq', models.Retraction.PENDING))
     for retraction in pending_retractions:
         if should_be_retracted(retraction):
-            retraction.state = 'retracted'
-            retraction.save()
+            if dry_run:
+                logger.warn('Dry run mode')
+            logger.warn('Retracting registration {0}'.format(retraction._id))
+            if not dry_run:
+                retraction.state = models.Retraction.RETRACTED
+                retraction.save()
 
 
 def should_be_retracted(retraction):

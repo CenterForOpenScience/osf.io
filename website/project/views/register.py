@@ -86,7 +86,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
 
     data = request.get_json()
     try:
-        node.retract_registration(auth.user, data['justification'])
+        node.retract_registration(auth.user, data.get('justification', None))
         node.save()
     except ValidationValueError:
         raise HTTPError(http.BAD_REQUEST)

@@ -2544,7 +2544,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'is_registration': self.is_registration,
         }
 
-    def _initiate_retraction(self, user, justification=None):
+    def _initiate_retraction(self, user, justification=None, save=True):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
@@ -2554,7 +2554,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.initiated_by = user
         if justification:
             retraction.justification = justification
-        retraction.state = 'pending'
+        retraction.state = Retraction.PENDING
 
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
 
@@ -2568,6 +2568,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             }
 
         retraction.approval_state = approval_state
+        # Retraction record needs to be saved to ensure the forward reference Node->Retraction
+        if save:
+            retraction.save()
         return retraction
 
     def retract_registration(self, user, justification=None):
@@ -2578,9 +2581,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_public or not self.is_registration:
             raise NodeStateError('Cannot retract private node or non-registration')
 
-        retraction = self._initiate_retraction(user, justification)
-        # Retraction record needs to be saved to ensure the forward reference Node->Retraction
-        retraction.save()
+        retraction = self._initiate_retraction(user, justification, save=True)
         self.retraction = retraction
 
     def _is_embargo_date_valid(self, end_date):
@@ -2741,7 +2742,7 @@ class PrivateLink(StoredObject):
 
 
 def validate_retraction_state(value):
-    acceptable_states = ['pending', 'retracted', 'cancelled']
+    acceptable_states = [Retraction.PENDING, Retraction.RETRACTED, Retraction.CANCELLED]
     if value not in acceptable_states:
         raise ValidationValueError
 
@@ -2750,6 +2751,10 @@ def validate_retraction_state(value):
 
 class Retraction(StoredObject):
     """Retraction object for public registrations."""
+
+    PENDING = 'pending'
+    RETRACTED = 'retracted'
+    CANCELLED = 'cancelled'
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
@@ -2768,18 +2773,18 @@ class Retraction(StoredObject):
 
     @property
     def is_retracted(self):
-        return self.state == 'retracted'
+        return self.state == self.RETRACTED
 
     @property
     def pending_retraction(self):
-        return self.state == 'pending'
+        return self.state == self.PENDING
 
     def disapprove_retraction(self, user, token):
         """Cancels retraction if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
                 raise InvalidRetractionDisapprovalToken
-            self.state = 'cancelled'
+            self.state = self.CANCELLED
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
 
@@ -2792,11 +2797,11 @@ class Retraction(StoredObject):
             num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
 
             if num_of_approvals == len(self.approval_state.keys()):
-                self.state = 'retracted'
+                self.state = self.RETRACTED
                 # Remove any embargoes associated with the registration
                 parent_registration = Node.find_one(Q('retraction', 'eq', self))
                 if parent_registration.is_embargoed or parent_registration.pending_embargo:
-                    parent_registration.embargo.state = 'cancelled'
+                    parent_registration.embargo.state = self.CANCELLED
                     parent_registration.embargo.save()
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
