@@ -3,7 +3,6 @@ import datetime
 import mock
 import pytz
 from babel import dates, Locale
-from jsonschema import validate
 from schema import Schema, And, Use, Optional, Or
 
 from mako.lookup import Template
@@ -31,6 +30,8 @@ from website.util import web_url_for
 from tests import factories
 from tests.base import capture_signals
 from tests.base import OsfTestCase
+
+from pprint import pprint
 
 
 class TestNotificationsModels(OsfTestCase):
@@ -308,25 +309,10 @@ def subscription_schema(project, structure, level=0):
     :param structure: list of nodes (another list) and events
     :return: schema
     """
-    event_schema = {
-        'event': {
-            'title': And(Use(str, error="event_title{} not a string".format(level)),
-                         Use(lambda s: s in constants.NOTIFICATION_TYPES,
-                             error="event_title{} not in list".format(level))),
-            'description': And(Use(str, error="event_desc{} not a string".format(level)),
-                               Use(lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
-                                   error="event_desc{} not in list".format(level))),
-            'notificationType': And(str, Or('adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)),
-            'parent_notification_type': Or(None, And(str, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES))
-        },
-        'kind': 'event',
-        'children': And(list, lambda l: len(l) == 0)
-    }
-
     sub_list = []
     for item in list_or_dict(structure):
         sub_list.append(subscription_schema(project, item, level=level+1))
-    sub_list.append(event_schema)
+    sub_list.append(event_schema(level))
 
     node_schema = {
         'node': {
@@ -340,6 +326,23 @@ def subscription_schema(project, structure, level=0):
     if level == 0:
         return Schema([node_schema])
     return node_schema
+
+
+def event_schema(level=None):
+    return {
+        'event': {
+            'title': And(Use(str, error="event_title{} not a string".format(level)),
+                         Use(lambda s: s in constants.NOTIFICATION_TYPES,
+                             error="event_title{} not in list".format(level))),
+            'description': And(Use(str, error="event_desc{} not a string".format(level)),
+                               Use(lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
+                                   error="event_desc{} not in list".format(level))),
+            'notificationType': And(str, Or('adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)),
+            'parent_notification_type': Or(None, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)
+        },
+        'kind': 'event',
+        'children': And(list, lambda l: len(l) == 0)
+    }
 
 
 class TestNotificationUtils(OsfTestCase):
@@ -477,55 +480,6 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_format_data_project_settings(self):
         data = utils.format_data(self.user, [self.project._id])
-        expected = [
-            {
-                'node': {
-                    'id': self.project._id,
-                    'title': self.project.title,
-                    'url': self.project.url,
-                },
-                'kind': 'folder',
-                'children': [
-                    {
-                        'event': {
-                            'title': 'comments',
-                            'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                            'notificationType': 'email_transactional',
-                            'parent_notification_type': None
-                        },
-
-                        'kind': 'event',
-                        'children': []
-                    },
-                    {
-                        'node': {
-                            'id': self.node._id,
-                            'title': self.node.title,
-                            'url': self.node.url,
-                        },
-
-                        'kind': 'node',
-                        'children': [
-                            {
-                                'event': {
-                                    'title': 'comments',
-                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                                    'notificationType': 'email_transactional',
-                                    'parent_notification_type': 'email_transactional'
-                                },
-                                'kind': 'event',
-                                'children': [],
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
-        expected_new = [['event'], 'event']
-        schema = subscription_schema(self.project, expected_new)
-        print schema
-        print schema.validate(expected)
-
         parent_event = {
             'event': {
                 'title': 'comments',
@@ -546,33 +500,27 @@ class TestNotificationUtils(OsfTestCase):
             'kind': 'event',
             'children': []
         }
+        expected_new = [['event'], 'event']
+        schema = subscription_schema(self.project, expected_new)
+        assert schema.validate(data)
         assert has(data, parent_event)
         assert has(data, child_event)
 
     def test_format_data_node_settings(self):
         data = utils.format_data(self.user, [self.node._id])
-        expected = [{
-            'node': {
-                'id': self.node._id,
-                'title': self.node.title,
-                'url': self.node.url,
+        event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': 'email_transactional'
             },
-            'kind': 'node',
-            'children': [
-                {
-                    'event': {
-                        'title': 'comments',
-                        'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                        'notificationType': 'email_transactional',
-                        'parent_notification_type': 'email_transactional'
-                    },
-                    'kind': 'event',
-                    'children': []
-                }
-            ]
-        }]
-
-        assert_equal(data, expected)
+            'kind': 'event',
+            'children': []
+        }
+        schema = subscription_schema(self.project, ['event'])
+        assert schema.validate(data)
+        assert has(data, event)
 
     def test_format_includes_admin_view_only_component_subscriptions(self):
         """ Test private components in which parent project admins are not contributors still appear in their
@@ -580,72 +528,19 @@ class TestNotificationUtils(OsfTestCase):
         """
         node = factories.NodeFactory(parent=self.project)
         data = utils.format_data(self.user, [self.project._id])
-        expected = [
-            {
-                'node': {
-                    'id': self.project._id,
-                    'title': self.project.title,
-                    'url': self.project.url,
-                },
-                'kind': 'folder',
-                'children': [
-                    {
-                        'event': {
-                            'title': 'comments',
-                            'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                            'notificationType': 'email_transactional',
-                            'parent_notification_type': None
-                        },
-                        'kind': 'event',
-                        'children': []
-                    },
-                    {
-                        'node': {
-                            'id': self.node._id,
-                            'title': self.node.title,
-                            'url': self.node.url,
-                        },
-
-                        'kind': 'node',
-                        'children': [
-                            {
-                                'event': {
-                                    'title': 'comments',
-                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                                    'notificationType': 'email_transactional',
-                                    'parent_notification_type': 'email_transactional'
-                                },
-                                'kind': 'event',
-                                'children': [],
-                            }
-                        ]
-                    },
-                    {
-                        'node': {
-                            'id': node._id,
-                            'title': node.title,
-                            'url': node.url,
-                        },
-
-                        'kind': 'node',
-                        'children': [
-                            {
-                                'event': {
-                                    'title': 'comments',
-                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                                    'notificationType': 'adopt_parent',
-                                    'parent_notification_type': 'email_transactional'
-                                },
-                                'kind': 'event',
-                                'children': [],
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
-
-        assert_equal(data, expected)
+        event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'adopt_parent',
+                'parent_notification_type': 'email_transactional'
+            },
+            'kind': 'event',
+            'children': [],
+        }
+        schema = subscription_schema(self.project, ['event', ['event'], ['event']])
+        assert schema.validate(data)
+        assert has(data, event)
 
     def test_format_data_excludes_pointers(self):
         project = factories.ProjectFactory()
@@ -661,27 +556,19 @@ class TestNotificationUtils(OsfTestCase):
         project.save()
         configured_project_ids = utils.get_configured_projects(project.creator)
         data = utils.format_data(project.creator, configured_project_ids)
-        expected = [{
-            'node': {
-                'id': project._id,
-                'title': project.title,
-                'url': project.url,
+        event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
             },
-            'kind': 'folder',
-            'children': [
-                {
-                    'event': {
-                        'title': 'comments',
-                        'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                        'notificationType': 'email_transactional',
-                        'parent_notification_type': None
-                    },
-                    'kind': 'event',
-                    'children': [],
-                }
-            ]
-        }]
-        assert_equal(data, expected)
+            'kind': 'event',
+            'children': [],
+        }
+        schema = subscription_schema(self.project, ['event'])
+        assert schema.validate(data)
+        assert has(data, event)
 
     def test_format_data_user_subscriptions_includes_private_parent_if_configured_children(self):
         private_project = factories.ProjectFactory()
@@ -695,43 +582,22 @@ class TestNotificationUtils(OsfTestCase):
         node_subscription.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
         data = utils.format_data(node.creator, configured_project_ids)
-        expected = [
-            {
-                'node': {
-                    'id': private_project._id,
-                    'title': 'Private Project',
-                    'url': '',
-                },
-                'kind': 'folder',
-                'children': [
-                    {
-                        'node': {
-                            'id': node._id,
-                            'title': node.title,
-                            'url': node.url,
-                        },
-
-                        'kind': 'folder',
-                        'children': [
-                            {
-                                'event': {
-                                    'title': 'comments',
-                                    'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
-                                    'notificationType': 'email_transactional',
-                                    'parent_notification_type': None
-                                },
-                                'kind': 'event',
-                                'children': [],
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
-        assert_equal(data, expected)
+        event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
+            },
+            'kind': 'event',
+            'children': [],
+        }
+        schema = subscription_schema(self.project, ['event', ['event']])
+        assert schema.validate(data)
+        assert has(data, event)
 
     def test_format_user_subscriptions(self):
-        data = utils.format_user_subscriptions(self.user, [])
+        data = utils.format_user_subscriptions(self.user)
         expected = [{
             'event': {
                 'title': 'comment_replies',
@@ -753,7 +619,7 @@ class TestNotificationUtils(OsfTestCase):
                     'title': 'User Notifications'
             },
                 'kind': 'heading',
-                'children': utils.format_user_subscriptions(self.user, [])
+                'children': utils.format_user_subscriptions(self.user)
             },
             {
                 'node': {
@@ -943,7 +809,6 @@ class TestSendEmails(OsfTestCase):
         user = factories.UserFactory()
         time_now = datetime.datetime.utcnow()
         sent_subscribers = emails.notify(self.project._id, 'comments', user=self.project.creator, node=self.project, timestamp=time_now,  target_user=self.project.creator)
-        # mock_send.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comment_replies', self.project.creator, self.project, time_now, target_user=self.project.creator)
         assert_false(mock_send.called)
         assert_false(mock_send_mail.called)
 
@@ -982,6 +847,22 @@ class TestSendEmails(OsfTestCase):
         node5 = factories.NodeFactory(parent=node4)
         subs = emails.compile_subscriptions(node5, 'comments')
         assert_equal(subs, {'email_transactional': [self.project.creator._id], 'email_digest': [], 'none': []})
+
+    def test_compile_subscriptions_deep_precedence(self):
+        node2 = factories.NodeFactory(parent=self.node)
+        node3 = factories.NodeFactory(parent=node2)
+        node4 = factories.NodeFactory(parent=node3)
+        node4_subscription = factories.NotificationSubscriptionFactory(
+            _id=node4._id + '_comments',
+            owner=node4,
+            event_name='comments'
+        )
+        node4_subscription.save()
+        node4_subscription.email_digest.append(self.project.creator)
+        node4_subscription.save()
+        node5 = factories.NodeFactory(parent=node4)
+        subs = emails.compile_subscriptions(node5, 'comments')
+        assert_equal(subs, {'email_transactional': [], 'email_digest': [self.project.creator._id], 'none': []})
 
     @mock.patch('website.project.views.comment.notify')
     def test_check_user_comment_reply_subscription_if_email_not_sent_to_target_user(self, mock_notify):

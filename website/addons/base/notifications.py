@@ -14,7 +14,10 @@ def file_notify(user, node, event, metadata, provider):
         message = 'deleted <strong>"{}"</strong>.'.format(path)  # only has path
         f_url.path = node.web_url_for('collect_file_trees')
     else:
-        name = metadata['name']
+        try:
+            name = metadata['name']
+        except KeyError:
+            name = path
         f_url.path = node.web_url_for('addon_view_or_download_file', path=path, provider=provider)
         if event == 'create':
             message = 'uploaded file <strong>"{}"</strong>.'.format(name)
