@@ -1309,7 +1309,7 @@ var POToolbar = {
                 className : 'text-info'
             }, '')
         );
-        if(ctrl.items().length > 0){
+        if(ctrl.items().length > 1){
             var someItemsAreFolders = false;
             var pointerIds = [];
             var theParentNode = ctrl.items()[0].parent();
