@@ -14,12 +14,23 @@ from website.project import signals as project_signals
 
 @project_signals.after_create_registration.connect
 def archive_node(src, dst, user):
+    """Blinker listener for registration initiations. Enqueqes an archive task
+
+    :param src: Node being registered
+    :param dst: registration Node
+    :param user: registration initiator
+    """
     link_archive_provider(dst, user)
     enqueue_task(archive.si(src._id, dst._id, user._id))
 
 
 @project_signals.archive_callback.connect
 def archive_callback(dst):
+    """Blinker listener for updates to the archive task. When no tasks are
+    pending, either fail the registration or send a success email
+
+    :param dst: registration Node
+    """
     if not dst.archiving:
         return
     pending = {key: value for key, value in dst.archived_providers.iteritems() if value['status'] in (ARCHIVER_PENDING, ARCHIVER_CHECKING)}
