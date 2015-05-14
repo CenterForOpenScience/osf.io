@@ -104,6 +104,8 @@ text-align: center;
 }
 .tb-notify {
 	white-space: nowrap;
+    height: 30px;
+    padding-top: 4px;
 }
 
 .tb-expand-icon-holder {
