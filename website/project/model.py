@@ -2793,18 +2793,17 @@ class Retraction(StoredObject):
         try:
             if self.approval_state[user._id]['approval_token'] != token:
                 raise InvalidRetractionApprovalToken
-            self.approval_state[user._id]['has_approved'] = True
-            num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
-
-            if num_of_approvals == len(self.approval_state.keys()):
-                self.state = self.RETRACTED
-                # Remove any embargoes associated with the registration
-                parent_registration = Node.find_one(Q('retraction', 'eq', self))
-                if parent_registration.is_embargoed or parent_registration.pending_embargo:
-                    parent_registration.embargo.state = self.CANCELLED
-                    parent_registration.embargo.save()
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
+        self.approval_state[user._id]['has_approved'] = True
+
+        if all(val['has_approved'] for val in self.approval_state.values()):
+            self.state = self.RETRACTED
+            # Remove any embargoes associated with the registration
+            parent_registration = Node.find_one(Q('retraction', 'eq', self))
+            if parent_registration.is_embargoed or parent_registration.pending_embargo:
+                parent_registration.embargo.state = self.CANCELLED
+                parent_registration.embargo.save()
 
 
 def validate_embargo_state(value):
