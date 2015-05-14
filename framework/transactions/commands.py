@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
 from framework.mongo import database as proxy_database
+from website import settings as osfsettings
+
+logger = logging.getLogger(__name__)
 
 
 def begin(database=None):
@@ -24,4 +28,8 @@ def show_live(database=None):
 
 def disconnect(database=None):
     database = database or proxy_database
-    database.logout()
+    try:
+        database.connection.close()
+    except AttributeError:
+        if not osfsettings.DEBUG_MODE:
+            logger.error('MongoDB client not attached to request.')
