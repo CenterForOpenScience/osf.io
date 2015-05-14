@@ -155,7 +155,7 @@ class FigshareProjectProvider(BaseFigshareProvider):
     @asyncio.coroutine
     def download(self, path, **kwargs):
         provider = yield from self._make_article_provider(path.parts[1].identifier)
-        return (yield from provider.download(path.identifier, **kwargs))
+        return (yield from provider.download(path, **kwargs))
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
@@ -331,7 +331,7 @@ class FigshareArticleProvider(BaseFigshareProvider):
     def metadata(self, path, **kwargs):
         article_json = yield from self._get_article_json()
 
-        if path.is_root or path.identifier == int(self.article_id):
+        if path.is_root or str(path.identifier) == self.article_id:
             return [x for x in [
                 self._serialize_item(item, parent=article_json)
                 for item in article_json['files']
