@@ -236,7 +236,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.CreateFolderError,
         )
 
-        return GoogleDriveFolderMetadata((yield from resp.json()), path.parent).serialized()
+        return GoogleDriveFolderMetadata((yield from resp.json()), path).serialized()
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
