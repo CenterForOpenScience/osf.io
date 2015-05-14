@@ -341,9 +341,6 @@ function _poResolveIcon(item) {
             iconType += ' po-icon';
         }
         var template = m('span', { 'class' : iconType});
-        if (viewLink) {
-            return m('a', { href : viewLink}, template);
-        }
         return template;
     }
     if (item.data.isSmartFolder) {
