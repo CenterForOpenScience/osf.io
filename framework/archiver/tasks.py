@@ -40,20 +40,19 @@ if settings.SENTRY_DSN:
     raven_handler = SentryHandler(raven_client)
     setup_logging(raven_handler)
 
-def stat_file_tree(src_addon, fileobj_metadata, user, cookie=None):
+def stat_file_tree(addon_short_name, fileobj_metadata, user):
     """Traverse the addon's file tree and collect metadata in AggregateStatResult
 
     :param src_addon: AddonNodeSettings instance of addon being examined
     :param fileobj_metadata: file or folder metadata of current point of reference
     in file tree
     :param user: archive initatior
-    :param cookie: optional user cookie to pass to WaterButler API
     :return: top-most recursive call returns AggregateStatResult containing addon file tree metadata
     """
     is_file = fileobj_metadata['kind'] == 'file'
     disk_usage = fileobj_metadata.get('size')
     if is_file:
-        if not disk_usage and not src_addon.config.short_name == 'osfstorage':
+        if not disk_usage and not addon_short_name.config.short_name == 'osfstorage':
             disk_usage = 0  # float('inf')  # trigger failure
         result = StatResult(
             target_name=fileobj_metadata['name'],
@@ -63,11 +62,10 @@ def stat_file_tree(src_addon, fileobj_metadata, user, cookie=None):
         )
         return result
     else:
-        cookie = user.get_or_create_cookie()
         return AggregateStatResult(
             target_id=fileobj_metadata['path'].lstrip('/'),
             target_name=fileobj_metadata['name'],
-            targets=[stat_file_tree(src_addon, child, user, cookie=cookie) for child in fileobj_metadata.get('children', [])],
+            targets=[stat_file_tree(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
             meta=fileobj_metadata,
         )
 
@@ -93,7 +91,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     result = AggregateStatResult(
         src_addon._id,
         src_addon.config.short_name,
-        targets=[stat_file_tree(src_addon, file_tree, user)],
+        targets=[stat_file_tree(addon_short_name, file_tree, user)],
     )
     return result
 
@@ -162,7 +160,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     src_provider = src.get_addon(addon_short_name)
     parent_name = "Archive of {addon}".format(addon=src_provider.config.full_name)
     if hasattr(src_provider, 'folder'):
-        parent_name = parent_name + " (folder)".format(folder=src_provider.folder)
+        parent_name = parent_name + " ({folder})".format(folder=src_provider.folder)
     provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
     data = dict(
@@ -176,7 +174,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
             cookie=cookie,
             nid=dst_pk,
             provider=ARCHIVE_PROVIDER,
-            path="/",
+            path='/',
         ),
         rename=parent_name
     )
