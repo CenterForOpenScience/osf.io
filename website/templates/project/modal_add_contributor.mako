@@ -168,7 +168,7 @@
                                         <td>
                                             <select class="form-control" data-bind="
                                                 options: $root.permissionList,
-                                                value: curPermission,
+                                                value: permission,
                                                 optionsText: 'text'">
                                             </select>
                                         </td>
