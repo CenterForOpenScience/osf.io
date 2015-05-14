@@ -234,6 +234,20 @@ function _fangornLazyLoadOnLoad (tree, event) {
     }
 }
 
+function gotoFile (item) {
+    var tb = this;
+    var fileurl = new URI(item.data.nodeUrl)
+        .segment('files')
+        .segment(item.data.provider)
+        .segment(item.data.path.substring(1))
+        .search({branch: item.data.branch})
+        .toString();
+    if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+        window.open(fileurl, '_blank');
+    } else {
+        window.open(fileurl, '_self');
+    }
+}
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     if (item.data.addonFullname) {
@@ -246,18 +260,7 @@ function _fangornGithubTitle(item, col)  {
             return m('span',[
                 m('github-name.fg-file-links', {
                     onclick: function() {
-                        var redir = new URI(item.data.nodeUrl);
-                        var fileurl = new URI(item.data.nodeUrl)
-                            .segment('files')
-                            .segment(item.data.provider)
-                            .segment(item.data.path.substring(1))
-                            .search({branch: item.data.branch})
-                            .toString();
-                            if(commandKeys.indexOf(tb.pressedKey) !== -1) {
-                                window.open(fileurl, '_blank');
-                            } else {
-                                window.open(fileurl, '_self');
-                            }
+                        gotoFile.call(tb, item);
                     }
                 }, item.data.name)]);
         } else {
