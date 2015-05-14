@@ -93,11 +93,20 @@ function cancelUploads (row) {
 var cancelUploadTemplate = function(row){
     var treebeard = this;
     return m('.btn.m-l-sm.text-muted', {
+            config : function() {
+                reapplyTooltips();
+            },
             'onclick' : function (e) {
                 e.stopImmediatePropagation();
                 cancelUploads.call(treebeard, row);
             }},
-        m('.fa.fa-times-circle.text-warning', { style : 'display:block;font-size:18px'}, m('span', { style : 'font-size: 14px;'}, ' Cancel')));
+        m('.fa.fa-times-circle.text-warning', {
+            style : 'display:block;font-size:18px; margin-top: -4px;',
+            'data-toggle': 'tooltip',
+            'data-placement' : 'bottom',
+            'title':  'Cancel upload'
+        }, '')
+    );
 };
 
 /**
@@ -268,8 +277,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     var item,
         child,
-        templateWithCancel;
-
+        templateWithCancel,
+        templateWithoutCancel;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -279,17 +288,17 @@ function _fangornUploadProgress(treebeard, file, progress) {
             item = child;
         }
     }
-
     templateWithCancel = m('span', [
+        cancelUploadTemplate.call(treebeard, item),
         m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
-        cancelUploadTemplate.call(treebeard, item)
     ]);
-
-
+    templateWithoutCancel = m('span', [
+        m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
+    ]);
     if (progress < 100) {
         item.notify.update(templateWithCancel, 'success', null, 0);
     } else {
-        item.notify.update(templateWithCancel, 'success', null, 2000);
+        item.notify.update(templateWithoutCancel, 'success', null, 2000);
     }
 }
 
@@ -609,7 +618,7 @@ function _removeEvent (event, items, col) {
         if (folder.data.permissions.edit) {
                 var mithrilContent = m('div', [
                         m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
-                        m('p', 'This action is irreversible.')
+                        m('p.text-danger', 'ALL contents of this folder will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
@@ -660,7 +669,7 @@ function _removeEvent (event, items, col) {
                 deleteList.push(item);
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
-                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'));
+                deleteMessage.push(m('p.text-danger', 'Some items in this list are folders. This will delete ALL of their content.'));
             }
         });
         // If all items can be deleted
@@ -838,7 +847,7 @@ function _fangornResolveRows(item) {
         {
             data : '',  // Data field name
             css : 't-a-c',
-            custom : function(){ return m('span.text-muted', [m('span', ' Uploading:' + item.data.name), m('span', cancelUploadTemplate.call(this, item))]); }
+            custom : function(){ return m('span.text-muted', [m('span', cancelUploadTemplate.call(this, item)), m('span', item.data.name.slice(0,25) + '... : ' + 'Upload pending.')]); }
         },
         {
             data : '',  // Data field name
@@ -1224,7 +1233,7 @@ var FGToolbar = {
                     tooltip: 'Cancel currently pending uploads.',
                     icon: 'fa fa-time-circle',
                     className : 'text-warning'
-                }, 'Cancel All Uploads')
+                }, 'Cancel Pending Uploads')
             );
         }
         //multiple selection icons
@@ -1256,7 +1265,7 @@ var FGToolbar = {
                         m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
-                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and double click a file name to open it in a new tab.')]),
                     ]);
                     var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { ctrl.tb.modal.dismiss(); } }, 'Close'),
