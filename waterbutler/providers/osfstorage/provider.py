@@ -333,7 +333,7 @@ class OSFStorageProvider(provider.BaseProvider):
         )
 
         return OsfStorageFolderMetadata(
-            (yield from resp.json()),
+            (yield from resp.json())['data'],
             str(path)
         ).serialized()
 
