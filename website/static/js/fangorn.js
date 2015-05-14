@@ -1233,7 +1233,7 @@ var FGToolbar = {
                     tooltip: 'Cancel currently pending uploads.',
                     icon: 'fa fa-time-circle',
                     className : 'text-warning'
-                }, 'Cancel All Uploads')
+                }, 'Cancel Pending Uploads')
             );
         }
         //multiple selection icons
