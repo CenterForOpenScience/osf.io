@@ -1154,7 +1154,6 @@ var FGItemButtons = {
                         icon: 'fa fa-external-link',
                         className : 'text-info'
                     }, 'View'));
-
             }
         }
         return m('span', rowButtons);
@@ -1736,7 +1735,8 @@ Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
-    createFolder: _createFolder
+    createFolder: _createFolder,
+    _gotoFileEvent : gotoFileEvent
 };
 
 Fangorn.DefaultColumns = {
