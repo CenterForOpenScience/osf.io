@@ -2759,7 +2759,7 @@ class Retraction(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    initiated_by = fields.ForeignField('user', backref='retracted_by')
+    initiated_by = fields.ForeignField('user', backref='retracted')
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
     #   'b3k97': {

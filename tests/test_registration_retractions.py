@@ -38,6 +38,13 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         assert_true(self.registration.is_public)
 
+    # Backref tests
+    def test_retraction_initiator_has_backref(self):
+        self.registration.retract_registration(self.user, self.valid_justification)
+        self.registration.save()
+        self.registration.reload()
+        assert_equal(len(self.user.retraction__retracted), 1)
+
     # Node#retract_registration tests
     def test_pending_retract(self):
         self.registration.retract_registration(self.user, self.valid_justification)
