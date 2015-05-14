@@ -78,22 +78,32 @@ class ContributorSerializer(UserSerializer):
 class OAuth2AppSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
 
-    # TODO: Implement validators, eg https://docs.djangoproject.com/en/1.8/ref/validators/#urlvalidator
+    #id = ser.CharField(read_only=True, source='_id')
 
-    id = ser.CharField(read_only=True, source='_id')
+    client_id = ser.CharField(help_text="The client ID for this application (automatically generated)",
+                              read_only=True)
+    client_secret = ser.CharField(help_text="The client secret for this application (automatically generated)",
+                                  read_only=True)  # TODO: May change this later
 
-    client_id = ser.CharField(read_only=True)
-    client_secret = ser.CharField(read_only=True)  # TODO: May change this later
+    owner = ser.CharField(help_text="The id of the user who owns this application",
+                          required=True, source='owner._id',
+                          validators=[user_validator]) # TODO: Make readonly??
 
-    owner = ser.CharField(required=True, source='owner._id', validators=[user_validator])
+    name = ser.CharField(help_text="A short, descriptive name for this application",
+                         required=True)
+    description = ser.CharField(help_text="An optional description displayed to all users of this application",
+                                required=False,
+                                allow_blank=True)
 
-    name = ser.CharField(required=True)
-    description = ser.CharField(required=False, allow_blank=True)
+    reg_date = ser.DateTimeField(help_text="The date this application was generated (automatically filled in)",
+                                 read_only=True)
 
-    reg_date = ser.DateTimeField(read_only=True)
-
-    home_url = ser.CharField(required=True, validators=[URLValidator()])
-    callback_url = ser.CharField(required=True, validators=[URLValidator()])
+    home_url = ser.CharField(help_text="The full URL to this application's homepage.",
+                             required=True,
+                             validators=[URLValidator()])
+    callback_url = ser.CharField(help_text="The callback URL for this application (refer to OAuth documentation)",
+                                 required=True,
+                                 validators=[URLValidator()])
 
     def to_internal_value(self, data):
         """
