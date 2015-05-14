@@ -618,7 +618,7 @@ function _removeEvent (event, items, col) {
         if (folder.data.permissions.edit) {
                 var mithrilContent = m('div', [
                         m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
-                        m('p.text-danger', 'ALL contents of this folder will be deleted. This action is irreversible.')
+                        m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
