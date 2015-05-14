@@ -1,8 +1,25 @@
 from rest_framework import serializers as ser
+from django.core.validators import URLValidator
+
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
-from website.models import OAuth2App
+from website.models import OAuth2App, User
+
+
+def user_validator(user):
+    """
+    Raise a validation error if this is not a user object (or a valid user ID)
+    """
+    if isinstance(user, User):
+        return True
+    elif isinstance(user, basestring):
+        try:
+            User.load(user)
+        except:
+            raise ser.ValidationError("Must specify a valid user ID")
+    else:
+        raise ser.ValidationError("Must provide valid user object or ID string")
 
 
 class UserSerializer(JSONAPISerializer):
@@ -65,15 +82,15 @@ class OAuth2AppSerializer(JSONAPISerializer):
     client_id = ser.CharField(read_only=True)
     client_secret = ser.CharField(read_only=True)  # TODO: May change this later
 
-    owner = ser.CharField(required=True, source='owner._id')  # TODO: How is owner represented when we do this?
+    owner = ser.CharField(required=True, source='owner._id', validators=[user_validator])
 
     name = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
 
     reg_date = ser.DateTimeField(read_only=True)
 
-    home_url = ser.CharField(required=True)
-    callback_url = ser.CharField(required=True)
+    home_url = ser.CharField(required=True, validators=[URLValidator()])
+    callback_url = ser.CharField(required=True, validators=[URLValidator()])
 
     def to_internal_value(self, data):
         """

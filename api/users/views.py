@@ -160,3 +160,10 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
         obj.active = False
         obj.save()
+
+    def perform_update(self, serializer):
+        #serializer.validated_data['owner'] = self.request.user
+        """Necessary to prevent owner field from being blanked on updates"""
+        # TODO: Write code to transfer ownership
+        serializer.save(owner=self.request.user)
+
