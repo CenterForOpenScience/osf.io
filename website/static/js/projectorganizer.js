@@ -1271,6 +1271,11 @@ var POToolbar = {
                     config : function () {
                         applyTypeahead.call(ctrl.tb);
                     },
+                    onkeypress : function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            addProjectEvent.call(ctrl.tb);
+                        }
+                    },
                     type : 'text',
                     placeholder : 'Name of the project to find'
                 }),
