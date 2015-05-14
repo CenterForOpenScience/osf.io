@@ -106,15 +106,11 @@ projectOrganizer.myProjects = new Bloodhound({
 function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    var isLink = item.data.urls.fetch ? '.fg-file-links' : '';
-    return m('span' + isLink, { 'class' : css, ondblclick : function (event) {
-        if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-            window.open(item.data.urls.fetch, '_blank');
-        } else {
-            window.open(item.data.urls.fetch, '_self');
-        }
+    if(item.data.urls.fetch){
+        return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
+    } else {
+        return  m('span', { 'class' : css}, item.data.name);
     }
-        }, item.data.name);
 }
 
 /**
@@ -341,9 +337,6 @@ function _poResolveIcon(item) {
             iconType += ' po-icon';
         }
         var template = m('span', { 'class' : iconType});
-        if (viewLink) {
-            return m('a', { href : viewLink}, template);
-        }
         return template;
     }
     if (item.data.isSmartFolder) {
@@ -1392,7 +1385,7 @@ function _deleteFolder(item) {
  * For documentation visit: https://github.com/caneruguz/treebeard/wiki
  */
 var tbOptions = {
-    rowHeight : 27,         // user can override or get from .tb-row height
+    rowHeight : 35,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.

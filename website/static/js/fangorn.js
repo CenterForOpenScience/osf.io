@@ -100,7 +100,7 @@ var cancelUploadTemplate = function(row){
                 e.stopImmediatePropagation();
                 cancelUploads.call(treebeard, row);
             }},
-        m('.fa.fa-times-circle.text-warning', {
+        m('.fa.fa-times-circle.text-danger', {
             style : 'display:block;font-size:18px; margin-top: -4px;',
             'data-toggle': 'tooltip',
             'data-placement' : 'bottom',
@@ -824,7 +824,7 @@ function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
-            ondblclick: function() {
+            onclick: function() {
                 gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
@@ -1284,9 +1284,10 @@ var FGToolbar = {
                 onclick: function(event){
                     var mithrilContent = m('div', [
                         m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
-                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
-                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and double click a file name to open it in a new tab.')]),
+                        m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
                     ]);
                     var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
@@ -1546,7 +1547,7 @@ function _resizeHeight () {
  * Check Treebeard API for more information
  */
 tbOptions = {
-    rowHeight : 30,         // user can override or get from .tb-row height
+    rowHeight : 35,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.

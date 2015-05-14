@@ -200,7 +200,7 @@ function _fangornDataverseTitle(item, col) {
     } else {
         return m('span', [
             m('dataverse-name.fg-file-links', {
-                ondblclick: function () {
+                onclick: function () {
                     var redir = new URI(item.data.nodeUrl);
                     window.location = redir
                         .segment('files')
