@@ -473,6 +473,7 @@ function _poMultiselect(event, tree) {
     m.redraw();
     if (tb.multiselected().length === 1) {
         // temporarily remove classes until mithril redraws raws with another hover.
+        tb.inputValue(tb.multiselected()[0].data.name);
         tb.select('#tb-tbody').removeClass('unselectable');
         if (scrollToItem) {
             Fangorn.Utils.scrollToFile.call(tb, tb.multiselected()[0].id);
@@ -1197,6 +1198,7 @@ var POToolbar = {
         var self = this;
         self.tb = args.treebeard;
         self.tb.toolbarMode = m.prop(Fangorn.Components.toolbarModes.DEFAULT);
+        self.tb.inputValue = m.prop('');
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
         self.helpText = m.prop('');
@@ -1261,6 +1263,7 @@ var POToolbar = {
             m('.col-xs-9',
                 m.component(Fangorn.Components.input, {
                     onkeypress: function (event) {
+                        ctrl.tb.inputValue($(event.target).val());
                         if (ctrl.tb.pressedKey === ENTER_KEY) {
                             _renameEvent.call(ctrl.tb);
                         }
@@ -1268,7 +1271,7 @@ var POToolbar = {
                     id : 'renameInput',
                     helpTextId : 'renameHelpText',
                     placeholder : null,
-                    value : ctrl.items()[0] ? ctrl.items()[0].data.name : '',
+                    value : ctrl.tb.inputValue(),
                     tooltip: 'Rename this item'
                 }, ctrl.helpText())
                 ),
