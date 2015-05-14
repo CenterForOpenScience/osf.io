@@ -20,3 +20,8 @@ def commit(database=None):
 def show_live(database=None):
     database = database or proxy_database
     return database.command('showLiveTransactions')
+
+
+def disconnect(database=None):
+    database = database or proxy_database
+    database.logout()

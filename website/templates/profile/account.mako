@@ -69,7 +69,7 @@
                                     <td colspan="2">
                                         <form data-bind="submit: addEmail">
                                             <div class="form-group">
-                                                <input data-bind="value: emailInput" class="form-control">
+                                              <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
                                             </div>
                                             <input type="submit" value="Add Email" class="btn btn-default">
                                         </form>

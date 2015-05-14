@@ -7,15 +7,19 @@ from framework.auth.core import Auth
 
 class NodeSerializer(JSONAPISerializer):
 
+    category_choices = Node.CATEGORY_MAP.keys()
+    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True)
-    category = ser.ChoiceField(choices=Node.CATEGORY_MAP.keys())
+    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
-    tags = ser.SerializerMethodField()
+    tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
+                                               'user and system. Any tag that a user will define in the UI will be '
+                                               'a user tag')
 
     links = LinksField({
         'html': 'get_absolute_url',
@@ -39,8 +43,17 @@ class NodeSerializer(JSONAPISerializer):
             'related': Link('nodes:node-files', kwargs={'pk': '<pk>'})
         },
     })
-    properties = ser.SerializerMethodField()
-    public = ser.BooleanField(source='is_public')
+    properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
+                                                     'and dashboard. Collections are special nodes used by the Project '
+                                                     'Organizer to, as you would imagine, organize projects. '
+                                                     'A dashboard is a collection node that serves as the root of '
+                                                     'Project Organizer collections. Every user will always have '
+                                                     'one Dashboard')
+    public = ser.BooleanField(source='is_public', help_text='Nodes that are made public will give read-only access '
+                                                            'to everyone. Private nodes require explicit read '
+                                                            'permission. Write and admin access are the same for '
+                                                            'public and private nodes. Administrators on a parent '
+                                                            'node have implicit read permissions for all child nodes')
     # TODO: finish me
 
     class Meta:
@@ -105,8 +118,9 @@ class NodeSerializer(JSONAPISerializer):
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
-    node_id = ser.CharField(source='node._id')
-    title = ser.CharField(read_only=True, source='node.title')
+    node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
+    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
+                                                                         'points to')
 
     class Meta:
         type_ = 'pointers'

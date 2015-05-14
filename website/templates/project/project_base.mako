@@ -89,7 +89,7 @@ ${next.body()}
 </script>
 <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
-        tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+        tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']], processEscapes: true},
         // Don't automatically typeset the whole page. Must explicitly use MathJax.Hub.Typeset
         skipStartupTypeset: true
     });
