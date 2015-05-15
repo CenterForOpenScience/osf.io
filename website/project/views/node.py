@@ -631,7 +631,7 @@ def delete_folder(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission("admin")
+@must_have_permission(ADMIN)
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 

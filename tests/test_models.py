@@ -1594,6 +1594,19 @@ class TestNode(OsfTestCase):
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
+    def test_cannot_register_deleted_node(self):
+        self.node.is_deleted = True
+        self.node.save()
+        with assert_raises(NodeStateError) as err:
+            self.node.register_node(
+                schema=None,
+                auth=self.consolidate_auth,
+                template='the template',
+                data=None
+            )
+        assert_equal(err.exception.message, 'Cannot register deleted node.')
+
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
