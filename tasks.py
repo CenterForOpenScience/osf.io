@@ -555,6 +555,7 @@ def npm_bower():
 def bower_install():
     print('Installing bower-managed packages')
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} prune'.format(bower_bin), echo=True)
     run('{} install'.format(bower_bin), echo=True)
 
 
