@@ -1,15 +1,17 @@
 import json
 import celery
 from faker import Faker
+import datetime
+from modularodm import Q
 
 import mock  # noqa
 from nose.tools import *  # noqa PEP8 asserts
 import httpretty
 
+from scripts import cleanup_failed_registrations as scripts
+
 from framework.auth import Auth
-
 from framework.tasks import handlers
-
 from framework import archiver
 from framework.archiver.tasks import *  # noqa
 from framework.archiver.exceptions import *  # noqa
@@ -27,8 +29,8 @@ from framework.archiver import listeners
 
 from website import settings
 from website.util import waterbutler_url_for
+from website.project.model import Node
 from website.addons.base import StorageAddonBase
-from website import mails
 
 from tests import factories
 from tests.base import OsfTestCase
@@ -374,22 +376,98 @@ class TestArchiverListeners(ArchiverTestCase):
     def test_archive_node(self):
         with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
             listeners.archive_node(self.src, self.dst, self.user)
-        archive_signature = archive.si(self.src, self.dst. self.user)
+        archive_signature = archive(self.src, self.dst. self.user)
         assert(mock_queue.called_with(archive_signature))
 
     def test_archive_node_links_unlinked(self):
         self.dst.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
             listeners.archive_node(self.src, self.dst, self.user)
-        archive_signature = archive.si(self.src, self.dst. self.user)
+        archive_signature = archive(self.src, self.dst. self.user)
         assert(mock_queue.called_with(archive_signature))
         assert_true(archiver_utils.has_archive_provider(self.dst, self.user))
 
     def test_archive_callback_pending(self):
-        pass
+        self.dst.archived_providers = {
+            addon: {
+                'status': ARCHIVER_PENDING
+            } for addon in settings.ADDONS_ARCHIVABLE
+        }
+        self.dst.archived_providers['osfstorage'] = {
+            'status': ARCHIVER_SUCCESS
+        }
+        self.dst.save()
+        with mock.patch.object(handlers, 'enqueue_task') as mock_enqueue:
+            with mock.patch.object(archiver_exceptions, 'ArchiverCopyError') as MockError:
+                listeners.archive_callback(self.dst)
+        assert_false(mock_enqueue.called)
+        assert_false(MockError.called)
 
     def test_archive_callback_done_success(self):
-        pass
+        self.dst.archived_providers = {
+            addon: {
+                'status': ARCHIVER_SUCCESS
+            } for addon in settings.ADDONS_ARCHIVABLE
+        }
+        self.dst.save()
+        with mock.patch.object(handlers, 'enqueue_task') as mock_enqueue:
+            listeners.archive_callback(self.dst)
+        send_success_message_sig = send_success_message.si(self.dst._id)
+        assert(mock_enqueue.called_with(send_success_message_sig))
 
     def test_archive_callback_done_errors(self):
-        pass
+        self.dst.archived_providers = {
+            addon: {
+                'status': ARCHIVER_SUCCESS
+            } for addon in settings.ADDONS_ARCHIVABLE
+        }
+        self.dst.archived_providers['osfstorage']['status'] = ARCHIVER_FAILURE
+        self.dst.save()
+        with mock.patch.object(archiver_exceptions, 'ArchiverCopyError') as MockError:
+            listeners.archive_callback(self.dst)
+        assert(MockError.called_with(self.src, self.dst, self.user, self.dst.archived_providers))
+
+
+class TestArchiverScripts(ArchiverTestCase):
+
+    def test_find_failed_registrations(self):
+        failures = []
+        delta = datetime.timedelta(2)
+        for i in range(5):
+            reg = factories.RegistrationFactory(send_signals=False)
+            reg._fields['registered_date'].__set__(
+                reg,
+                datetime.datetime.now() - delta,
+                safe=True
+            )
+            reg.archived_providers = {
+                addon: {
+                    'status': ARCHIVER_PENDING
+                } for addon in settings.ADDONS_ARCHIVABLE
+            }
+            reg.archiving = True
+            reg.save()
+            failures.append(reg)
+        pending = []
+        for i in range(5):
+            reg = factories.RegistrationFactory(send_signals=False)
+            reg.archived_providers = {
+                addon: {
+                    'status': ARCHIVER_PENDING
+                } for addon in settings.ADDONS_ARCHIVABLE
+            }
+            reg.archiving = True
+            reg.save()
+            pending.append(reg)
+        failed = scripts.find_failed_registrations()
+        assert_equal(failed.get_keys(), [f._id for f in failures])
+
+    def test_delete_registration_tree(self):
+        proj = factories.NodeFactory()
+        factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=comp2)
+        reg = factories.RegistrationFactory(project=proj, send_signals=False)
+        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        scripts.delete_registration_tree(reg)
+        assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
