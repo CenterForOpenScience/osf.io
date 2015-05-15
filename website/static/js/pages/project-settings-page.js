@@ -57,7 +57,10 @@ $(document).ready(function() {
         window.contextVars.node.urls.update,
         disableCategory
     );
-    ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+
+    if ($('#nodeCategorySettings')[0]) {
+        ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+    }
 
     $(window).resize(function (){ fixAffixWidth(); });
     $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
