@@ -1157,8 +1157,10 @@ var FGItemButtons = {
 
 var _dismissToolbar = function(){
     var tb = this;
+    if (tb.toolbarMode === toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
     tb.toolbarMode(toolbarModes.DEFAULT);
-    tb.resetFilter();
     tb.filterText('');
     m.redraw();
 };

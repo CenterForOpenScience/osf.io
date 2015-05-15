@@ -1163,8 +1163,10 @@ var POItemButtons = {
 
 var _dismissToolbar = function () {
     var tb = this;
+    if (tb.toolbarMode === Fangorn.Components.toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
     tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
-    tb.resetFilter();
     tb.filterText('');
     tb.select('.tb-header-row .twitter-typeahead').remove();
     m.redraw();
