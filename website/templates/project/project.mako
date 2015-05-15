@@ -112,10 +112,16 @@
                         <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                     % endfor
                 % endif
-                <br />Date Created:
-                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                | Last Updated:
-                <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % if node['is_registration']:
+                    <br />Date Registered:
+                    <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                % endif
+                    <br />Date Created:
+                    <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
+                % if not node['is_registration']:
+                    | Last Updated:
+                    <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % endif
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
@@ -178,7 +184,8 @@
             <div class="addon-widget-body">
                 <div id="treeGrid">
                     <div class="fangorn-loading">
-                        <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>
