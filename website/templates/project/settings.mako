@@ -210,7 +210,7 @@
                     <h3 class="panel-title">Configure Notifications</h3>
                 </div>
                 <div class="help-block" style="padding-left: 15px">
-                    <p>These notifications settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                    <p>These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                 </div>
                 <form id="notificationSettings" class="osf-treebeard-minimal">
                     <div id="grid">
