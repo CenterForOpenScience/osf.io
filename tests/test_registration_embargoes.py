@@ -206,7 +206,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(self.registration.embargo.state, 'cancelled')
+        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
         assert_false(self.registration.pending_embargo)
         assert_false(self.registration.is_embargoed)
 
@@ -219,7 +219,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(self.registration.embargo.state, 'cancelled')
+        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
         assert_true(self.registration.is_deleted)
 
     def test_cancelling_embargo_for_existing_registration_does_not_delete_registration(self):
@@ -232,7 +232,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(self.registration.embargo.state, 'cancelled')
+        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
         assert_false(self.registration.is_deleted)
 
     # Embargo property tests
@@ -421,7 +421,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         self.registration.embargo.reload()
-        assert_equal(self.registration.embargo.state, 'cancelled')
+        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
         assert_false(self.registration.is_embargoed)
         assert_false(self.registration.pending_embargo)
         assert_equal(res.status_code, 302)

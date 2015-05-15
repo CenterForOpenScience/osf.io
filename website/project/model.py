@@ -2812,7 +2812,9 @@ class Retraction(StoredObject):
 
 
 def validate_embargo_state(value):
-    acceptable_states = ['unapproved', 'active', 'cancelled', 'completed']
+    acceptable_states = [
+        Embargo.UNAPPROVED, Embargo.ACTIVE, Embargo.CANCELLED, Embargo.COMPLETED
+    ]
     if value not in acceptable_states:
         raise ValidationValueError('Invalid embargo state assignment.')
     return True
@@ -2820,6 +2822,11 @@ def validate_embargo_state(value):
 
 class Embargo(StoredObject):
     """Embargo object for registrations waiting to go public."""
+
+    UNAPPROVED = 'unapproved'
+    ACTIVE = 'active'
+    CANCELLED = 'cancelled'
+    COMPLETED = 'completed'
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -2845,7 +2852,7 @@ class Embargo(StoredObject):
 
     @property
     def pending_embargo(self):
-        return self.state == 'unapproved'
+        return self.state == Embargo.UNAPPROVED
 
     # NOTE(hrybacki): Old, private registrations are grandfathered and do not
     # require to be made public or embargoed. This field differentiates them
@@ -2860,7 +2867,7 @@ class Embargo(StoredObject):
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
                 raise InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
-            self.state = 'cancelled'
+            self.state = Embargo.CANCELLED
             # Delete parent registration if it was created at the time the embargo was initiated
             if not self.for_existing_registration:
                 parent_registration = Node.find_one(Q('embargo', 'eq', self))
@@ -2878,6 +2885,6 @@ class Embargo(StoredObject):
             num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
 
             if num_of_approvals == len(self.approval_state.keys()):
-                self.state = 'active'
+                self.state = Embargo.ACTIVE
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')

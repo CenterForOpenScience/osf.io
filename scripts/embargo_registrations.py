@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_embargoes = models.Embargo.find(Q('state', 'eq', 'unapproved'))
+    pending_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.UNAPPROVED))
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
@@ -30,10 +30,10 @@ def main(dry_run=True):
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
-                embargo.state = 'active'
+                embargo.state = models.Embargo.ACTIVE
                 embargo.save()
 
-    active_embargoes = models.Embargo.find(Q('state', 'eq', 'active'))
+    active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.ACTIVE))
     for embargo in active_embargoes:
         if embargo.end_date < datetime.datetime.utcnow():
             parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
@@ -46,7 +46,7 @@ def main(dry_run=True):
             )
             if not dry_run:
                 parent_registration.set_privacy('public')
-                embargo.state = 'completed'
+                embargo.state = models.Embargo.COMPLETED
                 embargo.save()
 
 
