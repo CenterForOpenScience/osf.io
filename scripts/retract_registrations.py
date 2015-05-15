@@ -21,7 +21,11 @@ def main(dry_run=True):
         if should_be_retracted(retraction):
             if dry_run:
                 logger.warn('Dry run mode')
-            logger.warn('Retracting registration {0}'.format(retraction._id))
+            parent_registration = models.Node.find_one(Q('retraction', 'eq', retraction))
+            logger.warn(
+                'Retraction {0} approved. Retracting registration {1}'
+                .format(retraction._id, parent_registration._id)
+            )
             if not dry_run:
                 retraction.state = models.Retraction.RETRACTED
                 retraction.save()
