@@ -8,6 +8,7 @@ from modularodm.query import QueryGroup
 
 from framework.archiver import ARCHIVER_CHECKING, ARCHIVER_FAILURE, ARCHIVER_PENDING
 from framework.archiver.settings import ARCHIVE_TIMEOUT_TIMEDELTA
+from framework.archiver.exceptions import ArchiverCopyError
 
 from website.project.model import Node
 from website import settings
@@ -27,15 +28,14 @@ def find_failed_registrations():
     )
     return Node.find(query)
 
-def delete_registration_tree(node):
-    node.is_deleted = True
-    node.save()
-    [delete_registration_tree(child) for child in node.nodes if child.primary]
-
 def remove_failed_registrations(dry_run=True):
     failed = find_failed_registrations()
     if not dry_run:
-        [delete_registration_tree(f) for f in failed]
+        for f in failed:
+            try:
+                raise ArchiverCopyError(f.registered_from, f, f.creator, f.archived_providers)
+            except:
+                pass
 
 def main():
     flags = ['dry_run']

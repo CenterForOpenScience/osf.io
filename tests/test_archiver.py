@@ -370,6 +370,16 @@ class TestArchiverUtils(ArchiverTestCase):
         assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_FAILURE)
         assert_equal(self.dst.archived_providers['dropbox']['errors'], errors)
 
+    def test_delete_registration_tree(self):
+        proj = factories.NodeFactory()
+        factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=comp2)
+        reg = factories.RegistrationFactory(project=proj, send_signals=False)
+        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        scripts.delete_registration_tree(reg)
+        assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
+
 
 class TestArchiverListeners(ArchiverTestCase):
 
@@ -461,13 +471,3 @@ class TestArchiverScripts(ArchiverTestCase):
             pending.append(reg)
         failed = scripts.find_failed_registrations()
         assert_equal(failed.get_keys(), [f._id for f in failures])
-
-    def test_delete_registration_tree(self):
-        proj = factories.NodeFactory()
-        factories.NodeFactory(parent=proj)
-        factories.NodeFactory(parent=proj)
-        factories.NodeFactory(parent=comp2)
-        reg = factories.RegistrationFactory(project=proj, send_signals=False)
-        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
-        scripts.delete_registration_tree(reg)
-        assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())

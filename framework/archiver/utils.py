@@ -22,3 +22,8 @@ def catch_archive_addon_error(node, addon_short_name, errors=[]):
         'errors': errors,
     })
     node.save()
+
+def delete_registration_tree(node):
+    node.is_deleted = True
+    node.save()
+    [delete_registration_tree(child) for child in node.nodes if child.primary]
