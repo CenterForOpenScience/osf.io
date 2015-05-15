@@ -821,7 +821,8 @@ function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
-            onclick: function() {
+            onclick: function(event) {
+                event.stopImmediatePropagation();
                 gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
