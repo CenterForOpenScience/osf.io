@@ -1004,10 +1004,8 @@ function scrollToFile(fileID) {
     if (fileID !== undefined) {
         var index = tb.returnIndex(fileID);
         var visibleIndex = tb.visibleIndexes.indexOf(index);
-        if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
-            var scrollTo = visibleIndex * tb.options.rowHeight;
-            this.select('#tb-tbody').scrollTop(scrollTo);
-        }
+        var scrollTo = visibleIndex * tb.options.rowHeight;
+        this.select('#tb-tbody').scrollTop(scrollTo);
     }
 }
 
