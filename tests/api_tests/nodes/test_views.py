@@ -465,3 +465,13 @@ class TestNodeFilesList(OsfTestCase):
         mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):
+        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id)) + '?path=%2F&provider=osfstorage'
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 418
+        mock_res.json.return_value = {}
+        mock_waterbutler_request.return_value = mock_res
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)

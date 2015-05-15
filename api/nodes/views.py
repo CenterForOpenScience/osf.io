@@ -1,7 +1,7 @@
 import requests
 
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from modularodm import Q
 
 from framework.auth.core import Auth
@@ -256,7 +256,11 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             waterbutler_request = requests.get(url)
             if waterbutler_request.status_code == 401:
                 raise PermissionDenied
-            waterbutler_data = waterbutler_request.json()['data']
+            try:
+                waterbutler_data = waterbutler_request.json()['data']
+            except KeyError:
+                raise ValidationError(detail='detail: Could not retrieve files information.')
+
             if isinstance(waterbutler_data, list):
                 for item in waterbutler_data:
                     file = self.get_file_item(item, cookie, obj_args)
