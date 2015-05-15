@@ -31,13 +31,12 @@ describe('registrationRetraction', () => {
                 },
                 {
                     method: 'POST',
-                    url: invalidConfirmationText,
-                    response: {status: 500}
+                    url: invalidSubmitUrl,
+                    response: {},
+                    status: 500
                 }
-
             ];
             var server;
-
 
             before(() => {
                 server = utils.createServer(sinon, endpoints);
@@ -93,33 +92,32 @@ describe('registrationRetraction', () => {
 
                     vm.confirmationText(registrationTitle);
                     vm.submit().done(() => {
-                        assert.equal(response, redirectUrl);
+                        assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitSuccessStub);
                         assert.called(postSpy);
                         assert.notCalled(growlSpy);
+                        onSubmitSuccessStub.restore();
+                        done();
                     });
-
-                    onSubmitSuccessStub.restore();
-                    done();
                 });
+
                 it('logs error with Raven if submit fails', (done) => {
                     vm = new registrationRetraction.ViewModel(invalidSubmitUrl, registrationTitle);
                     var onSubmitErrorSpy = new sinon.spy(vm, 'onSubmitError');
                     var ravenStub = new sinon.stub(Raven, 'captureMessage');
 
                     vm.confirmationText(registrationTitle);
-
-                    vm.submit().done(() => {
-                        assert.equal(response, redirectUrl);
+                    vm.submit().always(() => {
+                        assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitErrorSpy);
                         assert.called(postSpy);
                         assert.called(growlSpy);
+                        onSubmitErrorSpy.restore();
+                        ravenStub.restore();
+                        done();
                     });
-
-                    onSubmitErrorSpy.restore();
-                    ravenStub.restore();
-                    done();
                 });
+
             });
         });
     });

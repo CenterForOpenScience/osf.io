@@ -26,14 +26,16 @@ var RegistrationRetractionViewModel = function(submitUrl, registrationTitle) {
     self.onSubmitSuccess = function(response) {
         window.location = response.redirectUrl;
     };
-    self.onSubmitError = function(error) {
+    self.onSubmitError = function(xhr, status, errorThrown) {
         $osf.growl(
             'Error',
-            error,
+            errorThrown,
             'warning'
         );
         Raven.captureMessage('Could not submit registration retraction.', {
-           error: error
+            xhr: xhr,
+            status: status,
+            error: errorThrown
         });
     };
 
