@@ -660,7 +660,6 @@ class TestMetadata:
     def test_metadata_file(self, provider, repo_metadata, repo_tree_metadata_root):
         ref = hashlib.sha1().hexdigest()
         path = yield from provider.validate_path('/file.txt')
-        assert result == GitHubFileContentMetadata(content_repo_metadata_root_file_txt).serialized()
 
         tree_url = provider.build_repo_url('git', 'trees', ref, recursive=1)
         latest_sha_url = provider.build_repo_url('git', 'refs', 'heads', path.identifier[0])
