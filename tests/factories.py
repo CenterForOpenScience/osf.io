@@ -19,6 +19,8 @@ from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.sessions.model import Session
+from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
@@ -392,6 +394,29 @@ class ExternalAccountFactory(ModularOdmFactory):
     provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
     provider_name = 'Fake Provider'
+    display_name = Sequence(lambda n: 'user-{0}'.format(n))
+
+
+class SessionFactory(ModularOdmFactory):
+    FACTORY_FOR = Session
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        instance = target_class(*args, **kwargs)
+
+        if user:
+            instance.data['auth_user_username'] = user.username
+            instance.data['auth_user_id'] = user._primary_key
+            instance.data['auth_user_fullname'] = user.fullname
+
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = cls._build(target_class, *args, **kwargs)
+        instance.save()
+        return instance
 
 
 class MockOAuth2Provider(ExternalProvider):
@@ -408,3 +433,16 @@ class MockOAuth2Provider(ExternalProvider):
         return {
             'provider_id': 'mock_provider_id'
         }
+
+
+class MockAddonNodeSettings(addons_base.AddonNodeSettingsBase):
+    pass
+
+
+class MockAddonUserSettings(addons_base.AddonUserSettingsBase):
+    pass
+
+
+class MockAddonUserSettingsMergeable(addons_base.AddonUserSettingsBase):
+    def merge(self):
+        pass
