@@ -464,6 +464,49 @@ class TestHelpers:
         assert provider.committer == expected
 
 
+class TestValidatePath:
+
+    @async
+    def test_validate_path(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == (provider.default_branch, None)
+
+    @async
+    def test_validate_path_passes_branch(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path', branch='NotMaster')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == ('NotMaster', None)
+
+    @async
+    def test_validate_path_passes_ref(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path', ref='NotMaster')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == ('NotMaster', None)
+
+    @async
+    def test_validate_path_passes_file_sha(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path', fileSha='Thisisasha')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == (provider.default_branch, 'Thisisasha')
+
+
 class TestCRUD:
 
     # @async
@@ -617,6 +660,7 @@ class TestMetadata:
     def test_metadata_file(self, provider, repo_metadata, repo_tree_metadata_root):
         ref = hashlib.sha1().hexdigest()
         path = yield from provider.validate_path('/file.txt')
+        assert result == GitHubFileContentMetadata(content_repo_metadata_root_file_txt).serialized()
 
         tree_url = provider.build_repo_url('git', 'trees', ref, recursive=1)
         latest_sha_url = provider.build_repo_url('git', 'refs', 'heads', path.identifier[0])

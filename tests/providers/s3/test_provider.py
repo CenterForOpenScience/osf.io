@@ -283,6 +283,34 @@ class TestCRUD:
 
     @async
     @pytest.mark.aiohttpretty
+    def test_download_version(self, provider):
+        path = WaterButlerPath('/muhtriangle')
+        url = provider.bucket.new_key(path.path).generate_url(
+            100,
+            query_parameters={'versionId': 'someversion'},
+            response_headers={'response-content-disposition': 'attachment'},
+        )
+        aiohttpretty.register_uri('GET', url, body=b'delicious', auto_length=True)
+
+        result = yield from provider.download(path, version='someversion')
+        content = yield from result.read()
+
+        assert content == b'delicious'
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_display_name(self, provider):
+        path = WaterButlerPath('/muhtriangle')
+        url = provider.bucket.new_key(path.path).generate_url(100, response_headers={'response-content-disposition': "attachment; filename*=UTF-8''tuna"})
+        aiohttpretty.register_uri('GET', url, body=b'delicious', auto_length=True)
+
+        result = yield from provider.download(path, displayName='tuna')
+        content = yield from result.read()
+
+        assert content == b'delicious'
+
+    @async
+    @pytest.mark.aiohttpretty
     def test_download_not_found(self, provider):
         path = WaterButlerPath('/muhtriangle')
         url = provider.bucket.new_key(path.path).generate_url(100, response_headers={'response-content-disposition': 'attachment'})
@@ -291,14 +319,12 @@ class TestCRUD:
         with pytest.raises(exceptions.DownloadError):
             yield from provider.download(path)
 
-    # Probably unneeded
-    # @async
-    # @pytest.mark.aiohttpretty
-    # def test_download_no_name(self, provider):
-    #     with pytest.raises(exceptions.InvalidPathError):
-    #         yield from provider.download('')
-    #     with pytest.raises(exceptions.DownloadError):
-    #         yield from provider.download('/')
+    @async
+    @pytest.mark.aiohttpretty
+    def test_download_folder_400s(self, provider):
+        with pytest.raises(exceptions.DownloadError) as e:
+            yield from provider.download(WaterButlerPath('/cool/folder/mom/'))
+        assert e.value.code == 400
 
     @async
     @pytest.mark.aiohttpretty
