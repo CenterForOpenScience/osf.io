@@ -100,7 +100,7 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
 
     if user:
         url.args['cookie'] = user.get_or_create_cookie()
-    else:
+    elif settings.COOKIE_NAME in request.cookies:
         url.args['cookie'] = request.cookies[settings.COOKIE_NAME]
 
     view_only = False

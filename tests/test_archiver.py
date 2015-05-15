@@ -8,6 +8,8 @@ import httpretty
 
 from framework.auth import Auth
 
+from framework.tasks import handlers
+
 from framework import archiver
 from framework.archiver.tasks import *  # noqa
 from framework.archiver.exceptions import *  # noqa
@@ -21,6 +23,7 @@ from framework.archiver import settings as archiver_settings
 from framework.archiver import exceptions as archiver_exceptions
 from framework.archiver import utils as archiver_utils
 from framework.archiver import mails as archiver_mails
+from framework.archiver import listeners
 
 from website import settings
 from website.util import waterbutler_url_for
@@ -369,7 +372,18 @@ class TestArchiverUtils(ArchiverTestCase):
 class TestArchiverListeners(ArchiverTestCase):
 
     def test_archive_node(self):
-        pass
+        with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
+            listeners.archive_node(self.src, self.dst, self.user)
+        archive_signature = archive.si(self.src, self.dst. self.user)
+        assert(mock_queue.called_with(archive_signature))
+
+    def test_archive_node_links_unlinked(self):
+        self.dst.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
+        with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
+            listeners.archive_node(self.src, self.dst, self.user)
+        archive_signature = archive.si(self.src, self.dst. self.user)
+        assert(mock_queue.called_with(archive_signature))
+        assert_true(archiver_utils.has_archive_provider(self.dst, self.user))
 
     def test_archive_callback_pending(self):
         pass
@@ -379,4 +393,3 @@ class TestArchiverListeners(ArchiverTestCase):
 
     def test_archive_callback_done_errors(self):
         pass
-    
