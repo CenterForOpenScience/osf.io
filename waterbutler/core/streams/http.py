@@ -153,7 +153,7 @@ class ResponseStreamReader(BaseStream):
 
     @property
     def size(self):
-        return int(self.response.headers.get('Content-Length'))
+        return self._size
 
     @asyncio.coroutine
     def _read(self, size):
