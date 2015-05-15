@@ -2882,9 +2882,8 @@ class Embargo(StoredObject):
             if self.approval_state[user._id]['approval_token'] != token:
                 raise InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
             self.approval_state[user._id]['has_approved'] = True
-            num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
 
-            if num_of_approvals == len(self.approval_state.keys()):
+            if all(val['has_approved'] for val in self.approval_state.values()):
                 self.state = Embargo.ACTIVE
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
