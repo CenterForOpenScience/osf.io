@@ -173,6 +173,8 @@ def format_result(result, parent_id=None):
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
+        'is_retracted': result['is_retracted'],
+        'pending_retraction': result['pending_retraction'],
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
         'date_created': result.get('date_created'),
@@ -246,17 +248,21 @@ def update_node(node, index=INDEX):
             'description': node.description,
             'url': node.url,
             'is_registration': node.is_registration,
+            'is_retracted': node.is_retracted,
+            'pending_retraction': node.pending_retraction,
             'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
-        for wiki in [
-            NodeWikiPage.load(x)
-            for x in node.wiki_pages_current.values()
-        ]:
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+
+        if not node.is_retracted:
+            for wiki in [
+                NodeWikiPage.load(x)
+                for x in node.wiki_pages_current.values()
+            ]:
+                elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 

@@ -163,8 +163,10 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     contributed = user.node__contributed
 
     nodes = contributed.find(
+
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
+        Q('is_retracted', 'ne', True) &
         Q('is_folder', 'eq', False)
     ).sort('-title')
 

@@ -25,6 +25,7 @@ from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
     ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
+    Retraction,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 
@@ -212,6 +213,11 @@ class NodeLogFactory(ModularOdmFactory):
 class WatchConfigFactory(ModularOdmFactory):
     FACTORY_FOR = WatchConfig
     node = SubFactory(NodeFactory)
+
+
+class RetractionFactory(ModularOdmFactory):
+    FACTORY_FOR = Retraction
+    user = SubFactory(UserFactory)
 
 
 class NodeWikiFactory(ModularOdmFactory):
