@@ -1240,7 +1240,7 @@ var FGToolbar = {
                         cancelUploads.call(ctrl.tb);
                     },
                     icon: 'fa fa-time-circle',
-                    className : 'text-warning'
+                    className : 'text-danger'
                 }, 'Cancel Pending Uploads')
             );
         }
