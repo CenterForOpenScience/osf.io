@@ -1,17 +1,6 @@
-import os
-import http
-import json
-import asyncio
-
-from tornado import web
-
-import waterbutler.core
 from waterbutler import tasks
-
 from waterbutler.server import utils
-from waterbutler.server import settings
 from waterbutler.server.handlers import core
-from waterbutler.server.identity import get_identity
 
 
 class MoveHandler(core.BaseCrossProviderHandler):

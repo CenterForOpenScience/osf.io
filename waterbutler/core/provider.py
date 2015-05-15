@@ -1,7 +1,6 @@
 import os
 import abc
 import asyncio
-import functools
 import itertools
 
 import furl

@@ -1,4 +1,3 @@
-import os
 import http
 import json
 import asyncio
@@ -8,7 +7,6 @@ from urllib import parse
 import furl
 
 from waterbutler.core import path
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
@@ -41,12 +39,14 @@ class GoogleDriveProvider(provider.BaseProvider):
         if path == '/':
             return GoogleDrivePath('/', _ids=[self.folder['id']], folder=True)
 
-        if file_id:
-            parts = yield from self._resolve_id_to_parts(file_id)
-        elif path:
-            parts = yield from self._resolve_path_to_ids(path)
-        else:
-            raise Exception  # TODO
+        parts = yield from self._resolve_path_to_ids(path)
+
+        # TODO Allow for just passing file_id
+        # if file_id:
+        #     parts = yield from self._resolve_id_to_parts(file_id)
+        # elif path:
+        # else:
+        #     raise Exception  # TODO
 
         names, ids = zip(*[(parse.quote(x['title'], safe=''), x['id']) for x in parts])
         return GoogleDrivePath('/'.join(names), _ids=ids, folder='folder' in parts[-1]['mimeType'])
@@ -370,7 +370,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             if self.folder['id'] == parent['id']:
                 return [parent] + (accum or [])
                 try:
-                    return (yield from _resolve_id_to_parts(
+                    return (yield from self._resolve_id_to_parts(
                         self, parent['id'],
                         [parent] + (accum or [])
                     ))

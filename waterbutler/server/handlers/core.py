@@ -1,9 +1,7 @@
-import os
 import json
 import time
 import asyncio
 
-import aiohttp
 import tornado.web
 from raven.contrib.tornado import SentryMixin
 

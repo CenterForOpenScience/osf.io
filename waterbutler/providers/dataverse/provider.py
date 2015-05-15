@@ -168,9 +168,6 @@ class DataverseProvider(provider.BaseProvider):
             - None for all data
         """
 
-        # Get appropriate metadata
-        dataset_metadata = yield from self._get_data(version)
-
         if path.is_root:
             return (yield from self._maybe_fetch_metadata(version=version))
 

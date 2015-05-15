@@ -8,7 +8,6 @@ import xmltodict
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
 
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions

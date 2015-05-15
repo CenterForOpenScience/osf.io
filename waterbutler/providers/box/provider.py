@@ -3,7 +3,6 @@ import http
 import json
 import asyncio
 
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
@@ -226,7 +225,7 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        if not path.identifier: # TODO This should be abstracted
+        if not path.identifier:  # TODO This should be abstracted
             raise exceptions.NotFoundError(str(path))
 
         if path.is_file:

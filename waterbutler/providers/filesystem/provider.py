@@ -4,7 +4,6 @@ import asyncio
 import datetime
 import mimetypes
 
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions

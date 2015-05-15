@@ -1,4 +1,3 @@
-import os
 import http
 import json
 import asyncio
@@ -6,7 +5,6 @@ import asyncio
 import aiohttp
 import oauthlib.oauth1
 
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions

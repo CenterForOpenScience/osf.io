@@ -1,4 +1,3 @@
-import os
 import time
 
 from waterbutler.core import utils

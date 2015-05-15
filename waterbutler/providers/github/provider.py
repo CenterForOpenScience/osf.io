@@ -1,10 +1,9 @@
-import os
+import copy
 import json
 import asyncio
 
 import furl
 
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
@@ -477,30 +476,30 @@ class GitHubProvider(provider.BaseProvider):
             return ret
 
         #TODO?
-        if self._is_sha(ref):
-            tree_sha = ref
-        elif path.parent.is_root:
-            branch_data = yield from self._fetch_branch(self.identifier)
-            tree_sha = branch_data['commit']['commit']['tree']['sha']
-        else:
-            data = yield from self._fetch_contents(parent_path, ref=ref)
-            try:
-                tree_sha = next(x for x in data if x['path'] == path.path)['sha']
-            except StopIteration:
-                raise exceptions.MetadataError(
-                    'Could not find folder \'{0}\''.format(path),
-                    code=404,
-                )
+        # if self._is_sha(ref):
+        #     tree_sha = ref
+        # elif path.parent.is_root:
+        #     branch_data = yield from self._fetch_branch(self.identifier)
+        #     tree_sha = branch_data['commit']['commit']['tree']['sha']
+        # else:
+        #     data = yield from self._fetch_contents(parent_path, ref=ref)
+        #     try:
+        #         tree_sha = next(x for x in data if x['path'] == path.path)['sha']
+        #     except StopIteration:
+        #         raise exceptions.MetadataError(
+        #             'Could not find folder \'{0}\''.format(path),
+        #             code=404,
+        #         )
 
-        data = yield from self._fetch_tree(tree_sha, recursive=recursive)
+        # data = yield from self._fetch_tree(tree_sha, recursive=recursive)
 
-        ret = []
-        for item in data['tree']:
-            if item['type'] == 'tree':
-                ret.append(GitHubFolderTreeMetadata(item, folder=path.path).serialized())
-            else:
-                ret.append(GitHubFileTreeMetadata(item, folder=path.path).serialized())
-        return ret
+        # ret = []
+        # for item in data['tree']:
+        #     if item['type'] == 'tree':
+        #         ret.append(GitHubFolderTreeMetadata(item, folder=path.path).serialized())
+        #     else:
+        #         ret.append(GitHubFileTreeMetadata(item, folder=path.path).serialized())
+        # return ret
 
     @asyncio.coroutine
     def _metadata_file(self, path, ref=None, **kwargs):
