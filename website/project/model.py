@@ -2830,7 +2830,7 @@ class Embargo(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    initiated_by = fields.ForeignField('user', backref='embargoed_by')
+    initiated_by = fields.ForeignField('user', backref='embargoed')
     end_date = fields.DateTimeField()
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
