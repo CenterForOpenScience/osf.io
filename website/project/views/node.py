@@ -728,7 +728,7 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
-            'registration_count': len(node.node__registrations),
+            'registration_count': len(node.registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
@@ -990,7 +990,7 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = node.node__registrations
+    registrations = node.registrations
     return _render_nodes(registrations, auth)
 
 

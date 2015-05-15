@@ -6,7 +6,9 @@ from datetime import datetime
 from modularodm import Q
 from modularodm.query import QueryGroup
 
-from framework.archiver import ARCHIVER_CHECKING, ARCHIVER_FAILURE, ARCHIVER_PENDING, ARCHIVE_TIMEOUT_TIMEDELTA
+from framework.archiver import ARCHIVER_CHECKING, ARCHIVER_FAILURE, ARCHIVER_PENDING
+from framework.archiver.settings import ARCHIVE_TIMEOUT_TIMEDELTA
+
 from website.project.model import Node
 from website import settings
 
@@ -16,18 +18,24 @@ def find_failed_registrations():
     pending = QueryGroup(*args)
 
     expired_if_before = datetime.now() - ARCHIVE_TIMEOUT_TIMEDELTA
-    query =(
+    query = (
         Q('is_deleted', 'eq', False) &
         Q('archiving', 'eq', True) &
+        Q('is_registration', 'eq', True) &
         Q('registered_date', 'lt', expired_if_before) &
         pending
     )
     return Node.find(query)
 
+def delete_registration_tree(node):
+    node.is_deleted = True
+    node.save()
+    [delete_registration_tree(child) for child in node.nodes if child.primary]
+
 def remove_failed_registrations(dry_run=True):
     failed = find_failed_registrations()
     if not dry_run:
-        [f.remove_node for f in failed]
+        [delete_registration_tree(f) for f in failed]
 
 def main():
     flags = ['dry_run']

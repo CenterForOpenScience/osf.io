@@ -210,7 +210,6 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
         for result in stat_result.targets.values()
     ).apply_async()
 
-
 @celery_app.task(bind=True, name='archiver.archive')
 def archive(self, src_pk, dst_pk, user_pk):
     """Create a celery.chain task chain for first examining the file trees

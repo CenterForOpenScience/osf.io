@@ -173,8 +173,11 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, send_signals=True, *args, **kwargs):
-
+                template=None, data=None, send_signals=False, *args, **kwargs):
+        """
+        :param send_signals: optionally send blinker signals-- currently used only by Archiver
+        """
+        
         save_kwargs(**kwargs)
 
         # Original project to be registered
