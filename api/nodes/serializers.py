@@ -63,7 +63,11 @@ class NodeSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def get_node_count(self, obj):
-        return len(obj.nodes)
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
+        nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
+        return len(nodes)
 
     def get_contrib_count(self, obj):
         return len(obj.contributors)

@@ -5,7 +5,7 @@ from framework.auth.core import Auth
 from website.models import Node
 from website.util import api_v2_url_for
 from tests.base import OsfTestCase, fake
-from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
+from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, NodeFactory, PointerFactory
 
 
 class TestNodeList(OsfTestCase):
@@ -75,6 +75,34 @@ class TestNodeContributorList(OsfTestCase):
         res = self.app.get(url, auth=(self.user.username, self.password))
         assert_equal(res.status_code, 200)
         Node.remove()
+
+
+class TestNodeChildrenList(OsfTestCase):
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.auth = (self.user.username, password)
+        self.project = ProjectFactory()
+        self.project.add_contributor(self.user, permissions=['read', 'write'])
+        self.project.save()
+        self.component = NodeFactory(parent=self.project, creator=self.user)
+        self.pointer = ProjectFactory()
+        self.project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
+
+    def test_node_children_list_does_not_include_pointers(self):
+        url = api_v2_url_for('nodes:node-children', kwargs=dict(pk=self.project._id))
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['data']), 1)
+
+    def test_node_children_list_does_not_include_unauthorized_projects(self):
+        private_component = NodeFactory(parent=self.project)
+        url = api_v2_url_for('nodes:node-children', kwargs=dict(pk=self.project._id))
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['data']), 1)
 
 
 class TestNodeFiltering(OsfTestCase):
