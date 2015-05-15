@@ -315,7 +315,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
         :param WaterbutlerPath path: An object supporting the waterbutler path API
         :param str conflict: replace or keep
-        :rtype: (WaterButlerPath, dict or None)
+        :rtype: (WaterButlerPath, dict or False)
         """
         exists = yield from self.exists(path, **kwargs)
         if not exists or conflict != 'keep':
