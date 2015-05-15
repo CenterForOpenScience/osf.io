@@ -1661,7 +1661,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # the cloned node must pass itself to its wiki objects to build the
         # correct URLs to that content.
         if original.is_deleted:
-            raise NodeStateError("Node has been deleted")
+            raise NodeStateError('Cannot register deleted node.')
 
         registered = original.clone()
 
