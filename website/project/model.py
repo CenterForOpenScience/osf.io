@@ -2748,7 +2748,7 @@ class PrivateLink(StoredObject):
 def validate_retraction_state(value):
     acceptable_states = [Retraction.PENDING, Retraction.RETRACTED, Retraction.CANCELLED]
     if value not in acceptable_states:
-        raise ValidationValueError
+        raise ValidationValueError('Invalid retraction state assignment.')
 
     return True
 
@@ -2787,7 +2787,7 @@ class Retraction(StoredObject):
         """Cancels retraction if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
-                raise InvalidRetractionDisapprovalToken
+                raise InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
             self.state = self.CANCELLED
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
@@ -2796,7 +2796,7 @@ class Retraction(StoredObject):
         """Add user to approval list if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidRetractionApprovalToken
+                raise InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
         self.approval_state[user._id]['has_approved'] = True
@@ -2813,7 +2813,7 @@ class Retraction(StoredObject):
 def validate_embargo_state(value):
     acceptable_states = ['unapproved', 'active', 'cancelled', 'completed']
     if value not in acceptable_states:
-        raise ValidationValueError
+        raise ValidationValueError('Invalid embargo state assignment.')
     return True
 
 
@@ -2858,7 +2858,7 @@ class Embargo(StoredObject):
         """Cancels retraction if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
-                raise InvalidEmbargoDisapprovalToken
+                raise InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
             self.state = 'cancelled'
             # Delete parent registration if it was created at the time the embargo was initiated
             if not self.for_existing_registration:
@@ -2872,7 +2872,7 @@ class Embargo(StoredObject):
         """Add user to approval list if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidEmbargoApprovalToken
+                raise InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
             self.approval_state[user._id]['has_approved'] = True
             num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
 
