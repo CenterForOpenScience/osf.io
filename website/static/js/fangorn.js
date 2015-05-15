@@ -1540,7 +1540,8 @@ function _resizeHeight () {
  */
 tbOptions = {
     rowHeight : 35,         // user can override or get from .tb-row height
-    showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
+    showTotal : 500,
+    naturalScroll: true,
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
     uploads : true,         // Turns dropzone on/off.
