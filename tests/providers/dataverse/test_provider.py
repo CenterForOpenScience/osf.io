@@ -456,5 +456,8 @@ class TestMetadata:
         published_url = provider.build_url(dvs.JSON_BASE_URL.format(provider._id, 'latest-published'), key=provider.token)
         aiohttpretty.register_json_uri('GET', published_url, status=400)
 
-        with pytest.raises(exceptions.MetadataError):
-            result = yield from provider.metadata(path='/')
+        path = yield from provider.validate_path('/')
+        with pytest.raises(exceptions.MetadataError) as e:
+            result = yield from provider.metadata(path)
+
+        assert e.value.code == 400
