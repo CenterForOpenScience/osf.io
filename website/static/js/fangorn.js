@@ -1039,7 +1039,7 @@ var FGButton = {
         }
         return m('div', opts, [
             m('i', {className: iconCSS}),
-            m('span.hidden-xs', children)
+            m('span', children)
         ]);
     }
 };
@@ -1151,7 +1151,6 @@ var FGItemButtons = {
                         icon: 'fa fa-external-link',
                         className : 'text-info'
                     }, 'View'));
-
             }
         }
         return m('span', rowButtons);
@@ -1251,7 +1250,7 @@ var FGToolbar = {
             // Only show delete button if user has edit permissions on at least one selected file
             for (var i = 0, len = items.length; i < len; i++) {
                 var each = items[i];
-                if (each.data.permissions.edit) {
+                if (each.data.permissions.edit && !each.data.isAddonRoot) {
                     showDelete = true;
                     break;
                 }
@@ -1369,7 +1368,7 @@ function _openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
-    var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected());
+    filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'search') {
         _dismissToolbar.call(tb);
         scrollToItem = true;
@@ -1377,19 +1376,15 @@ function _openParentFolders (item) {
         _openParentFolders.call(tb, row);
     }
 
-    if(tb.multiselected().length === 1){
+    if (tb.multiselected().length === 1){
         tb.select('#tb-tbody').removeClass('unselectable');
         if(scrollToItem) {
              scrollToFile.call(tb, tb.multiselected()[0].id);
         }
     } else if (tb.multiselected().length > 1) {
-            tb.select('#tb-tbody').addClass('unselectable');
+        tb.select('#tb-tbody').addClass('unselectable');
     }
-    tb.redraw();
-
-    if(tb.pressedKey === 'toggle') {
-        tb.pressedKey = undefined;
-    }
+    m.redraw();
     reapplyTooltips();
 }
 
@@ -1737,7 +1732,8 @@ Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
-    createFolder: _createFolder
+    createFolder: _createFolder,
+    _gotoFileEvent : gotoFileEvent
 };
 
 Fangorn.DefaultColumns = {

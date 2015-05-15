@@ -251,6 +251,9 @@ function _poResolveRows(item) {
     if (item.data.permissions) {
         draggable = item.data.permissions.movable || item.data.permissions.copyable;
     }
+    if(this.isMultiselected(item.id)){
+        item.css = 'fangorn-selected';
+    }
     if (draggable) {
         css = 'po-draggable';
     }
@@ -452,18 +455,15 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
-    var tb = this,
-        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected()),
-        someItemsAreFolders,
-        pointerIds;
+    var tb = this;
+    filterRowsNotInParent.call(tb, tb.multiselected());
     var scrollToItem = false;
-    _dismissToolbar.call(tb);
-    if (!tb.filterOn) {
+    if (tb.toolbarMode() === 'search') {
+        _dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         Fangorn.Utils.openParentFolders.call(tb, tree);
     }
-    m.redraw();
     if (tb.multiselected().length === 1) {
         // temporarily remove classes until mithril redraws raws with another hover.
         tb.inputValue(tb.multiselected()[0].data.name);
@@ -474,6 +474,7 @@ function _poMultiselect(event, tree) {
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
+    m.redraw();
 }
 
 /**
@@ -1167,7 +1168,6 @@ var _dismissToolbar = function () {
     tb.filterText('');
     tb.select('.tb-header-row .twitter-typeahead').remove();
     m.redraw();
-
 };
 
 
@@ -1271,6 +1271,11 @@ var POToolbar = {
                     config : function () {
                         applyTypeahead.call(ctrl.tb);
                     },
+                    onkeypress : function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            addProjectEvent.call(ctrl.tb);
+                        }
+                    },
                     type : 'text',
                     placeholder : 'Name of the project to find'
                 }),
@@ -1309,7 +1314,7 @@ var POToolbar = {
                 className : 'text-info'
             }, '')
         );
-        if(ctrl.items().length > 0){
+        if(ctrl.items().length > 1){
             var someItemsAreFolders = false;
             var pointerIds = [];
             var theParentNode = ctrl.items()[0].parent();
