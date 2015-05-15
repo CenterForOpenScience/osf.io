@@ -34,6 +34,18 @@ def ensure_item(cron, command):
     return items[0] if items else cron.new(command)
 
 
+def cleanup_failed_registrations(cron):
+    cleanup = ensure_item(
+        cron,
+        cd_app(
+            tasks.bin_prefix(
+                'python -m scripts.cleanup_failed_registrations'
+            )
+        )
+    )
+    cleanup.hour.on(0)  # daily, 12 a.m.
+
+
 def schedule_osf_storage(cron):
     for idx in range(N_AUDIT_WORKERS):
         audit = ensure_item(
