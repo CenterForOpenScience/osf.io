@@ -83,6 +83,7 @@ function FileViewTreebeard(data) {
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
                 item.css = 'fangorn-selected';
+                tb.multiselected([item]);
             }
 
             var defaultColumns = [
