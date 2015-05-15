@@ -8,7 +8,7 @@ var $ = require('jquery');
 var DOMAIN = '';
 
 var BaseClient = oop.defclass({
-    PREFIX: '/api/v2',
+    PREFIX: '/api',
     DEFAULT_AJAX_OPTIONS: {
         contentType: 'application/json',
         dataType: 'json'
