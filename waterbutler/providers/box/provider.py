@@ -92,8 +92,7 @@ class BoxProvider(provider.BaseProvider):
         try:
             item = next(
                 x for x in data['entries']
-                if x['name'].lower() == lower_name
-                and (
+                if x['name'].lower() == lower_name and (
                     folder is None or
                     (x['type'] == 'folder') == folder
                 )
