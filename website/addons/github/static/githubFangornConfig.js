@@ -123,12 +123,10 @@ var _githubItemButtons = {
         var tb = args.treebeard;
         var item = args.item;
         var buttons = [];
-
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
             window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
         }
-
         // Download Zip File
         if (item.kind === 'folder') {
             var branchArray = [];
@@ -154,7 +152,7 @@ var _githubItemButtons = {
                     }, 'Upload'),
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            tb.toolbarMode('createFolder');
+                            tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                         },
                         icon: 'fa fa-plus',
                         className: 'text-primary'
@@ -208,6 +206,17 @@ var _githubItemButtons = {
                     }, 'Delete')
                 );
             }
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile.call(tb, item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
+
+            }
         }
 
         return m('span', buttons); // Tell fangorn this function is used.
@@ -234,6 +243,20 @@ function _fangornLazyLoadOnLoad (tree, event) {
     }
 }
 
+function gotoFile (item) {
+    var tb = this;
+    var fileurl = new URI(item.data.nodeUrl)
+        .segment('files')
+        .segment(item.data.provider)
+        .segment(item.data.path.substring(1))
+        .search({branch: item.data.branch})
+        .toString();
+    if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+        window.open(fileurl, '_blank');
+    } else {
+        window.open(fileurl, '_self');
+    }
+}
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     if (item.data.addonFullname) {
@@ -246,18 +269,7 @@ function _fangornGithubTitle(item, col)  {
             return m('span',[
                 m('github-name.fg-file-links', {
                     onclick: function() {
-                        var redir = new URI(item.data.nodeUrl);
-                        var fileurl = new URI(item.data.nodeUrl)
-                            .segment('files')
-                            .segment(item.data.provider)
-                            .segment(item.data.path.substring(1))
-                            .search({branch: item.data.branch})
-                            .toString();
-                            if(commandKeys.indexOf(tb.pressedKey) !== -1) {
-                                window.open(fileurl, '_blank');
-                            } else {
-                                window.open(fileurl, '_self');
-                            }
+                        gotoFile.call(tb, item);
                     }
                 }, item.data.name)]);
         } else {
