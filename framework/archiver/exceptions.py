@@ -1,6 +1,6 @@
 from framework.auth import Auth
 from framework.archiver import mails
-
+from framework.archiver.utils import delete_registration_tree
 
 from website import settings
 from website.mails import send_mail
@@ -38,7 +38,7 @@ class ArchiverSizeExceeded(ArchiverError):
             stat_result=stat_result,
             mimetype='html',
         )
-        dst.remove_node(Auth(user))
+        delete_registration_tree(dst)
 
 class ArchiverCopyError(ArchiverError):
 
@@ -67,4 +67,4 @@ class ArchiverCopyError(ArchiverError):
             results=results,
             mimetype='html',
         )
-        dst.remove_node(Auth(user))
+        delete_registration_tree(dst)
