@@ -86,8 +86,10 @@ class OAuth2AppSerializer(JSONAPISerializer):
                                   read_only=True)  # TODO: May change this later
 
     owner = ser.CharField(help_text="The id of the user who owns this application",
-                          required=True, source='owner._id',
-                          validators=[user_validator]) # TODO: Make readonly??
+                          read_only=True,  # TODO: The serializer does not control creating/changing this field directly
+                          source='owner._id',
+
+                          validators=[user_validator])  # TODO: Make readonly??
 
     name = ser.CharField(help_text="A short, descriptive name for this application",
                          required=True)
@@ -105,19 +107,6 @@ class OAuth2AppSerializer(JSONAPISerializer):
                                  required=True,
                                  validators=[URLValidator()])
 
-    def to_internal_value(self, data):
-        """
-        Total hack to make update/patch operations work: if data is nested under a key "data", this extracts it
-
-        It will break schemas that happen to include a field named "data".
-        :param data:
-        :return:
-        """
-        # FIXME: Fix this the right way without a hack. Why is request.data nested for update/patch but not create?
-        if "data" in data:
-            data = data["data"]
-        return super(OAuth2AppSerializer, self).to_internal_value(data)
-
     def create(self, validated_data):
         # TODO: Known issue- create view allows creating duplicate entries.
         # If the data passed contains read_only fields, the model will be created with auto-populated different values of those fields.
@@ -128,11 +117,6 @@ class OAuth2AppSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(instance, OAuth2App), 'instance must be an OAuth2App'
-
-        # TODO: This silently fails to populated validated_data because to_internal_value can't deal with nesting:
-        ## Request.data reads {u'data': {u'callback_url': u'www.cos.io', u'description': u'BB', u'reg_date': u'2015-05-14T19:04:54.784313', u'client_id': u'3d99eb57a1ff4751bedd24a09655f9ff', u'owner': u'4urxt', u'client_secret': u'ZGFhY2ViMDliOGI1NDUwZDg3NjU2OGVjNmIwZDNkMGE=', u'home_url': u'www.google.com', u'type': u'applications', u'id': u'5554f1d69f8b1f98ec7825b0', u'name': u'AAeee'}}
-        #   instead of the data being at the top level. Creates work because they send the right data; patch fails because it nests
-
         for attr, value in validated_data.iteritems():
             setattr(instance, attr, value)
         instance.save()
