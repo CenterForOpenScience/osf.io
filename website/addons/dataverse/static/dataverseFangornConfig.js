@@ -222,7 +222,7 @@ function _fangornColumns(item) {
     var tb = this;
     var selectClass = '';
     if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        selectClass = 'fangorn-hover';
+        selectClass = 'fangorn-selected';
     }
     var columns = [];
     columns.push({
