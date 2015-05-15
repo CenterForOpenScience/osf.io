@@ -120,7 +120,10 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 # Predefined Emails
 
 TEST = Mail('test', subject='A test email to ${name}')
+
 CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
+CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')

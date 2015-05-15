@@ -123,12 +123,10 @@ var _githubItemButtons = {
         var tb = args.treebeard;
         var item = args.item;
         var buttons = [];
-
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
             window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
         }
-
         // Download Zip File
         if (item.kind === 'folder') {
             var branchArray = [];
@@ -149,15 +147,13 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
                         },
-                        tooltip: 'Upload files to Github folder',
                         icon: 'fa fa-upload',
                         className: 'text-success'
                     }, 'Upload'),
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            tb.toolbarMode('createFolder');
+                            tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                         },
-                        tooltip: 'Create a new folder.',
                         icon: 'fa fa-plus',
                         className: 'text-primary'
                     }, 'Create Folder')
@@ -169,7 +165,6 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             window.location = item.data.urls.zip;
                         },
-                        tooltip: 'Download repository as a zip file',
                         icon: 'fa fa-download',
                         className: 'text-success'
                     }, 'Download'),
@@ -177,7 +172,6 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             window.open(item.data.urls.repo, '_blank');
                         },
-                        tooltip: 'Open repository in a new window.',
                         icon: 'fa fa-external-link',
                         className: 'text-info'
                     }, 'Open'),
@@ -186,7 +180,6 @@ var _githubItemButtons = {
                         onchange: function (event) {
                             changeBranch.call(tb, item, event.target.value);
                         },
-                        tooltip: 'Change Branch',
                         icon: 'fa fa-external-link',
                         className: 'text-info'
                     }, branchArray)
@@ -198,7 +191,6 @@ var _githubItemButtons = {
                     onclick: function (event) {
                         _downloadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Download file to your computer.',
                     icon: 'fa fa-download',
                     className: 'text-info'
                 }, 'Download')
@@ -209,11 +201,21 @@ var _githubItemButtons = {
                         onclick: function (event) {
                             _removeEvent.call(tb, event, [item]);
                         },
-                        tooltip: 'Delete file.',
                         icon: 'fa fa-trash',
                         className: 'text-danger'
                     }, 'Delete')
                 );
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile.call(tb, item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
+
             }
         }
 
@@ -241,29 +243,33 @@ function _fangornLazyLoadOnLoad (tree, event) {
     }
 }
 
+function gotoFile (item) {
+    var tb = this;
+    var fileurl = new URI(item.data.nodeUrl)
+        .segment('files')
+        .segment(item.data.provider)
+        .segment(item.data.path.substring(1))
+        .search({branch: item.data.branch})
+        .toString();
+    if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+        window.open(fileurl, '_blank');
+    } else {
+        window.open(fileurl, '_self');
+    }
+}
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     if (item.data.addonFullname) {
+        var branch = item.data.branch || item.data.defaultBranch;
         return m('span',[
-            m('github-name', item.data.name + ' (' + item.data.branch + ')')
+            m('github-name', item.data.name + ' (' + branch + ')')
         ]);
     } else {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
                 m('github-name.fg-file-links', {
-                    ondblclick: function() {
-                        var redir = new URI(item.data.nodeUrl);
-                        var fileurl = new URI(item.data.nodeUrl)
-                            .segment('files')
-                            .segment(item.data.provider)
-                            .segment(item.data.path.substring(1))
-                            .search({branch: item.data.branch})
-                            .toString();
-                            if(commandKeys.indexOf(tb.pressedKey) !== -1) {
-                                window.open(fileurl, '_blank');
-                            } else {
-                                window.open(fileurl, '_self');
-                            }
+                    onclick: function() {
+                        gotoFile.call(tb, item);
                     }
                 }, item.data.name)]);
         } else {
@@ -278,7 +284,7 @@ function _fangornColumns (item) {
     var selectClass = '';
     var node = item.parent().parent();
     if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        selectClass = 'fangorn-hover';
+        selectClass = 'fangorn-selected';
     }
 
     var columns = [];

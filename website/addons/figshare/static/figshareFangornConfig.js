@@ -18,7 +18,6 @@ var _figshareItemButtons = {
                     onclick: function (event) {
                         Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files to figshare.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload')
@@ -30,11 +29,10 @@ var _figshareItemButtons = {
                     onclick: function (event) {
                         Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Download file to your computer.',
                     icon: 'fa fa-download',
                     className: 'text-info'
                 }, 'Download')
-            )
+            );
         }
         // Files can be deleted if private or if parent contains more than one child
         var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
@@ -45,11 +43,20 @@ var _figshareItemButtons = {
                     onclick: function (event) {
                         Fangorn.ButtonEvents._removeEvent.call(tb, event, tb.multiselected());
                     },
-                    tooltip: 'Delete file.',
                     icon: 'fa fa-trash',
                     className: 'text-danger'
                 }, 'Delete')
             );
+        }
+        if (item.data.permissions && item.data.permissions.view) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {
+                        Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
+                    },
+                    icon: 'fa fa-external-link',
+                    className : 'text-info'
+                }, 'View'));
         }
         return m('span', buttons); // Tell fangorn this function is used.
     }
