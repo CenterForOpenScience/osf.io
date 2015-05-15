@@ -38,6 +38,17 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         assert_true(self.registration.is_public)
 
+    # Node#_initiate_retraction tests
+    def test_initiate_retraction_does_not_save_embargo(self):
+        initial_count = Retraction.find().count()
+        self.registration._initiate_retraction(self.user)
+        self.assertEqual(Retraction.find().count(), initial_count)
+
+    def test_initiate_retraction_with_save_does_save_embargo(self):
+        initial_count = Retraction.find().count()
+        self.registration._initiate_retraction(self.user, save=True)
+        self.assertEqual(Retraction.find().count(), initial_count + 1)
+
     # Backref tests
     def test_retraction_initiator_has_backref(self):
         self.registration.retract_registration(self.user, self.valid_justification)

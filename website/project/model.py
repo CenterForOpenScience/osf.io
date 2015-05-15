@@ -2548,7 +2548,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'is_registration': self.is_registration,
         }
 
-    def _initiate_retraction(self, user, justification=None, save=True):
+    def _initiate_retraction(self, user, justification=None, save=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
@@ -2595,7 +2595,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return True
         return False
 
-    def _initiate_embargo(self, user, end_date, for_existing_registration=False):
+    def _initiate_embargo(self, user, end_date, for_existing_registration=False, save=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
@@ -2620,6 +2620,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             }
 
         embargo.approval_state = approval_state
+        if save:
+            embargo.save()
         return embargo
 
     def embargo_registration(self, user, end_date, for_existing_registration=False):
@@ -2639,9 +2641,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self._is_embargo_date_valid(end_date):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
-        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration)
+        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
         # Embargo record needs to be saved to ensure the forward reference Node->Embargo
-        embargo.save()
         self.embargo = embargo
 
 

@@ -16,7 +16,7 @@ from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
     InvalidEmbargoDisapprovalToken, InvalidEmbargoApprovalToken, NodeStateError,
 )
-from website.models import Node
+from website.models import Embargo, Node
 from website.project.model import ensure_schemas
 
 
@@ -26,6 +26,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.user = UserFactory()
         self.registration = RegistrationFactory(creator=self.user)
         self.embargo = EmbargoFactory(user=self.user)
+        self.valid_embargo_end_date = datetime.date(2099, 1, 1)
+
 
     # Validator tests
     def test_invalid_state_raises_ValidationValueError(self):
@@ -33,14 +35,33 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             self.embargo.state = 'not a valid state'
             self.embargo.save()
 
+    # Node#_initiate_embargo tests
+    def test__initiate_embargo_does_not_save_embargo(self):
+        initial_count = Embargo.find().count()
+        self.registration._initiate_embargo(
+            self.user,
+            self.valid_embargo_end_date,
+            for_existing_registration=True
+        )
+        self.assertEqual(Embargo.find().count(), initial_count)
+
+    def test__initiate_embargo_with_save_does_save_embargo(self):
+        initial_count = Embargo.find().count()
+        self.registration._initiate_embargo(
+            self.user,
+            self.valid_embargo_end_date,
+            for_existing_registration=True,
+            save=True
+        )
+        self.assertEqual(Embargo.find().count(), initial_count + 1)
+
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
-        embargo_end_date = datetime.date(2099, 1, 1)
         self.registration.remove_permission(self.user, 'admin')
         self.registration.save()
         self.registration.reload()
         with assert_raises(PermissionsError):
-            self.registration.embargo_registration(self.user, embargo_end_date)
+            self.registration.embargo_registration(self.user, self.valid_embargo_end_date)
 
     def test_embargo_end_date_in_past_raises_ValidationValueError(self):
         with assert_raises(ValidationValueError):
