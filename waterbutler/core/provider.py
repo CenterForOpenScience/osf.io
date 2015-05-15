@@ -136,10 +136,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
         if handle_naming:
             dest_path = yield from dest_provider.handle_naming(
+                src_path,
                 dest_path,
-                rename or (dest_path.name if dest_path.is_file else src_path.name),
-                is_dir=src_path.is_dir,
-                conflict=conflict
+                rename=rename,
+                conflict=conflict,
             )
             args = (dest_provider, src_path, dest_path)
             kwargs = {}
@@ -163,10 +163,10 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
         if handle_naming:
             dest_path = yield from dest_provider.handle_naming(
+                src_path,
                 dest_path,
-                rename or (dest_path.name if dest_path.is_file else src_path.name),
-                is_dir=src_path.is_dir,
-                conflict=conflict
+                rename=rename,
+                conflict=conflict,
             )
             args = (dest_provider, src_path, dest_path)
             kwargs = {}
@@ -231,13 +231,36 @@ class BaseProvider(metaclass=abc.ABCMeta):
         return folder, created
 
     @asyncio.coroutine
-    def handle_naming(self, path, rename, is_dir=False, conflict='replace'):
-        if not is_dir and not path.is_dir:
-            path = path.parent
-        dest_path, _ = yield from self.handle_name_conflict(
-            (yield from self.revalidate_path(
-                path, rename, folder=is_dir
-            )), conflict=conflict)
+    def handle_naming(self, src_path, dest_path, rename=None, conflict='replace'):
+        """Given a WaterButlerPath and the desired name handle any potential
+        naming issues
+
+        ie:
+            cp /file.txt /folder/ -> /folder/file.txt
+            cp /folder/ /folder/ -> /folder/folder/
+            cp /file.txt /folder/file.txt -> /folder/file.txt
+            cp /file.txt /folder/file.txt -> /folder/file (1).txt
+            cp /file.txt /folder/doc.txt -> /folder/doc.txt
+
+        :param WaterButlerPath src_path: The object that is being copied
+        :param WaterButlerPath dest_path: The path that is being copied to or into
+        :param str rename: The desired name of the resulting path, may be incremented
+        :param str conflict: The conflict resolution strategy, replace or keep
+        """
+        if src_path.is_dir and dest_path.is_file:
+            # Cant copy a directory to a file
+            raise ValueError('Destination must be a directory if the source is')
+
+        if not dest_path.is_file:
+            # Directories always are going to be copied into
+            # cp /folder1/ /folder2/ -> /folder1/folder2/
+            dest_path = yield from self.revalidate_path(
+                dest_path,
+                rename or src_path.name,
+                folder=src_path.is_dir
+            )
+
+        dest_path, _ = yield from self.handle_name_conflict(dest_path, conflict=conflict)
 
         return dest_path
 
