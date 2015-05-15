@@ -88,8 +88,8 @@ def node_registration_retraction_post(auth, node, **kwargs):
     try:
         node.retract_registration(auth.user, data.get('justification', None))
         node.save()
-    except ValidationValueError:
-        raise HTTPError(http.BAD_REQUEST)
+    except ValidationValueError as err:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
     for contributor in node.contributors:
         _send_retraction_email(node, contributor)
@@ -444,8 +444,8 @@ def node_register_template_page_post(auth, node, **kwargs):
         try:
             register.embargo_registration(auth.user, embargo_end_date)
             register.save()
-        except ValidationValueError:
-            raise HTTPError(http.BAD_REQUEST)
+        except ValidationValueError as err:
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
         for contributor in register.contributors:
             _send_embargo_email(register, contributor)
