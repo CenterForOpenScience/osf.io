@@ -284,7 +284,8 @@ function _fangornColumns (item) {
     var selectClass = '';
     var node = item.parent().parent();
     if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        selectClass = 'fangorn-selected';
+        item.css = 'fangorn-selected';
+        tb.multiselected([item]);
     }
 
     var columns = [];
@@ -293,7 +294,6 @@ function _fangornColumns (item) {
         data : 'name',
         folderIcons : true,
         filter: true,
-        css: selectClass,
         custom : _fangornGithubTitle
     });
 
