@@ -275,6 +275,62 @@ class TestCopy:
             conflict='replace',
         )
 
+    @async
+    def test_checks_can_intra_copy(self, provider1):
+        provider1.can_intra_copy = mock.Mock(return_value=False)
+        src_path = yield from provider1.validate_path('/source/path')
+        dest_path = yield from provider1.validate_path('/destination/path')
+
+        yield from provider1.copy(provider1, src_path, dest_path)
+
+        provider1.can_intra_copy.assert_called_once_with(provider1, src_path)
+
+    @async
+    def test_calls_intra_copy(self, provider1):
+        src_path = yield from provider1.validate_path('/source/path')
+        dest_path = yield from provider1.validate_path('/destination/path')
+
+        provider1.can_intra_copy = mock.Mock(return_value=True)
+        provider1.intra_copy = utils.MockCoroutine(return_value='Someratheruniquevalue')
+
+        data = yield from provider1.copy(provider1, src_path, dest_path)
+
+        assert data == 'Someratheruniquevalue'
+        provider1.can_intra_copy.assert_called_once_with(provider1, src_path)
+        provider1.intra_copy.assert_called_once_with(provider1, src_path, dest_path)
+
+    @async
+    def test_calls_folder_op_on_dir(self, provider1):
+        src_path = yield from provider1.validate_path('/source/path/')
+        dest_path = yield from provider1.validate_path('/destination/path/')
+
+        provider1._folder_file_op = utils.MockCoroutine(return_value='Someratheruniquevalue')
+
+        data = yield from provider1.copy(provider1, src_path, dest_path)
+
+        assert data == 'Someratheruniquevalue'
+
+        provider1._folder_file_op.assert_called_once_with(
+            provider1.copy,
+            provider1,
+            src_path,
+            dest_path.child('path', folder=True),
+        )
+
+    @async
+    def test_copy_pipes_download_to_upload(self, provider1):
+        src_path = yield from provider1.validate_path('/source/path')
+        dest_path = yield from provider1.validate_path('/destination/path')
+
+        provider1.upload = utils.MockCoroutine(return_value='Upload return')
+        provider1.download = utils.MockCoroutine(return_value='Download return')
+
+        ret = yield from provider1.copy(provider1, src_path, dest_path)
+
+        assert ret == 'Upload return'
+        provider1.download.assert_called_once_with(src_path)
+        provider1.upload.assert_called_once_with('Download return', dest_path)
+
 
 class TestMove:
     @async
@@ -334,4 +390,87 @@ class TestMove:
             dest_path,
             rename='Baz',
             conflict='replace',
+        )
+
+    @async
+    def test_checks_can_intra_move(self, provider1):
+        provider1.can_intra_move = mock.Mock(return_value=False)
+        src_path = yield from provider1.validate_path('/source/path')
+        dest_path = yield from provider1.validate_path('/destination/path')
+
+        yield from provider1.move(provider1, src_path, dest_path)
+
+        provider1.can_intra_move.assert_called_once_with(provider1, src_path)
+
+    @async
+    def test_calls_intra_move(self, provider1):
+        src_path = yield from provider1.validate_path('/source/path')
+        dest_path = yield from provider1.validate_path('/destination/path')
+
+        provider1.can_intra_move = mock.Mock(return_value=True)
+        provider1.intra_move = utils.MockCoroutine(return_value='Someratheruniquevalue')
+
+        data = yield from provider1.move(provider1, src_path, dest_path)
+
+        assert data == 'Someratheruniquevalue'
+        provider1.can_intra_move.assert_called_once_with(provider1, src_path)
+        provider1.intra_move.assert_called_once_with(provider1, src_path, dest_path)
+
+    @async
+    def test_calls_folder_op_on_dir_and_delete(self, provider1):
+        src_path = yield from provider1.validate_path('/source/path/')
+        dest_path = yield from provider1.validate_path('/destination/path/')
+
+        provider1.delete = utils.MockCoroutine()
+        provider1._folder_file_op = utils.MockCoroutine(return_value=('Someratheruniquevalue', 'AndThen'))
+
+        data = yield from provider1.move(provider1, src_path, dest_path)
+
+        assert data == ('Someratheruniquevalue', 'AndThen')
+
+        provider1.delete.assert_called_once_with(src_path)
+        provider1._folder_file_op.assert_called_once_with(
+            provider1.move,
+            provider1,
+            src_path,
+            dest_path.child('path', folder=True),
+        )
+
+    @async
+    def test_calls_copy_and_delete(self, provider1):
+        src_path = yield from provider1.validate_path('/source/path')
+        dest_path = yield from provider1.validate_path('/destination/path')
+
+        provider1.delete = utils.MockCoroutine()
+        provider1.copy = utils.MockCoroutine(return_value=('Copy return', 'Value'))
+
+        ret = yield from provider1.move(provider1, src_path, dest_path)
+
+        assert ret == ('Copy return', 'Value')
+        provider1.delete.assert_called_once_with(src_path)
+        provider1.copy.assert_called_once_with(
+            provider1,
+            src_path,
+            dest_path,
+            handle_naming=False
+        )
+
+    @async
+    def test_no_delete_on_copy_error(self, provider1):
+        src_path = yield from provider1.validate_path('/source/path')
+        dest_path = yield from provider1.validate_path('/destination/path')
+
+        provider1.delete = utils.MockCoroutine()
+        provider1.copy = utils.MockCoroutine(side_effect=Exception('WHAT'))
+
+        with pytest.raises(Exception) as e:
+            yield from provider1.move(provider1, src_path, dest_path)
+
+        assert e.value.args == ('WHAT', )
+        assert provider1.delete.called is False
+        provider1.copy.assert_called_once_with(
+            provider1,
+            src_path,
+            dest_path,
+            handle_naming=False
         )
