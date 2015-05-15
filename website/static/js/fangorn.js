@@ -1080,8 +1080,8 @@ var FGDropdown = {
         var name = args.name || '';
         var label = args.label || '';
         var onchange = args.onchange || noop;
-        return m('div', {
-                className: 'fangorn-toolbar-icon ' + extraCSS
+        return m('span.fangorn-dropdown', {
+                className: extraCSS
             },[
                 m('span.hidden-xs',label),
                 m('select.no-border', {

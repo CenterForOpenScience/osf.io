@@ -211,6 +211,9 @@ text-align: center;
 	color: #CCC;
 	text-align: center;
 }
+.fangorn-dropdown {
+  margin-right: 5px;
+}
 .fangorn-canDelete, .fangorn-noDelete {
 	font-weight: bold;
 	border-bottom: 1px solid #EEE;
