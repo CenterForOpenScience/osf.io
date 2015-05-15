@@ -1,4 +1,3 @@
-from framework.auth import Auth
 from framework.archiver import mails
 from framework.archiver.utils import delete_registration_tree
 
