@@ -41,24 +41,24 @@ function fixAffixWidth() {
 
 $(document).ready(function() {
 
-    // Apply KO bindings for Node Category Settings
-    var categories = [];
-    var keys = Object.keys(window.contextVars.nodeCategories);
-    for (var i = 0; i < keys.length; i++) {
-        categories.push({
-            label: window.contextVars.nodeCategories[keys[i]],
-            value: keys[i]
-        });
-    }
-    var disableCategory = !window.contextVars.node.parentExists;
-    var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
-        window.contextVars.node.category,
-        categories,
-        window.contextVars.node.urls.update,
-        disableCategory
-    );
-
     if ($('#nodeCategorySettings')[0]) {
+        // Apply KO bindings for Node Category Settings
+        var categories = [];
+        var keys = Object.keys(window.contextVars.nodeCategories);
+        for (var i = 0; i < keys.length; i++) {
+            categories.push({
+                label: window.contextVars.nodeCategories[keys[i]],
+                value: keys[i]
+            });
+        }
+        var disableCategory = !window.contextVars.node.parentExists;
+        var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
+            window.contextVars.node.category,
+            categories,
+            window.contextVars.node.urls.update,
+            disableCategory
+        );
+
         ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
     }
 
