@@ -1702,7 +1702,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for node_contained in original.nodes:
             registered_node = node_contained.register_node(
-                schema, auth, template, data
+                schema, auth, template, data, send_signals=send_signals
             )
             if registered_node is not None:
                 registered.nodes.append(registered_node)
@@ -1894,6 +1894,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return self.parent_node.root
         else:
             return self
+
+    @property
+    def registrations(self):
+        return self.node__registrations.find(Q('archiving', 'eq', False))
 
     @property
     def watch_url(self):
