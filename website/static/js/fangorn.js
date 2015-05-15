@@ -821,7 +821,8 @@ function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
-            onclick: function() {
+            onclick: function(event) {
+                event.stopImmediatePropagation();
                 gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
@@ -1157,7 +1158,7 @@ var FGItemButtons = {
 
 var _dismissToolbar = function(){
     var tb = this;
-    if (tb.toolbarMode === toolbarModes.SEARCH){
+    if (tb.toolbarMode() === toolbarModes.SEARCH){
         tb.resetFilter();
     }
     tb.toolbarMode(toolbarModes.DEFAULT);

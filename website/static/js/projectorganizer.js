@@ -1163,7 +1163,7 @@ var POItemButtons = {
 
 var _dismissToolbar = function () {
     var tb = this;
-    if (tb.toolbarMode === Fangorn.Components.toolbarModes.SEARCH){
+    if (tb.toolbarMode() === Fangorn.Components.toolbarModes.SEARCH){
         tb.resetFilter();
     }
     tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
