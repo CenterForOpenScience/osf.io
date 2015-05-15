@@ -91,7 +91,7 @@ describe('registrationRetraction', () => {
                     var onSubmitSuccessStub = new sinon.stub(vm, 'onSubmitSuccess');
 
                     vm.confirmationText(registrationTitle);
-                    vm.submit().done(() => {
+                    vm.submit().always(() => {
                         assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitSuccessStub);
                         assert.called(postSpy);
@@ -107,7 +107,8 @@ describe('registrationRetraction', () => {
                     var ravenStub = new sinon.stub(Raven, 'captureMessage');
 
                     vm.confirmationText(registrationTitle);
-                    vm.submit().always(() => {
+                    vm.submit().always((xhr) => {
+                        assert.equal(xhr.status, 500);
                         assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitErrorSpy);
                         assert.called(postSpy);
