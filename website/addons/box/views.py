@@ -33,7 +33,8 @@ def box_get_user_settings(auth):
 @must_have_permission(permissions.WRITE)
 def box_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    refresh_oauth_key(node_addon.external_account)
+    if node_addon.external_account:
+        refresh_oauth_key(node_addon.external_account)
     return {
         'result': BoxSerializer().serialize_settings(node_addon, auth.user),
     }
