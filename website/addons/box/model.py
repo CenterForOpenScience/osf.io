@@ -47,80 +47,27 @@ class Box(ExternalProvider):
     callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     default_scopes = ['root_readwrite']
 
-    @must_be_logged_in
-    def handle_callback(self, *args, **kwargs):
+    def handle_callback(self, response):
         """View called when the Oauth flow is completed. Adds a new BoxUserSettings
         record to the user and saves the user's access token and account info.
         """
-        auth = kwargs.get('auth')
-        user = auth.user
-        node = Node.load(session.data.pop('box_auth_nid', None))
-
-        # Handle request cancellations from Box's API
-        if request.args.get('error'):
-            flash('Box authorization request cancelled.')
-            if node:
-                return redirect(node.web_url_for('node_setting'))
-            return redirect(web_url_for('user_addons'))
-
-        result = self.finish_auth()
-        # If result is a redirect response, follow the redirect
-        if isinstance(result, BaseResponse):
-            return result
 
         client = BoxClient(CredentialsV2(
-            result['access_token'],
-            result['refresh_token'],
+            response['access_token'],
+            response['refresh_token'],
             settings.BOX_KEY,
             settings.BOX_SECRET,
         ))
 
         about = client.get_user_info()
 
-        # Make sure user has box enabled
-        user.add_addon('box')
-        user.save()
+        url = 'https://app.box.com/profile/' + about['id']
 
         return {
             'provider_id': about['id'],
-            'oauth_key': result['access_token'],
-            'refresh_token': result['refresh_token'],
-            'expires_at': datetime.utcfromtimestamp(time.time() + 3600),
+            'display_name': about['name'],
+            'profile_url': url
         }
-
-    def finish_auth(self):
-        """View helper for finishing the Box Oauth2 flow. Returns the
-        access_token, user_id, and url_state.
-
-        Handles various errors that may be raised by the Box client.
-        """
-        if 'error' in request.args:
-            self.handle_box_error(error=request.args['error'], msg=request.args['error_description'])
-
-        # Should always be defined
-        code = request.args['code']
-        # Default to empty string over None because of below assertion
-        state = request.args.get('state', '')
-
-        if state != session.data['oauth_states']['box']['state']:
-            raise HTTPError(http.FORBIDDEN)
-
-        data = {
-            'code': code,
-            'client_id': settings.BOX_KEY,
-            'grant_type': 'authorization_code',
-            'client_secret': settings.BOX_SECRET,
-        }
-
-        response = requests.post(settings.BOX_OAUTH_TOKEN_ENDPOINT, data)
-        result = response.json()
-
-        if 'error' in result:
-            handle_box_error(
-                error=request.args['error'],
-                msg=request.args['error_description'])
-
-        return result
 
     @must_be_logged_in
     @must_have_addon('box', 'user')
