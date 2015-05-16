@@ -1,28 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
-import time
 import logging
-import httplib as http
-from datetime import datetime
 
 import pymongo
-import requests
-from flask import request, redirect
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
-from werkzeug.wrappers import BaseResponse
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from framework.sessions import session
-from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message as flash
-
-from website.util import api_url_for
-from website.util import web_url_for
-from website.project.model import Node
-from website.project.decorators import must_have_addon
 
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase, GuidFile
@@ -31,7 +17,6 @@ from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger, refresh_oauth_key
 from website.addons.box.serializer import BoxSerializer
 from website.oauth.models import ExternalProvider
-from website.addons.box.utils import handle_box_error
 
 logger = logging.getLogger(__name__)
 
@@ -67,42 +52,6 @@ class Box(ExternalProvider):
             'provider_id': about['id'],
             'display_name': about['name'],
             'profile_url': url
-        }
-
-    @must_be_logged_in
-    @must_have_addon('box', 'user')
-    def box_oauth_delete_user(self, user_addon, auth, **kwargs):
-        """View for deauthorizing Box."""
-        user_addon.clear()
-        user_addon.save()
-
-    @must_be_logged_in
-    @must_have_addon('box', 'user')
-    def box_user_config_get(self, user_addon, auth, **kwargs):
-        """View for getting a JSON representation of the logged-in user's
-        Box user settings.
-        """
-        urls = {
-            'create': api_url_for('box_oauth_start_user'),
-            'delete': api_url_for('box_oauth_delete_user')
-        }
-        valid_credentials = True
-
-        if user_addon.has_auth:
-            try:
-                client = self.client
-                client.get_user_info()
-            except BoxClientException:
-                valid_credentials = False
-
-        return {
-            'result': {
-                'urls': urls,
-                'boxName': user_addon.username,
-                'userHasAuth': user_addon.has_auth,
-                'validCredentials': valid_credentials,
-                'nNodesAuthorized': len(user_addon.nodes_authorized),
-            },
         }
 
 
