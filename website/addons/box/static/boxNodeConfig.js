@@ -26,7 +26,7 @@ var BoxNodeConfigViewModel = oop.extend(AddonNodeConfigViewModel, {
 
         self.messages.submitSettingsSuccess = ko.pureComputed(function() {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
-                self.urls().files + '">Overview page</a> to view your citations.';
+                self.urls().files + '">Overview page</a> to view your files.';
         });
 
         self.treebeardOptions = $.extend(
