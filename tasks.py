@@ -566,9 +566,10 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
-    from website.app import init_app
-    # Call init_app to build log templates, nodeCategories.json, etc.
-    init_app(routes=False, set_backends=True, mfr=True)
+    from website.app import build_js_config_files
+    from website import settings
+    # Build nodeCategories.json before building assets
+    build_js_config_files(settings)
     assets(dev=True, watch=False)
 
 
