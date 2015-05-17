@@ -35,7 +35,17 @@ var MESSAGES = {
 
     makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?'
+                        'Would you like to continue?',
+    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
+    makeRegistrationPublicWarning: 'Once a registration is made public, there is no way to guarantee that ' +
+                        'access to the data it contains can be completely prevented. Users ' +
+                        'should assume that once a project is made public, it will always ' +
+                        'be public. Are you absolutely sure you would like to continue?' +
+                        '<hr /> \n<b>Important Note:</b> Effective <u>29-May-2015</u>, public registrations ' +
+                        'will no longer be able to be made private. They will instead need to be retracted ' +
+                        'leaving behind basic meta-data related to the registration. If you would like ' +
+                        'your registration to be private, ensure that you take necessary action '+
+                        'before 29-May-2015.',
 };
 
 // TODO(sloria): Fix this external dependency on nodeApiUrl
@@ -52,8 +62,11 @@ var COMPONENT = 'component';
 function setPermissions(permissions, nodeType) {
 
     var msgKey;
+    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
+    var isRegistration = window.contextVars.node.isRegistration;
 
-    if (permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+    if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
+    else if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
     else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
     else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
     else { msgKey = 'makeComponentPrivateWarning'; }
