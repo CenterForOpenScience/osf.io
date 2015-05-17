@@ -46,12 +46,20 @@ class CasClient:
     def __init__(self, base_url):
         self.BASE_URL = base_url
 
-    def get_login_url(self, service_url, auto=False):
+    def get_login_url(self, service_url, auto=False, username=None, password=None, verification_key=None, otp=None):
         url = furl.furl(self.BASE_URL)
         url.path.segments.append('login')
         url.args['service'] = service_url
         if auto:
             url.args['auto'] = 'true'
+            if username:
+                url.args['username'] = username
+            if password:
+                url.args['password'] = password
+            if verification_key:
+                url.args['verification_key'] = verification_key
+            if otp:
+                url.args['otp'] = otp
         return url.url
 
     def get_logout_url(self, service_url):
