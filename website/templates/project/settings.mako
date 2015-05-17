@@ -17,32 +17,32 @@
 
 <div class="row project-page">
     <div class="col-sm-3 affix-parent">
-        <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268">
-            <ul class="nav nav-stacked nav-pills">
-                % if 'admin' in user['permissions'] and not node['is_registration']:
+        % if 'write' in user['permissions'] and not node['is_registration']:
+            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268">
+                <ul class="nav nav-stacked nav-pills">
                     <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
-                % endif
-                % if 'admin' in user['permissions'] and not node['is_registration']:
-                    <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
-                % endif
 
-                % if 'write' in user['permissions'] and not node['is_registration']:
-                    <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
+                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                        <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
+                    % endif
 
-                % if addon_enabled_settings:
-                    <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                % endif
+                    % if 'write' in user['permissions'] and not node['is_registration']:
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
+    
+                    % if addon_enabled_settings:
+                        <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
+                    % endif
 
-                    <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
-                %endif
-            </ul>
-        </div><!-- end sidebar -->
+                        <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                    %endif
+                </ul>
+            </div><!-- end sidebar -->
+        % endif
     </div>
 
     <div class="col-sm-9">
 
-        % if 'admin' in user['permissions'] and not node['is_registration']:
-
+        % if 'write' in user['permissions'] and not node['is_registration']:
             <div class="panel panel-default">
                 <span id="configureNodeAnchor" class="anchor"></span>
 
@@ -70,19 +70,23 @@
                     A top-level project's category cannot be changed
                   </span>
                 </div>
-                <hr />
-                <div class="panel-body">
-                    <div class="help-block">
-                        A project cannot be deleted if it has any components within it.
-                        To delete a parent project, you must first delete all child components
-                        by visiting their settings pages.
+
+                % if 'admin' in user['permissions'] and not node['is_registration']:
+                    <hr />
+                    <div class="panel-body">
+                        <div class="help-block">
+                            A project cannot be deleted if it has any components within it.
+                            To delete a parent project, you must first delete all child components
+                            by visiting their settings pages.
+                        </div>
+                        <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+
                     </div>
-                    <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
-
-                </div>
-
+                % endif
             </div>
+        % endif
 
+        % if 'admin' in user['permissions'] and not node['is_registration']:
             <div class="panel panel-default">
                 <span id="configureCommentingAnchor" class="anchor"></span>
 
