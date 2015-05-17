@@ -2,6 +2,7 @@ import sys
 import logging
 
 from framework.auth.core import get_user
+from framework.transactions.context import TokuTransaction
 from website.project.model import Node
 from website.app import init_app
 from scripts import utils as script_utils
@@ -14,9 +15,10 @@ def do_migration(records, dry=False):
     for user in records:
         logger.info('Deleting user - {}'.format(user._id))
         if not dry:
-            migrate_project_contributed(user)
-            user.is_disabled = True
-            user.save()
+            with TokuTransaction():
+                migrate_project_contributed(user)
+                user.is_disabled = True
+                user.save()
     logger.info('{}Deleted {} users'.format('[dry]'if dry else '', len(records)))
 
 
