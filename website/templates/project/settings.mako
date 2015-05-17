@@ -213,7 +213,9 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure Notifications</h3>
                 </div>
-
+                <div class="help-block" style="padding-left: 15px">
+                    <p>These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                </div>
                 <form id="notificationSettings" class="osf-treebeard-minimal">
                     <div id="grid">
     <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
