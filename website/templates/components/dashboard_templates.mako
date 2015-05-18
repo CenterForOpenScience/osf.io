@@ -112,13 +112,33 @@
                 <osf-project-search
                 params="data: data,
                         onSubmit: startUpload,
-                        onClear: clearMessages,
-                        onSelected: clearMessages,
-                        submitText: 'Upload'">
+                        onClear: showCreateAndUpload,
+                        onSelected: hideCreateAndUpload,
+                        submitText: 'Upload',
+                        ">
                 </osf-project-search>
             </div>
         </div><!-- end row -->
-        <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+        <form data-bind="submit: submitCreateAndUpload, visible:createAndUpload">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4> "OR" Upload to a New Project</h4>
+                    <input class="form-control"
+                        type="text" name="title"
+                        maxlength="200"
+                        data-bind="value: newProjectName"
+                        placeholder="Enter a Project name"
+                    >
+                </div>
+            </div>
+            <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+            <div class="row">
+                <div class="col-md-12">
+                    <br>
+                    <button  class="btn btn-primary pull-right" type="submit">Create</button>
+                </div>
+            </div>
+        </form>
     </div>
 </li> <!-- end .ob-list -->
 </template>

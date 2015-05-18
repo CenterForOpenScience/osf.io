@@ -83,6 +83,7 @@ def project_new_post(auth, **kwargs):
     category = data.get('category', 'project')
     template = data.get('template')
     description = strip_html(data.get('description'))
+    new_project = {}
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -107,10 +108,22 @@ def project_new_post(auth, **kwargs):
 
     else:
         project = new_node(category, title, user, description)
+        new_project = _view_project(project, auth)
 
     return {
-        'projectUrl': project.url
+        'projectUrl': project.url,
+        'newNode': new_project['node'] if new_project else None
     }, http.CREATED
+
+
+@must_be_logged_in
+def project_delete_new_post(auth, **kwargs):
+    node_id = kwargs['pid']
+    node = Node.load(node_id)
+    node.remove_node(auth)
+    return {
+        'message': 'Node removed'
+    }
 
 
 @must_be_logged_in
