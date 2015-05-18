@@ -283,8 +283,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
         }
         if(child.data.tmpID === file.tmpID) {
             item = child;
-            item.uploadState = 'uploading';
-            item.progress = progress;
+            item.data.progress = progress;
+            item.data.uploadState('uploading');
         }
     }
     //templateWithCancel = m('span', [
@@ -353,7 +353,7 @@ function _fangornAddedFile(treebeard, file) {
             edit: false
         },
         tmpID: tmpID,
-        uploadState : 'pending'
+        uploadState : m.prop('pending')
     };
     var newitem = treebeard.createItem(blankItem, item.id);
     return configOption || null;
@@ -447,6 +447,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     }
     if (item.data.tmpID) {
         item.data.tmpID = null;
+        item.data.uploadState('completed');
     }
     // Remove duplicates if file was updated
     var status = file.xhr.status;
