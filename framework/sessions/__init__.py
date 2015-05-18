@@ -10,7 +10,7 @@ import itsdangerous
 
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request
+from flask import request, make_response
 from framework.flask import app, redirect
 
 from website import settings
@@ -172,8 +172,10 @@ def before_request():
     if authorization and authorization.startswith('Bearer '):
         access_token = authorization[7:]
         cas_resp = CasClient(settings.CAS_SERVER_URL).profile(access_token)
-        user = User.load(cas_resp.user)
-        return authenticate(user, access_token, None)
+        if cas_resp.authenticated:
+            user = User.load(cas_resp.user)
+            return authenticate(user, access_token, None)
+        return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:
         # Create a session from the API key; if key is

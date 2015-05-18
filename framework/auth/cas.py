@@ -5,44 +5,15 @@ import requests
 from lxml import etree
 
 
-class CasResponse:
+class CasResponse(object):
 
-    def __init__(self):
-        self._authenticated = False
-        self._status = None
-        self._user = None
-        self._attributes = {}
-
-    @property
-    def authenticated(self):
-        return self._authenticated
-
-    @authenticated.setter
-    def authenticated(self, value):
-        self._authenticated = value
-
-    @property
-    def status(self):
-        return self._status
-
-    @status.setter
-    def status(self, value):
-        self._status = value
-
-    @property
-    def user(self):
-        return self._user
-
-    @user.setter
-    def user(self, value):
-        self._user = value
-
-    @property
-    def attributes(self):
-        return self._attributes
+    authenticated = False
+    status = None
+    user = None
+    attributes = {}
 
 
-class CasClient:
+class CasClient(object):
 
     def __init__(self, base_url):
         self.BASE_URL = base_url

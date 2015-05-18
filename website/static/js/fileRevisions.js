@@ -122,7 +122,11 @@ RevisionsViewModel.prototype.fetch = function() {
         }
     }
 
-    var request = $.getJSON(self.urls.revisions);
+    var request = $.ajax({
+        url: self.urls.revisions,
+        dataType: 'json',
+        beforeSend: $osf.setXHRAuthorization
+    });
 
     request.done(function(response) {
         self.revisions(ko.utils.arrayMap(response.data, function(item, index) {
