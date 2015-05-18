@@ -157,8 +157,8 @@ class TestWikiViews(OsfTestCase):
     def test_serialize_wiki_toc(self):
         project = ProjectFactory()
         auth = Auth(project.creator)
-        NodeFactory(project=project, creator=project.creator)
-        no_wiki = NodeFactory(project=project, creator=project.creator)
+        NodeFactory(parent=project, creator=project.creator)
+        no_wiki = NodeFactory(parent=project, creator=project.creator)
         project.save()
 
         serialized = _serialize_wiki_toc(project, auth=auth)

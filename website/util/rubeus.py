@@ -294,7 +294,6 @@ class NodeProjectCollector(object):
             modified_by = user.family_name or user.given_name
         except AttributeError:
             modified_by = ''
-        # test_children = self._collect_addons(node)
         child_nodes = node.nodes
         readable_children = []
         for child in child_nodes:
@@ -319,7 +318,7 @@ class NodeProjectCollector(object):
 
         if node.is_dashboard:
             to_expand = True
-        elif type_ != 'pointer':
+        elif not is_pointer or parent_is_folder:
             to_expand = expanded
         else:
             to_expand = False
@@ -328,6 +327,7 @@ class NodeProjectCollector(object):
             #TODO Remove the replace when mako html safe comes around
             'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
             'kind': FOLDER,
+            'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
                 'edit': can_edit,
@@ -458,6 +458,7 @@ class NodeFileCollector(object):
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeType': node.project_or_component,
             'nodeID': node.resolve()._id,
         }
 

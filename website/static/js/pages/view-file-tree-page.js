@@ -1,4 +1,5 @@
 'use strict';
+var $ = require('jquery');
 
 var fileBrowser = require('../fileViewTreebeard');
 var nodeApiUrl = window.contextVars.node.urls.api;
