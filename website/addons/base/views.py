@@ -194,11 +194,14 @@ def create_waterbutler_log(payload, **kwargs):
 
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
         for bundle in ('source', 'destination'):
-            for key in ('provider', 'materialized', 'name'):
+            for key in ('provider', 'materialized', 'name', 'nid'):
                 if key not in payload[bundle]:
                     raise HTTPError(httplib.BAD_REQUEST)
 
-        source = node.get_addon(payload['source']['provider'])
+        destination_node = node  # For clarity
+        source_node = Node.load(payload['source']['nid'])
+
+        source = source_node.get_addon(payload['source']['provider'])
         destination = node.get_addon(payload['destination']['provider'])
 
         payload['source']['addon'] = source.config.full_name
@@ -208,18 +211,28 @@ def create_waterbutler_log(payload, **kwargs):
         payload['destination']['path'] = payload['destination']['materialized']
 
         payload.update({
-            'node': node._id,
-            'project': node.parent_id,
+            'node': destination_node._id,
+            'project': destination_node.parent_id,
         })
 
-        node.add_log(
+        destination_node.add_log(
             action=action,
             auth=auth,
             params=payload
         )
 
-        if payload.get('email'):
-            mails.send_mail(user.username, mails.FILE_OPERATION_COMPLETE, user)
+        if payload.get('email') is True:
+            mails.send_mail(
+                user.username,
+                mails.FILE_OPERATION_FAILED if payload.get('errors')
+                else mails.FILE_OPERATION_SUCCESS,
+                source_node=source_node,
+                destination_node=destination_node,
+                source_path=payload['source']['path'],
+                destination_path=payload['source']['path'],
+                source_addon=payload['source']['addon'],
+                destination_addon=payload['destination']['addon'],
+            )
     else:
         try:
             metadata = payload['metadata']
