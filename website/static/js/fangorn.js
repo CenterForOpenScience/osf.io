@@ -1552,6 +1552,7 @@ tbOptions = {
     resolveRows : _fangornResolveRows,
     hoverClassMultiselect : 'fangorn-selected',
     multiselect : true,
+    placement : 'files',
     title : function() {
         //TODO Add disk saving mode message
         // if(window.contextVars.diskSavingMode) {
