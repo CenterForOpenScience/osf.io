@@ -1762,7 +1762,8 @@ Fangorn.Utils = {
     setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile,
     openParentFolders : _openParentFolders,
-    dismissToolbar : _dismissToolbar
+    dismissToolbar : _dismissToolbar,
+    uploadRowTemplate : uploadRowTemplate
 };
 
 Fangorn.DefaultOptions = tbOptions;
