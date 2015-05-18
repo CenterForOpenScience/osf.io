@@ -61,9 +61,9 @@
 
 <h3>How does OSF store and back up files that I upload to the site?</h3>
     <p>The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
-    via an open source sponsorship, and has backups on 
-    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>. 
-    OSF maintains several backup schemes, including off-site backups and 
+    via an open source sponsorship, and has backups on
+    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
+    OSF maintains several backup schemes, including off-site backups and
     automated backups performed by our host every day, week, and fortnight.</p>
 
 <h3>What is coming to the OSF?</h3>
@@ -116,13 +116,13 @@
 <p>Yes. Log into the account you wish to keep and navigate to your Account Settings. There, enter the email address associated with your other OSF account. You will receive a confirmation link via email. Clicking the link will merge the projects and components under one account.</p>
 
 <h3>What is the difference between a component and a folder?</h3>
-<p>A folder can be used to organize files within a project or component - just like a folder on your own computer groups files together. A component is like a sub-project to help you organize different parts of your research. Components have privacy and sharing settings independent of the overarching project's settings, their own unique, persistent identifiers for citation, and their own wiki and add-ons.</p>
+<p>A folder can be used to organize files within a project or component - just like a folder on your own computer groups files together. A component is like a sub-project to help you organize different parts of your research. Components have their own privacy and sharing settings as well as their own unique, persistent identifiers for citation, and their own wiki and add-ons.</p>
 
 <h3>I’m using the search function to find one of my projects, but it’s not showing up in the results. What’s wrong?</h3>
 <p>The search function only returns public projects, so if you’re searching for one of your own private projects, it won’t be returned in the results. To search for your own projects, go to your dashboard, and use the “Go to my project” widget on the top right.</p>
 
 <h3>None of these FAQs answered my question. Now what?</h3>
-<p>Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to answer your questions.             
-            
-            
+<p>Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to answer your questions.
+
+
 </%def>
