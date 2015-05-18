@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 import os
+import httplib as http
 
+from flask import request
 from flask import send_from_directory
 
 from framework import status
@@ -17,6 +18,7 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
+from framework.auth.cas import CasClient
 
 from website import util
 from website import settings
@@ -66,6 +68,7 @@ def get_globals():
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
+        'login_url': CasClient(settings.CAS_SERVER_URL).get_login_url(request.url, auto=True),
     }
 
 
@@ -441,10 +444,9 @@ def make_url_map(app):
         Rule('/login/two_factor/', ['get', 'post'], auth_views.two_factor,
              OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-        # TODO(hrybacki): combining the get/posts into a single rule is causing a build error and needs debugging
-        Rule('/forgotpassword/', 'get', auth_views._forgot_password,
+        Rule('/forgotpassword/', 'get', auth_views.forgot_password_get,
              OsfWebRenderer('public/forgot_password.mako')),
-        Rule('/forgotpassword/', 'post', auth_views.forgot_password,
+        Rule('/forgotpassword/', 'post', auth_views.forgot_password_post,
              OsfWebRenderer('public/login.mako')),
 
         Rule([

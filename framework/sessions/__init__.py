@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import httplib as http
+import furl
 import urllib
 import urlparse
 import bson.objectid
+import httplib as http
+
 import itsdangerous
+
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
 from flask import request
@@ -143,9 +146,31 @@ session = LocalProxy(get_session)
 # NOTE: This gets attached in website.app.init_app to ensure correct callback
 # order
 def before_request():
+    from framework.auth import authenticate
+    from framework.auth.core import User
+    from framework.auth.cas import CasClient
+
+    # Central Authorization Server Ticket Validation and Authentication
+    ticket = request.args.get('ticket')
+    if ticket:
+        service_url = furl.furl(request.url)
+        service_url.args.pop('ticket')
+
+        cas_resp = CasClient(settings.CAS_SERVER_URL).service_validate(ticket, service_url.url)
+        if cas_resp.authenticated:
+            user = User.load(cas_resp.user)
+            # TODO: CAS Store AccessToken
+            print(cas_resp.attributes['accessToken'])
+            # if we successfully authentication and a verification key is present, invalidate it
+            if user.verification_key:
+                user.verification_key = None
+                user.save()
+            return authenticate(user, redirect(service_url.url))
+        # Ticket could not be validated, unauthorized.
+        return redirect(service_url.url)
 
     if request.authorization:
-
+        # TODO: Check Bearer Token and validate against CAS
         # Create a session from the API key; if key is
         # not valid, save the HTTP error code in the
         # "auth_error_code" field of session.data
@@ -170,16 +195,12 @@ def before_request():
                 session.data['auth_user_username'] = user.username
                 session.data['auth_user_id'] = user._primary_key
                 session.data['auth_user_fullname'] = user.fullname
-
             elif node:
                 session.data['auth_node_id'] = node._primary_key
-
             else:
                 # Invalid key: Not attached to user or node
                 session.data['auth_error_code'] = http.FORBIDDEN
-
         else:
-
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN
 

@@ -2426,7 +2426,7 @@ class TestPublicViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_forgot_password_get(self):
-        res = self.app.get(web_url_for('_forgot_password'))
+        res = self.app.get(web_url_for('forgot_password_get'))
         assert_equal(res.status_code, 200)
         assert_in('Forgot Password', res.body)
 
