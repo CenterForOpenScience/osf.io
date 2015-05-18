@@ -1326,6 +1326,7 @@ var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
+        self.tb.inputValue = m.prop('');
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
@@ -1384,6 +1385,7 @@ var FGToolbar = {
             m('.col-xs-9',
                 m.component(FGInput, {
                     onkeypress: function (event) {
+                        ctrl.tb.inputValue($(event.target).val());
                         if (ctrl.tb.pressedKey === ENTER_KEY) {
                             _renameEvent.call(ctrl.tb);
                         }
@@ -1391,7 +1393,7 @@ var FGToolbar = {
                     id : 'renameInput',
                     helpTextId : 'renameHelpText',
                     placeholder : null,
-                    value : ctrl.items()[0] ? ctrl.items()[0].data.name : '',
+                    value : ctrl.tb.inputValue(),
                     tooltip: 'Change the name of the item here'
                 }, ctrl.helpText())
             ),
@@ -1483,7 +1485,7 @@ var FGToolbar = {
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
+        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1573,6 +1575,7 @@ function _openParentFolders (item) {
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
+    tb.inputValue(tb.multiselected()[0].data.name);
     m.redraw();
     reapplyTooltips();
 }
