@@ -29,7 +29,7 @@ class Box(ExternalProvider):
     client_secret = settings.BOX_SECRET
 
     auth_url_base = settings.BOX_OAUTH_AUTH_ENDPOINT
-    callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
+    auto_refresh_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     default_scopes = ['root_readwrite']
 
     def handle_callback(self, response):
@@ -182,11 +182,6 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
     def find_or_create_file_guid(self, path):
         return BoxFile.get_or_create(node=self.owner, path=path)
 
-    # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
-    def delete(self, save=True):
-        self.deauthorize(add_log=False)
-        super(BoxNodeSettings, self).delete(save)
-
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         node = self.owner
@@ -241,113 +236,5 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
 
     ##### Callback overrides #####
 
-    def before_register_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        registration.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.has_auth:
-            return (
-                u'The contents of Box add-ons cannot be registered at this time; '
-                u'the Box folder linked to this {category} will not be included '
-                u'as part of this registration.'
-            ).format(**locals())
-
-    # backwards compatibility
-    before_register = before_register_message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                u'Because you have authorized the Box add-on for this '
-                '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.'
-            ).format(category=category)
-        else:
-            return (
-                u'Because the Box add-on has been authorized by a different '
-                'user, forking it will not transfer authentication token to the forked '
-                '{category}.'
-            ).format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
-
-    def before_remove_contributor_message(self, node, removed):
-        """Return warning text to display if removed contributor is the user
-        who authorized the Box addon
-        """
-        if self.user_settings and self.user_settings.owner == removed:
-            category = node.project_or_component
-            name = removed.fullname
-            return (
-                u'The Box add-on for this {category} is authenticated by {name}. '
-                'Removing this user will also remove write access to Box '
-                'unless another contributor re-authenticates the add-on.'
-            ).format(**locals())
-
-    # backwards compatibility
-    before_remove_contributor = before_remove_contributor_message
-
-    def after_fork(self, node, fork, user, save=True):
-        """After forking, copy user settings if the user is the one who authorized
-        the addon.
-
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, _ = super(BoxNodeSettings, self).after_fork(
-            node=node, fork=fork, user=user, save=False
-        )
-
-        if self.user_settings and self.user_settings.owner == user:
-            clone.user_settings = self.user_settings
-            message = (
-                'Box authorization copied to forked {cat}.'
-            ).format(cat=fork.project_or_component)
-        else:
-            message = (
-                u'Box authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
-                'page.'
-            ).format(
-                url=fork.web_url_for('node_setting'),
-                cat=fork.project_or_component
-            )
-        if save:
-            clone.save()
-        return clone, message
-
-    def after_remove_contributor(self, node, removed, auth=None):
-        """If the removed contributor was the user who authorized the Box
-        addon, remove the auth credentials from this node.
-        Return the message text that will be displayed to the user.
-        """
-
-        if self.user_settings and self.user_settings.owner == removed:
-
-            self.user_settings = None
-            self.save()
-            message = (
-                u'Because the Box add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
-            ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
-            )
-
-            if not auth or auth.user != removed:
-                url = node.web_url_for('node_setting')
-                message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
-                ).format(url=url)
-            #
-            return message
-
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)
-        self.save()
