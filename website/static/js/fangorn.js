@@ -314,18 +314,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
             item.data.uploadState('uploading');
         }
     }
-    //templateWithCancel = m('span', [
-    //    cancelUploadTemplate.call(treebeard, item),
-    //    m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
-    //]);
-    //templateWithoutCancel = m('span', [
-    //    m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
-    //]);
-    //if (progress < 100) {
-    //    item.notify.update(templateWithCancel, 'success', null, 0);
-    //} else {
-    //    item.notify.update(templateWithoutCancel, 'success', null, 2000);
-    //}
+    m.redraw();
 }
 
 /**
