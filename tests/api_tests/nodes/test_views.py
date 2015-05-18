@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import mock
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -428,3 +429,77 @@ class TestNodePointerDetail(OsfTestCase):
         res = self.app.delete(url, auth=self.auth)
         assert_equal(res.status_code, 204)
         assert_equal(len(self.project.nodes_pointer), 0)
+
+
+class TestNodeFilesList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth = (self.user.username, 'justapoorboy')
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_returns_200(self):
+        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id))
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_returns_addon_folders(self):
+        project = ProjectFactory(creator=self.user)
+        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=project._id))
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+
+        project.add_addon('github', auth=Auth(self.user))
+        project.save()
+
+        res = self.app.get(url, auth=self.auth)
+        data = res.json['data']
+        providers = [item['provider'] for item in data]
+        assert_equal(len(data), 2)
+        assert_in('github', providers)
+        assert_in('osfstorage', providers)
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_returns_node_files_list(self, mock_waterbutler_request):
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = {
+            u'data': [{
+                u'contentType': None,
+                u'extra': {u'downloads': 0, u'version': 1},
+                u'kind': u'file',
+                u'modified': None,
+                u'name': u'NewFile',
+                u'path': u'/',
+                u'provider': u'osfstorage',
+                u'size': None
+            }]
+        }
+        mock_waterbutler_request.return_value = mock_res
+        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id)) + '?path=%2F&provider=osfstorage'
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.json['data'][0]['name'], 'NewFile')
+        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
+        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id)) + '?path=%2F&provider=osfstorage'
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 401
+        mock_waterbutler_request.return_value = mock_res
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):
+        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id)) + '?path=%2F&provider=osfstorage'
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 418
+        mock_res.json.return_value = {}
+        mock_waterbutler_request.return_value = mock_res
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
