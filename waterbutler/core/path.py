@@ -155,6 +155,12 @@ class WaterButlerPath:
         return '/'.join([x.value for x in self.parts[1:]]) + ('/' if self.is_dir else '')
 
     @property
+    def raw_path(self):
+        if len(self.parts) == 1:
+            return ''
+        return '/'.join([x.raw for x in self.parts[1:]]) + ('/' if self.is_dir else '')
+
+    @property
     def full_path(self):
         return '/'.join([x.value for x in self._prepend_parts + self.parts[1:]]) + ('/' if self.is_dir else '')
 

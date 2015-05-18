@@ -435,7 +435,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         data = yield from resp.json()
 
         return [
-            self._serialize_item(path, item, raw=raw)
+            self._serialize_item(path.child(item['title']), item, raw=raw)
             for item in data['items']
         ]
 

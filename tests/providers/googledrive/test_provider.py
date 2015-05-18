@@ -317,7 +317,10 @@ class TestMetadata:
 
         result = yield from provider.metadata(path)
 
-        expected = GoogleDriveFileMetadata(fixtures.list_file['items'][0], path).serialized()
+        expected = GoogleDriveFileMetadata(
+            fixtures.list_file['items'][0],
+            path.child(fixtures.list_file['items'][0]['title'])
+        ).serialized()
         assert result == [expected]
 
     @async
@@ -338,7 +341,7 @@ class TestMetadata:
 
         result = yield from provider.metadata(path)
 
-        expected = GoogleDriveFileMetadata(item, path).serialized()
+        expected = GoogleDriveFileMetadata(item, path.child(item['title'])).serialized()
 
         assert result == [expected]
         assert aiohttpretty.has_call(method='GET', uri=url)
