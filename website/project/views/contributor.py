@@ -10,10 +10,8 @@ from modularodm.exceptions import ValidationValueError
 from framework import forms
 from framework import status
 from framework.auth.cas import CasClient
-from framework.auth.core import generate_confirm_token
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
-from framework.auth import authenticate
 from framework.auth import User, get_user
 from framework.exceptions import HTTPError
 from framework.auth.signals import user_registered

@@ -159,13 +159,11 @@ def before_request():
         cas_resp = CasClient(settings.CAS_SERVER_URL).service_validate(ticket, service_url.url)
         if cas_resp.authenticated:
             user = User.load(cas_resp.user)
-            # TODO: CAS Store AccessToken
-            print(cas_resp.attributes['accessToken'])
             # if we successfully authentication and a verification key is present, invalidate it
             if user.verification_key:
                 user.verification_key = None
                 user.save()
-            return authenticate(user, redirect(service_url.url))
+            return authenticate(user, cas_resp.attributes['accessToken'], redirect(service_url.url))
         # Ticket could not be validated, unauthorized.
         return redirect(service_url.url)
 
