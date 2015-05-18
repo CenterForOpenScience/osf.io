@@ -283,20 +283,22 @@ function _fangornUploadProgress(treebeard, file, progress) {
         }
         if(child.data.tmpID === file.tmpID) {
             item = child;
+            item.uploadState = 'uploading';
+            item.progress = progress;
         }
     }
-    templateWithCancel = m('span', [
-        cancelUploadTemplate.call(treebeard, item),
-        m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
-    ]);
-    templateWithoutCancel = m('span', [
-        m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
-    ]);
-    if (progress < 100) {
-        item.notify.update(templateWithCancel, 'success', null, 0);
-    } else {
-        item.notify.update(templateWithoutCancel, 'success', null, 2000);
-    }
+    //templateWithCancel = m('span', [
+    //    cancelUploadTemplate.call(treebeard, item),
+    //    m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
+    //]);
+    //templateWithoutCancel = m('span', [
+    //    m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
+    //]);
+    //if (progress < 100) {
+    //    item.notify.update(templateWithCancel, 'success', null, 0);
+    //} else {
+    //    item.notify.update(templateWithoutCancel, 'success', null, 2000);
+    //}
 }
 
 /**
@@ -350,7 +352,8 @@ function _fangornAddedFile(treebeard, file) {
             view: false,
             edit: false
         },
-        tmpID: tmpID
+        tmpID: tmpID,
+        uploadState : 'pending'
     };
     var newitem = treebeard.createItem(blankItem, item.id);
     return configOption || null;
