@@ -454,7 +454,7 @@ class TestAUser(OsfTestCase):
         # A registered user
         user = UserFactory()
         # goes to the login page
-        url = web_url_for('_forgot_password')
+        url = web_url_for('forgot_password_get')
         res = self.app.get(url)
         # and fills out forgot password form
         form = res.forms['forgotPasswordForm']
@@ -466,7 +466,7 @@ class TestAUser(OsfTestCase):
         # gets 200 response
         assert_equal(res.status_code, 200)
         # URL is /forgotpassword
-        assert_equal(res.request.path, web_url_for('forgot_password'))
+        assert_equal(res.request.path, web_url_for('forgot_password_post'))
 
 
 class TestRegistrations(OsfTestCase):
