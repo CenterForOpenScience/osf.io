@@ -357,17 +357,10 @@ def user_notifications(auth, **kwargs):
         'mailing_lists': auth.user.mailing_lists
     }
 
-
-# @must_be_logged_in
-# def oauth_application_config(auth, **kwargs):
-#     user = auth.user
-#     return {
-#         'user_id': user._primary_key,
-#     }
-
 @must_be_logged_in
 def oauth_application_config(auth, **kwargs):
     """Return app creation page with list of known apps"""
+    # TODO: Will rewrite as knockout.js endpoint
     user_apps = OAuth2App.find(Q('owner', 'eq', auth.user))
     user_apps_dict = [{"id": ua.client_id,
                        "owner": ua.owner,
@@ -383,25 +376,49 @@ def oauth_application_config(auth, **kwargs):
 
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
+    """Register an API application: blank form view"""
+    # TODO: Maybe something JSON based would be easier to work with? DEPRECATED; use API call and KO.js instead
+
+    return {"app_data": None,
+            "user_id": auth.user._id}
+
+@must_be_logged_in
+def oauth_application_submit(auth, **kwargs):
     """Register an API application"""
-    # TODO: Maybe something JSON based would be easier to work with?
+    # TODO: Maybe something JSON based would be easier to work with? DEPRECATED; use API call and KO.js instead
     app_name = request.form['appName']
     home_url = request.form['appHomeURL']
     app_desc = request.form['appDesc']
     app_callback_url = request.form['appCallbackURL']
 
-    owner = auth.user
-
     new_reg = OAuth2App(name=app_name,
                         home_url=home_url,
                         callback_url=app_callback_url,
                         description=app_desc)
-    new_reg.owner = owner
+    new_reg.owner = auth.user  # Tie reg to the logged-in user
 
     new_reg.save()
 
     # TODO: Tighten up submission view later
     return redirect(web_url_for('oauth_application_config'))
+
+@must_be_logged_in
+def oauth_application_detail(auth, **kwargs):
+    """Show detail for a single OAuth application"""
+    client_id = kwargs.get('cid')
+
+    ua = OAuth2App.find_one(Q('client_id', 'eq', client_id))
+
+    # TODO: Rewrite to use api endpoint
+    return {"user_id": ua.owner,
+            "app_data": {"client_id": ua.client_id,
+                         "client_secret": ua.client_secret,
+                         "owner": ua.owner,
+                         "name": ua.name,
+                         "description": ua.description,
+                         "reg_date": ua.reg_date,
+                         "home_url": ua.home_url,
+                         "callback_url": ua.callback_url}}
 
 
 def collect_user_config_js(addons):

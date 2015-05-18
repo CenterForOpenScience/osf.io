@@ -82,6 +82,7 @@ class OAuth2AppSerializer(JSONAPISerializer):
 
     client_id = ser.CharField(help_text="The client ID for this application (automatically generated)",
                               read_only=True)
+
     client_secret = ser.CharField(help_text="The client secret for this application (automatically generated)",
                                   read_only=True)  # TODO: May change this later
 
@@ -93,6 +94,7 @@ class OAuth2AppSerializer(JSONAPISerializer):
 
     name = ser.CharField(help_text="A short, descriptive name for this application",
                          required=True)
+
     description = ser.CharField(help_text="An optional description displayed to all users of this application",
                                 required=False,
                                 allow_blank=True)
@@ -103,14 +105,15 @@ class OAuth2AppSerializer(JSONAPISerializer):
     home_url = ser.CharField(help_text="The full URL to this application's homepage.",
                              required=True,
                              validators=[URLValidator()])
+
     callback_url = ser.CharField(help_text="The callback URL for this application (refer to OAuth documentation)",
                                  required=True,
                                  validators=[URLValidator()])
 
+    class Meta:
+        type_ = 'applications'
+
     def create(self, validated_data):
-        # TODO: Known issue- create view allows creating duplicate entries.
-        # If the data passed contains read_only fields, the model will be created with auto-populated different values of those fields.
-        # This won't result in a key collision, but it's pretty confusing to an external user. Should fail if request contains those keys?
         instance = OAuth2App(**validated_data)
         instance.save()
         return instance
@@ -121,6 +124,3 @@ class OAuth2AppSerializer(JSONAPISerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
-    class Meta:
-        type_ = 'applications'
