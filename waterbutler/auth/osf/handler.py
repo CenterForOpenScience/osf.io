@@ -12,7 +12,7 @@ class OsfAuthHandler(auth.BaseAuthHandler):
 
     @asyncio.coroutine
     def fetch(self, request_handler):
-        headers= {
+        headers = {
             'Content-Type': 'application/json',
         }
         authorization = request_handler.request.headers.get('Authorization')
@@ -22,10 +22,7 @@ class OsfAuthHandler(auth.BaseAuthHandler):
             'get',
             settings.API_URL,
             params=request_handler.arguments,
-            headers={
-                'Authorization': authorization,
-                'Content-Type': 'application/json'
-            },
+            headers=headers
         )
         if response.status != 200:
             try:

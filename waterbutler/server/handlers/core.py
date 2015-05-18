@@ -88,7 +88,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         self.captureException(exc_info)
         etype, exc, _ = exc_info
 
-        if issubclass(etype, exceptions.ProviderError):
+        if issubclass(etype, exceptions.AuthError) or issubclass(etype, exceptions.ProviderError):
             self.set_status(exc.code)
             if exc.data:
                 self.finish(exc.data)
