@@ -134,15 +134,15 @@ describe('CitationsNodeConfig', () => {
             });
             after(() => {
                 $osf.putJSON.restore();
-            });        
+            });
             it('makes a PUT request to the the "importAuth" url passed in settings sending the passed account_id as data', (done) => {
                 vm.updateFromData(data)
                     .always(function() {
                         var account_id = faker.finance.account();
                         vm.connectExistingAccount(account_id)
                             .always(function() {
-                                assert.calledWith(stub, 
-                                                  importAuthUrl, 
+                                assert.calledWith(stub,
+                                                  importAuthUrl,
                                                   {
                                                       external_account_id: account_id
                                                   });

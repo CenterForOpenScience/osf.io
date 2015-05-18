@@ -9,7 +9,8 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 from website.addons.osfstorage import model
-from website.addons.osfstorage import views
+from website.addons.osfstorage import utils
+from website.addons.osfstorage import oldels
 
 from scripts.osfstorage import migrate_from_oldels as migration
 from scripts.osfstorage import finish_oldel_migration as finishm
@@ -28,7 +29,7 @@ class TestMigrateOldels(OsfTestCase):
 
         self.node_settings = self.project.get_addon('osfstorage')
 
-        tree, _ = model.OsfStorageFileTree.get_or_create('', self.node_settings)
+        tree, _ = oldels.OsfStorageFileTree.get_or_create('', self.node_settings)
         tree.save()
         self.node_settings.file_tree = tree
         self.node_settings.save()
@@ -52,7 +53,7 @@ class TestMigrateOldels(OsfTestCase):
         names = []
         for num in range(10):
             names.append('DEAR GOD! {} CARPNADOS'.format(num))
-            model.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
+            oldels.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
 
         assert len(self.node_settings.file_tree.children) == 10
 
@@ -81,7 +82,7 @@ class TestMigrateOldels(OsfTestCase):
             names.append('DEAR GOD! {} CARPNADOS'.format(num))
             guid = model.OsfStorageGuidFile(node=self.project, path=names[-1])
             guid.save()
-            model.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
+            oldels.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
 
         assert len(model.OsfStorageGuidFile.find()) == 10
 
@@ -118,7 +119,7 @@ class TestMigrateOldels(OsfTestCase):
         names = []
         for num in range(10):
             names.append('DEAR GOD! {} CARPNADOS'.format(num))
-            x, _ = model.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
+            x, _ = oldels.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
             x.delete(None)
             self.project.logs[-1].params['path'] = x.path
             self.project.logs[-1].save()
@@ -154,7 +155,7 @@ class TestMigrateOldels(OsfTestCase):
             if log.action.startswith('osf_storage_file'):
                 log.reload()
                 path = log.params['path'].lstrip('/')
-                node = model.OsfStorageFileRecord.find_by_path(path, self.node_settings)
+                node = oldels.OsfStorageFileRecord.find_by_path(path, self.node_settings)
                 assert quote(node.path) in log.params['urls']['view']
                 assert quote(node.path) in log.params['urls']['download']
 
@@ -163,7 +164,7 @@ class TestMigrateOldels(OsfTestCase):
         names = []
         for index, num in enumerate(range(10)):
             names.append('DEAR GOD$! ({})^ CARPNADOS'.format(num))
-            fobj, _ = model.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
+            fobj, _ = oldels.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
             for _id in range(index):
                 fobj.create_version(self.user, {
                     'folder': '',
@@ -171,7 +172,10 @@ class TestMigrateOldels(OsfTestCase):
                     'service': 'buttfiles',
                     'object': '{}{}'.format(index, _id),
                 })
-                views.update_analytics(self.project, fobj.path, _id + 1)
+                utils.update_analytics(self.project, fobj.path, _id + 1)
+                self.project.logs[-1].params['path'] = 'notnone'
+                self.project.logs[-1].save()
+
             assert len(fobj.versions) == index
             assert fobj.get_download_count() == index
 

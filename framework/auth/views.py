@@ -197,23 +197,18 @@ def confirm_email_get(**kwargs):
     """
     user = User.load(kwargs['uid'])
     is_initial_confirmation = not user.date_confirmed
+    is_merge = 'confirm_merge' in request.args
     token = kwargs['token']
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
 
     try:
-        user.confirm_email(token)
+        user.confirm_email(token, merge=is_merge)
     except exceptions.EmailConfirmTokenError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
-        })
-    except exceptions.DuplicateEmailError as e:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Email Confirmation Failed',
-            'message_long': 'This email address has already been confirmed by '
-                            'another user.'
         })
 
     if is_initial_confirmation:
@@ -224,8 +219,12 @@ def confirm_email_get(**kwargs):
         status.push_status_message(language.WELCOME_MESSAGE, 'success')
         response = redirect('/settings/')
     else:
-        status.push_status_message(language.CONFIRMED_EMAIL, 'success')
         response = redirect(web_url_for('user_account'))
+
+    if is_merge:
+        status.push_status_message(language.MERGE_COMPLETE, 'success')
+    else:
+        status.push_status_message(language.CONFIRMED_EMAIL, 'success')
 
     return framework.auth.authenticate(user, response=response)
 
@@ -236,10 +235,26 @@ def send_confirm_email(user, email):
     :raises: KeyError if user does not have a confirmation token for the given
         email.
     """
-    confirmation_url = user.get_confirmation_url(email, external=True, force=True)
-    mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
+    confirmation_url = user.get_confirmation_url(
+        email,
+        external=True,
+        force=True,
+    )
+
+    try:
+        merge_target = User.find_one(Q('emails', 'eq', email))
+    except NoResultsFound:
+        merge_target = None
+
+    mails.send_mail(
+        email,
+        mails.CONFIRM_MERGE if merge_target else mails.CONFIRM_EMAIL,
+        'plain',
         user=user,
-        confirmation_url=confirmation_url)
+        confirmation_url=confirmation_url,
+        email=email,
+        merge_target=merge_target,
+    )
 
 
 def register_user(**kwargs):

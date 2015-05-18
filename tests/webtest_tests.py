@@ -6,7 +6,7 @@ import unittest
 import re
 import mock
 
-from nose.tools import *  # noqa (PEP8 asserts)
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.mongo.utils import to_mongo_key
 
@@ -555,7 +555,7 @@ class TestComponents(OsfTestCase):
         self.component = NodeFactory(
             category='hypothesis',
             creator=self.user,
-            project=self.project,
+            parent=self.project,
         )
         self.component.save()
         self.component.set_privacy('public', self.consolidate_auth)
@@ -567,9 +567,9 @@ class TestComponents(OsfTestCase):
         res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
         assert_in('Add Component', res)
 
-    def test_cannot_create_component_from_a_component(self):
+    def test_can_create_component_from_a_component(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        assert_not_in('Add Component', res)
+        assert_in('Add Component', res)
 
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
@@ -625,16 +625,16 @@ class TestComponents(OsfTestCase):
         ).maybe_follow()
         assert_not_in('Configure commenting', res)
 
-    def test_components_shouldnt_have_component_list(self):
+    def test_components_should_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
-        assert_not_in('Components', res)
+        assert_in('Components', res)
 
-    def test_do_not_show_registration_button(self):
+    def test_does_show_registration_button(self):
         # No registrations on the component
         url = self.component.web_url_for('node_registrations')
         res = self.app.get(url, auth=self.user.auth)
         # New registration button is hidden
-        assert_not_in('New Registration', res)
+        assert_in('New Registration', res)
 
 
 class TestPrivateLinkView(OsfTestCase):
@@ -873,7 +873,7 @@ class TestShortUrls(OsfTestCase):
         self.user.api_keys.append(api_key)
         self.user.save()
         self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
+        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)
@@ -1353,6 +1353,40 @@ class TestForgotAndResetPasswordViews(OsfTestCase):
         # make sure the form is on the page
         assert_true(res.forms['resetPasswordForm'])
 
+
+class TestAUserProfile(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+
+        self.user = AuthUserFactory()
+        self.me = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.me, is_public=True, title=fake.bs())
+        self.component = NodeFactory(creator=self.me, project=self.project, is_public=True, title=fake.bs())
+
+    # regression test for https://github.com/CenterForOpenScience/osf.io/issues/2623
+    def test_has_public_projects_and_components(self):
+        # I go to my own profile
+        url = web_url_for('profile_view_id', uid=self.me._primary_key)
+        # I see the title of both my project and component
+        res = self.app.get(url, auth=self.me.auth)
+        assert_in(self.component.title, res)
+        assert_in(self.project.title, res)
+
+        # Another user can also see my public project and component
+        url = web_url_for('profile_view_id', uid=self.me._primary_key)
+        # I see the title of both my project and component
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in(self.component.title, res)
+        assert_in(self.project.title, res)
+
+    def test_user_no_public_projects_or_components(self):
+        # I go to other user's profile
+        url = web_url_for('profile_view_id', uid=self.user._primary_key)
+        # User has no public components/projects
+        res = self.app.get(url, auth=self.me.auth)
+        assert_in('This user has no public projects', res)
+        assert_in('This user has no public components', res)
 
 if __name__ == '__main__':
     unittest.main()

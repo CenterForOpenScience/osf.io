@@ -1,4 +1,4 @@
-<div id="s3Scope" class="scripted">
+ <div id="s3Scope" class="scripted">
     <h4 class="addon-title">
         Amazon S3
         <small class="authorized-by">
@@ -24,7 +24,10 @@
       <div class="col-md-12">
         <p>
           <strong>Current Bucket:</strong>
-          <a data-bind="attr.href: urls().files">
+          <span data-bind="ifnot: currentBucket">
+            None
+          </span>
+          <a data-bind="if: currentBucket, attr.href: urls().files">
             {{currentBucket}}
           </a>
         </p>

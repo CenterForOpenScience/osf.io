@@ -259,6 +259,91 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     }
 });
 
+
+var DeactivateAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
+    urls: {
+        'update': '/api/v1/profile/deactivate/'
+    },
+    _requestDeactivation: function() {
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Deactivation request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account deactivation', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account deactivation?',
+            message: 'Are you sure you want to request account deactivation? An OSF administrator will review your request. If accepted, you ' +
+                     'will <strong>NOT</strong> be able to reactivate your account.',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestDeactivation();
+                }
+            }
+        });
+    }
+});
+
+
+var ExportAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
+    urls: {
+        'update': '/api/v1/profile/export/'
+    },
+    _requestExport: function() {
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Export request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account export', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account export?',
+            message: 'Are you sure you want to request account export?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestExport();
+                }
+            }
+        });
+    }
+});
+
 module.exports = {
-    UserProfileViewModel: UserProfileViewModel
+    UserProfileViewModel: UserProfileViewModel,
+    DeactivateAccountViewModel: DeactivateAccountViewModel,
+    ExportAccountViewModel: ExportAccountViewModel
 };

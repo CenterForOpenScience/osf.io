@@ -31,7 +31,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
     return ''.join(output)
 
 # TODO: This should be a class method of Node
-def new_node(category, title, user, description=None, project=None):
+def new_node(category, title, user, description=None, parent=None):
     """Create a new project or component.
 
     :param str category: Node category
@@ -42,7 +42,7 @@ def new_node(category, title, user, description=None, project=None):
     :return Node: Created node
 
     """
-    category = category.strip().lower()
+    category = category
     title = sanitize(title.strip())
     if description:
         description = sanitize(description.strip())
@@ -52,7 +52,7 @@ def new_node(category, title, user, description=None, project=None):
         category=category,
         creator=user,
         description=description,
-        project=project,
+        parent=parent
     )
 
     node.save()

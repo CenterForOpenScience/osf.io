@@ -5,7 +5,7 @@
 def build_log_urls(node, path):
     url = node.web_url_for(
         'addon_view_or_download_file',
-        path=path,
+        path=path.strip('/'),
         provider='osfstorage'
     )
     return {
@@ -16,10 +16,11 @@ def build_log_urls(node, path):
 
 class OsfStorageNodeLogger(object):
 
-    def __init__(self, node, auth, path=None):
+    def __init__(self, node, auth, path=None, full_path=None):
         self.node = node
         self.auth = auth
         self.path = path
+        self.full_path = full_path
 
     def log(self, action, extra=None, save=False):
         """Log an event. Wraps the Node#add_log method, automatically adding
@@ -30,14 +31,14 @@ class OsfStorageNodeLogger(object):
             new NodeLog.
         """
         params = {
+            'node': self.node._id,
             'project': self.node.parent_id,
-            'node': self.node._primary_key,
         }
         # If logging a file-related action, add the file's view and download URLs
         if self.path:
             params.update({
+                'path': self.full_path,
                 'urls': build_log_urls(self.node, self.path),
-                'path': self.path,
             })
         if extra:
             params.update(extra)
