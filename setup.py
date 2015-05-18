@@ -37,8 +37,7 @@ setup(
     ],
     entry_points={
         'waterbutler.auth': [
-            'rest = waterbutler.auth.rest:RestAuthHandler',
-            'viewonly = waterbutler.auth.viewonly:ViewOnlyAuthHandler',
+            'osf = waterbutler.auth.osf:OsfAuthHandler',
         ],
         'waterbutler.providers': [
             'cloudfiles = waterbutler.providers.cloudfiles:CloudFilesProvider',

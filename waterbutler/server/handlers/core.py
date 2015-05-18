@@ -16,6 +16,7 @@ from waterbutler.server.auth import AuthHandler
 CORS_ACCEPT_HEADERS = [
     'Range',
     'Content-Type',
+    'Authorization',
     'Cache-Control',
     'X-Requested-With',
 ]

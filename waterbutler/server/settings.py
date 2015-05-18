@@ -23,8 +23,7 @@ CHUNK_SIZE = config.get('CHUNK_SIZE', 65536)  # 64KB
 MAX_BUFFER_SIZE = config.get('MAX_BUFFER_SIZE', 1024 * 1024 * 100)  # 100MB
 
 AUTH_HANDLERS = config.get('AUTH_HANDLERS', [
-    'viewonly',
-    'rest',
+    'osf',
 ])
 
 HMAC_ALGORITHM = getattr(hashlib, config.get('HMAC_ALGORITHM', 'sha256'))
