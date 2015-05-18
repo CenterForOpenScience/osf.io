@@ -11,6 +11,7 @@ var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
+var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment');
@@ -62,6 +63,7 @@ $(document).ready(function () {
             placement: 'dashboard',
             title : undefined,
             filterFullWidth : true, // Make the filter span the entire row for this view
+            xhrconfig: $osf.setXHRAuthorization,
             columnTitles : function () {
                 return [
                     {

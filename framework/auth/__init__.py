@@ -40,12 +40,13 @@ def get_display_name(username):
 check_password = bcrypt.check_password_hash
 
 
-def authenticate(user, response):
+def authenticate(user, access_token, response):
     data = session.data if session._get_current_object() else {}
     data.update({
         'auth_user_username': user.username,
         'auth_user_id': user._primary_key,
         'auth_user_fullname': user.fullname,
+        'auth_user_access_token': access_token,
     })
     response = create_session(response, data=data)
     return response
@@ -148,7 +149,7 @@ def login(email, password):
 
 
 def logout():
-    for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
+    for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname', 'auth_user_access_token']:
         try:
             del session.data[key]
         except KeyError:
