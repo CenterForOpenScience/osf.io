@@ -14,39 +14,39 @@ require('css/projectorganizer.css');
 var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
+var Fangorn = require('js/fangorn');
 var bootbox = require('bootbox');
 var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
+var $osf = require('js/osfHelpers');
+var iconmap = require('js/iconmap');
+var legendView = require('js/components/legend').view;
+var Fangorn = require('js/fangorn');
 
-
-var $osf = require('./osfHelpers');
+var nodeCategories = require('json!built/nodeCategories.json');
 
 // copyMode can be 'copy', 'move', 'forbidden', or null.
 // This is set at draglogic and is used as global within this module
 var copyMode = null;
-
 // Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
 var projectOrganizer = {};
 
-// Templates load once
-var detailTemplateSource = $('#project-detail-template').html();
-if(detailTemplateSource) {
-    var detailTemplate = Handlebars.compile(detailTemplateSource);
-}
+// Link ID's used to add existing project to folder
+var linkName;
+var linkID;
 
-var multiItemDetailTemplateSource = $('#project-detail-multi-item-template').html();
-if(multiItemDetailTemplateSource) {
-    var multiItemDetailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
-}
+// Cross browser key codes for the Command key
+var COMMAND_KEYS = [224, 17, 91, 93];
+var ESCAPE_KEY = 27;
+var ENTER_KEY = 13;
 
-var multiItemDetailTemplateSourceNoAction = $('#project-detail-multi-item-no-action').html();
-if(multiItemDetailTemplateSourceNoAction) {
-    var multiItemDetailTemplateNoAction = Handlebars.compile(multiItemDetailTemplateSourceNoAction);
-}
-
-
-var $detailDiv = $('.project-details');
+var projectOrganizerCategories = $.extend({}, {
+    collection: 'Collections',
+    smartCollection: 'Smart Collections',
+    project: 'Project',
+    link:  'Link'
+}, nodeCategories);
 
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
@@ -104,8 +104,13 @@ projectOrganizer.myProjects = new Bloodhound({
  * @private
  */
 function _poTitleColumn(item) {
+    var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    return m('span', { 'class' : css }, item.data.name);
+    if(item.data.urls.fetch){
+        return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
+    } else {
+        return  m('span', { 'class' : css}, item.data.name);
+    }
 }
 
 /**
@@ -116,9 +121,15 @@ function _poTitleColumn(item) {
  * @this Treebeard.controller Check Treebeard API for methods available
  * @private
  */
-function _gotoEvent(event, item, col) {
-    window.location = item.data.urls.fetch;
+function _gotoEvent(event, item) {
+    var tb = this;
+    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+        window.open(item.data.urls.fetch, '_blank');
+    } else {
+        window.open(item.data.urls.fetch, '_self');
+    }
 }
+
 
 /**
  * Watching for escape key press
@@ -133,32 +144,14 @@ function addFormKeyBindings(nodeID) {
     });
 }
 
-/**
- * The project detail popup is populated based on the row that it was clicked from
- * @param {Object} theItem Only the item.data portion of A Treebeard _item object for the row involved.
- */
-function createProjectDetailHTMLFromTemplate(theItem) {
-    var detailTemplateContext = {
-        theItem: theItem,
-        parentIsSmartFolder: theItem.parentIsSmartFolder
-    };
-    var displayHTML = detailTemplate(detailTemplateContext);
-    $detailDiv.html(displayHTML);
-    addFormKeyBindings(theItem.node_id);
-}
-
-function createBlankProjectDetail(message) {
-    var text = message || 'Select a row to view further actions.';
-    $detailDiv.html('<div class="row text-muted "> <div class="col-xs-8"> <i class="text-center po-placeholder"> ' + text + ' </i> </div> <div class="col-xs-4"><i class="po-placeholder pull-right"> No Actions </i> </div>');
-}
 
 function triggerClickOnItem(item, force) {
-    var row = $('.tb-row[data-id="'+ item.id+'"]');
-    if (force){
+    var row = $('.tb-row[data-id="' + item.id + '"]');
+    if (force) {
         row.trigger('click');
     }
 
-    if(row.hasClass(this.options.hoverClassMultiselect)){
+    if (row.hasClass(this.options.hoverClassMultiselect)) {
         row.trigger('click');
     }
 }
@@ -181,7 +174,7 @@ function saveExpandState(item, callback) {
         postAction = $osf.postJSON(collapseUrl, {});
         postAction.done(function () {
             item.expand = false;
-            if (typeof callback !== 'undefined') {
+            if (callback !== undefined) {
                 callback();
             }
         }).fail($osf.handleJSONError);
@@ -191,312 +184,11 @@ function saveExpandState(item, callback) {
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
             item.expand = false;
-            if (typeof callback !== 'undefined') {
+            if (callback !== undefined) {
                 callback();
             }
         }).fail($osf.handleJSONError);
     }
-}
-
-/**
- * Takes care of all instances of showing any project detail and action. It's the box that appears on clicks
- * @param event Browser event object
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Column information for the column where click happened.
- * @this Treebeard.controller.
- * @private
- */
-function _showProjectDetails(event, item, col) {
-    event.stopImmediatePropagation();
-    var treebeard = this,
-        mySourceWithEmptySelectable,
-        publicSourceWithEmptySelectable,
-        linkName,
-        linkID,
-        theItem = item.data,
-        theParentNode,
-        theParentNodeID;
-    projectOrganizer.myProjects.initialize();
-    projectOrganizer.publicProjects.initialize();
-    // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
-    mySourceWithEmptySelectable = function (q, cb) {
-        var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
-        projectOrganizer.myProjects.get(q, injectEmptySelectable);
-        function injectEmptySelectable(suggestions) {
-            if (suggestions.length === 0) {
-                cb(emptyMyProjects);
-            } else {
-                cb(suggestions);
-            }
-        }
-    };
-    publicSourceWithEmptySelectable = function (q, cb) {
-        var emptyPublicProjects = { error: 'There are no matching public projects.' };
-        projectOrganizer.publicProjects.get(q, injectEmptySelectable);
-        function injectEmptySelectable(suggestions) {
-            if (suggestions.length === 0) {
-                cb([emptyPublicProjects]);
-            } else {
-                cb(suggestions);
-            }
-        }
-    };
-
-    theParentNode = item.parent();
-    if (theParentNode === 'undefined') {
-        theParentNode = theItem;
-        theItem.parentIsSmartFolder = true;
-    }
-    theItem.parentNode = theParentNode;
-    theParentNodeID = theParentNode.data.node_id;
-    theItem.parentIsSmartFolder = theParentNode.data.isSmartFolder;
-    theItem.parentNodeID = theParentNodeID;
-    if (!theItem.isSmartFolder) {
-        createProjectDetailHTMLFromTemplate(theItem);
-        $('#findNode' + theItem.node_id).hide();
-        $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
-            highlight: true
-        }, {
-            name: 'my-projects',
-            displayKey: function (data) {
-                return data.name;
-            },
-            source: mySourceWithEmptySelectable,
-            templates: {
-                header: function () {
-                    return '<h3 class="category">My Projects</h3>';
-                },
-                suggestion: function (data) {
-                    if (typeof data.name !== 'undefined') {
-                        return '<p>' + data.name + '</p>';
-                    }
-                    return '<p>' + data.error + '</p>';
-                }
-            }
-        }, {
-            name: 'public-projects',
-            displayKey: function (data) {
-                return data.name;
-            },
-            source: publicSourceWithEmptySelectable,
-            templates: {
-                header: function () {
-                    return '<h3 class="category">Public Projects</h3>';
-                },
-                suggestion: function (data) {
-                    if (typeof data.name !== 'undefined') {
-                        return '<p>' + data.name + '</p>';
-                    }
-                    return '<p>' + data.error + '</p>';
-                }
-            }
-        });
-        $('#input' + theItem.node_id).bind('keyup', function (event) {
-            var key = event.keyCode || event.which,
-                buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== 'undefined');
-
-            if (key === 13) {
-                if (buttonEnabled) {
-                    $('#add-link-' + theItem.node_id).click(); //submits if the control is active
-                }
-            } else {
-                $('#add-link-warn-' + theItem.node_id).text('');
-                $('#add-link-' + theItem.node_id).attr('disabled', 'disabled');
-                linkName = '';
-                linkID = '';
-            }
-        });
-        $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
-            var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
-                children;
-            $.getJSON(getChildrenURL, function (data) {
-                children = data;
-                if (children.indexOf(datum.node_id) === -1) {
-                    $('#add-link-' + theItem.node_id).removeAttr('disabled');
-                    linkName = datum.name;
-                    linkID = datum.node_id;
-                } else {
-                    $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
-                }
-            }).fail($osf.handleJSONError);
-        });
-        $('#close-' + theItem.node_id).click(function () {
-            createBlankProjectDetail();
-            return false;
-        });
-        $('#add-link-' + theItem.node_id).click(function () {
-            var url = '/api/v1/pointer/',
-                postData = JSON.stringify({
-                    pointerID: linkID,
-                    toNodeID: theItem.node_id
-                });
-            theItem.expand = false;
-            saveExpandState(theItem, function () {
-                var tb = treebeard,
-                    postAction = $.ajax({
-                        type: 'POST',
-                        url: url,
-                        data: postData,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    });
-                postAction.done(function () {
-                    tb.updateFolder(null, item);
-                });
-            });
-            triggerClickOnItem.call(treebeard, item);
-            return false;
-        });
-        $('#remove-link-' + theItem.node_id).click(function () {
-            var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id,
-                deleteAction = $.ajax({
-                    type: 'DELETE',
-                    url: url,
-                    contentType: 'application/json',
-                    dataType: 'json'
-                });
-            deleteAction.done(function () {
-                treebeard.updateFolder(null, theParentNode);
-                createBlankProjectDetail();
-
-            });
-        });
-        $('#delete-folder-' + theItem.node_id).click(function () {
-            bootbox.confirm({
-                title: 'Delete this folder?',
-                message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
-                    'inside this one. You will not delete any projects in this folder.',
-                callback: function (result) {
-                    if (result !== null && result) {
-                        var url = '/api/v1/folder/' + theItem.node_id,
-                            deleteAction = $.ajax({
-                                type: 'DELETE',
-                                url: url,
-                                contentType: 'application/json',
-                                dataType: 'json'
-                            });
-                        deleteAction.done(function () {
-                            treebeard.updateFolder(null, item.parent());
-                            createBlankProjectDetail();
-                        });
-                    }
-                }
-            });
-        });
-        $('#add-folder-' + theItem.node_id).click(function () {
-            $('#buttons' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).hide();
-            $('#afc-' + theItem.node_id).show();
-            $('#add-folder-input' + theItem.node_id).focus();
-        });
-        $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
-            var contents = $.trim($(this).val());
-            if (contents === '') {
-                $('#add-folder-button' + theItem.node_id).attr('disabled', 'disabled');
-            } else {
-                $('#add-folder-button' + theItem.node_id).removeAttr('disabled');
-            }
-        });
-        $('#add-folder-button' + theItem.node_id).click(function () {
-            var url = '/api/v1/folder/',
-                postData = {
-                    node_id: theItem.node_id,
-                    title: $.trim($('#add-folder-input' + theItem.node_id).val())
-                };
-            theItem.expand = false;
-            saveExpandState(theItem, function () {
-                var putAction = $osf.putJSON(url, postData);
-                putAction.done(function () {
-                    //var icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
-                    //    iconTemplate = treebeard.options.resolveToggle.call(treebeard, item);
-                    //if (icon.get(0)) {
-                    //    m.render(icon.get(0), iconTemplate);
-                    //}
-                    treebeard.updateFolder(null, item);
-                    triggerClickOnItem.call(treebeard, item);
-                }).fail($osf.handleJSONError);
-
-            });
-            return false;
-        });
-        $('#rename-node-' + theItem.node_id).click(function () {
-            $('#buttons' + theItem.node_id).hide();
-            $('#afc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).hide();
-            $('#nc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).css({'display':'inline-block', 'width' : '100%'});
-            $('#rename-node-input' + theItem.node_id).focus();
-        });
-        $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
-            var contents = $.trim($(this).val());
-            if (contents === '' || contents === theItem.name) {
-                $('#rename-node-button' + theItem.node_id).attr('disabled', 'disabled');
-            } else {
-                $('#rename-node-button' + theItem.node_id).removeAttr('disabled');
-            }
-        });
-        $('#rename-node-button' + theItem.node_id).click(function () {
-            var url = theItem.apiURL + 'edit/',
-                postAction,
-                postData = {
-                    name: 'title',
-                    value: $.trim($('#rename-node-input' + theItem.node_id).val())
-                };
-            postAction = $osf.postJSON(url, postData);
-            postAction.done(function () {
-                treebeard.updateFolder(null, treebeard.find(1));
-                // Also update every
-            }).fail($osf.handleJSONError);
-            return false;
-        });
-        $('.cancel-button-' + theItem.node_id).click(function () {
-            $('#afc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).hide();
-            $('#nc-' + theItem.node_id).show();
-            $('#buttons' + theItem.node_id).show();
-        });
-        $('#add-item-' + theItem.node_id).click(function () {
-            $('#buttons' + theItem.node_id).hide();
-            $('#afc-' + theItem.node_id).hide();
-            $('#rnc-' + theItem.node_id).hide();
-            $('#findNode' + theItem.node_id).show();
-            $('#input' + theItem.node_id).focus();
-        });
-    } else {
-        createBlankProjectDetail(theItem.name);
-    }
-}
-
-/**
- * Project Organizer actions, has info and go to project
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Column information for the column where click happened.
- * @returns {Array} An array of buttons in mithril view format using mithril's m()
- * @private
- */
-function _poActionColumn(item, col) {
-    var self = this,
-        buttons = [],
-        url = item.data.urls.fetch;
-    if (!item.data.isSmartFolder) {
-        if (url !== null) {
-            buttons.push({
-                'name' : '',
-                'icon' : 'fa fa-chevron-right',
-                'css' : 'project-organizer-icon-visit fangorn-clickable btn btn-info btn-xs',
-                'onclick' : _gotoEvent
-            });
-        }
-    }
-    // Build the template for icons
-    return buttons.map(function (btn) {
-        return m('span', { 'data-col' : item.id }, [ m('i',
-            { 'class' : btn.css, 'data-toggle' : 'tooltip', title : 'Go to page', 'data-placement': 'bottom','style' : btn.style, 'onclick' : function (event) {  btn.onclick.call(self, event, item, col); } },
-            [ m('span', { 'class' : btn.icon}, btn.name) ])
-            ]);
-    });
 }
 
 /**
@@ -512,7 +204,7 @@ function _poContributors(item) {
 
     return item.data.contributors.map(function (person, index, arr) {
         var comma;
-        if(index === 0) {
+        if (index === 0) {
             comma = '';
         } else {
             comma = ', ';
@@ -523,7 +215,7 @@ function _poContributors(item) {
         if (index === 2) {
             return m('span', ' + ' + (arr.length - 2));
         }
-        return m('span', comma + person.name );
+        return m('span', comma + person.name);
     });
 }
 
@@ -559,6 +251,9 @@ function _poResolveRows(item) {
     if (item.data.permissions) {
         draggable = item.data.permissions.movable || item.data.permissions.copyable;
     }
+    if(this.isMultiselected(item.id)){
+        item.css = 'fangorn-selected';
+    }
     if (draggable) {
         css = 'po-draggable';
     }
@@ -570,12 +265,11 @@ function _poResolveRows(item) {
         css : css,
         custom : _poTitleColumn
     }, {
-        sortInclude : false,
-        custom : _poActionColumn
-    }, {
-        filter : true,
+        data : 'contributors',
+        filter : false,
         custom : _poContributors
     }, {
+        data : 'dateModified',
         filter : false,
         custom : _poModified
     }];
@@ -591,15 +285,12 @@ function _poColumnTitles() {
     var columns = [];
     columns.push({
         title: 'Name',
-        width : '45%',
-        sort : false
-    }, {
-        title : 'Actions',
-        width : '10%',
-        sort : false
+        width : '50%',
+        sort : true,
+        sortType : 'text'
     }, {
         title : 'Contributors',
-        width : '20%',
+        width : '25%',
         sort : false
     }, {
         title : 'Modified',
@@ -632,53 +323,53 @@ function _poToggleCheck(item) {
  * @private
  */
 function _poResolveIcon(item) {
-    var viewLink,
-        icons = {
-            folder : 'project-organizer-icon-folder',
-            smartFolder : 'project-organizer-icon-smart-folder',
-            project : 'project-organizer-icon-project',
-            registration :  'project-organizer-icon-reg-project',
-            component :  'project-organizer-icon-component',
-            registeredComponent :  'project-organizer-icon-reg-component',
-            link :  'project-organizer-icon-pointer'
-        };
-    viewLink = item.data.urls.fetch;
-    function returnView(type) {
-        var template = m('span', { 'class' : icons[type]});
-        if (viewLink) {
-            return m('a', { href : viewLink}, template);
+    var icons = iconmap.projectIcons;
+    var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
+    var viewLink = item.data.urls.fetch;
+    function returnView(type, category) {
+        var iconType = icons[type];
+        if (type === 'component' || type === 'registeredComponent') {
+            iconType = componentIcons[category];
+        } else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
         }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
+            iconType += ' po-icon-registered';
+        } else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
         return template;
     }
     if (item.data.isSmartFolder) {
-        return returnView('smartFolder');
+        return returnView('smartCollection');
     }
     if (item.data.isFolder) {
-        return returnView('folder');
+        return returnView('collection');
     }
-    if(item.data.isPointer && !item.parent().data.isFolder){
+    if (item.data.isPointer && !item.parent().data.isFolder) {
         return returnView('link');
     }
     if (item.data.isProject) {
         if (item.data.isRegistration) {
-            return returnView('registration');
+            return returnView('registeredProject', item.data.category);
         } else {
-            return returnView('project');
+            return returnView('project', item.data.category);
         }
     }
 
     if (item.data.isComponent) {
         if (item.data.isRegistration) {
-            return returnView('registeredComponent');
-        }else {
-            return returnView('component');
+            return returnView('registeredComponent', item.data.category);
         }
+        return returnView('component', item.data.category);
     }
 
     if (item.data.isPointer) {
         return returnView('link');
     }
-    return returnView('folder');
+    return returnView('collection');
 }
 
 /**
@@ -722,16 +413,20 @@ function _poResolveLazyLoad(item) {
 function expandStateLoad(item) {
     var tb = this,
         i;
-    if(item.children.length === 0 && item.data.childrenCount > 0){
+    if (item.children.length === 0 && item.data.childrenCount > 0){
         item.data.childrenCount = 0;
         tb.updateFolder(null, item);
+    }
+
+    if (item.data.isPointer && !item.data.parentIsFolder) {
+        item.data.expand = false;
     }
     if (item.children.length > 0 && item.depth > 0) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.expand) {
                 tb.updateFolder(null, item.children[i]);
             }
-            if(tb.multiselected[0] && item.children[i].data.node_id === tb.multiselected[0].data.node_id) {
+            if (tb.multiselected()[0] && item.children[i].data.node_id === tb.multiselected()[0].data.node_id) {
                 triggerClickOnItem.call(tb, item.children[i], true);
             }
         }
@@ -745,7 +440,7 @@ function expandStateLoad(item) {
  */
 function _poLoadOpenChildren() {
     var tb = this;
-    this.treeData.children.map(function (item) {
+    tb.treeData.children.map(function (item) {
         if (item.data.expand) {
             tb.updateFolder(null, item);
         }
@@ -760,62 +455,27 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
-    var tb = this,
-        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected),
-        someItemsAreFolders,
-        pointerIds;
-    if (selectedRows.length > 1) {
-        someItemsAreFolders = false;
-        pointerIds = [];
-        selectedRows.forEach(function (item) {
-            var thisItem = item.data;
-            someItemsAreFolders = someItemsAreFolders ||
-                                  thisItem.isFolder ||
-                                  thisItem.isSmartFolder ||
-                                  thisItem.parentIsSmartFolder ||
-                                  !thisItem.permissions.movable;
-            pointerIds.push(thisItem.node_id);
-        });
-        var detailTemplateContext;
-        if(!selectedRows[0].parent().data.isFolder){
-            detailTemplateContext = {
-                itemsCount: selectedRows.length
-            };
-            var theParentNode = selectedRows[0].parent();
-            var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-            $detailDiv.html(displayHTML).show();
-        } else {
-            if (!someItemsAreFolders) {
-                detailTemplateContext = {
-                    multipleItems: true,
-                    itemsCount: selectedRows.length
-                };
-                var theParentNode = selectedRows[0].parent();
-                var displayHTML = multiItemDetailTemplate(detailTemplateContext);
-                $detailDiv.html(displayHTML).show();
-                $('#remove-links-multiple').click(function () {
-                    deleteMultiplePointersFromFolder.call(tb, pointerIds, theParentNode);
-                    createBlankProjectDetail();
-                });
-                $('#close-multi-select').click(function () {
-                    createBlankProjectDetail();
-                    return false;
-                });
-            } else {
-                detailTemplateContext = {
-                    itemsCount: selectedRows.length
-                };
-                var theParentNode = selectedRows[0].parent();
-                var displayHTML = multiItemDetailTemplateNoAction(detailTemplateContext);
-                $detailDiv.html(displayHTML).show();
-            }
-        }
-    } else {
-        _showProjectDetails.call(tb, event, tb.multiselected[0]);
+    var tb = this;
+    filterRowsNotInParent.call(tb, tb.multiselected());
+    var scrollToItem = false;
+    if (tb.toolbarMode() === 'search') {
+        _dismissToolbar.call(tb);
+        scrollToItem = true;
+        // recursively open parents of the selected item but do not lazyload;
+        Fangorn.Utils.openParentFolders.call(tb, tree);
     }
+    if (tb.multiselected().length === 1) {
+        // temporarily remove classes until mithril redraws raws with another hover.
+        tb.inputValue(tb.multiselected()[0].data.name);
+        tb.select('#tb-tbody').removeClass('unselectable');
+        if (scrollToItem) {
+            Fangorn.Utils.scrollToFile.call(tb, tb.multiselected()[0].id);
+        }
+    } else if (tb.multiselected().length > 1) {
+        tb.select('#tb-tbody').addClass('unselectable');
+    }
+    m.redraw();
 }
-
-
 
 /**
  * Deletes pointers based on their ids from the folder specified
@@ -846,6 +506,8 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
             $osf.growl('Error:', textStatus + '. ' + errorThrown);
         });
     }
+    _dismissToolbar.call(tb);
+
 }
 
 /**
@@ -854,24 +516,28 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRowsNotInParent(rows) {
-    if (this.multiselected.length < 2) {
-        return this.multiselected;
+    var tb = this;
+    if (tb.multiselected().length < 2) {
+        return tb.multiselected();
     }
     var i, newRows = [],
-        originalRow = this.find(this.multiselected[0].id),
+        originalRow = tb.find(tb.multiselected()[0].id),
         originalParent,
         currentItem;
-    if (typeof originalRow !== "undefined") {
+    var changeColor = function() { $(this).css('background-color', ''); };
+    if (typeof originalRow !== 'undefined') {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
+            } else {
+                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, changeColor);
             }
         }
     }
-    this.multiselected = newRows;
-    this.highlightMultiselect();
+    tb.multiselected(newRows);
+    tb.highlightMultiselect();
     return newRows;
 }
 
@@ -882,12 +548,12 @@ function filterRowsNotInParent(rows) {
  * @private
  */
 function _poDragStart(event, ui) {
+    var tb = this;
     var itemID = $(event.target).attr('data-id'),
-        item = this.find(itemID);
-    if (this.multiselected.length < 2) {
-        this.multiselected = [item];
+        item = tb.find(itemID);
+    if (tb.multiselected().length < 2) {
+        tb.multiselected([item]);
     }
-    createBlankProjectDetail();
 }
 
 /**
@@ -897,9 +563,10 @@ function _poDragStart(event, ui) {
  * @private
  */
 function _poDrop(event, ui) {
-    var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
-        folder = this.find($(event.target).attr('data-id'));
-    dropLogic.call(this, event, items, folder);
+    var tb = this;
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
+        folder = tb.find($(event.target).attr('data-id'));
+    dropLogic.call(tb, event, items, folder);
 }
 
 /**
@@ -909,9 +576,10 @@ function _poDrop(event, ui) {
  * @private
  */
 function _poOver(event, ui) {
-    var items = this.multiselected.length === 0 ? [this.find(this.selected)] : this.multiselected,
-        folder = this.find($(event.target).attr('data-id')),
-        dragState = dragLogic.call(this, event, items, ui);
+    var tb = this;
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
+        folder = tb.find($(event.target).attr('data-id')),
+        dragState = dragLogic.call(tb, event, items, ui);
     $('.tb-row').removeClass('tb-h-success po-hover');
     if (dragState !== 'forbidden') {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
@@ -999,7 +667,7 @@ function dragLogic(event, items, ui) {
  * @returns {boolean} canDrop Whether drop can happen
  */
 function canAcceptDrop(items, folder, theCopyMode) {
-    if(typeof theCopyMode === 'undefined'){
+    if (typeof theCopyMode === 'undefined') {
         theCopyMode = copyMode;
     }
     var representativeItem,
@@ -1103,8 +771,8 @@ function dropLogic(event, items, folder) {
                 if (copyMode === 'copy' || copyMode === 'move') {
                     deleteMultiplePointersFromFolder.call(tb, itemsNotToMove, itemParent);
                     if (itemsToMove.length > 0) {
-                        var url = postInfo[copyMode]['url'],
-                            postData = JSON.stringify(postInfo[copyMode]['json']),
+                        var url = postInfo[copyMode].url,
+                            postData = JSON.stringify(postInfo[copyMode].json),
                             outerFolder = whichIsContainer.call(tb, itemParent, folder),
                             postAction = $.ajax({
                                 type: 'POST',
@@ -1183,30 +851,566 @@ function _cleanupMithril() {
     });
 }
 
-//
+function _addFolderEvent() {
+    var tb = this;
+    var val = $.trim($('#addNewFolder').val());
+    if (tb.multiselected().length !== 1 || val.length < 1) {
+        tb.toolbarMode('bar');
+        return;
+    }
+    var item = tb.multiselected()[0];
+    var theItem = item.data;
+    var url = '/api/v1/folder/';
+    var postData = {
+            node_id: theItem.node_id,
+            title: val
+        };
+    theItem.expand = false;
+    saveExpandState(theItem, function () {
+        var putAction = $osf.putJSON(url, postData);
+        putAction.done(function () {
+            tb.updateFolder(null, item);
+            triggerClickOnItem.call(tb, item);
+        }).fail($osf.handleJSONError);
+
+    });
+    tb.toolbarMode('bar');
+}
+
+function _renameEvent() {
+    var tb = this;
+    var val = $.trim($('#renameInput').val());
+    if (tb.multiselected().length !== 1 || val.length < 1) {
+        tb.toolbarMode('bar');
+        return;
+    }
+    var item = tb.multiselected()[0];
+    var theItem = item.data;
+    var url = theItem.apiURL + 'edit/';
+    var postAction;
+    var postData = {
+            name: 'title',
+            value: val
+        };
+    postAction = $osf.postJSON(url, postData);
+    postAction.done(function () {
+        tb.updateFolder(null, tb.find(1));
+        // Also update every
+    }).fail($osf.handleJSONError);
+    tb.toolbarMode('bar');
+}
+
+function applyTypeahead() {
+    var tb = this;
+    var item = tb.multiselected()[0];
+    var theItem = item.data;
+    projectOrganizer.myProjects.initialize();
+    projectOrganizer.publicProjects.initialize();
+    // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
+    var mySourceWithEmptySelectable = function (q, cb) {
+        var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
+        projectOrganizer.myProjects.get(q, injectEmptySelectable);
+        function injectEmptySelectable(suggestions) {
+            if (suggestions.length === 0) {
+                cb(emptyMyProjects);
+            } else {
+                cb(suggestions);
+            }
+        }
+    };
+    var publicSourceWithEmptySelectable = function (q, cb) {
+        var emptyPublicProjects = { error: 'There are no matching public projects.' };
+        projectOrganizer.publicProjects.get(q, injectEmptySelectable);
+        function injectEmptySelectable(suggestions) {
+            if (suggestions.length === 0) {
+                cb([emptyPublicProjects]);
+            } else {
+                cb(suggestions);
+            }
+        }
+    };
+
+    if (!theItem.isSmartFolder) {
+        $('#addprojectInput').typeahead('destroy');
+        $('#addprojectInput').typeahead({
+            highlight: true
+        }, {
+            name: 'my-projects',
+            displayKey: function (data) {
+                return data.name;
+            },
+            source: mySourceWithEmptySelectable,
+            templates: {
+                header: function () {
+                    return '<h3 class="category">My Projects</h3>';
+                },
+                suggestion: function (data) {
+                    if (typeof data.name !== 'undefined') {
+                        return '<p>' + data.name + '</p>';
+                    }
+                    return '<p>' + data.error + '</p>';
+                }
+            }
+        }, {
+            name: 'public-projects',
+            displayKey: function (data) {
+                return data.name;
+            },
+            source: publicSourceWithEmptySelectable,
+            templates: {
+                header: function () {
+                    return '<h3 class="category">Public Projects</h3>';
+                },
+                suggestion: function (data) {
+                    if (typeof data.name !== 'undefined') {
+                        return '<p>' + data.name + '</p>';
+                    }
+                    return '<p>' + data.error + '</p>';
+                }
+            }
+        });
+        $('#addprojectInput').bind('keyup', function (event) {
+            var key = event.keyCode || event.which,
+                buttonEnabled = $('#add-link-button').hasClass('tb-disabled');
+
+            if (key === 13) {
+                if (buttonEnabled) {
+                    $('#add-link-button').click(); //submits if the control is active
+                }
+            } else {
+                $('#add-link-warning').text('');
+                $('#add-link-button').addClass('tb-disabled');
+                linkName = '';
+                linkID = '';
+            }
+        });
+        $('#addprojectInput').bind('typeahead:selected', function (obj, datum, name) {
+            var getChildrenURL = theItem.apiURL + 'get_folder_pointers/',
+                children;
+            $.getJSON(getChildrenURL, function (data) {
+                children = data;
+                if (children.indexOf(datum.node_id) === -1) {
+                    $('#add-link-button').removeClass('tb-disabled');
+                    linkName = datum.name;
+                    linkID = datum.node_id;
+                } else {
+                    $('#add-link-warning').text('This project is already in the folder');
+                }
+            }).fail($osf.handleJSONError);
+        });
+    }
+
+}
+
+function addProjectEvent() {
+    var tb = this;
+    var item = tb.multiselected()[0];
+    var theItem = item.data;
+    var url = '/api/v1/pointer/',
+        postData = JSON.stringify({
+            pointerID: linkID,
+            toNodeID: theItem.node_id
+        });
+    theItem.expand = false;
+    saveExpandState(theItem, function () {
+        var postAction = $.ajax({
+            type: 'POST',
+            url: url,
+            data: postData,
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+        postAction.done(function () {
+            tb.updateFolder(null, item);
+        });
+    });
+    triggerClickOnItem.call(tb, item);
+    tb.toolbarMode('bar');
+    tb.select('.tb-header-row .twitter-typeahead').remove();
+}
+
+function showLegend() {
+    var tb = this;
+    var keys = Object.keys(projectOrganizerCategories);
+    var data = keys.map(function (key) {
+        return {
+            icon: iconmap.componentIcons[key] || iconmap.projectIcons[key],
+            label: nodeCategories[key] || projectOrganizerCategories[key]
+        };
+    });
+    var repr = function (item) {
+        return [
+            m('span', {
+                className: item.icon
+            }),
+            '  ',
+            item.label
+        ];
+    };
+    var opts = {
+        footer: m('span', ['*lighter color denotes a registration (e.g. ',
+            m('span', {
+                className: iconmap.componentIcons.data + ' po-icon'
+            }),
+            ' becomes  ',
+            m('span', {
+                className: iconmap.componentIcons.data + ' po-icon-registered'
+            }),
+            ' )'
+            ])
+    };
+    tb.modal.update(legendView(data, repr, opts));
+    tb.modal.show();
+}
+
+var POItemButtons = {
+    view : function (ctrl, args, children) {
+        var tb = args.treebeard;
+        var item = args.item;
+        var buttons = [];
+        if (!item.data.urls) {
+            return m('div');
+        }
+        var url = item.data.urls.fetch;
+        var theItem = item.data;
+        var theParentNode = item.parent();
+        var theParentNodeID = theParentNode.data.node_id;
+        $('.fangorn-toolbar-icon').tooltip('destroy');
+        if (!item.data.isSmartFolder) {
+            if (url !== null) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _gotoEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className: 'text-primary'
+                    }, 'Open')
+                );
+            }
+        }
+        if (!item.data.isSmartFolder && (item.data.isDashboard || item.data.isFolder)) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        tb.toolbarMode('addFolder');
+                    },
+                    icon: 'fa fa-cubes',
+                    className: 'text-primary'
+                }, 'Add Collection'),
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        tb.toolbarMode('addProject');
+                    },
+                    icon: 'fa fa-cube',
+                    className: 'text-primary'
+                }, 'Add Existing Project')
+            );
+        }
+        if (!item.data.isFolder && item.data.parentIsFolder && !item.parent().data.isSmartFolder) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
+                        var deleteAction = $.ajax({
+                            type: 'DELETE',
+                            url: url,
+                            contentType: 'application/json',
+                            dataType: 'json'
+                        });
+                        deleteAction.done(function () {
+                            tb.updateFolder(null, theParentNode);
+                            tb.clearMultiselect();
+                        });
+                        deleteAction.fail(function (xhr, status, error) {
+                            Raven.captureMessage('Remove from collection in PO failed.', {
+                                url: url,
+                                textStatus: status,
+                                error: error
+                            });
+                        });
+                    },
+                    icon: 'fa fa-minus',
+                    className: 'text-primary'
+                }, 'Remove from Collection')
+            );
+        }
+        if (!item.data.isDashboard && !item.data.isRegistration && item.data.permissions && item.data.permissions.edit) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        tb.toolbarMode('rename');
+                    },
+                    icon: 'fa fa-font',
+                    className: 'text-primary'
+                }, 'Rename')
+            );
+        }
+        if (item.data.isFolder && !item.data.isDashboard && !item.data.isSmartFolder) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        _deleteFolder.call(tb, item, theItem);
+                    },
+                    icon: 'fa fa-trash',
+                    className: 'text-danger'
+                }, 'Delete')
+            );
+        }
+        return m('span', buttons);
+    }
+};
+
+var _dismissToolbar = function () {
+    var tb = this;
+    if (tb.toolbarMode() === Fangorn.Components.toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
+    tb.filterText('');
+    tb.select('.tb-header-row .twitter-typeahead').remove();
+    m.redraw();
+};
+
+
+var POToolbar = {
+    controller: function (args) {
+        var self = this;
+        self.tb = args.treebeard;
+        self.tb.toolbarMode = m.prop(Fangorn.Components.toolbarModes.DEFAULT);
+        self.tb.inputValue = m.prop('');
+        self.items = args.treebeard.multiselected;
+        self.mode = self.tb.toolbarMode;
+        self.helpText = m.prop('');
+        self.dismissToolbar = _dismissToolbar.bind(self.tb);
+    },
+    view: function (ctrl) {
+        var templates = {};
+        var generalButtons = [];
+        var rowButtons = [];
+        var dismissIcon = m.component(Fangorn.Components.button, {
+            onclick: ctrl.dismissToolbar,
+            icon : 'fa fa-times'
+        }, '');
+        templates[Fangorn.Components.toolbarModes.SEARCH] =  [
+            m('.col-xs-10', [
+                ctrl.tb.options.filterTemplate.call(ctrl.tb)
+            ]),
+            m('.col-xs-2.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(Fangorn.Components.button, {
+                            onclick: ctrl.dismissToolbar,
+                            icon : 'fa fa-times'
+                        }, 'Close')
+                    ]
+                    )
+                )
+        ];
+        templates[Fangorn.Components.toolbarModes.ADDFOLDER] = [
+            m('.col-xs-9',
+                m.component(Fangorn.Components.input, {
+                    onkeypress: function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            _addFolderEvent.call(ctrl.tb);
+                        }
+                    },
+                    id : 'addNewFolder',
+                    helpTextId : 'addFolderHelp',
+                    placeholder : 'New collection name',
+                    tooltip: 'Name your new collection'
+                }, ctrl.helpText())
+                ),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                _addFolderEvent.call(ctrl.tb);
+                            },
+                            icon : 'fa fa-plus',
+                            className : 'text-info'
+                        }, 'Add'),
+                        dismissIcon
+                    ]
+                    )
+                )
+        ];
+        templates[Fangorn.Components.toolbarModes.RENAME] = [
+            m('.col-xs-9',
+                m.component(Fangorn.Components.input, {
+                    onkeypress: function (event) {
+                        ctrl.tb.inputValue($(event.target).val());
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            _renameEvent.call(ctrl.tb);
+                        }
+                    },
+                    id : 'renameInput',
+                    helpTextId : 'renameHelpText',
+                    placeholder : null,
+                    value : ctrl.tb.inputValue(),
+                    tooltip: 'Rename this item'
+                }, ctrl.helpText())
+                ),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                _renameEvent.call(ctrl.tb);
+                            },
+                            icon : 'fa fa-pencil',
+                            className : 'text-info'
+                        }, 'Rename'),
+                        dismissIcon
+                    ]
+                    )
+                )
+        ];
+        templates[Fangorn.Components.toolbarModes.ADDPROJECT] = [
+            m('.col-xs-9', [
+                m('input#addprojectInput.tb-header-input', {
+                    config : function () {
+                        applyTypeahead.call(ctrl.tb);
+                    },
+                    onkeypress : function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            addProjectEvent.call(ctrl.tb);
+                        }
+                    },
+                    type : 'text',
+                    placeholder : 'Name of the project to find'
+                }),
+                m('#add-link-warning.text-warning.p-sm')
+            ]
+                ),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                addProjectEvent.call(ctrl.tb);
+                            },
+                            icon : 'fa fa-plus',
+                            className : 'text-info'
+                        }, 'Add'),
+                        dismissIcon
+                    ]
+                    )
+                )
+        ];
+        generalButtons.push(
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    ctrl.mode(Fangorn.Components.toolbarModes.SEARCH);
+                    ctrl.tb.clearMultiselect();
+                },
+                icon: 'fa fa-search',
+                className : 'text-primary'
+            }, 'Search'),
+            m.component(Fangorn.Components.button, {
+                onclick: function (event) {
+                    showLegend.call(ctrl.tb);
+                },
+                icon: 'fa fa-info',
+                className : 'text-info'
+            }, '')
+        );
+        if(ctrl.items().length > 1){
+            var someItemsAreFolders = false;
+            var pointerIds = [];
+            var theParentNode = ctrl.items()[0].parent();
+            ctrl.items().forEach(function (item) {
+                var thisItem = item.data;
+                someItemsAreFolders = (
+                    someItemsAreFolders ||
+                    thisItem.isFolder ||
+                    thisItem.isSmartFolder ||
+                    thisItem.parentIsSmartFolder ||
+                    !thisItem.permissions.movable
+                );
+                pointerIds.push(thisItem.node_id);
+            });
+            if(!someItemsAreFolders){
+                generalButtons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            deleteMultiplePointersFromFolder.call(ctrl.tb, pointerIds, theParentNode);
+                        },
+                        icon: 'fa fa-minus',
+                        className : 'text-primary'
+                    }, 'Remove All from Collection')
+                );
+            }
+        }
+        if (ctrl.items().length === 1) {
+            rowButtons = m.component(POItemButtons, {treebeard : ctrl.tb, item : ctrl.items()[0]});
+        }
+        templates[Fangorn.Components.toolbarModes.DEFAULT] = m('.col-xs-12',m('.pull-right', [rowButtons, generalButtons]));
+        return m('.row.tb-header-row', [
+            m('#headerRow', { config : function () {
+                $('#headerRow input').focus();
+            }}, [
+                templates[ctrl.mode()]
+            ])
+        ]);
+    }
+};
+
+
+function _deleteFolder(item) {
+    var tb = this;
+    var theItem = item.data;
+    function runDeleteFolder() {
+        var url = '/api/v1/folder/' + theItem.node_id;
+        var deleteAction = $.ajax({
+                type: 'DELETE',
+                url: url,
+                contentType: 'application/json',
+                dataType: 'json'
+            });
+        deleteAction.done(function () {
+            tb.updateFolder(null, item.parent());
+            tb.modal.dismiss();
+            tb.select('.tb-row').first().trigger('click');
+        });
+    }
+    var mithrilContent = m('div', [
+            m('h3.break-word', 'Delete "' + theItem.name + '"?'),
+            m('p', 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
+                'inside this one. You will not delete any projects in this Collection.')
+        ]);
+    var mithrilButtons = m('div', [
+            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteFolder(); }  }, 'Delete')
+        ]);
+    tb.modal.update(mithrilContent, mithrilButtons);
+}
+
 /**
  * OSF-specific Treebeard options common to all addons.
  * For documentation visit: https://github.com/caneruguz/treebeard/wiki
  */
 var tbOptions = {
-    rowHeight : 27,         // user can override or get from .tb-row height
+    rowHeight : 35,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
     uploads : false,         // Turns dropzone on/off.
     columnTitles : _poColumnTitles,
     resolveRows : _poResolveRows,
-    showFilter : false,     // Gives the option to filter by showing the filter box.
+    showFilter : true,     // Gives the option to filter by showing the filter box.
     title : false,          // Title of the grid, boolean, string OR function that returns a string.
     allowMove : true,       // Turn moving on or off.
     moveClass : 'po-draggable',
-    hoverClass : 'po-hover',
-    hoverClassMultiselect : 'po-hover-multiselect',
+    hoverClass : 'fangorn-hover',
+    hoverClassMultiselect : 'fangorn-selected',
     togglecheck : _poToggleCheck,
     sortButtonSelector : {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
     },
+    sortDepth : 1,
     dragOptions : {},
     dropOptions : {},
     dragEvents : {
@@ -1218,15 +1422,13 @@ var tbOptions = {
     },
     onload : function () {
         var tb = this,
-            rowDiv = $('.tb-row');
+            rowDiv = tb.select('.tb-row');
         _poLoadOpenChildren.call(tb);
-       rowDiv.first().trigger('click');
+        rowDiv.first().trigger('click');
 
-        $('.gridWrapper').on('mouseout', function(){
+        $('.gridWrapper').on('mouseout', function () {
             rowDiv.removeClass('po-hover');
         });
-
-
     },
     createcheck : function (item, parent) {
         return true;
@@ -1243,7 +1445,7 @@ var tbOptions = {
         }
         $('[data-toggle="tooltip"]').tooltip();
     },
-    onscrollcomplete : function(){
+    onscrollcomplete : function () {
         $('[data-toggle="tooltip"]').tooltip();
         _cleanupMithril();
     },
@@ -1252,9 +1454,10 @@ var tbOptions = {
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,
-    resolveRefreshIcon : function() {
+    resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
-    }
+    },
+    toolbarComponent : POToolbar
 };
 
 /**
@@ -1267,7 +1470,6 @@ function ProjectOrganizer(options) {
     this.grid = null; // Set by _initGrid
     this.init();
 }
-
 /**
  * Project organizer prototype object with init functions set to Treebeard.
  * @type {{constructor: ProjectOrganizer, init: Function, _initGrid: Function}}

@@ -78,9 +78,6 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             created.append(user)
-
-        if user_created:
-            created.append(user)
             set_password_url = web_url_for(
                 'reset_password',
                 verification_key=user.verification_key,
@@ -129,7 +126,7 @@ def add_poster_by_email(conference, message):
 
 def _render_conference_node(node, idx):
     storage_settings = node.get_addon('osfstorage')
-    records = storage_settings.file_tree.children if storage_settings.file_tree else []
+    records = storage_settings.root_node.children
     try:
         record = next(
             each for each in records
