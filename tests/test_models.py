@@ -2464,7 +2464,7 @@ class TestProject(OsfTestCase):
         self.project.save()
         self.project.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10))
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         assert_false(self.project.is_embargoed)
         assert_true(self.project.pending_embargo)
@@ -2484,7 +2484,7 @@ class TestProject(OsfTestCase):
         self.project.save()
         self.project.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10))
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         assert_false(self.project.is_embargoed)
         assert_true(self.project.pending_embargo)

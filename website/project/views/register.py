@@ -437,7 +437,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         embargo_end_date = datetime.datetime.strptime(
             data['embargoEndDate'],
             "%a, %d %b %Y %H:%M:%S %Z"
-        ).date()
+        )
 
         # Initiate embargo
         try:

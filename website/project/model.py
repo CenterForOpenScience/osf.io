@@ -2597,7 +2597,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.retraction = retraction
 
     def _is_embargo_date_valid(self, end_date):
-        today = datetime.date.today()
+        today = datetime.datetime.utcnow()
         if (end_date - today) >= settings.EMBARGO_END_DATE_MIN:
             if (end_date - today) <= settings.EMBARGO_END_DATE_MAX:
                 return True

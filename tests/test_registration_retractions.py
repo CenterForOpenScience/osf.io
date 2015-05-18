@@ -183,7 +183,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10)),
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -205,7 +205,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10)),
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -382,7 +382,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10)),
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -415,7 +415,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10)),
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
