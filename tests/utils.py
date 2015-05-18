@@ -71,7 +71,7 @@ class HandlerTestCase(testing.AsyncHTTPTestCase):
         })
         self.mock_identity = mock.Mock()
         self.mock_identity.return_value = identity_future
-        self.identity_patcher = mock.patch('waterbutler.server.handlers.core.get_identity', self.mock_identity)
+        self.identity_patcher = mock.patch('waterbutler.server.handlers.core.auth_handler.fetch', self.mock_identity)
 
         self.mock_provider = MockProvider1({}, {}, {})
         self.mock_make_provider = mock.Mock(return_value=self.mock_provider)
