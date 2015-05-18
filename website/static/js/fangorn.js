@@ -118,7 +118,7 @@ var uploadRowTemplate = function(item){
                             e.stopImmediatePropagation();
                             cancelUploads.call(tb, item);
                         }},
-                     m('span.text-danger','×')
+                     m('span.text-muted','×')
                 )),
             ]),
 
