@@ -858,6 +858,7 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornResolveRows(item) {
+    var tb = this;
     var default_columns = [];
     var configOption;
     item.css = '';
@@ -865,19 +866,10 @@ function _fangornResolveRows(item) {
         item.css = 'fangorn-selected';
     }
 
-    if(item.data.tmpID){
-        return [
-        {
-            data : '',  // Data field name
-            css : 't-a-c',
-            custom : function(){ return m('span.text-muted', [m('span', cancelUploadTemplate.call(this, item)), m('span', item.data.name.slice(0,25) + '... : ' + 'Upload pending.')]); }
-        },
-        {
-            data : '',  // Data field name
-            custom : function(){ return '';}
-        }
-        ];
+    if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
+        return uploadRowTemplate.call(tb, item);
     }
+
     if (item.parentID) {
         item.data.permissions = item.data.permissions || item.parent().data.permissions;
         if (item.data.kind === 'folder') {
