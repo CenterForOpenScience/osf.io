@@ -36,6 +36,7 @@ var Revision = function(data, index, file, node) {
 
             self.displayVersion = self.version in displayMap ?
                 displayMap[self.version] : self.version.substring(0, 8);
+            break;
         default:
             self.displayVersion = self.version.substring(0, 8);
     }
@@ -79,8 +80,8 @@ var RevisionsViewModel = function(node, file, editable) {
     self.node = node;
     self.file = file;
     self.path = file.provider !== 'googledrive' ?
-        file.path.split('/') :
-        file.path.split('/').map(decodeURIComponent);
+        (file.extra.fullPath || file.path).split('/') :
+        (file.extra.fullPath || file.path).split('/').map(decodeURIComponent);
 
     // Hack: Set Figshare files to uneditable by default, then update after
     // fetching file metadata after revisions request fails
@@ -101,6 +102,10 @@ var RevisionsViewModel = function(node, file, editable) {
         return self.revisions()[0] &&
             self.revisions()[0].extra &&
             self.revisions()[0].extra.user;
+    });
+
+    self.hasDate = ko.computed(function() {
+        return self.file.provider !== 'dataverse';
     });
 };
 
@@ -131,6 +136,8 @@ RevisionsViewModel.prototype.fetch = function() {
         if (Object.keys(self.currentVersion()).length === 0) {
             self.currentVersion(self.revisions()[0]);
         }
+
+        $osf.tableResize('#fileRevisions', 4);
     });
 
     request.fail(function(response) {

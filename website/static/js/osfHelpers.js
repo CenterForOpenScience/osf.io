@@ -93,8 +93,8 @@ var errorDefaultLong = 'OSF was unable to resolve your request. If this issue pe
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
 var handleJSONError = function(response) {
-    var title = response.message_short || errorDefaultShort;
-    var message = response.message_long || errorDefaultLong;
+    var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
+    var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
 
     $.osf.growl(title, message);
 
@@ -346,7 +346,6 @@ var applyBindings = function(viewModel, selector) {
         elem = $elem[0];
         cssSelector = selector;
     }
-    var $elem = $(selector);
     if ($elem.length === 0) {
         throw "No elements matching selector '" + selector + "'";  // jshint ignore: line
     }
@@ -360,7 +359,7 @@ var applyBindings = function(viewModel, selector) {
     // Also show any child elements that have the scripted class
     $(cssSelector + ' .scripted').each(function(elm) {
         $(this).show();
-    })
+    });
     ko.applyBindings(viewModel, $elem[0]);
 };
 
@@ -390,6 +389,88 @@ var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
 };
 
+/**
++ * Resize table to match thead and tbody column
++ */
+
+var tableResize = function(selector, checker) {
+    // Change the selector if needed
+    var $table = $(selector);
+    var $bodyCells = $table.find('tbody tr:first').children();
+    var colWidth;
+
+    // Adjust the width of thead cells when window resizes
+    $(window).resize(function() {
+        // Get the tbody columns width array
+        colWidth = $bodyCells.map(function() {
+            return $(this).width();
+        }).get();
+        // Set the width of thead columns
+        $table.find('thead tr').children().each(function(i, v) {
+            if(i === 0 && $(v).width() > colWidth[i]){
+                $($bodyCells[i]).width($(v).width());
+            }
+            if(checker && i === checker) {
+                $(v).width(colWidth[i] + colWidth[i + 1]);
+            }else{
+                $(v).width(colWidth[i]);
+            }
+        });
+    }).resize(); // Trigger resize handler
+};
+
+/* A binding handler to convert lists into formatted lists, e.g.:
+ * [dog] -> dog
+ * [dog, cat] -> dog and cat
+ * [dog, cat, fish] -> dog, cat, and fish
+ *
+ * This handler should not be used for user inputs.
+ *
+ * Example use:
+ * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'],
+ *                            map: function(item) {return item.charAt(0) + '.';}}"></span>
+ * yields
+ * <span ...>A., B., and G.</span>
+ */
+ko.bindingHandlers.listing = {
+    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        var value = valueAccessor();
+        var valueUnwrapped = ko.unwrap(value);
+        var map = valueUnwrapped.map || function(item) {return item;};
+        var data = valueUnwrapped.data || [];
+        var keys = [];
+        if (!Array.isArray(data)) {
+            keys = Object.keys(data);
+        }
+        else {
+            keys = data;
+        }
+        var index = 1;
+        var list = ko.utils.arrayMap(keys, function(key) {
+            var ret;
+            if (index === 1){
+                ret = '';
+            }
+            else if (index === 2){
+                if (valueUnwrapped.length === 2) {
+                    ret = ' and ';
+                }
+                else {
+                    ret = ', ';
+                }
+            }
+            else {
+                ret = ', and ';
+            }
+            ret += map(key, data[key]);
+            index++;
+            return ret;
+        }).join('');
+        $(element).html(list);
+    }
+};
+
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -409,5 +490,6 @@ module.exports = window.$.osf = {
     FormattableDate: FormattableDate,
     throttle: throttle,
     debounce: debounce,
-    htmlEscape: htmlEscape
+    htmlEscape: htmlEscape,
+    tableResize: tableResize
 };

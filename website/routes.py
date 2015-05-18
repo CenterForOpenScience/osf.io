@@ -551,6 +551,20 @@ def make_url_map(app):
              project_views.contributor.claim_user_post, json_renderer),
 
         Rule(
+            '/profile/export/',
+            'post',
+            profile_views.request_export,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/deactivate/',
+            'post',
+            profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
             [
                 '/profile/gravatar/',
                 '/users/gravatar/',
@@ -1067,6 +1081,17 @@ def make_url_map(app):
         Rule([
             '/project/new/<nid>/',
         ], 'post', project_views.node.project_new_from_template, json_renderer),
+
+        # Update
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'put',
+            project_views.node.update_node,
+            json_renderer,
+        ),
 
         # Remove
         Rule(

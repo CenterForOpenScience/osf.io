@@ -161,6 +161,11 @@ class TestCallbacks(OsfTestCase):
         s3.secret_key = "lives"
         assert_equals(s3.to_json(self.project.creator)['has_auth'], 1)
 
+    def test_is_valid_none_none(self):
+        self.user_settings.access_key = None
+        self.user_settings.secret_key = None
+        assert_false(self.user_settings.is_valid)
+
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(self.project,

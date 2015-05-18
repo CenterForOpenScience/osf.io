@@ -88,6 +88,15 @@ class BoxFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
+    @property
+    def extra(self):
+        if not self._metadata_cache:
+            return {}
+
+        return {
+            'fullPath': self._metadata_cache['extra']['fullPath'],
+        }
+
 
 class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information

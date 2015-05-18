@@ -24,13 +24,14 @@ function getDefaultOptions(path, provider) {
 
 function buildUrl(suffix, path, provider, nid, options) {
     path = path || '/';
-    var baseUrl = contextVars.waterbutlerURL + suffix;
+    var baseUrl = window.contextVars.waterbutlerURL + suffix;
     return baseUrl + $.param($.extend(getDefaultOptions(path, provider), {nid: nid}, options));
 }
 
 var buildCrudUrl = buildUrl.bind(this, 'file?');
 var buildMetadataUrl = buildUrl.bind(this, 'data?');
 var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
+var buildCreateFolderUrl = buildUrl.bind(this, 'folders?');
 
 
 function buildUploadUrl(path, provider, nid, file, options) {
@@ -51,6 +52,7 @@ module.exports = {
     buildUploadUrl: buildUploadUrl,
     buildDownloadUrl: buildCrudUrl,
     buildMetadataUrl: buildMetadataUrl,
+    buildCreateFolderUrl: buildCrudUrl,
     buildRevisionsUrl: buildRevisionsUrl,
     buildTreeBeardUpload: buildFromTreebeardFile,
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),

@@ -17,7 +17,6 @@ def collect_auth(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-
         kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
         return func(*args, **kwargs)
 
