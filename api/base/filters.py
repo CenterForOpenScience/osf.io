@@ -61,7 +61,8 @@ class FilterMixin(object):
                 return True
             elif value in self.FALSY:
                 return False
-            # TODO Should we handle if the value is neither TRUTHY nor FALSY
+            # TODO Should we handle if the value is neither TRUTHY nor FALSY (first add test for how we'd expect it to
+            # work, then ensure that it works that way).
         else:
             return value
 
