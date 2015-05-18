@@ -12,37 +12,36 @@ function Meeting(data) {
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
+        naturalScrollLimit : 2000, // turns of virtual scrolling with visible items less than this number
         columnTitles : function _conferenceColumnTitles(item, col) {
              return [
                 {
-                    title: "Title",
-                    width: "50%",
-                    sortType : "text",
+                    title: 'Title',
+                    width: '50%',
+                    sortType : 'text',
                     sort : true
                 },
                 {
-                    title: "Author",
-                    width : "20%",
-                    sortType : "text",
-                    sort : true
-
-                },
-                {
-                    title: "Category",
-                    width : "15%",
-                    sortType : "text",
+                    title: 'Author',
+                    width : '20%',
+                    sortType : 'text',
                     sort : true
                 },
                 {
-                    title: "Downloads",
-                    width : "15%",
-                    sortType : "number",
+                    title: 'Category',
+                    width : '15%',
+                    sortType : 'text',
+                    sort : true
+                },
+                {
+                    title: 'Downloads',
+                    width : '15%',
+                    sortType : 'number',
                     sort : true
                 }
             ];
         },
         resolveRows : function _conferenceResolveRows(item){
-
             var default_columns = [
                 {
                     data : 'title',  // Data field name
@@ -90,7 +89,7 @@ function Meeting(data) {
         showFilter : true,     // Gives the option to filter by showing the filter box.
         filterStyle : { 'float' : 'right', 'width' : '50%'},
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover',
+        hoverClass : 'fangorn-hover'
     };
     var grid = new Treebeard(tbOptions);
 }
