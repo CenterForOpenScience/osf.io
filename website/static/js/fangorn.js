@@ -8,6 +8,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var URI = require('URIjs');
+var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 
 var $osf = require('js/osfHelpers');
@@ -284,11 +285,18 @@ function doItemOp(isMove, to, from, rename, conflict) {
 
     tb.redraw();
 
-    $osf.postJSON(isMove ? waterbutler.moveUrl() : waterbutler.copyUrl(), {
-        'rename': rename,
-        'conflict': conflict,
-        'source': waterbutler.toJsonBlob(from),
-        'destination': waterbutler.toJsonBlob(to),
+    $.ajax({
+        type: 'POST',
+        url: isMove ? waterbutler.moveUrl() : waterbutler.copyUrl(),
+        headers: {
+            'Content-Type': 'Application/json'
+        },
+        data: JSON.stringify({
+            'rename': rename,
+            'conflict': conflict,
+            'source': waterbutler.toJsonBlob(from),
+            'destination': waterbutler.toJsonBlob(to),
+        })
     }).done(function(resp, _, xhr) {
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
