@@ -138,7 +138,7 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DownloadError,
         )
 
-        return streams.ResponseStreamReader(download_resp)
+        return streams.ResponseStreamReader(download_resp, size=data['fileSize'])
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
