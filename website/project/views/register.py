@@ -65,7 +65,6 @@ def node_registration_retraction_get(auth, node, **kwargs):
     :raises: 400: BAD_REQUEST if registration already pending retraction
     """
 
-    # node = kwargs['node'] or kwargs['project']
     if node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
@@ -163,7 +162,7 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
             'message_long': e.message_long
         })
     # FIXME(hrybacki) should be PermissionsError
-    except ValidationValueError as e:
+    except PermissionsError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
             'message_long': e.message
@@ -198,7 +197,7 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
             'message_long': e.message_long
         })
     # FIXME(hrybacki) should be PermissionsError
-    except ValidationValueError as e:
+    except PermissionsError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
             'message_long': e.message
