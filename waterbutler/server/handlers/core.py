@@ -10,12 +10,13 @@ from waterbutler.core import utils
 from waterbutler.core import signing
 from waterbutler.core import exceptions
 from waterbutler.server import settings
-from waterbutler.server.identity import get_identity
+from waterbutler.server.auth import AuthHandler
 
 
 CORS_ACCEPT_HEADERS = [
     'Range',
     'Content-Type',
+    'Authorization',
     'Cache-Control',
     'X-Requested-With',
 ]
@@ -44,6 +45,7 @@ def list_or_value(value):
 
 
 signer = signing.Signer(settings.HMAC_SECRET, settings.HMAC_ALGORITHM)
+auth_handler = AuthHandler(settings.AUTH_HANDLERS)
 
 
 class BaseHandler(tornado.web.RequestHandler, SentryMixin):
@@ -76,7 +78,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         self.captureException(exc_info)
         etype, exc, _ = exc_info
 
-        if issubclass(etype, exceptions.ProviderError):
+        if issubclass(etype, exceptions.PluginError):
             self.set_status(exc.code)
             if exc.data:
                 self.finish(exc.data)
@@ -97,7 +99,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
 
     def options(self):
         self.set_status(204)
-        self.set_header('Access-Control-Allow-Methods', 'PUT, POST, DELETE'),
+        self.set_header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE'),
 
 
 class BaseProviderHandler(BaseHandler):
@@ -113,7 +115,7 @@ class BaseProviderHandler(BaseHandler):
         except KeyError:
             return
 
-        self.payload = yield from get_identity(settings.IDENTITY_METHOD, **self.arguments)
+        self.payload = yield from auth_handler.fetch(self)
 
         self.provider = utils.make_provider(
             self.arguments['provider'],
@@ -154,11 +156,10 @@ class BaseCrossProviderHandler(BaseHandler):
 
     @asyncio.coroutine
     def make_provider(self, provider, **kwargs):
-        payload = yield from get_identity(
-            settings.IDENTITY_METHOD,
+        payload = yield from auth_handler.fetch(
+            self,
             action=self.ACTION_MAP[self.request.method],
-            provider=provider,
-            **kwargs
+            provider=provider
         )
         self.auth = payload
         self.callback_url = payload.pop('callback_url')
