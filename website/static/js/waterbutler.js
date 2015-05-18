@@ -3,23 +3,20 @@
 var $ = require('jquery');
 var $osf = require('./osfHelpers');
 
-function getCookie() {
-    var cookieName = window.contextVars.cookieName;
-    var match = document.cookie.match(new RegExp(cookieName + '=(.*?)(;|$)'));
-    return match ? match[1] : null;
-}
-
 function getViewOnly() {
   return $osf.urlParams().view_only;
 }
 
 function getDefaultOptions(path, provider) {
-    return {
+    var options = {
         path: path,
-        provider: provider,
-        cookie: getCookie(),
-        view_only: getViewOnly()
+        provider: provider
     };
+    var viewOnly = getViewOnly();
+    if (viewOnly) {
+        options.view_only = viewOnly;
+    }
+    return options;
 }
 
 function buildUrl(suffix, path, provider, nid, options) {

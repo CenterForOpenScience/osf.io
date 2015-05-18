@@ -1,4 +1,5 @@
 import furl
+import json
 import requests
 
 from lxml import etree
@@ -80,6 +81,18 @@ class CasClient:
         else:
             return CasResponse()
 
+    def profile(self, access_token):
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.extend(('oauth2', 'profile',))
+        headers = {
+            'Authorization': 'Bearer {}'.format(access_token),
+        }
+        resp = requests.get(url.url, headers=headers)
+        if resp.status_code == 200:
+            return self._parse_profile(resp.content)
+        else:
+            return CasResponse()
+
     def _parse_service_validation(self, xml):
         resp = CasResponse()
         doc = etree.fromstring(xml)
@@ -93,4 +106,13 @@ class CasClient:
                 resp.attributes[str(attribute.xpath('local-name()'))] = str(attribute.text)
         else:
             resp.authenticated = False
+        return resp
+
+    def _parse_profile(self, raw):
+        resp = CasResponse()
+        data = json.loads(raw)
+        resp.authenticated = True
+        resp.user = data['id']
+        for attribute in data['attributes'].keys():
+            resp.attributes[attribute] = data['attributes'][attribute]
         return resp
