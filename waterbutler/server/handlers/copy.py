@@ -17,9 +17,11 @@ class CopyHandler(core.BaseCrossProviderHandler):
     def post(self):
         if not self.source_provider.can_intra_copy(self.destination_provider, self.json['source']['path']):
             result = yield from tasks.copy.adelay({
+                'nid': self.json['source']['nid'],
                 'path': self.json['source']['path'],
                 'provider': self.source_provider.serialized()
             }, {
+                'nid': self.json['destination']['nid'],
                 'path': self.json['destination']['path'],
                 'provider': self.destination_provider.serialized()
             },
