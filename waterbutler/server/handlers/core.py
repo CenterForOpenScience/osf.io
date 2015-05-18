@@ -78,7 +78,7 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
         self.captureException(exc_info)
         etype, exc, _ = exc_info
 
-        if issubclass(etype, exceptions.AuthError) or issubclass(etype, exceptions.ProviderError):
+        if issubclass(etype, exceptions.PluginError):
             self.set_status(exc.code)
             if exc.data:
                 self.finish(exc.data)
@@ -156,11 +156,10 @@ class BaseCrossProviderHandler(BaseHandler):
 
     @asyncio.coroutine
     def make_provider(self, provider, **kwargs):
-        payload = yield from get_identity(
-            settings.IDENTITY_METHOD,
+        payload = yield from auth_handler.fetch(
+            self,
             action=self.ACTION_MAP[self.request.method],
-            provider=provider,
-            **kwargs
+            provider=provider
         )
         self.auth = payload
         self.callback_url = payload.pop('callback_url')

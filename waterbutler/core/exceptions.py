@@ -7,10 +7,9 @@ import asyncio
 DEFAULT_ERROR_MSG = 'An error occurred while making a {response.method} request to {response.url}'
 
 
-class AuthError(Exception):
+class PluginError(Exception):
     """The WaterButler related errors raised
-    from a :class:`waterbutler.core.auth` should
-    inherit from AuthError
+    from a plugins should inherit from PluginError
     """
 
     def __init__(self, message, code=500, log_message=None):
@@ -24,27 +23,22 @@ class AuthError(Exception):
             self.data = None
             self.message = message
 
+    def __repr__(self):
+        return '<{}({}, {})>'.format(self.__class__.__name__, self.code, self.message)
 
-class ProviderError(Exception):
+
+class AuthError(PluginError):
+    """The WaterButler related errors raised
+    from a :class:`waterbutler.core.auth` should
+    inherit from AuthError
+    """
+
+
+class ProviderError(PluginError):
     """The WaterButler related errors raised
     from a :class:`waterbutler.core.provider` should
     inherit from ProviderError
     """
-
-    def __init__(self, message, code=400, log_message=None):
-        super().__init__(code)
-        self.code = code
-        self.log_message = log_message
-        if isinstance(message, dict):
-            self.data = message
-            self.message = json.dumps(message)
-        else:
-            self.data = None
-            self.message = message
-
-    def __repr__(self):
-        return '<{}({}, {})>'.format(self.__class__.__name__, self.code, self.message)
-
 
 class CopyError(ProviderError):
     pass
