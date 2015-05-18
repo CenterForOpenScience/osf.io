@@ -165,9 +165,8 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',
     subject='Registration pending for one of your projects.'
- )
+)
 PENDING_EMBARGO_NON_ADMIN = Mail(
     'pending_embargo_non_admin',
     subject='Registration pending for one of your projects.'
 )
-
