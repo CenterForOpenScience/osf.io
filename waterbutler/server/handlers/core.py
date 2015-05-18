@@ -115,7 +115,7 @@ class BaseProviderHandler(BaseHandler):
         except KeyError:
             return
 
-        self.payload = yield from auth_handler.fetch(self)
+        self.payload = yield from auth_handler.fetch(self.request, self.arguments)
 
         self.provider = utils.make_provider(
             self.arguments['provider'],
@@ -157,9 +157,8 @@ class BaseCrossProviderHandler(BaseHandler):
     @asyncio.coroutine
     def make_provider(self, provider, **kwargs):
         payload = yield from auth_handler.fetch(
-            self,
-            action=self.ACTION_MAP[self.request.method],
-            provider=provider
+            self.request,
+            dict(kwargs, provider=provider, action=self.action)
         )
         self.auth = payload
         self.callback_url = payload.pop('callback_url')
