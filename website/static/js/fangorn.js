@@ -90,20 +90,47 @@ function cancelUploads (row) {
     tb.isUploading(false);
 }
 
-var cancelUploadTemplate = function(row){
-    var treebeard = this;
-    return m('.btn.m-l-sm.text-muted', {
-            config : function() {
-                reapplyTooltips();
-            },
-            'onclick' : function (e) {
-                e.stopImmediatePropagation();
-                cancelUploads.call(treebeard, row);
-            }},
-        m('.fa.fa-times-circle.text-danger', {
-            style : 'display:block;font-size:18px; margin-top: -4px;',
-        }, '')
-    );
+var uploadRowTemplate = function(item){
+    var tb = this;
+    var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
+    var columns = [{
+        data : '',  // Data field name
+        css : '',
+        custom : function(){ return m('row.text-muted', [
+            m('.col-xs-7', {style: 'padding-left:40px;overflow: hidden;text-overflow: ellipsis;'}, item.data.name),
+            m('.col-xs-3',
+                m('.progress', [
+                    m('.progress-bar.progress-bar-info.progress-bar-striped', {
+                        role : 'progressbar',
+                        'aria-valuenow' : progress,
+                        'aria-valuemin' : '0',
+                        'aria-valuemax': '100',
+                        'style':'width: ' + progress + '%' }, m('span.sr-only', progress + '% Complete'))
+                ])
+            ),
+            m('.col-xs-2', [
+                m('span', m('.fangorn-toolbar-icon.m-l-sm', {
+                        style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
+                        config : function() {
+                            reapplyTooltips();
+                        },
+                        'onclick' : function (e) {
+                            e.stopImmediatePropagation();
+                            cancelUploads.call(tb, item);
+                        }},
+                     m('span.text-danger','×')
+                )),
+            ]),
+
+        ]); }
+    }];
+    if(tb.options.placement === 'files'){
+        columns.push({
+            data : '',  // Data field name
+            custom : function(){ return '';}
+        });
+    }
+    return columns;
 };
 
 /**
