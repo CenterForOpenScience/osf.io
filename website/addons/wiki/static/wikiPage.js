@@ -198,6 +198,24 @@ function ViewModel(options){
     self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
 
+    self.subList = [
+        {value: 'email_transactional', text: 'Emails'},
+        {value: 'email_digest', text: 'Email Digest'},
+        {value: 'adopt_parent', text: 'Adopt from Project'},
+        {value: 'none', text: 'None'}
+    ];
+    self.getSub = function(sub) {
+        for(var i=0; i < self.subList.length; i++) {
+            if(sub === self.subList[i].value) {
+                return self.subList[i]
+            }
+        }
+        return self.subList[3];
+    };
+    self.subscription = ko.observable(self.getSub('adopt_parent'));
+
+    self.subsVisible = ko.observable(false);
+
     self.viewText = ko.observable('');
     self.renderedView = ko.observable('');
     self.renderedCompare = ko.observable('');
@@ -308,6 +326,31 @@ function ViewModel(options){
     });
 }
 
+ko.bindingHandlers.slideVisible = {
+    init: function(element, valueAccessor) {
+        // Initially set the element to be instantly visible/hidden depending on the value
+        var value = valueAccessor();
+        $(element).toggle(ko.utils.unwrapObservable(value)); // Use "unwrapObservable" so we can handle values that may or may not be observable
+    },
+    update: function(element, valueAccessor) {
+        // Whenever the value subsequently changes, slowly fade the element in or out
+        var value = valueAccessor();
+        // $(element).slideToggle(); //
+        console.log(ko.utils.unwrapObservable(value));
+        ko.utils.unwrapObservable(value) ? $(element).slideDown() : $(element).slideUp();
+    }
+};
+
+ko.bindingHandlers.toggle = {
+    init: function (element, valueAccessor) {
+        var value = valueAccessor();
+        ko.applyBindingsToNode(element, {
+            click: function () {
+                value(!value());
+            }
+        });
+    }
+};
 
 
 var WikiPage = function(selector, options) {

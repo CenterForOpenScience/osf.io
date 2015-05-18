@@ -16,13 +16,24 @@
                     </a>
                 </div>
                 <div class="col-xs-2">
-                    <a href="#" data-toggle="modal" data-target="#settings">
+                    <a href="#" data-bind="toggle: subsVisible">
                         <i class="fa fa-cog pointer fa-lg wiki-menu" data-toggle="tooltip" title="Settings" data-placement="top"></i>
                     </a>
                 </div>
             </div>
         % endif
     </h4>
+
+    <div class="tag-cloud" data-bind="visible: subsVisible" style="border-bottom: dashed 1px #ddd;
+                                  border-top: dashed 1px #ddd;
+                                  background-color: #eee">
+        <div style="padding-left: 15px;font-size: 16px"><strong>Subscription: (page)</strong></div>
+        <div class="cloud-tag tag-med" style="margin-left: 15px">Emails</div>
+        <div class="cloud-tag tag-med" style="margin-left: 15px">Digest</div>
+        <div class="cloud-tag tag-med" style="margin-left: 15px">Adopt from Project</div>
+        <div class="cloud-tag tag-med" style="margin-left: 15px">None</div>
+
+    </div>
 
     
         <ul class="nav bs-sidenav" style="margin: 0;">
@@ -41,18 +52,36 @@
             % for page in pages_current:
                 %if page['name'] != 'home':
                     <li ${'class="active"' if page['name'] == wiki_name else '' | n}>
+                        %if page['name'] == wiki_name and user['can_edit']:
                             <div class="row">
-                                %if page['name'] == wiki_name and user['can_edit']:
-                                    <a href="${page['url']}"><div class="col-xs-10">${page['name']}</div></a>
-                                    <div class="col-xs-2">
-                                        <a href="#" data-toggle="modal" data-target="#deleteWiki">
-                                            <i class="fa fa-trash-o text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
-                                        </a>
-                                    </div>
-                                % else:
-                                    <a href="${page['url']}"><div class="col-xs-12">${page['name']}</div></a>
-                                % endif
+                                <a href="${page['url']}"><div class="col-xs-8">${page['name']}</div></a>
+                                <div class="col-xs-2">
+                                    <i class="fa fa-cog pointer fa-lg" data-toggle="tooltip"
+                                       title="Settings" data-placement="left"
+                                       data-bind="toggle: subsVisible"> </i>
+                                </div>
+                                <div class="col-xs-2">
+                                    <a href="#" data-toggle="modal" data-target="#deleteWiki">
+                                        <i class="fa fa-trash-o text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
+                                    </a>
+                                </div>
                             </div>
+                            <div class="tag-cloud" data-bind="visible: subsVisible" style="border-bottom: dashed 1px #ddd;
+                                  border-top: dashed 1px #ddd;
+                                  background-color: #eee">
+                                <div style="padding-left: 15px;font-size: 16px"><strong>Subscription:</strong></div>
+                                <div data-bind="foreach: subList">
+                                    <div class="cloud-tag tag-med" data-bind=""
+                                         style="margin-left: 15px">
+                                        <span data-bind="text: text"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        % else:
+                            <div class="row">
+                                    <a href="${page['url']}"><div class="col-xs-12">${page['name']}</div></a>
+                            </div>
+                        % endif
                     </li>
                 % endif
             %endfor
