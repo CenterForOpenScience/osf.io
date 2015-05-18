@@ -89,7 +89,7 @@ var Log = function(params) {
     };
 
     //helper funtion to determine the type for removing in log template
-    self.typeToRemove = function(path){
+    self.pathType = function(path){
         return path.match(/\/$/) ? 'folder' : 'file';
     };
 };

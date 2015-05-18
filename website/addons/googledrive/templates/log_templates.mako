@@ -21,7 +21,7 @@ Google Drive in
 
 
 <script type="text/html" id="googledrive_file_removed">
-removed {{ typeToRemove(params.path) }} <span class="overflow ">{{ decodeURIComponent(params.path) }}</span> from
+removed {{ pathType(params.path) }} <span class="overflow ">{{ decodeURIComponent(params.path) }}</span> from
 Google Drive in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

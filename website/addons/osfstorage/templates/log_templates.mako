@@ -19,7 +19,7 @@ updated file
 </script>
 
 <script type="text/html" id="osf_storage_file_removed">
-  removed {{ typeToRemove(params.path) }} <span class="overflow">
+  removed {{ pathType(params.path) }} <span class="overflow">
       {{ stripLeadingSlash(params.path) }}</span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

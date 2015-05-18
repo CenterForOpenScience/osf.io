@@ -23,7 +23,7 @@ Box in
 
 
 <script type="text/html" id="box_file_removed">
-removed {{ typeToRemove(params.path) }} <span class="overflow">
+removed {{ pathType(params.path) }} <span class="overflow">
     {{ stripLeadingSlash(params.name) }}</span> from
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
