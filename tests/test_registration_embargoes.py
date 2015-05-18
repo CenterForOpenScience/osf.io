@@ -6,8 +6,8 @@ import json
 from nose.tools import *  #noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
-    AuthUserFactory, EmbargoFactory, RegistrationFactory, UserFactory,
-    ProjectFactory,
+    AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
+    RegistrationFactory, UserFactory,
 )
 
 from framework.exceptions import PermissionsError
@@ -27,7 +27,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration = RegistrationFactory(creator=self.user)
         self.embargo = EmbargoFactory(user=self.user)
         self.valid_embargo_end_date = datetime.date.today() + datetime.timedelta(days=3)
-
 
     # Validator tests
     def test_invalid_state_raises_ValidationValueError(self):
@@ -263,6 +262,83 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         assert_false(self.registration.pending_registration)
 
+
+class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
+    def setUp(self):
+        super(RegistrationWithChildNodesEmbargoModelTestCase, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.valid_embargo_end_date = datetime.date.today() + datetime.timedelta(days=3)
+        self.project = ProjectFactory(title='Root', is_public=False, creator=self.user)
+        self.component = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Component'
+        )
+        self.subproject = ProjectFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Subproject'
+        )
+        self.subproject_component = NodeFactory(
+            creator=self.user,
+            parent=self.subproject,
+            title='Subcomponent'
+        )
+        self.registration = RegistrationFactory(project=self.project)
+        # Reload the registration; else tests won't catch failures to svae
+        self.registration.reload()
+
+    def test_approval_embargoes_descendant_nodes(self):
+        # Initiate embargo for parent registration
+        self.registration.embargo_registration(
+            self.user,
+            self.valid_embargo_end_date
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+
+        # Ensure descendant nodes are pending embargo
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.pending_embargo)
+
+        # Approve parent registration's embargo
+        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
+        self.registration.embargo.approve_embargo(self.user, approval_token)
+        assert_true(self.registration.embargo.is_embargoed)
+
+        # Ensure descendant nodes are in embargo
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.is_embargoed)
+
+    def test_disapproval_cancels_embargo_on_descendant_nodes(self):
+        # Initiate embargo on parent registration
+        self.registration.embargo_registration(
+            self.user,
+            self.valid_embargo_end_date
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+
+        # Ensure descendant nodes are pending embargo
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.pending_embargo)
+
+        # Disapprove parent registration's embargo
+        disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
+        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_embargoed)
+        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
+
+        # Ensure descendant nodes' embargoes are cancelled
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_false(node.pending_embargo)
+            assert_false(node.is_embargoed)
 
 class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):

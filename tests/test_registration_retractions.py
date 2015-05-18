@@ -4,7 +4,10 @@ import datetime
 
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
-from tests.factories import ProjectFactory, RegistrationFactory, UserFactory, AuthUserFactory
+from tests.factories import (
+    AuthUserFactory, NodeFactory, ProjectFactory,
+    RegistrationFactory, RetractionFactory, UserFactory
+)
 
 from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
@@ -39,12 +42,12 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_true(self.registration.is_public)
 
     # Node#_initiate_retraction tests
-    def test_initiate_retraction_does_not_save_embargo(self):
+    def test_initiate_retraction_does_not_save_retraction(self):
         initial_count = Retraction.find().count()
         self.registration._initiate_retraction(self.user)
         self.assertEqual(Retraction.find().count(), initial_count)
 
-    def test_initiate_retraction_with_save_does_save_embargo(self):
+    def test_initiate_retraction_with_save_does_save_retraction(self):
         initial_count = Retraction.find().count()
         self.registration._initiate_retraction(self.user, save=True)
         self.assertEqual(Retraction.find().count(), initial_count + 1)
@@ -301,6 +304,151 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retract_registration(self.user)
         assert_true(self.registration.pending_retraction)
         assert_false(self.registration.is_retracted)
+
+
+class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
+    def setUp(self):
+        super(RegistrationWithChildNodesRetractionModelTestCase, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.component = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Component'
+        )
+        self.subproject = ProjectFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Subproject'
+        )
+        self.subproject_component = NodeFactory(
+            creator=self.user,
+            parent=self.subproject,
+            title='Subcomponent'
+        )
+        self.registration = RegistrationFactory(project=self.project)
+        # Reload the registration; else tests won't catch failures to svae
+        self.registration.reload()
+
+    def test_approval_retracts_descendant_nodes(self):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+        assert_true(self.registration.pending_retraction)
+
+        # Ensure descendant nodes are pending registration
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            node.save()
+            assert_true(node.pending_retraction)
+
+        # Approve parent registration's retraction
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_true(self.registration.is_retracted)
+
+        # Ensure descendant nodes are retracted
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.is_retracted)
+
+    def test_disapproval_cancels_retraction_on_descendant_nodes(self):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+        assert_true(self.registration.pending_retraction)
+
+        # Ensure descendant nodes are pending registration
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            node.save()
+            assert_true(node.pending_retraction)
+
+        # Disapprove parent registration's retraction
+        disapproval_token = self.registration.retraction.approval_state[self.user._id]['disapproval_token']
+        self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
+        assert_false(self.registration.pending_retraction)
+        assert_false(self.registration.is_retracted)
+        assert_equal(self.registration.retraction.state, Retraction.CANCELLED)
+
+        # Ensure descendant nodes' retractions are cancelled
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_false(node.pending_retraction)
+            assert_false(node.is_retracted)
+
+    def test_approval_cancels_pending_embargoes_on_descendant_nodes(self):
+        # Initiate embargo for registration
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+        assert_true(self.registration.pending_retraction)
+
+        # Ensure descendant nodes are not pending embargo
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.pending_retraction)
+            assert_true(node.pending_embargo)
+
+        # Approve parent registration's retraction
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_true(self.registration.is_retracted)
+        assert_false(self.registration.pending_embargo)
+
+        # Ensure descendant nodes are not pending embargo
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.is_retracted)
+            assert_false(node.pending_embargo)
+
+    def test_approval_cancels_active_embargoes_on_descendant_nodes(self):
+        # Initiate embargo for registration
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.date.today() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+
+        # Approve embargo for registration
+        embargo_approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
+        self.registration.embargo.approve_embargo(self.user, embargo_approval_token)
+        assert_false(self.registration.pending_embargo)
+        assert_true(self.registration.is_embargoed)
+
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+        assert_true(self.registration.pending_retraction)
+
+        # Ensure descendant nodes are not pending embargo
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.pending_retraction)
+            assert_true(node.is_embargoed)
+
+        # Approve parent registration's retraction
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_true(self.registration.is_retracted)
+        assert_false(self.registration.is_embargoed)
+
+        # Ensure descendant nodes are not pending embargo
+        descendants = self.registration.get_descendants_recursive()
+        for node in descendants:
+            assert_true(node.is_retracted)
+            assert_false(node.is_embargoed)
 
 
 class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):

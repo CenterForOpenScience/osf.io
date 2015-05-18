@@ -672,18 +672,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def is_retracted(self):
+        if self.retraction is None and self.parent_node:
+            return self.parent_node.is_retracted
         return getattr(self.retraction, 'is_retracted', False)
 
     @property
     def pending_retraction(self):
+        if self.retraction is None and self.parent_node:
+            return self.parent_node.pending_retraction
         return getattr(self.retraction, 'pending_retraction', False)
 
     @property
     def is_embargoed(self):
+        if self.embargo is None and self.parent_node:
+            return self.parent_node.is_embargoed
         return getattr(self.embargo, 'is_embargoed', False)
 
     @property
     def pending_embargo(self):
+        if self.embargo is None and self.parent_node:
+            return self.parent_node.pending_embargo
         return getattr(self.embargo, 'pending_embargo', False)
 
     @property
