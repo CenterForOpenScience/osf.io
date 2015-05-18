@@ -33,12 +33,8 @@ var filePage = new FilePage('#filePageContext', filePageOptions);
 $(document).ready(function () {
     var bodyElement = $('body');
 
-    var view = $('[data-osf-panel="View"]');
-    view.hide();
-
-
     $('*[data-osf-panel]').osfPanel({
-//        buttonElement : '.switch',
+        buttonElement : '.switch',
         onSize : 'xs',
         onclick : function (event, title, buttonState, thisbtn, col) {
             // this = all the column elements; an array

@@ -40,7 +40,7 @@ function ViewModel(url, viewText) {
     var self = this;
 
     self.initText = ko.observable('');
-    self.currentText = viewText; //from wikiPage's VM
+    self.currentText = viewText; //from filePage's VM
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
@@ -111,35 +111,34 @@ function ViewModel(url, viewText) {
         }
     });
 
-    self.wikisDiffer = function(wiki1, wiki2) {
+    self.filesDiffer = function(file1, file2) {
         // Handle inconsistencies in newline notation
         var clean1 = typeof wiki1 === 'string' ?
-            wiki1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+            file1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
         var clean2 = typeof wiki2 === 'string' ?
-            wiki2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+            file2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
         return clean1 !== clean2;
     };
 
     self.changed = function() {
-        return self.wikisDiffer(self.initText(), self.currentText());
+        return self.filesDiffer(self.initText(), self.currentText());
     };
 
-    // Fetch initial wiki text
+    // Fetch initial file text
     self.fetchData = function() {
         var request = $.ajax({
             type: 'GET',
             url: url,
             dataType: 'json'
         });
-        console.log('URL in fetchData is: ' + url);
         request.done(function (response) {
             self.initText(response.content);
 
         });
         request.fail(function (xhr, textStatus, error) {
-            $osf.growl('Error','The wiki content could not be loaded.');
-            Raven.captureMessage('Could not GET wiki contents.', {
+            $osf.growl('Error','The file content could not be loaded.');
+            Raven.captureMessage('Could not GET file contents.', {
                 url: url,
                 textStatus: textStatus,
                 error: error
@@ -152,8 +151,8 @@ function ViewModel(url, viewText) {
     self.revertChanges = function() {
         return self.fetchData().then(function(response) {
             // Dirty check now covers last saved version
-            self.initText(response.wiki_content);
-            self.currentText(response.wiki_content);
+            self.initText(response.content);
+            self.currentText(response.content);
         });
     };
 
@@ -166,7 +165,7 @@ function ViewModel(url, viewText) {
 
 }
 
-function WikiEditor(url, viewText, editor) {
+function FileEditor(url, viewText, editor) {
     this.viewModel = new ViewModel(url, viewText);
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
@@ -174,4 +173,4 @@ function WikiEditor(url, viewText, editor) {
 
 }
 
-module.exports = WikiEditor;
+module.exports = FileEditor;

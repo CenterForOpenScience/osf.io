@@ -52,9 +52,7 @@
 
         % if user['can_edit'] and file_ext == '.txt':
             <div class="wiki" id="filePageContext">
-                <div data-bind="with: $root.editVM.wikiEditor.viewModel"
-                    data-osf-panel="Edit"
-                    style="${'' if 'edit' in panels_used else 'display: none' | n}">
+                <div data-bind="with: $root.editVM.wikiEditor.viewModel" data-osf-panel="Edit" style="display: none">
                     <div class="osf-panel" >
                         <div class="osf-panel-header" >
                             <div class="wiki-panel">
@@ -107,7 +105,7 @@
                                 <textarea name="edit_content" style="display: none;" data-bind="value: currentText"></textarea>
 
                             </div>
-                            </form>
+                        </form>
                     </div>
                 </div>
 
@@ -123,10 +121,8 @@
     </div>
 
     % if user['can_edit'] and file_ext == '.txt':
-
-    <div data-osf-panel="View"
-        style="${'' if 'view' in panels_used else 'display: none' | n}">
-        <div class="osf-panel no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
+    <div data-osf-panel="View">
+        <div class="osf-panel" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
             <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
                 <div class="row">
                     <div class="col-sm-6">
@@ -252,7 +248,7 @@
                 <th></th>
               </tr>
             </thead>
-            
+
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
@@ -344,8 +340,6 @@
                 panelsUsed: ${json.dumps(panels_used) | n},
                 isEditable: isEditable,
                 urls: {
-
-##                  TODO: @caseyrollins refactor these URLs and determine which are necessary
 
                     draft: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     content: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
