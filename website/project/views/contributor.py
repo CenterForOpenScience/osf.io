@@ -407,7 +407,9 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     # roll the valid token for each email, thus user cannot change email and approve a different email address
     timestamp = unclaimed_record.get('last_sent')
     if not throttle_period_expired(timestamp, throttle):
-        raise Exception("User account can only be claimed with an existing user once every 24 hours")
+        raise HTTPError(400, data=dict(
+            message_long='User account can only be claimed with an existing user once every 24 hours'
+        ))
     unclaimed_record['token'] = generate_confirm_token()
     unclaimed_record['email'] = claimer.username
     unreg_user.save()
@@ -467,7 +469,9 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         # roll the valid token for each email, thus user cannot change email and approve a different email address
         timestamp = unclaimed_record.get('last_sent')
         if not throttle_period_expired(timestamp, throttle):
-            raise Exception("User account can only be claimed with a new email once every 24 hours")
+            raise HTTPError(400, data=dict(
+                message_long='User account can only be claimed with an existing user once every 24 hours'
+            ))
         unclaimed_record['last_sent'] = get_timestamp()
         unclaimed_record['token'] = generate_confirm_token()
         unclaimed_record['email'] = email
