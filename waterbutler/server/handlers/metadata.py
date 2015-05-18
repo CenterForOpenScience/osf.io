@@ -2,7 +2,7 @@ from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
 
-class MetadataHandler(core.BaseHandler):
+class MetadataHandler(core.BaseProviderHandler):
 
     ACTION_MAP = {
         'GET': 'metadata',

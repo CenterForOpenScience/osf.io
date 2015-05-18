@@ -12,3 +12,7 @@ from waterbutler.core.streams.http import ResponseStreamReader  # noqa
 from waterbutler.core.streams.metadata import HashStreamWriter  # noqa
 
 from waterbutler.core.streams.zip import ZipStreamReader  # noqa
+
+from waterbutler.core.streams.base64 import Base64EncodeStream  # noqa
+
+from waterbutler.core.streams.json import JSONStream  # noqa

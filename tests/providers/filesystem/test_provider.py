@@ -8,9 +8,9 @@ import shutil
 
 from waterbutler.core import streams
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.filesystem import FileSystemProvider
-from waterbutler.providers.filesystem.provider import FileSystemPath
 from waterbutler.providers.filesystem.metadata import FileSystemFileMetadata
 
 
@@ -52,19 +52,19 @@ class TestCRUD:
 
     @async
     def test_download(self, provider):
-        path = FileSystemPath(provider.folder, '/flower.jpg')
+        path = yield from provider.validate_path('/flower.jpg')
 
-        result = yield from provider.download(str(path))
+        result = yield from provider.download(path)
         content = yield from result.read()
 
         assert content == b'I am a file'
 
     @async
     def test_download_not_found(self, provider):
-        path = FileSystemPath(provider.folder, '/missing.txt')
+        path = yield from provider.validate_path('/missing.txt')
 
         with pytest.raises(exceptions.DownloadError):
-            yield from provider.download(str(path))
+            yield from provider.download(path)
 
     @async
     def test_upload_create(self, provider):
@@ -72,15 +72,15 @@ class TestCRUD:
         file_folder = '/'
         file_path = os.path.join(file_folder, file_name)
         file_content = b'Test Upload Content'
-        file_stream = streams.FileStreamReader(io.BytesIO(file_content))
+        file_stream = streams.StringStream(file_content)
 
-        path = FileSystemPath(provider.folder, file_path)
-        metadata, created = yield from provider.upload(file_stream, str(path))
+        path = yield from provider.validate_path(file_path)
+        metadata, created = yield from provider.upload(file_stream, path)
 
         assert metadata['name'] == file_name
         assert metadata['path'] == file_path
         assert metadata['size'] == len(file_content)
-        assert created == True
+        assert created is True
 
     @async
     def test_upload_update(self, provider):
@@ -90,13 +90,13 @@ class TestCRUD:
         file_content = b'Short and stout'
         file_stream = streams.FileStreamReader(io.BytesIO(file_content))
 
-        path = FileSystemPath(provider.folder, file_path)
-        metadata, created = yield from provider.upload(file_stream, str(path))
+        path = yield from provider.validate_path(file_path)
+        metadata, created = yield from provider.upload(file_stream, path)
 
         assert metadata['name'] == file_name
         assert metadata['path'] == file_path
         assert metadata['size'] == len(file_content)
-        assert created == False
+        assert created is False
 
     @async
     def test_upload_nested_create(self, provider):
@@ -106,13 +106,13 @@ class TestCRUD:
         file_content = b'Test New Nested Content'
         file_stream = streams.FileStreamReader(io.BytesIO(file_content))
 
-        path = FileSystemPath(provider.folder, file_path)
-        metadata, created = yield from provider.upload(file_stream, str(path))
+        path = yield from provider.validate_path(file_path)
+        metadata, created = yield from provider.upload(file_stream, path)
 
         assert metadata['name'] == file_name
         assert metadata['path'] == file_path
         assert metadata['size'] == len(file_content)
-        assert created == True
+        assert created is True
 
     @async
     def test_upload_nested_update(self, provider):
@@ -122,30 +122,30 @@ class TestCRUD:
         file_content = b'Test Update Nested Content'
         file_stream = streams.FileStreamReader(io.BytesIO(file_content))
 
-        path = FileSystemPath(provider.folder, file_path)
-        metadata, created = yield from provider.upload(file_stream, str(path))
+        path = yield from provider.validate_path(file_path)
+        metadata, created = yield from provider.upload(file_stream, path)
 
         assert metadata['name'] == file_name
         assert metadata['path'] == file_path
         assert metadata['size'] == len(file_content)
-        assert created == False
+        assert created is False
 
     @async
     def test_delete_file(self, provider):
-        path = FileSystemPath(provider.folder, '/flower.jpg')
+        path = yield from provider.validate_path('/flower.jpg')
 
-        yield from provider.delete(str(path))
+        yield from provider.delete(path)
 
         with pytest.raises(exceptions.MetadataError):
-            yield from provider.metadata(str(path))
+            yield from provider.metadata(path)
 
 
 class TestMetadata:
 
     @async
     def test_metadata(self, provider):
-        path = FileSystemPath(provider.folder, '/')
-        result = yield from provider.metadata(str(path))
+        path = yield from provider.validate_path('/')
+        result = yield from provider.metadata(path)
 
         assert isinstance(result, list)
         assert len(result) == 2
@@ -159,8 +159,8 @@ class TestMetadata:
 
     @async
     def test_metadata_root_file(self, provider):
-        path = FileSystemPath(provider.folder, '/flower.jpg')
-        result = yield from provider.metadata(str(path))
+        path = yield from provider.validate_path('/flower.jpg')
+        result = yield from provider.metadata(path)
 
         assert isinstance(result, dict)
         assert result['kind'] == 'file'
@@ -169,10 +169,10 @@ class TestMetadata:
 
     @async
     def test_metadata_missing(self, provider):
-        path = FileSystemPath(provider.folder, '/missing.txt')
+        path = yield from provider.validate_path('/missing.txt')
 
         with pytest.raises(exceptions.MetadataError):
-            yield from provider.metadata(str(path))
+            yield from provider.metadata(path)
 
 
 class TestOperations:

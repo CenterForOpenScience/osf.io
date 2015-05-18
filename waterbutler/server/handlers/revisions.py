@@ -4,7 +4,7 @@ from waterbutler.server import utils
 from waterbutler.server.handlers import core
 
 
-class RevisionHandler(core.BaseHandler):
+class RevisionHandler(core.BaseProviderHandler):
 
     ACTION_MAP = {
         'GET': 'revisions',

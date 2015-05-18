@@ -42,6 +42,9 @@ class ProviderError(Exception):
             self.data = None
             self.message = message
 
+    def __repr__(self):
+        return '<{}({}, {})>'.format(self.__class__.__name__, self.code, self.message)
+
 
 class CopyError(ProviderError):
     pass
@@ -117,5 +120,13 @@ def exception_from_response(resp, error=ProviderError, **kwargs):
         data = yield from resp.json()
         return error(data, code=resp.status)
     except Exception:
-        # When all else fails return the most generic return message
-        return error(DEFAULT_ERROR_MSG.format(response=resp), code=resp.status)
+        pass
+
+    try:
+        data = yield from resp.read()
+        return error({'response': data.decode('utf-8')}, code=resp.status)
+    except TypeError:
+        pass
+
+    # When all else fails return the most generic return message
+    return error(DEFAULT_ERROR_MSG.format(response=resp), code=resp.status)

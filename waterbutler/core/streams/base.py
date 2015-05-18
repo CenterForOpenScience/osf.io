@@ -57,15 +57,22 @@ class MultiStream(asyncio.StreamReader):
     Originally written by @jmcarp
     """
     def __init__(self, *streams):
+        self._size = 0
         self.stream = []
         self._streams = []
+
         self.add_streams(*streams)
+
+    @property
+    def size(self):
+        return self._size
 
     @property
     def streams(self):
         return self._streams
 
     def add_streams(self, *streams):
+        self._size += sum(x.size for x in streams)
         self._streams.extend(streams)
 
         if not self.stream:

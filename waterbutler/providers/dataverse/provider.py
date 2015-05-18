@@ -5,6 +5,7 @@ import tempfile
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.dataverse import settings
 from waterbutler.providers.dataverse.metadata import DataverseRevision
@@ -13,6 +14,8 @@ from waterbutler.providers.dataverse.metadata import DataverseDatasetMetadata
 
 class DataverseProvider(provider.BaseProvider):
     """Provider for Dataverse"""
+
+    NAME = 'dataverse'
 
     def __init__(self, auth, credentials, settings):
         """
@@ -33,6 +36,34 @@ class DataverseProvider(provider.BaseProvider):
         self._id = self.settings['id']
         self.name = self.settings['name']
 
+        self._metadata_cache = {}
+
+    @asyncio.coroutine
+    def validate_path(self, path, revision=None, **kwargs):
+        """Ensure path is in configured dataset
+
+        :param str path: The path to a file
+        :param list metadata: List of file metadata from _get_data
+        """
+        if path == '/':
+            return WaterButlerPath('/')
+
+        path = path.strip('/')
+
+        for item in (yield from self._maybe_fetch_metadata(version=revision)):
+            if path == item['extra']['fileId']:
+                return WaterButlerPath('/' + item['name'], _ids=(None, item['extra']['fileId']))
+        return WaterButlerPath('/' + path)
+
+    @asyncio.coroutine
+    def _maybe_fetch_metadata(self, version=None, refresh=False):
+        if refresh or self._metadata_cache.get(version) is None:
+            for v in ((version, ) or ('latest', 'latest-published')):
+                self._metadata_cache[v] = yield from self._get_data(v)
+        if version:
+            return self._metadata_cache[version]
+        return sum(self._metadata_cache.values(), [])
+
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
         """Returns a ResponseWrapper (Stream) for the specified path
@@ -48,12 +79,12 @@ class DataverseProvider(provider.BaseProvider):
         :rtype: :class:`waterbutler.core.streams.ResponseStreamReader`
         :raises: :class:`waterbutler.core.exceptions.DownloadError`
         """
-        metadata = yield from self._get_data(revision)
-        self._validate_path(path, metadata)
+        if path.identifier is None:
+            raise exceptions.NotFoundError(str(path))
 
         resp = yield from self.make_request(
             'GET',
-            self.build_url(settings.DOWN_BASE_URL, path, key=self.token),
+            self.build_url(settings.DOWN_BASE_URL, path.identifier, key=self.token),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
@@ -69,11 +100,8 @@ class DataverseProvider(provider.BaseProvider):
 
         :rtype: dict, bool
         """
-
-        filename = path.strip('/')
-
         stream = streams.ZipStreamReader(
-            filename=filename,
+            filename=path.name,
             file_stream=stream,
         )
 
@@ -93,16 +121,8 @@ class DataverseProvider(provider.BaseProvider):
         }
 
         # Delete old file if it exists
-        metadata = yield from self._get_data('latest')
-        files = metadata if isinstance(metadata, list) else []
-
-        try:
-            old_file = next(file for file in files if file['name'] == filename)
-        except StopIteration:
-            old_file = None
-
-        if old_file:
-            yield from self.delete(old_file['path'])
+        if path.identifier:
+            yield from self.delete(path)
 
         yield from self.make_request(
             'POST',
@@ -117,9 +137,9 @@ class DataverseProvider(provider.BaseProvider):
         # Find appropriate version of file
         metadata = yield from self._get_data('latest')
         files = metadata if isinstance(metadata, list) else []
-        file_metadata = next(file for file in files if file['name'] == filename)
+        file_metadata = next(file for file in files if file['name'] == path.name)
 
-        return file_metadata, old_file is None
+        return file_metadata, path.identifier is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
@@ -127,14 +147,12 @@ class DataverseProvider(provider.BaseProvider):
 
         :param str path: The path of the key to delete
         """
-
         # Can only delete files in draft
-        metadata = yield from self._get_data('latest')
-        self._validate_path(path, metadata)
+        path = yield from self.validate_path('/' + path.identifier, version='latest', throw=True)
 
         yield from self.make_request(
             'DELETE',
-            self.build_url(settings.EDIT_MEDIA_BASE_URL, 'file', path),
+            self.build_url(settings.EDIT_MEDIA_BASE_URL, 'file', path.identifier),
             auth=(self.token, ),
             expects=(204, ),
             throws=exceptions.DeleteError,
@@ -150,15 +168,15 @@ class DataverseProvider(provider.BaseProvider):
             - None for all data
         """
 
-        # Get appropriate metadata
-        dataset_metadata = yield from self._get_data(version)
-
-        if path == '/':
-            return dataset_metadata
+        if path.is_root:
+            return (yield from self._maybe_fetch_metadata(version=version))
 
         try:
             return next(
-                item for item in dataset_metadata if item['path'] == path
+                item
+                for item in
+                (yield from self._maybe_fetch_metadata(version=version))
+                if item['extra']['fileId'] == path.identifier
             )
         except StopIteration:
             raise exceptions.MetadataError(
@@ -178,7 +196,7 @@ class DataverseProvider(provider.BaseProvider):
         metadata = yield from self._get_data()
         return [
             DataverseRevision(item['extra']['datasetVersion']).serialized()
-            for item in metadata if item['path'] == path
+            for item in metadata if item['extra']['fileId'] == path.identifier
         ]
 
     @asyncio.coroutine
@@ -228,16 +246,3 @@ class DataverseProvider(provider.BaseProvider):
 
         # Prefer published to guarantee users get published version by default
         return published_data + draft_data
-
-    def _validate_path(self, path, metadata):
-        """Ensure path is in configured dataset
-
-        :param str path: The path to a file
-        :param list metadata: List of file metadata from _get_data
-        """
-        # Ensure file is in specified dataset
-        if path.lstrip('/') not in [item['path'].lstrip('/') for item in metadata]:
-            raise exceptions.MetadataError(
-                "Could not retrieve file '{}'".format(path),
-                code=http.client.NOT_FOUND,
-            )

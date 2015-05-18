@@ -16,11 +16,12 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             This method determines the output of the REST API
         """
         return {
-            'provider': self.provider,
+            'extra': self.extra,
             'kind': self.kind,
             'name': self.name,
             'path': self.path,
-            'extra': self.extra,
+            'provider': self.provider,
+            'materialized': self.materialized_path,
         }
 
     def build_path(self, path):
@@ -35,12 +36,12 @@ class BaseMetadata(metaclass=abc.ABCMeta):
         """The provider from which this resource
         originated.
         """
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def kind(self):
         """`file` or `folder`"""
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def name(self):
@@ -49,17 +50,34 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             /bar/foo.txt -> foo.txt
             /<someid> -> whatever.png
         """
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def path(self):
         """The canonical string representation
         of a waterbutler file or folder.
 
-        All paths MUST start with a `/`
-        All Folders MUST end with a `/`
+        ..note::
+            All paths MUST start with a `/`
+            All Folders MUST end with a `/`
         """
-        pass
+        raise NotImplementedError
+
+    @property
+    def materialized_path(self):
+        """The "pretty" variant of path
+        this path can be displayed to the enduser
+
+        path -> /Folder%20Name/123abc
+        full_path -> /Folder Name/File Name
+
+        ..note::
+            All paths MUST start with a `/`
+            All Folders MUST end with a `/`
+        ..note::
+            Defaults to self.path
+        """
+        return self.path
 
     @property
     def extra(self):
@@ -82,15 +100,15 @@ class BaseFileMetadata(BaseMetadata):
 
     @abc.abstractproperty
     def content_type(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def modified(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def size(self):
-        pass
+        raise NotImplementedError
 
 
 class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
@@ -107,15 +125,15 @@ class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
 
     @abc.abstractproperty
     def modified(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def version(self):
-        pass
+        raise NotImplementedError
 
     @abc.abstractproperty
     def version_identifier(self):
-        pass
+        raise NotImplementedError
 
     @property
     def extra(self):

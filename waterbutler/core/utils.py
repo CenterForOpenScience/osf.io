@@ -1,7 +1,9 @@
 import os
+import json
 import asyncio
 import logging
 import functools
+# from concurrent.futures import ProcessPoolExecutor  TODO Get this working
 
 import aiohttp
 
@@ -9,12 +11,15 @@ from raven.contrib.tornado import AsyncSentryClient
 from stevedore import driver
 
 from waterbutler import settings
+from waterbutler.server import settings as server_settings
 from waterbutler.core import exceptions
+from waterbutler.core.signing import Signer
 
 
 logger = logging.getLogger(__name__)
 
 sentry_dns = settings.get('SENTRY_DSN', None)
+signer = Signer(server_settings.HMAC_SECRET, server_settings.HMAC_ALGORITHM)
 
 
 class AioSentryClient(AsyncSentryClient):
@@ -71,6 +76,10 @@ class WaterButlerPath:
 
         # after class variables have been setup
         self._path = self._format_path(path)
+        # For name confliction resolution
+        # foo.txt -> foo (1).txt -> foo (2).txt
+        self._count = 0
+        self._orig_name = self.name
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self._orig_path)
@@ -111,6 +120,15 @@ class WaterButlerPath:
     @property
     def name(self):
         return self._parts[-1]
+
+    def increment_name(self):
+        self._count += 1
+        name, ext = os.path.splitext(self._orig_name)
+        new_name = '{} ({}){}'.format(name, self._count, ext)
+        self._orig_path = self._orig_path.replace(self.name, new_name)
+        self._parts[-1] = new_name
+        self._path = self._format_path(self._orig_path)
+        return self
 
     @property
     def parts(self):
@@ -215,3 +233,16 @@ def async_retry(retries=5, backoff=1, exceptions=(Exception, ), raven=client):
         return wrapped
 
     return _async_retry
+
+
+@asyncio.coroutine
+def send_signed_request(method, url, payload):
+    message, signature = signer.sign_payload(payload)
+    return (yield from aiohttp.request(
+        method, url,
+        data=json.dumps({
+            'payload': message.decode(),
+            'signature': signature,
+        }),
+        headers={'Content-Type': 'application/json'},
+    ))

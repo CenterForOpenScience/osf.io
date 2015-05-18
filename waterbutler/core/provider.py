@@ -50,14 +50,26 @@ class BaseProvider(metaclass=abc.ABCMeta):
         self.credentials = credentials
         self.settings = settings
 
+    @abc.abstractproperty
+    def NAME(self):
+        raise NotImplementedError
+
     def __eq__(self, other):
         try:
             return (
                 type(self) == type(other) and
-                self.identity == other.identity
+                self.credentials == other.credentials
             )
         except AttributeError:
             return False
+
+    def serialized(self):
+        return {
+            'name': self.NAME,
+            'auth': self.auth,
+            'settings': self.settings,
+            'credentials': self.credentials,
+        }
 
     def build_url(self, *segments, **query):
         """A nice wrapped around furl, builds urls based on self.BASE_URL
@@ -107,7 +119,152 @@ class BaseProvider(metaclass=abc.ABCMeta):
             raise (yield from exceptions.exception_from_response(response, error=throws, **kwargs))
         return response
 
-    def can_intra_copy(self, other):
+    @asyncio.coroutine
+    def move(self, dest_provider, src_path, dest_path, rename=None, conflict='replace', handle_naming=True):
+        """Moves a file or folder from the current provider to the specified one
+        Performs a copy and then a delete.
+        Calls :func:`BaseProvider.intra_move` if possible.
+
+        :param BaseProvider dest_provider: The provider to move to
+        :param dict source_options: A dict to be sent to either :func:`BaseProvider.intra_move`
+            or :func:`BaseProvider.copy` and :func:`BaseProvider.delete`
+        :param dict dest_options: A dict to be sent to either :func:`BaseProvider.intra_move`
+            or :func:`BaseProvider.copy`
+        """
+        args = (dest_provider, src_path, dest_path)
+        kwargs = {'rename': rename, 'conflict': conflict}
+
+        if handle_naming:
+            dest_path = yield from dest_provider.handle_naming(
+                src_path,
+                dest_path,
+                rename=rename,
+                conflict=conflict,
+            )
+            args = (dest_provider, src_path, dest_path)
+            kwargs = {}
+
+        if self.can_intra_move(dest_provider, src_path):
+            return (yield from self.intra_move(*args))
+
+        if src_path.is_dir:
+            metadata, created = yield from self._folder_file_op(self.move, *args, **kwargs)
+        else:
+            metadata, created = yield from self.copy(*args, handle_naming=False, **kwargs)
+
+        yield from self.delete(src_path)
+
+        return metadata, created
+
+    @asyncio.coroutine
+    def copy(self, dest_provider, src_path, dest_path, rename=None, conflict='replace', handle_naming=True):
+        args = (dest_provider, src_path, dest_path)
+        kwargs = {'rename': rename, 'conflict': conflict, 'handle_naming': handle_naming}
+
+        if handle_naming:
+            dest_path = yield from dest_provider.handle_naming(
+                src_path,
+                dest_path,
+                rename=rename,
+                conflict=conflict,
+            )
+            args = (dest_provider, src_path, dest_path)
+            kwargs = {}
+
+        if self.can_intra_copy(dest_provider, src_path):
+                return (yield from self.intra_copy(*args))
+
+        if src_path.is_dir:
+            return (yield from self._folder_file_op(self.copy, *args, **kwargs))
+
+        return (yield from dest_provider.upload(
+            (yield from self.download(src_path)),
+            dest_path
+        ))
+
+    @asyncio.coroutine
+    def _folder_file_op(self, func, dest_provider, src_path, dest_path, **kwargs):
+        assert src_path.is_dir, 'src_path must be a directory'
+        assert asyncio.iscoroutinefunction(func), 'func must be a coroutine'
+
+        try:
+            folder = yield from dest_provider.create_folder(dest_path)
+            created = True
+        except exceptions.CreateFolderError as e:
+            if e.code != 409:
+                raise
+            created = False
+            #TODO
+
+        dest_path = yield from dest_provider.revalidate_path(dest_path.parent, dest_path.name, folder=dest_path.is_dir)
+
+        futures = []
+        for item in (yield from self.metadata(src_path)):
+            futures.append(
+                asyncio.async(
+                    func(
+                        dest_provider,
+                        # TODO figure out a way to cut down on all the requests made here
+                        (yield from self.revalidate_path(src_path, item['name'], folder=item['kind'] == 'folder')),
+                        (yield from dest_provider.revalidate_path(dest_path, item['name'], folder=item['kind'] == 'folder')),
+                        # src_path.child(item['name'], _id=item.get('id'), folder=item['kind'] == 'folder'),
+                        # dest_path.child(item['name'], _id=item.get('id'), folder=item['kind'] == 'folder'),
+                        handle_naming=False,
+                    )
+                )
+            )
+
+        if not futures:
+            folder['children'] = []
+            return folder, created
+
+        finished, pending = yield from asyncio.wait(futures, return_when=asyncio.FIRST_EXCEPTION)
+
+        if len(pending) != 0:
+            finished.pop().result()
+
+        folder['children'] = [
+            future.result()[0]  # result is a tuple of (metadata, created)
+            for future in finished
+        ]
+
+        return folder, created
+
+    @asyncio.coroutine
+    def handle_naming(self, src_path, dest_path, rename=None, conflict='replace'):
+        """Given a WaterButlerPath and the desired name handle any potential
+        naming issues
+
+        ie:
+            cp /file.txt /folder/ -> /folder/file.txt
+            cp /folder/ /folder/ -> /folder/folder/
+            cp /file.txt /folder/file.txt -> /folder/file.txt
+            cp /file.txt /folder/file.txt -> /folder/file (1).txt
+            cp /file.txt /folder/doc.txt -> /folder/doc.txt
+
+        :param WaterButlerPath src_path: The object that is being copied
+        :param WaterButlerPath dest_path: The path that is being copied to or into
+        :param str rename: The desired name of the resulting path, may be incremented
+        :param str conflict: The conflict resolution strategy, replace or keep
+        """
+        if src_path.is_dir and dest_path.is_file:
+            # Cant copy a directory to a file
+            raise ValueError('Destination must be a directory if the source is')
+
+        if not dest_path.is_file:
+            # Directories always are going to be copied into
+            # cp /folder1/ /folder2/ -> /folder1/folder2/
+            dest_path = yield from self.revalidate_path(
+                dest_path,
+                rename or src_path.name,
+                folder=src_path.is_dir
+            )
+
+        dest_path, _ = yield from self.handle_name_conflict(dest_path, conflict=conflict)
+
+        return dest_path
+
+    def can_intra_copy(self, other, path=None):
         """Indicates if a quick copy can be performed
         between the current and `other`.
 
@@ -119,7 +276,7 @@ class BaseProvider(metaclass=abc.ABCMeta):
         """
         return False
 
-    def can_intra_move(self, other):
+    def can_intra_move(self, other, path=None):
         """Indicates if a quick move can be performed
         between the current and `other`.
 
@@ -135,60 +292,67 @@ class BaseProvider(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @asyncio.coroutine
-    def intra_move(self, dest_provider, source_options, dest_options):
-        resp = yield from self.intra_copy(dest_provider, source_options, dest_options)
-        yield from self.delete(**source_options)
-        return resp
+    def intra_move(self, dest_provider, src_path, dest_path):
+        data, created = yield from self.intra_copy(dest_provider, src_path, dest_path)
+        yield from self.delete(src_path)
+        return data, created
 
     @asyncio.coroutine
-    def copy(self, dest_provider, source_options, dest_options):
-        if self.can_intra_copy(dest_provider):
-            try:
-                return (yield from self.intra_copy(dest_provider, source_options, dest_options))
-            except NotImplementedError:
-                pass
-        stream = yield from self.download(**source_options)
-        return (yield from dest_provider.upload(stream, **dest_options))
+    def exists(self, path, **kwargs):
+        try:
+            return (yield from self.metadata(path, **kwargs))
+        except exceptions.NotFoundError:
+            return False
+        except exceptions.MetadataError as e:
+            if e.code != 404:
+                raise
+        return False
 
     @asyncio.coroutine
-    def move(self, dest_provider, source_options, dest_options):
-        """Moves a file or folder from the current provider to the specified one
-        Performs a copy and then a delete.
-        Calls :func:`BaseProvider.intra_move` if possible.
+    def handle_name_conflict(self, path, conflict='replace', **kwargs):
+        """Given a name and a conflict resolution pattern determine
+        the correct file path to upload to and indicate if that file exists or not
 
-        :param BaseProvider dest_provider: The provider to move to
-        :param dict source_options: A dict to be sent to either :func:`BaseProvider.intra_move`
-            or :func:`BaseProvider.copy` and :func:`BaseProvider.delete`
-        :param dict dest_options: A dict to be sent to either :func:`BaseProvider.intra_move`
-            or :func:`BaseProvider.copy`
+        :param WaterbutlerPath path: An object supporting the waterbutler path API
+        :param str conflict: replace or keep
+        :rtype: (WaterButlerPath, dict or False)
         """
-        if self.can_intra_move(dest_provider):
-            try:
-                return (yield from self.intra_move(dest_provider, source_options, dest_options))
-            except NotImplementedError:
-                pass
-        metadata = yield from self.copy(dest_provider, source_options, dest_options)
-        yield from self.delete(**source_options)
-        return metadata
+        exists = yield from self.exists(path, **kwargs)
+        if not exists or conflict != 'keep':
+            return path, exists
+
+        while (yield from self.exists(path.increment_name(), **kwargs)):
+            pass
+        # path.increment_name()
+        # exists = self.exists(str(path))
+        return path, False
+
+    @asyncio.coroutine
+    def revalidate_path(self, base, path, folder=False):
+        return base.child(path, folder=folder)
 
     @abc.abstractmethod
     def download(self, **kwargs):
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def upload(self, stream, **kwargs):
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def delete(self, **kwargs):
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def metadata(self, **kwargs):
-        pass
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def validate_path(self, path, **kwargs):
+        raise NotImplementedError
 
     def revisions(self, **kwargs):
-        return []
+        return []  # TODO Raise 405 by default h/t @rliebz
 
     def create_folder(self, *args, **kwargs):
         """Create a folder in the current provider
