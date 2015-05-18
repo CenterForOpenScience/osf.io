@@ -44,11 +44,11 @@ class CopyHandler(core.BaseCrossProviderHandler):
                 )
             )
 
+            self._send_hook('copy', metadata)
+
         if created:
             self.set_status(201)
         else:
             self.set_status(200)
 
         self.write(metadata)
-
-        self._send_hook('copy', metadata)
