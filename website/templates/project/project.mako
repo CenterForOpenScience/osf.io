@@ -292,7 +292,7 @@
                   }'></div>
             </div><!-- end containment -->
         % else:
-          <p>No components have been added to this project.</p>
+          <p>No components have been added to this ${node['node_type']}.</p>
         % endif
     </div><!-- end addon-widget-body -->
 </div><!-- end components -->
