@@ -284,18 +284,11 @@ function doItemOp(isMove, to, from, rename, conflict) {
 
     tb.redraw();
 
-    $.ajax({
-        type: 'POST',
-        url: isMove ? waterbutler.moveUrl() : waterbutler.copyUrl(),
-        headers: {
-            'Content-Type': 'Application/json'
-        },
-        data: JSON.stringify({
-            'rename': rename,
-            'conflict': conflict,
-            'source': waterbutler.toJsonBlob(from),
-            'destination': waterbutler.toJsonBlob(to),
-        })
+    $osf.postJSON(isMove ? waterbutler.moveUrl() : waterbutler.copyUrl(), {
+        'rename': rename,
+        'conflict': conflict,
+        'source': waterbutler.toJsonBlob(from),
+        'destination': waterbutler.toJsonBlob(to),
     }).done(function(resp, _, xhr) {
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
@@ -335,7 +328,7 @@ function doItemOp(isMove, to, from, rename, conflict) {
         }
 
         tb.redraw();
-    }).fail(function() {
+    }).fail(function(xhr) {
         if (isMove) {
             from.move(ogParent);
             from.data.status = undefined;
@@ -343,7 +336,19 @@ function doItemOp(isMove, to, from, rename, conflict) {
             from.removeSelf();
         }
 
-        $osf.growl('Error', (isMove ? 'Move' : 'Copy') + ' failed.');
+        Raven.captureMessage('Failed to move or copy file', {
+            xhr: xhr,
+            requestData: {
+                rename: rename,
+                conflict: conflict,
+                source: waterbutler.toJsonBlob(from),
+                destination: waterbutler.toJsonBlob(to),
+            }
+        });
+
+        $osf.growl((isMove ? 'Move' : 'Copy') + ' failed.', 'Please refresh the page or ' +
+            'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+            'problem persists.');
 
         tb.redraw();
     });
