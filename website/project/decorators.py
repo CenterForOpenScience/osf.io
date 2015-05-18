@@ -7,11 +7,13 @@ from flask import request
 
 from framework import status
 from framework.auth import Auth
+from framework.auth.cas import CasClient
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
+from website import settings
 from website.models import Node
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
@@ -127,9 +129,9 @@ def _must_be_contributor_factory(include_public):
             if not node.is_public or not include_public:
                 if key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user, key=key):
-                        url = '/login/?next={0}'.format(request.path)
-                        redirect_url = check_key_expired(key=key, node=node, url=url)
-                        response = redirect(redirect_url)
+                        cas_client = CasClient(settings.CAS_SERVER_URL)
+                        redirect_url = check_key_expired(key=key, node=node, url=request.url)
+                        response = redirect(cas_client.get_login_url(redirect_url))
 
             return response or func(*args, **kwargs)
 

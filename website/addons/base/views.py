@@ -13,6 +13,7 @@ from flask import make_response
 from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
+from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
@@ -127,15 +128,18 @@ restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
 def get_auth(**kwargs):
     try:
         action = request.args['action']
-        cookie = request.args['cookie']
         node_id = request.args['nid']
         provider_name = request.args['provider']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    cookie = request.args.get('cookie')
     view_only = request.args.get('view_only')
 
-    user = User.from_cookie(cookie)
+    if session.data['auth_user_id']:
+        user = User.load(session.data['auth_user_id'])
+    elif cookie:
+        user = User.from_cookie(cookie)
 
     node = Node.load(node_id)
     if not node:

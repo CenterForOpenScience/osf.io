@@ -553,8 +553,10 @@ def togglewatch_post(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission(ADMIN)
+@must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
+    # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
+    # category, title, and discription which can be edited by write permission contributor
     try:
         return {
             'updated_fields': {

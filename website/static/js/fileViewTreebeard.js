@@ -1,5 +1,6 @@
 var Fangorn = require('js/fangorn');
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
 
 function FileViewTreebeard(data) {
 
@@ -33,6 +34,7 @@ function FileViewTreebeard(data) {
                 value: tb.filterText()
             });
         },
+        xhrconfig: $osf.setXHRAuthorization,
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);

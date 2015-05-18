@@ -705,7 +705,8 @@ function _createFolder(event, dismissCallback, helpText) {
     m.request({
         method: 'POST',
         background: true,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, extra)
+        xhrconfig: $osf.setXHRAuthorization,
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
@@ -974,7 +975,8 @@ function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
-            onclick: function() {
+            onclick: function(event) {
+                event.stopImmediatePropagation();
                 gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
@@ -1338,8 +1340,10 @@ var FGItemButtons = {
 
 var _dismissToolbar = function(){
     var tb = this;
+    if (tb.toolbarMode() === toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
     tb.toolbarMode(toolbarModes.DEFAULT);
-    tb.resetFilter();
     tb.filterText('');
     m.redraw();
 };
