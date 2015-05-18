@@ -53,6 +53,9 @@ text-align: center;
 	background: #337AB7;
 	color: #FFF;
 }
+.fangorn-selected .text-muted {
+    color: #eeeeee;
+}
 .fangorn-selected a {
 	color : white;
 }
@@ -118,6 +121,10 @@ text-align: center;
     padding-top: 4px;
 }
 
+.tb-row .progress {
+    height: 12px;
+    margin-top: 5px;
+}
 .tb-expand-icon-holder {
 	cursor: default;
 }
