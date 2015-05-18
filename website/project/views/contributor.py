@@ -15,6 +15,7 @@ from framework.auth import authenticate
 from framework.auth import User, get_user
 from framework.exceptions import HTTPError
 from framework.auth.signals import user_registered
+from framework.auth.core import generate_confirm_token
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.transactions.handlers import no_auto_transaction
@@ -403,6 +404,13 @@ def throttle_period_expired(timestamp, throttle):
 
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
+    # roll the valid token for each email, thus user cannot change email and approve a different email address
+    timestamp = unclaimed_record.get('last_sent')
+    if not throttle_period_expired(timestamp, throttle):
+        raise Exception("User account can only be claimed with an existing user once every 24 hours")
+    unclaimed_record['token'] = generate_confirm_token()
+    unclaimed_record['email'] = claimer.username
+    unreg_user.save()
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = web_url_for(
         'claim_user_registered',
@@ -411,20 +419,18 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
         token=unclaimed_record['token'],
         _external=True,
     )
-    timestamp = unclaimed_record.get('last_sent')
-    if throttle_period_expired(timestamp, throttle):
-        # Send mail to referrer, telling them to forward verification link to claimer
-        mails.send_mail(
-            referrer.username,
-            mails.FORWARD_INVITE_REGiSTERED,
-            user=unreg_user,
-            referrer=referrer,
-            node=node,
-            claim_url=claim_url,
-            fullname=unclaimed_record['name'],
-        )
-        unclaimed_record['last_sent'] = get_timestamp()
-        unreg_user.save()
+    # Send mail to referrer, telling them to forward verification link to claimer
+    mails.send_mail(
+        referrer.username,
+        mails.FORWARD_INVITE_REGiSTERED,
+        user=unreg_user,
+        referrer=referrer,
+        node=node,
+        claim_url=claim_url,
+        fullname=unclaimed_record['name'],
+    )
+    unclaimed_record['last_sent'] = get_timestamp()
+    unreg_user.save()
     # Send mail to claimer, telling them to wait for referrer
     mails.send_mail(
         claimer.username,
@@ -454,10 +460,19 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = user.get_claim_url(node._primary_key, external=True)
     # If given email is the same provided by user, just send to that email
-    if unclaimed_record.get('email', None) == invited_email:
+    if unclaimed_record.get('email') == invited_email:
         mail_tpl = mails.INVITE
         to_addr = invited_email
     else:  # Otherwise have the referrer forward the email to the user
+        # roll the valid token for each email, thus user cannot change email and approve a different email address
+        timestamp = unclaimed_record.get('last_sent')
+        if not throttle_period_expired(timestamp, throttle):
+            raise Exception("User account can only be claimed with a new email once every 24 hours")
+        unclaimed_record['last_sent'] = get_timestamp()
+        unclaimed_record['token'] = generate_confirm_token()
+        unclaimed_record['email'] = email
+        user.save()
+        claim_url = user.get_claim_url(node._primary_key, external=True)
         if notify:
             pending_mail = mails.PENDING_VERIFICATION
             mails.send_mail(
@@ -468,12 +483,6 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
                 fullname=unclaimed_record['name'],
                 node=node
             )
-        timestamp = unclaimed_record.get('last_sent')
-        if throttle_period_expired(timestamp, throttle):
-            unclaimed_record['last_sent'] = get_timestamp()
-            user.save()
-        else:  # Don't send the email to the referrer
-            return
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
     mails.send_mail(
