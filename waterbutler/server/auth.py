@@ -16,5 +16,5 @@ class AuthHandler:
         for extension in self.manager.extensions:
             credential = yield from extension.obj.fetch(request_handler, **kwargs)
             if credential:
-               return credential
+                return credential
         raise AuthHandler('no valid credential found')
