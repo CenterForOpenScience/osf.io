@@ -14,21 +14,24 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
             ' its parent, <b>' + parentTitle + '</b>.' +
             ' If you want to register the parent, please go <a href="' +
             parentUrl + '">here.</a>' +
-            '<hr /><b>Important Note:</b> Effective <u>29-May-2015</u>, public registrations ' +
-            'will no longer be able to be made private. They will instead need to be retracted ' +
-            'leaving behind basic meta-data related to the registration. If you would like ' +
-            'your registration to be private, ensure that you take necessary action '+
-            'before 29-May-2015.';
+            '<hr /><b>Important Note:</b> Effective <u>29 May 2015</u>, registrations ' +
+            'will be made public immediately or can be embargoed for up to one year. ' +
+            'There will no longer be the option of creating a permanently private ' +
+            'registration. If you register before 29 May 2015 and leave your ' +
+            'registration private, then the registration can remain private. After 29 May 2015, ' +
+            'if you ever make it public, you will not be able to return it to private. ';
     } else {
         return 'You are about to register <b>' + title +
-            '</b> and everything that is inside it. If you would prefer to register ' +
-            'a particular component, please ' +
-            'navigate to that component and then initiate registration.' +
-            '<hr /><b>Important Note:</b> Effective <u>29-May-2015</u>, public registrations ' +
-            'will no longer be able to be made private. They will instead need to be retracted ' +
-            'leaving behind basic meta-data related to the registration. If you would like ' +
-            'your registration to be private, ensure that you take necessary action '+
-            'before 29-May-2015.';
+            '</b> and everything that is inside it. Registration creates a permanent, ' +
+            'time-stamped, uneditable version of the project. If you would prefer to ' +
+            'register a particular component, please navigate to that component and then ' +
+            'initiate registration. '+
+            '<hr /><b>Important Note:</b> Effective <u>29 May 2015</u>, registrations ' +
+            'will be made public immediately or can be embargoed for up to one year. ' +
+            'There will no longer be the option of creating a permanently private ' +
+            'registration. If you register before 29 May 2015 and leave your ' +
+            'registration private, then the registration can remain private. After 29 May 2015, ' +
+            'if you ever make it public, you will not be able to return it to private.';
     }
 };
 

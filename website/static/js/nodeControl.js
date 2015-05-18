@@ -41,11 +41,13 @@ var MESSAGES = {
                         'access to the data it contains can be completely prevented. Users ' +
                         'should assume that once a project is made public, it will always ' +
                         'be public. Are you absolutely sure you would like to continue?' +
-                        '<hr /> \n<b>Important Note:</b> Effective <u>29-May-2015</u>, public registrations ' +
-                        'will no longer be able to be made private. They will instead need to be retracted ' +
-                        'leaving behind basic meta-data related to the registration. If you would like ' +
-                        'your registration to be private, ensure that you take necessary action '+
-                        'before 29-May-2015.',
+                        '<hr /> \n<b>Important Note:</b> Effective <u>29 May 2015</u>, new registrations ' +
+                        'will be made public immediately or can be embargoed for up to one year. There ' +
+                        'will no longer be the option of creating a permanently private registration. This ' +
+                        'registration occurred before 29 May 2015, so you do retain the option of keeping it ' +
+                        'private. However, if you do choose to make the registration public now, then after 29 ' +
+                        'May 2015 you will not be able to return it to private. Are you sure that you would like ' +
+                        'to continue?',
 };
 
 // TODO(sloria): Fix this external dependency on nodeApiUrl
