@@ -35,6 +35,28 @@ var STATE_MAP = {
     },
     move: {
         display: 'Moving '
+    },
+    rename: {
+        display: 'Renaming '
+    }
+};
+
+
+var OPERATIONS = {
+    RENAME: {
+        status: 'rename',
+        verb: 'Rename',
+        passed: 'renamed',
+    },
+    MOVE: {
+        status: 'move',
+        verb: 'Move',
+        passed: 'moved',
+    },
+    COPY: {
+        status: 'copy',
+        verb: 'Copy',
+        passed: 'copied',
     }
 };
 
@@ -269,25 +291,25 @@ function checkConflicts(tb, item, folder, cb) {
     cb('replace');
 }
 
-function doItemOp(isMove, to, from, rename, conflict) {
+function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
     var ogParent = from.parentID;
     if (to.id === ogParent && (!rename || rename === from.data.name)) return;
 
-    if (isMove) {
-        from.move(to.id);
-        from.data.status = 'move';
-    } else {
+    if (operation === OPERATIONS.COPY) {
         from = tb.createItem($.extend(true, {}, from.data), to.id);
-        from.data.status = 'copy';
+    } else {
+        from.move(to.id);
     }
+
+    from.data.status = operation.status;
 
     tb.redraw();
 
     $.ajax({
         type: 'POST',
-        url: isMove ? waterbutler.moveUrl() : waterbutler.copyUrl(),
+        url: operation === OPERATIONS.COPY ? waterbutler.copyUrl() : waterbutler.moveUrl(),
         headers: {
             'Content-Type': 'Application/json'
         },
@@ -300,7 +322,7 @@ function doItemOp(isMove, to, from, rename, conflict) {
     }).done(function(resp, _, xhr) {
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', (isMove ? 'Moving' : 'Copying') + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
+                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
                 m('p', 'We\'ll send you an email when it has finished.')
             ]);
             var mithrilButtons = m('div', [
@@ -311,9 +333,9 @@ function doItemOp(isMove, to, from, rename, conflict) {
         }
         from.data = resp;
         from.data.status = undefined;
-        from.notify.update('Successfully ' + (isMove ? 'moved.' : 'copied.'), 'success', null, 1000);
+        from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
-        if (!isMove && xhr.status === 200) {
+        if (operation === OPERATIONS.COPY && xhr.status === 200) {
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
@@ -337,11 +359,11 @@ function doItemOp(isMove, to, from, rename, conflict) {
 
         tb.redraw();
     }).fail(function(xhr) {
-        if (isMove) {
+        if (operation === OPERATIONS.COPY) {
+            from.removeSelf();
+        } else {
             from.move(ogParent);
             from.data.status = undefined;
-        } else {
-            from.removeSelf();
         }
 
         Raven.captureMessage('Failed to move or copy file', {
@@ -354,7 +376,7 @@ function doItemOp(isMove, to, from, rename, conflict) {
             }
         });
 
-        $osf.growl((isMove ? 'Move' : 'Copy') + ' failed.', 'Please refresh the page or ' +
+        $osf.growl(operation.verb + ' failed.', 'Please refresh the page or ' +
             'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
             'problem persists.');
 
@@ -1153,7 +1175,7 @@ function _renameEvent () {
     var item = tb.multiselected()[0];
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
-    checkConflicts(tb, item, folder, doItemOp.bind(tb, true, folder, item, val));
+    checkConflicts(tb, item, folder, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
 var toolbarModes = {
@@ -1666,7 +1688,7 @@ function _dropLogic(event, items, folder) {
     }
 
     $.each(items, function(index, item) {
-        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move', folder, item, undefined));
+        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
     });
 }
 
@@ -1690,7 +1712,7 @@ function _dragLogic(event, items, ui) {
         copyMode = 'forbidden';
     }
 
-    if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
+    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
         copyMode = 'forbidden';
     }
 
