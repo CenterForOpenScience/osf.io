@@ -646,8 +646,7 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    //Fix me
-    window.location = waterbutler.buildTreeBeardDownload(item[0]);
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 function _createFolder(event, dismissCallback, helpText) {
