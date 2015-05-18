@@ -150,7 +150,7 @@ def before_request():
     from framework.auth.core import User
     from framework.auth.cas import CasClient
 
-    # Central Authorization Server Ticket Validation and Authentication
+    # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
     if ticket:
         service_url = furl.furl(request.url)
@@ -167,8 +167,15 @@ def before_request():
         # Ticket could not be validated, unauthorized.
         return redirect(service_url.url)
 
+    # Central Authentication Server OAuth Bearer Token
+    authorization = request.headers.get('Authorization')
+    if authorization and authorization.startswith('Bearer '):
+        access_token = authorization[7:]
+        cas_resp = CasClient(settings.CAS_SERVER_URL).profile(access_token)
+        user = User.load(cas_resp.user)
+        return authenticate(user, access_token, None)
+
     if request.authorization:
-        # TODO: Check Bearer Token and validate against CAS
         # Create a session from the API key; if key is
         # not valid, save the HTTP error code in the
         # "auth_error_code" field of session.data

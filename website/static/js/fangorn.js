@@ -46,6 +46,26 @@ var ENTER_KEY = 13;
 
 var ICON_PATH = '/static/img/hgrid/fatcowicons/';
 
+// Add Authorization Bearer Token to request
+var oldmrequest = m.request;
+m.request = function () {
+    var requestArgs = arguments[0];
+    var oldconfig = requestArgs.config;
+    requestArgs.config = function (xhr, options) {
+        if (typeof oldconfig === "function") {
+            var maybeXhr = options.config(xhr, options);
+            if (maybeXhr !== null) {
+                xhr = maybeXhr;
+            }
+        }
+        // TODO: Context data for bearer token
+        var token = 'eyJhbGciOiJIUzUxMiJ9.ZXlKaGJHY2lPaUprYVhJaUxDSmxibU1pT2lKQk1USTRRMEpETFVoVE1qVTJJbjAuLjR4dTdhSXAtdUw1Qkw4QWVORDZWdlEudHB6VERybnZZNkhQd3VpUnVQZkhROUFIR21ISkd6aFVXajhqR2V0Yko2cEhrR0U4MjVrN0EybHlzeGQtbGFKeW5BVDBFcW4zYkFoejZGUUZ0NERmZl9xSUYxMVYyX3RXRVZxQzdpX1JLdGRVampUekxuZ2V4cmEyc3FJa0ctNG9nNTB6SzBadDRtQnhKV1hHTG5BQklQaW5rVmFBM3JTYjRxc21aaUhkbDZRLjVoWndfV0tYSV83eUQ5X29LNm5TS2c.qp7x7eYxvjg8VtkDL2yHSasEyCZv5HOKnV5AI30ETBAniDvYNg7XRtoiJkTX4K_0AoiO1oOBleS6bsQrrmYy1g';
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        return xhr;
+    };
+    return oldmrequest.apply(this, arguments);
+};
+
 var getExtensionIconClass = function (name) {
     var extension = name.split('.').pop().toLowerCase();
     var icon = EXTENSION_MAP[extension];
