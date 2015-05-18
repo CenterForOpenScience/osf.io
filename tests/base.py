@@ -45,7 +45,7 @@ test_app = init_app(
 )
 test_app.testing = True
 
-
+# Test app that connects to the django app
 test_api = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
@@ -158,7 +158,7 @@ class AppTestCase(unittest.TestCase):
 
 
 class ApiAppTestCase(unittest.TestCase):
-    """Base `TestCase` for OSF tests that require the WSGI app (but no database).
+    """Base `TestCase` for OSF API tests that require the WSGI app (but no database).
     """
 
     def setUp(self):
@@ -242,7 +242,7 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
 
 class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
-    application. Note: superclasses must call `super` in order for all setup and
+    API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
     pass
