@@ -340,6 +340,7 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
             assert_false(node.pending_embargo)
             assert_false(node.is_embargoed)
 
+
 class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoApprovalDisapprovalViewsTestCase, self).setUp()

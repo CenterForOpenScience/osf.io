@@ -2784,6 +2784,15 @@ class Retraction(StoredObject):
     # One of 'pending', 'retracted', or 'cancelled'
     state = fields.StringField(default='pending', validate=validate_retraction_state)
 
+    def __repr__(self):
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        return ('<Retraction(parent_registration={0}, initiated_by={1}) '
+                'with _id {2}>').format(
+            parent_registration,
+            self.initiated_by,
+            self._id
+        )
+
     @property
     def is_retracted(self):
         return self.state == self.RETRACTED
@@ -2851,6 +2860,16 @@ class Embargo(StoredObject):
     # One of 'unapproved', 'active', 'cancelled', or 'completed
     state = fields.StringField(default='unapproved', validate=validate_embargo_state)
     for_existing_registration = fields.BooleanField(default=False)
+
+    def __repr__(self):
+        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        return ('<Embargo(parent_registration={0}, initiated_by={1}, '
+                'end_date={2}) with _id {3}>').format(
+            parent_registration,
+            self.initiated_by,
+            self.end_date,
+            self._id
+        )
 
     @property
     def is_embargoed(self):
