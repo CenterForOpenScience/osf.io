@@ -61,10 +61,7 @@ class FilterMixin(object):
                 return True
             elif value in self.FALSY:
                 return False
-        # Convert me to current user's pk
-        # TODO: this will still change me to the user id no matter what kind of field it is. Fix that.
-        elif value == 'me' and not self.request.user.is_anonymous():
-            return self.request.user.pk
+            # TODO Should we handle if the value is neither TRUTHY nor FALSY
         else:
             return value
 
