@@ -78,7 +78,7 @@
                             </div>
                         </div>
 
-                        <form id="file-edit-form" action="/api/v1${files_url | js_str}${provider | js_str}${file_path | js_str}/" method="POST">
+                        <form id="file-edit-form" action="${edit_url}" method="POST">
                             <div class="wiki-panel-body" style="padding: 10px">
                                 <div class="row">
                                     <div class="col-xs-12">

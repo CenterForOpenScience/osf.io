@@ -333,15 +333,25 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     return addon_view_file(auth, node, node_addon, file_guid, extras)
 
 
-def addon_view_file(auth, node, node_addon, file_guid, extras):
+def addon_view_file(auth, node, node_addon, file_guid, extras, file_contents=None):
+    path = file_guid.waterbutler_path.lstrip('/')
+    provider = file_guid.provider
+
     render_url = node.api_url_for(
         'addon_render_file',
-        path=file_guid.waterbutler_path.lstrip('/'),
-        provider=file_guid.provider,
+        path=path,
+        provider=provider,
         render=True,
         **extras
     )
 
+    edit_url = node.api_url_for(
+        'addon_edit_file',
+        path=path,
+        provider=provider
+    )
+
+    content = extras.get('file_contents') or file_content(file_guid)
     ret = serialize_node(node, auth, primary=True)
 
     # Disable OSF Storage file deletion in DISK_SAVING_MODE
@@ -351,9 +361,10 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
+        'edit_url': edit_url,
         'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
-        'content': file_content(file_guid),
+        'content': content,
         'rendered': get_or_start_render(file_guid),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
@@ -365,6 +376,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
+
 
 @must_be_valid_project
 def addon_edit_file(**kwargs):
@@ -391,12 +403,23 @@ def addon_edit_file(**kwargs):
     edit_content = request.form['edit_content']
 
     if original_content != edit_content:
-        requests.put(
+        resp = requests.put(
             upload_url,
             data=edit_content,
         )
 
-    return
+    extras['file_contents'] = edit_content
+
+    return redirect(
+        node.web_url_for(
+            'addon_view_or_download_file',
+            path=path.lstrip('/'),
+            provider=provider,
+            **extras
+        ),
+        code=httplib.MOVED_PERMANENTLY
+    )
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
