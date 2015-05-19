@@ -12,7 +12,6 @@ function Meeting(data) {
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
-        naturalScrollLimit : 2000, // turns of virtual scrolling with visible items less than this number
         columnTitles : function _conferenceColumnTitles(item, col) {
              return [
                 {
