@@ -136,10 +136,12 @@ def get_auth(**kwargs):
     cookie = request.args.get('cookie')
     view_only = request.args.get('view_only')
 
-    if session.data['auth_user_id']:
+    if 'auth_user_id' in session.data:
         user = User.load(session.data['auth_user_id'])
     elif cookie:
         user = User.from_cookie(cookie)
+    else:
+        user = None
 
     node = Node.load(node_id)
     if not node:
@@ -230,6 +232,7 @@ def create_waterbutler_log(payload, **kwargs):
                 user.username,
                 mails.FILE_OPERATION_FAILED if payload.get('errors')
                 else mails.FILE_OPERATION_SUCCESS,
+                action=payload['action'],
                 source_node=source_node,
                 destination_node=destination_node,
                 source_path=payload['source']['path'],
