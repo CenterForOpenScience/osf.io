@@ -6,7 +6,7 @@ from waterbutler.server.handlers import core
 class ZipHandler(core.BaseProviderHandler):
 
     ACTION_MAP = {
-        'GET': 'zip',
+        'GET': 'download',
     }
 
     @utils.coroutine
