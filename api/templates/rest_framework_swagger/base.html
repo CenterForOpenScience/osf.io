@@ -1,6 +1,7 @@
-{# This template is in the latest development version of django-rest-framework and can be removed here
- after upgrading to their next release (0.3.0) #}
-
+{% comment %}
+    This template is in the latest development version of django-rest-framework and can be removed here after upgrading
+    to their next release (0.3.0)
+{% endcomment %}
 {% load staticfiles %}
 {% spaceless %}
 <!DOCTYPE html>
@@ -86,7 +87,6 @@
                     log('key: ' + key);
 
                     if (key && key.trim() != '') {
-                        console.log('added key ' + key);
                         window.authorizations.add('key', new ApiKeyAuthorization('Authorization', '{{ swagger_settings.token_type }} ' + key, 'header'));
                     }
                 });
