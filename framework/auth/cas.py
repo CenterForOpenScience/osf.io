@@ -1,17 +1,30 @@
+# -*- coding: utf-8 -*-
 import furl
 import json
 import requests
-
 from lxml import etree
 
+from website import settings
+
+from framework.auth import User
+from framework.auth import authenticate
+from framework.flask import redirect
+
+
+class CasError(Exception):
+    """Error raised when an unexpected error is returned from the CAS server."""
+    def __init__(self, message, status_code, headers):
+        super(CasError).__init__(message)
+        self.status_code = status_code
+        self.headers = headers
 
 class CasResponse(object):
 
-    authenticated = False
-    status = None
-    user = None
-    attributes = {}
-
+    def __init__(self, authenticated=False, status=None, user=None, attributes=None):
+        self.authenticated = authenticated
+        self.status = status
+        self.user = user
+        self.attributes = attributes or {}
 
 class CasClient(object):
 
@@ -50,7 +63,7 @@ class CasClient(object):
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
-            return CasResponse()
+            return CasResponse(authenticated=False)
 
     def profile(self, access_token):
         url = furl.furl(self.BASE_URL)
@@ -62,7 +75,7 @@ class CasClient(object):
         if resp.status_code == 200:
             return self._parse_profile(resp.content)
         else:
-            return CasResponse()
+            return CasResponse(authenticated=False)
 
     def _parse_service_validation(self, xml):
         resp = CasResponse()
@@ -80,10 +93,30 @@ class CasClient(object):
         return resp
 
     def _parse_profile(self, raw):
-        resp = CasResponse()
         data = json.loads(raw)
-        resp.authenticated = True
-        resp.user = data['id']
+        resp = CasResponse(authenticated=True, user=data['id'])
         for attribute in data['attributes'].keys():
             resp.attributes[attribute] = data['attributes'][attribute]
         return resp
+
+def get_client():
+    return CasClient(settings.CAS_SERVER_URL)
+
+def make_response_from_ticket(ticket, service_url):
+    """Given a CAS ticket and service URL, attempt to the user and return a proper
+    redirect response.
+    """
+    service_furl = furl.furl(service_url)
+    if 'ticket' in service_furl.args:
+        service_furl.args.pop('ticket')
+    client = get_client()
+    cas_resp = client.service_validate(ticket, service_furl.url)
+    if cas_resp.authenticated:
+        user = User.load(cas_resp.user)
+        # if we successfully authenticate and a verification key is present, invalidate it
+        if user.verification_key:
+            user.verification_key = None
+            user.save()
+        return authenticate(user, cas_resp.attributes['accessToken'], redirect(service_furl.url))
+    # Ticket could not be validated, unauthorized.
+    return redirect(service_furl.url)
