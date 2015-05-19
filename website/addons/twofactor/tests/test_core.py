@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from werkzeug.wrappers import BaseResponse
 
 from framework import sessions
 from framework.auth import authenticate_two_factor, verify_two_factor, user_requires_two_factor_verification
-from framework.auth.exceptions import PasswordIncorrectError, TwoFactorValidationError
+from framework.auth.exceptions import TwoFactorValidationError
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from website.app import init_app

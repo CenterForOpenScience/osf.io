@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from framework.sessions import session, create_session, goback
+from framework.sessions import session, create_session
 from framework import bcrypt
 from framework.auth.exceptions import (
     DuplicateEmailError,
-    LoginDisabledError,
-    LoginNotAllowedError,
-    PasswordIncorrectError,
     TwoFactorValidationError,
 )
 from framework.flask import redirect
@@ -24,7 +21,6 @@ __all__ = [
     'get_user',
     'check_password',
     'authenticate',
-    'login',
     'logout',
     'register_unconfirmed',
 ]
