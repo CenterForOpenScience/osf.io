@@ -162,6 +162,6 @@ def make_response_from_ticket(ticket, service_url):
         if user.verification_key:
             user.verification_key = None
             user.save()
-        return authenticate(user, cas_resp.attributes['accessToken'], redirect(service_furl.url))
+        return authenticate(user, response=redirect(service_furl.url), access_token=cas_resp.attributes['accessToken'])
     # Ticket could not be validated, unauthorized.
     return redirect(service_furl.url)

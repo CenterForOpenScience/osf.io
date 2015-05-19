@@ -170,18 +170,6 @@ class TestAUser(OsfTestCase):
         assert_in('Projects', res)
         assert_in('Watchlist', res)
 
-    def test_sees_flash_message_on_bad_login(self):
-        # Goes to log in page
-        res = self.app.get('/account/').maybe_follow()
-        # Fills the form with incorrect password
-        form  = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'thisiswrong'
-        # Submits
-        res = form.submit()
-        # Sees a flash message
-        assert_in('Log-in failed', res)
-
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
         self.user.add_addon('twofactor')

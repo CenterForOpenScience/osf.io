@@ -170,7 +170,7 @@ def before_request():
         cas_resp = client.profile(access_token)
         if cas_resp.authenticated:
             user = User.load(cas_resp.user)
-            return authenticate(user, access_token, None)
+            return authenticate(user, access_token=access_token, response=None)
         return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:
