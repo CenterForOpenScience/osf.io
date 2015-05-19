@@ -45,14 +45,6 @@ test_app = init_app(
 )
 test_app.testing = True
 
-# Test app that connects to the django app
-test_api = init_app(
-    settings_module='website.settings', routes=True, set_backends=False
-)
-test_api.wsgi_app = DispatcherMiddleware(test_api.wsgi_app, {
-    '': django_app,
-})
-
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -163,13 +155,8 @@ class ApiAppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
-        self.app = TestApp(test_api)
-        self.context = test_api.test_request_context()
-        self.context.push()
+        self.app = TestApp(django_app)
 
-    def tearDown(self):
-        super(ApiAppTestCase, self).tearDown()
-        self.context.pop()
 
 class UploadTestCase(unittest.TestCase):
 
