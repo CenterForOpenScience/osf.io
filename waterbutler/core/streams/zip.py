@@ -68,8 +68,6 @@ class ZipLocalFileData(BaseStream):
             self.file.compressed_size += len(compressed)
             ret += compressed
 
-        # import ipdb; ipdb.set_trace()
-
         # buffer any overages
         if n != -1 and len(ret) > n:
             self._buffer = ret[n:]
