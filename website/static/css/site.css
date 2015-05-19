@@ -1058,11 +1058,16 @@ h1.unavailable {
 
 .option-cloud
 {
-    word-break: break-all;
+    word-break: keep-all;
     border-bottom: dashed 1px #ddd;
     border-top: dashed 1px #ddd;
     background-color: #EEEEEE;
-    padding-left: 15px;
+    padding: 8px 15px 15px 15px;
+}
+
+.option-cloud .option-container
+{
+    word-break: break-all;
 }
 
 .option-cloud .cloud-option
@@ -1085,6 +1090,19 @@ h1.unavailable {
 {
     font-size: 16px;
     font-weight: bold;
+    padding-bottom: 7px;
+}
+
+.option-cloud .title.option-success
+{
+    color: #337733;
+    padding-bottom: 0px;
+}
+
+.option-cloud .title.option-fail
+{
+    color: #AA3333;
+    padding-bottom: 0px;
 }
 
 .option-cloud .cloud-option.current

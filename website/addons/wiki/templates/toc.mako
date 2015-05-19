@@ -26,12 +26,37 @@
                     class="active"
                 %endif
             >
-                <div class="row">
-                    ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
-                    <a href="${urls['web']['home']}">
-                        <div class="col-xs-12">Home</div>
-                    </a>
-                </div> 
+
+                %if 'home' == wiki_name and user['can_edit']:
+                    <div class="row">
+                        ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
+                        <a href="${urls['web']['home']}">
+                            <div class="col-xs-8">Home</div>
+                        </a>
+                        <div class="col-xs-2">
+                            <i class="fa fa-cog pointer fa-lg" data-toggle="tooltip"
+                               title="Settings" data-placement="left"
+                               data-bind="toggle: subsVisible"> </i>
+                        </div>
+                        <div class="col-xs-2"></div>
+                    </div>
+                    <div class="option-cloud" data-bind="visible: subsVisible">
+                        <div class="title" data-bind='text: subText, css: { "option-success": subSuccess() === true,
+                                                                            "option-fail": subSuccess() === false}'></div>
+                        <div class="option-container" data-bind="visible: message, foreach: subList">
+                            <div class="cloud-option pointer" data-bind='css: { current: value === $root.subscription().value },
+                                                                         click: $root.clickSub.bind(value)'>
+                                <span data-bind="text: text"></span>
+                            </div>
+                        </div>
+                    </div>
+                %else:
+                    <div class="row">
+                        <a href="${urls['web']['home']}">
+                            <div class="col-xs-12">Home</div>
+                        </a>
+                    </div>
+                %endif
             </li>
             % for page in pages_current:
                 %if page['name'] != 'home':
@@ -51,8 +76,8 @@
                                 </div>
                             </div>
                             <div class="option-cloud" data-bind="visible: subsVisible">
-                                <div class="title" data-bind="text: subText"></div>
-                                <div class="container" data-bind="foreach: subList">
+                                <div class="title" data-bind='text: subText, css: subSuccessStatus'></div>
+                                <div class="option-container" data-bind="visible: message, foreach: subList">
                                     <div class="cloud-option pointer" data-bind='css: { current: value === $root.subscription().value },
                                                                                  click: $root.clickSub.bind(value)'>
                                         <span data-bind="text: text"></span>

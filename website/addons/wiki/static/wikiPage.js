@@ -215,15 +215,37 @@ function ViewModel(options){
     };
     self.subscription = ko.observable(self.getSub('adopt_parent'));
     self.subText = ko.observable();
+    self.subSuccess = ko.observable(null);
     self.subsVisible = ko.observable(false);
     self.clickGear = ko.computed(function () {
         var visible = self.subsVisible();
         self.subText("Subscription:");
         return visible;
     });
+    self.message = ko.observable(true);
     self.clickSub = function (value) {
         self.subscription(value);
+        self.message(false);
+        var subscription = self.subscription().text;
+        self.subText("Subscription set to: " + subscription);
+        self.subSuccess(true);
+        setTimeout(function(){
+            self.subsVisible(false);
+            self.message(true);
+            self.subSuccess(null);
+        }, 2500);
     };
+
+    self.subSuccessStatus = ko.pureComputed(function() {
+        var success = self.subSuccess();
+        if(success === true) {
+            return "option-success";
+        } else if(success === false) {
+            return "option-fail";
+        } else {
+            return "";
+        }
+    });
 
     self.viewText = ko.observable('');
     self.renderedView = ko.observable('');
