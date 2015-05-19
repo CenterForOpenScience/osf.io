@@ -6,9 +6,8 @@ import itertools
 import furl
 import aiohttp
 
-from waterbutler.core import exceptions
-from waterbutler.core import utils
 from waterbutler.core import streams
+from waterbutler.core import exceptions
 
 
 def build_url(base, *segments, **query):
