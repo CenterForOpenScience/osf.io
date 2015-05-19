@@ -18,6 +18,8 @@ class OsfAuthHandler(auth.BaseAuthHandler):
         authorization = request.headers.get('Authorization')
         if authorization and authorization.startswith('Bearer '):
             headers['Authorization'] = authorization
+        elif 'token' in bundle:
+            headers['Authorization'] = 'Bearer ' + bundle['token']
 
         response = yield from aiohttp.request(
             'get',
