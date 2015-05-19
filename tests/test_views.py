@@ -2967,7 +2967,6 @@ class TestComments(OsfTestCase):
         assert_equal(len(self.project.commented), 1)
         assert_equal(res_comment, serialized_comment)
 
-
     def test_add_comment_private_non_contributor(self):
 
         self._configure_project(self.project, 'private')
@@ -2978,12 +2977,11 @@ class TestComments(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_add_comment_logged_out(self):
-
         self._configure_project(self.project, 'public')
         res = self._add_comment(self.project)
 
         assert_equal(res.status_code, 302)
-        assert_in('next=', res.headers.get('location'))
+        assert_in('login', res.headers.get('location'))
 
     def test_add_comment_off(self):
 

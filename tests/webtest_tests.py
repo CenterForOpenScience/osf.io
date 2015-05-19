@@ -9,7 +9,7 @@ import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.mongo.utils import to_mongo_key
-
+from framework.auth import cas
 from framework.auth import exceptions as auth_exc
 from framework.auth import authenticate
 from framework.auth.core import Auth
@@ -46,81 +46,11 @@ class TestDisabledUser(OsfTestCase):
 class TestAnUnregisteredUser(OsfTestCase):
 
     def test_cant_see_profile_if_not_logged_in(self):
-        res = self.app.get(web_url_for('profile_view'))
-        assert_equal(res.status_code, 302)
-        res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in(
-            'You must log in to access this resource',
-            res,
-        )
-
-
-class TestTwoFactor(OsfTestCase):
-
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def setUp(self, mock_push_message):
-        super(TestTwoFactor, self).setUp()
-        self.user = UserFactory()
-        self.user.set_password('science')
-        self.user.save()
-
-        self.user.add_addon('twofactor')
-        self.user_settings = self.user.get_addon('twofactor')
-        self.user_settings.is_confirmed = True
-        self.user_settings.save()
-
-    def test_user_with_two_factor_redirected_to_two_factor_page(self):
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login'))
-        # Fills in log in form with correct username/password
-        form = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        res = form.submit()
+        url = web_url_for('profile_view')
+        res = self.app.get(url)
         res = res.follow()
-
-        assert_equal(web_url_for('two_factor'), res.request.path)
-        assert_equal(res.status_code, 200)
-
-    def test_user_with_2fa_failure(self):
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login'))
-        # Fills in log in form with correct username/password
-        form = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        res = form.submit()
-        res = res.follow()
-        # Fills in 2FA form with incorrect two factor code
-        form = res.forms['twoFactorSignInForm']
-        form['twoFactorCode'] = 0000000
-        # Submits
-        res = form.submit(expect_errors=True)
-
-        assert_equal(web_url_for('two_factor'), res.request.path)
-        assert_equal(res.status_code, 401)
-
-    def test_user_with_2fa_success(self):
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login'))
-        # Fills in log in form with correct username/password
-        form = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        res = form.submit()
-        res = res.follow()
-        # Fills in 2FA form with incorrect two factor code
-        form = res.forms['twoFactorSignInForm']
-        form['twoFactorCode'] = _valid_code(self.user_settings.totp_secret)
-        res = form.submit()
-        res.follow()
-
-        assert_urls_equal(web_url_for('dashboard'), res.location)
-        assert_equal(res.status_code, 302)
+        assert_equal(res.status_code, 301)
+        assert_in('/login/', res.headers['Location'])
 
 
 class TestAUser(OsfTestCase):
@@ -135,17 +65,6 @@ class TestAUser(OsfTestCase):
         self.user.save()
         self.auth = ('test', api_key._primary_key)
 
-    def _login(self, username, password):
-        '''Log in a user via at the login page.'''
-        res = self.app.get(web_url_for('auth_login')).maybe_follow()
-        # Fills out login info
-        form = res.forms['logInForm']  # Get the form from its ID
-        form['username'] = username
-        form['password'] = password
-        # submits
-        res = form.submit().maybe_follow()
-        return res
-
     def test_can_see_profile_url(self):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
@@ -154,93 +73,6 @@ class TestAUser(OsfTestCase):
         # Goes to homepage
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
-
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
-        self.user.add_addon('twofactor')
-        self.user_settings = self.user.get_addon('twofactor')
-        self.user_settings.is_confirmed = True
-        self.user_settings.save()
-
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login'))
-        # Fills the form with correct password
-        form = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        res = form.submit()
-        res = res.follow()
-        assert_equal(web_url_for('two_factor'), res.request.path)
-        assert_equal(res.status_code, 200)
-
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_user_with_two_factor_redirected_to_two_factor_page_from_navbar_login(self, mock_push_message):
-        self.user.add_addon('twofactor')
-        self.user_settings = self.user.get_addon('twofactor')
-        self.user_settings.is_confirmed = True
-        self.user_settings.save()
-
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login'))  # TODO(hrybacki): Is there an actual landing page route?
-        # Fills in the form with correct password
-        form = res.forms['signInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        res = form.submit()
-        res = res.follow()
-        assert_equal(web_url_for('two_factor'), res.request.path)
-        assert_equal(res.status_code, 200)
-
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_access_resource_before_two_factor_authorization(self, mock_push_message):
-        # User attempts to access resource after login page but before two factor authentication
-        self.user.add_addon('twofactor')
-        self.user_settings = self.user.get_addon('twofactor')
-        self.user_settings.is_confirmed = True
-        self.user_settings.save()
-
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login'))
-        # Fills the form with correct password
-        form  = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        form.submit()
-        # User attempts to access a protected resource
-        res = self.app.get(web_url_for('dashboard'))
-        assert_equal(res.status_code, 302)
-        assert_in(web_url_for('auth_login'), res.location)
-        res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 401)
-
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_is_redirected_to_dashboard_after_two_factor_login(self, mock_push_message):
-        # User attempts to access resource after login page but before two factor authentication
-        self.user.add_addon('twofactor')
-        self.user_settings = self.user.get_addon('twofactor')
-        self.user_settings.is_confirmed = True
-        self.user_settings.save()
-
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login'))
-        # Fills the form with correct password
-        form  = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # Submits
-        res = form.submit()
-        res = res.follow()
-        # Fills the form with the correct 2FA code
-        form = res.forms['twoFactorSignInForm']
-        form['twoFactorCode'] = _valid_code(self.user_settings.totp_secret)
-        # Submits
-        res = form.submit()
-        res = res.follow()
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, web_url_for('dashboard'))
 
     def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
@@ -784,14 +616,6 @@ class TestShortUrls(OsfTestCase):
         ).maybe_follow(
             auth=self.auth,
         ).normal_body
-
-    def test_profile_url(self):
-        res1 = self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow()
-        res2 = self.app.get('/profile/{}/'.format(self.user._primary_key)).maybe_follow()
-        assert_equal(
-            res1.normal_body,
-            res2.normal_body
-        )
 
     def test_project_url(self):
         assert_equal(
