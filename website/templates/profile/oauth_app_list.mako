@@ -25,8 +25,8 @@
         <div id="app-list">
 
             <!-- TODO: Hidden data bindings not firing properly? Rewrite so it also hides the table view entirely -->
-            <p data-bind="hidden: !(applicationList.length > 0)">You have registered the following applications that can connect to the OSF:</p>
-            <p data-bind="hidden: (applicationsList.length > 0)">You have not registered any applications that can connect to the OSF.</p>
+            <p data-bind="hidden: !(contents.length > 0)">You have registered the following applications that can connect to the OSF:</p>
+            <p data-bind="hidden: (contents.length > 0)">You have not registered any applications that can connect to the OSF.</p>
 
             <table class="table table-condensed">
                 <thead>
@@ -40,7 +40,7 @@
                     </th>
                 </tr>
                 </thead>
-                <tbody data-bind="foreach: applicationList">
+                <tbody data-bind="foreach: contents">
                 <tr><!-- TODO: Write KO to fetch from API -->
                     <td>
                         <!-- TODO: Write delete method that uses an internal URL concatenation method + AJAX delete request -->

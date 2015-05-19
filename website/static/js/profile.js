@@ -171,7 +171,7 @@ var TrackedMixin = function() {
     self.originalValues = ko.observable();
 };
 
-/** Determine is the model has changed from its original state */
+/** Determine if the model has changed from its original state */
 TrackedMixin.prototype.dirty = function() {
     var self = this;
     return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
@@ -651,7 +651,7 @@ ListViewModel.prototype.unserialize = function(data) {
     } else {
         self.editable(false);
     }
-    self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
+    self.contents(ko.utils.arrayMap(data.contents || data.data || [], function (each) {
         return new self.ContentModel(self).unserialize(each);
     }));
 
@@ -745,46 +745,64 @@ var SchoolsViewModel = function(urls, modes) {
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
+
+var ApplicationViewModel = function() {
+    var self = this;
+    TrackedMixin.call(self);
+
+    self.client_id = ko.observable('').extend({required: true});
+    self.client_secret = ko.observable('').extend({required: true});
+    self.owner = ko.observable('').extend({required: true});
+
+    self.name = ko.observable('').extend({required: true, trimmed: true});
+    self.description = ko.observable('').extend({trimmed: true});
+    self.home_url = ko.observable('').extend({trimmed: true});
+    self.callback_url = ko.observable('').extend({trimmed: true});
+
+    self.trackedProperties = [
+        self.name,
+        self.description,
+        self.home_url,
+        self.callback_url
+    ];
+
+    var validated = ko.validatedObservable(self);
+    self.isValid = ko.computed(function() {
+        return validated.isValid();
+    });
+};
+$.extend(ApplicationViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
+
+
 /**
  * Track data related to API consumer applications registered by a given user
  */
 var ApplicationsViewModel = function(urls, modes) {
     var self = this;
-
-    self.urls = urls;
-    self.applicationList = ko.observableArray([]);
-
-    $.ajax({
-        type: 'GET',
-        url: self.urls.crud,
-        dataType: 'json',
-        success: function(data){
-            self.applicationList(data.data);
-        },
-        error: function(){}
-    });
+    ListViewModel.call(self, ApplicationViewModel, urls, modes);
+    self.fetch();
 
     self.getDetailUrl = function(appId){
         // Get the web detail URL
-        return self.urls.baseDetailUrl + appId
+        return self.urls.baseDetailUrl + appId() + "/"
     };
 
     self.getApiDetailUrl = function(appId){
         // Get the API detail URL
-        return self.urls.baseApiDetailUrl + appId
+        return self.urls.baseApiDetailUrl + appId() + "/"
 
     };
 
     self.deleteApplication = function(appData){
         // Delete a single application
-        var detailUrl = self.getDetailUrl(appData.client_id);
+        var detailUrl = self.getApiDetailUrl(appData.client_id);
 
         $.ajax({
             type: 'DELETE',
             url: detailUrl,
             dataType: 'json',
             success: function(data){
-                self.applicationList.destroy(appData);
+                self.contents.destroy(appData);
             },
             error: function(){}
         });
@@ -792,6 +810,7 @@ var ApplicationsViewModel = function(urls, modes) {
 
 
 };
+ApplicationsViewModel.prototype = Object.create(ListViewModel.prototype);
 
 
 var Names = function(selector, urls, modes) {
