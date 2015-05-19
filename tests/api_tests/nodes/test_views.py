@@ -5,14 +5,14 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from website.models import Node
 from website.util import api_v2_url_for
-from tests.base import OsfTestCase, fake
+from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, NodeFactory, PointerFactory
 
 
-class TestNodeList(OsfTestCase):
+class TestNodeList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('justapoorboy')
         self.user.save()
@@ -39,10 +39,10 @@ class TestNodeList(OsfTestCase):
         Node.remove()
 
 
-class TestNodeContributorList(OsfTestCase):
+class TestNodeContributorList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
 
         password = fake.password()
@@ -78,9 +78,9 @@ class TestNodeContributorList(OsfTestCase):
         Node.remove()
 
 
-class TestNodeChildrenList(OsfTestCase):
+class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -106,10 +106,10 @@ class TestNodeChildrenList(OsfTestCase):
         assert_equal(len(res.json['data']), 1)
 
 
-class TestNodeFiltering(OsfTestCase):
+class TestNodeFiltering(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.save()
@@ -127,7 +127,7 @@ class TestNodeFiltering(OsfTestCase):
         self.dashboard = DashboardFactory()
 
     def tearDown(self):
-        OsfTestCase.tearDown(self)
+        ApiTestCase.tearDown(self)
         Node.remove()
 
     def test_get_all_projects_with_no_filter_logged_in(self):
@@ -313,10 +313,10 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
 
-class TestNodePointersList(OsfTestCase):
+class TestNodePointersList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('password')
         self.user.save()
@@ -346,7 +346,7 @@ class TestNodePointersList(OsfTestCase):
         assert_equal(res.json['data']['node_id'], project._id)
 
 
-class TestNodeContributorFiltering(OsfTestCase):
+class TestNodeContributorFiltering(ApiTestCase):
 
     def test_filtering_node_with_only_bibliographic_contributors(self):
         project = ProjectFactory()
@@ -401,10 +401,10 @@ class TestNodeContributorFiltering(OsfTestCase):
         assert_false(res.json['data'][0].get('bibliographic', None))
 
 
-class TestNodePointerDetail(OsfTestCase):
+class TestNodePointerDetail(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('password')
         self.user.save()
@@ -431,10 +431,10 @@ class TestNodePointerDetail(OsfTestCase):
         assert_equal(len(self.project.nodes_pointer), 0)
 
 
-class TestNodeFilesList(OsfTestCase):
+class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('justapoorboy')
         self.user.save()

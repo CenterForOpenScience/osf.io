@@ -16,7 +16,9 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
+from werkzeug.wsgi import DispatcherMiddleware
 
+from api.base.wsgi import application as django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -42,6 +44,14 @@ test_app = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
 test_app.testing = True
+
+# Test app that connects to the django app
+test_api = init_app(
+    settings_module='website.settings', routes=True, set_backends=False
+)
+test_api.wsgi_app = DispatcherMiddleware(test_api.wsgi_app, {
+    '/api': django_app,
+})
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -147,6 +157,20 @@ class AppTestCase(unittest.TestCase):
         self.context.pop()
 
 
+class ApiAppTestCase(unittest.TestCase):
+    """Base `TestCase` for OSF API tests that require the WSGI app (but no database).
+    """
+
+    def setUp(self):
+        super(ApiAppTestCase, self).setUp()
+        self.app = TestApp(test_api)
+        self.context = test_api.test_request_context()
+        self.context.push()
+
+    def tearDown(self):
+        super(ApiAppTestCase, self).tearDown()
+        self.context.pop()
+
 class UploadTestCase(unittest.TestCase):
 
     @classmethod
@@ -211,6 +235,14 @@ class MockRequestTestCase(unittest.TestCase):
 class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
+    teardown methods to be called correctly.
+    """
+    pass
+
+
+class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
+    """Base `TestCase` for tests that require both scratch databases and the OSF
+    API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
     pass
