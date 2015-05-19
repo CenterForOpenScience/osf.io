@@ -309,6 +309,7 @@ function doItemOp(operation, to, from, rename, conflict) {
 
     $.ajax({
         type: 'POST',
+        beforeSend: $osf.setXHRAuthorization,
         url: operation === OPERATIONS.COPY ? waterbutler.copyUrl() : waterbutler.moveUrl(),
         headers: {
             'Content-Type': 'Application/json'
