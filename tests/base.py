@@ -50,7 +50,7 @@ test_api = init_app(
     settings_module='website.settings', routes=True, set_backends=False
 )
 test_api.wsgi_app = DispatcherMiddleware(test_api.wsgi_app, {
-    '': django_app,
+    '/v2': django_app,
 })
 
 
