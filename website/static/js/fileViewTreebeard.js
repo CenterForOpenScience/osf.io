@@ -1,5 +1,6 @@
 var Fangorn = require('js/fangorn');
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
 
 function FileViewTreebeard(data) {
 
@@ -33,6 +34,7 @@ function FileViewTreebeard(data) {
                 value: tb.filterText()
             });
         },
+        xhrconfig: $osf.setXHRAuthorization,
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
@@ -79,21 +81,18 @@ function FileViewTreebeard(data) {
             }
         },
         resolveRows: function (item) {
-            var selectClass = '';
             var tb = this;
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-                selectClass = 'fangorn-selected';
+                item.css = 'fangorn-selected';
+                tb.multiselected([item]);
             }
-
-            item.icons = []; // In this view there won't be toolbar items.
 
             var defaultColumns = [
                 {
                     data: 'name',
                     folderIcons: true,
                     filter: true,
-                    css: selectClass,
                     custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }
             ];

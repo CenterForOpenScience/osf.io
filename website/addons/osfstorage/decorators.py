@@ -28,8 +28,13 @@ def handle_odm_errors(func):
 
 
 def autoload_filenode(must_be=None, default_root=False):
+    """Implies both must_have_addon osfstorage node and
+    handle_odm_errors
+    Attempts to load fid as a OsfStorageFileNode with viable constraints
+    """
     def _autoload_filenode(func):
         @handle_odm_errors
+        @must_have_addon('osfstorage', 'node')
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             node_addon = kwargs['node_addon']
@@ -40,7 +45,10 @@ def autoload_filenode(must_be=None, default_root=False):
                 file_node = model.OsfStorageFileNode.get(kwargs.get('fid'), node_addon)
 
             if must_be and file_node.kind != must_be:
-                raise HTTPError(httplib.BAD_REQUEST)
+                raise HTTPError(httplib.BAD_REQUEST, data={
+                    'message_short': 'incorrect type',
+                    'message_long': 'FileNode must be of type {} not {}'.foramt(must_be, file_node.kind)
+                })
 
             kwargs['file_node'] = file_node
 

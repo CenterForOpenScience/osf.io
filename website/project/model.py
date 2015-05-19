@@ -1673,6 +1673,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # database objects to which these dictionaries refer. This means that
         # the cloned node must pass itself to its wiki objects to build the
         # correct URLs to that content.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
+
         registered = original.clone()
 
         registered.is_registration = True

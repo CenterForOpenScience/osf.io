@@ -8,6 +8,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var URI = require('URIjs');
+var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 
 var $osf = require('js/osfHelpers');
@@ -34,6 +35,28 @@ var STATE_MAP = {
     },
     move: {
         display: 'Moving '
+    },
+    rename: {
+        display: 'Renaming '
+    }
+};
+
+
+var OPERATIONS = {
+    RENAME: {
+        status: 'rename',
+        verb: 'Rename',
+        passed: 'renamed',
+    },
+    MOVE: {
+        status: 'move',
+        verb: 'Move',
+        passed: 'moved',
+    },
+    COPY: {
+        status: 'copy',
+        verb: 'Copy',
+        passed: 'copied',
     }
 };
 
@@ -108,11 +131,17 @@ function cancelUploads (row) {
 var cancelUploadTemplate = function(row){
     var treebeard = this;
     return m('.btn.m-l-sm.text-muted', {
+            config : function() {
+                reapplyTooltips();
+            },
             'onclick' : function (e) {
                 e.stopImmediatePropagation();
                 cancelUploads.call(treebeard, row);
             }},
-        m('.fa.fa-times-circle.text-warning', { style : 'display:block;font-size:18px'}, m('span', { style : 'font-size: 14px;'}, ' Cancel')));
+        m('.fa.fa-times-circle.text-danger', {
+            style : 'display:block;font-size:18px; margin-top: -4px;',
+        }, '')
+    );
 };
 
 /**
@@ -252,9 +281,9 @@ function checkConflicts(tb, item, folder, cb) {
                 m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
                 m('p', 'Do you want to replace it?')
             ]), m('', [
-                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('button.btn.btn-md.btn-default.m-r-sm', {onclick: tb.modal.dismiss.bind(tb)}, 'Cancel'),
-                m('button.btn.btn-md.btn-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
+                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -262,25 +291,26 @@ function checkConflicts(tb, item, folder, cb) {
     cb('replace');
 }
 
-function doItemOp(isMove, to, from, rename, conflict) {
+function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
     var ogParent = from.parentID;
     if (to.id === ogParent && (!rename || rename === from.data.name)) return;
 
-    if (isMove) {
-        from.move(to.id);
-        from.data.status = 'move';
-    } else {
+    if (operation === OPERATIONS.COPY) {
         from = tb.createItem($.extend(true, {}, from.data), to.id);
-        from.data.status = 'copy';
+    } else {
+        from.move(to.id);
     }
+
+    from.data.status = operation.status;
 
     tb.redraw();
 
     $.ajax({
         type: 'POST',
-        url: isMove ? waterbutler.moveUrl() : waterbutler.copyUrl(),
+        beforeSend: $osf.setXHRAuthorization,
+        url: operation === OPERATIONS.COPY ? waterbutler.copyUrl() : waterbutler.moveUrl(),
         headers: {
             'Content-Type': 'Application/json'
         },
@@ -293,7 +323,7 @@ function doItemOp(isMove, to, from, rename, conflict) {
     }).done(function(resp, _, xhr) {
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', (isMove ? 'Moving' : 'Copying') + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
+                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
                 m('p', 'We\'ll send you an email when it has finished.')
             ]);
             var mithrilButtons = m('div', [
@@ -304,9 +334,9 @@ function doItemOp(isMove, to, from, rename, conflict) {
         }
         from.data = resp;
         from.data.status = undefined;
-        from.notify.update('Successfully ' + (isMove ? 'moved.' : 'copied.'), 'success', null, 1000);
+        from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
-        if (!isMove && xhr.status === 200) {
+        if (operation === OPERATIONS.COPY && xhr.status === 200) {
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
@@ -329,15 +359,35 @@ function doItemOp(isMove, to, from, rename, conflict) {
         }
 
         tb.redraw();
-    }).fail(function() {
-        if (isMove) {
+    }).fail(function(xhr) {
+        if (operation === OPERATIONS.COPY) {
+            from.removeSelf();
+        } else {
             from.move(ogParent);
             from.data.status = undefined;
-        } else {
-            from.removeSelf();
         }
 
-        $osf.growl('Error', (isMove ? 'Move' : 'Copy') + ' failed.');
+        var message;
+
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+        } else {
+            message = 'Please refresh the page or ' +
+                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'problem persists.';
+        }
+
+        $osf.growl(operation.verb + ' failed.', message);
+
+        Raven.captureMessage('Failed to move or copy file', {
+            xhr: xhr,
+            requestData: {
+                rename: rename,
+                conflict: conflict,
+                source: waterbutler.toJsonBlob(from),
+                destination: waterbutler.toJsonBlob(to),
+            }
+        });
 
         tb.redraw();
     });
@@ -381,8 +431,8 @@ function _fangornUploadProgress(treebeard, file, progress) {
 
     var item,
         child,
-        templateWithCancel;
-
+        templateWithCancel,
+        templateWithoutCancel;
     for(var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if(!child.data.tmpID){
@@ -392,17 +442,17 @@ function _fangornUploadProgress(treebeard, file, progress) {
             item = child;
         }
     }
-
     templateWithCancel = m('span', [
+        cancelUploadTemplate.call(treebeard, item),
         m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
-        cancelUploadTemplate.call(treebeard, item)
     ]);
-
-
+    templateWithoutCancel = m('span', [
+        m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
+    ]);
     if (progress < 100) {
         item.notify.update(templateWithCancel, 'success', null, 0);
     } else {
-        item.notify.update(templateWithCancel, 'success', null, 2000);
+        item.notify.update(templateWithoutCancel, 'success', null, 2000);
     }
 }
 
@@ -635,8 +685,7 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    //Fix me
-    window.location = waterbutler.buildTreeBeardDownload(item[0]);
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 function _createFolder(event, dismissCallback, helpText) {
@@ -665,7 +714,8 @@ function _createFolder(event, dismissCallback, helpText) {
     m.request({
         method: 'POST',
         background: true,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, extra)
+        xhrconfig: $osf.setXHRAuthorization,
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
@@ -728,7 +778,7 @@ function _removeEvent (event, items, col) {
         if (folder.data.permissions.edit) {
                 var mithrilContent = m('div', [
                         m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
-                        m('p', 'This action is irreversible.')
+                        m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
@@ -779,7 +829,7 @@ function _removeEvent (event, items, col) {
                 deleteList.push(item);
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
-                deleteMessage.push(m('p', 'Some items in this list are folders. This will delete all their content.'));
+                deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
             }
         });
         // If all items can be deleted
@@ -910,6 +960,18 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
+
+function gotoFileEvent (item) {
+    var tb = this;
+    var redir = new URI(item.data.nodeUrl);
+    redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+    var fileurl  = redir.toString() + '/';
+    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+        window.open(fileurl, '_blank');
+    } else {
+        window.open(fileurl, '_self');
+    }
+}
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -922,15 +984,9 @@ function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
-            ondblclick: function() {
-                var redir = new URI(item.data.nodeUrl);
-                redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-                var fileurl  = redir.toString() + '/';
-                if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-                    window.open(fileurl, '_blank');
-                } else {
-                    window.open(fileurl, '_self');
-                }
+            onclick: function(event) {
+                event.stopImmediatePropagation();
+                gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
     }
@@ -956,7 +1012,7 @@ function _fangornResolveRows(item) {
         return [{
             data : '',  // Data field name
             css : 't-a-c',
-            custom : function(){ return m('span.text-muted', [m('span', ' Uploading:' + item.data.name), m('span', cancelUploadTemplate.call(this, item))]); }
+            custom : function(){ return m('span.text-muted', [m('span', cancelUploadTemplate.call(this, item)), m('span', item.data.name.slice(0,25) + '... : ' + 'Upload pending.')]); }
         }, {
             data : '',  // Data field name
             custom : function(){ return '';}
@@ -1120,10 +1176,8 @@ function scrollToFile(fileID) {
     if (fileID !== undefined) {
         var index = tb.returnIndex(fileID);
         var visibleIndex = tb.visibleIndexes.indexOf(index);
-        if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
-            var scrollTo = visibleIndex * tb.options.rowHeight;
-            this.select('#tb-tbody').scrollTop(scrollTo);
-        }
+        var scrollTo = visibleIndex * tb.options.rowHeight;
+        this.select('#tb-tbody').scrollTop(scrollTo);
     }
 }
 
@@ -1132,7 +1186,7 @@ function _renameEvent () {
     var item = tb.multiselected()[0];
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
-    checkConflicts(tb, item, folder, doItemOp.bind(tb, true, folder, item, val));
+    checkConflicts(tb, item, folder, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
 var toolbarModes = {
@@ -1151,14 +1205,19 @@ var FGButton = {
         var tooltipText = args.tooltip || '';
         var iconCSS = args.icon || '';
         var onclick = args.onclick || noop;
-        return m('div', {
+        var opts = {
             className: 'fangorn-toolbar-icon ' + extraCSS,
-            onclick: onclick,
-            'data-toggle': tooltipText ? 'tooltip' : '',
-            'data-placement' : 'bottom',
-            'title':  tooltipText}, [
+            onclick: onclick
+        };
+        // Add tooltip if applicable
+        if (args.tooltip) {
+            opts['data-toggle'] = 'tooltip';
+            opts['data-placement'] = 'bottom';
+            opts.title = args.tooltip;
+        }
+        return m('div', opts, [
             m('i', {className: iconCSS}),
-            m('span.hidden-xs', children)
+            m('span', children)
         ]);
     }
 };
@@ -1199,8 +1258,8 @@ var FGDropdown = {
         var name = args.name || '';
         var label = args.label || '';
         var onchange = args.onchange || noop;
-        return m('div', {
-                className: 'fangorn-toolbar-icon ' + extraCSS
+        return m('span.fangorn-dropdown', {
+                className: extraCSS
             },[
                 m('span.hidden-xs',label),
                 m('select.no-border', {
@@ -1224,8 +1283,7 @@ var FGItemButtons = {
         if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
             rowButtons.push(
                 m.component(FGButton, {
-                    onclick: function() {_uploadEvent.call(tb, event, item); },
-                    tooltip: 'Select files to upload from your computer.',
+                    onclick: function(event) {_uploadEvent.call(tb, event, item); },
                     icon: 'fa fa-upload',
                     className : 'text-primary'
                 }, 'Upload'),
@@ -1233,25 +1291,32 @@ var FGItemButtons = {
                     onclick: function() {
                         mode(toolbarModes.ADDFOLDER);
                     },
-                    tooltip: 'Create a new folder inside curently selected folder.',
                     icon: 'fa fa-plus',
                     className : 'text-primary'
                 }, 'Create Folder'));
             if(item.data.path){
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function() {_removeEvent.call(tb, event, [item]); },
-                        tooltip: 'Delete this folder and all its contents.',
+                        onclick: function(event) {_removeEvent.call(tb, event, [item]); },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete Folder'));
             }
         }
         if (item.kind === 'file'){
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
+            }
             rowButtons.push(
                 m.component(FGButton, {
-                    onclick: function() { _downloadEvent.call(tb, event, item); },
-                    tooltip: 'Download this file to your computer.',
+                    onclick: function(event) { _downloadEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
                     className : 'text-success'
                 }, 'Download')
@@ -1259,8 +1324,7 @@ var FGItemButtons = {
             if (item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function() { _removeEvent.call(tb, event, [item]); },
-                        tooltip: 'Permanently delete this file.',
+                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete'));
@@ -1285,8 +1349,10 @@ var FGItemButtons = {
 
 var _dismissToolbar = function(){
     var tb = this;
+    if (tb.toolbarMode() === toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
     tb.toolbarMode(toolbarModes.DEFAULT);
-    tb.resetFilter();
     tb.filterText('');
     m.redraw();
 };
@@ -1295,6 +1361,7 @@ var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
+        self.tb.inputValue = m.prop('');
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
@@ -1313,7 +1380,6 @@ var FGToolbar = {
         var item = items[0];
         var dismissIcon = m.component(FGButton, {
                 onclick: ctrl.dismissToolbar,
-                tooltip: 'Close Search',
                 icon : 'fa fa-times'
             }, '');
         templates[toolbarModes.SEARCH] =  [
@@ -1335,7 +1401,6 @@ var FGToolbar = {
                     id : 'createFolderInput',
                     helpTextId : 'createFolderHelp',
                     placeholder : 'New folder name',
-                    tooltip: 'Enter a name for the new folder'
                 }, ctrl.helpText())
             ]),
             m('.col-xs-3.tb-buttons-col',
@@ -1343,7 +1408,6 @@ var FGToolbar = {
                     [
                         m.component(FGButton, {
                             onclick: ctrl.createFolder,
-                            tooltip: 'Create Folder',
                             icon : 'fa fa-plus',
                             className : 'text-success'
                         }, 'Create'),
@@ -1356,6 +1420,7 @@ var FGToolbar = {
             m('.col-xs-9',
                 m.component(FGInput, {
                     onkeypress: function (event) {
+                        ctrl.tb.inputValue($(event.target).val());
                         if (ctrl.tb.pressedKey === ENTER_KEY) {
                             _renameEvent.call(ctrl.tb);
                         }
@@ -1363,7 +1428,7 @@ var FGToolbar = {
                     id : 'renameInput',
                     helpTextId : 'renameHelpText',
                     placeholder : null,
-                    value : ctrl.items()[0] ? ctrl.items()[0].data.name : '',
+                    value : ctrl.tb.inputValue(),
                     tooltip: 'Change the name of the item here'
                 }, ctrl.helpText())
             ),
@@ -1399,32 +1464,40 @@ var FGToolbar = {
                     onclick: function() {
                         cancelUploads.call(ctrl.tb);
                     },
-                    tooltip: 'Cancel currently pending uploads.',
                     icon: 'fa fa-time-circle',
-                    className : 'text-warning'
-                }, 'Cancel All Uploads')
+                    className : 'text-danger'
+                }, 'Cancel Pending Uploads')
             );
         }
         //multiple selection icons
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
-            generalButtons.push(
-                m.component(FGButton, {
-                    onclick: function() {
-                        var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
-                        if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
-                    },
-                    tooltip: 'Delete all of the currently selected items.',
-                    icon: 'fa fa-trash',
-                    className : 'text-danger'
-                }, 'Delete Multiple')
-            );
+            var showDelete = false;
+            // Only show delete button if user has edit permissions on at least one selected file
+            for (var i = 0, len = items.length; i < len; i++) {
+                var each = items[i];
+                if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
+                    showDelete = true;
+                    break;
+                }
+            }
+            if(showDelete){
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
+                            if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
+                        },
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete Multiple')
+                );
+            }
         }
         generalButtons.push(
             m.component(FGButton, {
                 onclick: function(event){
                     ctrl.mode(toolbarModes.SEARCH);
                 },
-                tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, 'Search'),
@@ -1432,22 +1505,22 @@ var FGToolbar = {
                 onclick: function(event){
                     var mithrilContent = m('div', [
                         m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
-                        m('p', [ m('b', 'Open Files:'), m('span', ' Double click a file name to go to the file.')]),
-                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and click a file name to open it in a new tab.')]),
+                        m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
+                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
                     ]);
                     var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { ctrl.tb.modal.dismiss(); } }, 'Close'),
+                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
                     ]);
                     ctrl.tb.modal.update(mithrilContent, mithrilButtons);
                 },
-                tooltip: 'Learn more about how to use the file browser.',
                 icon: 'fa fa-info',
                 className : 'text-info'
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
+        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1521,7 +1594,7 @@ function _openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
-    var selectedRows = filterRowsNotInParent.call(tb, tb.multiselected());
+    filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'search') {
         _dismissToolbar.call(tb);
         scrollToItem = true;
@@ -1529,19 +1602,16 @@ function _openParentFolders (item) {
         _openParentFolders.call(tb, row);
     }
 
-    if(tb.multiselected().length === 1){
+    if (tb.multiselected().length === 1){
         tb.select('#tb-tbody').removeClass('unselectable');
         if(scrollToItem) {
              scrollToFile.call(tb, tb.multiselected()[0].id);
         }
     } else if (tb.multiselected().length > 1) {
-            tb.select('#tb-tbody').addClass('unselectable');
+        tb.select('#tb-tbody').addClass('unselectable');
     }
-    tb.redraw();
-
-    if(tb.pressedKey === 'toggle') {
-        tb.pressedKey = undefined;
-    }
+    tb.inputValue(tb.multiselected()[0].data.name);
+    m.redraw();
     reapplyTooltips();
 }
 
@@ -1631,7 +1701,7 @@ function _dropLogic(event, items, folder) {
     }
 
     $.each(items, function(index, item) {
-        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move', folder, item, undefined));
+        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
     });
 }
 
@@ -1655,7 +1725,7 @@ function _dragLogic(event, items, ui) {
         copyMode = 'forbidden';
     }
 
-    if (items[0].data.kind == 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
+    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
         copyMode = 'forbidden';
     }
 
@@ -1718,7 +1788,7 @@ function _resizeHeight () {
  * Check Treebeard API for more information
  */
 tbOptions = {
-    rowHeight : 30,         // user can override or get from .tb-row height
+    rowHeight : 35,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
@@ -1869,7 +1939,8 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400
+    hScroll : 400,
+    naturalScrollLimit : 1000
 };
 
 /**
@@ -1911,7 +1982,8 @@ Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
-    createFolder: _createFolder
+    createFolder: _createFolder,
+    _gotoFileEvent : gotoFileEvent
 };
 
 Fangorn.DefaultColumns = {

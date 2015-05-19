@@ -54,6 +54,7 @@ def make_error(code, message_short=None, message_long=None):
 
 
 @must_be_signed
+@must_have_addon('osfstorage', 'node')
 def osfstorage_update_metadata(node_addon, payload, **kwargs):
     try:
         version_id = payload['version']
@@ -238,9 +239,3 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             osf_storage_settings.WATERBUTLER_RESOURCE: version.location[osf_storage_settings.WATERBUTLER_RESOURCE],
         },
     }
-
-
-# lol
-for key, item in locals().items():
-    if callable(item) and key.startswith('osfstorage'):
-        locals()[key] = must_have_addon('osfstorage', 'node')(item)
