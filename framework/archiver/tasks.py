@@ -40,7 +40,8 @@ def stat_file_tree(addon_short_name, fileobj_metadata, user):
     is_file = fileobj_metadata['kind'] == 'file'
     disk_usage = fileobj_metadata.get('size')
     if is_file:
-        if not disk_usage and not addon_short_name.config.short_name == 'osfstorage':
+        # Files are never actually copied on osfstorage, so file size is irrelivant
+        if not disk_usage and not addon_short_name == 'osfstorage':
             disk_usage = 0  # float('inf')  # trigger failure
         result = StatResult(
             target_name=fileobj_metadata['name'],
@@ -78,7 +79,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     file_tree = src_addon._get_file_tree(user=user)
     result = AggregateStatResult(
         src_addon._id,
-        src_addon.config.short_name,
+        addon_short_name,
         targets=[stat_file_tree(addon_short_name, file_tree, user)],
     )
     return result
