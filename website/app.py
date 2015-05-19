@@ -158,7 +158,4 @@ def apply_middlewares(flask_app, settings):
     if settings.LOAD_BALANCER:
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
 
-    flask_app.wsgi_app = DispatcherMiddleware(flask_app.wsgi_app, {
-        '/api/v2': django_app,
-    })
     return flask_app
