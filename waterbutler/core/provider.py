@@ -339,6 +339,11 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
         :param str path: The folder to compress
         """
+        if path.is_file:
+            base_path = path.parent.path
+        else:
+            base_path = path.path
+
         names, coros, remaining = [], [], [path]
 
         while remaining:
@@ -352,8 +357,8 @@ class BaseProvider(metaclass=abc.ABCMeta):
                     folder=item['kind'] == 'folder'
                 )
                 if current_path.is_file:
-                    names.append(current_path.path)
                     coros.append(self.download(current_path))
+                    names.append(current_path.path.replace(base_path, '', 1))
                 else:
                     remaining.append(current_path)
 
