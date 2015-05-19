@@ -656,7 +656,7 @@ var MetaData = (function() {
             });
             // Add embargoAddon relevant fields
             $.extend(data, {
-                'registrationChoice': self.embargoAddon.registrationChoice(),
+                'registrationChoice': self.embargoAddon.registrationChoice()[0],
                 'embargoEndDate': self.embargoAddon.embargoEndDate().toUTCString()
             });
             return {

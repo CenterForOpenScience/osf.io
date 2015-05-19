@@ -14,7 +14,7 @@ var RegistrationEmbargoViewModel = function() {
         MAKE_PUBLIC,
         MAKE_EMBARGO
     ]);
-    self.registrationChoice = ko.observable(MAKE_PUBLIC);
+    self.registrationChoice = ko.observable([MAKE_PUBLIC]);
 
     self.pikaday = ko.observable(today);
     var picker = new pikaday(
