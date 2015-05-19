@@ -16,7 +16,7 @@
                     <li>
                         <a href="#structure">Structure</a>
                         <ul class="nav">
-                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer and Folders</a></li>
+                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer and Collections</a></li>
                             <li><a href="#dashboards"><i class="fa fa-chevron-right"></i> Dashboard</a></li>
                             <li><a href="#userprofile"><i class="fa fa-chevron-right"></i> User Profile</a></li>
                             <li><a href="#projects"><i class="fa fa-chevron-right"></i> Projects</a></li>

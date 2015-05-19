@@ -821,7 +821,8 @@ function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
-            onclick: function() {
+            onclick: function(event) {
+                event.stopImmediatePropagation();
                 gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
@@ -1004,10 +1005,8 @@ function scrollToFile(fileID) {
     if (fileID !== undefined) {
         var index = tb.returnIndex(fileID);
         var visibleIndex = tb.visibleIndexes.indexOf(index);
-        if (visibleIndex !== -1 && visibleIndex > tb.showRange.length - 2) {
-            var scrollTo = visibleIndex * tb.options.rowHeight;
-            this.select('#tb-tbody').scrollTop(scrollTo);
-        }
+        var scrollTo = visibleIndex * tb.options.rowHeight;
+        this.select('#tb-tbody').scrollTop(scrollTo);
     }
 }
 
@@ -1126,6 +1125,16 @@ var FGItemButtons = {
             }
         }
         if (item.kind === 'file'){
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
+            }
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
@@ -1142,16 +1151,6 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
-            if (item.data.permissions && item.data.permissions.view) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            gotoFileEvent.call(tb, item);
-                        },
-                        icon: 'fa fa-external-link',
-                        className : 'text-info'
-                    }, 'View'));
-            }
         }
         return m('span', rowButtons);
     }
@@ -1159,8 +1158,10 @@ var FGItemButtons = {
 
 var _dismissToolbar = function(){
     var tb = this;
+    if (tb.toolbarMode() === toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
     tb.toolbarMode(toolbarModes.DEFAULT);
-    tb.resetFilter();
     tb.filterText('');
     m.redraw();
 };
@@ -1250,7 +1251,7 @@ var FGToolbar = {
             // Only show delete button if user has edit permissions on at least one selected file
             for (var i = 0, len = items.length; i < len; i++) {
                 var each = items[i];
-                if (each.data.permissions.edit && !each.data.isAddonRoot) {
+                if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
                     break;
                 }
@@ -1690,7 +1691,8 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400
+    hScroll : 400,
+    naturalScrollLimit : 1000
 };
 
 /**

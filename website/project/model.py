@@ -1334,7 +1334,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
         query = Q('__backrefs.logged.node.logs', 'in', ids)
-        return NodeLog.find(query).sort('-_id')
+        logs = NodeLog.find(query).sort('-_id')
+        return [each for each in logs if each.node__logged[0].can_view(auth)]
 
     @property
     def nodes_pointer(self):
