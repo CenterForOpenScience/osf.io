@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
-
-from modularodm import fields
+import httplib as http
+from random import randint
+from modularodm import fields, Q
+from modularodm.storage.base import KeyExistsException
 
 from framework.mongo import StoredObject
+from framework.exceptions import HTTPError
+from framework import sentry
+
+
+class WhitelistWord(StoredObject):
+
+    _id = fields.StringField(primary=True)
 
 
 class Guid(StoredObject):
 
     _id = fields.StringField(primary=True)
     referent = fields.AbstractForeignField()
-
-    _meta = {
-        'optimistic': True,
-    }
 
     def __repr__(self):
         return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
@@ -49,14 +54,25 @@ class GuidStoredObject(StoredObject):
             )
             guid.save()
 
-        # Else create GUID optimistically
+        # Else create GUID using database of white-listed words
         else:
+            while True:
+                # Get a random word from the database
+                words = WhitelistWord.find()
+                rand = randint(0, words.count()-1)
+                id = words[rand]._id
 
-            # Create GUID
-            guid = Guid()
-            guid.save()
-            guid.referent = (guid._primary_key, self._name)
-            guid.save()
+                try:
+                    guid = Guid(_id=id)
+                    guid.save()
+                    break
+                except KeyExistsException:
+                    pass
+
+            if guid:
+                WhitelistWord.remove(Q('_id', 'eq', id))
+                guid.referent = (guid._primary_key, self._name)
+                guid.save()
 
             # Set primary key to GUID key
             self._primary_key = guid._primary_key
