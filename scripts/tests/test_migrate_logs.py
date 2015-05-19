@@ -41,3 +41,13 @@ class TestMigrateManualMergedUser(OsfTestCase):
         logs = [each for each in project.logs if each.action == 'contributor_added']
         assert len(logs) is 1
         assert logs[0].should_hide is True
+
+        project.logs.append(None)
+        project.save()
+
+        node_list = get_targets()
+        do_migration(node_list)
+        project.reload()
+
+        logs = [each for each in project.logs if not each]
+        assert len(logs) is 0
