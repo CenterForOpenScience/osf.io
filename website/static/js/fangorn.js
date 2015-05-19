@@ -367,6 +367,18 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.data.status = undefined;
         }
 
+        var message;
+
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+        } else {
+            message = 'Please refresh the page or ' +
+                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'problem persists.';
+        }
+
+        $osf.growl(operation.verb + ' failed.', message);
+
         Raven.captureMessage('Failed to move or copy file', {
             xhr: xhr,
             requestData: {
@@ -376,10 +388,6 @@ function doItemOp(operation, to, from, rename, conflict) {
                 destination: waterbutler.toJsonBlob(to),
             }
         });
-
-        $osf.growl(operation.verb + ' failed.', 'Please refresh the page or ' +
-            'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-            'problem persists.');
 
         tb.redraw();
     });
