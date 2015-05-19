@@ -376,11 +376,12 @@ def _send_embargo_email(node, user):
     initiators_fullname = node.embargo.initiated_by.fullname
 
     if node.has_permission(user, 'admin'):
-        approval_token = node.embargo.approval_state[user._id]['approval_token'],
-        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token'],
-        approval_link = node.web_url_for('node_registration_embargo_approve',
-                                         token=approval_token,
-                                         _absolute=True)
+        approval_token = node.embargo.approval_state[user._id]['approval_token']
+        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
+        approval_link = node.web_url_for(
+            'node_registration_embargo_approve',
+            token=approval_token,
+            _absolute=True)
         disapproval_link = node.web_url_for(
             'node_registration_embargo_disapprove',
             token=disapproval_token,
