@@ -79,7 +79,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     def get_queryset(self):
         user = self.get_user(check_permissions=False)
         current_user = self.request.user
-        if user.is_anonymous():
+        if current_user.is_anonymous():
             auth = Auth(None)
         else:
             auth = Auth(current_user)
