@@ -50,6 +50,16 @@ def make_service_validation_response_body(user, access_token=None):
     )
 
 
+def test_parse_authorization_header():
+    token = fake.md5()
+    valid = 'Bearer {}'.format(token)
+    assert_equal(cas.parse_auth_header(valid), token)
+
+    missing_token = 'Bearer '
+    with assert_raises(cas.CasTokenError):
+        cas.parse_auth_header(missing_token)
+
+
 # TODO:
 class TestCASClient(OsfTestCase):
 

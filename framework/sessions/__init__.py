@@ -10,7 +10,7 @@ import itsdangerous
 
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request, make_response
+from flask import request, make_response, jsonify
 from framework.flask import app, redirect
 
 from website import settings
@@ -162,7 +162,11 @@ def before_request():
     authorization = request.headers.get('Authorization')
     if authorization and authorization.startswith('Bearer '):
         client = cas.get_client()
-        access_token = authorization[7:]
+        try:
+            access_token = cas.parse_auth_header(authorization)
+        except cas.CasTokenError as err:
+            # NOTE: We assume that the request is an AJAX request
+            return jsonify({'message_short': 'Invalid Bearer token', 'message_long': err.args[0]}), http.UNAUTHORIZED
         cas_resp = client.profile(access_token)
         if cas_resp.authenticated:
             user = User.load(cas_resp.user)

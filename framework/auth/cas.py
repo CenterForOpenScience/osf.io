@@ -21,13 +21,32 @@ class CasHTTPError(CasError):
         self.status_code = status_code
         self.headers = headers
 
+
+class CasTokenError(CasError):
+    """Raised if an invalid token is passed by the client."""
+    pass
+
 class CasResponse(object):
+    """A wrapper for an HTTP response returned from CAS."""
 
     def __init__(self, authenticated=False, status=None, user=None, attributes=None):
         self.authenticated = authenticated
         self.status = status
         self.user = user
         self.attributes = attributes or {}
+
+def parse_auth_header(header):
+    """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token
+    or raise an error if the header is invalid.
+    """
+    parts = header.split()
+    if parts[0].lower() != 'bearer':
+        raise CasTokenError('Unsupported authorization type')
+    elif len(parts) == 1:
+        raise CasTokenError('Missing token')
+    elif len(parts) > 2:
+        raise CasTokenError('Token contains spaces')
+    return parts[1]  # the token
 
 class CasClient(object):
     """HTTP client for the CAS server."""
