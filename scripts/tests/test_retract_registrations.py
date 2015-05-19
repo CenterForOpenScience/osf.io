@@ -65,3 +65,18 @@ class TestRetractRegistrations(OsfTestCase):
 
         main(dry_run=False)
         assert_true(self.registration.retraction.is_retracted)
+
+    def test_retraction_adds_to_parent_registrations_log(self):
+        initial_num_logs = len(self.registration.logs)
+        # Retraction#iniation_date is read only
+        self.registration.retraction._fields['initiation_date'].__set__(
+            self.registration.retraction,
+            (datetime.utcnow() - timedelta(days=365)),
+            safe=True
+        )
+        self.registration.retraction.save()
+        assert_false(self.registration.retraction.is_retracted)
+
+        main(dry_run=False)
+        assert_true(self.registration.retraction.is_retracted)
+        assert_equal(len(self.registration.logs), initial_num_logs + 1)

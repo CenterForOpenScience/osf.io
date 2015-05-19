@@ -6,8 +6,10 @@ import sys
 
 from modularodm import Q
 
+from framework.auth import Auth
 from website import models, settings
 from website.app import init_app
+from website.project.model import NodeLog
 from scripts import utils as scripts_utils
 
 
@@ -28,6 +30,16 @@ def main(dry_run=True):
             )
             if not dry_run:
                 retraction.state = models.Retraction.RETRACTED
+                parent_registration.add_log(
+                    action=NodeLog.RETRACTION_APPROVED,
+                    params={
+                        'registration_id': parent_registration._id,
+                        'retraction_id': parent_registration.retraction._id,
+                    },
+                    auth=Auth(parent_registration.retraction.initiated_by),
+                    log_date=datetime.datetime.utcnow(),
+                    save=False,
+                )
                 retraction.save()
 
 

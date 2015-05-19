@@ -153,6 +153,18 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
 
+    def test_approval_adds_to_parent_registrations_log(self):
+        initial_num_logs = len(self.registration.logs)
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        self.registration.save()
+
+        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
+        self.registration.embargo.approve_embargo(self.user, approval_token)
+        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
         self.registration.contributors.append(admin2)
@@ -218,6 +230,18 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
         assert_false(self.registration.pending_embargo)
         assert_false(self.registration.embargo_end_date)
+
+    def test_disapproval_adds_to_parent_registrations_log(self):
+        initial_num_logs = len(self.registration.logs)
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        self.registration.save()
+
+        disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
+        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        assert_equal(len(self.registration.logs), initial_num_logs + 1)
 
     def test_cancelling_embargo_deletes_parent_registration(self):
         self.registration.embargo_registration(
@@ -592,3 +616,16 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
 
         assert_equal(res.status_code, 400)
+
+    def test_valid_POST_embargo_adds_to_parent_node_log(self):
+        initial_num_logs = len(self.registration.logs)
+        res = self.app.post(
+            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.valid_embargo_payload,
+            content_type='application/json',
+            auth=self.user.auth
+        )
+
+        registration_id = res.json['result'].strip('/')
+        registration = Node.find_one(Q('_id', 'eq', registration_id))
+        assert_equal(len(registration.logs), initial_num_logs + 1)

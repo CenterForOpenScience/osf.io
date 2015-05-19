@@ -9,8 +9,10 @@ import sys
 
 from modularodm import Q
 
+from framework.auth import Auth
 from website import models, settings
 from website.app import init_app
+from website.project.model import NodeLog
 from scripts import utils as scripts_utils
 
 
@@ -31,6 +33,16 @@ def main(dry_run=True):
             )
             if not dry_run:
                 embargo.state = models.Embargo.ACTIVE
+                parent_registration.add_log(
+                    action=NodeLog.EMBARGO_APPROVED,
+                    params={
+                        'registration_id': parent_registration._id,
+                        'embargo_id': embargo._id,
+                    },
+                    auth=Auth(parent_registration.embargo.initiated_by),
+                    log_date=datetime.datetime.utcnow(),
+                    save=False,
+                )
                 embargo.save()
 
     active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.ACTIVE))
@@ -47,6 +59,16 @@ def main(dry_run=True):
             if not dry_run:
                 parent_registration.set_privacy('public')
                 embargo.state = models.Embargo.COMPLETED
+                parent_registration.add_log(
+                    action=NodeLog.EMBARGO_COMPLETED,
+                    params={
+                        'registration_id': parent_registration._id,
+                        'embargo_id': embargo._id,
+                    },
+                    auth=Auth(parent_registration.embargo.initiated_by),
+                    log_date=datetime.datetime.utcnow(),
+                    save=False,
+                )
                 embargo.save()
 
 

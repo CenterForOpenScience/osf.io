@@ -115,3 +115,34 @@ class TestRetractRegistrations(OsfTestCase):
         assert_false(self.registration.is_public)
         assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
+
+    def test_embargo_approval_adds_to_parent_registrations_log(self):
+        initial_num_logs = len(self.registration.logs)
+        # Embargo#iniation_date is read only
+        self.registration.embargo._fields['initiation_date'].__set__(
+            self.registration.embargo,
+            (datetime.utcnow() - timedelta(days=365)),
+            safe=True
+        )
+        self.registration.embargo.save()
+
+        main(dry_run=False)
+        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+
+    def test_embargo_completion_adds_to_parent_registrations_log(self):
+        initial_num_logs = len(self.registration.logs)
+        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
+        self.registration.embargo.approve_embargo(self.user, approval_token)
+        self.registration.save()
+
+        # Embargo#iniation_date is read only
+        self.registration.embargo._fields['end_date'].__set__(
+            self.registration.embargo,
+            (datetime.utcnow() - timedelta(days=1)),
+            safe=True
+        )
+        self.registration.embargo.save()
+
+        main(dry_run=False)
+        # Approved embargo, made registration public, and completed embargo
+        assert_equal(len(self.registration.logs), initial_num_logs + 3)
