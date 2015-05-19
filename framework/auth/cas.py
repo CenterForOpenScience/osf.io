@@ -10,11 +10,14 @@ from framework.auth import User
 from framework.auth import authenticate
 from framework.flask import redirect
 
-
 class CasError(Exception):
+    """General CAS-related error."""
+    pass
+
+class CasHTTPError(CasError):
     """Error raised when an unexpected error is returned from the CAS server."""
     def __init__(self, message, status_code, headers):
-        super(CasError).__init__(message)
+        super(CasError, self).__init__(message)
         self.status_code = status_code
         self.headers = headers
 
@@ -27,6 +30,7 @@ class CasResponse(object):
         self.attributes = attributes or {}
 
 class CasClient(object):
+    """HTTP client for the CAS server."""
 
     def __init__(self, base_url):
         self.BASE_URL = base_url
@@ -54,6 +58,14 @@ class CasClient(object):
         return url.url
 
     def service_validate(self, ticket, service_url):
+        """Send request to validate ticket.
+
+        :param str ticket: CAS service ticket.
+        :param str service_url: Service URL from which the authentication request
+            originates.
+        :rtype: CasResponse
+        :raises: CasError if an unexpected response is returned
+        """
         url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('p3', 'serviceValidate',))
         url.args['ticket'] = ticket
@@ -63,9 +75,15 @@ class CasClient(object):
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
-            return CasResponse(authenticated=False)
+            self.handle_error(resp)
 
     def profile(self, access_token):
+        """Send request to get profile information, given an access token.
+
+        :param str access_token: CAS access_token.
+        :rtype: CasResponse
+        :raises: CasError if an unexpected response is returned.
+        """
         url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('oauth2', 'profile',))
         headers = {
@@ -75,7 +93,15 @@ class CasClient(object):
         if resp.status_code == 200:
             return self._parse_profile(resp.content)
         else:
-            return CasResponse(authenticated=False)
+            self.handle_error(resp)
+
+    def handle_error(self, response, message='Unexpected response from CAS server'):
+        """Handle an error response from CAS."""
+        raise CasHTTPError(
+            message,
+            status_code=response.status_code,
+            headers=response.headers,
+        )
 
     def _parse_service_validation(self, xml):
         resp = CasResponse()
