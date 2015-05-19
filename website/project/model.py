@@ -313,6 +313,18 @@ class OAuth2App(StoredObject):
     home_url = fields.StringField(required=True)
     callback_url = fields.StringField(required=True)
 
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('users:application-detail', kwargs={'pk': self.owner._id, 'client_id': self.client_id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
 
 @unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):

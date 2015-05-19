@@ -2,7 +2,7 @@
     <!-- TODO: Write AJAX or KO endpoint for submission -->
     <div class="form-group">
         <label>Application name</label>
-        <input class="form-control" type="text" name="appName" value="${app_data['client_id'] if app_data is not None else ''}">
+        <input class="form-control" type="text" name="appName" value="${app_data['name'] if app_data is not None else ''}">
     </div>
 
     <div class="form-group">

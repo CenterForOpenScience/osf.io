@@ -745,6 +745,55 @@ var SchoolsViewModel = function(urls, modes) {
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
+/**
+ * Track data related to API consumer applications registered by a given user
+ */
+var ApplicationsViewModel = function(urls, modes) {
+    var self = this;
+
+    self.urls = urls;
+    self.applicationList = ko.observableArray([]);
+
+    $.ajax({
+        type: 'GET',
+        url: self.urls.crud,
+        dataType: 'json',
+        success: function(data){
+            self.applicationList(data.data);
+        },
+        error: function(){}
+    });
+
+    self.getDetailUrl = function(appId){
+        // Get the web detail URL
+        return self.urls.baseDetailUrl + appId
+    };
+
+    self.getApiDetailUrl = function(appId){
+        // Get the API detail URL
+        return self.urls.baseApiDetailUrl + appId
+
+    };
+
+    self.deleteApplication = function(appData){
+        // Delete a single application
+        var detailUrl = self.getDetailUrl(appData.client_id);
+
+        $.ajax({
+            type: 'DELETE',
+            url: detailUrl,
+            dataType: 'json',
+            success: function(data){
+                self.applicationList.destroy(appData);
+            },
+            error: function(){}
+        });
+    };
+
+
+};
+
+
 var Names = function(selector, urls, modes) {
     this.viewModel = new NameViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
@@ -768,11 +817,20 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
+var Applications = function(selector, urls, modes) {
+    this.viewModel = new ApplicationsViewModel(urls, modes);
+    $osf.applyBindings(this.viewModel, selector);
+};
+
+
 module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,
     Schools: Schools,
+
+    Applications: Applications,
+
     // Expose private viewmodels
     _NameViewModel: NameViewModel
 };

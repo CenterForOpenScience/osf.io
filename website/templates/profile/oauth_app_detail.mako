@@ -19,7 +19,6 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
-
         % if app_data is not None:
             ## Reuse this template for creation and deletion
                 <!-- TODO: Style -->
@@ -46,9 +45,9 @@
 ##    ## modules. Not sure if this is a good idea.
 ##    window.contextVars = window.contextVars || {};
 ##    window.contextVars.appDetailUrls = {
-##      TODO: Make sure template url is correct
-##        crud: '${ api_v2_url_for('users:application-detail', kwargs={'pk': user_id, 'client_id': client_id}) }'
+##     ## TODO: Make sure template url is correct
+##        //crud: '${ api_v2_url_for('users:application-detail', kwargs={'pk': user_id, 'client_id': client_id}) }'
 ##    };
 ##</script>
-##<script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>
+##<script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>
 </%def>
