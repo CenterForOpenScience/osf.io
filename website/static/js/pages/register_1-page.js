@@ -6,6 +6,9 @@ var $osf = require('js/osfHelpers');
 
 var MetaData = require('../metadata_1.js');
 var ctx = window.contextVars;
+
+require('../../css/pikaday.css');
+
 /**
     * Unblock UI and display error modal
     */
@@ -74,6 +77,7 @@ $(document).ready(function() {
                     'Please double check the date you have chosen is within the parameters specified.',
                     'warning'
                 );
+                $('#endDatePicker').focus();
                 return false;
             }
         }

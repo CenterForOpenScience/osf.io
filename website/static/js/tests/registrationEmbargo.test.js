@@ -18,44 +18,6 @@ describe('registrationEmbargo', () => {
             vm = new registrationEmbargo.ViewModel();
         });
 
-        describe('#dayOptions', () => {
-            it('returns array of 31 days for relevant months', () => {
-                vm.monthChoice('January');
-                var expectedDayOptions = [];
-                for (var i=1; i<=31; i+=1) { expectedDayOptions.push(i); }
-                assert.equal(
-                    JSON.stringify(vm.dayOptions()),
-                    JSON.stringify(expectedDayOptions)
-                );
-            });
-            it('returns array of 30 days for relevant months', () => {
-                vm.monthChoice('June');
-                var expectedDayOptions = [];
-                for (var i=1; i<=30; i+=1) { expectedDayOptions.push(i); }
-                assert.equal(
-                    JSON.stringify(vm.dayOptions()),
-                    JSON.stringify(expectedDayOptions)
-                );
-            });
-            it('returns array of 28 days for February', () => {
-                vm.monthChoice('February');
-                var expectedDayOptions = [];
-                for (var i=1; i<=28; i+=1) { expectedDayOptions.push(i); }
-                assert.equal(
-                    JSON.stringify(vm.dayOptions()),
-                    JSON.stringify(expectedDayOptions)
-                );
-            });
-        });
-        describe('#yearOptions', () => {
-            it('returns list of current year and next', () => {
-                var currentYear = new Date().getFullYear();
-                assert.equal(
-                    JSON.stringify(vm.yearOptions()),
-                    JSON.stringify([currentYear, currentYear+1])
-                );
-            });
-        });
         describe('#checkShowEmbargoDatePicker', () => {
             it('returns false if registrationChoice is make public', () => {
                 vm.registrationChoice([MAKE_PUBLIC]);
@@ -70,41 +32,28 @@ describe('registrationEmbargo', () => {
         });
         describe('#embargoEndDate', () => {
             it('returns Date from user input', () =>{
-                vm.dayChoice(1);
-                vm.monthChoice('March');
-                vm.yearChoice(2015);
-
+                vm.pikaday('2015-01-01');
                 var date = vm.embargoEndDate();
                 assert.isTrue(date instanceof Date);
-            });
-            it('returns Invalid Date if no user input provided', () => {
-                var date = vm.embargoEndDate();
-                assert.equal(date, 'Invalid Date');
             });
         });
         describe('#isEmbargoEndDateValid', () => {
             it('returns true for date more than 2 days but less than 365 days in the future', () => {
-                var today = new Date();
-                vm.yearChoice(today.getYear() + 1900);  // years begin at 1900
-                vm.monthChoice(vm.monthOptions()[today.getMonth()]);
-                vm.dayChoice(today.getDate() + 3);
-
+                var validDate = new Date();
+                validDate.setDate(validDate.getDate() + 3);
+                vm.pikaday(validDate);
                 assert.isTrue(vm.isEmbargoEndDateValid());
             });
             it('returns false for date less than 2 days in the future', () => {
-                var today = new Date();
-                vm.yearChoice(today.getYear() + 1900);  // years begin at 1900
-                vm.monthChoice(vm.monthOptions()[today.getMonth()]);
-                vm.dayChoice(today.getDate() + 2);
-
+                var invalidPastDate = new Date();
+                invalidPastDate.setDate(invalidPastDate.getDate() - 2);
+                vm.pikaday(invalidPastDate);
                 assert.isFalse(vm.isEmbargoEndDateValid());
             });
             it('returns false for date more than 365 days in the future', () => {
-                var today = new Date();
-                vm.yearChoice(today.getYear() + 1901);  // years begin at 1900
-                vm.monthChoice(vm.monthOptions()[today.getMonth()]);
-                vm.dayChoice(today.getDate() + 2);
-
+                var invalidFutureDate = new Date();
+                invalidFutureDate.setDate(invalidFutureDate.getDate() + 366);
+                vm.pikaday(invalidFutureDate);
                 assert.isFalse(vm.isEmbargoEndDateValid());
             });
         });

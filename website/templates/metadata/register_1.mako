@@ -15,17 +15,9 @@
                     <select class="form-control" data-bind="options: registrationOptions, selectedOptions: registrationChoice, event: {change: checkShowEmbargoDatePicker}"></select>
                 </div>
                 <span data-bind="visible: showEmbargoDatePicker">
-                    <div class="form-group>">
-                        <label class="control-label">Day</label>
-                        <select class="form-control" data-bind="options: dayOptions, value: dayChoice"></select>
-                    </div>
-                    <div class="form-group>">
-                        <label class="control-label">Month</label>
-                        <select class="form-control" data-bind="options: monthOptions, value: monthChoice"></select>
-                    </div>
-                    <div class="form-group>">
-                        <label class="control-label">Year</label>
-                        <select class="form-control" data-bind="options: yearOptions, value: yearChoice"></select>
+                    <div class="form-group">
+                        <label class="control-label">Embargo End Date</label>
+                        <input type="text" id="endDatePicker" class="form-control">
                     </div>
                 </span>
             </div>
