@@ -1381,18 +1381,6 @@ def make_url_map(app):
             project_views.contributor.invite_contributor_post,
             json_renderer
         ),
-
-        # Edit Files
-        Rule(
-            [
-                '/project/<pid>/files/<provider>/<path:path>/',
-                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
-            ],
-            'post',
-            addon_views.addon_edit_file,
-            json_renderer
-        ),
-
     ], prefix='/api/v1')
 
     # Set up static routing for addons

@@ -78,7 +78,7 @@
                             </div>
                         </div>
 
-                        <form id="file-edit-form" action="${edit_url}" method="POST">
+                        <form id="file-edit-form">
                             <div class="wiki-panel-body" style="padding: 10px">
                                 <div class="row">
                                     <div class="col-xs-12">
@@ -95,14 +95,14 @@
                                     <div class="col-xs-12">
                                         <div class="pull-right">
                                             <button id="revert-button" class="btn btn-danger" data-bind="click: revertChanges">Revert</button>
-                                            <input type="submit" class="btn btn-success" value="Save" onclick=$(window).off('beforeunload')>
+                                            <input type="submit" class="btn btn-success" value="Save" id="submitEdit">
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Invisible textarea for form submission -->
-                                <textarea name="original_content" style="display: none;">${content}</textarea>
-                                <textarea name="edit_content" style="display: none;" data-bind="value: currentText"></textarea>
+                                <textarea id="original_content" style="display: none;">${content}</textarea>
+                                <textarea id="edit_content" style="display: none;" data-bind="value: currentText"></textarea>
 
                             </div>
                         </form>
@@ -340,7 +340,6 @@
                 panelsUsed: ${json.dumps(panels_used) | n},
                 isEditable: isEditable,
                 urls: {
-
                     draft: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     content: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     rename: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
@@ -350,6 +349,37 @@
                 }
             }
       });
+    </script>
+
+    <script>
+        $('#submitEdit').on('click', function(e) {
+            e.preventDefault();
+            var editContent = $('#edit_content').val();
+            var originalContent = $('#original_content').val();
+
+            if (editContent != originalContent) {
+                var request = $.ajax({
+                    type: 'PUT',
+                    url: '${edit_url}',
+                    data: editContent
+                });
+
+                request.done(function () {
+                    $.ajax({
+                        type: 'GET',
+                        url: '${view_url}'
+                    }).done(function() {
+                        window.location.reload();
+                    });
+                });
+
+                request.fail(function(response) {
+                   console.log('fail');
+                });
+            } else {
+                alert("There are no changes to be saved.");
+            }
+        });
     </script>
 
     <script src="//localhost:7007/text.js"></script>

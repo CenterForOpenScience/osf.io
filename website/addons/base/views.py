@@ -333,25 +333,24 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     return addon_view_file(auth, node, node_addon, file_guid, extras)
 
 
-def addon_view_file(auth, node, node_addon, file_guid, extras, file_contents=None):
-    path = file_guid.waterbutler_path.lstrip('/')
+def addon_view_file(auth, node, node_addon, file_guid, extras):
+    path = file_guid.waterbutler_path
     provider = file_guid.provider
 
     render_url = node.api_url_for(
         'addon_render_file',
-        path=path,
+        path=path.lstrip('/'),
         provider=provider,
         render=True,
         **extras
     )
 
-    edit_url = node.api_url_for(
-        'addon_edit_file',
-        path=path,
+    view_url = node.web_url_for(
+        'addon_view_or_download_file',
+        path=path.lstrip('/'),
         provider=provider
     )
 
-    content = extras.get('file_contents') or file_content(file_guid)
     ret = serialize_node(node, auth, primary=True)
 
     # Disable OSF Storage file deletion in DISK_SAVING_MODE
@@ -361,64 +360,23 @@ def addon_view_file(auth, node, node_addon, file_guid, extras, file_contents=Non
     ret.update({
         'provider': file_guid.provider,
         'render_url': render_url,
-        'edit_url': edit_url,
+        'edit_url': waterbutler_url_for('upload', provider, path, node),
+        'view_url': view_url,
         'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
-        'content': content,
         'rendered': get_or_start_render(file_guid),
+        'content': file_content(file_guid),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
         'file_ext': get_file_extension(file_guid.waterbutler_path),
         'panels_used': ['edit', 'view'],
+
     })
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
-
-
-@must_be_valid_project
-def addon_edit_file(**kwargs):
-
-    extras = request.args.to_dict()
-    node = kwargs.get('node') or kwargs['project']
-    path = kwargs.get('path')
-    provider = kwargs.get('provider')
-
-    node_addon = node.get_addon(provider)
-
-    if not path or not node_addon:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if not node_addon.has_auth:
-        raise HTTPError(httplib.FORBIDDEN)
-
-    if not path.startswith('/'):
-        path = '/' + path
-
-    upload_url = waterbutler_url_for('upload', provider, path, node)
-
-    original_content = request.form['original_content']
-    edit_content = request.form['edit_content']
-
-    if original_content != edit_content:
-        resp = requests.put(
-            upload_url,
-            data=edit_content,
-        )
-
-    extras['file_contents'] = edit_content
-
-    return redirect(
-        node.web_url_for(
-            'addon_view_or_download_file',
-            path=path.lstrip('/'),
-            provider=provider,
-            **extras
-        ),
-        code=httplib.MOVED_PERMANENTLY
-    )
 
 
 @must_be_valid_project
