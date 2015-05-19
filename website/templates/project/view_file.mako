@@ -133,7 +133,7 @@
 
             <div id="wikiViewPanel"  class="osf-panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
                 <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
-                    % if content is not None:
+                    % if content:
                         ${content}
                     % else:
                         <p><em>No file content</em></p>
@@ -369,7 +369,7 @@
                         type: 'GET',
                         url: '${view_url}'
                     }).done(function() {
-                        window.location.reload();
+                        window.location.href = '${view_url}';
                     });
                 });
 
