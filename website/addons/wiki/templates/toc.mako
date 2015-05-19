@@ -15,25 +15,9 @@
                         <i class="fa fa-plus-circle pointer fa-lg wiki-menu" data-toggle="tooltip" title="New" data-placement="top"></i>
                     </a>
                 </div>
-                <div class="col-xs-2">
-                    <a href="#" data-bind="toggle: subsVisible">
-                        <i class="fa fa-cog pointer fa-lg wiki-menu" data-toggle="tooltip" title="Settings" data-placement="top"></i>
-                    </a>
-                </div>
             </div>
         % endif
     </h4>
-
-    <div class="tag-cloud" data-bind="visible: subsVisible" style="border-bottom: dashed 1px #ddd;
-                                  border-top: dashed 1px #ddd;
-                                  background-color: #eee">
-        <div style="padding-left: 15px;font-size: 16px"><strong>Subscription: (page)</strong></div>
-        <div class="cloud-tag tag-med" style="margin-left: 15px">Emails</div>
-        <div class="cloud-tag tag-med" style="margin-left: 15px">Digest</div>
-        <div class="cloud-tag tag-med" style="margin-left: 15px">Adopt from Project</div>
-        <div class="cloud-tag tag-med" style="margin-left: 15px">None</div>
-
-    </div>
 
     
         <ul class="nav bs-sidenav" style="margin: 0;">
@@ -66,13 +50,11 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="tag-cloud" data-bind="visible: subsVisible" style="border-bottom: dashed 1px #ddd;
-                                  border-top: dashed 1px #ddd;
-                                  background-color: #eee">
-                                <div style="padding-left: 15px;font-size: 16px"><strong>Subscription:</strong></div>
-                                <div data-bind="foreach: subList">
-                                    <div class="cloud-tag tag-med" data-bind=""
-                                         style="margin-left: 15px">
+                            <div class="option-cloud" data-bind="visible: subsVisible">
+                                <div class="title" data-bind="text: subText"></div>
+                                <div class="container" data-bind="foreach: subList">
+                                    <div class="cloud-option pointer" data-bind='css: { current: value === $root.subscription().value },
+                                                                                 click: $root.clickSub.bind(value)'>
                                         <span data-bind="text: text"></span>
                                     </div>
                                 </div>

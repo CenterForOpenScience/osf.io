@@ -1052,9 +1052,46 @@ h1.unavailable {
 }
 
 .tag-cloud h3
-    {
-        margin: 0;
-    }
+{
+    margin: 0;
+}
+
+.option-cloud
+{
+    word-break: break-all;
+    border-bottom: dashed 1px #ddd;
+    border-top: dashed 1px #ddd;
+    background-color: #EEEEEE;
+    padding-left: 15px;
+}
+
+.option-cloud .cloud-option
+{
+    font-size: 11pt;
+    display: inline-block;
+    word-break: break-all;
+    margin: 5px 5px 5px 0px;
+    padding: 5px;
+    border-radius: 5px;
+    background-color: #CCDDEE;
+}
+
+.option-cloud .cloud-option:hover
+{
+    background-color: #AABCDD;
+}
+
+.option-cloud .title
+{
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.option-cloud .cloud-option.current
+{
+    background-color: #214762;
+    color: #FFFFFF;
+}
 
 .registration a {
     color: #666;

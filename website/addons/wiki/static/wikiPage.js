@@ -198,6 +198,7 @@ function ViewModel(options){
     self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
 
+    // Subscriptions
     self.subList = [
         {value: 'email_transactional', text: 'Emails'},
         {value: 'email_digest', text: 'Email Digest'},
@@ -213,8 +214,16 @@ function ViewModel(options){
         return self.subList[3];
     };
     self.subscription = ko.observable(self.getSub('adopt_parent'));
-
+    self.subText = ko.observable();
     self.subsVisible = ko.observable(false);
+    self.clickGear = ko.computed(function () {
+        var visible = self.subsVisible();
+        self.subText("Subscription:");
+        return visible;
+    });
+    self.clickSub = function (value) {
+        self.subscription(value);
+    };
 
     self.viewText = ko.observable('');
     self.renderedView = ko.observable('');
