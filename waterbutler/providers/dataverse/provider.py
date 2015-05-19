@@ -100,10 +100,8 @@ class DataverseProvider(provider.BaseProvider):
 
         :rtype: dict, bool
         """
-        stream = streams.ZipStreamReader(
-            filename=path.name,
-            file_stream=stream,
-        )
+
+        stream = streams.ZipStreamReader((path.name, stream))
 
         # Write stream to disk (Necessary to find zip file size)
         f = tempfile.TemporaryFile()

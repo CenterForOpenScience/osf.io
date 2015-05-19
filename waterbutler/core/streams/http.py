@@ -157,7 +157,12 @@ class ResponseStreamReader(BaseStream):
 
     @asyncio.coroutine
     def _read(self, size):
-        return (yield from self.response.content.read(size))
+        chunk = (yield from self.response.content.read(size))
+
+        if not chunk:
+            self.feed_eof()
+
+        return chunk
 
 
 class RequestStreamReader(BaseStream):

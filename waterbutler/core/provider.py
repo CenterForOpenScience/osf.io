@@ -7,6 +7,8 @@ import furl
 import aiohttp
 
 from waterbutler.core import exceptions
+from waterbutler.core import utils
+from waterbutler.core import streams
 
 
 def build_url(base, *segments, **query):
@@ -330,6 +332,38 @@ class BaseProvider(metaclass=abc.ABCMeta):
     @asyncio.coroutine
     def revalidate_path(self, base, path, folder=False):
         return base.child(path, folder=folder)
+
+    @asyncio.coroutine
+    def zip(self, path, **kwargs):
+        """Streams a Zip archive of the given folder
+
+        :param str path: The folder to compress
+        """
+        base_path = utils.WaterButlerPath(path)
+        if not base_path.is_dir:
+            raise exceptions.NotFoundError()
+
+        files = []
+        remaining = [(base_path, ())]  # (WaterButlerPath, ('path', 'to'))
+        while remaining:
+            name, relative_path = remaining.pop()
+            kwargs['path'] = str(name)
+            metadata = yield from self.metadata(**kwargs)
+
+            for item in metadata:
+                path = utils.WaterButlerPath(item['path'])
+                name = item.get('name', str(path))
+                if path.is_file:
+                    kw = kwargs.copy()
+                    kw['path'] = str(path)
+                    files.append((
+                        '/'.join(relative_path + (name, )),  # path
+                        (yield from self.download(**kw))  # download stream
+                    ))
+                elif path.is_dir:
+                    remaining.append((path, relative_path + (name, )))
+
+        return streams.ZipStreamReader(*files)
 
     @abc.abstractmethod
     def download(self, **kwargs):

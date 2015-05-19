@@ -1,8 +1,12 @@
 import asyncio
+import os
+import shutil
+import tempfile
 from unittest import mock
 
 from decorator import decorator
 
+import pytest
 from tornado import testing
 from tornado.platform.asyncio import AsyncIOMainLoop
 
@@ -90,3 +94,27 @@ class HandlerTestCase(testing.AsyncHTTPTestCase):
 
     def get_new_ioloop(self):
         return AsyncIOMainLoop()
+
+
+class TempFilesContext:
+    def __init__(self):
+        self._dir = tempfile.mkdtemp()
+        self.files = []
+
+    def add_file(self, filename=None):
+        _, path = tempfile.mkstemp(dir=self._dir)
+
+        if filename:
+            os.rename(path, os.path.join(self._dir, filename))
+
+        return path
+
+    def tear_down(self):
+        shutil.rmtree(self._dir)
+
+
+@pytest.yield_fixture
+def temp_files():
+    context = TempFilesContext()
+    yield context
+    context.tear_down()

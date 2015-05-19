@@ -12,6 +12,7 @@ from waterbutler.server.handlers import move
 from waterbutler.server.handlers import status
 from waterbutler.server.handlers import metadata
 from waterbutler.server.handlers import revisions
+from waterbutler.server.handlers import zip
 from waterbutler.server import settings as server_settings
 
 
@@ -24,6 +25,7 @@ def make_app(debug):
             (r'/ops/copy', copy.CopyHandler),
             (r'/ops/move', move.MoveHandler),
             (r'/revisions', revisions.RevisionHandler),
+            (r'/zip', zip.ZipHandler),
         ],
         debug=debug,
     )
