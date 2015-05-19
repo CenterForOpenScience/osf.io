@@ -16,7 +16,6 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
-from werkzeug.wsgi import DispatcherMiddleware
 
 from api.base.wsgi import application as django_app
 from framework.mongo import set_up_storage
