@@ -152,5 +152,6 @@ SWAGGER_SETTINGS = {
         <p>Some routes may have extra rules for links, especially if those links work with external services. Collections
         may have counts with them to indicate how many items are in that collection.</p>""",
         'title': 'OSF API Documentation',
-    }
+    },
+    'doc_expansion': 'list',
 }
