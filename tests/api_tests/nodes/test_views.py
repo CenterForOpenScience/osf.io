@@ -503,3 +503,75 @@ class TestNodeFilesList(OsfTestCase):
         mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+
+class TestNodeCreateUpdate(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth = (self.user.username, 'justapoorboy')
+
+    def test_creates_project_returns_proper_data(self):
+        url = '/api/v2/nodes/'
+        title = 'Cool Project'
+        description = 'A Properly Cool Project'
+        category = 'data'
+
+        res = self.app.post_json(url, {
+            'title': title,
+            'description': description,
+            'category': category,
+            'public': True,
+        }, auth=self.auth)
+        project_id = res.json['data']['id']
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], title)
+        assert_equal(res.json['data']['description'], description)
+        assert_equal(res.json['data']['category'], category)
+
+    def test_creates_project_creates_project(self):
+        url = '/api/v2/nodes/'
+        title = 'Cool Project'
+        description = 'A Properly Cool Project'
+        category = 'data'
+
+        res = self.app.post_json(url, {
+            'title': title,
+            'description': description,
+            'category': category,
+            'public': True,
+        }, auth=self.auth)
+        project_id = res.json['data']['id']
+        assert_equal(res.status_code, 201)
+        url = api_v2_url_for('nodes:node-detail', kwargs=dict(pk=project_id))
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.json['data']['title'], title)
+        assert_equal(res.json['data']['description'], description)
+        assert_equal(res.json['data']['category'], category)
+
+    def test_update_project_returns_proper_data(self):
+        url = '/api/v2/nodes/'
+        title = 'Cool Project'
+        new_title = 'Super Cool Project'
+        description = 'A Properly Cool Project'
+        new_description = 'An even cooler project'
+        category = 'data'
+        new_category = 'project'
+
+        project = self.project = ProjectFactory(
+            title=title, description=description, category=category, is_public=True, creator=self.user)
+
+        url = api_v2_url_for('nodes:node-detail', kwargs=dict(pk=project._id))
+        res = self.app.put_json(url, {
+            'title': new_title,
+            'description': new_description,
+            'category': new_category,
+            'public': True,
+        }, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['title'], new_title)
+        assert_equal(res.json['data']['description'], new_description)
+        assert_equal(res.json['data']['category'], new_category)
