@@ -18,6 +18,7 @@ from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
 from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
+from framework.archiver import listeners  # noqa
 
 import website.models
 from website.routes import make_url_map

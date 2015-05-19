@@ -23,7 +23,6 @@ def archive_node(src, dst, user):
     link_archive_provider(dst, user)
     enqueue_task(archive.si(src._id, dst._id, user._id))
 
-
 @project_signals.archive_callback.connect
 def archive_callback(dst):
     """Blinker listener for updates to the archive task. When no tasks are

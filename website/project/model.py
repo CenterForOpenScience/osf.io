@@ -1650,7 +1650,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         :template: Template name
         :data: Form data
-        :send_signals: For testing only-- temporarily disables sendinging blinker signals
+        :send_signals: For testing only-- temporarily disables sending blinker signals
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):

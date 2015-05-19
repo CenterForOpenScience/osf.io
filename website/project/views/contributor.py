@@ -533,8 +533,7 @@ def claim_user_registered(auth, node, **kwargs):
         logout_url = web_url_for('auth_logout', redirect_url=request.url)
         data = {
             'message_short': 'Already a contributor',
-            'message_long': 'The logged-in user is already a contributor to this project. Would you like to <a href="{}">log out</a>?'
-                .format(logout_url)
+            'message_long': 'The logged-in user is already a contributor to this project. Would you like to <a href="{}">log out</a>?'.format(logout_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']

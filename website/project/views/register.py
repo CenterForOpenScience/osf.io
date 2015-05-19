@@ -158,7 +158,6 @@ def node_register_template_page_post(auth, node, **kwargs):
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
-
     return {
         'status': 'initiated',
         'result': register.url,
