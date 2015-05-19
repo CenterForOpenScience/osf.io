@@ -8,6 +8,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var URI = require('URIjs');
+var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 
 var $osf = require('js/osfHelpers');
@@ -21,6 +22,43 @@ var tbOptions;
 var noop = function () { };
 
 var tempCounter = 1;
+
+var STATE_MAP = {
+    upload: {
+        display: 'Upload pending...'
+    },
+    copy: {
+        display: 'Copying '
+    },
+    delete: {
+        display: 'Deleting '
+    },
+    move: {
+        display: 'Moving '
+    },
+    rename: {
+        display: 'Renaming '
+    }
+};
+
+
+var OPERATIONS = {
+    RENAME: {
+        status: 'rename',
+        verb: 'Rename',
+        passed: 'renamed',
+    },
+    MOVE: {
+        status: 'move',
+        verb: 'Move',
+        passed: 'moved',
+    },
+    COPY: {
+        status: 'copy',
+        verb: 'Copy',
+        passed: 'copied',
+    }
+};
 
 var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
     'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
@@ -191,8 +229,7 @@ function resolveconfigOption(item, option, args) {
  */
 var inheritedFields = ['nodeId', 'nodeUrl', 'nodeApiUrl', 'permissions', 'provider', 'accept'];
 function inheritFromParent(item, parent, fields) {
-    fields = fields || inheritedFields;
-    fields.forEach(function(field) {
+    inheritedFields.concat(fields || []).forEach(function(field) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 }
@@ -234,6 +271,126 @@ function _fangornToggleCheck(item) {
     }
     item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
     return false;
+}
+
+function checkConflicts(tb, item, folder, cb) {
+    for(var i = 0; i < folder.children.length; i++) {
+        var child = folder.children[i];
+        if (child.data.name === item.data.name && child.id !== item.id) {
+            tb.modal.update(m('', [
+                m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
+                m('p', 'Do you want to replace it?')
+            ]), m('', [
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
+                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+            ]));
+            return;
+        }
+    }
+    cb('replace');
+}
+
+function doItemOp(operation, to, from, rename, conflict) {
+    var tb = this;
+    tb.modal.dismiss();
+    var ogParent = from.parentID;
+    if (to.id === ogParent && (!rename || rename === from.data.name)) return;
+
+    if (operation === OPERATIONS.COPY) {
+        from = tb.createItem($.extend(true, {}, from.data), to.id);
+    } else {
+        from.move(to.id);
+    }
+
+    from.data.status = operation.status;
+
+    tb.redraw();
+
+    $.ajax({
+        type: 'POST',
+        beforeSend: $osf.setXHRAuthorization,
+        url: operation === OPERATIONS.COPY ? waterbutler.copyUrl() : waterbutler.moveUrl(),
+        headers: {
+            'Content-Type': 'Application/json'
+        },
+        data: JSON.stringify({
+            'rename': rename,
+            'conflict': conflict,
+            'source': waterbutler.toJsonBlob(from),
+            'destination': waterbutler.toJsonBlob(to),
+        })
+    }).done(function(resp, _, xhr) {
+        if (xhr.status === 202) {
+            var mithrilContent = m('div', [
+                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
+                m('p', 'We\'ll send you an email when it has finished.')
+            ]);
+            var mithrilButtons = m('div', [
+                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
+            ]);
+            tb.modal.update(mithrilContent, mithrilButtons);
+            return;
+        }
+        from.data = resp;
+        from.data.status = undefined;
+        from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
+
+        if (operation === OPERATIONS.COPY && xhr.status === 200) {
+            to.children.forEach(function(child) {
+                if (child.data.name === from.data.name && child.id !== from.id) {
+                    child.removeSelf();
+                }
+            });
+        }
+
+        inheritFromParent(from, from.parent());
+
+        if (from.data.kind === 'folder' && from.data.children) {
+            from.children = [];
+            var child;
+            from.data.children.forEach(function(item) {
+                child = tb.buildTree(item, from);
+                inheritFromParent(child, from);
+                from.add(child);
+            });
+            from.open = true;
+            from.load = true;
+        }
+
+        tb.redraw();
+    }).fail(function(xhr) {
+        if (operation === OPERATIONS.COPY) {
+            from.removeSelf();
+        } else {
+            from.move(ogParent);
+            from.data.status = undefined;
+        }
+
+        var message;
+
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+        } else {
+            message = 'Please refresh the page or ' +
+                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'problem persists.';
+        }
+
+        $osf.growl(operation.verb + ' failed.', message);
+
+        Raven.captureMessage('Failed to move or copy file', {
+            xhr: xhr,
+            requestData: {
+                rename: rename,
+                conflict: conflict,
+                source: waterbutler.toJsonBlob(from),
+                destination: waterbutler.toJsonBlob(to),
+            }
+        });
+
+        tb.redraw();
+    });
 }
 
 /**
@@ -476,7 +633,7 @@ function _fangornDropzoneError(treebeard, file, message) {
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
-    var parent = file.treebeardParent || tb.dropzoneItemCache;
+    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache;
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
     var item;
     var child;
@@ -487,12 +644,11 @@ function _fangornDropzoneError(treebeard, file, message) {
             continue;
         }
         if (child.data.tmpID === file.tmpID) {
-            item = child;
-            tb.deleteNode(parent.id, item.id);
+            child.removeSelf();
         }
     }
     $osf.growl('Error', msgText);
-    tb.options.uploadInProgress = false;
+    treebeard.options.uploadInProgress = false;
 }
 
 /**
@@ -547,14 +703,21 @@ function _createFolder(event, dismissCallback, helpText) {
         helpText('Folder name contains illegal characters.');
         return;
     }
+
+    var extra = {};
     var path = (parent.data.path || '/') + val + '/';
+
+    if (parent.data.provider === 'github') {
+        extra.branch = parent.data.branch;
+    }
 
     m.request({
         method: 'POST',
         background: true,
+        xhrconfig: $osf.setXHRAuthorization,
         url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
-        inheritFromParent({data: item}, parent);
+        inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
         _fangornOrderFolder.call(tb, parent);
         item.notify.update('New folder created!', 'success', undefined, 1000);
@@ -846,17 +1009,25 @@ function _fangornResolveRows(item) {
     }
 
     if(item.data.tmpID){
-        return [
-        {
+        return [{
             data : '',  // Data field name
             css : 't-a-c',
             custom : function(){ return m('span.text-muted', [m('span', cancelUploadTemplate.call(this, item)), m('span', item.data.name.slice(0,25) + '... : ' + 'Upload pending.')]); }
-        },
-        {
+        }, {
             data : '',  // Data field name
             custom : function(){ return '';}
-        }
-        ];
+        }];
+    }
+
+    if(item.data.status) {
+        return [{
+            data : '',  // Data field name
+            css : 't-a-c',
+            custom : function(){ return m('span.text-muted', [STATE_MAP[item.data.status].display, item.data.name, '...']); }
+        }, {
+            data : '',  // Data field name
+            custom : function(){ return '';}
+        }];
     }
     if (item.parentID) {
         item.data.permissions = item.data.permissions || item.parent().data.permissions;
@@ -1010,6 +1181,14 @@ function scrollToFile(fileID) {
     }
 }
 
+function _renameEvent () {
+    var tb = this;
+    var item = tb.multiselected()[0];
+    var val = $.trim($('#renameInput').val());
+    var folder = item.parent();
+    checkConflicts(tb, item, folder, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
+    tb.toolbarMode(toolbarModes.DEFAULT);
+}
 var toolbarModes = {
     'DEFAULT' : 'bar',
     'SEARCH' : 'search',
@@ -1152,6 +1331,18 @@ var FGItemButtons = {
 
             }
         }
+        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function() {
+                        mode(toolbarModes.RENAME);
+                    },
+                    tooltip: 'Change the name of the item',
+                    icon: 'fa fa-font',
+                    className : 'text-info'
+                }, 'Rename')
+            );
+        }
         return m('span', rowButtons);
     }
 };
@@ -1170,6 +1361,7 @@ var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
+        self.tb.inputValue = m.prop('');
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
@@ -1219,6 +1411,38 @@ var FGToolbar = {
                             icon : 'fa fa-plus',
                             className : 'text-success'
                         }, 'Create'),
+                        dismissIcon
+                    ]
+                )
+            )
+        ];
+        templates[toolbarModes.RENAME] = [
+            m('.col-xs-9',
+                m.component(FGInput, {
+                    onkeypress: function (event) {
+                        ctrl.tb.inputValue($(event.target).val());
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            _renameEvent.call(ctrl.tb);
+                        }
+                    },
+                    id : 'renameInput',
+                    helpTextId : 'renameHelpText',
+                    placeholder : null,
+                    value : ctrl.tb.inputValue(),
+                    tooltip: 'Change the name of the item here'
+                }, ctrl.helpText())
+            ),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right',
+                    [
+                        m.component(FGButton, {
+                            onclick: function () {
+                                _renameEvent.call(ctrl.tb);
+                            },
+                            tooltip: 'Rename item',
+                            icon : 'fa fa-pencil',
+                            className : 'text-info'
+                        }, 'Rename'),
                         dismissIcon
                     ]
                 )
@@ -1296,7 +1520,7 @@ var FGToolbar = {
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12',m('.pull-right', [finalRowButtons, generalButtons]));
+        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons, generalButtons]));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1313,11 +1537,12 @@ var FGToolbar = {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRowsNotInParent(rows) {
-    if (this.multiselected().length < 2) {
-        return this.multiselected();
+    var tb = this;
+    if (tb.multiselected().length < 2) {
+        return tb.multiselected();
     }
     var i, newRows = [],
-        originalRow = this.find(this.multiselected()[0].id),
+        originalRow = tb.find(tb.multiselected()[0].id),
         originalParent,
         currentItem;
     function changeColor() { $(this).css('background-color', ''); }
@@ -1333,8 +1558,8 @@ function filterRowsNotInParent(rows) {
             }
         }
     }
-    this.multiselected(newRows);
-    this.highlightMultiselect();
+    tb.multiselected(newRows);
+    tb.highlightMultiselect();
     return newRows;
 }
 
@@ -1385,6 +1610,7 @@ function _openParentFolders (item) {
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
+    tb.inputValue(tb.multiselected()[0].data.name);
     m.redraw();
     reapplyTooltips();
 }
@@ -1464,6 +1690,19 @@ function _fangornOver(event, ui) {
  */
 function _dropLogic(event, items, folder) {
     var tb = this;
+
+    if (items.length < 1) { return; }
+    if (items.indexOf(folder) > -1) { return; }
+
+    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
+
+    if (!folder.open) {
+        return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
+    }
+
+    $.each(items, function(index, item) {
+        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
+    });
 }
 
 /**
@@ -1481,6 +1720,15 @@ function _dragLogic(event, items, ui) {
         isSelf = false,
         isParent  = false,
         dragGhost = $('.tb-drag-ghost');
+
+    if (folder.data.status) {
+        copyMode = 'forbidden';
+    }
+
+    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
+        copyMode = 'forbidden';
+    }
+
     items.forEach(function (item) {
         if (!isSelf) {
             isSelf = item.id === folder.id;
@@ -1573,7 +1821,7 @@ tbOptions = {
         return undefined;
     },
     showFilter : true,     // Gives the option to filter by showing the filter box.
-    allowMove : false,       // Turn moving on or off.
+    allowMove : true,       // Turn moving on or off.
     hoverClass : 'fangorn-hover',
     togglecheck : _fangornToggleCheck,
     sortButtonSelector : {
@@ -1592,8 +1840,8 @@ tbOptions = {
         });
 
         $(window).on('beforeunload', function() {
-            if (tb.dropzone && tb.dropzone.getUploadingFiles().length) {
-              return 'You have pending uploads, if you leave this page they may not complete.';
+            if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
+                return 'You have pending uploads, if you leave this page they may not complete.';
             }
         });
         if(tb.options.placement === 'project-files') {

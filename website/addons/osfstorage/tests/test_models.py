@@ -259,6 +259,78 @@ class TestOsfstorageFileNode(StorageTestCase):
         child = self.node_settings.root_node.append_folder('Cloud').append_file('Carp')
         assert_equals('/Cloud/Carp', child.materialized_path())
 
+    def test_copy(self):
+        to_copy = self.node_settings.root_node.append_file('Carp')
+        copy_to = self.node_settings.root_node.append_folder('Cloud')
+
+        copied = to_copy.copy_under(copy_to)
+
+        assert_not_equal(copied, to_copy)
+        assert_equal(copied.parent, copy_to)
+        assert_equal(to_copy.parent, self.node_settings.root_node)
+
+    def test_copy_rename(self):
+        to_copy = self.node_settings.root_node.append_file('Carp')
+        copy_to = self.node_settings.root_node.append_folder('Cloud')
+
+        copied = to_copy.copy_under(copy_to, name='But')
+
+        assert_equal(copied.name, 'But')
+        assert_not_equal(copied, to_copy)
+        assert_equal(to_copy.name, 'Carp')
+        assert_equal(copied.parent, copy_to)
+        assert_equal(to_copy.parent, self.node_settings.root_node)
+
+    def test_move(self):
+        to_move = self.node_settings.root_node.append_file('Carp')
+        move_to = self.node_settings.root_node.append_folder('Cloud')
+
+        moved = to_move.move_under(move_to)
+
+        assert_equal(to_move, moved)
+        assert_equal(moved.parent, move_to)
+
+    def test_move_and_rename(self):
+        to_move = self.node_settings.root_node.append_file('Carp')
+        move_to = self.node_settings.root_node.append_folder('Cloud')
+
+        moved = to_move.move_under(move_to, name='Tuna')
+
+        assert_equal(to_move, moved)
+        assert_equal(to_move.name, 'Tuna')
+        assert_equal(moved.parent, move_to)
+
+    @unittest.skip
+    def test_move_folder(self):
+        pass
+
+    @unittest.skip
+    def test_move_folder_and_rename(self):
+        pass
+
+    @unittest.skip
+    def test_rename_folder(self):
+        pass
+
+    @unittest.skip
+    def test_rename_file(self):
+        pass
+
+    @unittest.skip
+    def test_move_across_nodes(self):
+        pass
+
+    @unittest.skip
+    def test_move_folder_across_nodes(self):
+        pass
+
+    @unittest.skip
+    def test_copy_across_nodes(self):
+        pass
+
+    @unittest.skip
+    def test_copy_folder_across_nodes(self):
+        pass
 
 class TestNodeSettingsModel(StorageTestCase):
 
@@ -373,3 +445,4 @@ class TestOsfStorageFileVersion(OsfTestCase):
         version.reload()
         assert_in('archive', version.metadata)
         assert_equal(version.metadata['archive'], 'glacier')
+
