@@ -5,7 +5,7 @@ from waterbutler.server import settings
 from waterbutler.server.handlers import core
 
 
-class ZipHandler(core.BaseHandler):
+class ZipHandler(core.BaseProviderHandler):
 
     ACTION_MAP = {
         'GET': 'zip',
