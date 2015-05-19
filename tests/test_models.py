@@ -2466,12 +2466,12 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(self.project.is_embargoed)
+        assert_false(self.project.embargo_end_date)
         assert_true(self.project.pending_embargo)
 
         self.project.set_privacy('public', auth=self.consolidate_auth)
         self.project.save()
-        assert_false(self.project.is_embargoed)
+        assert_false(self.project.embargo_end_date)
         assert_false(self.project.pending_embargo)
         assert_equal(self.project.embargo.state, 'cancelled')
         assert_true(self.project.is_public)
@@ -2486,17 +2486,17 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(self.project.is_embargoed)
+        assert_false(self.project.embargo_end_date)
         assert_true(self.project.pending_embargo)
 
         approval_token = self.project.embargo.approval_state[self.user._id]['approval_token']
         self.project.embargo.approve_embargo(self.user, approval_token)
-        assert_true(self.project.is_embargoed)
+        assert_true(self.project.embargo_end_date)
         assert_false(self.project.pending_embargo)
 
         self.project.set_privacy('public', auth=self.consolidate_auth)
         self.project.save()
-        assert_false(self.project.is_embargoed)
+        assert_false(self.project.embargo_end_date)
         assert_false(self.project.pending_embargo)
         assert_equal(self.project.embargo.state, 'cancelled')
         assert_true(self.project.is_public)

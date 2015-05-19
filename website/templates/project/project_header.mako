@@ -95,8 +95,8 @@
     <div class="alert alert-info">This ${node['node_type']} is currently pending entering into an embargoed state.</div>
 % endif
 
-% if node['is_registration'] and node['is_embargoed']:
-    <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['is_embargoed'] }, passes or an admin manually makes it public.</div>
+% if node['is_registration'] and node['embargo_end_date']:
+    <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }, passes or an admin manually makes it public.</div>
 % endif
 
 % if node['anonymous'] and user['is_contributor']:

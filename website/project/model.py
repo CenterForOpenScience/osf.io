@@ -683,10 +683,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return getattr(self.retraction, 'pending_retraction', False)
 
     @property
-    def is_embargoed(self):
+    def embargo_end_date(self):
         if self.embargo is None and self.parent_node:
-            return self.parent_node.is_embargoed
-        return getattr(self.embargo, 'is_embargoed', False)
+            return self.parent_node.embargo_end_date
+        return getattr(self.embargo, 'embargo_end_date', False)
 
     @property
     def pending_embargo(self):
@@ -696,6 +696,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def pending_registration(self):
+        if self.embargo is None and self.parent_node:
+            return self.parent_node.pending_registration
         return getattr(self.embargo, 'pending_registration', False)
 
     @property
@@ -2340,7 +2342,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         """
         if permissions == 'public' and not self.is_public:
-            if self.is_registration and (self.is_embargoed or self.pending_embargo):
+            if self.is_registration and (self.embargo_end_date or self.pending_embargo):
                 self.embargo.state = 'cancelled'
                 self.embargo.save()
             self.is_public = True
@@ -2824,7 +2826,7 @@ class Retraction(StoredObject):
             self.state = self.RETRACTED
             # Remove any embargoes associated with the registration
             parent_registration = Node.find_one(Q('retraction', 'eq', self))
-            if parent_registration.is_embargoed or parent_registration.pending_embargo:
+            if parent_registration.embargo_end_date or parent_registration.pending_embargo:
                 parent_registration.embargo.state = self.CANCELLED
                 parent_registration.embargo.save()
 
@@ -2873,7 +2875,7 @@ class Embargo(StoredObject):
         )
 
     @property
-    def is_embargoed(self):
+    def embargo_end_date(self):
         if self.state == 'active':
             return self.end_date.strftime("%A, %b. %d, %Y")  # e.g. 'Friday, Jan. 01, 2016'
         return False

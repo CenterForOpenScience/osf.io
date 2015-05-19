@@ -124,7 +124,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         with assert_raises(InvalidEmbargoApprovalToken):
             self.registration.embargo.approve_embargo(self.user, invalid_approval_token)
         assert_true(self.registration.pending_embargo)
-        assert_false(self.registration.is_embargoed)
+        assert_false(self.registration.embargo_end_date)
 
     def test_non_admin_approval_token_raises_PermissionsError(self):
         non_admin = UserFactory()
@@ -150,7 +150,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(self.registration.is_embargoed)
+        assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
 
     def test_one_approval_with_two_admins_stays_pending(self):
@@ -173,7 +173,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         # Second admin approves
         approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         self.registration.embargo.approve_embargo(admin2, approval_token)
-        assert_true(self.registration.is_embargoed)
+        assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.embargo.approval_state.values()])
         assert_equal(num_of_approvals, 2)
@@ -189,7 +189,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         with assert_raises(InvalidEmbargoDisapprovalToken):
             self.registration.embargo.disapprove_embargo(self.user, fake.sentence())
         assert_true(self.registration.pending_embargo)
-        assert_false(self.registration.is_embargoed)
+        assert_false(self.registration.embargo_end_date)
 
     def test_non_admin_disapproval_token_raises_PermissionsError(self):
         non_admin = UserFactory()
@@ -217,7 +217,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
         assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
         assert_false(self.registration.pending_embargo)
-        assert_false(self.registration.is_embargoed)
+        assert_false(self.registration.embargo_end_date)
 
     def test_cancelling_embargo_deletes_parent_registration(self):
         self.registration.embargo_registration(
@@ -306,12 +306,12 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
         # Approve parent registration's embargo
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(self.registration.embargo.is_embargoed)
+        assert_true(self.registration.embargo.embargo_end_date)
 
         # Ensure descendant nodes are in embargo
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
-            assert_true(node.is_embargoed)
+            assert_true(node.embargo_end_date)
 
     def test_disapproval_cancels_embargo_on_descendant_nodes(self):
         # Initiate embargo on parent registration
@@ -331,14 +331,14 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
         assert_false(self.registration.pending_embargo)
-        assert_false(self.registration.is_embargoed)
+        assert_false(self.registration.embargo_end_date)
         assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
 
         # Ensure descendant nodes' embargoes are cancelled
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
             assert_false(node.pending_embargo)
-            assert_false(node.is_embargoed)
+            assert_false(node.embargo_end_date)
 
 
 class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
@@ -434,7 +434,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         self.registration.embargo.reload()
-        assert_true(self.registration.is_embargoed)
+        assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
         assert_equal(res.status_code, 302)
 
@@ -509,7 +509,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         self.registration.embargo.reload()
         assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
-        assert_false(self.registration.is_embargoed)
+        assert_false(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
         assert_equal(res.status_code, 302)
 
