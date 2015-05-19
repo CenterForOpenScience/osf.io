@@ -51,7 +51,7 @@ class ZipLocalFileData(BaseStream):
     def _read(self, n=-1, *args, **kwargs):
         ret = self._buffer
 
-        while (n==-1 or len(ret) < n) and not self.stream.at_eof():
+        while (n == -1 or len(ret) < n) and not self.stream.at_eof():
             chunk = yield from self.stream.read(n, *args, **kwargs)
 
             # Update file info
