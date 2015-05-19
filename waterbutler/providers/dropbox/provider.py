@@ -84,6 +84,10 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def intra_move(self, dest_provider, src_path, dest_path):
+        if str(dest_path).lower() == str(src_path).lower():
+            # Dropbox does not support changing the casing in a file name
+            raise exceptions.InvalidPathError('In Dropbox to change case, add or subtract other characters.')
+
         try:
             resp = yield from self.make_request(
                 'POST',
