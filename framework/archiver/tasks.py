@@ -11,7 +11,6 @@ from framework.archiver import (
 )
 from framework.archiver.exceptions import ArchiverSizeExceeded
 
-from website.addons.base import StorageAddonBase
 from website.project.model import Node
 from website.project import signals as project_signals
 from website.mails import send_mail
@@ -95,7 +94,7 @@ def stat_node(src_pk, dst_pk, user_pk):
     values of a #stat_addon
     """
     src = Node.load(src_pk)
-    return group(
+    subtasks = group(
         stat_addon.si(
             addon.config.short_name,
             src_pk,
@@ -103,8 +102,9 @@ def stat_node(src_pk, dst_pk, user_pk):
             user_pk,
         )
         for addon in src.get_addons()
-        if isinstance(addon, StorageAddonBase)
-    ).apply_async()
+        if addon.config.short_name in settings.ADDONS_ARCHIVABLE
+    )
+    return subtasks.apply_async()
 
 @celery_app.task
 def make_copy_request(dst_pk, url, data):

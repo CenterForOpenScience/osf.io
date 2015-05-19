@@ -3,6 +3,7 @@ import celery
 from faker import Faker
 import datetime
 from modularodm import Q
+import requests
 
 import mock  # noqa
 from nose.tools import *  # noqa PEP8 asserts
@@ -67,6 +68,7 @@ FILE_TREE = {
 class ArchiverTestCase(OsfTestCase):
     def setUp(self):
         super(ArchiverTestCase, self).setUp()
+        handlers.celery_before_request()
         self.user = factories.UserFactory()
         self.auth = Auth(user=self.user)
         self.src = factories.NodeFactory(creator=self.user)
@@ -197,15 +199,10 @@ class TestArchiverTasks(ArchiverTestCase):
 
     def test_archive_addon(self):
         src_pk, dst_pk, user_pk = self.pks
-        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
-            mock_file_tree.return_value = FILE_TREE
-            result = AggregateStatResult(
-                src_pk,
-                self.src.title,
-                targets=[result.result for result in stat_node.apply(args=(src_pk, dst_pk, user_pk)).result]
-            )
+        result = stat_file_tree('dropbox', FILE_TREE, self.user),
         with mock.patch.object(make_copy_request, 'si') as mock_make_copy_request:
-            archive_addon('dropbox', src_pk, dst_pk, user_pk, result.targets.values()[0])
+            with mock.patch.object(requests, 'post'):
+                archive_addon('dropbox', src_pk, dst_pk, user_pk, result)
         assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_PENDING)
         cookie = self.user.get_or_create_cookie()
         assert(mock_make_copy_request.called_with(
@@ -373,11 +370,11 @@ class TestArchiverUtils(ArchiverTestCase):
     def test_delete_registration_tree(self):
         proj = factories.NodeFactory()
         factories.NodeFactory(parent=proj)
-        factories.NodeFactory(parent=proj)
+        comp2 = factories.NodeFactory(parent=proj)
         factories.NodeFactory(parent=comp2)
         reg = factories.RegistrationFactory(project=proj, send_signals=False)
         reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
-        scripts.delete_registration_tree(reg)
+        archiver_utils.delete_registration_tree(reg)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
 
 
@@ -386,14 +383,14 @@ class TestArchiverListeners(ArchiverTestCase):
     def test_archive_node(self):
         with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
             listeners.archive_node(self.src, self.dst, self.user)
-        archive_signature = archive(self.src, self.dst. self.user)
+        archive_signature = archive.si(self.src._id, self.dst._id, self.user._id)
         assert(mock_queue.called_with(archive_signature))
 
     def test_archive_node_links_unlinked(self):
         self.dst.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
             listeners.archive_node(self.src, self.dst, self.user)
-        archive_signature = archive(self.src, self.dst. self.user)
+        archive_signature = archive.si(self.src._id, self.dst._id, self.user._id)
         assert(mock_queue.called_with(archive_signature))
         assert_true(archiver_utils.has_archive_provider(self.dst, self.user))
 

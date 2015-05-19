@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import mock
 from website import mailchimp_utils
 from tests.base import OsfTestCase
@@ -7,8 +6,13 @@ from nose.tools import *  # noqa; PEP8 asserts
 from tests.factories import UserFactory
 import mailchimp
 
+from framework.tasks import handlers
 
 class TestMailChimpHelpers(OsfTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestMailChimpHelpers, self).__init__(*args, **kwargs)        
+        handlers.celery_before_request()
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_get_list_id_from_name(self, mock_get_mailchimp_api):
