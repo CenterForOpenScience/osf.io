@@ -11,6 +11,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from framework.mongo.utils import to_mongo_key
 
 from framework.auth import exceptions as auth_exc
+from framework.auth import authenticate
 from framework.auth.core import Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -126,7 +127,7 @@ class TestAUser(OsfTestCase):
 
     def setUp(self):
         super(TestAUser, self).setUp()
-        self.user = UserFactory()
+        self.user = AuthUserFactory()
         self.user.set_password('science')
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -153,22 +154,6 @@ class TestAUser(OsfTestCase):
         # Goes to homepage
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
-
-    def test_can_log_in(self):
-        # Log in and out
-        self._login(self.user.username, 'science')
-        self.app.get('/logout/')
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Fills out login info
-        form = res.forms['signInForm']  # Get the form from its ID
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # submits
-        res = form.submit().maybe_follow()
-        # Sees dashboard with projects and watched projects
-        assert_in('Projects', res)
-        assert_in('Watchlist', res)
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_user_with_two_factor_redirected_to_two_factor_page(self, mock_push_message):
@@ -258,8 +243,9 @@ class TestAUser(OsfTestCase):
         assert_equal(res.request.path, web_url_for('dashboard'))
 
     def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
-        res = self._login(self.user.username, 'science')
-        res = self.app.get('/login/').follow()
+        res = self.app.get('/login/', auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        res = res.follow(auth=self.user.auth)
         assert_equal(res.request.path, '/dashboard/')
 
     def test_sees_projects_in_her_dashboard(self):
@@ -268,17 +254,12 @@ class TestAUser(OsfTestCase):
         project.add_contributor(self.user)
         project.save()
         # Goes to homepage, already logged in
-        res = self._login(self.user.username, 'science')
-        res = self.app.get('/').maybe_follow()
+        res = self.app.get('/', auth=self.user.auth).follow(auth=self.user.auth)
         # Clicks Dashboard link in navbar
-        res = res.click('Dashboard', index=0)
+        res = res.click('My Dashboard', index=0, auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
-        # The project title is listed
-        # TODO: (bgeiger) figure out how to make this assertion work with hgrid view
-        #assert_in(project.title, res)
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
-        res = self._login(self.user.username, 'science')
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
         assert_not_in('OSF Storage', res)
 
@@ -688,83 +669,6 @@ class TestMergingAccounts(OsfTestCase):
         self.dupe = UserFactory.build()
         self.dupe.set_password('example')
         self.dupe.save()
-
-    def _login(self, username, password):
-        '''Log in a user via at the login page.'''
-        res = self.app.get(web_url_for('auth_login')).maybe_follow()
-        # Fills out login info
-        form = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'science'
-        # submits
-        res = form.submit().maybe_follow()
-        return res
-
-    @unittest.skip('Disabled for now')
-    def test_can_merge_accounts(self):
-        res = self._login(self.user.username, 'science')
-        # Goes to settings
-        res = self.app.get('/settings/').maybe_follow()
-        # Clicks merge link
-        res = res.click('Merge with duplicate account')
-        # Fills out form
-        form = res.forms['mergeAccountsForm']
-        form['merged_username'] = self.dupe.username
-        form['merged_password'] = 'example'
-        form['user_password'] = 'science'
-        # Submits
-        res = form.submit().maybe_follow()
-        # Back at the settings page
-        assert_equal(res.request.path, '/settings/')
-        # Sees a flash message
-        assert_in(
-            'Successfully merged {0} with this account'.format(
-                self.dupe.username
-            ),
-            res
-        )
-        # User is merged in database
-        self.dupe.reload()
-        assert_true(self.dupe.is_merged)
-
-    def test_sees_error_message_when_merged_password_is_wrong(self):
-        # User logs in
-        res = self._login(self.user.username, 'science')
-        res = self.app.get('/user/merge/')
-        # Fills out form
-        form = res.forms['mergeAccountsForm']
-        form['merged_username'] = self.dupe.username
-        form['merged_password'] = 'WRONG'
-        form['user_password'] = 'science'
-        # Submits
-        res = form.submit().maybe_follow()
-        # Sees flash message
-        assert_in(
-            'Could not find that user. Please check the username and '
-            'password.',
-            res
-        )
-
-    @unittest.skip('Disabled for now')
-    def test_sees_error_message_when_own_password_is_wrong(self):
-        # User logs in
-        res = self._login(self.user.username, 'science')
-        # Goes to settings
-        res = self.app.get('/settings/').maybe_follow()
-        # Clicks merge link
-        res = res.click('Merge with duplicate account')
-        # Fills out form
-        form = res.forms['mergeAccountsForm']
-        form['merged_username'] = self.dupe.username
-        form['merged_password'] = 'example'
-        form['user_password'] = 'BAD'
-        # Submits
-        res = form.submit().maybe_follow()
-        # Sees flash message
-        assert_in(
-            'Could not authenticate. Please check your username and password.',
-            res
-        )
 
     def test_merged_user_is_not_shown_as_a_contributor(self):
         project = ProjectFactory(is_public=True)

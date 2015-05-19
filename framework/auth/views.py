@@ -15,9 +15,9 @@ from framework.auth import exceptions
 from framework.auth.cas import CasClient
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
-from framework.auth import (login, logout, get_user, DuplicateEmailError, verify_two_factor)
+from framework.auth import (logout, get_user, DuplicateEmailError, verify_two_factor)
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
+from framework.auth.forms import (MergeAccountForm, RegistrationForm,
         ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
 from framework.sessions import session
 
@@ -107,7 +107,7 @@ def forgot_password_get(*args, **kwargs):
 
 # TODO: Rewrite async
 @collect_auth
-def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs):
+def auth_login(auth, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
     login form passsed; else send forgot password email.
 
@@ -120,23 +120,6 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
             return redirect(web_url_for('dashboard'))
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
-    direct_call = registration_form or forgot_password_form
-    if request.method == 'POST' and not direct_call:
-        form = SignInForm(request.form)
-        if form.validate():
-            try:
-                # session.data.update({'next_url': request.args.get('next')})
-                return login(form.username.data, form.password.data)
-            except exceptions.LoginDisabledError:
-                status.push_status_message(language.DISABLED, 'error')
-            except exceptions.LoginNotAllowedError:
-                status.push_status_message(language.UNCONFIRMED, 'warning')
-                # Don't go anywhere
-                return {}
-            except exceptions.PasswordIncorrectError:
-                status.push_status_message(language.LOGIN_FAILED)
-        forms.push_errors_to_status(form.errors)
-
     if kwargs.get('first', False):
         status.push_status_message('You may now log in')
 
@@ -332,18 +315,18 @@ def auth_register_post():
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))
-            return auth_login(registration_form=form)
+            return auth_login()
         if user:
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=user.username)
                 message = language.REGISTRATION_SUCCESS.format(email=user.username)
                 status.push_status_message(message, 'success')
-                return auth_login(registration_form=form)
+                return auth_login()
             else:
                 return redirect('/login/first/')
     else:
         forms.push_errors_to_status(form.errors)
-        return auth_login(registration_form=form)
+        return auth_login()
 
 
 def resend_confirmation():
