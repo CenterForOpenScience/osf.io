@@ -339,31 +339,28 @@ class BaseProvider(metaclass=abc.ABCMeta):
 
         :param str path: The folder to compress
         """
-        base_path = utils.WaterButlerPath(path)
-        if not base_path.is_dir:
-            raise exceptions.NotFoundError()
+        names, coros, remaining = [], [], [path]
 
-        files = []
-        remaining = [(base_path, ())]  # (WaterButlerPath, ('path', 'to'))
         while remaining:
-            name, relative_path = remaining.pop()
-            kwargs['path'] = str(name)
-            metadata = yield from self.metadata(**kwargs)
+            path = remaining.pop()
+            metadata = yield from self.metadata(path)
 
             for item in metadata:
-                path = utils.WaterButlerPath(item['path'])
-                name = item.get('name', str(path))
-                if path.is_file:
-                    kw = kwargs.copy()
-                    kw['path'] = str(path)
-                    files.append((
-                        '/'.join(relative_path + (name, )),  # path
-                        (yield from self.download(**kw))  # download stream
-                    ))
-                elif path.is_dir:
-                    remaining.append((path, relative_path + (name, )))
+                current_path = yield from self.revalidate_path(
+                    path,
+                    item['name'],
+                    folder=item['kind'] == 'folder'
+                )
+                if current_path.is_file:
+                    names.append(current_path.path)
+                    coros.append(self.download(current_path))
+                else:
+                    remaining.append(current_path)
 
-        return streams.ZipStreamReader(*files)
+        return streams.ZipStreamReader(*(
+            (name, stream) for name, stream in
+            zip(names, (yield from asyncio.gather(*coros)))
+        ))
 
     @abc.abstractmethod
     def download(self, **kwargs):
