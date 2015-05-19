@@ -97,8 +97,8 @@ class BoxProvider(provider.BaseProvider):
                     (x['type'] == 'folder') == folder
                 )
             )
+            name = path  # Use path over x['name'] because of casing issues
             _id = item['id']
-            name = item['name']
             folder = item['type'] == 'folder'
         except StopIteration:
             _id = None
@@ -139,7 +139,7 @@ class BoxProvider(provider.BaseProvider):
         return self._serialize_item(data, dest_path), dest_path.identifier is None
 
     def intra_move(self, dest_provider, src_path, dest_path):
-        if dest_path.identifier is not None:
+        if dest_path.identifier is not None and str(dest_path).lower() != str(src_path).lower():
             yield from dest_provider.delete(dest_path)
 
         resp = yield from self.make_request(
