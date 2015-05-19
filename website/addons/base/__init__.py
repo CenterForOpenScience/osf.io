@@ -259,6 +259,14 @@ class GuidFile(GuidStoredObject):
             raise AttributeError('No attribute name')
 
     @property
+    def materialized(self):
+        try:
+            return self._metadata_cache['materialized']
+        except (TypeError, KeyError):
+            # If materialized is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute materialized')
+
+    @property
     def file_name(self):
         if self.revision:
             return '{0}_{1}.html'.format(self._id, self.revision)
