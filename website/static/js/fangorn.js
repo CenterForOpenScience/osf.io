@@ -469,6 +469,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
 function _fangornSending(treebeard, file, xhr, formData) {
     treebeard.options.uploadInProgress = true;
     var parent = file.treebeardParent || treebeard.dropzoneItemCache;
+    xhr = $osf.setXHRAuthorization(xhr);
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
@@ -686,6 +687,15 @@ function _downloadEvent (event, item, col) {
         window.event.cancelBubble = true;
     }
     window.location = waterbutler.buildTreeBeardDownload(item);
+}
+
+function _downloadZipEvent (event, item, col) {
+    try {
+        event.stopPropagation();
+    } catch (e) {
+        window.event.cancelBubble = true;
+    }
+    window.location = waterbutler.buildTreeBeardDownloadZip(item);
 }
 
 function _createFolder(event, dismissCallback, helpText) {
@@ -1330,6 +1340,14 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
+        } else {
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
+                    icon: 'fa fa-download',
+                    className : 'text-success'
+                }, 'Download as zip')
+            );
         }
         if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
             rowButtons.push(
@@ -1979,6 +1997,7 @@ Fangorn.Components = {
 
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
+    _downloadZipEvent: _downloadZipEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
     createFolder: _createFolder,
