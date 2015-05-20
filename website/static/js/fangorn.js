@@ -468,6 +468,7 @@ function _fangornUploadProgress(treebeard, file, progress) {
  */
 function _fangornSending(treebeard, file, xhr, formData) {
     treebeard.options.uploadInProgress = true;
+    $osf.setXHRAuthorization(xhr);
     var parent = file.treebeardParent || treebeard.dropzoneItemCache;
     var _send = xhr.send;
     xhr.send = function() {
@@ -714,7 +715,7 @@ function _createFolder(event, dismissCallback, helpText) {
     m.request({
         method: 'POST',
         background: true,
-        xhrconfig: $osf.setXHRAuthorization,
+        config: $osf.setXHRAuthorization,
         url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
