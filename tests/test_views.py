@@ -86,10 +86,10 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 301)
         assert_equal(
             res.request.path,
-            web_url_for('auth_login')
+            '/login'
         )
 
     def test_logged_in_no_private_key(self):
@@ -3936,8 +3936,8 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
-        assert_equal(res2.status_code, 401)
-        assert_in("Sign In", res2.body)
+        assert_equal(res2.status_code, 301)
+        assert_equal(res2.request.path, '/login')
 
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()
