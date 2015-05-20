@@ -112,6 +112,7 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url, auth=self.auth_one)
         user_json = res.json['data']
         assert_not_equal(user_json['fullname'], self.user_one.fullname)
+        assert_equal(user_json['fullname'], self.user_two.fullname)
 
 
 class TestUserNodes(ApiTestCase):
