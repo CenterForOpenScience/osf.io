@@ -119,7 +119,7 @@
                             </div>
                         </form>
                     </div>
-
+                </div>
             % else:
                 % if rendered is not None:
                     ${rendered}
@@ -127,8 +127,6 @@
                     <img src="/static/img/loading.gif">
                 % endif
             % endif
-
-            </div>
         </div>
     </div>
 
@@ -322,6 +320,7 @@
     </script>
     %endif
     <script type="text/javascript">
+        var isEditable = false;
       % if user['can_edit'] and file_ext == '.txt':
           isEditable = true;
       % endif
