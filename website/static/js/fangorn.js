@@ -336,7 +336,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.data.status = undefined;
         from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
-        if (operation === OPERATIONS.COPY && xhr.status === 200) {
+        if (xhr.status === 200) {
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
