@@ -1307,7 +1307,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
         return NodeLog.find(query).sort('-_id')
 
-
     @property
     def nodes_pointer(self):
         return [
