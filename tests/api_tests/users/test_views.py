@@ -64,7 +64,6 @@ class TestUsers(ApiTestCase):
         assert_not_in(self.user_two._id, ids)
 
     def test_find_no_user_in_users(self):
-        # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
         url = "/v2/users/?filter[fullname]=NotMyMom"
         res = self.app.get(url)
         user_json = res.json['data']
@@ -131,13 +130,12 @@ class TestUserNodes(ApiTestCase):
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
-        self.folder = FolderFactory()
-        self.dashboard = DashboardFactory()
         self.public_project_user_one = ProjectFactory(title="Public Project User One", is_public=True, creator=self.user_one)
         self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
         self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
         self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
         self.folder = FolderFactory()
+        self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
         self.dashboard = DashboardFactory()
 
     def tearDown(self):
@@ -165,6 +163,7 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.public_project_user_two._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
 
     def test_get_projects_not_logged_in(self):
         url = "/v2/users/" + self.user_one._id + '/nodes/'
