@@ -52,7 +52,7 @@
 
         % if user['can_edit'] and file_ext == '.txt':
             <div class="wiki" id="filePageContext">
-                <div data-bind="with: $root.editVM.wikiEditor.viewModel" data-osf-panel="Edit" style="display: none">
+                <div data-bind="with: $root.editVM.fileEditor.viewModel" data-osf-panel="Edit" style="display: none">
                     <div class="osf-panel" >
                         <div class="osf-panel-header" >
                             <div class="wiki-panel">
@@ -83,7 +83,15 @@
                                 <div class="row">
                                     <div class="col-xs-12">
                                         <div class="form-group wmd-panel">
-                                            <div id="wmd-button-bar"></div>
+                                          <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
+                                              <!-- ko ifnot: id === '${user_id}' -->
+                                                  <li><a data-bind="attr: { href: url }" >
+                                                      <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
+                                                           style="border: 1px solid black;">
+                                                  </a></li>
+                                              <!-- /ko -->
+                                          </ul>
+                                            <div id="wmd-button-bar" style="display: none"></div>
                                             <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
                                         </div>
                                     </div>
@@ -122,8 +130,8 @@
 
     % if user['can_edit'] and file_ext == '.txt':
     <div data-osf-panel="View">
-        <div class="osf-panel" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-            <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
+        <div class="osf-panel" >
+            <div class="osf-panel-header bordered">
                 <div class="row">
                     <div class="col-sm-6">
                         <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
@@ -131,11 +139,11 @@
                 </div>
             </div>
 
-            <div id="wikiViewPanel"  class="osf-panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
-                <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+            <div id="wikiViewPanel"  class="osf-panel-body" >
+                <div id="wikiViewRender" >
                     % if content:
-                        ${content}
-                    % else:
+                        <pre style="background-color: white; border: none">${content}</pre>
+                     % else:
                         <p><em>No file content</em></p>
                     % endif
                 </div>
