@@ -25,8 +25,8 @@ MAILER = Mail(
 def send_retraction_and_embargo_addition_message(contrib, label, mail, dry_run=True):
     if label in contrib.security_messages:
         return
-    send_mail(contrib.username, mail, user=contrib)
     if not dry_run:
+        send_mail(contrib.username, mail, user=contrib)
         contrib.security_messages[MESSAGE_NAME] = datetime.datetime.utcnow()
         contrib.save()
 
