@@ -16,6 +16,9 @@ function getDefaultOptions(path, provider) {
     if (viewOnly) {
         options.view_only = viewOnly;
     }
+    if (window.contextVars.accessToken) {
+        options.token = window.contextVars.accessToken;
+    }
     return options;
 }
 
@@ -64,6 +67,7 @@ module.exports = {
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),
     buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
+    buildTreeBeardDownloadZip: buildFromTreebeard.bind(this, 'zip?'),
     copyUrl: function(){return window.contextVars.waterbutlerURL + 'ops/copy';},
     moveUrl: function(){return window.contextVars.waterbutlerURL + 'ops/move';}
 };
