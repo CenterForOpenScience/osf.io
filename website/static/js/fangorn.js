@@ -291,6 +291,25 @@ function checkConflicts(tb, item, folder, cb) {
     cb('replace');
 }
 
+function checkConflictsRename(tb, item, name, cb) {
+    var parent = item.parent();
+    for(var i = 0; i < parent.children.length; i++) {
+        var child = parent.children[i];
+        if (child.data.name === name && child.id !== item.id) {
+            tb.modal.update(m('', [
+                m('h3.break-word', 'An item named "' + name + '" already exists in this location.'),
+                m('p', 'Do you want to replace it?')
+            ]), m('', [
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
+                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+            ]));
+            return;
+        }
+    }
+    cb('replace');
+}
+
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
