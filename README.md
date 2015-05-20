@@ -80,7 +80,8 @@ $ invoke sharejs
 
 #### Waterbutler
 
-Waterbutler is used for file storage features on the OSF. Consult the Waterbutler 
+Waterbutler is used for file storage features. Upload and download features will be disabled if Waterbutler is not 
+installed. Consult the Waterbutler 
 [repository](https://github.com/CenterForOpenScience/waterbutler) and 
 [documentation](https://waterbutler.readthedocs.org/en/latest/) for information on how to set up and run this service.
 
