@@ -2072,6 +2072,15 @@ span#profileFullname{
         text-decoration: none !important;
         padding: 14px;
     }
+     .navbar-brand {
+        margin-left: 0 !important;
+        height: 48px !important;
+        line-height: 27px !important;
+        padding: 11px 15px 10px 15px !important;
+    }
+    .osf-navbar-logo {
+        margin-top: 0px !important;
+    }
 }
 
 @media (min-width: 768px) {
