@@ -382,9 +382,14 @@
                     });
                 });
 
-                request.fail(function(response) {
-                   console.log('fail');
+                request.fail(function(error) {
+                   $osf.growl('Error', 'The file could not be updated.');
+                   Raven.captureMessage('Could not PUT file content.', {
+                       url: '${edit_url}',
+                       error: error
+                   });
                 });
+
             } else {
                 alert("There are no changes to be saved.");
             }
