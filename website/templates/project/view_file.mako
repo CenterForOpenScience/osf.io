@@ -160,11 +160,11 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h3 class="modal-title">Connected to the collaborative wiki</h3>
+                    <h3 class="modal-title">Connected to collaborative file editing</h3>
                 </div>
                 <div class="modal-body">
                     <p>
-                        This page is currently connected to the collaborative wiki. All edits made will be visible to
+                        This page is currently connected to collaborative file editing. All edits made will be visible to
                         contributors with write permission in real time. Changes will be stored
                         but not published until you click the "Save" button.
                     </p>
@@ -178,11 +178,11 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h3 class="modal-title">Connecting to the collaborative wiki</h3>
+                    <h3 class="modal-title">Connecting to collaborative file editing</h3>
                 </div>
                 <div class="modal-body">
                     <p>
-                        This page is currently attempting to connect to the collaborative wiki. You may continue to make edits.
+                        This page is currently attempting to connect to collaborative file editing. You may continue to make edits.
                         <strong>Changes will not be saved until you press the "Save" button.</strong>
                     </p>
                 </div>
@@ -195,11 +195,11 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h3 class="modal-title">Collaborative wiki is unavailable</h3>
+                    <h3 class="modal-title">Collaborative file editing is unavailable</h3>
                 </div>
                 <div class="modal-body">
                     <p>
-                        The collaborative wiki is currently unavailable. You may continue to make edits.
+                        Collaborative file editing is currently unavailable. You may continue to make edits.
                         <strong>Changes will not be saved until you press the "Save" button.</strong>
                     </p>
                 </div>
