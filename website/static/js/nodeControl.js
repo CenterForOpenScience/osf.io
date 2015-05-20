@@ -137,7 +137,7 @@ var ProjectViewModel = function(data) {
     });
 
     self.canBeOrganized = ko.pureComputed(function() {
-        return !!(self.user.username && (self.nodeIsPublic || self.user.is_contributor));
+        return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
     // Add icon to title

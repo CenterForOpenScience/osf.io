@@ -765,6 +765,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    @property
+    def forks(self):
+        """List of forks of this node"""
+        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
+                                           Q('is_registration', 'ne', True)))
+
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
 
@@ -1302,7 +1308,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                             if n.can_view(auth)]
         query = Q('__backrefs.logged.node.logs', 'in', ids)
         logs = NodeLog.find(query).sort('-_id')
-        return [each for each in logs if each.node__logged[0].can_view(auth)]
+        # FIXME: Before 0.35.0, children node's logs were copied to the parent.
+        # After 0.35.0, logs are not copied; they are aggregated. For projects
+        # created before 0.35.0, we still need to make sure that private children's logs
+        # don't show up in parent project's log feeds. Therefore, we check for "read"
+        # access for every log.
+        # This is expensive. The proper fix is probably to migrate legacy node's logs so
+        # that projects' logs don't include their children's logs /sloria /chennan
+        return [each for each in logs
+                if each and each.node__logged[0]
+                and each.node__logged[0].can_view(auth)]
 
     @property
     def nodes_pointer(self):
@@ -2002,7 +2017,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.add_permission(new, permission)
                 self.permissions.pop(old._id)
                 if old._id in self.visible_contributor_ids:
-                    self.visible_contributor_ids.remove(old._id)
+                    self.visible_contributor_ids[self.visible_contributor_ids.index(old._id)] = new._id
                 return True
         return False
 

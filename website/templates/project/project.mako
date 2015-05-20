@@ -61,7 +61,7 @@
                     <!-- /ko -->
                     <div class="btn-group">
                         <a
-                        % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
+                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
                             class="btn btn-default"
                         % else:
