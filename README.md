@@ -16,7 +16,8 @@
 ## Help
 The [COS Development Docs](http://cosdev.readthedocs.org/) provide detailed information about all aspects of OSF development. 
 This includes [detailed installation instructions](http://cosdev.readthedocs.org/en/latest/osf/setup.html), 
-a list of [common setup errors](http://cosdev.readthedocs.org/en/latest/osf/setup.html#common-error-messages), and [other troubleshooting](http://cosdev.readthedocs.org/en/latest/osf/common_problems.html).
+a list of [common setup errors](http://cosdev.readthedocs.org/en/latest/osf/setup.html#common-error-messages), and 
+[other troubleshooting](http://cosdev.readthedocs.org/en/latest/osf/common_problems.html).
 
 The OSF `invoke` script provides several useful commands. For more information, run:
 
@@ -80,7 +81,8 @@ $ invoke sharejs
 ## Installation
 
 These instructions assume a working knowledge of package managers and the command line.
-For a detailed step-by-step walkthrough suitable for new programmers, consult the [COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html).
+For a detailed step-by-step walkthrough suitable for new programmers, consult the 
+[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html).
 
 ### Pre-requisites
 
@@ -128,6 +130,23 @@ $ invoke setup
 To verify that your installation works, follow the instructions to [start the OSF](#running-the-osf) and 
 [run unit tests](#running-tests).
 
+##### Additional configuration for Mac OS X
+
+After running the automatic installer, you may find that some actions- such as running unit tests- fail due to an error 
+with Mongo/ TokuMX. This can be resolved by increasing the system limits on number of open files and processes.
+
+Add the following lines to `/etc/launchctl.conf` and/or `/etc/launchd.conf` (creating the files if necessary):
+```
+limit maxfiles 16384 16384
+limit maxproc 2048 2048
+```
+
+Then create or edit either `~./bash_profile` or `/etc/profile` to include the following:
+
+`ulimit -n 2048`
+
+Then reboot.
+
 ### Manual installation
 [At present](CONTRIBUTING.md), there is no complete automated install process for other platforms. 
 Although the process above should perform most setup steps on Mac OS, users of other platforms will need to perform the 
@@ -167,7 +186,7 @@ And finally starting the rng-tools daemon with:
 sudo /etc/init.d/rng-tools start
 ```
 
-__source: http://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny __
+**source: http://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny**
 
 ### Detailed installation and setup guides
 
