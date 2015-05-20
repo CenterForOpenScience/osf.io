@@ -78,6 +78,12 @@ ShareJS is used for collaborative editing features, such as the OSF wiki. To run
 $ invoke sharejs
 ```
 
+#### Waterbutler
+
+Waterbutler is used for file storage features on the OSF. Consult the Waterbutler 
+[repository](https://github.com/CenterForOpenScience/waterbutler) and 
+[documentation](https://waterbutler.readthedocs.org/en/latest/) for information on how to set up and run this service.
+
 ## Installation
 
 These instructions assume a working knowledge of package managers and the command line.
@@ -146,6 +152,11 @@ Then create or edit either `~./bash_profile` or `/etc/profile` to include the fo
 `ulimit -n 2048`
 
 Then reboot.
+
+#### Additional things to install
+
+The automated installer does not install Waterbutler, which may be needed to run some OSF features locally. 
+Consult the [Waterbutler repository](https://github.com/CenterForOpenScience/waterbutler) for setup instructions.
 
 ### Manual installation
 [At present](CONTRIBUTING.md), there is no complete automated install process for other platforms. 
