@@ -16,16 +16,9 @@ def do_migration(records, dry=False):
             'Migrating logs in node - {}, '.format(node._id)
         )
         count = 0
-        removed_none_log = False
         for log in node.logs:
             if not dry:
-                if not log:
-                    node.logs.remove(log)
-                    removed_none_log = True
-                    logger.info(
-                        'Remove log None in node - {}'.format(node._id)
-                    )
-                elif node != log.node:
+                if node != log.node:
                     log.should_hide = True
                     log.save()
                     count += 1
@@ -35,8 +28,6 @@ def do_migration(records, dry=False):
                             log._id, node._id, log.action
                         )
                     )
-        if removed_none_log:
-            node.save()
 
         logger.info(
             '{}Migrated {} logs in node - {}'.format(
