@@ -623,7 +623,8 @@ def claim_user_form(auth, **kwargs):
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
-    claimer_email = unclaimed_record['claimer_email']
+    # The email can be the original referrer email if no claimer email has been specified.
+    claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
