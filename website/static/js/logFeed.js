@@ -83,9 +83,13 @@ var Log = function(params) {
         return ret;
     });
 
-    //helper function to strip the leading slash for file or folder in log template
-    self.stripLeadingSlash = function(path){
-        return path.replace(/^\//, '');
+    //helper function to strip the slash for file or folder in log template
+    self.stripSlash = function(path, name){
+        if (path.match(/\/$/)){
+            return name ? name.replace(/(^\/)|(\/$)/g, ''): path.replace(/(^\/)|(\/$)/g, '');
+        } else {
+            return name ? name.replace(/^\//, ''): path.replace(/^\//, '');
+        }
     };
 
     //helper funtion to determine the type for removing in log template
