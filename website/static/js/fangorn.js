@@ -1196,7 +1196,9 @@ function _renameEvent () {
     var item = tb.multiselected()[0];
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
-    checkConflicts(tb, item, folder, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
+    //TODO Error message?
+    if  (val === item.name) return;
+    checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
 var toolbarModes = {
