@@ -2486,6 +2486,7 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
+        self.project.save()
         assert_false(self.project.embargo_end_date)
         assert_true(self.project.pending_embargo)
 
