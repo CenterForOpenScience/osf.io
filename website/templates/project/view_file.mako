@@ -49,9 +49,10 @@
 
     <div class="panel-expand col-md-6">
         <div id="fileRendered" class="mfr mfr-file">
+            <div class="wiki" id="filePageContext">
 
         % if user['can_edit'] and file_ext == '.txt':
-            <div class="wiki" id="filePageContext">
+
                 <div data-bind="with: $root.editVM.fileEditor.viewModel" data-osf-panel="Edit" style="display: none">
                     <div class="osf-panel" >
                         <div class="osf-panel-header" >
@@ -392,7 +393,11 @@
 
     <script src="//localhost:7007/text.js"></script>
     <script src="//localhost:7007/share.js"></script>
-    <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
+
+    % if user['can_edit'] and file_ext == '.txt':
+        <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
+    % endif
+
     <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>
