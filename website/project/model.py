@@ -763,6 +763,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    @property
+    def forks(self):
+        """List of forks of this node"""
+        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
+                                           Q('is_registration', 'ne', True)))
+
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
 
@@ -1300,6 +1306,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                             if n.can_view(auth)]
         query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
         return NodeLog.find(query).sort('-_id')
+
 
     @property
     def nodes_pointer(self):
