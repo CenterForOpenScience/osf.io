@@ -235,10 +235,26 @@ def send_confirm_email(user, email):
     :raises: KeyError if user does not have a confirmation token for the given
         email.
     """
-    confirmation_url = user.get_confirmation_url(email, external=True, force=True)
-    mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
+    confirmation_url = user.get_confirmation_url(
+        email,
+        external=True,
+        force=True,
+    )
+
+    try:
+        merge_target = User.find_one(Q('emails', 'eq', email))
+    except NoResultsFound:
+        merge_target = None
+
+    mails.send_mail(
+        email,
+        mails.CONFIRM_MERGE if merge_target else mails.CONFIRM_EMAIL,
+        'plain',
         user=user,
-        confirmation_url=confirmation_url)
+        confirmation_url=confirmation_url,
+        email=email,
+        merge_target=merge_target,
+    )
 
 
 def register_user(**kwargs):
