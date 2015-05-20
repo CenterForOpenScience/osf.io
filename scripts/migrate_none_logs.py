@@ -22,7 +22,7 @@ def do_migration(records, dry=False):
 
         if count > 0:
             node.save()
-            
+
             logger.info(
                 '{}Rmoved {} None logs in node - {}'.format(
                     '[dry]'if dry else '', count, node._id)
