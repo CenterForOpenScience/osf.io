@@ -35,7 +35,7 @@
           });
     % endif
     </script>
-% elif user.get('is_profile', False):
+    % elif user.get('is_profile', False):
     <div class="help-block">
       You have no public ${pluralized_node_type}.
         <p>
