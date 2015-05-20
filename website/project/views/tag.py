@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import httplib as http
 
 from modularodm.exceptions import ValidationError
