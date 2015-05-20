@@ -1088,18 +1088,18 @@ h1.unavailable {
 
 .option-cloud .title
 {
-    font-size: 16px;
+    font-size: 12pt;
     font-weight: bold;
     padding-bottom: 7px;
 }
 
-.option-cloud .title.option-success
+.option-cloud .title .option-success
 {
     color: #337733;
     padding-bottom: 0px;
 }
 
-.option-cloud .title.option-fail
+.option-cloud .title .option-fail
 {
     color: #AA3333;
     padding-bottom: 0px;
@@ -1107,7 +1107,7 @@ h1.unavailable {
 
 .option-cloud .cloud-option.current
 {
-    background-color: #214762;
+    background-color: #337ab7;
     color: #FFFFFF;
 }
 

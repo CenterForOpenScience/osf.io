@@ -214,25 +214,30 @@ function ViewModel(options){
         return self.subList[3];
     };
     self.subscription = ko.observable(self.getSub('adopt_parent'));
-    self.subText = ko.observable();
+    self.subText1 = ko.observable();
+    self.subText2 = ko.observable("");
     self.subSuccess = ko.observable(null);
     self.subsVisible = ko.observable(false);
     self.clickGear = ko.computed(function () {
-        var visible = self.subsVisible();
-        self.subText("Subscription:");
-        return visible;
+        var hidden = self.subsVisible();
+        self.subText1("Subscription:");
+        self.subText2("");
+        return hidden;
     });
     self.message = ko.observable(true);
     self.clickSub = function (value) {
         self.subscription(value);
-        self.message(false);
         var subscription = self.subscription().text;
-        self.subText("Subscription set to: " + subscription);
+        self.subText1("Subscription set to: ");
+        self.subText2(subscription);
+        self.message(false);
         self.subSuccess(true);
         setTimeout(function(){
             self.subsVisible(false);
-            self.message(true);
-            self.subSuccess(null);
+            setTimeout(function() {
+                self.message(true);
+                self.subSuccess(null);
+            }, 600);
         }, 2500);
     };
 
@@ -367,11 +372,13 @@ ko.bindingHandlers.slideVisible = {
         // Whenever the value subsequently changes, slowly fade the element in or out
         var value = valueAccessor();
         // $(element).slideToggle(); //
-        console.log(ko.utils.unwrapObservable(value));
-        ko.utils.unwrapObservable(value) ? $(element).slideDown() : $(element).slideUp();
+        ko.utils.unwrapObservable(value) ? $(element).slideDown() : $(element).slideUp(600);
     }
 };
-
+/**
+ * http://tech.pro/blog/1863/10-knockout-binding-handlers-i-don-t-want-to-live-without
+ *  * @type {{init: Function}}
+ */
 ko.bindingHandlers.toggle = {
     init: function (element, valueAccessor) {
         var value = valueAccessor();

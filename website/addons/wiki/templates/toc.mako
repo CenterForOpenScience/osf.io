@@ -33,23 +33,10 @@
                         <a href="${urls['web']['home']}">
                             <div class="col-xs-8">Home</div>
                         </a>
-                        <div class="col-xs-2">
-                            <i class="fa fa-cog pointer fa-lg" data-toggle="tooltip"
-                               title="Settings" data-placement="left"
-                               data-bind="toggle: subsVisible"> </i>
-                        </div>
+                        ${self.cog()}
                         <div class="col-xs-2"></div>
                     </div>
-                    <div class="option-cloud" data-bind="visible: subsVisible">
-                        <div class="title" data-bind='text: subText, css: { "option-success": subSuccess() === true,
-                                                                            "option-fail": subSuccess() === false}'></div>
-                        <div class="option-container" data-bind="visible: message, foreach: subList">
-                            <div class="cloud-option pointer" data-bind='css: { current: value === $root.subscription().value },
-                                                                         click: $root.clickSub.bind(value)'>
-                                <span data-bind="text: text"></span>
-                            </div>
-                        </div>
-                    </div>
+                    <div data-bind="template: 'option-cloud'"></div>
                 %else:
                     <div class="row">
                         <a href="${urls['web']['home']}">
@@ -64,26 +51,14 @@
                         %if page['name'] == wiki_name and user['can_edit']:
                             <div class="row">
                                 <a href="${page['url']}"><div class="col-xs-8">${page['name']}</div></a>
-                                <div class="col-xs-2">
-                                    <i class="fa fa-cog pointer fa-lg" data-toggle="tooltip"
-                                       title="Settings" data-placement="left"
-                                       data-bind="toggle: subsVisible"> </i>
-                                </div>
+                                ${self.cog()}
                                 <div class="col-xs-2">
                                     <a href="#" data-toggle="modal" data-target="#deleteWiki">
                                         <i class="fa fa-trash-o text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
                                     </a>
                                 </div>
                             </div>
-                            <div class="option-cloud" data-bind="visible: subsVisible">
-                                <div class="title" data-bind='text: subText, css: subSuccessStatus'></div>
-                                <div class="option-container" data-bind="visible: message, foreach: subList">
-                                    <div class="cloud-option pointer" data-bind='css: { current: value === $root.subscription().value },
-                                                                                 click: $root.clickSub.bind(value)'>
-                                        <span data-bind="text: text"></span>
-                                    </div>
-                                </div>
-                            </div>
+                            <div data-bind="template: 'option-cloud'"></div>
                         % else:
                             <div class="row">
                                     <a href="${page['url']}"><div class="col-xs-12">${page['name']}</div></a>
@@ -127,3 +102,31 @@
             </ul>
         %endif
 </div>
+
+<!-- modular parts of the subscription system -->
+<%def name="cog()">
+    <div class="col-xs-2">
+        <i class="fa fa-cog pointer fa-lg" data-toggle="tooltip"
+           title="Settings" data-placement="left"
+           data-bind="toggle: subsVisible"> </i>
+    </div>
+</%def>
+
+
+<script id="option-cloud" type="text/html">
+    <div class="option-cloud" data-bind="slideVisible: subsVisible">
+        <div class="title">
+            <i class="fa fa-bell-o fa-md"></i>
+            <span data-bind='text: subText1, css: subSuccessStatus'></span>
+            <span data-bind="text: subText2"></span>
+        </div>
+        <ul class="option-container list-unstyled" data-bind="slideVisible: message, foreach: subList">
+            <li>
+                <div class="cloud-option pointer" data-bind='css: { current: value === $root.subscription().value },
+                                                             click: $root.clickSub.bind(value)'>
+                    <span data-bind="text: text"></span>
+                </div>
+            </li>
+        </ul>
+    </div>
+</script>
