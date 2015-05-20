@@ -4,7 +4,7 @@ var m = require('mithril');
 function FileViewTreebeard(data) {
 
     // Set item.branch to show the branch of the rendered GitHub file instead of the default branch
-    var addonRootFolders = data['data'][0].children;
+    var addonRootFolders = data.data[0].children;
 
     if (window.contextVars.file.provider === 'github') {
         for (var i = 0; i < addonRootFolders.length; i++) {
@@ -22,10 +22,13 @@ function FileViewTreebeard(data) {
         showFilter: false,
         title: undefined,
         hideColumnTitles: true,
+        multiselect : false,
+        placement : 'fileview',
+        allowMove : false,
         filterTemplate: function () {
             var tb = this;
-            return m("input.pull-left.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
-                style: "width:100%;display:inline;",
+            return m('input.pull-left.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+                style: 'width:100%;display:inline;',
                 onkeyup: tb.filter,
                 value: tb.filterText()
             });
@@ -34,6 +37,8 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
             $('.osf-panel-header.osf-panel-header-flex').show();
+            tb.select('.tb-header-row').hide();
+
         },
         ondataload: function () {
             var tb = this;
@@ -46,7 +51,7 @@ function FileViewTreebeard(data) {
                 } else {
                     path = decodeURIComponent(window.contextVars.file.path);
                 }
-                tb.fangornFolderArray = path.split("/");
+                tb.fangornFolderArray = path.split('/');
                 if (tb.fangornFolderArray.length > 1) {
                     tb.fangornFolderArray.splice(0, 1);
                 }
@@ -62,7 +67,9 @@ function FileViewTreebeard(data) {
         ontogglefolder : function (tree) {
             Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
             var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            if (!this.options.naturalScrollLimit){
+                this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            }
             this.redraw();
         },
         lazyLoadOnLoad: function(tree, event) {
@@ -74,11 +81,11 @@ function FileViewTreebeard(data) {
             }
         },
         resolveRows: function (item) {
-            var selectClass = '';
             var tb = this;
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-                selectClass = 'fangorn-hover';
+                item.css = 'fangorn-selected';
+                tb.multiselected([item]);
             }
 
             var defaultColumns = [
@@ -86,7 +93,6 @@ function FileViewTreebeard(data) {
                     data: 'name',
                     folderIcons: true,
                     filter: true,
-                    css: selectClass,
                     custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }
             ];

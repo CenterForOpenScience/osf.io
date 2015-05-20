@@ -555,6 +555,7 @@ def npm_bower():
 def bower_install():
     print('Installing bower-managed packages')
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} prune'.format(bower_bin), echo=True)
     run('{} install'.format(bower_bin), echo=True)
 
 
@@ -565,6 +566,10 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
+    from website.app import build_js_config_files
+    from website import settings
+    # Build nodeCategories.json before building assets
+    build_js_config_files(settings)
     assets(dev=True, watch=False)
 
 

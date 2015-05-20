@@ -61,9 +61,9 @@
 
 <h3>How does OSF store and back up files that I upload to the site?</h3>
     <p>The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
-    via an open source sponsorship, and has backups on 
-    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>. 
-    OSF maintains several backup schemes, including off-site backups and 
+    via an open source sponsorship, and has backups on
+    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
+    OSF maintains several backup schemes, including off-site backups and
     automated backups performed by our host every day, week, and fortnight.</p>
 
 <h3>What is coming to the OSF?</h3>
@@ -112,19 +112,17 @@
 <h3>How do I create a lab group/organizational group?</h3>
 <p>The best way to create a lab or organizational group on the OSF is to create a project for that group. Then, individual projects within the lab can either be organized into components of the lab project or into their own projects which are linked to the lab group project. For an example, check out the <a href="https://osf.io/ezcuj/">Reproducibility Project: Psychology.</a></p>
 
-<h3>Someone added me as an unregistered contributor, but I already have an OSF account under a different email address. What do I do?</h3>
-<p>There are a few ways to solve this issue. If you haven’t clicked the link to confirm this new account - and the project is public - don’t claim the account. Instead, log into your existing OSF account, navigate to the project of interest, and find your name in the contributor list. When you hover over it, a tooltip will ask if you’d like to claim the account. Click to claim the account - this will send an email to the project creator asking to verify your identity to add you to the project.</p> 
-<p>If you’ve already claimed the account (and now have two OSF accounts!), send us an <a href="mailto:support@osf.io">email</a>. We can merge the accounts for you so that you’ll only have one - all of your projects will be under one account, your name will only show in search once, and you will have one login email and password.</p> 
-<p>If the project is private, claim the account, and then follow the steps above.</p>
+<h3>I have multiple OSF accounts. Can I merge them into one account?</h3>
+<p>Yes. Log into the account you wish to keep and navigate to your Account Settings. There, enter the email address associated with your other OSF account. You will receive a confirmation link via email. Clicking the link will merge the projects and components under one account.</p>
 
-<h3>How do I make folders to organize the files in my project?</h3>
-<p>Components act like folders. Thus, to organize your files into folders, create components. From the project overview page, click “create component” on the right half of the page.</p>
+<h3>What is the difference between a component and a folder?</h3>
+<p>A folder can be used to organize files within a project or component - just like a folder on your own computer groups files together. A component is like a sub-project to help you organize different parts of your research. Components have their own privacy and sharing settings as well as their own unique, persistent identifiers for citation, and their own wiki and add-ons.</p>
 
 <h3>I’m using the search function to find one of my projects, but it’s not showing up in the results. What’s wrong?</h3>
 <p>The search function only returns public projects, so if you’re searching for one of your own private projects, it won’t be returned in the results. To search for your own projects, go to your dashboard, and use the “Go to my project” widget on the top right.</p>
 
 <h3>None of these FAQs answered my question. Now what?</h3>
-<p>Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to answer your questions.             
-            
-            
+<p>Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to answer your questions.
+
+
 </%def>
