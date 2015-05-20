@@ -44,19 +44,22 @@ var STATE_MAP = {
 
 var OPERATIONS = {
     RENAME: {
-        status: 'rename',
         verb: 'Rename',
+        status: 'rename',
         passed: 'renamed',
+        action: 'Renaming',
     },
     MOVE: {
-        status: 'move',
         verb: 'Move',
+        status: 'move',
         passed: 'moved',
+        action: 'Moving',
     },
     COPY: {
-        status: 'copy',
         verb: 'Copy',
+        status: 'copy',
         passed: 'copied',
+        action: 'Copying',
     }
 };
 
