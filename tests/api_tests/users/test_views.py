@@ -3,7 +3,6 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 from website.models import Node
-from website.util import api_v2_url_for
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
 
@@ -85,8 +84,6 @@ class TestUserDetail(ApiTestCase):
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
-        self.folder = FolderFactory()
-        self.dashboard = DashboardFactory()
 
     def tearDown(self):
         ApiTestCase.tearDown(self)
@@ -104,9 +101,15 @@ class TestUserDetail(ApiTestCase):
         assert_equal(user_json['fullname'], self.user_one.fullname)
         assert_equal(user_json['social_accounts']['twitter'], 'howtopizza')
 
-    def test_get_incorrect_pk_user(self):
+    def test_get_incorrect_pk_user_logged_in(self):
         url = "/v2/users/{}/".format(self.user_two._id)
         res = self.app.get(url)
+        user_json = res.json['data']
+        assert_not_equal(user_json['fullname'], self.user_one.fullname)
+
+    def test_get_incorrect_pk_user_not_logged_in(self):
+        url = "/v2/users/{}/".format(self.user_two._id)
+        res = self.app.get(url, auth=self.auth_one)
         user_json = res.json['data']
         assert_not_equal(user_json['fullname'], self.user_one.fullname)
 
@@ -128,6 +131,7 @@ class TestUserNodes(ApiTestCase):
         self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
         self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
         self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
+        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
         self.folder = FolderFactory()
         self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
         self.dashboard = DashboardFactory()
@@ -158,6 +162,7 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_projects_not_logged_in(self):
         url = "/v2/users/{}/nodes/".format(self.user_one._id)
@@ -170,6 +175,7 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.public_project_user_two._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_projects_logged_in_as_different_user(self):
         url = "/v2/users/{}/nodes/".format(self.user_two._id)
@@ -182,3 +188,4 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
