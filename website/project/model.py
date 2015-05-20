@@ -2817,20 +2817,21 @@ class Retraction(StoredObject):
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
                 raise InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
-            self.state = self.CANCELLED
-            parent_registration = Node.find_one(Q('retraction', 'eq', self))
-            parent_registration.add_log(
-                action=NodeLog.RETRACTION_CANCELLED,
-                params={
-                    'registration_id': parent_registration._id,
-                    'retraction_id': self._id,
-                },
-                auth=Auth(user),
-                log_date=datetime.datetime.utcnow(),
-                save=True,
-            )
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
+
+        self.state = self.CANCELLED
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration.add_log(
+            action=NodeLog.RETRACTION_CANCELLED,
+            params={
+                'registration_id': parent_registration._id,
+                'retraction_id': self._id,
+            },
+            auth=Auth(user),
+            log_date=datetime.datetime.utcnow(),
+            save=True,
+        )
 
     def approve_retraction(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
@@ -2839,8 +2840,8 @@ class Retraction(StoredObject):
                 raise InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
         except KeyError:
             raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
-        self.approval_state[user._id]['has_approved'] = True
 
+        self.approval_state[user._id]['has_approved'] = True
         if all(val['has_approved'] for val in self.approval_state.values()):
             self.state = self.RETRACTED
 
@@ -2937,10 +2938,40 @@ class Embargo(StoredObject):
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
                 raise InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
-            self.state = Embargo.CANCELLED
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+
+        self.state = Embargo.CANCELLED
+        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration.add_log(
+            action=NodeLog.EMBARGO_CANCELLED,
+            params={
+                'registration_id': parent_registration._id,
+                'embargo_id': self._id,
+            },
+            auth=Auth(user),
+            log_date=datetime.datetime.utcnow(),
+            save=True,
+        )
+        # Delete parent registration if it was created at the time the embargo was initiated
+        if not self.for_existing_registration:
+            parent_registration.is_deleted = True
+            parent_registration.save()
+
+    def approve_embargo(self, user, token):
+        """Add user to approval list if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['approval_token'] != token:
+                raise InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+
+        self.approval_state[user._id]['has_approved'] = True
+        if all(val['has_approved'] for val in self.approval_state.values()):
+            self.state = Embargo.ACTIVE
             parent_registration = Node.find_one(Q('embargo', 'eq', self))
             parent_registration.add_log(
-                action=NodeLog.EMBARGO_CANCELLED,
+                action=NodeLog.EMBARGO_APPROVED,
                 params={
                     'registration_id': parent_registration._id,
                     'embargo_id': self._id,
@@ -2949,32 +2980,3 @@ class Embargo(StoredObject):
                 log_date=datetime.datetime.utcnow(),
                 save=True,
             )
-            # Delete parent registration if it was created at the time the embargo was initiated
-            if not self.for_existing_registration:
-                parent_registration.is_deleted = True
-                parent_registration.save()
-        except KeyError:
-            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
-
-    def approve_embargo(self, user, token):
-        """Add user to approval list if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
-            self.approval_state[user._id]['has_approved'] = True
-
-            if all(val['has_approved'] for val in self.approval_state.values()):
-                self.state = Embargo.ACTIVE
-                parent_registration = Node.find_one(Q('embargo', 'eq', self))
-                parent_registration.add_log(
-                    action=NodeLog.EMBARGO_APPROVED,
-                    params={
-                        'registration_id': parent_registration._id,
-                        'embargo_id': self._id,
-                    },
-                    auth=Auth(user),
-                    log_date=datetime.datetime.utcnow(),
-                    save=True,
-                )
-        except KeyError:
-            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
