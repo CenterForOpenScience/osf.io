@@ -93,25 +93,19 @@ class TestUserDetail(ApiTestCase):
         Node.remove()
 
     def test_gets_200(self):
-        base_url = "/v2/users/"
-        user_id = self.user_one._id
-        url = base_url + user_id + '/'
+        url = "/v2/users/{}/".format(self.user_one._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_get_correct_pk_user(self):
-        base_url = "/v2/users/"
-        user_id = self.user_one._id
-        url = base_url + user_id + '/'
+        url = "/v2/users/{}/".format(self.user_one._id)
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['fullname'], self.user_one.fullname)
         assert_equal(user_json['social_accounts']['twitter'], 'howtopizza')
 
     def test_get_incorrect_pk_user(self):
-        base_url = "/v2/users/"
-        user_id = self.user_two._id
-        url = base_url + user_id + '/'
+        url = "/v2/users/{}/".format(self.user_two._id)
         res = self.app.get(url)
         user_json = res.json['data']
         assert_not_equal(user_json['fullname'], self.user_one.fullname)
@@ -143,17 +137,17 @@ class TestUserNodes(ApiTestCase):
         Node.remove()
 
     def test_authorized_in_gets_200(self):
-        url = "/v2/users/" + self.user_one._id + '/nodes/'
+        url = "/v2/users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
 
     def test_anonymous_gets_200(self):
-        url = "/v2/users/" + self.user_one._id + '/nodes/'
+        url = "/v2/users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_get_projects_logged_in(self):
-        url = "/v2/users/" + self.user_one._id + '/nodes/'
+        url = "/v2/users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
 
@@ -166,7 +160,7 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.deleted_folder._id, ids)
 
     def test_get_projects_not_logged_in(self):
-        url = "/v2/users/" + self.user_one._id + '/nodes/'
+        url = "/v2/users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url)
         node_json = res.json['data']
 
@@ -178,7 +172,7 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.folder._id, ids)
 
     def test_get_projects_logged_in_as_different_user(self):
-        url = "/v2/users/" + self.user_two._id + '/nodes/'
+        url = "/v2/users/{}/nodes/".format(self.user_two._id)
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
 
