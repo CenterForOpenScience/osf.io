@@ -1305,7 +1305,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                             if n.can_view(auth)]
         query = Q('__backrefs.logged.node.logs', 'in', ids)
         logs = NodeLog.find(query).sort('-_id')
-        return [each for each in logs if each.node__logged[0].can_view(auth)]
+        # FIXME: Before 0.35.0, children node's logs were copied to the parent.
+        # After 0.35.0, logs are not copied; they are aggregated. For projects
+        # created before 0.35.0, we still need to make sure that private children's logs
+        # don't show up in parent project's log feeds. Therefore, we check for "read"
+        # access for every log.
+        # This is expensive. The proper fix is probably to migrate legacy node's logs so
+        # that projects' logs don't include their children's logs /sloria /chennan
+        return [each for each in logs
+                if each and each.node__logged[0]
+                and each.node__logged[0].can_view(auth)]
 
     @property
     def nodes_pointer(self):
