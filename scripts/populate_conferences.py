@@ -253,6 +253,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+     'singlecasedesigns2015': {
+        'name': 'Single Case Designs in Clinical Psychology: Uniting Research and Practice',
+        'info_url': 'https://www.royalholloway.ac.uk/psychology/events/eventsarticles/singlecasedesignsinclinicalpsychologyunitingresearchandpractice.aspx',
+        'logo_url': none,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
