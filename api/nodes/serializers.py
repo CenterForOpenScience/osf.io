@@ -108,7 +108,10 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(instance, Node), 'instance must be a Node'
-        is_public = validated_data.pop('is_public')
+        if 'is_public' in validated_data:
+            is_public = validated_data.pop('is_public')
+        else:
+            is_public = instance.is_public
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
