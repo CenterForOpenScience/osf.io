@@ -245,10 +245,18 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
-     'ARCS2015': {
+    'ARCS2015': {
         'name': 'Advancing Research Communication and Scholarship 2015',
         'info_url': 'http://commons.pacificu.edu/arcs/',
         'logo_url': 'http://commons.pacificu.edu/assets/md5images/4dfd167454e9f4745360a9550e189323.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'singlecasedesigns2015': {
+        'name': 'Single Case Designs in Clinical Psychology: Uniting Research and Practice',
+        'info_url': 'https://www.royalholloway.ac.uk/psychology/events/eventsarticles/singlecasedesignsinclinicalpsychologyunitingresearchandpractice.aspx',
+        'logo_url': None,
         'active': True,
         'admins': [],
         'public_projects': True,
