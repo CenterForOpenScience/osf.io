@@ -22,14 +22,17 @@ In order to run waterbutler, you must have a virtualenv created for waterbutler 
 ```bash
 brew install python3 (installs the latest version of python3)
 which python3 (prints the path to where python3 is installed)
+pip install virtualenv (if you don't already have this)
+pip install virtualenvwrapper (if you don't already have this)
 mkvirtualenv --python=(path to python3) waterbutler
-```
-
-
-```bash
-# Make sure that you are using >= python3.3
 pip install -U -r requirements.txt
 python setup.py develop
+invoke server
+```
+
+The above code will get the virtualenv up and running for the first time.  After the first time, you can run waterbutler by simply running:
+```bash
+workon waterbutler
 invoke server
 ```
 
