@@ -13,7 +13,7 @@ class NodeSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
-    description = ser.CharField(required=False, allow_blank=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
@@ -65,7 +65,10 @@ class NodeSerializer(JSONAPISerializer):
     def get_node_count(self, obj):
         request = self.context['request']
         user = request.user
-        auth = Auth(user)
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
         return len(nodes)
 
@@ -105,7 +108,10 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(instance, Node), 'instance must be a Node'
-        is_public = validated_data.pop('is_public')
+        if 'is_public' in validated_data:
+            is_public = validated_data.pop('is_public')
+        else:
+            is_public = instance.is_public
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 

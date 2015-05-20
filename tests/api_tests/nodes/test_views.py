@@ -4,22 +4,21 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 from website.models import Node
-from website.util import api_v2_url_for
-from tests.base import OsfTestCase, fake
+from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, NodeFactory, PointerFactory
 
 
-class TestNodeList(OsfTestCase):
+class TestNodeList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('justapoorboy')
         self.user.save()
         self.auth = (self.user.username, 'justapoorboy')
 
     def test_returns_200(self):
-        res = self.app.get('/api/v2/nodes/')
+        res = self.app.get('/v2/nodes/')
         assert_equal(res.status_code, 200)
 
     def test_only_returns_non_deleted_public_projects(self):
@@ -27,7 +26,7 @@ class TestNodeList(OsfTestCase):
         private = ProjectFactory(is_public=False)
         public = ProjectFactory(is_public=True)
 
-        res = self.app.get('/api/v2/nodes/')
+        res = self.app.get('/v2/nodes/')
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
@@ -39,10 +38,10 @@ class TestNodeList(OsfTestCase):
         Node.remove()
 
 
-class TestNodeContributorList(OsfTestCase):
+class TestNodeContributorList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
 
         password = fake.password()
@@ -63,7 +62,7 @@ class TestNodeContributorList(OsfTestCase):
         non_contrib.set_password(pw)
         non_contrib.save()
 
-        url = api_v2_url_for('nodes:node-contributors', kwargs=dict(pk=self.project._id))
+        url = '/v2/nodes/{}/contributors/'.format(self.project._id)
         # non-authenticated
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
@@ -78,9 +77,9 @@ class TestNodeContributorList(OsfTestCase):
         Node.remove()
 
 
-class TestNodeChildrenList(OsfTestCase):
+class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -95,21 +94,21 @@ class TestNodeChildrenList(OsfTestCase):
         self.project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
 
     def test_node_children_list_does_not_include_pointers(self):
-        url = api_v2_url_for('nodes:node-children', kwargs=dict(pk=self.project._id))
+        url = '/v2/nodes/{}/children/'.format(self.project._id)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
 
     def test_node_children_list_does_not_include_unauthorized_projects(self):
         private_component = NodeFactory(parent=self.project)
-        url = api_v2_url_for('nodes:node-children', kwargs=dict(pk=self.project._id))
+        url = '/v2/nodes/{}/children/'.format(self.project._id)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
 
 
-class TestNodeFiltering(OsfTestCase):
+class TestNodeFiltering(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.save()
@@ -127,11 +126,11 @@ class TestNodeFiltering(OsfTestCase):
         self.dashboard = DashboardFactory()
 
     def tearDown(self):
-        OsfTestCase.tearDown(self)
+        ApiTestCase.tearDown(self)
         Node.remove()
 
     def test_get_all_projects_with_no_filter_logged_in(self):
-        url = "/api/v2/nodes/"
+        url = "/v2/nodes/"
 
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
@@ -146,7 +145,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_all_projects_with_no_filter_not_logged_in(self):
-        url = "/api/v2/nodes/"
+        url = "/v2/nodes/"
 
         res = self.app.get(url)
         node_json = res.json['data']
@@ -161,7 +160,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_one_project_with_exact_filter_logged_in(self):
-        url = "/api/v2/nodes/?filter[title]=Project%20One"
+        url = "/v2/nodes/?filter[title]=Project%20One"
 
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
@@ -176,7 +175,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_one_project_with_exact_filter_not_logged_in(self):
-        url = "/api/v2/nodes/?filter[title]=Project%20One"
+        url = "/v2/nodes/?filter[title]=Project%20One"
 
         res = self.app.get(url)
         node_json = res.json['data']
@@ -191,7 +190,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_some_projects_with_substring_logged_in(self):
-        url = "/api/v2/nodes/?filter[title]=Two"
+        url = "/v2/nodes/?filter[title]=Two"
 
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
@@ -206,7 +205,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_some_projects_with_substring_not_logged_in(self):
-        url = "/api/v2/nodes/?filter[title]=Two"
+        url = "/v2/nodes/?filter[title]=Two"
 
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
@@ -221,7 +220,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_only_public_or_my_projects_with_filter_logged_in(self):
-        url = "/api/v2/nodes/?filter[title]=Project"
+        url = "/v2/nodes/?filter[title]=Project"
 
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
@@ -236,7 +235,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_only_public_projects_with_filter_not_logged_in(self):
-        url = "/api/v2/nodes/?filter[title]=Project"
+        url = "/v2/nodes/?filter[title]=Project"
 
         res = self.app.get(url)
         node_json = res.json['data']
@@ -251,7 +250,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_alternate_filtering_field_logged_in(self):
-        url = "/api/v2/nodes/?filter[description]=Three"
+        url = "/v2/nodes/?filter[description]=Three"
 
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
@@ -266,7 +265,7 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_alternate_filtering_field_not_logged_in(self):
-        url = "/api/v2/nodes/?filter[description]=Three"
+        url = "/v2/nodes/?filter[description]=Three"
 
         res = self.app.get(url)
         node_json = res.json['data']
@@ -282,7 +281,7 @@ class TestNodeFiltering(OsfTestCase):
 
     def test_incorrect_filtering_field_logged_in(self):
         # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
-        url = "/api/v2/nodes/?filter[notafield]=bogus"
+        url = "/v2/nodes/?filter[notafield]=bogus"
 
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
@@ -298,7 +297,7 @@ class TestNodeFiltering(OsfTestCase):
 
     def test_incorrect_filtering_field_not_logged_in(self):
         # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
-        url = "/api/v2/nodes/?filter[notafield]=bogus"
+        url = "/v2/nodes/?filter[notafield]=bogus"
 
         res = self.app.get(url)
         node_json = res.json['data']
@@ -313,10 +312,10 @@ class TestNodeFiltering(OsfTestCase):
         assert_not_in(self.dashboard._id, ids)
 
 
-class TestNodePointersList(OsfTestCase):
+class TestNodePointersList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('password')
         self.user.save()
@@ -326,12 +325,12 @@ class TestNodePointersList(OsfTestCase):
         self.project.add_pointer(self.pointer_project, auth=Auth(self.user))
 
     def test_returns_200(self):
-        url = api_v2_url_for('nodes:node-pointers', kwargs=dict(pk=self.project._id))
+        url = '/v2/nodes/{}/pointers/'.format(self.project._id)
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 200)
 
     def test_returns_node_pointers(self):
-        url = api_v2_url_for('nodes:node-pointers', kwargs=dict(pk=self.project._id))
+        url = '/v2/nodes/{}/pointers/'.format(self.project._id)
         res = self.app.get(url, auth=self.auth)
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
@@ -339,14 +338,14 @@ class TestNodePointersList(OsfTestCase):
 
     def test_creates_node_pointer(self):
         project = ProjectFactory()
-        url = api_v2_url_for('nodes:node-pointers', kwargs=dict(pk=self.project._id))
+        url = '/v2/nodes/{}/pointers/'.format(self.project._id)
         payload = {'node_id': project._id}
         res = self.app.post(url, payload, auth=self.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['node_id'], project._id)
 
 
-class TestNodeContributorFiltering(OsfTestCase):
+class TestNodeContributorFiltering(ApiTestCase):
 
     def test_filtering_node_with_only_bibliographic_contributors(self):
         project = ProjectFactory()
@@ -355,8 +354,7 @@ class TestNodeContributorFiltering(OsfTestCase):
         project.creator.save()
         auth = (project.creator.username, password)
 
-        base_url = api_v2_url_for('nodes:node-contributors', kwargs=dict(pk=project._id))
-
+        base_url = '/v2/nodes/{}/contributors/'.format(project._id)
         # no filter
         res = self.app.get(base_url, auth=auth)
         assert_equal(len(res.json['data']), 1)
@@ -382,7 +380,7 @@ class TestNodeContributorFiltering(OsfTestCase):
         project.add_contributor(non_bibliographic_contrib, visible=False)
         project.save()
 
-        base_url = api_v2_url_for('nodes:node-contributors', kwargs=dict(pk=project._id))
+        base_url = base_url = '/v2/nodes/{}/contributors/'.format(project._id)
 
         # no filter
         res = self.app.get(base_url, auth=auth)
@@ -401,10 +399,10 @@ class TestNodeContributorFiltering(OsfTestCase):
         assert_false(res.json['data'][0].get('bibliographic', None))
 
 
-class TestNodePointerDetail(OsfTestCase):
+class TestNodePointerDetail(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('password')
         self.user.save()
@@ -414,27 +412,27 @@ class TestNodePointerDetail(OsfTestCase):
         self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
 
     def test_returns_200(self):
-        url = api_v2_url_for('nodes:node-pointer-detail', kwargs=dict(pk=self.project._id, pointer_id=self.pointer._id))
+        url = '/v2/nodes/{}/pointers/{}'.format(self.project._id, self.pointer._id)
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 200)
 
     def test_returns_node_pointer(self):
-        url = api_v2_url_for('nodes:node-pointer-detail', kwargs=dict(pk=self.project._id, pointer_id=self.pointer._id))
+        url = '/v2/nodes/{}/pointers/{}'.format(self.project._id, self.pointer._id)
         res = self.app.get(url, auth=self.auth)
         res_json = res.json['data']
         assert_equal(res_json['node_id'], self.pointer_project._id)
 
     def test_deletes_node_pointer(self):
-        url = api_v2_url_for('nodes:node-pointer-detail', kwargs=dict(pk=self.project._id, pointer_id=self.pointer._id))
+        url = '/v2/nodes/{}/pointers/{}'.format(self.project._id, self.pointer._id)
         res = self.app.delete(url, auth=self.auth)
         assert_equal(res.status_code, 204)
         assert_equal(len(self.project.nodes_pointer), 0)
 
 
-class TestNodeFilesList(OsfTestCase):
+class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        ApiTestCase.setUp(self)
         self.user = UserFactory.build()
         self.user.set_password('justapoorboy')
         self.user.save()
@@ -442,18 +440,19 @@ class TestNodeFilesList(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
 
     def test_returns_200(self):
-        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id))
+        url = '/v2/nodes/{}/files/'.format(self.project._id)
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 200)
 
     def test_returns_addon_folders(self):
         project = ProjectFactory(creator=self.user)
-        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=project._id))
+        user_auth = Auth(self.user)
+        url = '/v2/nodes/{}/files/'.format(project._id)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
-        project.add_addon('github', auth=Auth(self.user))
+        project.add_addon('github', auth=user_auth)
         project.save()
 
         res = self.app.get(url, auth=self.auth)
@@ -480,14 +479,14 @@ class TestNodeFilesList(OsfTestCase):
             }]
         }
         mock_waterbutler_request.return_value = mock_res
-        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id)) + '?path=%2F&provider=osfstorage'
+        url = '/v2/nodes/{}/files/?path=%2F&provider=osfstorage'.format(self.project._id)
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.json['data'][0]['name'], 'NewFile')
         assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
-        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id)) + '?path=%2F&provider=osfstorage'
+        url = '/v2/nodes/{}/files/?path=%2F&provider=osfstorage'.format(self.project._id)
         mock_res = mock.MagicMock()
         mock_res.status_code = 401
         mock_waterbutler_request.return_value = mock_res
@@ -496,10 +495,144 @@ class TestNodeFilesList(OsfTestCase):
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):
-        url = api_v2_url_for('nodes:node-files', kwargs=dict(pk=self.project._id)) + '?path=%2F&provider=osfstorage'
+        url = '/v2/nodes/{}/files/?path=%2F&provider=osfstorage'.format(self.project._id)
         mock_res = mock.MagicMock()
         mock_res.status_code = 418
         mock_res.json.return_value = {}
         mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+
+class TestNodeCreateUpdate(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth = (self.user.username, 'justapoorboy')
+
+    def test_creates_project_returns_proper_data(self):
+        url = '/v2/nodes/'
+        title = 'Cool Project'
+        description = 'A Properly Cool Project'
+        category = 'data'
+
+        res = self.app.post_json(url, {
+            'title': title,
+            'description': description,
+            'category': category,
+            'public': True,
+        }, auth=self.auth)
+        project_id = res.json['data']['id']
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], title)
+        assert_equal(res.json['data']['description'], description)
+        assert_equal(res.json['data']['category'], category)
+
+    def test_creates_project_creates_project(self):
+        url = '/v2/nodes/'
+        title = 'Cool Project'
+        description = 'A Properly Cool Project'
+        category = 'data'
+
+        res = self.app.post_json(url, {
+            'title': title,
+            'description': description,
+            'category': category,
+            'public': True,
+        }, auth=self.auth)
+        project_id = res.json['data']['id']
+        assert_equal(res.status_code, 201)
+        url = '/v2/nodes/{}/'.format(project_id)
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.json['data']['title'], title)
+        assert_equal(res.json['data']['description'], description)
+        assert_equal(res.json['data']['category'], category)
+
+    def test_update_project_returns_proper_data(self):
+        url = '/v2/nodes/'
+        title = 'Cool Project'
+        new_title = 'Super Cool Project'
+        description = 'A Properly Cool Project'
+        new_description = 'An even cooler project'
+        category = 'data'
+        new_category = 'project'
+        project = self.project = ProjectFactory(
+            title=title, description=description, category=category, is_public=True, creator=self.user)
+
+        url = '/v2/nodes/{}/'.format(project._id)
+        res = self.app.put_json(url, {
+            'title': new_title,
+            'description': new_description,
+            'category': new_category,
+            'public': True,
+        }, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['title'], new_title)
+        assert_equal(res.json['data']['description'], new_description)
+        assert_equal(res.json['data']['category'], new_category)
+
+    def test_update_project_updates_project_properly(self):
+        url = '/v2/nodes/'
+        title = 'Cool Project'
+        new_title = 'Super Cool Project'
+        description = 'A Properly Cool Project'
+        new_description = 'An even cooler project'
+        category = 'data'
+        new_category = 'project'
+        project = self.project = ProjectFactory(
+            title=title, description=description, category=category, is_public=True, creator=self.user)
+
+        url = '/v2/nodes/{}/'.format(project._id)
+        res = self.app.put_json(url, {
+            'title': new_title,
+            'description': new_description,
+            'category': new_category,
+            'public': True,
+        }, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['title'], new_title)
+        assert_equal(res.json['data']['description'], new_description)
+        assert_equal(res.json['data']['category'], new_category)
+
+    def test_partial_update_project_returns_proper_data(self):
+        url = '/v2/nodes/'
+        title = 'Cool Project'
+        new_title = 'Super Cool Project'
+        description = 'A Properly Cool Project'
+        category = 'data'
+        project = self.project = ProjectFactory(
+            title=title, description=description, category=category, is_public=True, creator=self.user)
+
+        url = '/v2/nodes/{}/'.format(project._id)
+        res = self.app.patch_json(url, {
+            'title': new_title,
+        }, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['title'], new_title)
+        assert_equal(res.json['data']['description'], description)
+        assert_equal(res.json['data']['category'], category)
+
+    def test_partial_update_project_updates_project_properly(self):
+        url = '/v2/nodes/'
+        title = 'Cool Project'
+        description = 'A Properly Cool Project'
+        new_description = 'An even cooler project'
+        category = 'data'
+        project = self.project = ProjectFactory(
+            title=title, description=description, category=category, is_public=True, creator=self.user)
+
+        url = '/v2/nodes/{}/'.format(project._id)
+        res = self.app.patch_json(url, {
+            'description': new_description,
+        }, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['title'], title)
+        assert_equal(res.json['data']['description'], new_description)
+        assert_equal(res.json['data']['category'], category)

@@ -113,7 +113,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
-STATIC_URL = '/api/v2/static/'
+STATIC_URL = '/v2/static/'
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
     ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
@@ -123,19 +123,26 @@ SWAGGER_SETTINGS = {
     'info': {
         'description':
         """
-        <p>Welcome to the V2 Open Science Framework API. Once this clause disappears from this sentence, the V2 API will be the first supported, public REST API for the Open Science Framework.
-        We will define what the expected limits of the support are before this goes live, but for now I expect that this will be functional until we have at least the V3 API in place and
-        possibly the V4. There may be additions to the V2 API, but no changes or deletions to the routes and returns. Links to services external to the OSF may change (see below), so following
-        our development guidelines will be useful for maintaining compatibility.</p>
+        <p>Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
+        projects, components, and files from the <a href="https://osf.io/">Open Science Framework</a>. The Open Science
+        Framework is a website that
+         integrates with the scientist's daily workflow. OSF helps document and archive study designs, materials, and data.
+         OSF facilitates sharing of materials and data within a laboratory or across laboratories. OSF also facilitates
+         transparency of laboratory research and provides a network design that details and credits individual
+         contributions for all aspects of the research process.</p>
+         <p>NOTE: This API is currently in beta. The beta period should be fairly short, but until then, details about
+         the api could change. Once this notice disappears, it will be replaced with a description of how long we will
+         support the current api and under what circumstances it might change.</p>
+         <h2>General API Usage</h2>
         <p>Each endpoint will have its own documentation, but there are some general things that should work pretty much everywhere.</p>
-        <h2>Filtering</h2>
+        <h3>Filtering</h3>
         <p>Collections can be filtered by adding a query parameter in the form:</p>
         <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
         <p>For example, if you were trying to find <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Metiner</a>:</p>
         <pre>/users?filter[fullname]=meitn</pre>
         <p>You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.</p>
         <pre>/users?filter[fullname]=lise&filter[family_name]=mei</pre>
-        <h2>Links</h2>
+        <h3>Links</h3>
         <p>Responses will generally have associated links. These are helpers to keep you from having to construct
         URLs in your code or by hand. If you know the route to a high-level resource, then feel free to just go to that
         route. For example, going to:</p>
@@ -152,5 +159,6 @@ SWAGGER_SETTINGS = {
         <p>Some routes may have extra rules for links, especially if those links work with external services. Collections
         may have counts with them to indicate how many items are in that collection.</p>""",
         'title': 'OSF API Documentation',
-    }
+    },
+    'doc_expansion': 'list',
 }

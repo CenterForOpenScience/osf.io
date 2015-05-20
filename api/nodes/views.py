@@ -166,7 +166,11 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
     # overrides ListAPIView
     def get_queryset(self):
         nodes = self.get_node().nodes
-        auth = Auth(self.request.user)
+        user = self.request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
         children = [node for node in nodes if node.can_view(auth) and node.primary]
         return children
 
