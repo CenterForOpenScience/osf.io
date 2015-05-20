@@ -54,7 +54,7 @@
         <div id="fileRendered" class="mfr mfr-file">
             <div class="wiki" id="filePageContext">
 
-        % if user['can_edit'] and file_ext == '.txt':
+            % if user['can_edit'] and file_ext == '.txt':
 
                 <div data-bind="with: $root.editVM.fileEditor.viewModel" data-osf-panel="Edit" style="display: none">
                     <div class="osf-panel" >
@@ -119,16 +119,16 @@
                             </div>
                         </form>
                     </div>
-                </div>
 
-        % else:
-            % if rendered is not None:
-                ${rendered}
             % else:
-                <img src="/static/img/loading.gif">
+                % if rendered is not None:
+                    ${rendered}
+                % else:
+                    <img src="/static/img/loading.gif">
+                % endif
             % endif
-        % endif
 
+            </div>
         </div>
     </div>
 
@@ -322,16 +322,20 @@
     </script>
     %endif
     <script type="text/javascript">
-      var isEditable = false;
       % if user['can_edit'] and file_ext == '.txt':
           isEditable = true;
       % endif
+
       window.contextVars = $.extend(true, {}, window.contextVars, {
-        %if rendered is None:
-            renderURL: '${render_url | js_str}',
-        %else:
+
+        %if user['can_edit'] and file_ext == '.txt':
             renderURL: undefined,
+        %elif rendered is not None:
+            renderURL: undefined,
+        %else:
+            renderURL: '${render_url | js_str}',
         %endif
+
             file: {
                 extra: ${extra},
                 name: '${file_name | js_str}',
