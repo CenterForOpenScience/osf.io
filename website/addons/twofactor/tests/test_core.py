@@ -12,12 +12,6 @@ from website.app import init_app
 from website.addons.twofactor.tests import _valid_code
 from website.util import web_url_for
 
-app = init_app(
-    routes=True,
-    set_backends=False,
-    settings_module='website.settings',
-)
-
 
 class TestCore(OsfTestCase):
     @mock.patch('website.addons.twofactor.models.push_status_message')
