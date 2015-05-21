@@ -69,7 +69,9 @@ function FileViewTreebeard(data) {
         ontogglefolder : function (tree) {
             Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
             var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            if (!this.options.naturalScrollLimit){
+                this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            }
             this.redraw();
         },
         lazyLoadOnLoad: function(tree, event) {

@@ -44,19 +44,22 @@ var STATE_MAP = {
 
 var OPERATIONS = {
     RENAME: {
-        status: 'rename',
         verb: 'Rename',
+        status: 'rename',
         passed: 'renamed',
+        action: 'Renaming',
     },
     MOVE: {
-        status: 'move',
         verb: 'Move',
+        status: 'move',
         passed: 'moved',
+        action: 'Moving',
     },
     COPY: {
-        status: 'copy',
         verb: 'Copy',
+        status: 'copy',
         passed: 'copied',
+        action: 'Copying',
     }
 };
 
@@ -128,20 +131,47 @@ function cancelUploads (row) {
     tb.isUploading(false);
 }
 
-var cancelUploadTemplate = function(row){
-    var treebeard = this;
-    return m('.btn.m-l-sm.text-muted', {
-            config : function() {
-                reapplyTooltips();
-            },
-            'onclick' : function (e) {
-                e.stopImmediatePropagation();
-                cancelUploads.call(treebeard, row);
-            }},
-        m('.fa.fa-times-circle.text-danger', {
-            style : 'display:block;font-size:18px; margin-top: -4px;',
-        }, '')
-    );
+var uploadRowTemplate = function(item){
+    var tb = this;
+    var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
+    var columns = [{
+        data : '',  // Data field name
+        css : '',
+        custom : function(){ return m('row.text-muted', [
+            m('.col-xs-7', {style: 'padding-left:40px;overflow: hidden;text-overflow: ellipsis;'}, item.data.name),
+            m('.col-xs-3',
+                m('.progress', [
+                    m('.progress-bar.progress-bar-info.progress-bar-striped', {
+                        role : 'progressbar',
+                        'aria-valuenow' : progress,
+                        'aria-valuemin' : '0',
+                        'aria-valuemax': '100',
+                        'style':'width: ' + progress + '%' }, m('span.sr-only', progress + '% Complete'))
+                ])
+            ),
+            m('.col-xs-2', [
+                m('span', m('.fangorn-toolbar-icon.m-l-sm', {
+                        style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
+                        config : function() {
+                            reapplyTooltips();
+                        },
+                        'onclick' : function (e) {
+                            e.stopImmediatePropagation();
+                            cancelUploads.call(tb, item);
+                        }},
+                     m('span.text-muted','×')
+                )),
+            ]),
+
+        ]); }
+    }];
+    if(tb.options.placement === 'files'){
+        columns.push({
+            data : '',  // Data field name
+            custom : function(){ return '';}
+        });
+    }
+    return columns;
 };
 
 /**
@@ -291,6 +321,25 @@ function checkConflicts(tb, item, folder, cb) {
     cb('replace');
 }
 
+function checkConflictsRename(tb, item, name, cb) {
+    var parent = item.parent();
+    for(var i = 0; i < parent.children.length; i++) {
+        var child = parent.children[i];
+        if (child.data.name === name && child.id !== item.id) {
+            tb.modal.update(m('', [
+                m('h3.break-word', 'An item named "' + name + '" already exists in this location.'),
+                m('p', 'Do you want to replace it?')
+            ]), m('', [
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
+                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+            ]));
+            return;
+        }
+    }
+    cb('replace');
+}
+
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
@@ -336,7 +385,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.data.status = undefined;
         from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
-        if (operation === OPERATIONS.COPY && xhr.status === 200) {
+        if (xhr.status === 200) {
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
@@ -440,20 +489,11 @@ function _fangornUploadProgress(treebeard, file, progress) {
         }
         if(child.data.tmpID === file.tmpID) {
             item = child;
+            item.data.progress = progress;
+            item.data.uploadState('uploading');
         }
     }
-    templateWithCancel = m('span', [
-        cancelUploadTemplate.call(treebeard, item),
-        m('span', file.name.slice(0,25) + '... : ' + 'Uploaded ' + Math.floor(progress) + '%'),
-    ]);
-    templateWithoutCancel = m('span', [
-        m('span', file.name.slice(0,25) + '... : ' + 'Upload Successful'),
-    ]);
-    if (progress < 100) {
-        item.notify.update(templateWithCancel, 'success', null, 0);
-    } else {
-        item.notify.update(templateWithoutCancel, 'success', null, 2000);
-    }
+    m.redraw();
 }
 
 /**
@@ -470,6 +510,7 @@ function _fangornSending(treebeard, file, xhr, formData) {
     treebeard.options.uploadInProgress = true;
     $osf.setXHRAuthorization(xhr);
     var parent = file.treebeardParent || treebeard.dropzoneItemCache;
+    xhr = $osf.setXHRAuthorization(xhr);
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
@@ -508,7 +549,8 @@ function _fangornAddedFile(treebeard, file) {
             view: false,
             edit: false
         },
-        tmpID: tmpID
+        tmpID: tmpID,
+        uploadState : m.prop('pending')
     };
     var newitem = treebeard.createItem(blankItem, item.id);
     return configOption || null;
@@ -602,6 +644,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     }
     if (item.data.tmpID) {
         item.data.tmpID = null;
+        item.data.uploadState('completed');
     }
     // Remove duplicates if file was updated
     var status = file.xhr.status;
@@ -687,6 +730,15 @@ function _downloadEvent (event, item, col) {
         window.event.cancelBubble = true;
     }
     window.location = waterbutler.buildTreeBeardDownload(item);
+}
+
+function _downloadZipEvent (event, item, col) {
+    try {
+        event.stopPropagation();
+    } catch (e) {
+        window.event.cancelBubble = true;
+    }
+    window.location = waterbutler.buildTreeBeardDownloadZip(item);
 }
 
 function _createFolder(event, dismissCallback, helpText) {
@@ -1002,6 +1054,7 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornResolveRows(item) {
+    var tb = this;
     var default_columns = [];
     var configOption;
     item.css = '';
@@ -1009,15 +1062,8 @@ function _fangornResolveRows(item) {
         item.css = 'fangorn-selected';
     }
 
-    if(item.data.tmpID){
-        return [{
-            data : '',  // Data field name
-            css : 't-a-c',
-            custom : function(){ return m('span.text-muted', [m('span', cancelUploadTemplate.call(this, item)), m('span', item.data.name.slice(0,25) + '... : ' + 'Upload pending.')]); }
-        }, {
-            data : '',  // Data field name
-            custom : function(){ return '';}
-        }];
+    if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
+        return uploadRowTemplate.call(tb, item);
     }
 
     if(item.data.status) {
@@ -1187,9 +1233,12 @@ function _renameEvent () {
     var item = tb.multiselected()[0];
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
-    checkConflicts(tb, item, folder, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
+    //TODO Error message?
+    if  (val === item.name) return;
+    checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
+
 var toolbarModes = {
     'DEFAULT' : 'bar',
     'SEARCH' : 'search',
@@ -1331,6 +1380,14 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
+        } else {
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
+                    icon: 'fa fa-download',
+                    className : 'text-success'
+                }, 'Download as zip')
+            );
         }
         if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
             rowButtons.push(
@@ -1798,6 +1855,7 @@ tbOptions = {
     resolveRows : _fangornResolveRows,
     hoverClassMultiselect : 'fangorn-selected',
     multiselect : true,
+    placement : 'files',
     title : function() {
         //TODO Add disk saving mode message
         // if(window.contextVars.diskSavingMode) {
@@ -1940,8 +1998,7 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400,
-    naturalScrollLimit : 1000
+    hScroll : 400
 };
 
 /**
@@ -1981,6 +2038,7 @@ Fangorn.Components = {
 
 Fangorn.ButtonEvents = {
     _downloadEvent: _downloadEvent,
+    _downloadZipEvent: _downloadZipEvent,
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
     createFolder: _createFolder,
@@ -1998,7 +2056,8 @@ Fangorn.Utils = {
     setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile,
     openParentFolders : _openParentFolders,
-    dismissToolbar : _dismissToolbar
+    dismissToolbar : _dismissToolbar,
+    uploadRowTemplate : uploadRowTemplate
 };
 
 Fangorn.DefaultOptions = tbOptions;

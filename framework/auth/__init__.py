@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from framework.sessions import session, create_session, goback
+from framework.sessions import session, create_session
 from framework import bcrypt
 from framework.auth.exceptions import (
     DuplicateEmailError,
-    LoginDisabledError,
-    LoginNotAllowedError,
-    PasswordIncorrectError,
     TwoFactorValidationError,
 )
 from framework.flask import redirect
@@ -24,7 +21,6 @@ __all__ = [
     'get_user',
     'check_password',
     'authenticate',
-    'login',
     'logout',
     'register_unconfirmed',
 ]
@@ -115,37 +111,6 @@ def verify_two_factor(user_id, two_factor_code):
         from website.util import web_url_for
         response = redirect(web_url_for('dashboard'))
     return response
-
-
-def login(email, password):
-    """View helper function for logging in a user. Either authenticates a user
-    and returns a ``Response`` or raises an ``AuthError``.
-
-    :raises: AuthError on a bad login
-    :returns: Redirect response to settings page on successful login.
-    """
-    email = email.strip().lower()
-    password = password.strip()
-    if email and password:
-        user = get_user(email=email, password=password)
-        if user:
-            if not user.is_registered:
-                raise LoginNotAllowedError('User is not registered.')
-
-            if not user.is_claimed:
-                raise LoginNotAllowedError('User is not claimed.')
-
-            if user.is_merged:
-                raise LoginNotAllowedError('Cannot log in to a merged user.')
-
-            if user.is_disabled:
-                raise LoginDisabledError('User is disabled.')
-
-            if user_requires_two_factor_verification(user):
-                return authenticate_two_factor(user)
-
-            return authenticate(user, response=goback())
-    raise PasswordIncorrectError('Incorrect password attempt.')
 
 
 def logout():

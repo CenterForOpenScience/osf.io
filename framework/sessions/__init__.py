@@ -10,7 +10,7 @@ import itsdangerous
 
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request, make_response
+from flask import request, make_response, jsonify
 from framework.flask import app, redirect
 
 from website import settings
@@ -148,33 +148,29 @@ session = LocalProxy(get_session)
 def before_request():
     from framework.auth import authenticate
     from framework.auth.core import User
-    from framework.auth.cas import CasClient
+    from framework.auth import cas
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
     if ticket:
         service_url = furl.furl(request.url)
         service_url.args.pop('ticket')
-
-        cas_resp = CasClient(settings.CAS_SERVER_URL).service_validate(ticket, service_url.url)
-        if cas_resp.authenticated:
-            user = User.load(cas_resp.user)
-            # if we successfully authentication and a verification key is present, invalidate it
-            if user.verification_key:
-                user.verification_key = None
-                user.save()
-            return authenticate(user, cas_resp.attributes['accessToken'], redirect(service_url.url))
-        # Ticket could not be validated, unauthorized.
-        return redirect(service_url.url)
+        # Attempt autn wih CAS, and return a proper redirect response
+        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
     # Central Authentication Server OAuth Bearer Token
     authorization = request.headers.get('Authorization')
     if authorization and authorization.startswith('Bearer '):
-        access_token = authorization[7:]
-        cas_resp = CasClient(settings.CAS_SERVER_URL).profile(access_token)
+        client = cas.get_client()
+        try:
+            access_token = cas.parse_auth_header(authorization)
+        except cas.CasTokenError as err:
+            # NOTE: We assume that the request is an AJAX request
+            return jsonify({'message_short': 'Invalid Bearer token', 'message_long': err.args[0]}), http.UNAUTHORIZED
+        cas_resp = client.profile(access_token)
         if cas_resp.authenticated:
             user = User.load(cas_resp.user)
-            return authenticate(user, access_token, None)
+            return authenticate(user, access_token=access_token, response=None)
         return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:

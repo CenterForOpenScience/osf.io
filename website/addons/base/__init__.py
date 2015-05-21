@@ -658,6 +658,20 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         user_settings.oauth_grants = {}
         user_settings.save()
+
+        try:
+            config = settings.ADDONS_AVAILABLE_DICT[
+                self.oauth_provider.short_name
+            ]
+            Model = config.settings_models['node']
+        except KeyError:
+            pass
+        else:
+            connected = Model.find(Q('user_settings', 'eq', user_settings))
+            for node_settings in connected:
+                node_settings.user_settings = self
+                node_settings.save()
+
         self.save()
 
     def to_json(self, user):
