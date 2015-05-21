@@ -4,8 +4,7 @@ from framework.archiver.utils import (
     link_archive_provider,
 )
 from framework.archiver import (
-    ARCHIVER_PENDING,
-    ARCHIVER_CHECKING,
+    ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
 )
 from framework.archiver.exceptions import ArchiverCopyError
@@ -32,11 +31,11 @@ def archive_callback(dst):
     """
     if not dst.archiving:
         return
-    pending = {key: value for key, value in dst.archived_providers.iteritems() if value['status'] in (ARCHIVER_PENDING, ARCHIVER_CHECKING)}
+    pending = {key: value for key, value in dst.archived_providers.iteritems() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)}
     if not len(pending):
         dst.archiving = False
         dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
             raise ArchiverCopyError(dst.registered_from, dst, dst.creator, dst.archived_providers)
         else:
-            enqueue_task(send_success_message.si(dst._id))
+            send_success_message.si(dst._id).apply_async()
