@@ -26,6 +26,7 @@ def send_retraction_and_embargo_addition_message(contrib, label, mail, dry_run=T
     if label in contrib.security_messages:
         return
     if not dry_run:
+        logger.info('Sending message to user {0!r}'.format(contrib))
         send_mail(contrib.username, mail, user=contrib)
         contrib.security_messages[MESSAGE_NAME] = datetime.datetime.utcnow()
         contrib.save()
@@ -38,7 +39,7 @@ def get_registration_contributors():
 
     def has_received_message(contrib):
         query = (Q('_id', 'eq', contrib._id) & Q('security_messages.{0}'.format(MESSAGE_NAME), 'exists', False))
-        return False if len(models.User.find(query)) > 0 else True
+        return models.User.find(query).count() == 0
 
     for node in registrations:
         contributors.extend([contrib for contrib in node.contributors if contrib not in contributors and not has_received_message(contrib)])
@@ -49,16 +50,16 @@ def get_registration_contributors():
 def main(dry_run):
     contributors = get_registration_contributors()
 
+    if not dry_run:
+        logger.info('Emailing {0} users regarding upcoming registration changes'.format(len(contributors)))
     for contrib in contributors:
-        if dry_run:
-            logger.info('Dry run mode')
-        logger.info('Sending message to user {0!r}'.format(contrib))
         send_retraction_and_embargo_addition_message(contrib, MESSAGE_NAME, MAILER, dry_run=dry_run)
 
 
 if __name__ == '__main__':
     import sys
-    script_utils.add_file_logger(logger, __file__)
     dry_run = 'dry' in sys.argv
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
     init_app(routes=False, mfr=False)
     main(dry_run)
