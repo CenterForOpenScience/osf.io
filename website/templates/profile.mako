@@ -47,7 +47,7 @@
             </div>
         </div>
         % if profile.get('date_registered'):
-            <div class="row">
+            <div class="row table-row">
                 <div class="col-xs-4">
                     <span>Member&nbsp;Since</span>
                 </div>
@@ -57,7 +57,7 @@
             </div>
         % endif
         % if profile.get('url') and profile.get('display_absolute_url'):
-            <div class="row">
+            <div class="row table-row">
                 <div class="col-xs-4">
                     <span>Public&nbsp;Profile</span>
                 </div>
