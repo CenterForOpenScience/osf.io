@@ -358,7 +358,11 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
 
     normalized_items=  []
     for item in items:
-        normalized_item = unicodedata.normalize('NFKD', six.u(item)).encode('ascii', 'ignore')
+        try:
+            normalized_item = six.u(item)
+        except TypeError:
+            normalized_item = item
+        normalized_item = unicodedata.normalize('NFKD', normalized_item).encode('ascii', 'ignore')
         normalized_items.append(normalized_item)
     items = normalized_items
     
