@@ -93,7 +93,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
 
         data = yield from resp.json()
-        return GoogleDriveFileMetadata(data, dest_path.parent).serialized(), dest_path.identifier is None
+        return GoogleDriveFileMetadata(data, dest_path).serialized(), dest_path.identifier is None
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, src_path, dest_path):
@@ -115,7 +115,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         )
 
         data = yield from resp.json()
-        return GoogleDriveFileMetadata(data, dest_path.parent).serialized(), dest_path.identifier is None
+        return GoogleDriveFileMetadata(data, dest_path).serialized(), dest_path.identifier is None
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
