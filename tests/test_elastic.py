@@ -387,7 +387,10 @@ class TestAddContributor(SearchTestCase):
         super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
+        self.name3 = u'j\xc3\xb3ebert3 Smith3'
+        self.name4 = u'B\xc3\xb3bbert4 Jones4'
         self.user = UserFactory(fullname=self.name1)
+        self.user3 = UserFactory(fullname=self.name3)
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()
@@ -435,6 +438,40 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 1)
 
         contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 0)
+
+
+    def test_search_fullname_special_character(self):
+        """Verify that searching for a fullname with a special character yields
+        exactly one result.
+        
+        """
+        contribs = search.search_contributor(self.name3)
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4)
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_firstname_special_charcter(self):
+        """Verify that searching for a first name with a special character yields
+        exactly one result.
+        
+        """
+        contribs = search.search_contributor(self.name3.split(' ')[0])
+        assert_equal(len(contribs['users']), 1)
+        
+        contribs = search.search_contributor(self.name4.split(' ')[0])
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_partial_special_character(self):
+        """Verify that searching for a partial name with a special character yields
+        exctly one result.
+        
+        """
+        contribs = search.search_contributor(self.name3.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 1)
+                    
+        contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
 
