@@ -13,8 +13,6 @@ from scripts import cleanup_failed_registrations as scripts
 
 from framework.auth import Auth
 from framework.tasks import handlers
-from framework import archiver
-from framework.archiver.tasks import *  # noqa
 from framework.archiver.exceptions import *  # noqa
 from framework.archiver import (
     ARCHIVER_CHECKING,
@@ -26,7 +24,10 @@ from framework.archiver import settings as archiver_settings
 from framework.archiver import exceptions as archiver_exceptions
 from framework.archiver import utils as archiver_utils
 from framework.archiver import mails as archiver_mails
+from website.app import *  # noqa
+from framework import archiver
 from framework.archiver import listeners
+from framework.archiver.tasks import *   # noqa
 
 from website import settings
 from website.util import waterbutler_url_for

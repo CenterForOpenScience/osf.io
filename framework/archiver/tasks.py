@@ -1,6 +1,6 @@
 import requests
 import json
-from urllib import quote
+
 from celery import group, chain
 from celery.utils.log import get_task_logger
 
@@ -174,7 +174,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     src_provider = src.get_addon(addon_short_name)
     parent_name = "Archive of {addon}".format(addon=src_provider.config.full_name)
     if hasattr(src_provider, 'folder'):
-        parent_name = parent_name + " ({folder})".format(folder=src_provider.folder.replace('/', '%2F'))
+        parent_name = parent_name + " ({folder})".format(folder=(src_provider.folder or '').replace('/', '%2F'))
     provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
     data = dict(
