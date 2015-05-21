@@ -34,7 +34,7 @@
         </tr>
         <tr>
           <td style="border-collapse: collapse;">
-          ${content()}
+          ${self.content()}
           </td>
         </tr>
         <tr>

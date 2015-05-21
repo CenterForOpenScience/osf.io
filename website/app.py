@@ -18,7 +18,6 @@ from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
 from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
-from framework.archiver import listeners  # noqa
 
 import website.models
 from website.routes import make_url_map
@@ -156,3 +155,5 @@ def apply_middlewares(flask_app, settings):
     if settings.LOAD_BALANCER:
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
     return flask_app
+
+from framework.archiver import listeners  # noqa
