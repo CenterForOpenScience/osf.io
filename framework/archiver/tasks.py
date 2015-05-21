@@ -174,7 +174,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     src_provider = src.get_addon(addon_short_name)
     parent_name = "Archive of {addon}".format(addon=src_provider.config.full_name)
     if hasattr(src_provider, 'folder_name'):
-        folder_name = getattr(src_provider, 'folder_name', '').lstrip('/').strip()
+        folder_name = (getattr(src_provider, 'folder_name') or '').lstrip('/').strip()
         parent_name = parent_name + ": {folder}".format(folder=folder_name)
     provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()

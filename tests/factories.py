@@ -177,7 +177,6 @@ class RegistrationFactory(AbstractNodeFactory):
         """
         :param send_signals: optionally send blinker signals-- currently used only by Archiver
         """
-        
         save_kwargs(**kwargs)
 
         # Original project to be registered
