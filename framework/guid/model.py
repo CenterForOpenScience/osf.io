@@ -9,7 +9,7 @@ from framework.exceptions import HTTPError
 from framework import sentry
 
 
-class WhitelistWord(StoredObject):
+class CleanGuid(StoredObject):
 
     _id = fields.StringField(primary=True)
 
@@ -54,13 +54,13 @@ class GuidStoredObject(StoredObject):
             )
             guid.save()
 
-        # Else create GUID using database of white-listed words
+        # Else create GUID using database of "clean" guids
         else:
             while True:
-                # Get a random word from the database
-                words = WhitelistWord.find()
-                rand = randint(0, words.count()-1)
-                id = words[rand]._id
+                # Get a clean guid from the database
+                clean_guid = CleanGuid.find()
+                rand = randint(0, clean_guid.count()-1)
+                id = clean_guid[rand]._id
 
                 try:
                     guid = Guid(_id=id)
@@ -70,7 +70,7 @@ class GuidStoredObject(StoredObject):
                     pass
 
             if guid:
-                WhitelistWord.remove(Q('_id', 'eq', id))
+                CleanGuid.remove(Q('_id', 'eq', id))
                 guid.referent = (guid._primary_key, self._name)
                 guid.save()
 
