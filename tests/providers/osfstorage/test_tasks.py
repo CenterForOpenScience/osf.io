@@ -6,9 +6,11 @@ from unittest import mock
 import pytest
 
 from tests.utils import async
+from tests import utils as test_utils
 
 from boto.glacier.exceptions import UnexpectedHTTPResponseError
 
+from waterbutler.core.path import WaterButlerPath
 from waterbutler.providers.osfstorage import settings
 from waterbutler.providers.osfstorage.tasks import utils
 from waterbutler.providers.osfstorage.tasks import backup
@@ -31,6 +33,21 @@ def settings():
             'container': 'butt',
         },
     }
+
+@pytest.fixture
+def mock_provider(monkeypatch):
+    mock_provider = test_utils.MockProvider1({}, {}, {})
+
+    mock_provider.copy = test_utils.MockCoroutine()
+    mock_provider.move = test_utils.MockCoroutine()
+    mock_provider.delete = test_utils.MockCoroutine()
+    mock_provider.upload = test_utils.MockCoroutine()
+    mock_provider.download = test_utils.MockCoroutine()
+    mock_provider.metadata = test_utils.MockCoroutine()
+
+    mock_make_provider = mock.Mock(return_value=mock_provider)
+    monkeypatch.setattr(parity, 'make_provider', mock_make_provider)
+    return mock_provider
 
 
 class TestParityTask:
@@ -64,14 +81,10 @@ class TestParityTask:
             mock_upload_parity.assert_any_call(num, credentials, settings)
 
     @async
-    def test_uploads(self, monkeypatch, tmpdir):
-        mock_provider = mock.MagicMock()
+    def test_uploads(self, monkeypatch, tmpdir, mock_provider):
         tempfile = tmpdir.join('test.file')
         stream = parity.streams.FileStreamReader(tempfile)
         monkeypatch.setattr(parity.streams, 'FileStreamReader', lambda x: stream)
-        mock_make_provider = mock.Mock()
-        mock_make_provider.return_value = mock_provider
-        monkeypatch.setattr(parity, 'make_provider', mock_make_provider)
 
         tempfile.write('foo')
         path = tempfile.strpath
@@ -82,7 +95,7 @@ class TestParityTask:
 
         mock_provider.upload.assert_called_once_with(
             stream,
-            path='/' + os.path.split(path)[1],
+            WaterButlerPath('/' + os.path.split(path)[1])
         )
 
     def test_exceptions_get_raised(self, monkeypatch):
