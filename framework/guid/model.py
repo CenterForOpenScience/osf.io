@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 from random import randint
 from modularodm import fields, Q
 from modularodm.storage.base import KeyExistsException
 
 from framework.mongo import StoredObject
-from framework.exceptions import HTTPError
-from framework import sentry
 
 
 class CleanGuid(StoredObject):
