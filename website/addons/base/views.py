@@ -7,6 +7,7 @@ import errno
 import httplib
 import functools
 import requests
+import uuid
 
 import furl
 from flask import request
@@ -17,6 +18,7 @@ from modularodm.exceptions import NoResultsFound
 from framework.auth import Auth
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
+from framework.mongo.utils import to_mongo_key
 from framework.render.tasks import build_rendered_html, get_file_contents
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
@@ -27,6 +29,7 @@ from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
 from website.util import rubeus, waterbutler_url_for
+from website.profile.utils import get_gravatar
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
@@ -334,6 +337,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
+    # TODO: resolve circular import issue
+    from website.addons.wiki.utils import get_sharejs_uuid, generate_private_uuid
+    from website.addons.wiki import settings as wiki_settings
+
     path = file_guid.waterbutler_path
     provider = file_guid.provider
 
@@ -351,6 +358,17 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         provider=provider
     )
 
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    file_guid_str = str(file_guid)
+    file_key = to_mongo_key(file_guid_str)
+
+    if can_edit:
+        if file_key not in node.wiki_private_uuids:
+            generate_private_uuid(node, file_guid_str)
+        sharejs_uuid = get_sharejs_uuid(node, file_guid_str)
+    else:
+        sharejs_uuid = None
+
     ret = serialize_node(node, auth, primary=True)
 
     # Disable OSF Storage file deletion in DISK_SAVING_MODE
@@ -359,10 +377,15 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 
     ret.update({
         'provider': file_guid.provider,
-        'render_url': render_url,
-        'edit_url': waterbutler_url_for('upload', provider, path, node),
-        'view_url': view_url,
         'file_path': file_guid.waterbutler_path,
+        'sharejs_uuid': sharejs_uuid or '',
+        'urls': {
+            'sharejs': wiki_settings.SHAREJS_URL,
+            'render': render_url,
+            'edit': waterbutler_url_for('upload', provider, path, node),
+            'view': view_url,
+            'gravatar': get_gravatar(auth.user, 25)
+        },
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid),
         'content': file_content(file_guid),

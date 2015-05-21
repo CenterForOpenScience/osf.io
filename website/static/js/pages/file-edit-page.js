@@ -24,7 +24,8 @@ var filePageOptions = {
     viewVisible: viewable,
     canEdit: ctx.canEdit,
     isEditable: ctx.isEditable,
-    urls: ctx.urls
+    urls: ctx.urls,
+    metadata: ctx.metadata
 };
 
 var filePage = new FilePage('#filePageContext', filePageOptions);

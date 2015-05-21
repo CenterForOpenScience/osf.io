@@ -71,9 +71,7 @@ var defaultOptions = {
     canEdit: true,
     viewVersion: 'current',
     urls: {
-        content: '',
-        draft: '',
-        page: ''
+        content: ''
     },
     metadata: {}
 };
@@ -105,9 +103,7 @@ function ViewModel(options){
     self.pageTitle = $(document).find('title').text();
 
     self.viewVersion = ko.observable(options.viewVersion);
-    self.draftURL = options.urls.draft;
     self.contentURL = options.urls.content;
-    self.pageURL = options.urls.page;
     self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
     self.isEditable = options.isEditable;
@@ -129,7 +125,7 @@ function ViewModel(options){
         self.editor = ace.edit('editor'); // jshint ignore: line
 
         var ShareJSDoc = require('./ShareJSDocFile.js');
-        self.editVM = new ShareJSDoc(self.draftURL, self.editorMetadata, self.viewText, self.editor);
+        self.editVM = new ShareJSDoc(self.contentURL, self.editorMetadata, self.viewText, self.editor);
     }
     self.viewVM = new ViewWidget(self.viewVis, self.viewVersion, self.viewText, self.renderedView, self.contentURL, self.allowMathjaxification, self.allowFullRender, self.editor);
 

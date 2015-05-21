@@ -68,10 +68,12 @@
                                         <div class="col-md-6">
                                             <div class="pull-right">
                                                 <div class="progress progress-no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
-                                                    <div role="progressbar"data-bind="attr: progressBar">
+                                                    <div role="progressbar" data-bind="attr: progressBar">
                                                         <span class="progress-bar-content">
                                                             <span data-bind="text: statusDisplay"></span>
-                                                            <span class="sharejs-info-btn"><i class="fa fa-question-circle fa-large"></i></span>
+                                                            <span class="sharejs-info-btn">
+                                                                <i class="fa fa-question-circle fa-large"></i>
+                                                            </span>
                                                         </span>
                                                     </div>
                                                 </div>
@@ -87,14 +89,14 @@
                                 <div class="row">
                                     <div class="col-xs-12">
                                         <div class="form-group wmd-panel">
-                                          <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
+                                            <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
                                               <!-- ko ifnot: id === '${user_id}' -->
                                                   <li><a data-bind="attr: { href: url }" >
                                                       <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
                                                            style="border: 1px solid black;">
                                                   </a></li>
                                               <!-- /ko -->
-                                          </ul>
+                                            </ul>
                                             <div id="wmd-button-bar" style="display: none"></div>
                                             <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
                                         </div>
@@ -132,8 +134,8 @@
 
     % if user['can_edit'] and file_ext == '.txt':
     <div data-osf-panel="View">
-        <div class="osf-panel" >
-            <div class="osf-panel-header bordered">
+        <div class="osf-panel" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
+            <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
                 <div class="row">
                     <div class="col-sm-6">
                         <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
@@ -332,7 +334,7 @@
         %elif rendered is not None:
             renderURL: undefined,
         %else:
-            renderURL: '${render_url | js_str}',
+            renderURL: '${urls['render'] | js_str}',
         %endif
 
             file: {
@@ -355,18 +357,25 @@
                 panelsUsed: ${json.dumps(panels_used) | n},
                 isEditable: isEditable,
                 urls: {
-                    draft: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     content: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
-                    rename: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     page: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     base: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
-                    sharejs: 'localhost:7007'
+                    sharejs: '${urls['sharejs']}'
+                },
+                metadata: {
+                    registration: true,
+                    docId: '${sharejs_uuid}',
+                    userId: '${user_id}',
+                    userName: '${user_full_name}',
+                    userUrl: '${user_url}',
+                    userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
                 }
             }
       });
     </script>
 
     <script>
+
         $('#submitEdit').on('click', function(e) {
             e.preventDefault();
             var editContent = $('#edit_content').val();
@@ -375,23 +384,23 @@
             if (editContent != originalContent) {
                 var request = $.ajax({
                     type: 'PUT',
-                    url: '${edit_url}',
+                    url: '${urls['edit']}',
                     data: editContent
                 });
 
                 request.done(function () {
                     $.ajax({
                         type: 'GET',
-                        url: '${view_url}'
+                        url: '${urls['view']}'
                     }).done(function() {
-                        window.location.href = '${view_url}';
+                        window.location.href = '${urls['view']}';
                     });
                 });
 
                 request.fail(function(error) {
                    $osf.growl('Error', 'The file could not be updated.');
                    Raven.captureMessage('Could not PUT file content.', {
-                       url: '${edit_url}',
+                       url: '${urls['edit']}',
                        error: error
                    });
                 });
@@ -402,8 +411,8 @@
         });
     </script>
 
-    <script src="//localhost:7007/text.js"></script>
-    <script src="//localhost:7007/share.js"></script>
+    <script src="//${urls['sharejs']}/text.js"></script>
+    <script src="//${urls['sharejs']}/share.js"></script>
 
     % if user['can_edit'] and file_ext == '.txt':
         <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>

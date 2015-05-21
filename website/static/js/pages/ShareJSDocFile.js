@@ -68,7 +68,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
 
         viewModel.fetchData().done(function(response) {
             doc.attachAce(self.editor);
-            if (viewModel.wikisDiffer(viewModel.currentText(), response.content)) {
+            if (viewModel.filesDiffer(viewModel.currentText(), response.content)) {
                 viewModel.currentText(response.content);
             }
             unlockEditor();
@@ -96,7 +96,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
             if (canEdit) {
                 window.location.reload();
             } else {
-                window.location.replace(ctx.urls.page);
+                window.location.replace(ctx.urls.content);
             }
         }
     }
@@ -116,6 +116,26 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                     activeUsers.push(userMeta);
                 }
                 viewModel.activeUsers(activeUsers);
+                break;
+            case 'lock':
+                allowRefresh = false;
+                self.editor.setReadOnly(true);
+                permissionsModal.modal({
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                setTimeout(function() {
+                    allowRefresh = true;
+                    refreshMaybe();
+                }, 3000);
+                break;
+            case 'unlock':
+                canEdit = data.contributors.indexOf(metadata.userId) > -1;
+                refreshTriggered = true;
+                refreshMaybe();
+                break;
+            default:
+                onmessage(message);
                 break;
         }
     };

@@ -158,7 +158,7 @@ function ViewModel(url, viewText) {
 
     $(window).on('beforeunload', function() {
         if (self.changed() && self.status() !== 'connected') {
-            return 'There are unsaved changes to your wiki. If you exit ' +
+            return 'There are unsaved changes to your file. If you exit ' +
                 'the page now, those changes may be lost.';
         }
     });
