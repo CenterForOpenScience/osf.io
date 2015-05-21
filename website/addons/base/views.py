@@ -6,8 +6,6 @@ import codecs
 import errno
 import httplib
 import functools
-import requests
-import uuid
 
 import furl
 from flask import request
