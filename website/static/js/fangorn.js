@@ -169,7 +169,6 @@ function _fangornResolveIcon(item) {
 
     icon = getExtensionIconClass(item.data.name);
     if (icon) {
-        alert("Problem");
         return m('div.file-extension', { 'class': icon });
     }
     return m('i.fa.fa-file-text-o');
