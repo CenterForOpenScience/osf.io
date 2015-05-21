@@ -287,7 +287,7 @@ class OSFStorageProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         if path.identifier is None:
-            raise exceptions.MetadataError('{} not found'.format(str(path)), code=404)
+            raise exceptions.DeleteError('{} not found'.format(str(path)), code=404)
 
         yield from self.make_signed_request(
             'DELETE',
