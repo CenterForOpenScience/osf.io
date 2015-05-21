@@ -70,7 +70,7 @@ def get_globals():
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': CasClient(settings.CAS_SERVER_URL).get_login_url(request.url, auto=True),
-        'access_token': session.data.get('auth_user_access_token'),
+        'access_token': session.data.get('auth_user_access_token') or '',
     }
 
 
@@ -438,8 +438,6 @@ def make_url_map(app):
 
         Rule(['/login/', '/account/'], 'get',
              auth_views.auth_login, OsfWebRenderer('public/login.mako')),
-        Rule('/login/', 'post', auth_views.auth_login,
-             OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),

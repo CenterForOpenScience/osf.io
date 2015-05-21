@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import time
-import urllib
 import httplib
 import functools
 

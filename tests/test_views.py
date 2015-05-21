@@ -86,10 +86,10 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 301)
         assert_equal(
             res.request.path,
-            web_url_for('auth_login')
+            '/login'
         )
 
     def test_logged_in_no_private_key(self):
@@ -1820,7 +1820,7 @@ class TestClaimViews(OsfTestCase):
         url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, '/account/')
+        assert_equal(res.request.path, web_url_for('auth_login'))
 
     def test_posting_to_claim_form_with_valid_data(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -2967,7 +2967,6 @@ class TestComments(OsfTestCase):
         assert_equal(len(self.project.commented), 1)
         assert_equal(res_comment, serialized_comment)
 
-
     def test_add_comment_private_non_contributor(self):
 
         self._configure_project(self.project, 'private')
@@ -2978,12 +2977,11 @@ class TestComments(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_add_comment_logged_out(self):
-
         self._configure_project(self.project, 'public')
         res = self._add_comment(self.project)
 
         assert_equal(res.status_code, 302)
-        assert_in('next=', res.headers.get('location'))
+        assert_in('login', res.headers.get('location'))
 
     def test_add_comment_off(self):
 
@@ -3938,8 +3936,8 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
-        assert_equal(res2.status_code, 401)
-        assert_in("Sign In", res2.body)
+        assert_equal(res2.status_code, 301)
+        assert_equal(res2.request.path, '/login')
 
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()
