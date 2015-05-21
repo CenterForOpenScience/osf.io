@@ -30,6 +30,10 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
 
 class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMetadata):
 
+    def __init__(self, raw, path):
+        super().__init__(raw, path)
+        self._path._is_folder = True
+
     @property
     def id(self):
         return self.raw['id']

@@ -15,6 +15,7 @@ from waterbutler.providers.googledrive import GoogleDriveProvider
 from waterbutler.providers.googledrive.provider import GoogleDrivePath
 from waterbutler.providers.googledrive.metadata import GoogleDriveRevision
 from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
+from waterbutler.providers.googledrive.metadata import GoogleDriveFolderMetadata
 
 from tests.providers.googledrive import fixtures
 
@@ -342,6 +343,29 @@ class TestMetadata:
         result = yield from provider.metadata(path)
 
         expected = GoogleDriveFileMetadata(item, path.child(item['title'])).serialized()
+
+        assert result == [expected]
+        assert aiohttpretty.has_call(method='GET', uri=url)
+
+    @async
+    @pytest.mark.aiohttpretty
+    def test_folder_metadata(self, provider):
+        path = GoogleDrivePath(
+            '/hugo/kim/pins/',
+            _ids=[str(x) for x in range(4)]
+        )
+
+        body = fixtures.generate_list(3, **fixtures.folder_metadata)
+        item = body['items'][0]
+
+        query = provider._build_query(path.identifier)
+        url = provider.build_url('files', q=query, alt='json')
+
+        aiohttpretty.register_json_uri('GET', url, body=body)
+
+        result = yield from provider.metadata(path)
+
+        expected = GoogleDriveFolderMetadata(item, path.child(item['title'], folder=True)).serialized()
 
         assert result == [expected]
         assert aiohttpretty.has_call(method='GET', uri=url)
