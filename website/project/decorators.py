@@ -81,10 +81,13 @@ def must_be_public_registration(func):
 
         _inject_nodes(kwargs)
 
-        node = kwargs['node'] or kwargs['parent']
+        node = kwargs['node']
 
         if not node.is_public or not node.is_registration:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Must be a public registration to view')
+            )
 
         return func(*args, **kwargs)
 
