@@ -438,6 +438,40 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
 
+    def test_search_fullname_special_character(self):
+        """Verify that searching for a fullname with a special character yields
+        exactly one result.
+        
+        """
+        contribs = search.search_contributor(self.name3)
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4)
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_firstname_special_charcter(self):
+        """Verify that searching for a first name with a special character yields
+        exactly one result.
+        
+        """
+        contribs = search.search_contributor(self.name3.split(' ')[0])
+        assert_equal(len(contribs['users']), 1)
+        
+        contribs = search.search_contributor(self.name4.split(' ')[0])
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_partial_special_character(self):
+        """Verify that searching for a partial name with a special character yields
+        exctly one result.
+        
+        """
+        contribs = search.search_contributor(self.name3.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 1)
+                    
+        contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 0)
+
+
 class TestSearchExceptions(OsfTestCase):
     """
     Verify that the correct exception is thrown when the connection is lost
