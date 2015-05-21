@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-from random import randint
+import random
 from modularodm import fields, Q
 from modularodm.storage.base import KeyExistsException
 
 from framework.mongo import StoredObject
+
+
+ALPHABET = '23456789abcdefghijkmnpqrstuvwxyz'
 
 
 class CleanGuid(StoredObject):
@@ -56,8 +59,11 @@ class GuidStoredObject(StoredObject):
             while True:
                 # Get a clean guid from the database
                 clean_guid = CleanGuid.find()
-                rand = randint(0, clean_guid.count()-1)
-                id = clean_guid[rand]._id
+                if clean_guid:
+                    rand = random.randint(0, clean_guid.count()-1)
+                    id = clean_guid[rand]._id
+                else:
+                    id = ''.join(random.sample(ALPHABET, 5))
 
                 try:
                     guid = Guid(_id=id)
@@ -66,10 +72,9 @@ class GuidStoredObject(StoredObject):
                 except KeyExistsException:
                     pass
 
-            if guid:
-                CleanGuid.remove(Q('_id', 'eq', id))
-                guid.referent = (guid._primary_key, self._name)
-                guid.save()
+            CleanGuid.remove(Q('_id', 'eq', id))
+            guid.referent = (guid._primary_key, self._name)
+            guid.save()
 
             # Set primary key to GUID key
             self._primary_key = guid._primary_key
