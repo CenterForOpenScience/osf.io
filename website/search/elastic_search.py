@@ -355,6 +355,13 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """
     start = (page * size)
     items = re.split(r'[\s-]+', query)
+
+    normalized_items=  []
+    for item in items:
+        normalized_item = unicodedata.normalize('NFKD', six.u(item)).encode('ascii', 'ignore')
+        normalized_items.append(normalized_item)
+    items = normalized_items
+    
     query = ''
 
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
