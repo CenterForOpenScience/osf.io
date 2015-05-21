@@ -387,7 +387,10 @@ class TestAddContributor(SearchTestCase):
         super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
+        self.name3 = u'j\xc3\xb3ebert3 Smith3'
+        self.name4 = u'B\xc3\xb3bbert4 Jones4'
         self.user = UserFactory(fullname=self.name1)
+        self.user3 = UserFactory(fullname=self.name3)
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()
