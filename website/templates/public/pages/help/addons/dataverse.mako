@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="dataverse" class="anchor"></span>
     <h4>Dataverse</h4>
     <p><a href="https://osf.io/w75g2/">Dataverse</a> is a an open source web application to share, preserve, cite, explore,

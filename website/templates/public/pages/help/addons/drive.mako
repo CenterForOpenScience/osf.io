@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="drive" class="anchor"></span>
     <h4>Google Drive</h4>
     <p><a href="http://drive.google.com/">Google Drive</a> is a popular file storage and collaboration tool. After linking

@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="dropbox" class="anchor"></span>
     <h4>Dropbox</h4>
     <p><a href ="https://www.dropbox.com/">Dropbox</a> is a popular online file storage program. After linking your OSF
@@ -8,4 +8,5 @@
         in the grey navigation bar. Check "Dropbox" under "Select Add-ons" to enable the add-on. Read, then click "OK" on
         the pop-up, then submit. Then, authenticate with Dropbox by clicking the "Authorize" button. Once you have said "OK"
         you can choose the folder you would like to add to your OSF project.</p>
+    <div class="col-md-12"></div>
 </div>
