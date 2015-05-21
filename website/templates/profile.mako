@@ -38,43 +38,30 @@
 <div class="row">
 
     <div class="col-sm-6">
-        <div class="row">
-            <div class="col-xs-4">
-                <span>Name</span>
-            </div>
-            <div class="col-xs-8">
-                <span>${profile["fullname"]}</span>
-            </div>
-        </div>
-        % if profile.get('date_registered'):
-            <div class="row table-row">
-                <div class="col-xs-4">
-                    <span>Member&nbsp;Since</span>
-                </div>
-                <div class="col-xs-8">
-                    <span>${profile['date_registered']}</span>
-                </div>
-            </div>
-        % endif
-        % if profile.get('url') and profile.get('display_absolute_url'):
-            <div class="row table-row">
-                <div class="col-xs-4">
-                    <span>Public&nbsp;Profile</span>
-                </div>
-                <div class="col-xs-8">
-                    <span><a href="${profile['url']}">${profile['display_absolute_url']}</a></span>
-                </div>
-            </div>
-        % endif
-
-        <div>
-            <h2>
-               ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
-               ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
-            </h2>
-        </div>
-
+        <table class="table table-plain">
+            <tr>
+              <td>Name</td>
+              <td class="fullname" width="300px">${profile["fullname"]}</td>
+            </tr>
+            % if profile.get('date_registered'):
+                <tr>
+                    <td>Member&nbsp;Since</td>
+                    <td>${profile['date_registered']}</td>
+                </tr>
+            % endif
+            % if profile.get('url') and profile.get('display_absolute_url'):
+                <tr>
+                    <td>Public&nbsp;Profile</td>
+                    <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
+                </tr>
+            % endif
+        </table>
+        <h2>
+           ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
+           ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
+        </h2>
     </div>
+</div>
 
     <div class="col-sm-6">
 
