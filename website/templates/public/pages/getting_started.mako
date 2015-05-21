@@ -114,14 +114,50 @@
             <h2 class="text-center">Structuring Your Work</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/organizer.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/dashboards.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/user_profile.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/projects.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/components.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/files.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/links.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/forks.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/registrations.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/wiki.mako"/>
             </div>
         </div>
@@ -130,8 +166,20 @@
             <h2 class="text-center anchor">Sharing Your Work</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/privacy.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/view_only.mako"/>
+            </div>
+        </div>
+        <div  class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/comments.mako"/>
             </div>
         </div>
@@ -147,7 +195,15 @@
             <h2 class="text-center">Metrics</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/citations.mako"/>
+            </div>
+        </div>
+        <div class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/statistics.mako"/>
+            </div>
+        </div>
+        <div class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+            <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/notifications.mako"/>
             </div>
         </div>
