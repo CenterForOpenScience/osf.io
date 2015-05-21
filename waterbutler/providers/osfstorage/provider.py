@@ -178,11 +178,11 @@ class OSFStorageProvider(provider.BaseProvider):
         return (yield from self.make_request(method, url, data=data, params=params, **kwargs))
 
     @asyncio.coroutine
-    def download(self, path, version=None, **kwargs):
+    def download(self, path, version=None, mode=None, **kwargs):
         # osf storage metadata will return a virtual path within the provider
         resp = yield from self.make_signed_request(
             'GET',
-            self.build_url(path.identifier, 'download', version=version),
+            self.build_url(path.identifier, 'download', version=version, mode=mode),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
