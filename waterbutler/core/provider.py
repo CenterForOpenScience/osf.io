@@ -189,13 +189,14 @@ class BaseProvider(metaclass=abc.ABCMeta):
         assert asyncio.iscoroutinefunction(func), 'func must be a coroutine'
 
         try:
-            folder = yield from dest_provider.create_folder(dest_path)
+            yield from dest_provider.delete(dest_path)
             created = True
-        except exceptions.CreateFolderError as e:
-            if e.code != 409:
+        except exceptions.ProviderError as e:
+            if e.code != 404:
                 raise
             created = False
-            #TODO
+
+        folder = yield from dest_provider.create_folder(dest_path)
 
         dest_path = yield from dest_provider.revalidate_path(dest_path.parent, dest_path.name, folder=dest_path.is_dir)
 
