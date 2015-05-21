@@ -10,6 +10,7 @@ import sys
 from modularodm import Q
 
 from framework.auth import Auth
+from framework.transactions.context import TokuTransaction
 from website import models, settings
 from website.app import init_app
 from website.project.model import NodeLog
@@ -32,23 +33,23 @@ def main(dry_run=True):
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
-                embargo.state = models.Embargo.ACTIVE
-                parent_registration.add_log(
-                    action=NodeLog.EMBARGO_APPROVED,
-                    params={
-                        'registration_id': parent_registration._id,
-                        'embargo_id': embargo._id,
-                    },
-                    auth=Auth(parent_registration.embargo.initiated_by),
-                    log_date=datetime.datetime.utcnow(),
-                    save=False,
-                )
-                embargo.save()
+                with TokuTransaction():
+                    embargo.state = models.Embargo.ACTIVE
+                    parent_registration.add_log(
+                        action=NodeLog.EMBARGO_APPROVED,
+                        params={
+                            'registration_id': parent_registration._id,
+                            'embargo_id': embargo._id,
+                        },
+                        auth=Auth(parent_registration.embargo.initiated_by),
+                        log_date=datetime.datetime.utcnow(),
+                        save=False,
+                    )
+                    embargo.save()
 
     active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.ACTIVE))
     for embargo in active_embargoes:
         if embargo.end_date < datetime.datetime.utcnow():
-            parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
             if dry_run:
                 logger.warn('Dry run mode')
             parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
@@ -57,19 +58,20 @@ def main(dry_run=True):
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
-                parent_registration.set_privacy('public')
-                embargo.state = models.Embargo.COMPLETED
-                parent_registration.add_log(
-                    action=NodeLog.EMBARGO_COMPLETED,
-                    params={
-                        'registration_id': parent_registration._id,
-                        'embargo_id': embargo._id,
-                    },
-                    auth=Auth(parent_registration.embargo.initiated_by),
-                    log_date=datetime.datetime.utcnow(),
-                    save=False,
-                )
-                embargo.save()
+                with TokuTransaction():
+                    parent_registration.set_privacy('public')
+                    embargo.state = models.Embargo.COMPLETED
+                    parent_registration.add_log(
+                        action=NodeLog.EMBARGO_COMPLETED,
+                        params={
+                            'registration_id': parent_registration._id,
+                            'embargo_id': embargo._id,
+                        },
+                        auth=Auth(parent_registration.embargo.initiated_by),
+                        log_date=datetime.datetime.utcnow(),
+                        save=False,
+                    )
+                    embargo.save()
 
 
 def should_be_embargoed(embargo):
