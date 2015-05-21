@@ -6,8 +6,8 @@ from waterbutler.tasks import settings
 
 
 @core.celery_task
-def move(src_bundle, dest_bundle, callback_url, auth, **kwargs):
-    start_time = time.time()
+def move(src_bundle, dest_bundle, callback_url, auth, start_time=None, **kwargs):
+    start_time = start_time or time.time()
     src_path, src_provider = src_bundle.pop('path'), utils.make_provider(**src_bundle.pop('provider'))
     dest_path, dest_provider = dest_bundle.pop('path'), utils.make_provider(**dest_bundle.pop('provider'))
 

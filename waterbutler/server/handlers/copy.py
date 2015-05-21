@@ -1,3 +1,5 @@
+import time
+
 from waterbutler import tasks
 from waterbutler.server import utils
 from waterbutler.server.handlers import core
@@ -29,6 +31,7 @@ class CopyHandler(core.BaseCrossProviderHandler):
                 self.auth,
                 rename=self.json.get('rename'),
                 conflict=self.json.get('conflict', 'replace'),
+                start_time=time.time()
             )
 
             metadata, created = yield from tasks.wait_on_celery(result)
