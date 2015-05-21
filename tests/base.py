@@ -25,6 +25,7 @@ from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
 from scripts.clean_guids import remove_current_guids, create_clean_guid_objects
+from website.settings import APP_PATH
 
 
 from website.project.model import (
@@ -124,7 +125,7 @@ class DbTestCase(unittest.TestCase):
 
     @classmethod
     def populate_guids(self):
-        clean_list = remove_current_guids('test_files/test_guids.csv')
+        clean_list = remove_current_guids(os.path.join(APP_PATH, 'tests/test_files/test_guids.csv'))
         create_clean_guid_objects(clean_list)
 
     @classmethod
