@@ -7,7 +7,7 @@ var $osf = require('js/osfHelpers');
 var MetaData = require('../metadata_1.js');
 var ctx = window.contextVars;
 
-require('../../css/pikaday.css');
+require('pikaday-css');
 
 /**
     * Unblock UI and display error modal
