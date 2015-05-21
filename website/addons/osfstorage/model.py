@@ -42,6 +42,10 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     # migrate_from_oldels scripts
     _migrated_from_old_models = fields.BooleanField(default=False)
 
+    @property
+    def folder_name(self):
+        return self.root_node_name
+
     def on_add(self):
         if self.root_node:
             return

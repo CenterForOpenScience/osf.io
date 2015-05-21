@@ -121,6 +121,10 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     registration_data = fields.DictionaryField()
 
     @property
+    def folder_name(self):
+        return self.folder
+
+    @property
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder)
 

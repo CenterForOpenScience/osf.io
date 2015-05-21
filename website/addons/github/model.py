@@ -214,6 +214,10 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     registration_data = fields.DictionaryField()
 
     @property
+    def folder_name(self):
+        return self.repo
+
+    @property
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
 

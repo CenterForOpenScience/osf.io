@@ -100,6 +100,10 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         'addons3usersettings', backref='authorized'
     )
 
+    @property
+    def folder_name(self):
+        return self.bucket
+
     def find_or_create_file_guid(self, path):
         path = path.lstrip('/')
         return S3GuidFile.get_or_create(node=self.owner, path=path)
