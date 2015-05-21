@@ -124,7 +124,7 @@ class DbTestCase(unittest.TestCase):
 
     @classmethod
     def populate_guids(self):
-        clean_list = remove_current_guids('tests/test_files/test_guids.csv')
+        clean_list = remove_current_guids('test_files/test_guids.csv')
         create_clean_guid_objects(clean_list)
 
     @classmethod
