@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
+from urlparse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +43,7 @@ INSTALLED_APPS = (
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
+    'corsheaders'
 )
 
 REST_FRAMEWORK = {
@@ -67,6 +69,16 @@ REST_FRAMEWORK = {
     ),
 }
 
+# Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
+# CORS plugin only matches based on part of URL; split in same manner as workaround
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
+                         osf_settings.DOMAIN,
+                         urlparse(osf_settings.OFFLOAD_DOMAIN).netloc,
+                         osf_settings.OFFLOAD_DOMAIN
+                         )
+CORS_ALLOW_CREDENTIALS = True
+
 MIDDLEWARE_CLASSES = (
     # TokuMX transaction support
     # Needs to go before CommonMiddleware, so that transactions are always started,
@@ -75,6 +87,7 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.TokuTransactionsMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',

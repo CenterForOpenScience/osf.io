@@ -45,3 +45,4 @@ webcolors==1.4
 Django==1.8
 djangorestframework==3.1.1
 django-rest-swagger==0.2.9
+django-cors-headers==1.1.0
