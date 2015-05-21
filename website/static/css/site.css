@@ -737,10 +737,6 @@ table.table.table-plain th, table.table.table-plain td {
   border-top: 0px solid #ddd;
 }
 
-.table-row {
-    margin-top: 10px;
-}
-
 ul#projects-list{
     list-style-image:url('/static/img/folder.gif');
     width:210px;
