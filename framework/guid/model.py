@@ -60,7 +60,7 @@ class GuidStoredObject(StoredObject):
                 # Get a clean guid from the database
                 clean_guid = CleanGuid.find()
                 if clean_guid:
-                    rand = random.randint(0, clean_guid.count()-1)
+                    rand = random.randint(0, clean_guid.count() - 1)
                     id = clean_guid[rand]._id
                 else:
                     id = ''.join(random.sample(ALPHABET, 5))
