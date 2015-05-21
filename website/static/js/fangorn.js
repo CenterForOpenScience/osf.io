@@ -44,19 +44,22 @@ var STATE_MAP = {
 
 var OPERATIONS = {
     RENAME: {
-        status: 'rename',
         verb: 'Rename',
+        status: 'rename',
         passed: 'renamed',
+        action: 'Renaming',
     },
     MOVE: {
-        status: 'move',
         verb: 'Move',
+        status: 'move',
         passed: 'moved',
+        action: 'Moving',
     },
     COPY: {
-        status: 'copy',
         verb: 'Copy',
+        status: 'copy',
         passed: 'copied',
+        action: 'Copying',
     }
 };
 
@@ -291,6 +294,25 @@ function checkConflicts(tb, item, folder, cb) {
     cb('replace');
 }
 
+function checkConflictsRename(tb, item, name, cb) {
+    var parent = item.parent();
+    for(var i = 0; i < parent.children.length; i++) {
+        var child = parent.children[i];
+        if (child.data.name === name && child.id !== item.id) {
+            tb.modal.update(m('', [
+                m('h3.break-word', 'An item named "' + name + '" already exists in this location.'),
+                m('p', 'Do you want to replace it?')
+            ]), m('', [
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
+                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+            ]));
+            return;
+        }
+    }
+    cb('replace');
+}
+
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
@@ -336,7 +358,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.data.status = undefined;
         from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
-        if (operation === OPERATIONS.COPY && xhr.status === 200) {
+        if (xhr.status === 200) {
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
@@ -1196,7 +1218,9 @@ function _renameEvent () {
     var item = tb.multiselected()[0];
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
-    checkConflicts(tb, item, folder, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
+    //TODO Error message?
+    if  (val === item.name) return;
+    checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
 var toolbarModes = {
