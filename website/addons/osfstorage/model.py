@@ -274,8 +274,6 @@ class OsfStorageFileNode(StoredObject):
         version = OsfStorageFileVersion(creator=creator, location=location)
 
         if latest_version and latest_version.is_duplicate(version):
-            if self.is_deleted:
-                self.undelete(Auth(creator))
             return latest_version
 
         if metadata:
@@ -283,7 +281,6 @@ class OsfStorageFileNode(StoredObject):
 
         version.save()
         self.versions.append(version)
-        self.is_deleted = False
         self.save()
 
         if log:
@@ -312,36 +309,25 @@ class OsfStorageFileNode(StoredObject):
         extra = {'version': len(self.versions)} if version else None
         node_logger.log(action, extra=extra, save=True)
 
-    def delete(self, auth, recurse=True, log=True):
-        if self.is_deleted:
-            raise errors.DeleteError
+    def delete(self, auth, log=True):
+        trashed = OsfStorageTrashedFileNode()
+        trashed._id = self._id
+        trashed.name = self.name
+        trashed.kind = self.kind
+        trashed.parent = self.parent
+        trashed.versions = self.versions
+        trashed.node_settings = self.node_settings
 
-        self.is_deleted = True
-        self.save()
+        trashed.save()
 
-        if recurse and self.is_folder:
+        if self.is_folder:
             for child in self.children:
-                try:
-                    child.delete(auth, recurse=recurse, log=log)
-                except errors.DeleteError:
-                    pass  # If a child is already deleted ignore the error
+                child.delete(auth, log=False)
+
+        self.__class__.remove_one(self)
 
         if log:
             self.log(auth, NodeLog.FILE_REMOVED, version=False)
-
-    def undelete(self, auth, recurse=True, log=True):
-        if not self.is_deleted:
-            raise errors.UndeleteError
-
-        self.is_deleted = False
-        self.save()
-
-        if recurse and self.is_folder:
-            for child in self.children:
-                child.undelete(auth, recurse=recurse, log=log)
-
-        if log:
-            self.log(auth, NodeLog.FILE_ADDED if self.is_file else NodeLog.FOLDER_CREATED)
 
     def serialized(self, include_full=False):
         """Build Treebeard JSON for folder or file.
@@ -489,3 +475,13 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
+
+
+class OsfStorageTrashedFileNode(StoredObject):
+    """The graveyard for all deleted OsfStorageFileNodes"""
+    _id = fields.StringField(primary=True)
+    name = fields.StringField(required=True, index=True)
+    kind = fields.StringField(required=True, index=True)
+    parent = fields.ForeignField('OsfStorageFileNode', index=True)
+    versions = fields.ForeignField('OsfStorageFileVersion', list=True)
+    node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
