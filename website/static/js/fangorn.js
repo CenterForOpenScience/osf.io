@@ -1737,7 +1737,7 @@ function _dropLogic(event, items, folder) {
     if (items.indexOf(folder) > -1) { return; }
     if (copyMode === 'forbidden') return;
 
-    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
+    // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
     if (!folder.open) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
@@ -1757,45 +1757,12 @@ function _dropLogic(event, items, folder) {
  */
 function _dragLogic(event, items, ui) {
     var tb = this;
-        var canCopy = true,
-        canMove = true,
-        folder = this.find($(event.target).attr('data-id')),
-        isSelf = false,
-        isParent  = false,
-        dragGhost = $('.tb-drag-ghost');
+    var canMove = true,
+    folder = this.find($(event.target).attr('data-id')),
+    dragGhost = $('.tb-drag-ghost');
 
-    if (folder.data.status) {
-        copyMode = 'forbidden';
-    }
-
-    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
-        copyMode = 'forbidden';
-    }
-
-    items.forEach(function (item) {
-        if (!isSelf) {
-            isSelf = item.id === folder.id;
-        }
-        if(!isParent){
-            isParent = item.parentID === folder.id;
-        }
-        canMove = canMove && item.data.permissions.edit;
-    });
-    if (folder.data.permissions.edit && folder.kind === 'folder' && folder.parentID !== 0 && canMove) {
-        if (canMove) {
-            if (altKey) {
-                copyMode = 'copy';
-            } else {
-                copyMode = 'move';
-            }
-        }
-    } else {
-        copyMode = 'forbidden';
-    }
-    if (isSelf || isParent) {
-        copyMode = 'forbidden';
-    }
     // Set the cursor to match the appropriate copy mode
+    copyMode = getCopyMode(folder, items);
     switch (copyMode) {
         case 'forbidden':
             dragGhost.css('cursor', 'not-allowed');
@@ -1811,6 +1778,30 @@ function _dragLogic(event, items, ui) {
     }
     return copyMode;
 
+}
+
+function getCopyMode(folder, items) {
+    var tb = this;
+    var canMove = true;
+
+    if (folder.parentId === 0) return 'forbidden';
+    if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
+    if (!folder.data.provider || folder.data.status) return 'forbidden';
+
+    for(var i = 0; i < items.length; i++) {
+        var item = items[i];
+        if (item.data.nodeType) return 'forbidden';
+        if (item.data.isAddonRoot) return 'forbidden';
+        if (item.id === folder.id) return 'forbidden';
+        if (item.parentID === folder.id) return 'forbidden';
+        if (item.data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) return 'forbidden';
+
+        canMove = canMove && item.data.permissions.edit;
+    }
+    if (folder.data.isPointer) return 'copy';
+    if (altKey) return 'copy';
+    if (!canMove) return 'copy';
+    return 'move';
 }
 /* END MOVE */
 
