@@ -259,7 +259,6 @@ class OSFStorageProvider(provider.BaseProvider):
         data = yield from response.json()
 
         if settings.RUN_TASKS:
-            version_id = data['version']
             parity.main(
                 local_complete_path,
                 self.parity_credentials,
@@ -267,7 +266,7 @@ class OSFStorageProvider(provider.BaseProvider):
             )
             backup.main(
                 local_complete_path,
-                version_id,
+                data['version'],
                 self.build_url('hooks', 'metadata'),
                 self.archive_credentials,
                 self.archive_settings,
