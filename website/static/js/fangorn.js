@@ -1735,6 +1735,7 @@ function _dropLogic(event, items, folder) {
 
     if (items.length < 1) { return; }
     if (items.indexOf(folder) > -1) { return; }
+    if (copyMode === 'forbidden') return;
 
     if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
