@@ -418,7 +418,7 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         var message;
 
-        if (xhr.responseJSON && xhr.responseJSON.message) {
+        if (xhr.status !== 500 && xhr.responseJSON && xhr.responseJSON.message) {
             message = xhr.responseJSON.message;
         } else {
             message = 'Please refresh the page or ' +
