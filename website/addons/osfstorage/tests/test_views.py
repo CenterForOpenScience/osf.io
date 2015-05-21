@@ -476,20 +476,21 @@ class TestDeleteHook(HookTestCase):
 
         resp = self.delete(file)
 
-        file.reload()
-        assert_true(file.is_deleted)
         assert_equal(resp.status_code, 200)
         assert_equal(resp.json, {'status': 'success'})
+        fid = file._id
+        del file
+        model.OsfStorageFileNode._clear_object_cache()
+        assert_is(model.OsfStorageFileNode.load(fid), None)
+        assert_true(model.OsfStorageTrashedFileNode.load(fid))
 
     def test_delete_deleted(self):
         file = self.root_node.append_file('Newfile')
         file.delete(None, log=False)
-        assert_true(file.is_deleted)
 
         resp = self.delete(file, expect_errors=True)
 
-        file.reload()
-        assert_equal(resp.status_code, 410)
+        assert_equal(resp.status_code, 404)
 
     def test_cannot_delete_root(self):
         resp = self.delete(self.root_node, expect_errors=True)

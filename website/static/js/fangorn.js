@@ -356,6 +356,10 @@ function doItemOp(operation, to, from, rename, conflict) {
 
     tb.redraw();
 
+    if (to.data.provider === from.provider) {
+        tb.pendingFileOps.push(from.id);
+    }
+
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
@@ -370,10 +374,14 @@ function doItemOp(operation, to, from, rename, conflict) {
             'destination': waterbutler.toJsonBlob(to),
         })
     }).done(function(resp, _, xhr) {
+        if (to.data.provider === from.provider) {
+            tb.pendingFileOps.pop();
+        }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
                 m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
-                m('p', 'We\'ll send you an email when it has finished.')
+                m('p', 'We\'ll send you an email when it has finished.'),
+                m('p', 'In the mean time you can leave this page; your ' + operation.status + 'will still be completed.')
             ]);
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
@@ -409,6 +417,9 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         tb.redraw();
     }).fail(function(xhr) {
+        if (to.data.provider === from.provider) {
+            tb.pendingFileOps.pop();
+        }
         if (operation === OPERATIONS.COPY) {
             from.removeSelf();
         } else {
@@ -418,7 +429,7 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         var message;
 
-        if (xhr.responseJSON && xhr.responseJSON.message) {
+        if (xhr.status !== 500 && xhr.responseJSON && xhr.responseJSON.message) {
             message = xhr.responseJSON.message;
         } else {
             message = 'Please refresh the page or ' +
@@ -1805,11 +1816,16 @@ function getCopyMode(folder, items) {
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
-        if (item.data.nodeType) return 'forbidden';
-        if (item.data.isAddonRoot) return 'forbidden';
-        if (item.id === folder.id) return 'forbidden';
-        if (item.parentID === folder.id) return 'forbidden';
-        if (item.data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) return 'forbidden';
+        if (
+            item.data.nodeType ||
+            item.data.isAddonRoot ||
+            item.id === folder.id ||
+            item.parentID === folder.id ||
+            (
+                item.data.kind === 'folder' &&
+                ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1
+            )
+        ) return 'forbidden';
 
         canMove = canMove && item.data.permissions.edit;
     }
@@ -1881,6 +1897,7 @@ tbOptions = {
     onload : function () {
         var tb = this;
         _loadTopLevelChildren.call(tb);
+        tb.pendingFileOps = [];
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
                 return;
@@ -1892,6 +1909,9 @@ tbOptions = {
         $(window).on('beforeunload', function() {
             if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
                 return 'You have pending uploads, if you leave this page they may not complete.';
+            }
+            if(tb.pendingFileOps.length > 0) {
+                return 'You have pending file operations, if you leave this page they may not complete.';
             }
         });
         if(tb.options.placement === 'project-files') {
