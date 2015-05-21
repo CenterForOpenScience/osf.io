@@ -113,6 +113,13 @@ class OAuth2AppSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'applications'
 
+    links = LinksField({
+        'html': 'absolute_url',
+        })
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
     def create(self, validated_data):
         instance = OAuth2App(**validated_data)
         instance.save()

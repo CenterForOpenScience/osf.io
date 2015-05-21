@@ -314,6 +314,10 @@ class OAuth2App(StoredObject):
     callback_url = fields.StringField(required=True)
 
     @property
+    def url(self):
+        return '/settings/applications/{}/'.format(self.client_id)  # TODO: Change if routes change
+
+    @property
     def absolute_url(self):
         return urlparse.urljoin(settings.DOMAIN, self.url)
 

@@ -1,11 +1,11 @@
 'use strict';
 
-var apiApplications = require('../apiApplications.js');
-var profile = require('../profile.js');
+var viewModels = require('../apiApplication.js');
 
 
 var ctx = window.contextVars;
 // Instantiate all the profile modules
-var Application = new profile.Applications('#app-list', ctx.appListUrls, ['view']);
+var apiApplication = new viewModels.ApplicationsList('#app-list', ctx.appListUrls);
 
+ctx.apiApplication = apiApplication;
 //new apiApplications.Applications('#app-list', ctx.appDetailUrls, ['view']);

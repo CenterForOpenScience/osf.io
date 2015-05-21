@@ -1,7 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">OAuth Application settings</%def>
 <%def name="content()">
-<% from website import settings %>
 <h2 class="page-header">OAuth application settings</h2>
 
 <div class="row">
@@ -40,15 +39,14 @@
                     </th>
                 </tr>
                 </thead>
-                <tbody data-bind="foreach: contents">
+                <tbody data-bind="foreach: content">
                 <tr><!-- TODO: Write KO to fetch from API -->
                     <td>
                         <!-- TODO: Write delete method that uses an internal URL concatenation method + AJAX delete request -->
-                        <a href="#" data-bind="attr: {href: $root.getDetailUrl(client_id)  }"><span data-bind="text: name"></span></a>
-                        <p>Client ID: <span class="text-muted" data-bind="text: client_id"></span></p>
+                        <a href="#" data-bind="attr: {href: detailUrl  }"><span data-bind="text: ownerName"></span></a>
+                        <p>Client ID: <span class="text-muted" data-bind="text: clientId"></span></p>
                     </td>
                     <td>
-                        <!-- TODO- how does link know WHAT to delete? -->
                         <a href="#" data-bind="click: $root.deleteApplication"><i class="fa fa-times text-danger pull-right"></i></a>
                     </td>
                 </tr>
@@ -58,18 +56,24 @@
     </div>
 
 </div>
-
 </%def>
 
 
 <%def name="javascript_bottom()">
+<% from website import settings %>
+<% from urlparse import urljoin %>
+
 <script type="text/javascript">
     ## Store mako variables on window so they are accessible from JS
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.appListUrls = {
         // TODO: Insert user id and possibly application ID into these urls, eg  api_v2_url_for("users:application-detail", kwargs={'pk':'abs', 'client_id':'asdf'})
-        crud: '${ api_v2_url_for("users:application-list", kwargs={"pk": user_id}) }',
+
+
+
+        // TODO: Use this as domain
+        appListUrl: '${urljoin(settings.API_DOMAIN, api_v2_url_for("users:application-list", kwargs={"pk": user_id}))}',
         baseDetailUrl: '/settings/applications/', // Base URL for web detail pages: concatenate client_id to get specific detail page. TODO: Hardcoded URL
         baseApiDetailUrl:  "/api/v2/users/" + "${user_id}" + "/applications/"  // Base URL for API detail calls (used for updates and deletes. TODO: Hardcoded URL
     };
