@@ -1,3 +1,4 @@
+from website.models import Node
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, NodeFactory
 from scripts.migrate_logs import (
@@ -5,7 +6,11 @@ from scripts.migrate_logs import (
 )
 
 
-class TestMigrateManualMergedUser(OsfTestCase):
+class TestMigrateLogs(OsfTestCase):
+
+    def tearDown(self):
+        OsfTestCase.tearDown(self)
+        Node.remove()
 
     def test_get_targets(self):
         project1 = ProjectFactory()

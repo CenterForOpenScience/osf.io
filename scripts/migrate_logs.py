@@ -18,7 +18,7 @@ def do_migration(records, dry=False):
         count = 0
         for log in node.logs:
             if not dry:
-                if node != log.node:
+                if log and node != log.resolve_node(node):
                     log.should_hide = True
                     log.save()
                     count += 1
