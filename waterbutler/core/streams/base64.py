@@ -44,3 +44,6 @@ class Base64EncodeStream(asyncio.StreamReader):
         chunk, self.extra = chunk[:nog], chunk[nog:]
 
         return chunk
+
+    def at_eof(self):
+        return len(self.extra) == 0 and self.stream.at_eof()

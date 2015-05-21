@@ -43,6 +43,54 @@ class TestJSONStream:
             'justAStream': 'These are some words'
         }
 
+    def test_other_streams_1_at_a_time(self):
+        stream = streams.JSONStream({
+            'justAStream': streams.StringStream('These are some words')
+        })
+
+        buffer = b''
+        chunk = yield from stream.read(1)
+
+        while chunk:
+            buffer += chunk
+            chunk = yield from stream.read(1)
+
+        assert json.loads(buffer.decode('utf-8')) == {
+            'justAStream': 'These are some words'
+        }
+
+    def test_github(self):
+        stream = streams.JSONStream({
+            'encoding': 'base64',
+            'content': streams.Base64EncodeStream(streams.StringStream('These are some words')),
+        })
+
+        buffer = b''
+        chunk = yield from stream.read(1)
+
+        while chunk:
+            buffer += chunk
+            chunk = yield from stream.read(1)
+
+        assert json.loads(buffer.decode('utf-8')) == {
+            'encoding': 'base64',
+            'content': 'VGhlc2UgYXJlIHNvbWUgd29yZHM='
+        }
+
+    def test_github_at_once(self):
+        stream = streams.JSONStream({
+            'encoding': 'base64',
+            'content': streams.Base64EncodeStream(streams.StringStream('These are some words')),
+        })
+
+        buffer = yield from stream.read()
+
+        assert json.loads(buffer.decode('utf-8')) == {
+            'encoding': 'base64',
+            'content': 'VGhlc2UgYXJlIHNvbWUgd29yZHM='
+        }
+
+
     # TODO
     # @async
     # def test_nested_streams(self):
