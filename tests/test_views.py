@@ -1820,7 +1820,7 @@ class TestClaimViews(OsfTestCase):
         url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, '/account/')
+        assert_equal(res.request.path, web_url_for('auth_login'))
 
     def test_posting_to_claim_form_with_valid_data(self):
         url = self.user.get_claim_url(self.project._primary_key)
