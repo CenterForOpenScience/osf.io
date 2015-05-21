@@ -8,8 +8,6 @@ import os
 import json
 import hashlib
 
-from kombu import Queue, Exchange
-
 os_env = os.environ
 
 def parent_dir(path):
@@ -179,11 +177,6 @@ CELERY_IMPORTS = (
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'scripts.send_digest'
-)
-
-CELERY_DEFAULT_QUEUE = 'osf'
-CELERY_QUEUES = (
-    Queue('osf', Exchange('osf'), routing_key='osf'),
 )
 
 # Add-ons
