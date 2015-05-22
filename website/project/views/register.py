@@ -403,7 +403,7 @@ def _send_embargo_email(node, user):
             mails.PENDING_EMBARGO_ADMIN,
             'plain',
             user=user,
-            iniated_by=initiators_fullname,
+            initiated_by=initiators_fullname,
             approval_link=approval_link,
             disapproval_link=disapproval_link,
             registration_link=registration_link,
@@ -415,7 +415,7 @@ def _send_embargo_email(node, user):
             user.username,
             mails.PENDING_EMBARGO_NON_ADMIN,
             user=user,
-            initated_by=initiators_fullname,
+            initiated_by=initiators_fullname,
             registration_link=registration_link,
             embargo_end_date=embargo_end_date,
 
