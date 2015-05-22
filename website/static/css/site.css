@@ -2130,6 +2130,16 @@ span#profileFullname{
 }
 
 /* Search bar */
+.search-label-placeholder {
+    position:absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 20px;
+    color: #738EA2;
+    font-weight: 300;
+}
+
 .osf-search {
     padding: 10px 0;
     background: #B8ECC0;
