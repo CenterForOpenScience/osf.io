@@ -50,10 +50,10 @@
                             <h4>Justification for Retraction</h4>
                         </div>
                         <div class="addon-widget-body">
-                            % if node['retracted_justification'] == '':
-                                No justification provided during retraction.
+                            % if node['retracted_justification'] is None:
+                                <em>No justification provided during retraction.</em>
                             % else:
-                                ${ node['retracted_justification'] }
+                                <em>${ node['retracted_justification'] }</em>
                             % endif
                         </div>
                     </div>
