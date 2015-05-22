@@ -510,110 +510,88 @@ class TestNodeCreateUpdate(ApiTestCase):
         self.user.set_password('justapoorboy')
         self.user.save()
         self.auth = (self.user.username, 'justapoorboy')
+        self.url = '/v2/nodes/'
+        self.title = 'Cool Project'
+        self.new_title = 'Super Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.new_description = 'An even cooler project'
+        self.category = 'data'
+        self.new_category = 'project'
 
     def test_creates_project_returns_proper_data(self):
-        url = '/v2/nodes/'
-        title = 'Cool Project'
-        description = 'A Properly Cool Project'
-        category = 'data'
-
-        res = self.app.post_json(url, {
-            'title': title,
-            'description': description,
-            'category': category,
+        res = self.app.post_json(self.url, {
+            'title': self.title,
+            'description': self.description,
+            'category': self.category,
             'public': True,
         }, auth=self.auth)
         project_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], title)
-        assert_equal(res.json['data']['description'], description)
-        assert_equal(res.json['data']['category'], category)
+        assert_equal(res.json['data']['title'], self.title)
+        assert_equal(res.json['data']['description'], self.description)
+        assert_equal(res.json['data']['category'], self.category)
 
     def test_creates_project_creates_project(self):
-        url = '/v2/nodes/'
-        title = 'Cool Project'
-        description = 'A Properly Cool Project'
-        category = 'data'
-
-        res = self.app.post_json(url, {
-            'title': title,
-            'description': description,
-            'category': category,
+        res = self.app.post_json(self.url, {
+            'title': self.title,
+            'description': self.description,
+            'category': self.category,
             'public': True,
         }, auth=self.auth)
         project_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
         url = '/v2/nodes/{}/'.format(project_id)
         res = self.app.get(url, auth=self.auth)
-        assert_equal(res.json['data']['title'], title)
-        assert_equal(res.json['data']['description'], description)
-        assert_equal(res.json['data']['category'], category)
+        assert_equal(res.json['data']['title'], self.title)
+        assert_equal(res.json['data']['description'], self.description)
+        assert_equal(res.json['data']['category'], self.category)
 
     def test_update_project_returns_proper_data(self):
-        url = '/v2/nodes/'
-        title = 'Cool Project'
-        new_title = 'Super Cool Project'
-        description = 'A Properly Cool Project'
-        new_description = 'An even cooler project'
-        category = 'data'
-        new_category = 'project'
         project = self.project = ProjectFactory(
-            title=title, description=description, category=category, is_public=True, creator=self.user)
+            title=self.title, description=self.description, category=self.category, is_public=True, creator=self.user)
 
         url = '/v2/nodes/{}/'.format(project._id)
         res = self.app.put_json(url, {
-            'title': new_title,
-            'description': new_description,
-            'category': new_category,
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
             'public': True,
         }, auth=self.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], new_title)
-        assert_equal(res.json['data']['description'], new_description)
-        assert_equal(res.json['data']['category'], new_category)
+        assert_equal(res.json['data']['title'], self.new_title)
+        assert_equal(res.json['data']['description'], self.new_description)
+        assert_equal(res.json['data']['category'], self.new_category)
 
     def test_update_project_updates_project_properly(self):
-        url = '/v2/nodes/'
-        title = 'Cool Project'
-        new_title = 'Super Cool Project'
-        description = 'A Properly Cool Project'
-        new_description = 'An even cooler project'
-        category = 'data'
-        new_category = 'project'
         project = self.project = ProjectFactory(
-            title=title, description=description, category=category, is_public=True, creator=self.user)
+            title=self.title, description=self.description, category=self.category, is_public=True, creator=self.user)
 
         url = '/v2/nodes/{}/'.format(project._id)
         res = self.app.put_json(url, {
-            'title': new_title,
-            'description': new_description,
-            'category': new_category,
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
             'public': True,
         }, auth=self.auth)
         assert_equal(res.status_code, 200)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], new_title)
-        assert_equal(res.json['data']['description'], new_description)
-        assert_equal(res.json['data']['category'], new_category)
+        assert_equal(res.json['data']['title'], self.new_title)
+        assert_equal(res.json['data']['description'], self.new_description)
+        assert_equal(res.json['data']['category'], self.new_category)
 
     def test_partial_update_project_returns_proper_data(self):
-        url = '/v2/nodes/'
-        title = 'Cool Project'
-        new_title = 'Super Cool Project'
-        description = 'A Properly Cool Project'
-        category = 'data'
         project = self.project = ProjectFactory(
-            title=title, description=description, category=category, is_public=True, creator=self.user)
+            title=self.title, description=self.description, category=self.category, is_public=True, creator=self.user)
 
         url = '/v2/nodes/{}/'.format(project._id)
         res = self.app.patch_json(url, {
-            'title': new_title,
+            'title': self.new_title,
         }, auth=self.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], new_title)
-        assert_equal(res.json['data']['description'], description)
-        assert_equal(res.json['data']['category'], category)
+        assert_equal(res.json['data']['title'], self.new_title)
+        assert_equal(res.json['data']['description'], self.description)
+        assert_equal(res.json['data']['category'], self.category)
 
     def test_partial_update_project_updates_project_properly(self):
         url = '/v2/nodes/'
