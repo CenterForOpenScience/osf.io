@@ -347,12 +347,11 @@ function doItemOp(operation, to, from, rename, conflict) {
     if (to.id === ogParent && (!rename || rename === from.data.name)) return;
 
     if (operation === OPERATIONS.COPY) {
-        from = tb.createItem($.extend(true, {}, from.data), to.id);
+        from = tb.createItem($.extend(true, {status: operation.status}, from.data), to.id);
     } else {
+        from.data.status = operation.status;
         from.move(to.id);
     }
-
-    from.data.status = operation.status;
 
     tb.redraw();
 
