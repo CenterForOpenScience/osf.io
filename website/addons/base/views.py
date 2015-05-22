@@ -80,6 +80,10 @@ permission_map = {
     'delete': 'write',
     'copy': 'write',
     'move': 'write',
+    'copyto': 'write',
+    'moveto': 'write',
+    'copyfrom': 'read',
+    'movefrom': 'write',
 }
 
 
@@ -210,22 +214,47 @@ def create_waterbutler_log(payload, **kwargs):
         source = source_node.get_addon(payload['source']['provider'])
         destination = node.get_addon(payload['destination']['provider'])
 
-        payload['source']['addon'] = source.config.full_name
-        payload['destination']['addon'] = destination.config.full_name
+        payload['source'].update({
+            'materialized': payload['source']['materialized'].lstrip('/'),
+            'addon': source.config.full_name,
+            'url': source_node.web_url_for(
+                'addon_view_or_download_file',
+                path=payload['source']['path'].lstrip('/'),
+                provider=payload['source']['provider']
+            ),
+            'node': {
+                '_id': source_node._id,
+                'url': source_node.url,
+                'title': source_node.title,
+            }
+        })
 
-        payload['source']['path'] = payload['source']['materialized']
-        payload['destination']['path'] = payload['destination']['materialized']
+        payload['destination'].update({
+            'materialized': payload['destination']['materialized'].lstrip('/'),
+            'addon': destination.config.full_name,
+            'url': destination_node.web_url_for(
+                'addon_view_or_download_file',
+                path=payload['destination']['path'].lstrip('/'),
+                provider=payload['destination']['provider']
+            ),
+            'node': {
+                '_id': destination_node._id,
+                'url': destination_node.url,
+                'title': destination_node.title,
+            }
+        })
 
         payload.update({
             'node': destination_node._id,
             'project': destination_node.parent_id,
         })
 
-        destination_node.add_log(
-            action=action,
-            auth=auth,
-            params=payload
-        )
+        if not payload.get('errors'):
+            destination_node.add_log(
+                action=action,
+                auth=auth,
+                params=payload
+            )
 
         if payload.get('email') is True:
             mails.send_mail(

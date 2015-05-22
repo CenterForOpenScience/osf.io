@@ -8,6 +8,7 @@ var $ = require('jquery');
 var URI = require('URIjs');
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
+var $osf = require('js/osfHelpers');
 
 // Cross browser key codes for the Command key
 var commandKeys = [224, 17, 91, 93];
@@ -28,7 +29,8 @@ function _removeEvent (event, items) {
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
-            type : 'DELETE'
+            type : 'DELETE',
+            beforeSend: $osf.setXHRAuthorization
         }).done(function (data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
@@ -217,6 +219,19 @@ var _githubItemButtons = {
                     }, 'View'));
 
             }
+        }
+
+        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function() {
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
+                    },
+                    tooltip: 'Change the name of the item',
+                    icon: 'fa fa-font',
+                    className : 'text-info'
+                }, 'Rename')
+            );
         }
 
         return m('span', buttons); // Tell fangorn this function is used.

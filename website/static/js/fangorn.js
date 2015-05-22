@@ -356,6 +356,10 @@ function doItemOp(operation, to, from, rename, conflict) {
 
     tb.redraw();
 
+    if (to.data.provider === from.provider) {
+        tb.pendingFileOps.push(from.id);
+    }
+
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
@@ -370,10 +374,14 @@ function doItemOp(operation, to, from, rename, conflict) {
             'destination': waterbutler.toJsonBlob(to),
         })
     }).done(function(resp, _, xhr) {
+        if (to.data.provider === from.provider) {
+            tb.pendingFileOps.pop();
+        }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
-                m('p', 'We\'ll send you an email when it has finished.')
+                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
+                m('p', 'We\'ll send you an email when it has finished.'),
+                m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
@@ -408,7 +416,10 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
 
         tb.redraw();
-    }).fail(function(xhr) {
+    }).fail(function(xhr, textStatus) {
+        if (to.data.provider === from.provider) {
+            tb.pendingFileOps.pop();
+        }
         if (operation === OPERATIONS.COPY) {
             from.removeSelf();
         } else {
@@ -418,8 +429,10 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         var message;
 
-        if (xhr.responseJSON && xhr.responseJSON.message) {
+        if (xhr.status !== 500 && xhr.responseJSON && xhr.responseJSON.message) {
             message = xhr.responseJSON.message;
+        } else if (xhr.status === 503) {
+            message = textStatus;
         } else {
             message = 'Please refresh the page or ' +
                 'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
@@ -766,7 +779,7 @@ function _createFolder(event, dismissCallback, helpText) {
     m.request({
         method: 'POST',
         background: true,
-        xhrconfig: $osf.setXHRAuthorization,
+        config: $osf.setXHRAuthorization,
         url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
@@ -784,7 +797,6 @@ function _createFolder(event, dismissCallback, helpText) {
         }
     });
 }
-
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -805,7 +817,8 @@ function _removeEvent (event, items, col) {
         url = url || waterbutler.buildTreeBeardDelete(item);
         $.ajax({
             url: url,
-            type: 'DELETE'
+            type: 'DELETE',
+            beforeSend: $osf.setXHRAuthorization
         })
         .done(function(data) {
             // delete view
@@ -1750,8 +1763,9 @@ function _dropLogic(event, items, folder) {
 
     if (items.length < 1) { return; }
     if (items.indexOf(folder) > -1) { return; }
+    if (copyMode === 'forbidden') return;
 
-    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
+    // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
     if (!folder.open) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
@@ -1771,45 +1785,12 @@ function _dropLogic(event, items, folder) {
  */
 function _dragLogic(event, items, ui) {
     var tb = this;
-        var canCopy = true,
-        canMove = true,
-        folder = this.find($(event.target).attr('data-id')),
-        isSelf = false,
-        isParent  = false,
-        dragGhost = $('.tb-drag-ghost');
+    var canMove = true,
+    folder = this.find($(event.target).attr('data-id')),
+    dragGhost = $('.tb-drag-ghost');
 
-    if (folder.data.status) {
-        copyMode = 'forbidden';
-    }
-
-    if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) {
-        copyMode = 'forbidden';
-    }
-
-    items.forEach(function (item) {
-        if (!isSelf) {
-            isSelf = item.id === folder.id;
-        }
-        if(!isParent){
-            isParent = item.parentID === folder.id;
-        }
-        canMove = canMove && item.data.permissions.edit;
-    });
-    if (folder.data.permissions.edit && folder.kind === 'folder' && folder.parentID !== 0 && canMove) {
-        if (canMove) {
-            if (altKey) {
-                copyMode = 'copy';
-            } else {
-                copyMode = 'move';
-            }
-        }
-    } else {
-        copyMode = 'forbidden';
-    }
-    if (isSelf || isParent) {
-        copyMode = 'forbidden';
-    }
     // Set the cursor to match the appropriate copy mode
+    copyMode = getCopyMode(folder, items);
     switch (copyMode) {
         case 'forbidden':
             dragGhost.css('cursor', 'not-allowed');
@@ -1825,6 +1806,39 @@ function _dragLogic(event, items, ui) {
     }
     return copyMode;
 
+}
+
+function getCopyMode(folder, items) {
+    var tb = this;
+    var canMove = true;
+    var mustBeIntra = (folder.data.provider === 'github');
+
+    if (folder.parentId === 0) return 'forbidden';
+    if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
+    if (!folder.data.provider || folder.data.status) return 'forbidden';
+
+    if (folder.data.provider === 'figshare') return 'forbidden';
+    if (folder.data.provider === 'dataverse') return 'forbidden';
+
+    for(var i = 0; i < items.length; i++) {
+        var item = items[i];
+        if (
+            item.data.nodeType ||
+            item.data.isAddonRoot ||
+            item.id === folder.id ||
+            item.parentID === folder.id ||
+            item.data.provider === 'figshare' ||
+            item.data.provider === 'dataverse' ||
+            (mustBeIntra && item.data.provider !== folder.data.provider)
+        ) return 'forbidden';
+
+        mustBeIntra = mustBeIntra || item.data.provider === 'github';
+        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || item.data.provider === folder.data.provider);
+    }
+    if (folder.data.isPointer) return 'copy';
+    if (altKey) return 'copy';
+    if (!canMove) return 'copy';
+    return 'move';
 }
 /* END MOVE */
 
@@ -1889,6 +1903,7 @@ tbOptions = {
     onload : function () {
         var tb = this;
         _loadTopLevelChildren.call(tb);
+        tb.pendingFileOps = [];
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
                 return;
@@ -1900,6 +1915,9 @@ tbOptions = {
         $(window).on('beforeunload', function() {
             if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
                 return 'You have pending uploads, if you leave this page they may not complete.';
+            }
+            if(tb.pendingFileOps.length > 0) {
+                return 'You have pending file operations, if you leave this page they may not complete.';
             }
         });
         if(tb.options.placement === 'project-files') {

@@ -47,7 +47,7 @@ def autoload_filenode(must_be=None, default_root=False):
             if must_be and file_node.kind != must_be:
                 raise HTTPError(httplib.BAD_REQUEST, data={
                     'message_short': 'incorrect type',
-                    'message_long': 'FileNode must be of type {} not {}'.foramt(must_be, file_node.kind)
+                    'message_long': 'FileNode must be of type {} not {}'.format(must_be, file_node.kind)
                 })
 
             kwargs['file_node'] = file_node
