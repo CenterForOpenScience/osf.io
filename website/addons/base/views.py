@@ -249,11 +249,12 @@ def create_waterbutler_log(payload, **kwargs):
             'project': destination_node.parent_id,
         })
 
-        destination_node.add_log(
-            action=action,
-            auth=auth,
-            params=payload
-        )
+        if not payload.get('errors'):
+            destination_node.add_log(
+                action=action,
+                auth=auth,
+                params=payload
+            )
 
         if payload.get('email') is True:
             mails.send_mail(
