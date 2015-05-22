@@ -347,54 +347,52 @@ class TestNodePointersList(ApiTestCase):
 
 class TestNodeContributorFiltering(ApiTestCase):
 
-    def test_filtering_node_with_only_bibliographic_contributors(self):
-        project = ProjectFactory()
-        password = fake.password()
-        project.creator.set_password(password)
-        project.creator.save()
-        auth = (project.creator.username, password)
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.project = ProjectFactory()
+        self.password = fake.password()
+        self.project.creator.set_password(self.password)
+        self.project.creator.save()
+        self.auth = (self.project.creator.username, self.password)
 
-        base_url = '/v2/nodes/{}/contributors/'.format(project._id)
+    def test_filtering_node_with_only_bibliographic_contributors(self):
+
+        base_url = '/v2/nodes/{}/contributors/'.format(self.project._id)
         # no filter
-        res = self.app.get(base_url, auth=auth)
+        res = self.app.get(base_url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=auth)
+        res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
-        res = self.app.get(url, auth=auth)
+        res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['data']), 0)
 
     def test_filtering_node_with_non_bibliographic_contributor(self):
-        project = ProjectFactory()
-        password = fake.password()
-        project.creator.set_password(password)
-        project.creator.save()
-        auth = (project.creator.username, password)
         non_bibliographic_contrib = UserFactory()
-        project.add_contributor(non_bibliographic_contrib, visible=False)
-        project.save()
+        self.project.add_contributor(non_bibliographic_contrib, visible=False)
+        self.project.save()
 
-        base_url = base_url = '/v2/nodes/{}/contributors/'.format(project._id)
+        base_url = base_url = '/v2/nodes/{}/contributors/'.format(self.project._id)
 
         # no filter
-        res = self.app.get(base_url, auth=auth)
+        res = self.app.get(base_url, auth=self.auth)
         assert_equal(len(res.json['data']), 2)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=auth)
+        res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
-        res = self.app.get(url, auth=auth)
+        res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0].get('bibliographic', None))
 
