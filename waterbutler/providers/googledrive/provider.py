@@ -53,6 +53,9 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revalidate_path(self, base, name, folder=None):
+        if not name.endswith('/') and folder:
+            name += '/'
+
         parts = yield from self._resolve_path_to_ids(name, start_at=[{
             'title': base.name,
             'mimeType': 'folder',
