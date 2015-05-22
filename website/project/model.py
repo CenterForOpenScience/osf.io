@@ -291,6 +291,7 @@ class NodeLog(StoredObject):
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
     params = fields.DictionaryField()
+    should_hide = fields.BooleanField(default=False)
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
@@ -761,6 +762,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
+
+    @property
+    def forks(self):
+        """List of forks of this node"""
+        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
+                                           Q('is_registration', 'ne', True)))
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1297,9 +1304,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids)
-        logs = NodeLog.find(query).sort('-_id')
-        return [each for each in logs if each.node__logged[0].can_view(auth)]
+        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        return NodeLog.find(query).sort('-_id')
 
     @property
     def nodes_pointer(self):
@@ -1999,7 +2005,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.add_permission(new, permission)
                 self.permissions.pop(old._id)
                 if old._id in self.visible_contributor_ids:
-                    self.visible_contributor_ids.remove(old._id)
+                    self.visible_contributor_ids[self.visible_contributor_ids.index(old._id)] = new._id
                 return True
         return False
 
