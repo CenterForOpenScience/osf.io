@@ -74,7 +74,7 @@ $(document).ready(function() {
                 registrationViewModel.continueText('');
                 $osf.growl(
                     'Invalid embargo end date',
-                    'Please double check the date you have chosen is within the parameters specified.',
+                    'Please choose a date more than two days, but less than one year, from today.',
                     'warning'
                 );
                 $('#endDatePicker').focus();

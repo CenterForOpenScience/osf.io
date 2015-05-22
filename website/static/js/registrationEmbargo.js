@@ -39,9 +39,7 @@ var RegistrationEmbargoViewModel = function() {
     });
     self.isEmbargoEndDateValid = ko.computed(function() {
         var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
-        if (endEmbargoDateTimestamp < ONE_YEAR_FROM_TODAY_TIMESTAMP && endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP) {
-            return true;
-        } else { return false; }
+        return (endEmbargoDateTimestamp < ONE_YEAR_FROM_TODAY_TIMESTAMP && endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP);
     });
     self.requestingEmbargo = ko.computed(function() {
         var choice = self.registrationChoice();
