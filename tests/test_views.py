@@ -669,24 +669,22 @@ class TestProjectViews(OsfTestCase):
             ]
         )
 
-    # TODO: this test is currently failing as the "project_created" log will hide after the
-    # forked_from project turns to private, need to make the log stay the same later
-    # def test_can_view_public_log_from_private_project(self):
-    #     project = ProjectFactory(is_public=True)
-    #     fork = project.fork_node(auth=self.consolidate_auth1)
-    #     url = fork.api_url_for('get_logs')
-    #     res = self.app.get(url, auth=self.auth)
-    #     assert_equal(
-    #         [each['action'] for each in res.json['logs']],
-    #         ['node_forked', 'project_created'],
-    #     )
-    #     project.is_public = False
-    #     project.save()
-    #     res = self.app.get(url, auth=self.auth)
-    #     assert_equal(
-    #         [each['action'] for each in res.json['logs']],
-    #         ['node_forked', 'project_created'],
-    #     )
+    def test_can_view_public_log_from_private_project(self):
+        project = ProjectFactory(is_public=True)
+        fork = project.fork_node(auth=self.consolidate_auth1)
+        url = fork.api_url_for('get_logs')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
+        )
+        project.is_public = False
+        project.save()
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
+        )
 
     def test_for_private_component_log(self):
         for _ in range(5):
