@@ -41,7 +41,7 @@ def test(verbose=False):
 @task
 def celery():
     from waterbutler.tasks.app import app
-    app.worker_main(['worker'])
+    app.worker_main(['worker', '-l', 'INFO'])
 
 
 @task
