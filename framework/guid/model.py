@@ -54,7 +54,7 @@ class GuidStoredObject(StoredObject):
             )
             guid.save()
 
-        # Else create GUID using database of "clean" guids
+        # Else try to create GUID using database of "clean" guids, otherwise default to random generation
         else:
             while True:
                 # Get a clean guid from the database

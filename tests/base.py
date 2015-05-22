@@ -25,7 +25,6 @@ from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
 
-
 from website.project.model import (
     ApiKey, Node, NodeLog, Tag, WatchConfig,
 )
