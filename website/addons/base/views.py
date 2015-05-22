@@ -227,22 +227,32 @@ def get_or_start_render(file_guid, start_render=True):
     return None
 
 
-def file_content(file_guid, file_type=None):
-    content = get_file_contents(
-        file_guid.mfr_download_url,
-        file_guid.mfr_cache_path,
-        file_guid.mfr_temp_path,
-        file_guid.public_download_url,
-        file_type
-    )
+def file_content(file_guid):
+    content = None
+    if is_editable(file_guid):
+        content = get_file_contents(
+            file_guid.mfr_download_url,
+            file_guid.mfr_cache_path,
+            file_guid.mfr_temp_path,
+            file_guid.public_download_url,
+        )
+
     return content
 
 
-def get_file_type(path):
-    file_type = get_mimetype(path)
+def is_editable(file_guid):
+    try:
+        file_guid.enrich()
+    except exceptions.AddonEnrichmentError:
+        return False
+
+    file_type = get_mimetype(file_guid.waterbutler_path)
     if file_type is not None:
         file_type = file_type.split('/')[0]
-    return file_type
+        if file_type == 'text':
+            return True
+    else:
+        return False
 
 
 def ensure_path(path):
@@ -366,7 +376,6 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     file_guid_str = str(file_guid)
     file_key = to_mongo_key(file_guid_str)
-    file_type = get_file_type(path)
 
     if can_edit:
         if file_key not in node.wiki_private_uuids:
@@ -398,12 +407,12 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         },
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid),
-        'content': file_content(file_guid, file_type),
+        'content': file_content(file_guid),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
-        'file_type': file_type,
+        'is_editable': is_editable(file_guid),
         'panels_used': ['edit', 'view'],
 
     })
@@ -448,12 +457,10 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**request.args.to_dict())
 
-    file_type = get_file_type(path)
-
     ret = serialize_node(node, auth, primary=True)
     ret.update({
         'rendered': get_or_start_render(file_guid),
-        'content': file_content(file_guid, file_type)
+        'content': file_content(file_guid)
     })
 
     return ret

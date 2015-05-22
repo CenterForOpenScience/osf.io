@@ -22,7 +22,7 @@ var FileRenderer = {
             url: self.url
         }).done(function(data) {
             if (data) {
-                self.element.html(data.content);
+                self.element.html(data.rendered);
             } else {
                 self.handleRetry();
             }

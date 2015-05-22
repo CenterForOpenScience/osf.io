@@ -48,17 +48,16 @@ def render_mfr_error(err):
 
 
 @app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
-def get_file_contents(download_url, cache_path, temp_path, public_download_url, file_type=None):
+def get_file_contents(download_url, cache_path, temp_path, public_download_url):
 
     ensure_path(os.path.split(temp_path)[0])
     ensure_path(os.path.split(cache_path)[0])
 
-    rendered = None
     try:
         save_to_file_or_error(download_url, temp_path)
     except exceptions.RenderNotPossibleException as e:
         # Write out unavoidable errors
-        rendered = e.renderable_error
+        content = e.renderable_error
     else:
         encoding = None
         if get_file_extension(temp_path) in CODE_EXTENSIONS:
@@ -66,15 +65,12 @@ def get_file_contents(download_url, cache_path, temp_path, public_download_url, 
         with codecs.open(temp_path, encoding=encoding) as temp_file:
             try:
                 rendered_html = mfr.render(fp=temp_file, src=public_download_url).content
-                content = rendered_html
-                if file_type == 'text':
-                    soup = BeautifulSoup(rendered_html)
-                    content = str(soup.get_text())
-                    print content
+                soup = BeautifulSoup(rendered_html)
+                content = str(soup.get_text())
 
             except MFRError as err:
                 # Rendered MFR error
-                rendered = render_mfr_error(err)
+                content = render_mfr_error(err)
 
     # Cleanup when we're done
     os.remove(temp_path)

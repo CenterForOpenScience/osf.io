@@ -54,7 +54,7 @@
         <div id="fileRendered" class="mfr mfr-file">
             <div class="wiki" id="filePageContext">
 
-            % if user['can_edit'] and file_type == 'text':
+            % if user['can_edit'] and is_editable:
 
                 <div data-bind="with: $root.editVM.fileEditor.viewModel" data-osf-panel="Edit" style="display: none">
                     <div class="osf-panel" >
@@ -132,7 +132,7 @@
         </div>
     </div>
 
-    % if user['can_edit'] and file_type == 'text':
+    % if user['can_edit'] and is_editable:
     <div data-osf-panel="View">
         <div class="osf-panel" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
             <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
@@ -323,13 +323,13 @@
     %endif
     <script type="text/javascript">
         var isEditable = false;
-      % if user['can_edit'] and file_type == 'text':
+      % if user['can_edit'] and is_editable:
           isEditable = true;
       % endif
 
       window.contextVars = $.extend(true, {}, window.contextVars, {
 
-        %if user['can_edit'] and file_type == 'text':
+        %if user['can_edit'] and is_editable:
             renderURL: undefined,
         %elif rendered is not None:
             renderURL: undefined,
@@ -415,7 +415,7 @@
     <script src="//${urls['web']['sharejs']}/text.js"></script>
     <script src="//${urls['web']['sharejs']}/share.js"></script>
 
-    % if user['can_edit'] and file_type == 'text':
+    % if user['can_edit'] and is_editable:
         <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
     % endif
 
