@@ -80,6 +80,10 @@ permission_map = {
     'delete': 'write',
     'copy': 'write',
     'move': 'write',
+    'copyto': 'write',
+    'moveto': 'write',
+    'copyfrom': 'read',
+    'movefrom': 'write',
 }
 
 
@@ -245,13 +249,14 @@ def create_waterbutler_log(payload, **kwargs):
             'project': destination_node.parent_id,
         })
 
-        destination_node.add_log(
-            action=action,
-            auth=auth,
-            params=payload
-        )
+        if not payload.get('errors'):
+            destination_node.add_log(
+                action=action,
+                auth=auth,
+                params=payload
+            )
 
-        if payload.get('email') is True:
+        if payload.get('email') is True or payload.get('errors'):
             mails.send_mail(
                 user.username,
                 mails.FILE_OPERATION_FAILED if payload.get('errors')

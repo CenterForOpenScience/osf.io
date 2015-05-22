@@ -62,7 +62,12 @@ module.exports = {
     buildTreeBeardCopy: buildFromTreebeard.bind(this, 'copy?'),
     buildTreeBeardMove: buildFromTreebeard.bind(this, 'move?'),
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
-    buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),
+    buildTreeBeardDownload: function(item, options) {
+        if (window.contextVars.accessToken) {
+            options = $.extend(options || {}, {token: window.contextVars.accessToken});
+        }
+        return buildFromTreebeard('file?', item, options);
+    },
     buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
     buildTreeBeardDownloadZip: buildFromTreebeard.bind(this, 'zip?'),
     copyUrl: function(){return window.contextVars.waterbutlerURL + 'ops/copy';},
