@@ -779,7 +779,7 @@ function _createFolder(event, dismissCallback, helpText) {
     m.request({
         method: 'POST',
         background: true,
-        xhrconfig: $osf.setXHRAuthorization,
+        config: $osf.setXHRAuthorization,
         url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
@@ -797,7 +797,6 @@ function _createFolder(event, dismissCallback, helpText) {
         }
     });
 }
-
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -1812,10 +1811,14 @@ function _dragLogic(event, items, ui) {
 function getCopyMode(folder, items) {
     var tb = this;
     var canMove = true;
+    var mustBeIntra = (folder.data.provider === 'github');
 
     if (folder.parentId === 0) return 'forbidden';
     if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
     if (!folder.data.provider || folder.data.status) return 'forbidden';
+
+    if (folder.data.provider === 'figshare') return 'forbidden';
+    if (folder.data.provider === 'dataverse') return 'forbidden';
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1824,13 +1827,13 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            (
-                item.data.kind === 'folder' &&
-                ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1
-            )
+            item.data.provider === 'figshare' ||
+            item.data.provider === 'dataverse' ||
+            (mustBeIntra && item.data.provider !== folder.data.provider)
         ) return 'forbidden';
 
-        canMove = canMove && item.data.permissions.edit;
+        mustBeIntra = mustBeIntra || item.data.provider === 'github';
+        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || item.data.provider === folder.data.provider);
     }
     if (folder.data.isPointer) return 'copy';
     if (altKey) return 'copy';
