@@ -39,6 +39,11 @@ class FilterMixin(object):
     FALSY = set(['false', 'False', 0, '0'])
     DEFAULT_OPERATOR = 'eq'
 
+    def __init__(self, *args, **kwargs):
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        if not self.serializer_class:
+            raise NotImplementedError()
+
     def is_filterable_field(self, key):
         try:
             return key.strip() in self.serializer_class.filterable_fields
