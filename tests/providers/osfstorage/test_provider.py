@@ -127,7 +127,7 @@ def mock_folder_path():
 def test_download(monkeypatch, provider_and_mock, osf_response, mock_path):
     provider, inner_provider = provider_and_mock
 
-    url = 'https://waterbutler.io/{}/download/?version'.format(mock_path.identifier)
+    url = 'https://waterbutler.io/{}/download/?mode&version'.format(mock_path.identifier)
 
     aiohttpretty.register_json_uri('GET', url, body=osf_response)
 

@@ -63,7 +63,7 @@ class OSFStorageProvider(provider.BaseProvider):
         )
 
         if resp.status == 404:
-            return WaterButlerPath(path, _ids=(self.root_id, None), folder=True)
+            return WaterButlerPath(path, _ids=(self.root_id, None), folder=path.endswith('/'))
 
         data = yield from resp.json()
 
