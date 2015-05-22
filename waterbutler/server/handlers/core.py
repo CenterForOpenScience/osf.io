@@ -148,17 +148,17 @@ class BaseCrossProviderHandler(BaseHandler):
         except KeyError:
             return
 
-        self.source_provider = yield from self.make_provider(**self.json['source'])
-        self.destination_provider = yield from self.make_provider(**self.json['destination'])
+        self.source_provider = yield from self.make_provider(prefix='from', **self.json['source'])
+        self.destination_provider = yield from self.make_provider(prefix='to', **self.json['destination'])
 
         self.json['source']['path'] = yield from self.source_provider.validate_path(**self.json['source'])
         self.json['destination']['path'] = yield from self.destination_provider.validate_path(**self.json['destination'])
 
     @asyncio.coroutine
-    def make_provider(self, provider, **kwargs):
+    def make_provider(self, provider, prefix='', **kwargs):
         payload = yield from auth_handler.fetch(
             self.request,
-            dict(kwargs, provider=provider, action=self.action)
+            dict(kwargs, provider=provider, action=self.action + prefix)
         )
         self.auth = payload
         self.callback_url = payload.pop('callback_url')
