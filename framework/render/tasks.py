@@ -48,7 +48,7 @@ def render_mfr_error(err):
 
 
 @app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
-def get_file_contents(download_url, cache_path, temp_path, public_download_url):
+def get_file_contents(download_url, cache_path, temp_path, public_download_url, file_type=None):
 
     ensure_path(os.path.split(temp_path)[0])
     ensure_path(os.path.split(cache_path)[0])
@@ -67,9 +67,10 @@ def get_file_contents(download_url, cache_path, temp_path, public_download_url):
             try:
                 rendered_html = mfr.render(fp=temp_file, src=public_download_url).content
                 content = rendered_html
-                if get_file_extension(temp_path) == '.txt':
+                if file_type == 'text':
                     soup = BeautifulSoup(rendered_html)
-                    content = soup.find('pre').contents[0]
+                    content = str(soup.get_text())
+                    print content
 
             except MFRError as err:
                 # Rendered MFR error

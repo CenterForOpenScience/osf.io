@@ -54,7 +54,7 @@
         <div id="fileRendered" class="mfr mfr-file">
             <div class="wiki" id="filePageContext">
 
-            % if user['can_edit'] and file_ext == '.txt':
+            % if user['can_edit'] and file_type == 'text':
 
                 <div data-bind="with: $root.editVM.fileEditor.viewModel" data-osf-panel="Edit" style="display: none">
                     <div class="osf-panel" >
@@ -132,7 +132,7 @@
         </div>
     </div>
 
-    % if user['can_edit'] and file_ext == '.txt':
+    % if user['can_edit'] and file_type == 'text':
     <div data-osf-panel="View">
         <div class="osf-panel" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
             <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
@@ -323,18 +323,18 @@
     %endif
     <script type="text/javascript">
         var isEditable = false;
-      % if user['can_edit'] and file_ext == '.txt':
+      % if user['can_edit'] and file_type == 'text':
           isEditable = true;
       % endif
 
       window.contextVars = $.extend(true, {}, window.contextVars, {
 
-        %if user['can_edit'] and file_ext == '.txt':
+        %if user['can_edit'] and file_type == 'text':
             renderURL: undefined,
         %elif rendered is not None:
             renderURL: undefined,
         %else:
-            renderURL: '${urls['render'] | js_str}',
+            renderURL: '${urls['api']['render'] | js_str}',
         %endif
 
             file: {
@@ -357,11 +357,11 @@
                 panelsUsed: ${json.dumps(panels_used) | n},
                 isEditable: isEditable,
                 urls: {
-                    draft: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
-                    content: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
-                    page: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
-                    base: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
-                    sharejs: '${urls['sharejs']}'
+                    draft: '${urls['api']['render'] | js_str}',
+                    content: '${urls['api']['render'] | js_str}',
+                    page: '${urls['api']['render'] | js_str}',
+                    base: '${urls['api']['render'] | js_str}',
+                    sharejs: '${urls['web']['sharejs']}'
                 },
                 metadata: {
                     registration: true,
@@ -369,7 +369,7 @@
                     userId: '${user_id}',
                     userName: '${user_full_name}',
                     userUrl: '${user_url}',
-                    userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
+                    userGravatar: '${urls['web']['gravatar']}'.replace('&amp;', '&')
                 }
             }
       });
@@ -385,23 +385,23 @@
             if (editContent != originalContent) {
                 var request = $.ajax({
                     type: 'PUT',
-                    url: '${urls['edit']}',
+                    url: '${urls['web']['edit']}',
                     data: editContent
                 });
 
                 request.done(function () {
                     $.ajax({
                         type: 'GET',
-                        url: '${urls['view']}'
+                        url: '${urls['web']['view']}'
                     }).done(function() {
-                        window.location.href = '${urls['view']}';
+                        window.location.href = '${urls['web']['view']}';
                     });
                 });
 
                 request.fail(function(error) {
                    $osf.growl('Error', 'The file could not be updated.');
                    Raven.captureMessage('Could not PUT file content.', {
-                       url: '${urls['edit']}',
+                       url: '${urls['web']['edit']}',
                        error: error
                    });
                 });
@@ -412,10 +412,10 @@
         });
     </script>
 
-    <script src="//${urls['sharejs']}/text.js"></script>
-    <script src="//${urls['sharejs']}/share.js"></script>
+    <script src="//${urls['web']['sharejs']}/text.js"></script>
+    <script src="//${urls['web']['sharejs']}/share.js"></script>
 
-    % if user['can_edit'] and file_ext == '.txt':
+    % if user['can_edit'] and file_type == 'text':
         <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
     % endif
 

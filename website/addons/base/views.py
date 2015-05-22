@@ -20,13 +20,12 @@ from framework.mongo.utils import to_mongo_key
 from framework.render.tasks import build_rendered_html, get_file_contents
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
-from mfr.core import get_file_extension
-
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
 from website.util import rubeus, waterbutler_url_for
+from website.util.mimetype import get_mimetype
 from website.profile.utils import get_gravatar
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
@@ -228,14 +227,22 @@ def get_or_start_render(file_guid, start_render=True):
     return None
 
 
-def file_content(file_guid):
+def file_content(file_guid, file_type=None):
     content = get_file_contents(
         file_guid.mfr_download_url,
         file_guid.mfr_cache_path,
         file_guid.mfr_temp_path,
-        file_guid.public_download_url
+        file_guid.public_download_url,
+        file_type
     )
     return content
+
+
+def get_file_type(path):
+    file_type = get_mimetype(path)
+    if file_type is not None:
+        file_type = file_type.split('/')[0]
+    return file_type
 
 
 def ensure_path(path):
@@ -359,6 +366,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     file_guid_str = str(file_guid)
     file_key = to_mongo_key(file_guid_str)
+    file_type = get_file_type(path)
 
     if can_edit:
         if file_key not in node.wiki_private_uuids:
@@ -378,20 +386,24 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'file_path': file_guid.waterbutler_path,
         'sharejs_uuid': sharejs_uuid or '',
         'urls': {
-            'sharejs': wiki_settings.SHAREJS_URL,
-            'render': render_url,
-            'edit': waterbutler_url_for('upload', provider, path, node),
-            'view': view_url,
-            'gravatar': get_gravatar(auth.user, 25)
+            'web': {
+                'sharejs': wiki_settings.SHAREJS_URL,
+                'edit': waterbutler_url_for('upload', provider, path, node),
+                'view': view_url,
+                'gravatar': get_gravatar(auth.user, 25)
+            },
+            'api': {
+                'render': render_url
+            }
         },
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(file_guid),
-        'content': file_content(file_guid),
+        'content': file_content(file_guid, file_type),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
-        'file_ext': get_file_extension(file_guid.waterbutler_path),
+        'file_type': file_type,
         'panels_used': ['edit', 'view'],
 
     })
@@ -436,10 +448,12 @@ def addon_render_file(auth, path, provider, **kwargs):
 
     file_guid.maybe_set_version(**request.args.to_dict())
 
+    file_type = get_file_type(path)
+
     ret = serialize_node(node, auth, primary=True)
     ret.update({
         'rendered': get_or_start_render(file_guid),
-        'content': file_content(file_guid)
+        'content': file_content(file_guid, file_type)
     })
 
     return ret
