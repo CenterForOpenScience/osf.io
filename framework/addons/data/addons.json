@@ -11,7 +11,7 @@
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in GitHub"
+                "text": "Adding/updating files in the project via OSF will be reflected in GitHub."
             },
             "Delete files": {
                 "status": "full",
