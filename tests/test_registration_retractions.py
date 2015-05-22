@@ -664,6 +664,24 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
+    def test_POST_pending_embargo_returns_HTTPBad_request(self):
+        self.registration.embargo_registration(
+            self.user,
+            (datetime.datetime.utcnow() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+
+        res = self.app.post_json(
+            self.retraction_post_url,
+            auth=self.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        self.registration.reload()
+        assert_is_none(self.registration.retraction)
+
     def test_POST_retraction_by_non_admin_retract_HTTPUnauthorized(self):
         res = self.app.post_json(self.retraction_post_url, expect_errors=True)
         assert_equals(res.status_code, 401)

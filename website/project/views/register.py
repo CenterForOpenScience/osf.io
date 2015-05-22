@@ -18,6 +18,7 @@ from website import settings
 from website.exceptions import (
     InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
     InvalidEmbargoApprovalToken, InvalidEmbargoDisapprovalToken,
+    NodeStateError
 )
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
@@ -106,7 +107,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
             save=False,
         )
         node.save()
-    except ValidationValueError as err:
+    except NodeStateError as err:
         raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
     for contributor in node.contributors:
