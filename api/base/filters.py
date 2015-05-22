@@ -89,6 +89,11 @@ class ODMFilterMixin(FilterMixin):
         ser.ListField: 'in',
     }
 
+    def __init__(self, *args, **kwargs):
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        if not self.serializer_class:
+            raise NotImplementedError()
+
     def get_comparison_operator(self, key):
         field_type = type(self.serializer_class._declared_fields[key])
         if field_type in self.field_comparison_operators:
@@ -138,6 +143,11 @@ class ListFilterMixin(FilterMixin):
     Serializers that want to restrict which fields are used for filtering need to have a variable called
     filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
     """
+
+    def __init__(self, *args, **kwargs):
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        if not self.serializer_class:
+            raise NotImplementedError()
 
     def get_default_queryset(self):
         raise NotImplementedError('Must define get_default_queryset')
