@@ -192,7 +192,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         count = model.OsfStorageFileNode.find().count()
         tcount = model.OsfStorageTrashedFileNode.find().count()
 
-        parent.delete(None, log=False)
+        parent.delete()
 
         assert_is(model.OsfStorageFileNode.load(parent._id), None)
         assert_equals(count - 11, model.OsfStorageFileNode.find().count())
@@ -206,7 +206,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_delete_file(self):
         child = self.node_settings.root_node.append_file('Test')
-        child.delete(None, log=False)
+        child.delete()
 
         # assert_true(child.is_deleted)
         assert_is(model.OsfStorageFileNode.load(child._id), None)

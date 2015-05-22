@@ -379,9 +379,9 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a big longer than expected'),
+                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
                 m('p', 'We\'ll send you an email when it has finished.'),
-                m('p', 'In the mean time you can leave this page; your ' + operation.status + 'will still be completed.')
+                m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
@@ -416,7 +416,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
 
         tb.redraw();
-    }).fail(function(xhr) {
+    }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
         }
@@ -431,6 +431,8 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         if (xhr.status !== 500 && xhr.responseJSON && xhr.responseJSON.message) {
             message = xhr.responseJSON.message;
+        } else if (xhr.status === 503) {
+            message = textStatus;
         } else {
             message = 'Please refresh the page or ' +
                 'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
