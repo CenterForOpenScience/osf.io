@@ -816,7 +816,8 @@ function _removeEvent (event, items, col) {
         url = url || waterbutler.buildTreeBeardDelete(item);
         $.ajax({
             url: url,
-            type: 'DELETE'
+            type: 'DELETE',
+            beforeSend: $osf.setXHRAuthorization
         })
         .done(function(data) {
             // delete view

@@ -16,9 +16,6 @@ function getDefaultOptions(path, provider) {
     if (viewOnly) {
         options.view_only = viewOnly;
     }
-    if (window.contextVars.accessToken) {
-        options.token = window.contextVars.accessToken;
-    }
     return options;
 }
 
