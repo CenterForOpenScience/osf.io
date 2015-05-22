@@ -70,6 +70,8 @@ class GuidStoredObject(StoredObject):
                     guid.save()
                     break
                 except KeyExistsException:
+                    if clean_guid:
+                        CleanGuid.remove(Q('_id', 'eq', id))
                     pass
 
             CleanGuid.remove(Q('_id', 'eq', id))
