@@ -38,14 +38,10 @@ from website.signals import ALL_SIGNALS
 from website.app import init_app
 from website.addons.base import AddonConfig
 
-# Just a simple app with routing but no backends
-try:
-    test_app = init_app(
-        settings_module='website.settings', routes=True, set_backends=False
-    )
-    test_app.testing = True
-except AssertionError:
-    pass
+test_app = init_app(
+    settings_module='website.settings', routes=True, set_backends=False, supress_assertion_errors=True
+)
+test_app.testing = True
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
