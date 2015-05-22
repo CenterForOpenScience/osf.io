@@ -11,15 +11,12 @@ from dateutil.parser import parse as parse_date
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
 
-from framework.auth import Auth
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
-from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
-from website.addons.osfstorage import logs
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
@@ -91,7 +88,27 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         return settings.WATERBUTLER_CREDENTIALS
 
     def create_waterbutler_log(self, auth, action, metadata):
-        pass
+        url = self.owner.web_url_for(
+            'addon_view_or_download_file',
+            path=metadata['path'],
+            provider='osfstorage'
+        )
+
+        self.owner.add_log(
+            'osf_storage_{0}'.format(action),
+            auth=auth,
+            params={
+                'node': self.owner._id,
+                'project': self.owner.parent_id,
+
+                'path': metadata['materialized'],
+
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                },
+            },
+        )
 
 
 @unique_on(['name', 'kind', 'parent', 'node_settings'])
@@ -269,7 +286,7 @@ class OsfStorageFileNode(StoredObject):
             return None
 
     @utils.must_be('file')
-    def create_version(self, creator, location, metadata=None, log=True):
+    def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
         version = OsfStorageFileVersion(creator=creator, location=location)
 
@@ -283,12 +300,6 @@ class OsfStorageFileNode(StoredObject):
         self.versions.append(version)
         self.save()
 
-        if log:
-            self.log(
-                Auth(creator),
-                NodeLog.FILE_UPDATED if len(self.versions) > 1 else NodeLog.FILE_ADDED,
-            )
-
         return version
 
     @utils.must_be('file')
@@ -299,17 +310,7 @@ class OsfStorageFileNode(StoredObject):
                 return
         raise errors.VersionNotFoundError
 
-    def log(self, auth, action, version=True):
-        node_logger = logs.OsfStorageNodeLogger(
-            auth=auth,
-            node=self.node,
-            path=self.path,
-            full_path=self.materialized_path(),
-        )
-        extra = {'version': len(self.versions)} if version else None
-        node_logger.log(action, extra=extra, save=True)
-
-    def delete(self, auth, log=True):
+    def delete(self):
         trashed = OsfStorageTrashedFileNode()
         trashed._id = self._id
         trashed.name = self.name
@@ -322,12 +323,9 @@ class OsfStorageFileNode(StoredObject):
 
         if self.is_folder:
             for child in self.children:
-                child.delete(auth, log=False)
+                child.delete()
 
         self.__class__.remove_one(self)
-
-        if log:
-            self.log(auth, NodeLog.FILE_REMOVED, version=False)
 
     def serialized(self, include_full=False):
         """Build Treebeard JSON for folder or file.
@@ -348,7 +346,7 @@ class OsfStorageFileNode(StoredObject):
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
 
-    def move_under(self, destination_parent, name=None, log=True):
+    def move_under(self, destination_parent, name=None):
         self.name = name or self.name
         self.parent = destination_parent
         self.node_settings = destination_parent.node_settings

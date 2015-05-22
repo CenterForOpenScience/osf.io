@@ -19,10 +19,8 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.project.model import has_anonymous_link
 
-from website.models import NodeLog
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
-from website.addons.osfstorage import errors
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
 
@@ -155,10 +153,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             )
         })
 
-    if is_folder:
-        #TODO Handle copies
-        file_node.log(Auth(user), NodeLog.FOLDER_CREATED)
-    else:
+    if not is_folder:
         try:
             file_node.create_version(
                 user,
@@ -171,9 +166,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                 dict(payload['metadata'], **payload['hashes'])
             )
         except KeyError:
-            #TODO Handle redeleting
             raise HTTPError(httplib.BAD_REQUEST)
-        file_node.log(Auth(user), NodeLog.FILE_ADDED)
 
     return {
         'status': 'success',
@@ -188,13 +181,14 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     auth = Auth(User.load(payload['user']))
 
+    #TODO Auth check?
     if not auth:
         raise HTTPError(httplib.BAD_REQUEST)
 
     if file_node == node_addon.root_node:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    file_node.delete(auth)
+    file_node.delete()
 
     return {'status': 'success'}
 

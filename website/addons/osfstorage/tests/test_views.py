@@ -486,7 +486,7 @@ class TestDeleteHook(HookTestCase):
 
     def test_delete_deleted(self):
         file = self.root_node.append_file('Newfile')
-        file.delete(None, log=False)
+        file.delete()
 
         resp = self.delete(file, expect_errors=True)
 
