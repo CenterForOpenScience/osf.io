@@ -267,7 +267,7 @@ class OSFStorageProvider(provider.BaseProvider):
             backup.main(
                 local_complete_path,
                 data['version'],
-                self.build_url('hooks', 'metadata'),
+                self.build_url('hooks', 'metadata') + '/',
                 self.archive_credentials,
                 self.archive_settings,
             )
