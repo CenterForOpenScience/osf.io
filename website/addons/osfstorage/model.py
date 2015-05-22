@@ -16,7 +16,6 @@ from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
 from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
-
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings

@@ -75,7 +75,7 @@ class ArchiverTestCase(OsfTestCase):
         self.src = factories.NodeFactory(creator=self.user)
         self.src.add_addon('dropbox', auth=self.auth)
         self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False)
-        self.stat_result = stat_file_tree('dropbox', FILE_TREE, self.user)
+        self.stat_result = aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
         self.pks = (self.src._id, self.dst._id, self.user._id)
 
 class TestStorageAddonBase(ArchiverTestCase):
@@ -157,15 +157,9 @@ class TestArchiverTasks(ArchiverTestCase):
         assert(MockStat.called_with(
             src_dropbox._id,
             'dropbox',
-            targets=[stat_file_tree(src_dropbox, FILE_TREE, self.user)]
+            targets=[aggregate_file_tree_metadata(src_dropbox, FILE_TREE, self.user)]
         ))
         assert_equal(res.target_name, 'dropbox')
-
-    def test_stat_file_tree(self):
-        a_stat_result = stat_file_tree('dropbox', FILE_TREE, self.user)
-        assert_equal(a_stat_result.disk_usage, 128 + 256)
-        assert_equal(a_stat_result.num_files, 2)
-        assert_equal(len(a_stat_result.targets), 2)
 
     def test_archive_node_pass(self):
         src_pk, dst_pk, user_pk = self.pks
@@ -200,7 +194,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
     def test_archive_addon(self):
         src_pk, dst_pk, user_pk = self.pks
-        result = stat_file_tree('dropbox', FILE_TREE, self.user),
+        result = aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user),
         with mock.patch.object(make_copy_request, 'si') as mock_make_copy_request:
             with mock.patch.object(requests, 'post'):
                 archive_addon('dropbox', src_pk, dst_pk, user_pk, result)
@@ -340,6 +334,21 @@ class TestArchiverExceptions(ArchiverTestCase):
 
 
 class TestArchiverUtils(ArchiverTestCase):
+
+    def test_update_status(self):
+        self.dst.archived_providers['test'] = {
+            'status': 'OK',
+        }
+        self.dst.save()
+        update_status(self.dst, 'test', 'BAD', meta={'meta': 'DATA'})
+        assert_equal(self.dst.archived_providers['test']['status'], 'BAD')
+        assert_equal(self.dst.archived_providers['test']['meta'], 'DATA')
+
+    def test_aggregate_file_tree_metadata(self):
+        a_stat_result = aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
+        assert_equal(a_stat_result.disk_usage, 128 + 256)
+        assert_equal(a_stat_result.num_files, 2)
+        assert_equal(len(a_stat_result.targets), 2)
 
     def test_archive_provider_for(self):
         provider = self.src.get_addon(archiver_settings.ARCHIVE_PROVIDER)

@@ -8,18 +8,9 @@ from framework.tasks import app as celery_app
 from framework.auth.core import User
 from framework.archiver import mails
 from framework.archiver import (
-    StatResult,
     AggregateStatResult,
 )
 from framework.archiver.exceptions import ArchiverSizeExceeded
-
-from website.project.model import Node
-from website.project import signals as project_signals
-from website.mails import send_mail
-
-from website import settings
-from website.app import init_addons, do_set_backends
-
 from framework.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
@@ -31,54 +22,27 @@ from framework.archiver.settings import (
     ARCHIVE_PROVIDER,
     MAX_ARCHIVE_SIZE,
 )
-from framework.archiver.utils import catch_archive_addon_error
+from framework.archiver.utils import (
+    catch_archive_addon_error,
+    archive_folder_name,
+    update_status,
+    aggregate_file_tree_metadata,
+)
 
-logger = get_task_logger(__name__)
+from website.project.model import Node
+from website.project import signals as project_signals
+from website.mails import send_mail
+from website import settings
+from website.app import init_addons, do_set_backends
 
 def create_app_context():
     try:
         init_addons(settings)
         do_set_backends(settings)
-    except AssertionError:
-        # ignore AssertionErrors
+    except AssertionError:  # ignore AssertionErrors
         pass
 
-def update_status(node, addon, status, meta={}):
-    tmp = node.archived_providers.get(addon) or {}
-    tmp['status'] = status
-    tmp.update(meta)
-    node.archived_providers[addon] = tmp
-    node.save()
-
-def stat_file_tree(addon_short_name, fileobj_metadata, user):
-    """Traverse the addon's file tree and collect metadata in AggregateStatResult
-
-    :param src_addon: AddonNodeSettings instance of addon being examined
-    :param fileobj_metadata: file or folder metadata of current point of reference
-    in file tree
-    :param user: archive initatior
-    :return: top-most recursive call returns AggregateStatResult containing addon file tree metadata
-    """
-    is_file = fileobj_metadata['kind'] == 'file'
-    disk_usage = fileobj_metadata.get('size')
-    if is_file:
-        # Files are never actually copied on osfstorage, so file size is irrelivant
-        if not disk_usage and not addon_short_name == 'osfstorage':
-            disk_usage = 0  # float('inf')  # trigger failure
-        result = StatResult(
-            target_name=fileobj_metadata['name'],
-            target_id=fileobj_metadata['path'].lstrip('/'),
-            disk_usage=disk_usage,
-            meta=fileobj_metadata,
-        )
-        return result
-    else:
-        return AggregateStatResult(
-            target_id=fileobj_metadata['path'].lstrip('/'),
-            target_name=fileobj_metadata['name'],
-            targets=[stat_file_tree(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
-            meta=fileobj_metadata,
-        )
+logger = get_task_logger(__name__)
 
 @celery_app.task(name="archiver.stat_addon")
 def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
@@ -100,7 +64,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     result = AggregateStatResult(
         src_addon._id,
         addon_short_name,
-        targets=[stat_file_tree(addon_short_name, file_tree, user)],
+        targets=[aggregate_file_tree_metadata(addon_short_name, file_tree, user)],
     )
     return result
 
@@ -151,7 +115,6 @@ def make_copy_request(dst_pk, url, data):
         update_status(dst, provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
 
-
 @celery_app.task(name="archiver.archive_addon")
 def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
@@ -172,10 +135,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     })
     user = User.load(user_pk)
     src_provider = src.get_addon(addon_short_name)
-    parent_name = "Archive of {addon}".format(addon=src_provider.config.full_name)
-    if hasattr(src_provider, 'folder_name'):
-        folder_name = (getattr(src_provider, 'folder_name') or '').lstrip('/').strip()
-        parent_name = parent_name + ": {folder}".format(folder=folder_name)
+    folder_name = archive_folder_name(src_provider)
     provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
     data = dict(
@@ -191,7 +151,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
             provider=ARCHIVE_PROVIDER,
             path='/',
         ),
-        rename=parent_name
+        rename=folder_name
     )
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
     make_copy_request.si(dst_pk, copy_url, data)()

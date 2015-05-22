@@ -1,6 +1,9 @@
 from framework.auth import Auth
 
-from framework.archiver import ARCHIVER_FAILURE
+from framework.archiver import (
+    StatResult, AggregateStatResult,
+    ARCHIVER_FAILURE,
+)
 from framework.archiver.settings import (
     ARCHIVE_PROVIDER,
 )
@@ -26,4 +29,51 @@ def catch_archive_addon_error(node, addon_short_name, errors=[]):
 def delete_registration_tree(node):
     node.is_deleted = True
     node.save()
-    [delete_registration_tree(child) for child in node.nodes if child.primary]
+    [delete_registration_tree(child) for child in node.nodes]
+
+def archive_folder_name(addon):
+    """Create a name for an archived addon's folder
+
+    :param addon: AddonNodeSettings instance of addon in question
+    """
+    name = "Archive of {addon}".format(addon=addon.config.full_name)
+    folder_name = (getattr(addon, 'folder_name') or '').lstrip('/').strip()
+    if folder_name:
+        name = name + ": {folder}".format(folder=folder_name)
+    return name
+
+def update_status(node, addon, status, meta={}):
+    tmp = node.archived_providers.get(addon) or {}
+    tmp['status'] = status
+    tmp.update(meta)
+    node.archived_providers[addon] = tmp
+    node.save()
+
+def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
+    """Recursively traverse the addon's file tree and collect metadata in AggregateStatResult
+
+    :param src_addon: AddonNodeSettings instance of addon being examined
+    :param fileobj_metadata: file or folder metadata of current point of reference
+    in file tree
+    :param user: archive initatior
+    :return: top-most recursive call returns AggregateStatResult containing addon file tree metadata
+    """
+    disk_usage = fileobj_metadata.get('size')
+    if fileobj_metadata['kind'] == 'file':
+        # Files are never actually copied on osfstorage, so file size is irrelivant
+        if not disk_usage and not addon_short_name == 'osfstorage':
+            disk_usage = float('inf')  # trigger failure
+        result = StatResult(
+            target_name=fileobj_metadata['name'],
+            target_id=fileobj_metadata['path'].lstrip('/'),
+            disk_usage=disk_usage,
+            meta=fileobj_metadata,
+        )
+        return result
+    else:
+        return AggregateStatResult(
+            target_id=fileobj_metadata['path'].lstrip('/'),
+            target_name=fileobj_metadata['name'],
+            targets=[aggregate_file_tree_metadata(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
+            meta=fileobj_metadata,
+        )
