@@ -96,7 +96,8 @@ def build_log_templates(settings):
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True, mfr=False,
-        attach_request_handlers=True):
+             attach_request_handlers=True,
+             supress_assertion_errors=False):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -110,7 +111,13 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     settings = importlib.import_module(settings_module)
 
     build_log_templates(settings)
-    init_addons(settings, routes)
+    try:
+        init_addons(settings, routes)
+    except AssertionError:
+        if supress_assertion_errors:
+            pass
+        else:
+            raise
     build_js_config_files(settings)
 
     app.debug = settings.DEBUG_MODE
