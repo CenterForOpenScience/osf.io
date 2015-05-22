@@ -991,10 +991,6 @@ h1.unavailable {
 }
 
 /* Search */
-.page-header
-    {
-        overflow: hidden;
-    }
 .add-query
     {
         width: 190px;
