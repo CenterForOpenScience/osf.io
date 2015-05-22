@@ -779,7 +779,7 @@ function _createFolder(event, dismissCallback, helpText) {
     m.request({
         method: 'POST',
         background: true,
-        xhrconfig: $osf.setXHRAuthorization,
+        config: $osf.setXHRAuthorization,
         url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
