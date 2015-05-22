@@ -256,7 +256,7 @@ def create_waterbutler_log(payload, **kwargs):
                 params=payload
             )
 
-        if payload.get('email') is True:
+        if payload.get('email') is True or payload.get('errors'):
             mails.send_mail(
                 user.username,
                 mails.FILE_OPERATION_FAILED if payload.get('errors')
