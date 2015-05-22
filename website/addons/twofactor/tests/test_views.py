@@ -6,12 +6,6 @@ from tests.factories import AuthUserFactory
 from website.app import init_app
 from website.addons.twofactor.tests import _valid_code
 
-app = init_app(
-    routes=True,
-    set_backends=False,
-    settings_module='website.settings',
-)
-
 class TestViews(OsfTestCase):
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def setUp(self, mocked):

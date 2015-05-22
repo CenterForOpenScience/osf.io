@@ -7,6 +7,7 @@ import logging
 import unittest
 import functools
 import datetime as dt
+from flask import g
 
 import blinker
 import httpretty
@@ -37,12 +38,10 @@ from website.signals import ALL_SIGNALS
 from website.app import init_app
 from website.addons.base import AddonConfig
 
-# Just a simple app without routing set up or backends
 test_app = init_app(
-    settings_module='website.settings', routes=True, set_backends=False
+    settings_module='website.settings', routes=True, set_backends=False, supress_assertion_errors=True
 )
 test_app.testing = True
-
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -141,11 +140,14 @@ class AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         self.context = test_app.test_request_context()
         self.context.push()
+        with self.context:
+            g._celery_tasks = []
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
+        with self.context:
+            g._celery_tasks = None
         self.context.pop()
-
 
 class UploadTestCase(unittest.TestCase):
 

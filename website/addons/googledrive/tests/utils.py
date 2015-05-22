@@ -2,10 +2,6 @@
 import website
 
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 mock_files_folders = {
  "kind": "drive#fileList",
  "etag": "\"zWM2D6PBtLRQKuDNbaQNSNEy5BE/OFY_BAPrn0m2U6l6Y1Al8txPdxM\"",
@@ -2442,4 +2438,4 @@ def getitem(key):
 
 
 def setitem(key, val):
-     mock_folders[key] = val
+    mock_folders[key] = val
