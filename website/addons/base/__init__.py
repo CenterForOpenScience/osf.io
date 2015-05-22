@@ -869,13 +869,16 @@ class GenericRootNode(object):
     name = ''
 
 class StorageAddonBase(object):
+    """
+    Mixin class for traversing file trees of addons with files
+    """
 
     root_node = GenericRootNode()
 
-    def _get_fileobj_child_metadata(self, node, user, cookie=None):
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None):
         kwargs = dict(
             provider=self.config.short_name,
-            path=node.get('path'),
+            path=filenode.get('path'),
             node=self.owner,
             user=user,
             view_only=True,
@@ -891,24 +894,24 @@ class StorageAddonBase(object):
             pass
         return res.json().get('data', [])
 
-    def _get_file_tree(self, node=None, user=None, cookie=None):
+    def _get_file_tree(self, filenode=None, user=None, cookie=None):
         """
         Recursively get file metadata
         """
-        node = node or {
+        filenode = filenode or {
             'path': self.root_node.path,
             'name': self.root_node.name,
             'kind': 'folder',
         }
-        if node.get('kind') == 'file':
-            return node
+        if filenode.get('kind') == 'file':
+            return filenode
         kwargs = {}
         if cookie:
             kwargs = {
                 'cookie': cookie,
             }
-        node['children'] = [self._get_file_tree(child, user, cookie=cookie) for child in self._get_fileobj_child_metadata(node, user, **kwargs)]
-        return node
+        filenode['children'] = [self._get_file_tree(child, user, cookie=cookie) for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)]
+        return filenode
 
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
