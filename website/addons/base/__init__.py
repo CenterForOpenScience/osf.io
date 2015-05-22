@@ -14,10 +14,11 @@ import requests
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
-from framework.exceptions import PermissionsError
+from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
+from framework.exceptions import PermissionsError
 
 from website import settings
 from website.addons.base import exceptions
@@ -283,8 +284,10 @@ class GuidFile(GuidStoredObject):
             'nid': self.node._id,
             'provider': self.provider,
             'path': self.waterbutler_path,
-            'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
+
+        if 'auth_user_access_token' in session.data:
+            url.args.add('token', session.data.get('auth_user_access_token'))
 
         if request.args.get('view_only'):
             url.args['view_only'] = request.args['view_only']
