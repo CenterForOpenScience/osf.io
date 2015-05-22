@@ -34,36 +34,44 @@ class DropboxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def intra_copy(self, dest_provider, src_path, dest_path):
-        if self == dest_provider:
-            resp = yield from self.make_request(
-                'POST',
-                self.build_url('fileops', 'copy'),
-                data={
-                    'root': 'auto',
-                    'from_path': src_path.full_path,
-                    'to_path': dest_path.full_path,
-                },
-                expects=(200, 201),
-                throws=exceptions.IntraCopyError,
-            )
-        else:
-            from_ref_resp = yield from self.make_request(
-                'GET',
-                self.build_url('copy_ref', 'auto', src_path.full_path),
-            )
-            from_ref_data = yield from from_ref_resp.json()
-            resp = yield from self.make_request(
-                'POST',
-                self.build_url('fileops', 'copy'),
-                data={
-                    'root': 'auto',
-                    'from_copy_ref': from_ref_data['copy_ref'],
-                    'to_path': dest_path,
-                },
-                headers=dest_provider.default_headers,
-                expects=(200, 201),
-                throws=exceptions.IntraCopyError,
-            )
+        try:
+            if self == dest_provider:
+                resp = yield from self.make_request(
+                    'POST',
+                    self.build_url('fileops', 'copy'),
+                    data={
+                        'root': 'auto',
+                        'from_path': src_path.full_path,
+                        'to_path': dest_path.full_path,
+                    },
+                    expects=(200, 201),
+                    throws=exceptions.IntraCopyError,
+                )
+            else:
+                from_ref_resp = yield from self.make_request(
+                    'GET',
+                    self.build_url('copy_ref', 'auto', src_path.full_path),
+                )
+                from_ref_data = yield from from_ref_resp.json()
+                resp = yield from self.make_request(
+                    'POST',
+                    self.build_url('fileops', 'copy'),
+                    data={
+                        'root': 'auto',
+                        'from_copy_ref': from_ref_data['copy_ref'],
+                        'to_path': dest_path,
+                    },
+                    headers=dest_provider.default_headers,
+                    expects=(200, 201),
+                    throws=exceptions.IntraCopyError,
+                )
+        except exceptions.IntraCopyError as e:
+            if e.code != 403:
+                raise
+
+            yield from dest_provider.delete(dest_path)
+            resp, _ = yield from self.intra_copy(dest_provider, src_path, dest_path)
+            return resp, False
 
         # TODO Refactor into a function
         data = yield from resp.json()
