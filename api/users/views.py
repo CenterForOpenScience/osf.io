@@ -89,8 +89,6 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
         return nodes
 
 
-# TODO: Needs to also handle a PUT or POST request for creating new single instances via this url:
-#       Possible alternate parent classes in http://www.django-rest-framework.org/api-guide/generic-views/#listapiview
 class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     Get a list of API applications (eg OAuth2) that the user has registered
@@ -124,7 +122,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
 
 class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     """
-    Get information about a specific API application (eq OAuth2) that the user has registered
+    Get information about a specific API application (eg OAuth2) that the user has registered
 
     Will only return success if logged in as that specified user
     """
@@ -149,7 +147,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        # Node is not actually deleted- just flagged as inactive, which hides it from list views
+        """Node is not actually deleted- just flagged as inactive, which hides it from list views"""
         obj = self.get_object()
 
         if obj.owner._id != self.request.user._id:  # TODO: This check may be redundant with check in self.get_object
@@ -159,8 +157,8 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
         obj.save()
 
     def perform_update(self, serializer):
-        #serializer.validated_data['owner'] = self.request.user
         """Necessary to prevent owner field from being blanked on updates"""
+        #serializer.validated_data['owner'] = self.request.user
         # TODO: Write code to transfer ownership
         serializer.save(owner=self.request.user)
 

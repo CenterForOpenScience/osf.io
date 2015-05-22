@@ -1,11 +1,10 @@
 from rest_framework import serializers as ser
 from django.core.validators import URLValidator
 
-
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
 from website.models import OAuth2App, User
-
+from website.util.sanitize import strip_html
 
 def user_validator(user):
     """
@@ -77,9 +76,6 @@ class ContributorSerializer(UserSerializer):
 
 class OAuth2AppSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
-
-    #id = ser.CharField(read_only=True, source='_id')
-
     client_id = ser.CharField(help_text="The client ID for this application (automatically generated)",
                               read_only=True)
 
@@ -87,10 +83,9 @@ class OAuth2AppSerializer(JSONAPISerializer):
                                   read_only=True)  # TODO: May change this later
 
     owner = ser.CharField(help_text="The id of the user who owns this application",
-                          read_only=True,  # TODO: The serializer does not control creating/changing this field directly
+                          read_only=True,  # TODO: The serializer does not control creating/changing this field directly; what does validation on a readonly field even mean?!
                           source='owner._id',
-
-                          validators=[user_validator])  # TODO: Make readonly??
+                          validators=[user_validator])
 
     name = ser.CharField(help_text="A short, descriptive name for this application",
                          required=True)
@@ -119,6 +114,13 @@ class OAuth2AppSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         return obj.absolute_url
+
+    def is_valid(self, *args, **kwargs):
+        """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
+        ret = super(OAuth2AppSerializer, self).is_valid(*args, **kwargs)
+        for k, v in self.validated_data.iteritems():
+            self.validated_data[k] = strip_html(v)
+        return ret
 
     def create(self, validated_data):
         instance = OAuth2App(**validated_data)
