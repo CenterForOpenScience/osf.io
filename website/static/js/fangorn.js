@@ -416,7 +416,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
 
         tb.redraw();
-    }).fail(function(xhr) {
+    }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
         }
@@ -431,6 +431,8 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         if (xhr.status !== 500 && xhr.responseJSON && xhr.responseJSON.message) {
             message = xhr.responseJSON.message;
+        } else if (xhr.status === 503) {
+            message = textStatus;
         } else {
             message = 'Please refresh the page or ' +
                 'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
