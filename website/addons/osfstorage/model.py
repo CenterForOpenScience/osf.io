@@ -11,12 +11,10 @@ from dateutil.parser import parse as parse_date
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
 
-from framework.auth import Auth
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
-from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
 
 from website.addons.osfstorage import utils
