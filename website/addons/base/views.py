@@ -80,6 +80,10 @@ permission_map = {
     'delete': 'write',
     'copy': 'write',
     'move': 'write',
+    'copyto': 'write',
+    'moveto': 'write',
+    'copyfrom': 'read',
+    'movefrom': 'write',
 }
 
 

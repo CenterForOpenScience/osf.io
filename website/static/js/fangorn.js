@@ -797,7 +797,6 @@ function _createFolder(event, dismissCallback, helpText) {
         }
     });
 }
-
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -1811,10 +1810,14 @@ function _dragLogic(event, items, ui) {
 function getCopyMode(folder, items) {
     var tb = this;
     var canMove = true;
+    var mustBeIntra = (folder.data.provider === 'github');
 
     if (folder.parentId === 0) return 'forbidden';
     if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
     if (!folder.data.provider || folder.data.status) return 'forbidden';
+
+    if (folder.data.provider === 'figshare') return 'forbidden';
+    if (folder.data.provider === 'dataverse') return 'forbidden';
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1823,11 +1826,11 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            (
-                item.data.kind === 'folder' &&
-                ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1
-            )
+            (mustBeIntra && item.data.provider !== folder.data.provider) ||
+            item.data.provider === 'figshare' ||
+            item.data.provider === 'dataverse'
         ) return 'forbidden';
+
 
         canMove = canMove && item.data.permissions.edit;
     }
