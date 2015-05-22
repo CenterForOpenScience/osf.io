@@ -57,7 +57,6 @@ def node_register_page(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_retraction_get(auth, node, **kwargs):
     """Prepares node object for registration retraction page.
 
@@ -65,6 +64,11 @@ def node_registration_retraction_get(auth, node, **kwargs):
     :raises: 400: BAD_REQUEST if registration already pending retraction
     """
 
+    if not node.is_registration:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retractions of non-registrations is not permitted.'
+        })
     if node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
@@ -75,13 +79,18 @@ def node_registration_retraction_get(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_retraction_post(auth, node, **kwargs):
     """Handles retraction of public registrations
 
     :param auth: Authentication object for User
     :return: Redirect URL for successful POST
     """
+
+    if not node.is_registration:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retractions of non-registrations is not permitted.'
+        })
 
     data = request.get_json()
     try:
