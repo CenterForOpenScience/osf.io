@@ -847,7 +847,7 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
-    return m('span', item.data.name);
+    return m('span', m.trust(item.data.name));
 }
 
 /**
