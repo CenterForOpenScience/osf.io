@@ -6,6 +6,8 @@ import logging
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
+from flask import request
+
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
@@ -17,10 +19,8 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.project.model import has_anonymous_link
 
-from website.models import NodeLog
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
-from website.addons.osfstorage import errors
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
 
@@ -113,22 +113,15 @@ def osfstorage_get_lineage(file_node, node_addon, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_get_metadata(file_node, **kwargs):
-    if file_node.is_deleted:
-        raise HTTPError(httplib.GONE)
-
     return file_node.serialized(include_full=True)
 
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
-    if file_node.is_deleted:
-        raise HTTPError(httplib.GONE)
-
     return [
         child.serialized()
         for child in file_node.children
-        if not child.is_deleted
     ]
 
 
@@ -146,25 +139,17 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         else:
             created, file_node = True, parent.append_file(name)
     except KeyExistsException:
-        file_node = parent.find_child_by_name(name, kind='folder' if is_folder else 'file')
-        created = False
+        created, file_node = False, parent.find_child_by_name(name, kind='folder' if is_folder else 'file')
 
-    # if not created and is_folder:
-    if file_node.is_deleted:
-        file_node.undelete(Auth(user), recurse=False)
-    else:
-        if not created and is_folder:
-            raise HTTPError(httplib.CONFLICT, data={
-                'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
-                    name=file_node.name,
-                    path=file_node.materialized_path(),
-                )
-            })
+    if not created and is_folder:
+        raise HTTPError(httplib.CONFLICT, data={
+            'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+                name=file_node.name,
+                path=file_node.materialized_path(),
+            )
+        })
 
-    if is_folder:
-        #TODO Handle copies
-        file_node.log(Auth(user), NodeLog.FOLDER_CREATED)
-    else:
+    if not is_folder:
         try:
             file_node.create_version(
                 user,
@@ -177,9 +162,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                 dict(payload['metadata'], **payload['hashes'])
             )
         except KeyError:
-            #TODO Handle redeleting
             raise HTTPError(httplib.BAD_REQUEST)
-        file_node.log(Auth(user), NodeLog.FILE_ADDED)
 
     return {
         'status': 'success',
@@ -194,38 +177,29 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     auth = Auth(User.load(payload['user']))
 
+    #TODO Auth check?
     if not auth:
         raise HTTPError(httplib.BAD_REQUEST)
 
     if file_node == node_addon.root_node:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.is_deleted:
-        raise HTTPError(httplib.GONE)
+    file_node.delete()
 
-    try:
-        file_node.delete(auth)
-    except errors.DeleteError:
-        raise HTTPError(httplib.NOT_FOUND)
-
-    file_node.save()
     return {'status': 'success'}
 
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_download(file_node, payload, node_addon, **kwargs):
-    if file_node.is_deleted:
-        raise HTTPError(httplib.GONE)
-
     try:
-        version_id = int(payload.get('version', 0)) - 1
+        version_id = int(request.args.get('version') or 0) - 1
     except ValueError:
         raise make_error(httplib.BAD_REQUEST, 'Version must be an int or not specified')
 
     version = file_node.get_version(version_id)
 
-    if payload.get('mode') not in ('render', ):
+    if request.args.get('mode') not in ('render', ):
         if version_id < 0:
             version_id = len(file_node.versions) + version_id
         utils.update_analytics(node_addon.owner, file_node._id, version_id)

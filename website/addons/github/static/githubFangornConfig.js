@@ -8,6 +8,7 @@ var $ = require('jquery');
 var URI = require('URIjs');
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
+var $osf = require('js/osfHelpers');
 
 // Cross browser key codes for the Command key
 var commandKeys = [224, 17, 91, 93];
@@ -28,7 +29,8 @@ function _removeEvent (event, items) {
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
-            type : 'DELETE'
+            type : 'DELETE',
+            beforeSend: $osf.setXHRAuthorization
         }).done(function (data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);

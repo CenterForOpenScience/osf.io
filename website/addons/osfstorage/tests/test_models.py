@@ -189,63 +189,31 @@ class TestOsfstorageFileNode(StorageTestCase):
             kid = parent.append_file(str(x))
             kid.save()
             kids.append(kid)
-        parent.delete(None, log=False)
-        assert_true(parent.is_deleted)
-        for kid in kids:
-            kid.reload()
-            assert_true(kid.is_deleted)
+        count = model.OsfStorageFileNode.find().count()
+        tcount = model.OsfStorageTrashedFileNode.find().count()
 
-    def test_delete_folder_no_recurse(self):
-        parent = self.node_settings.root_node.append_folder('Test')
-        kids = []
-        for x in range(10):
-            kid = parent.append_file(str(x))
-            kid.save()
-            kids.append(kid)
-        parent.delete(None, recurse=False, log=False)
-        assert_true(parent.is_deleted)
+        parent.delete()
+
+        assert_is(model.OsfStorageFileNode.load(parent._id), None)
+        assert_equals(count - 11, model.OsfStorageFileNode.find().count())
+        assert_equals(tcount + 11, model.OsfStorageTrashedFileNode.find().count())
+
         for kid in kids:
-            kid.reload()
-            assert_false(kid.is_deleted)
+            assert_is(
+                model.OsfStorageFileNode.load(kid._id),
+                None
+            )
 
     def test_delete_file(self):
         child = self.node_settings.root_node.append_file('Test')
-        child.delete(None, log=False)
+        child.delete()
 
-        assert_true(child.is_deleted)
-
-    def test_undelete_folder(self):
-        parent = self.node_settings.root_node.append_folder('Test')
-
-        kids = []
-        for x in range(10):
-            kid = parent.append_file(str(x))
-            kid.save()
-            kids.append(kid)
-
-        parent.delete(None, log=False)
-        assert_true(parent.is_deleted)
-
-        for kid in kids:
-            kid.reload()
-            assert_true(kid.is_deleted)
-
-        parent.undelete(None, log=False)
-
-        assert_false(parent.is_deleted)
-        for kid in kids:
-            kid.reload()
-            assert_false(kid.is_deleted)
-
-    def test_undelete_file(self):
-        child = self.node_settings.root_node.append_file('Test')
-        child.delete(None, log=False)
-
-        assert_true(child.is_deleted)
-
-        child.undelete(None, log=False)
-
-        assert_false(child.is_deleted)
+        # assert_true(child.is_deleted)
+        assert_is(model.OsfStorageFileNode.load(child._id), None)
+        trashed = model.OsfStorageTrashedFileNode.load(child._id)
+        child_storage = child.to_storage()
+        del child_storage['is_deleted']
+        assert_equal(trashed.to_storage(), child_storage)
 
     def test_materialized_path(self):
         child = self.node_settings.root_node.append_file('Test')

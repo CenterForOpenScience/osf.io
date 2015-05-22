@@ -158,7 +158,8 @@ RevisionsViewModel.prototype.fetch = function() {
             // so dont allow downloads and set a fake current version
             $.ajax({
                 method: 'GET',
-                url: self.urls.metadata
+                url: self.urls.metadata,
+                beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.editable(resp.data.extra.canDelete);
             }).fail(function(xhr) {
@@ -182,6 +183,7 @@ RevisionsViewModel.prototype.delete = function() {
     $.ajax({
         type: 'DELETE',
         url: self.urls.delete,
+        beforeSend: $osf.setXHRAuthorization
     }).done(function() {
         window.location = self.node.urls.files;
     }).fail(function() {
