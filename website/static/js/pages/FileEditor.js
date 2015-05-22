@@ -113,9 +113,9 @@ function ViewModel(url, viewText) {
 
     self.filesDiffer = function(file1, file2) {
         // Handle inconsistencies in newline notation
-        var clean1 = typeof wiki1 === 'string' ?
+        var clean1 = typeof file1 === 'string' ?
             file1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-        var clean2 = typeof wiki2 === 'string' ?
+        var clean2 = typeof file2 === 'string' ?
             file2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
         return clean1 !== clean2;

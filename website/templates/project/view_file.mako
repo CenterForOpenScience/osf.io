@@ -357,6 +357,7 @@
                 panelsUsed: ${json.dumps(panels_used) | n},
                 isEditable: isEditable,
                 urls: {
+                    draft: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     content: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     page: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
                     base: '/api/v1' + '${files_url | js_str}' + '${provider | js_str}' + '${file_path | js_str}',
