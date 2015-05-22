@@ -1826,13 +1826,13 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            (mustBeIntra && item.data.provider !== folder.data.provider) ||
             item.data.provider === 'figshare' ||
-            item.data.provider === 'dataverse'
+            item.data.provider === 'dataverse' ||
+            (mustBeIntra && item.data.provider !== folder.data.provider)
         ) return 'forbidden';
 
-
-        canMove = canMove && item.data.permissions.edit;
+        mustBeIntra = mustBeIntra || item.data.provider === 'github';
+        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || item.data.provider === folder.data.provider);
     }
     if (folder.data.isPointer) return 'copy';
     if (altKey) return 'copy';
