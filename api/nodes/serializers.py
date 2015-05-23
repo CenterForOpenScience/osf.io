@@ -6,7 +6,9 @@ from framework.auth.core import Auth
 
 
 class NodeSerializer(JSONAPISerializer):
-
+    # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
+    # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
+    # instance
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset(['title', 'description', 'public'])

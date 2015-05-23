@@ -39,6 +39,11 @@ class FilterMixin(object):
     FALSY = set(['false', 'False', 0, '0'])
     DEFAULT_OPERATOR = 'eq'
 
+    def __init__(self, *args, **kwargs):
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        if not self.serializer_class:
+            raise NotImplementedError()
+
     def is_filterable_field(self, key):
         try:
             return key.strip() in self.serializer_class.filterable_fields
@@ -83,6 +88,11 @@ class ODMFilterMixin(FilterMixin):
         ser.CharField: 'icontains',
         ser.ListField: 'in',
     }
+
+    def __init__(self, *args, **kwargs):
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        if not self.serializer_class:
+            raise NotImplementedError()
 
     def get_comparison_operator(self, key):
         field_type = type(self.serializer_class._declared_fields[key])
@@ -133,6 +143,11 @@ class ListFilterMixin(FilterMixin):
     Serializers that want to restrict which fields are used for filtering need to have a variable called
     filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
     """
+
+    def __init__(self, *args, **kwargs):
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        if not self.serializer_class:
+            raise NotImplementedError()
 
     def get_default_queryset(self):
         raise NotImplementedError('Must define get_default_queryset')

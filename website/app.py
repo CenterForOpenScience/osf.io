@@ -7,9 +7,6 @@ import json
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
-from werkzeug.wsgi import DispatcherMiddleware
-
-from api.base.wsgi import application as django_app
 import framework
 from framework.render.core import init_mfr
 from framework.flask import app, add_handlers
