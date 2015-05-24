@@ -2831,7 +2831,7 @@ class Retraction(StoredObject):
         parent_registration.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
-                'registration_id': parent_registration._id,
+                'node': parent_registration._id,
                 'retraction_id': self._id,
             },
             auth=Auth(user),
@@ -2855,7 +2855,7 @@ class Retraction(StoredObject):
             parent_registration.add_log(
                 action=NodeLog.RETRACTION_APPROVED,
                 params={
-                    'registration_id': parent_registration._id,
+                    'node': parent_registration._id,
                     'retraction_id': self._id,
                 },
                 auth=Auth(user),
@@ -2868,7 +2868,7 @@ class Retraction(StoredObject):
                 parent_registration.add_log(
                     action=NodeLog.EMBARGO_CANCELLED,
                     params={
-                        'registration_id': parent_registration._id,
+                        'node': parent_registration._id,
                         'embargo_id': parent_registration.embargo._id,
                     },
                     auth=Auth(user),
@@ -2955,7 +2955,7 @@ class Embargo(StoredObject):
         parent_registration.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
-                'registration_id': parent_registration._id,
+                'node': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(user),
@@ -2982,7 +2982,7 @@ class Embargo(StoredObject):
             parent_registration.add_log(
                 action=NodeLog.EMBARGO_APPROVED,
                 params={
-                    'registration_id': parent_registration._id,
+                    'node': parent_registration._id,
                     'embargo_id': self._id,
                 },
                 auth=Auth(user),

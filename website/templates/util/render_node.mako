@@ -34,6 +34,7 @@
             % endif
             </span>
 
+            <!-- Show/Hide recent activity log -->
             <div class="pull-right">
                 % if not summary['primary'] and 'admin' in user['permissions']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>

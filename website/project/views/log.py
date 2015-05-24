@@ -54,7 +54,7 @@ def _get_logs(node, count, auth, link=None, page=0):
 
 @no_auto_transaction
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_logs(auth, node, **kwargs):
     """
 

@@ -35,7 +35,7 @@ def main(dry_run=True):
                     parent_registration.add_log(
                         action=NodeLog.RETRACTION_APPROVED,
                         params={
-                            'registration_id': parent_registration._id,
+                            'node': parent_registration._id,
                             'retraction_id': parent_registration.retraction._id,
                         },
                         auth=Auth(parent_registration.retraction.initiated_by),

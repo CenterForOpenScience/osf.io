@@ -99,7 +99,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
         node.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
-                'registration_id': node._id,
+                'node': node._id,
                 'retraction_id': node.retraction._id,
             },
             auth=auth,
@@ -159,7 +159,6 @@ def _send_retraction_email(node, user):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_retraction_approve(auth, node, token, **kwargs):
     """Handles disapproval of registration retractions
     :param auth: User wanting to disapprove retraction
@@ -466,7 +465,7 @@ def node_register_template_page_post(auth, node, **kwargs):
             register.add_log(
                 action=NodeLog.EMBARGO_INITIATED,
                 params={
-                    'registration_id': node._id,
+                    'node': register._id,
                     'embargo_id': register.embargo._id,
                 },
                 auth=auth,

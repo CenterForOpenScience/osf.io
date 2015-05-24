@@ -4,6 +4,41 @@
 ## log templates. An addon's log templates are located in
 ## website/addons/<addon_name>/templates/log_templates.mako.
 
+<script type="text/html" id="embargo_approved">
+approved embargo of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="embargo_cancelled">
+cancelled embargo of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="embargo_completed">
+embargoed
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="embargo_initiated">
+initiated embargo of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="retraction_approved">
+approved retraction of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="retraction_cancelled">
+cancelled retraction of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="retraction_initiated">
+initiated retraction of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
 <script type="text/html" id="project_created">
 created 
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
