@@ -6,12 +6,10 @@ import functools
 
 from flask import request
 
+from framework.auth import cas
 from framework.auth import signing
 from framework.flask import redirect
 from framework.exceptions import HTTPError
-from framework.auth.cas import CasClient
-
-from website import settings
 
 from .core import Auth
 
@@ -38,7 +36,7 @@ def must_be_logged_in(func):
         if kwargs['auth'].logged_in:
             return func(*args, **kwargs)
         else:
-            return redirect(CasClient(settings.CAS_SERVER_URL).get_login_url(request.url))
+            return redirect(cas.get_login_url(request.url))
 
     return wrapped
 
