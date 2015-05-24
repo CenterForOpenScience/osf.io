@@ -2357,7 +2357,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         if permissions == 'public' and not self.is_public:
             if self.is_registration and (self.embargo_end_date or self.pending_embargo):
-                self.embargo.state = 'cancelled'
+                self.embargo.state = Embargo.CANCELLED
                 self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
@@ -2876,6 +2876,9 @@ class Retraction(StoredObject):
                     save=False,
                 )
                 parent_registration.embargo.save()
+            # Ensure retracted registration is public
+            if not parent_registration.is_public:
+                parent_registration.set_privacy('public')
 
 
 def validate_embargo_state(value):
