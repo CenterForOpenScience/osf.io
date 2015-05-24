@@ -1,10 +1,9 @@
 from flask import redirect
 
-from framework.auth.cas import CasClient
+from framework.auth import cas
 from framework.auth import views as auth_views
 from framework.auth.decorators import collect_auth
 
-from website import settings
 from website.util import web_url_for
 
 
@@ -28,7 +27,7 @@ def _landing_page(auth, title, content_path, redirect_to, **kwargs):
     try:
         data[0]['title_text'] = title
         data[0]['content_template_path'] = content_path
-        data[0]['login_url'] = CasClient(settings.CAS_SERVER_URL).get_login_url(redirect_to, auto=True)
+        data[0]['login_url'] = cas.get_login_url(redirect_to, auto=True)
     except TypeError:
         pass
 

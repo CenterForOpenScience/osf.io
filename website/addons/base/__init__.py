@@ -286,7 +286,7 @@ class GuidFile(GuidStoredObject):
             'path': self.waterbutler_path,
         })
 
-        if 'auth_user_access_token' in session.data:
+        if session and 'auth_user_access_token' in session.data:
             url.args.add('token', session.data.get('auth_user_access_token'))
 
         if request.args.get('view_only'):

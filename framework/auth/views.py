@@ -9,10 +9,10 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 import framework.auth
+from framework.auth import cas
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
-from framework.auth.cas import CasClient
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
 from framework.auth import (logout, get_user, DuplicateEmailError, verify_two_factor)
@@ -50,7 +50,7 @@ def reset_password(auth, **kwargs):
         user_obj.save()
         status.push_status_message('Password reset')
         # Redirect to CAS and authenticate the user with a verification key.
-        return redirect(CasClient(settings.CAS_SERVER_URL).get_login_url(
+        return redirect(cas.get_login_url(
             web_url_for('user_account', _absolute=True),
             auto=True,
             username=user_obj.username,
@@ -136,7 +136,7 @@ def auth_login(auth, **kwargs):
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
-    login_url = CasClient(settings.CAS_SERVER_URL).get_login_url(redirect_url, auto=True)
+    login_url = cas.get_login_url(redirect_url, auto=True)
     return {'login_url': login_url}, code
 
 
@@ -171,7 +171,7 @@ def auth_logout(redirect_url=None):
     """
     redirect_url = redirect_url or request.args.get('redirect_url')
     logout()
-    resp = redirect(CasClient(settings.CAS_SERVER_URL).get_logout_url(redirect_url if redirect_url else web_url_for('goodbye', _absolute=True)))
+    resp = redirect(cas.get_logout_url(redirect_url if redirect_url else web_url_for('goodbye', _absolute=True)))
     resp.delete_cookie(settings.COOKIE_NAME)
     return resp
 
@@ -217,7 +217,7 @@ def confirm_email_get(**kwargs):
     # Redirect to CAS and authenticate the user with a verification key.
     user.verification_key = security.random_string(20)
     user.save()
-    return redirect(CasClient(settings.CAS_SERVER_URL).get_login_url(
+    return redirect(cas.get_login_url(
         redirect_url,
         auto=True,
         username=user.username,
