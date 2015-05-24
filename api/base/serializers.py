@@ -1,15 +1,17 @@
+import collections
 import re
 
 from rest_framework import serializers as ser
+from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
-    if isinstance(d, dict):
+    if isinstance(d, collections.Mapping):
         return {
             key: _rapply(value, func, *args, **kwargs)
-            for key, value in d.items()
+            for key, value in d.iteritems()
         }
     else:
         return func(d, *args, **kwargs)
@@ -173,4 +175,13 @@ class JSONAPISerializer(ser.Serializer):
             ret[envelope] = data
         else:
             ret = data
+        return ret
+
+    # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
+    def is_valid(self, clean_html=True, **kwargs):
+        """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
+        ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+
+        if clean_html is True:
+            self._validated_data = _rapply(self.validated_data, strip_html)
         return ret

@@ -299,8 +299,8 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         node_id = self.get_node()._id
         obj_args = self.request.parser_context['args']
 
-        provider = query_params['provider'] if 'provider' in query_params else None
-        path = query_params['path'] if 'path' in query_params else '/'
+        provider = query_params.get('provider')
+        path = query_params.get('path', '/')
         files = []
 
         if provider is None:
