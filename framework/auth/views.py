@@ -15,11 +15,10 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
 from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
-from framework.auth import (logout, get_user, DuplicateEmailError, verify_two_factor)
+from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (MergeAccountForm, RegistrationForm,
         ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
-from framework.sessions import session
 
 from website import settings
 from website import mails
@@ -138,32 +137,6 @@ def auth_login(auth, **kwargs):
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
     login_url = cas.get_login_url(redirect_url, auto=True)
     return {'login_url': login_url}, code
-
-
-def two_factor(**kwargs):
-    """View for handling two factor code authentication
-
-    methods: GET, POST
-    """
-    if request.method != 'POST':
-        return {}
-
-    two_factor_code = request.form['twoFactorCode']
-    try:  # verify two factor for current user
-        response = verify_two_factor(session.data['two_factor_auth']['auth_user_id'],
-                                     two_factor_code)
-        return response
-    except exceptions.TwoFactorValidationError:
-        status.push_status_message(language.TWO_FACTOR_FAILED)
-        # Get next URL from GET / POST data
-        next_url = request.args.get(
-            'next',
-            request.form.get(
-                'next_url',
-                ''
-            )
-        )
-        return {'next_url': next_url}, http.UNAUTHORIZED
 
 
 def auth_logout(redirect_url=None):

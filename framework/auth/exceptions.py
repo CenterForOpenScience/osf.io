@@ -21,10 +21,6 @@ class DuplicateEmailError(AuthError):
     """
     pass
 
-class TwoFactorValidationError(AuthError):
-    """Raised in case an incorrect two-factor code is provided by the user."""
-    pass
-
 
 class EmailConfirmTokenError(FrameworkError):
     """Base class for errors arising from the use of an email confirm token."""
