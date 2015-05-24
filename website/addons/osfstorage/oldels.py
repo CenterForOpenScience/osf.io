@@ -15,7 +15,6 @@ from framework.mongo import StoredObject
 from framework.analytics import get_basic_counters
 from website.models import NodeLog
 
-from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
 from website.addons.osfstorage.model import OsfStorageFileVersion
 
