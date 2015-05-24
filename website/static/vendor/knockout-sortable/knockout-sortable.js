@@ -351,8 +351,7 @@
         },
         connectClass: ko.bindingHandlers.sortable.connectClass,
         options: {
-            helper: "clone",
-            tolerance: "pointer"
+            helper: "clone"
         }
     };
 
