@@ -209,15 +209,6 @@ class OsfStorageFileRecord(BaseFileObject):
                 return
         raise errors.VersionNotFoundError
 
-    def log(self, auth, action, version=True):
-        node_logger = logs.OsfStorageNodeLogger(
-            auth=auth,
-            node=self.node,
-            path=self.path,
-        )
-        extra = {'version': len(self.versions)} if version else None
-        node_logger.log(action, extra=extra, save=True)
-
     def delete(self, auth, log=True):
         if self.is_deleted:
             raise errors.DeleteError
