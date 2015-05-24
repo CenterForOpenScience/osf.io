@@ -518,10 +518,33 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(self.registration.pending_embargo)
         assert_equal(res.status_code, 400)
 
-    def test_GET_disapprove_with_valid_token_returns_redirect(self):
-        self.registration.embargo_registration(
+    def test_GET_disapprove_with_valid_token_returns_redirect_to_parent(self):
+        project = ProjectFactory(creator=self.user)
+        registration = RegistrationFactory(project=project)
+        registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        registration.save()
+        assert_true(registration.pending_embargo)
+
+        disapproval_token = registration.embargo.approval_state[self.user._id]['disapproval_token']
+        res = self.app.get(
+            registration.web_url_for('node_registration_embargo_disapprove', token=disapproval_token),
+            auth=self.user.auth,
+        )
+        registration.embargo.reload()
+        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_false(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
+        assert_equal(res.status_code, 302)
+        assert_true(project._id in res.location)
+
+    def test_GET_disapprove_for_existing_registration_with_valid_token_returns_redirect_to_registration(self):
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            for_existing_registration=True
         )
         self.registration.save()
         assert_true(self.registration.pending_embargo)
@@ -536,6 +559,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_false(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
         assert_equal(res.status_code, 302)
+        assert_true(self.registration._id in res.location)
 
 
 class RegistrationEmbargoViewsTestCase(OsfTestCase):

@@ -272,7 +272,11 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending an embargo.'
         })
-
+    # Note(hryabcki): node.registered_from not accessible after disapproval
+    if node.embargo.for_existing_registration:
+        redirect_url = node.web_url_for('view_project')
+    else:
+        redirect_url = node.registered_from.web_url_for('view_project')
     try:
         node.embargo.disapprove_embargo(auth.user, token)
         node.embargo.save()
@@ -288,7 +292,7 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
         })
 
     status.push_status_message('Your disapproval has been accepted and the embargo has been cancelled.')
-    return redirect(node.web_url_for('view_project'))
+    return redirect(redirect_url)
 
 @must_be_valid_project
 @must_be_contributor_or_public
