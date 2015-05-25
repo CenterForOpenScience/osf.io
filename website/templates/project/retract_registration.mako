@@ -38,7 +38,8 @@
 
             </div>
             <button type="submit" class="btn btn-danger" data-bind="click: submit, visible: true">Retract Registration</button>
-
+            <br /><br />
+            <span data-bind="css: messageClass, html: message"></span>
         </form>
     </div>
 
