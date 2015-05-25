@@ -543,33 +543,34 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _do_intra_move_or_copy(self, src_path, dest_path, is_copy):
-        branch_data = yield from self._fetch_branch(src_path.identifier[0])
+        target, branch = None, src_path.identifier[0]
+        branch_data = yield from self._fetch_branch(branch)
 
         old_commit_sha = branch_data['commit']['sha']
         old_commit_tree_sha = branch_data['commit']['commit']['tree']['sha']
 
         tree = yield from self._fetch_tree(old_commit_tree_sha, recursive=True)
-        exists = bool(list(filter(lambda x: x['path'] == dest_path.path, tree['tree'])))
+        exists = any(x['path'] == dest_path.path for x in tree['tree'])
 
-        targets = list(filter(lambda x: x['path'].startswith(src_path.path), tree['tree']))
+        target, keep = None, []
 
-        if src_path.is_file and len(targets) != 1:
-            raise Exception
+        for item in tree['tree']:
+            if item['path'] == str(src_path).strip('/'):
+                assert target is None, 'Found multiple targets'
+                target = item
+            elif item['path'].startswith(src_path.path):
+                keep.append(item)
 
-        if src_path.is_dir:
-            try:
-                folder = next(x for x in tree['tree'] if x['path'] == src_path.path.strip('/') and x['type'] == 'tree')
-            except StopIteration:
-                raise Exception
-
-            tree['tree'].remove(folder)
+        if target is None or (src_path.is_dir and target['type'] != 'tree'):
+            raise exceptions.NotFoundError(str(src_path))
 
         if is_copy:
-            targets = copy.deepcopy(targets)
-            tree['tree'].extend(targets)
+            tree['tree'].append(copy.deepcopy(target))
+        elif src_path.is_dir:
+            for item in keep:
+                tree['tree'].remove(item)
 
-        for target in targets:
-            target['path'] = target['path'].replace(src_path.path, dest_path.path, 1)
+        target['path'] = target['path'].replace(src_path.path.strip('/'), dest_path.path.strip('/'), 1)
 
         new_tree_data = yield from self._create_tree({'tree': tree['tree']})
         new_tree_sha = new_tree_data['sha']
@@ -595,7 +596,7 @@ class GitHubProvider(provider.BaseProvider):
         # No need to store data, rely on expects to raise exceptions
         yield from self.make_request(
             'PATCH',
-            self.build_repo_url('git', 'refs', 'heads', src_path.identifier[0]),
+            self.build_repo_url('git', 'refs', 'heads', branch),
             headers={'Content-Type': 'application/json'},
             data=json.dumps({'sha': commit['sha']}),
             expects=(200, ),
@@ -603,15 +604,16 @@ class GitHubProvider(provider.BaseProvider):
         )
 
         if dest_path.is_file:
-            return GitHubFileTreeMetadata(targets[0], commit=commit).serialized(), not exists
+            return GitHubFileTreeMetadata(target, commit=commit).serialized(), not exists
 
         folder = GitHubFolderTreeMetadata({
-            'path': dest_path.path
+            'path': dest_path.path.strip('/')
         }, commit=commit).serialized()
 
         folder['children'] = []
 
-        for item in targets:
+        for item in keep:
+            item['path'] = item['path'].replace(src_path.path, dest_path.path, 1)
             if item['type'] == 'tree':
                 folder['children'].append(GitHubFolderTreeMetadata(item).serialized())
             else:
