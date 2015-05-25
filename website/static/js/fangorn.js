@@ -1390,7 +1390,7 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
-        } else {
+        } else if(item.data.provider) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
