@@ -54,7 +54,12 @@ module.exports = {
     toJsonBlob: toJsonBlob,
     buildDeleteUrl: buildCrudUrl,
     buildUploadUrl: buildUploadUrl,
-    buildDownloadUrl: buildCrudUrl,
+    buildDownloadUrl: function(path, provider, nid, options) {
+        if (window.contextVars.accessToken) {
+            options = $.extend(options || {}, {token: window.contextVars.accessToken});
+        }
+        return buildCrudUrl(path, provider, nid, options);
+    },
     buildMetadataUrl: buildMetadataUrl,
     buildCreateFolderUrl: buildCrudUrl,
     buildRevisionsUrl: buildRevisionsUrl,
@@ -69,7 +74,12 @@ module.exports = {
         return buildFromTreebeard('file?', item, options);
     },
     buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
-    buildTreeBeardDownloadZip: buildFromTreebeard.bind(this, 'zip?'),
+    buildTreeBeardDownloadZip: function(item, options) {
+        if (window.contextVars.accessToken) {
+            options = $.extend(options || {}, {token: window.contextVars.accessToken});
+        }
+        return buildFromTreebeard('zip?', item, options);
+    },
     copyUrl: function(){return window.contextVars.waterbutlerURL + 'ops/copy';},
     moveUrl: function(){return window.contextVars.waterbutlerURL + 'ops/move';}
 };
