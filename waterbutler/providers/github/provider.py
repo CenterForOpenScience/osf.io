@@ -4,10 +4,10 @@ import asyncio
 
 import furl
 
+from waterbutler.core import path
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
-from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.github import settings
 from waterbutler.providers.github.metadata import GitHubRevision
@@ -18,6 +18,16 @@ from waterbutler.providers.github.metadata import GitHubFolderTreeMetadata
 
 
 GIT_EMPTY_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+
+
+class GitHubPathPart(path.WaterButlerPathPart):
+    def increment_name(self, _id=None):
+        self._id = _id or (self._id[0], None)
+        self._count += 1
+        return self
+
+class GitHubPath(path.WaterButlerPath):
+    PART_CLASS = GitHubPathPart
 
 
 class GitHubProvider(provider.BaseProvider):
@@ -50,7 +60,7 @@ class GitHubProvider(provider.BaseProvider):
             self._repo = yield from self._fetch_repo()
             self.default_branch = self._repo['default_branch']
 
-        path = WaterButlerPath(path)
+        path = GitHubPath(path)
 
         #TODO Validate that filesha is a valid sha
         path.parts[-1]._id = (
@@ -197,7 +207,7 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, branch=None, message=None, **kwargs):
-        WaterButlerPath.validate_folder(path)
+        GitHubPath.validate_folder(path)
 
         assert self.name is not None
         assert self.email is not None

@@ -17,6 +17,7 @@ from waterbutler.providers.googledrive.metadata import GoogleDriveRevision
 from waterbutler.providers.googledrive.metadata import GoogleDriveFileMetadata
 from waterbutler.providers.googledrive.metadata import GoogleDriveFolderMetadata
 
+
 class GoogleDrivePathPart(path.WaterButlerPathPart):
     DECODE = parse.unquote
     ENCODE = functools.partial(parse.quote, safe='')
