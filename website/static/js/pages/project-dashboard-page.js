@@ -76,7 +76,8 @@ $(document).ready(function () {
             },
             resolveRows : function (item) {
                 var tb = this;
-                if(this.isMultiselected(item.id)){
+                item.css = '';
+                if(tb.isMultiselected(item.id)){
                     item.css = 'fangorn-selected';
                 }
                 var defaultColumns = [

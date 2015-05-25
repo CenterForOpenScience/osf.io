@@ -1069,7 +1069,7 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-    if(this.isMultiselected(item.id)){
+    if(tb.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     }
 
