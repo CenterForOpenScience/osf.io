@@ -2079,6 +2079,12 @@ span#profileFullname{
     .osf-navbar-logo {
         margin-top: 0px !important;
     }
+
+    span#profileFullname {
+        font-size: 20px;
+        margin-bottom: 30px;
+    }
+
 }
 
 @media (min-width: 768px) {
