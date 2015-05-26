@@ -36,10 +36,11 @@ ko.bindingHandlers.ace = {
     }
 };
 
-function ViewModel(url, viewText) {
+var EditorViewModel = function(url, viewText) {
     var self = this;
 
     self.initText = ko.observable('');
+    self.url = url;
     self.currentText = viewText; //from filePage's VM
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connecting');
@@ -49,18 +50,12 @@ function ViewModel(url, viewText) {
        return self.activeUsers().length > 1;
     });
 
-    // Throttle the display when updating status.
-    self.updateStatus = function() {
-        self.throttledStatus(self.status());
-    };
-
     self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
 
     self.status.subscribe(function (newValue) {
         if (newValue !== 'connecting') {
             self.updateStatus();
         }
-
         self.throttledUpdateStatus();
     });
 
@@ -108,62 +103,68 @@ function ViewModel(url, viewText) {
         }
     });
 
-    self.filesDiffer = function(file1, file2) {
-        // Handle inconsistencies in newline notation
-        var clean1 = typeof file1 === 'string' ?
-            file1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-        var clean2 = typeof file2 === 'string' ?
-            file2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-
-        return clean1 !== clean2;
-    };
-
-    self.changed = function() {
-        return self.filesDiffer(self.initText(), self.currentText());
-    };
-
-    // Fetch initial file text
-    self.fetchData = function() {
-        var request = $.ajax({
-            type: 'GET',
-            url: url,
-            dataType: 'json'
-        });
-        request.done(function (response) {
-            self.initText(response.content);
-
-        });
-        request.fail(function (xhr, textStatus, error) {
-            $osf.growl('Error','The file content could not be loaded.');
-            Raven.captureMessage('Could not GET file contents.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
-        return request;
-    };
-
-    // Revert to last saved version, even if draft is more recent
-    self.revertChanges = function() {
-        return self.fetchData().then(function(response) {
-            // Dirty check now covers last saved version
-            self.initText(response.content);
-            self.currentText(response.content);
-        });
-    };
-
     $(window).on('beforeunload', function() {
         if (self.changed() && self.status() !== 'connected') {
             return 'There are unsaved changes to your file. If you exit ' +
                 'the page now, those changes may be lost.';
         }
     });
+};
 
-}
+EditorViewModel.prototype.updateStatus = function() {
+    var self = this;
+    self.throttledStatus(self.status());
+};
+
+EditorViewModel.prototype.filesDiffer = function(file1, file2) {
+    // Handle inconsistencies in newline notation
+    var clean1 = typeof file1 === 'string' ?
+        file1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+    var clean2 = typeof file2 === 'string' ?
+        file2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+
+    return clean1 !== clean2;
+};
+
+EditorViewModel.prototype.changed = function() {
+    var self = this;
+    return self.filesDiffer(self.initText(), self.currentText());
+};
+
+EditorViewModel.prototype.fetchData = function() {
+    var self = this;
+    var request = $.ajax({
+        type: 'GET',
+        url: self.url,
+        dataType: 'json'
+    });
+    request.done(function (response) {
+        self.initText(response.content);
+
+    });
+    request.fail(function (xhr, textStatus, error) {
+        $osf.growl('Error','The file content could not be loaded.');
+        Raven.captureMessage('Could not GET file contents.', {
+            url: self.url,
+            textStatus: textStatus,
+            error: error
+        });
+    });
+    return request;
+};
+
+EditorViewModel.prototype.revertChanges = function() {
+    var self = this;
+    return self.fetchData().then(function(response) {
+        // Dirty check now covers last saved version
+        self.initText(response.content);
+        self.currentText(response.content);
+    });
+};
 
 function FileEditor(url, viewText, editor) {
-    this.viewModel = new ViewModel(url, viewText);
+    var self = this;
+    self.viewModel = new EditorViewModel(url, viewText);
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
