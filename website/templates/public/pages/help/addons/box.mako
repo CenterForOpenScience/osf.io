@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="box" class="anchor"></span>
     <h4>Box</h4>
     <p><a href="http://box.com/">Box</a> is an online file storage program. After linking your OSF project to Box, you can

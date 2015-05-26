@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="figshare" class="anchor"></span>
     <h4>Figshare</h4>
     <p><a href="http://figshare.com/">figshare</a> is an online digital repository that allows researchers to preserve and

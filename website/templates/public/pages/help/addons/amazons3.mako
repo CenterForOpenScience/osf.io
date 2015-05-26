@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="amazon" class="anchor"></span>
     <h4>Amazon Simple Storage Service Add-on</h4>
     <p><a href="http://aws.amazon.com/s3/">Amazon Simple Storage Service </a> (Amazon S3), provides developers and IT teams
