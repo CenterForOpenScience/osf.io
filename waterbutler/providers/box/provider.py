@@ -41,11 +41,11 @@ class BoxProvider(provider.BaseProvider):
         response = yield from self.make_request(
             'get',
             self.build_url(files_or_folders, obj_id, fields='id,name,path_collection'),
-            expects=(200, 404),
+            expects=(200, 404, 405),
             throws=exceptions.MetadataError,
         )
 
-        if response.status == 404:
+        if response.status in (404, 405):
             if new_name is not None:
                 raise exceptions.MetadataError('Could not find {}'.format(path), code=404)
 
