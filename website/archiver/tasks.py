@@ -108,9 +108,9 @@ def make_copy_request(dst_pk, url, data):
     update_status(dst, provider, ARCHIVER_SENDING)
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst_pk))
     res = requests.post(url, data=json.dumps(data))
-    logger.info("Copy request responded with {2} for addon: {0} on node: {1}".format(provider, dst_pk, res.status_code))
+    logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst_pk))
     update_status(dst, provider, ARCHIVER_SENT)
-    if res.status_code not in (200, 201, 202):
+    if not res.ok:
         handle_archive_addon_error(dst, provider, errors=[res.json()])
     elif res.status_code in (200, 201):
         update_status(dst, provider, ARCHIVER_SUCCESS)
@@ -127,7 +127,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     :param user_pk: primary key of registration initatior
     :return: None
     """
-    logger.info("Archiving addon: {1} on node: {0}".format(src_pk, addon_short_name))
+    logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src_pk))
     create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
@@ -139,21 +139,21 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     folder_name = src_provider.archive_folder_name
     provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
-    data = dict(
-        source=dict(
-            cookie=cookie,
-            nid=src_pk,
-            provider=provider,
-            path='/',
-        ),
-        destination=dict(
-            cookie=cookie,
-            nid=dst_pk,
-            provider=ARCHIVE_PROVIDER,
-            path='/',
-        ),
-        rename=folder_name
-    )
+    data = {
+        'source': {
+            'cookie': cookie,
+            'nid': src_pk,
+            'provider': provider,
+            'path': '/',
+        },
+        'destination': {
+            'cookie': cookie,
+            'nid': dst_pk,
+            'provider': ARCHIVE_PROVIDER,
+            'path': '/',
+        },
+        'rename': folder_name,
+    }
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
     make_copy_request.si(dst_pk, copy_url, data)()
 
