@@ -1415,7 +1415,6 @@ var FGItemButtons = {
                     onclick: function() {
                         mode(toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the item',
                     icon: 'fa fa-font',
                     className : 'text-info'
                 }, 'Rename')
@@ -1507,7 +1506,6 @@ var FGToolbar = {
                     helpTextId : 'renameHelpText',
                     placeholder : null,
                     value : ctrl.tb.inputValue(),
-                    tooltip: 'Change the name of the item here'
                 }, ctrl.helpText())
             ),
             m('.col-xs-3.tb-buttons-col',
@@ -1517,7 +1515,6 @@ var FGToolbar = {
                             onclick: function () {
                                 _renameEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Rename item',
                             icon : 'fa fa-pencil',
                             className : 'text-info'
                         }, 'Rename'),
