@@ -66,6 +66,8 @@ class NodeSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
+    # TODO: See if we can get the count filters into the filter rather than the serializer.
+
     def get_node_count(self, obj):
         request = self.context['request']
         user = request.user
