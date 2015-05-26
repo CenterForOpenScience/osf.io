@@ -29,8 +29,6 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
-    if not dst.archiving:
-        return
     pending = [value for value in dst.archived_providers.values() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)]
     if not pending:
         dst.archiving = False

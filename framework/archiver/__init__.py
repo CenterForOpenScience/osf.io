@@ -63,8 +63,8 @@ class AggregateStatResult(object):
 
     @property
     def num_files(self):
-        return reduce(lambda accum, target: accum + target.num_files, self.targets.values(), 0)
+        return sum([value.num_files for value in self.targets.values()])
 
     @property
     def disk_usage(self):
-        return reduce(lambda accum, target: accum + (target.disk_usage or 0), self.targets.values(), 0)
+        return sum([value.disk_usage for value in self.targets.values()])
