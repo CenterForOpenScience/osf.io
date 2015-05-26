@@ -358,11 +358,17 @@ class BaseProvider(metaclass=abc.ABCMeta):
                 )
                 if current_path.is_file:
                     names.append(current_path.path.replace(base_path, '', 1))
-                    coros.append(lambda: self.download(current_path))
+                    coros.append(self.__zip_defered_download(current_path))
                 else:
                     remaining.append(current_path)
 
         return streams.ZipStreamReader(*zip(names, coros))
+
+    def __zip_defered_download(self, path):
+        """Returns a scoped lambda to defer the execution
+        of the download coroutine
+        """
+        return lambda: self.download(path)
 
     @abc.abstractmethod
     def download(self, **kwargs):
