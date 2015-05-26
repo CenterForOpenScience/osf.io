@@ -31,20 +31,22 @@
                             <a data-bind="click:addAll">Add all</a>
                         </div>
                         <div class="error" data-bind="text:errorMsg"></div>
-                        <table class="table table-striped">
-                            <tbody data-bind="foreach:{data:results, afterRender:addTips}">
-                                <tr data-bind="if:!($root.selected($data))">
-                                    <td>
-                                        <a
-                                                class="btn btn-default contrib-button"
-                                                data-bind="click:$root.add, tooltip: {title: 'Add link'}"
-                                            >+</a>
-                                    </td>
-                                    <td data-bind="text:title" class="overflow"></td>
-                                    <td data-bind="text:$root.authorText($data)"></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                                    <tr data-bind="if:!($root.selected($data))">
+                                        <td>
+                                            <a
+                                                    class="btn btn-default contrib-button"
+                                                    data-bind="click:$root.add, tooltip: {title: 'Add link'}"
+                                                >+</a>
+                                        </td>
+                                        <td data-bind="text:title" class="overflow"></td>
+                                        <td data-bind="text:$root.authorText($data)"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <div class='help-block'>
                             <div data-bind='if: foundResults'>
                                 <ul class="pagination pagination-sm" data-bind="foreach: paginators">
@@ -59,20 +61,22 @@
                             <span class="modal-subheader">Adding</span>
                             <a data-bind="click:removeAll">Remove all</a>
                         </div>
-                        <table class="table table-striped">
-                            <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
-                                <tr>
-                                    <td>
-                                        <a
-                                                class="btn btn-default contrib-button"
-                                                data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
-                                            >-</a>
-                                    </td>
-                                    <td data-bind="text:title" class="overflow"></td>
-                                    <td data-bind="text:$root.authorText($data)"></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
+                                    <tr>
+                                        <td>
+                                            <a
+                                                    class="btn btn-default contrib-button"
+                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
+                                                >-</a>
+                                        </td>
+                                        <td data-bind="text:title" class="overflow"></td>
+                                        <td data-bind="text:$root.authorText($data)"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                 </div>
