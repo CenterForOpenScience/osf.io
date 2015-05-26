@@ -107,9 +107,6 @@ class DropboxUserSettings(AddonUserSettingsBase):
         return u'<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
-
-    _guid_file_class = DropboxFile
-
     user_settings = fields.ForeignField(
         'dropboxusersettings', backref='authorized'
     )
