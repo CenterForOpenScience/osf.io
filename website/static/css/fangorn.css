@@ -59,6 +59,9 @@ text-align: center;
 .fangorn-selected a {
 	color : white;
 }
+.fangorn-selected > div span.text-muted {
+	color: #DDD;
+}
 .tb-disabled {
 	background: #eee;
 	color: #ccc;
@@ -154,6 +157,8 @@ text-align: center;
     margin-left: 9px;
     border-radius: 3px;
     background: #F8F8F8;
+    display: inline-block;
+    margin-bottom: 7px;
 }
 .tb-modal-btn:hover {
 	background-color: #efefef;
