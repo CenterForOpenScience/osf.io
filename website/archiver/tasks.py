@@ -91,7 +91,7 @@ def stat_node(src_pk, dst_pk, user_pk):
             user_pk,
         )
         for addon in targets if addon
-    )()
+    ).apply_async()
 
 @celery_app.task(name="archiver.make_copy_request")
 def make_copy_request(dst_pk, url, data):
@@ -197,7 +197,7 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
             result,
         )
         for result in stat_result.targets.values()
-    )()
+    ).apply_async()
 
 @celery_app.task(bind=True, name='archiver.archive')
 def archive(self, src_pk, dst_pk, user_pk):
