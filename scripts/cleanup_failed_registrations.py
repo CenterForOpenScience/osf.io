@@ -6,9 +6,14 @@ from datetime import datetime
 from modularodm import Q
 from modularodm.query import QueryGroup
 
-from framework.archiver import ARCHIVER_CHECKING, ARCHIVER_FAILURE, ARCHIVER_PENDING
-from framework.archiver.settings import ARCHIVE_TIMEOUT_TIMEDELTA
-from framework.archiver.exceptions import ArchiverCopyError
+from website.archiver import (
+    ARCHIVER_CHECKING,
+    ARCHIVER_FAILURE,
+    ARCHIVER_PENDING,
+    ARCHIVE_COPY_FAIL,
+)
+from website.archiver.settings import ARCHIVE_TIMEOUT_TIMEDELTA
+from website.archiver.utils import handle_archive_fail
 
 from website.project.model import Node
 from website import settings
@@ -32,10 +37,13 @@ def remove_failed_registrations(dry_run=True):
     failed = find_failed_registrations()
     if not dry_run:
         for f in failed:
-            try:
-                raise ArchiverCopyError(f.registered_from, f, f.creator, f.archived_providers)
-            except:
-                pass
+            handle_archive_fail(
+                ARCHIVE_COPY_FAIL,
+                f.registered_from,
+                f,
+                f.creator,
+                f.archived_providers
+            )
 
 def main():
     flags = ['dry_run']
