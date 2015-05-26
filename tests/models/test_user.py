@@ -101,11 +101,6 @@ class TestUser(base.OsfTestCase):
             self.user.remove_email(self.user.username)
         assert_equal(e.exception.message, "Can't remove primary email")
 
-    def test_cannot_remove_primary_email_from_unconfirmed_list(self):
-        with assert_raises(PermissionsError) as e:
-            self.user.remove_unconfirmed_email(self.user.username)
-        assert_equal(e.exception.message, "Can't remove primary email")
-
     def test_add_same_unconfirmed_email_twice(self):
         email = "test@example.com"
         token1 = self.user.add_unconfirmed_email(email)

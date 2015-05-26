@@ -868,19 +868,6 @@ class TestConfirmingEmail(OsfTestCase):
         assert_in(auth_exc.InvalidTokenError.message_short, res)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_flash_message_does_not_break_page_if_email_unconfirmed(self):
-        # set a password for user
-        self.user.set_password('bicycle')
-        self.user.save()
-        # Goes to log in page
-        res = self.app.get(web_url_for('auth_login')).maybe_follow()
-        # Fills the form with correct password
-        form = res.forms['logInForm']
-        form['username'] = self.user.username
-        form['password'] = 'bicycle'
-        res = form.submit().maybe_follow()
-        assert_in(language.UNCONFIRMED, res, 'shows flash message')
-
 
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
