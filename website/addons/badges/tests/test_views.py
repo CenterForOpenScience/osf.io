@@ -11,10 +11,6 @@ from website.addons.base.testing import AddonTestCase
 from tests.factories import AuthUserFactory
 from utils import create_mock_badger, create_badge_dict, get_garbage
 
-app = website.app.init_app(
-            routes=True, set_backends=False, settings_module='website.settings',
-        )
-
 
 class TestBadgesViews(AddonTestCase):
 

@@ -59,6 +59,7 @@ def train_spam(comment, is_spam):
 
         resp = requests.post(SPAM_ASSASSIN_TEACHING_URL, data=json.dumps(data))
 
+        #todo: handle new response
         if resp.text == "Learned":
             return True
         return False
@@ -79,6 +80,7 @@ def is_spam(comment):
 
         resp = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
 
+        #todo: handle new response
         if resp.text == "SPAM":
             return True
 
@@ -175,6 +177,8 @@ def _project_is_spam(node):
     try:
         data = _format_spam_node_data(node)
         res = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
+
+        #todo: handle new response
         if res.text == "SPAM":
             return True
         return False
@@ -188,6 +192,8 @@ def train_spam_project(project, is_spam):
         serialized_project = _format_spam_node_data(project)
         serialized_project['is_spam'] = is_spam
         r = requests.post(SPAM_ASSASSIN_TEACHING_URL, data=json.dumps(serialized_project))
+
+        #todo: handle new response
         if r.text == "Learned":
             return True
         return False

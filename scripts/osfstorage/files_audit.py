@@ -112,9 +112,9 @@ def get_targets():
 
 def main(nworkers, worker_id, dry_run):
     targets = get_targets()
-    progress_bar = progressbar.ProgressBar(maxval=math.ceil(targets.count() / nworkers))
+    progress_bar = progressbar.ProgressBar(maxval=math.ceil(targets.count() / nworkers)).start()
     idx = 0
-    for version in get_targets():
+    for version in targets:
         if hash(version._id) % nworkers == worker_id:
             ensure_backups(version, dry_run)
             idx += 1

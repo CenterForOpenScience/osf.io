@@ -559,8 +559,10 @@ def togglewatch_post(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission(ADMIN)
+@must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
+    # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
+    # category, title, and discription which can be edited by write permission contributor
     try:
         return {
             'updated_fields': {
@@ -637,7 +639,7 @@ def delete_folder(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission("admin")
+@must_have_permission(ADMIN)
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
@@ -738,7 +740,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
+            'fork_count': len(node.forks),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
@@ -986,11 +988,7 @@ def get_folder_pointers(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    forks = node.node__forked.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False)
-    )
-    return _render_nodes(forks, auth)
+    return _render_nodes(nodes=node.forks, auth=auth)
 
 
 @must_be_contributor_or_public
