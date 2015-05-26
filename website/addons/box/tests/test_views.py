@@ -10,70 +10,15 @@ from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from urllib3.exceptions import MaxRetryError
 from box.client import BoxClientException
-from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory
 
 from website.addons.box.tests.utils import (
     BoxAddonTestCase, mock_responses, MockBox, patch_client
 )
-from website.addons.box.model import BoxOAuthSettings
 from website.addons.box.utils import box_addon_folder
-from website.addons.box.views.config import serialize_settings
+from website.addons.box.serializer import BoxSerializer
 
 mock_client = MockBox()
-
-
-class TestAuthViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestAuthViews, self).setUp()
-        self.user = AuthUserFactory()
-        # Log user in
-        self.app.authenticate(*self.user.auth)
-
-    def test_box_oauth_start(self):
-        url = api_url_for('box_oauth_start_user')
-        res = self.app.get(url)
-        assert_is_redirect(res)
-
-    @mock.patch('website.addons.box.views.auth.box_oauth_finish')
-    @mock.patch('website.addons.box.views.auth.finish_auth')
-    @mock.patch('website.addons.box.views.auth.BoxClient')
-    def test_box_oauth_finish(self, mock_get, mock_finish, mock_oauth):
-        mock_client = mock.MagicMock()
-        mock_client.get_user_info.return_value = {'name': 'Mr. Box', 'id': '1234567890'}
-        mock_get.return_value = mock_client
-        mock_finish.return_value = {
-            'token_type': 'something',
-            'access_token': 'something',
-            'refresh_token': 'something'
-        }
-        mock_oauth.return_value = ('mytoken123', 'myboxid', 'done')
-        url = api_url_for('box_oauth_finish')
-        res = self.app.get(url)
-        assert_is_redirect(res)
-
-    @mock.patch('website.addons.box.views.auth.flash')
-    def test_box_oauth_finish_cancelled(self, mock_flash):
-        url = api_url_for('box_oauth_finish', error='User declined!')
-        res = self.app.get(url)
-        assert_is_redirect(res)
-        mock_flash.assert_called_once()
-
-    @mock.patch('website.addons.box.model.BoxOAuthSettings.revoke_access_token')
-    def test_box_oauth_delete_user(self, mock_disable_access_token):
-        self.user.add_addon('box')
-        settings = self.user.get_addon('box')
-        oauth = BoxOAuthSettings(user_id='fa;l', access_token='a;lkjadl;kas')
-        oauth.save()
-        settings.oauth_settings = oauth
-        settings.save()
-        assert_true(settings.has_auth)
-        self.user.save()
-        url = api_url_for('box_oauth_delete_user')
-        self.app.delete(url)
-        settings.reload()
-        assert_false(settings.has_auth)
 
 
 class TestConfigViews(BoxAddonTestCase):
@@ -139,7 +84,7 @@ class TestConfigViews(BoxAddonTestCase):
                 ]
             }
         }
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = BoxSerializer().serialize_settings(self.node_settings, self.user, client=mock_client)
         urls = result['urls']
 
         assert_equal(urls['config'], self.project.api_url_for('box_config_put'))
@@ -163,7 +108,7 @@ class TestConfigViews(BoxAddonTestCase):
                 ]
             }
         }
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = BoxSerializer().serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])

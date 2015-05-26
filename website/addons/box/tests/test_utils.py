@@ -13,7 +13,7 @@ from tests.factories import ProjectFactory
 from website.addons.box.tests.factories import BoxFileFactory
 from website.addons.box.tests.utils import BoxAddonTestCase, mock_responses
 from website.addons.box import utils
-from website.addons.box.views.config import serialize_folder
+from website.addons.box.serializer import BoxSerializer
 from website.addons.box.model import BoxNodeSettings
 
 
@@ -83,7 +83,7 @@ def test_serialize_folder():
         u'size': u'0 bytes',
         u'thumb_exists': False
     }
-    result = serialize_folder(metadata)
+    result = BoxSerializer().serialize_folder(metadata)
     assert_equal(result['path'], metadata['path'])
     assert_equal(result['name'], 'Box' + metadata['path'])
 
@@ -102,4 +102,3 @@ class TestBoxAddonFolder(BoxAddonTestCase):
         self.node_settings.folder_id = None
         assert_is(utils.box_addon_folder(
             self.node_settings, Auth(self.user)), None)
-
