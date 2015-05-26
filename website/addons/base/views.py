@@ -283,7 +283,7 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-    notifications.file_notify(user, node, action, metadata, provider)
+    notifications.file_notify(user, node, action, payload)
 
     return {'status': 'success'}
 
