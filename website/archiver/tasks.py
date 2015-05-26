@@ -24,7 +24,7 @@ from website.archiver.settings import (
     MAX_ARCHIVE_SIZE,
 )
 from website.archiver.utils import (
-    catch_archive_addon_error,
+    handle_archive_addon_error,
     update_status,
     aggregate_file_tree_metadata,
     handle_archive_fail,
@@ -111,7 +111,7 @@ def make_copy_request(dst_pk, url, data):
     logger.info("Copy request responded with {2} for addon: {0} on node: {1}".format(provider, dst_pk, res.status_code))
     update_status(dst, provider, ARCHIVER_SENT)
     if res.status_code not in (200, 201, 202):
-        catch_archive_addon_error(dst, provider, errors=[res.json()])
+        handle_archive_addon_error(dst, provider, errors=[res.json()])
     elif res.status_code in (200, 201):
         update_status(dst, provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)

@@ -11,7 +11,7 @@ from framework.exceptions import HTTPError
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
-from website.archiver.utils import catch_archive_addon_error
+from website.archiver.utils import handle_archive_addon_error
 from website.archiver import ARCHIVER_SUCCESS
 
 from website import settings
@@ -265,7 +265,7 @@ def registration_callbacks(node, payload, *args, **kwargs):
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
     if errors:
-        catch_archive_addon_error(registration, src_provider, errors)
+        handle_archive_addon_error(registration, src_provider, errors)
     else:
         registration.archived_providers[src_provider].update({
             'status': ARCHIVER_SUCCESS,

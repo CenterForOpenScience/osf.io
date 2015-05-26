@@ -268,7 +268,7 @@ class TestArchiverTasks(ArchiverTestCase):
                                url,
                                body=callback_400,
                                content_type='application/json')
-        with mock.patch.object(archiver_utils, 'catch_archive_addon_error') as mock_catch_error:
+        with mock.patch.object(archiver_utils, 'handle_archive_addon_error') as mock_catch_error:
             make_copy_request(dst_pk, url, {
                 'source': {
                     'provider': 'dropbox'
@@ -380,14 +380,14 @@ class TestArchiverUtils(ArchiverTestCase):
         archiver_utils.link_archive_provider(wo, self.user)
         assert_true(archiver_utils.has_archive_provider(wo, self.user))
 
-    def test_catch_archive_addon_error(self):
+    def test_cahandlerchive_addon_error(self):
         self.dst.archived_providers['dropbox'] = {
             'status': ARCHIVER_PENDING,
         }
         self.dst.save()
 
         errors = ['BAD REQUEST', 'BAD GATEWAY']
-        archiver_utils.catch_archive_addon_error(self.dst, 'dropbox', errors)
+        archiver_utils.handle_archive_addon_error(self.dst, 'dropbox', errors)
         assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_FAILURE)
         assert_equal(self.dst.archived_providers['dropbox']['errors'], errors)
 
