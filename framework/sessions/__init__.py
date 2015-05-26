@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import httplib as http
+import furl
 import urllib
 import urlparse
 import bson.objectid
+import httplib as http
+
 import itsdangerous
+
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request
+from flask import request, make_response, jsonify
 from framework.flask import app, redirect
 
 from website import settings
@@ -143,9 +146,34 @@ session = LocalProxy(get_session)
 # NOTE: This gets attached in website.app.init_app to ensure correct callback
 # order
 def before_request():
+    from framework.auth import authenticate
+    from framework.auth.core import User
+    from framework.auth import cas
+
+    # Central Authentication Server Ticket Validation and Authentication
+    ticket = request.args.get('ticket')
+    if ticket:
+        service_url = furl.furl(request.url)
+        service_url.args.pop('ticket')
+        # Attempt autn wih CAS, and return a proper redirect response
+        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
+
+    # Central Authentication Server OAuth Bearer Token
+    authorization = request.headers.get('Authorization')
+    if authorization and authorization.startswith('Bearer '):
+        client = cas.get_client()
+        try:
+            access_token = cas.parse_auth_header(authorization)
+        except cas.CasTokenError as err:
+            # NOTE: We assume that the request is an AJAX request
+            return jsonify({'message_short': 'Invalid Bearer token', 'message_long': err.args[0]}), http.UNAUTHORIZED
+        cas_resp = client.profile(access_token)
+        if cas_resp.authenticated:
+            user = User.load(cas_resp.user)
+            return authenticate(user, access_token=access_token, response=None)
+        return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:
-
         # Create a session from the API key; if key is
         # not valid, save the HTTP error code in the
         # "auth_error_code" field of session.data
@@ -170,16 +198,12 @@ def before_request():
                 session.data['auth_user_username'] = user.username
                 session.data['auth_user_id'] = user._primary_key
                 session.data['auth_user_fullname'] = user.fullname
-
             elif node:
                 session.data['auth_node_id'] = node._primary_key
-
             else:
                 # Invalid key: Not attached to user or node
                 session.data['auth_error_code'] = http.FORBIDDEN
-
         else:
-
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN
 

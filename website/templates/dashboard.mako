@@ -40,13 +40,13 @@
                         <li id="obNewProject" class="ob-list-item list-group-item">
 
                             <div data-bind="click: toggle" class="ob-header pointer">
+                                 <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
+                                    class="pointer ob-expand-icon fa-lg pull-right fa">
+                                </i>
                                 <h3
                                     class="ob-heading list-group-item-heading">
                                     Create a project
                                 </h3>
-                                <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-                                    class="pointer ob-expand-icon fa-lg pull-right fa">
-                                </i>
                             </div><!-- end ob-header -->
                             <div data-bind="visible: isOpen()" id="obRevealNewProject">
                                 <osf-project-create-form
