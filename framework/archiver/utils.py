@@ -29,7 +29,8 @@ def catch_archive_addon_error(node, addon_short_name, errors=[]):
 def delete_registration_tree(node):
     node.is_deleted = True
     node.save()
-    [delete_registration_tree(child) for child in node.nodes]
+    for child in node.nodes:
+        delete_registration_tree(child)
 
 def update_status(node, addon, status, meta={}):
     tmp = node.archived_providers.get(addon) or {}
