@@ -78,22 +78,19 @@ function ViewModel(url, viewText) {
     });
 
     self.progressBar = ko.computed(function() {
+        var className = 'progress-bar progress-bar-width ';
         switch(self.throttledStatus()) {
             case 'connected':
                 return {
-                    class: 'progress-bar progress-bar-success',
-                    style: 'width: 100%'
+                    class: className += 'progress-bar-success'
                 };
-
             case 'connecting':
                 return {
-                    class: 'progress-bar progress-bar-warning progress-bar-striped active',
-                    style: 'width: 100%'
+                    class: className += 'progress-bar-warning progress-bar-striped active'
                 };
             default:
                 return {
-                    class: 'progress-bar progress-bar-danger',
-                    style: 'width: 100%'
+                    class: className += 'progress-bar-danger'
                 };
         }
     });
