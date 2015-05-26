@@ -357,15 +357,12 @@ class BaseProvider(metaclass=abc.ABCMeta):
                     folder=item['kind'] == 'folder'
                 )
                 if current_path.is_file:
-                    coros.append(self.download(current_path))
                     names.append(current_path.path.replace(base_path, '', 1))
+                    coros.append(lambda: self.download(current_path))
                 else:
                     remaining.append(current_path)
 
-        return streams.ZipStreamReader(*(
-            (name, stream) for name, stream in
-            zip(names, (yield from asyncio.gather(*coros)))
-        ))
+        return streams.ZipStreamReader(*zip(names, coros))
 
     @abc.abstractmethod
     def download(self, **kwargs):

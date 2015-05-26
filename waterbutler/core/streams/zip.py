@@ -49,6 +49,9 @@ class ZipLocalFileData(BaseStream):
 
     @asyncio.coroutine
     def _read(self, n=-1, *args, **kwargs):
+        if callable(self.stream):
+            self.stream = yield from (self.stream())
+
         ret = self._buffer
 
         while (n == -1 or len(ret) < n) and not self.stream.at_eof():
