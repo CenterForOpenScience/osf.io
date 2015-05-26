@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="zotero" class="anchor"></span>
     <h4>Zotero</h4>
     <p><a href="https://www.zotero.org/">Zotero</a> is a free tool that helps you collect, cite, share, and organize your

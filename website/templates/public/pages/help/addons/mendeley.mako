@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="mendeley" class="anchor"></span>
     <h4>Mendeley</h4>
     <p><a href="http://mendeley.com/">Mendeley</a> is a free reference and PDF manager. By Adding Mendeley to your OSF
@@ -9,7 +9,7 @@
         Next, go to "Configure Add-Ons" and click "Import Access Token." Now you will be able to pick which folders you
         want to incorporate into your project. Click submit and go to your project overview page to see your new Mendeley
         widget.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="2RVJS7nYX8k"></div>
         </div>

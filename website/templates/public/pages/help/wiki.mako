@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
 <span id="wiki" class="anchor"></span>
     <h4>Collaborative Wiki</h4>
     <p>The wiki is a versatile tool for interacting with your team or the people who view your work. Each project
@@ -16,7 +16,7 @@
         <li><a href="http://assemble.io/docs/Cheatsheet-Markdown.html">Markdown</a></li>
         <li><a href="http://en.wikibooks.org/wiki/LaTeX/Mathematics">Inline Mathematics</a></li>
     </ul>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="BWlRGvg3Ro4"></div>
         </div>

@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="dashboards" class="anchor"></span>
 
     <h4>Dashboards</h4>
@@ -8,9 +8,12 @@
         To the right of your project organizer you will find a set of widgets that make it easy to create,
         register, and add files to your projects</p>
     <p>You can shrink or expand each project to display nested components by clicking the + or - to the
-        left of the projects name. A more detailed description of how to use the
-        <a href="#organizer">Project Organizer</a> is below.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+        left of the projects name.
+        ##todo remove this?
+            A more detailed description of how to use the
+            <a href="#organizer">Project Organizer</a> is above.</p>
+
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="CiwtT70rafU"></div>
         </div>

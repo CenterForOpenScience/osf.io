@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="github" class="anchor"></span>
     <h4>Github</h4>
     <p><a href="https://github.com/">GitHub</a> is a commonly used web based Git repository hosting service. After linking

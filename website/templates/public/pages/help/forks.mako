@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="forks" class="anchor"></span>
     <h4>Forks</h4>
     <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy
@@ -13,7 +13,7 @@
         linking to someone else's project but would now like to edit it and make your own version, from the project
         overview page, find the linked project from the and hit the small fork button. There will now be a version you
         can edit in addition to the original.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="RVFTg0iT2gg"></div>
         </div>
