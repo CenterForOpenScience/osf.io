@@ -120,7 +120,7 @@ $(document).ready(function () {
                 url: url,
                 contentType: 'application/json',
                 datatype: "json",
-                data: JSON.stringify(tagData)
+                data: tagData
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
