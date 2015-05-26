@@ -637,7 +637,7 @@ def hotfix(name, finish=False, push=False):
 def feature(name, finish=False, push=False):
     """Rename the current branch to a feature branch and optionally finish it."""
     print('Renaming branch...')
-    run('git br -m feature/{}'.format(name), echo=True)
+    run('git branch -m feature/{}'.format(name), echo=True)
     if finish:
         run('git flow feature finish {}'.format(name), echo=True)
     if push:

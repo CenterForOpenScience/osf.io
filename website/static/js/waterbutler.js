@@ -3,23 +3,20 @@
 var $ = require('jquery');
 var $osf = require('./osfHelpers');
 
-function getCookie() {
-    var cookieName = window.contextVars.cookieName;
-    var match = document.cookie.match(new RegExp(cookieName + '=(.*?)(;|$)'));
-    return match ? match[1] : null;
-}
-
 function getViewOnly() {
-  return $osf.urlParams().view_only;
+    return $osf.urlParams().view_only;
 }
 
 function getDefaultOptions(path, provider) {
-    return {
+    var options = {
         path: path,
-        provider: provider,
-        cookie: getCookie(),
-        view_only: getViewOnly()
+        provider: provider
     };
+    var viewOnly = getViewOnly();
+    if (viewOnly) {
+        options.view_only = viewOnly;
+    }
+    return options;
 }
 
 function buildUrl(suffix, path, provider, nid, options) {
@@ -29,6 +26,8 @@ function buildUrl(suffix, path, provider, nid, options) {
 }
 
 var buildCrudUrl = buildUrl.bind(this, 'file?');
+var buildCopyUrl = buildUrl.bind(this, 'copy?');
+var buildMoveUrl = buildUrl.bind(this, 'move?');
 var buildMetadataUrl = buildUrl.bind(this, 'data?');
 var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
 var buildCreateFolderUrl = buildUrl.bind(this, 'folders?');
@@ -47,15 +46,40 @@ function buildFromTreebeardFile(item, file, options) {
     return buildUploadUrl(item.data.path, item.data.provider, item.data.nodeId, file, options);
 }
 
+function toJsonBlob(item, options) {
+    return $.extend(getDefaultOptions(item.data.path || '/', item.data.provider), {nid: item.data.nodeId}, options);
+}
+
 module.exports = {
+    toJsonBlob: toJsonBlob,
     buildDeleteUrl: buildCrudUrl,
     buildUploadUrl: buildUploadUrl,
-    buildDownloadUrl: buildCrudUrl,
+    buildDownloadUrl: function(path, provider, nid, options) {
+        if (window.contextVars.accessToken) {
+            options = $.extend(options || {}, {token: window.contextVars.accessToken});
+        }
+        return buildCrudUrl(path, provider, nid, options);
+    },
     buildMetadataUrl: buildMetadataUrl,
     buildCreateFolderUrl: buildCrudUrl,
     buildRevisionsUrl: buildRevisionsUrl,
     buildTreeBeardUpload: buildFromTreebeardFile,
+    buildTreeBeardCopy: buildFromTreebeard.bind(this, 'copy?'),
+    buildTreeBeardMove: buildFromTreebeard.bind(this, 'move?'),
     buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
-    buildTreeBeardDownload: buildFromTreebeard.bind(this, 'file?'),
-    buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?')
+    buildTreeBeardDownload: function(item, options) {
+        if (window.contextVars.accessToken) {
+            options = $.extend(options || {}, {token: window.contextVars.accessToken});
+        }
+        return buildFromTreebeard('file?', item, options);
+    },
+    buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
+    buildTreeBeardDownloadZip: function(item, options) {
+        if (window.contextVars.accessToken) {
+            options = $.extend(options || {}, {token: window.contextVars.accessToken});
+        }
+        return buildFromTreebeard('zip?', item, options);
+    },
+    copyUrl: function(){return window.contextVars.waterbutlerURL + 'ops/copy';},
+    moveUrl: function(){return window.contextVars.waterbutlerURL + 'ops/move';}
 };

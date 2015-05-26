@@ -291,6 +291,7 @@ class NodeLog(StoredObject):
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
     params = fields.DictionaryField()
+    should_hide = fields.BooleanField(default=False)
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
@@ -333,6 +334,9 @@ class NodeLog(StoredObject):
     EDITED_DESCRIPTION = 'edit_description'
 
     UPDATED_FIELDS = 'updated_fields'
+
+    FILE_MOVED = 'addon_file_moved'
+    FILE_COPIED = 'addon_file_copied'
 
     FOLDER_CREATED = 'folder_created'
 
@@ -1303,18 +1307,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids)
-        logs = NodeLog.find(query).sort('-_id')
-        # FIXME: Before 0.35.0, children node's logs were copied to the parent.
-        # After 0.35.0, logs are not copied; they are aggregated. For projects
-        # created before 0.35.0, we still need to make sure that private children's logs
-        # don't show up in parent project's log feeds. Therefore, we check for "read"
-        # access for every log.
-        # This is expensive. The proper fix is probably to migrate legacy node's logs so
-        # that projects' logs don't include their children's logs /sloria /chennan
-        return [each for each in logs
-                if each and each.node__logged[0]
-                and each.node__logged[0].can_view(auth)]
+        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        return NodeLog.find(query).sort('-_id')
 
     @property
     def nodes_pointer(self):
@@ -2014,7 +2008,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.add_permission(new, permission)
                 self.permissions.pop(old._id)
                 if old._id in self.visible_contributor_ids:
-                    self.visible_contributor_ids.remove(old._id)
+                    self.visible_contributor_ids[self.visible_contributor_ids.index(old._id)] = new._id
                 return True
         return False
 
