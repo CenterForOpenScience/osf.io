@@ -23,7 +23,7 @@ ko.bindingHandlers.mathjaxify = {
 };
 
 
-function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathjaxification, allowFullRender, editor) {
+var ViewWidget = function(visible, version, viewText, rendered, contentURL, allowMathjaxification, allowFullRender, editor) {
     var self = this;
     self.version = version;
     self.viewText = viewText; // comes from EditWidget.viewText
@@ -38,18 +38,6 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
         self.allowFullRender(true);
     }, THROTTLE);
 
-    self.renderMarkdown = function(rawContent){
-        if(self.visible()) {
-            if (self.allowFullRender()) {
-                return md.render(rawContent);
-            } else {
-                return mdQuick.render(rawContent);
-            }
-        } else {
-            return '';
-        }
-    };
-
     if (typeof self.editor !== 'undefined') {
         self.editor.on('change', function () {
             if(self.version() === 'preview') {
@@ -63,7 +51,19 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
     } else {
         self.allowFullRender(true);
     }
-}
+};
+
+ViewWidget.prototype.renderMarkdown = function(rawContent) {
+    if(self.visible()) {
+        if (self.allowFullRender()) {
+            return md.render(rawContent);
+        } else {
+            return mdQuick.render(rawContent);
+        }
+    } else {
+        return '';
+    }
+};
 
 var defaultOptions = {
     editVisible: true,
