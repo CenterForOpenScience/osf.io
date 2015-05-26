@@ -71,10 +71,10 @@ def link_archive_provider(node, user):
     addon.on_add()
     node.save()
 
-def catch_archive_addon_error(node, addon_short_name, errors=[]):
+def catch_archive_addon_error(node, addon_short_name, errors=None):
     node.archived_providers[addon_short_name].update({
         'status': ARCHIVER_FAILURE,
-        'errors': errors,
+        'errors': errors or [],
     })
     node.save()
 

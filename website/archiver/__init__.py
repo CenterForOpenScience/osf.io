@@ -38,12 +38,12 @@ class AggregateStatResult(object):
     """
     Helper class to collect metadata about aribitrary depth file/addon/node file trees
     """
-    def __init__(self, target_id, target_name, targets=[], meta=None):
+    def __init__(self, target_id, target_name, targets=None, meta=None):
         self.target_id = target_id
         self.target_name = target_name
         self.targets = {
             "{0}".format(item.target_id): item
-            for item in targets
+            for item in targets or []
             if item
         }
         self.meta = meta
