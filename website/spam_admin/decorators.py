@@ -22,13 +22,13 @@ def must_be_spam_admin(func):
     return wrapped
 
 
-def spam_admin_active(func):
-    """Require that user be spam_admin.
+def spam_assassin_active(func):
+    """Spam Assassin is running.
     """
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
 
         if not SPAM_ASSASSIN:
-            return redirect('/login/')
+            return redirect('/login/?next={0}'.format(request.path))
 
     return wrapped

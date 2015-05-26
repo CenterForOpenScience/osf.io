@@ -4,7 +4,7 @@ from framework.exceptions import HTTPError
 from website.models import Node
 from website.models import Comment
 from framework.auth.decorators import must_be_logged_in
-from .decorators import must_be_spam_admin, spam_admin_active
+from .decorators import must_be_spam_admin, spam_assassin_active
 from .utils import serialize_comments, serialize_projects, train_spam_project, train_spam
 from flask import request
 import logging
@@ -14,10 +14,9 @@ logger = logging.getLogger(__name__)
 
 @must_be_logged_in
 @must_be_spam_admin
-@spam_admin_active
 def init_spam_admin_page(**kwargs):
     """
-    determine whether use is on comments page or projects page
+    determine whether user is on comments page or projects page
     """
     return {}
 
@@ -25,10 +24,9 @@ def init_spam_admin_page(**kwargs):
 
 @must_be_logged_in
 @must_be_spam_admin
-@spam_admin_active
 def init_spam_admin_comments_page(**kwargs):
     """
-    determine whether use is on comments page or projects page
+    determine whether user is on comments page or projects page
     """
     return {}
 

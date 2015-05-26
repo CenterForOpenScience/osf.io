@@ -29,20 +29,10 @@ class TestCommentSpamAdmin(OsfTestCase):
         self.project = ProjectFactory(is_public=True)
         self.project.save()
 
-
-
         #spam assassin
         self.GTUBE = "SPAM"
         self.spam_assassin_active = SPAM_ASSASSIN
         self.spam_admin = AuthUserFactory(spam_admin=True)
-
-
-
-
-
-
-
-
 
     def _configure_project(self, project, comment_level):
 
