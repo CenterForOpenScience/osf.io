@@ -32,6 +32,10 @@ class CloudFilesFileMetadata(BaseCloudFilesMetadata, metadata.BaseFileMetadata):
     def content_type(self):
         return self.raw['content_type']
 
+    @property
+    def etag(self):
+        return self.raw['hash']
+
 
 class CloudFilesHeaderMetadata(BaseCloudFilesMetadata, metadata.BaseFileMetadata):
 
@@ -58,6 +62,10 @@ class CloudFilesHeaderMetadata(BaseCloudFilesMetadata, metadata.BaseFileMetadata
     @property
     def content_type(self):
         return self.raw['Content-Type']
+
+    @property
+    def etag(self):
+        return self.raw['etag']
 
 
 class CloudFilesFolderMetadata(BaseCloudFilesMetadata, metadata.BaseFolderMetadata):

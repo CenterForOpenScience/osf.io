@@ -72,6 +72,10 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
         return self.raw['mimeType']
 
     @property
+    def etag(self):
+        return self.raw['version']
+
+    @property
     def extra(self):
         ret = super().extra
         if utils.is_docs_file(self.raw):

@@ -1,4 +1,5 @@
 import abc
+import hashlib
 
 
 class BaseMetadata(metaclass=abc.ABCMeta):
@@ -22,6 +23,7 @@ class BaseMetadata(metaclass=abc.ABCMeta):
             'path': self.path,
             'provider': self.provider,
             'materialized': self.materialized_path,
+            'etag': hashlib.sha256('{}::{}'.format(self.provider, self.etag).encode('utf-8')).hexdigest(),
         }
 
     def build_path(self, path):
@@ -110,11 +112,16 @@ class BaseFileMetadata(BaseMetadata):
     def size(self):
         raise NotImplementedError
 
+    @property
+    def etag(self):
+        raise NotImplementedError
+
 
 class BaseFileRevisionMetadata(metaclass=abc.ABCMeta):
 
     def __init__(self, raw):
         self.raw = raw
+
     def serialized(self):
         return {
             'extra': self.extra,
@@ -148,3 +155,7 @@ class BaseFolderMetadata(BaseMetadata):
     @property
     def kind(self):
         return 'folder'
+
+    @property
+    def etag(self):
+        return None

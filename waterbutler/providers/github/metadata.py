@@ -39,6 +39,10 @@ class BaseGitHubFileMetadata(BaseGitHubMetadata, metadata.BaseFileMetadata):
         return None
 
     @property
+    def etag(self):
+        return '{}::{}'.format(self.path, self.raw['sha'])
+
+    @property
     def extra(self):
         return dict(self.extras, fileSha=self.raw['sha'])
 

@@ -40,12 +40,14 @@ class OsfStorageFileMetadata(BaseOsfStorageItemMetadata, metadata.BaseFileMetada
         return None
 
     @property
+    def etag(self):
+        return '{}::{}'.format(self.raw['version'], self.path)
+
+    @property
     def extra(self):
         return {
-            key: self.raw[key]
-            for key in
-            ('version', 'downloads')
-            if key in self.raw
+            'version': self.raw['version'],
+            'downloads': self.raw['downloads']
         }
 
 

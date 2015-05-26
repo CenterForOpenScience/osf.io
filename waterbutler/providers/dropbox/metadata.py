@@ -59,6 +59,10 @@ class DropboxFileMetadata(BaseDropboxMetadata, metadata.BaseFileMetadata):
     def content_type(self):
         return self.raw['mime_type']
 
+    @property
+    def etag(self):
+        return self.raw['rev']
+
 
 # TODO dates!
 class DropboxRevision(metadata.BaseFileRevisionMetadata):
