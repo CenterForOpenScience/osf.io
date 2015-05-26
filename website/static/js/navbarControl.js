@@ -68,9 +68,38 @@ function NavbarControl (selector, data, options) {
     self.init();
 }
 
+/** Only for Search Bar Placeholder -- Allow IE and other browsers to work as the same */
+function placeholder(inputDom, inputLabel) {
+    inputDom.on('input', function () {
+        if (inputDom.val() === '') {
+            inputLabel.css( "visibility", "visible" );
+        } else {
+            inputLabel.css( "visibility", "hidden" );
+        }
+    });
+}
+
+function searchBarPlaceHolderInit() {
+    var inputDom =  $("#searchPageFullBar");
+    var inputLabel =  $('#searchBarLabel');
+    placeholder(inputDom, inputLabel);
+    inputDom.focus();
+
+    //Make sure IE cursor is located at the end of text
+    var $inputVal = inputDom.val();
+    inputDom.val('').val($inputVal);
+
+    //For search page with existing input, make sure placeholder is hidden.
+    if(inputDom.val() !== '' ){
+         inputLabel.css( "visibility", "hidden" );
+    }
+}
+
 NavbarControl.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
+    searchBarPlaceHolderInit();
 };
+
 
 module.exports = NavbarControl;
