@@ -15,19 +15,15 @@ from website.archiver import (
 from website import mails
 from website import settings
 
-def send_archiver_mail(*args, **kwargs):
-    """A proxy to facilitate unit testing"""
-    mails.send_mail(*args, **kwargs)
-
-def send_archiver_copy_error_mails(src, user, stat_result):
-    send_archiver_mail(
+def send_archiver_size_exceeded_mails(src, user, stat_result):
+    mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
         user=user,
         src=src,
         stat_result=stat_result
     )
-    send_archiver_mail(
+    mails.send_mail(
         to_addr=user.username,
         mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
         user=user,
@@ -36,15 +32,15 @@ def send_archiver_copy_error_mails(src, user, stat_result):
         mimetype='html',
     )
 
-def send_archiver_size_exceeded_mails(src, user, results):
-    send_archiver_mail(
+def send_archiver_copy_error_mails(src, user, results):
+    mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.ARCHIVE_COPY_ERROR_DESK,
         user=user,
         src=src,
         results=results,
     )
-    send_archiver_mail(
+    mails.send_mail(
         to_addr=user.username,
         mail=mails.ARCHIVE_COPY_ERROR_USER,
         user=user,
@@ -71,10 +67,10 @@ def link_archive_provider(node, user):
     addon.on_add()
     node.save()
 
-def catch_archive_addon_error(node, addon_short_name, errors=None):
+def catch_archive_addon_error(node, addon_short_name, errors=[]):
     node.archived_providers[addon_short_name].update({
         'status': ARCHIVER_FAILURE,
-        'errors': errors or [],
+        'errors': errors,
     })
     node.save()
 

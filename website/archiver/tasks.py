@@ -1,7 +1,7 @@
 import requests
 import json
 
-from celery import group, chain
+import celery
 from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
@@ -83,7 +83,7 @@ def stat_node(src_pk, dst_pk, user_pk):
     create_app_context()
     src = Node.load(src_pk)
     targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
-    return group(
+    return celery.group(
         stat_addon.si(
             addon.config.short_name,
             src_pk,
@@ -188,7 +188,7 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
             user,
             stat_result
         )
-    group(
+    celery.group(
         archive_addon.si(
             result.target_name,
             src_pk,
@@ -213,7 +213,7 @@ def archive(self, src_pk, dst_pk, user_pk):
     dst.archiving = True
     dst.archive_task_id = self.request.id
     dst.save()
-    chain(stat_node.si(src_pk, dst_pk, user_pk), archive_node.s(src_pk, dst_pk, user_pk)).apply_async()
+    celery.chain(stat_node.si(src_pk, dst_pk, user_pk), archive_node.s(src_pk, dst_pk, user_pk)).apply_async()
 
 
 @celery_app.task
