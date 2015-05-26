@@ -153,3 +153,13 @@ CONFERENCE_FAILED = Mail(
 
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
+
+FILE_OPERATION_SUCCESS = Mail(
+    'file_operation_success',
+    subject='Your ${action} has finished',
+)
+
+FILE_OPERATION_FAILED = Mail(
+    'file_operation_failed',
+    subject='Your ${action} has failed',
+)

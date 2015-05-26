@@ -88,6 +88,34 @@ var putJSON = function(url, data, success, error) {
     return $.ajax(ajaxOpts);
 };
 
+/**
+* Set XHR Authentication
+*
+* Example:
+*     var $osf = require('./osf-helpers');
+*
+*     JQuery
+*     $ajax({
+*         beforeSend: $osf.setXHRAuthorization,
+*         // ...
+*     }).done( ... );
+*
+*     MithrilJS
+*     m.request({
+*         config: $osf.setXHRAuthorization,
+*         // ...
+*     }).then( ... );
+*
+* @param  {Object} XML Http Request
+* @return {Object} xhr
+*/
+var setXHRAuthorization = function (xhr) {
+    if (window.contextVars.accessToken) {
+        xhr.setRequestHeader('Authorization', 'Bearer ' + window.contextVars.accessToken);
+    }
+    return xhr;
+};
+
 var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
@@ -476,6 +504,7 @@ ko.bindingHandlers.listing = {
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
+    setXHRAuthorization: setXHRAuthorization,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,

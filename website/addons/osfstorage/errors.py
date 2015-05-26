@@ -30,3 +30,6 @@ class InvalidVersionError(OsfStorageError):
 
 class MissingFieldError(OsfStorageError):
     pass
+
+class InvalidPath(OsfStorageError):
+    pass

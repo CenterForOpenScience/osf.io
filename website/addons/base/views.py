@@ -13,11 +13,13 @@ from flask import make_response
 from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
+from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
+from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
@@ -78,6 +80,10 @@ permission_map = {
     'delete': 'write',
     'copy': 'write',
     'move': 'write',
+    'copyto': 'write',
+    'moveto': 'write',
+    'copyfrom': 'read',
+    'movefrom': 'write',
 }
 
 
@@ -126,15 +132,20 @@ restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
 def get_auth(**kwargs):
     try:
         action = request.args['action']
-        cookie = request.args['cookie']
         node_id = request.args['nid']
         provider_name = request.args['provider']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    cookie = request.args.get('cookie')
     view_only = request.args.get('view_only')
 
-    user = User.from_cookie(cookie)
+    if 'auth_user_id' in session.data:
+        user = User.load(session.data['auth_user_id'])
+    elif cookie:
+        user = User.from_cookie(cookie)
+    else:
+        user = None
 
     node = Node.load(node_id)
     if not node:
@@ -165,6 +176,8 @@ def get_auth(**kwargs):
 
 
 LOG_ACTION_MAP = {
+    'move': NodeLog.FILE_MOVED,
+    'copy': NodeLog.FILE_COPIED,
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
@@ -178,27 +191,97 @@ LOG_ACTION_MAP = {
 def create_waterbutler_log(payload, **kwargs):
     try:
         auth = payload['auth']
-        action = payload['action']
-        provider = payload['provider']
-        metadata = payload['metadata']
+        action = LOG_ACTION_MAP[payload['action']]
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
-
-    metadata['path'] = metadata['path'].lstrip('/')
 
     user = User.load(auth['id'])
     if user is None:
         raise HTTPError(httplib.BAD_REQUEST)
-    node = kwargs['node'] or kwargs['project']
-    node_addon = node.get_addon(provider)
-    if node_addon is None:
-        raise HTTPError(httplib.BAD_REQUEST)
-    try:
-        osf_action = LOG_ACTION_MAP[action]
-    except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+
     auth = Auth(user=user)
-    node_addon.create_waterbutler_log(auth, osf_action, metadata)
+    node = kwargs['node'] or kwargs['project']
+
+    if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
+        for bundle in ('source', 'destination'):
+            for key in ('provider', 'materialized', 'name', 'nid'):
+                if key not in payload[bundle]:
+                    raise HTTPError(httplib.BAD_REQUEST)
+
+        destination_node = node  # For clarity
+        source_node = Node.load(payload['source']['nid'])
+
+        source = source_node.get_addon(payload['source']['provider'])
+        destination = node.get_addon(payload['destination']['provider'])
+
+        payload['source'].update({
+            'materialized': payload['source']['materialized'].lstrip('/'),
+            'addon': source.config.full_name,
+            'url': source_node.web_url_for(
+                'addon_view_or_download_file',
+                path=payload['source']['path'].lstrip('/'),
+                provider=payload['source']['provider']
+            ),
+            'node': {
+                '_id': source_node._id,
+                'url': source_node.url,
+                'title': source_node.title,
+            }
+        })
+
+        payload['destination'].update({
+            'materialized': payload['destination']['materialized'].lstrip('/'),
+            'addon': destination.config.full_name,
+            'url': destination_node.web_url_for(
+                'addon_view_or_download_file',
+                path=payload['destination']['path'].lstrip('/'),
+                provider=payload['destination']['provider']
+            ),
+            'node': {
+                '_id': destination_node._id,
+                'url': destination_node.url,
+                'title': destination_node.title,
+            }
+        })
+
+        payload.update({
+            'node': destination_node._id,
+            'project': destination_node.parent_id,
+        })
+
+        if not payload.get('errors'):
+            destination_node.add_log(
+                action=action,
+                auth=auth,
+                params=payload
+            )
+
+        if payload.get('email') is True or payload.get('errors'):
+            mails.send_mail(
+                user.username,
+                mails.FILE_OPERATION_FAILED if payload.get('errors')
+                else mails.FILE_OPERATION_SUCCESS,
+                action=payload['action'],
+                source_node=source_node,
+                destination_node=destination_node,
+                source_path=payload['source']['path'],
+                destination_path=payload['source']['path'],
+                source_addon=payload['source']['addon'],
+                destination_addon=payload['destination']['addon'],
+            )
+    else:
+        try:
+            metadata = payload['metadata']
+            node_addon = node.get_addon(payload['provider'])
+        except KeyError:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        if node_addon is None:
+            raise HTTPError(httplib.BAD_REQUEST)
+
+        metadata['path'] = metadata['path'].lstrip('/')
+
+        node_addon.create_waterbutler_log(auth, action, metadata)
 
     return {'status': 'success'}
 
@@ -336,6 +419,7 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
+        'materialized_path': getattr(file_guid, 'materialized', file_guid.waterbutler_path),
     })
 
     ret.update(rubeus.collect_addon_assets(node))

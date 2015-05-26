@@ -148,6 +148,9 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
+            % if access_token:
+                accessToken: '${access_token | js_str}',
+            % endif
                 cookieName: '${cookie_name}'
             });
         </script>
