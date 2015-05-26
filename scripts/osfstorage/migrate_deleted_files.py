@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def main():
     with TokuTransaction():
         for file in OsfStorageFileNode.find(Q('is_deleted', 'eq', True)):
-            file.delete()
+            file.delete(recurse=False)
             logger.info(u'Moving {!r} to the trashed collections'.format(file))
 
 
