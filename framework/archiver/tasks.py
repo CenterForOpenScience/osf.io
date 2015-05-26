@@ -24,7 +24,6 @@ from framework.archiver.settings import (
 )
 from framework.archiver.utils import (
     catch_archive_addon_error,
-    archive_folder_name,
     update_status,
     aggregate_file_tree_metadata,
 )
@@ -135,7 +134,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     })
     user = User.load(user_pk)
     src_provider = src.get_addon(addon_short_name)
-    folder_name = archive_folder_name(src_provider)
+    folder_name = src_provider.archive_folder_name
     provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
     data = dict(

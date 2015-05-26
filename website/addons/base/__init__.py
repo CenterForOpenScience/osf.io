@@ -875,6 +875,14 @@ class StorageAddonBase(object):
 
     root_node = GenericRootNode()
 
+    @property
+    def archive_folder_name(self):
+        name = "Archive of {addon}".format(addon=self.config.full_name)
+        folder_name = (getattr(self, 'folder_name') or '').lstrip('/').strip()
+        if folder_name:
+            name = name + ": {folder}".format(folder=folder_name)
+        return name
+
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None):
         kwargs = dict(
             provider=self.config.short_name,

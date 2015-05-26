@@ -31,17 +31,6 @@ def delete_registration_tree(node):
     node.save()
     [delete_registration_tree(child) for child in node.nodes]
 
-def archive_folder_name(addon):
-    """Create a name for an archived addon's folder
-
-    :param addon: AddonNodeSettings instance of addon in question
-    """
-    name = "Archive of {addon}".format(addon=addon.config.full_name)
-    folder_name = (getattr(addon, 'folder_name') or '').lstrip('/').strip()
-    if folder_name:
-        name = name + ": {folder}".format(folder=folder_name)
-    return name
-
 def update_status(node, addon, status, meta={}):
     tmp = node.archived_providers.get(addon) or {}
     tmp['status'] = status
