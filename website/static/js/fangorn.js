@@ -133,12 +133,21 @@ function cancelUploads (row) {
 
 var uploadRowTemplate = function(item){
     var tb = this;
+    var padding;
     var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
+    if (tb.filterOn) {
+        padding = 20;
+    } else {
+        padding = (item.depth - 1) * 20;
+    }
     var columns = [{
         data : '',  // Data field name
         css : '',
         custom : function(){ return m('row.text-muted', [
-            m('.col-xs-7', {style: 'padding-left:40px;overflow: hidden;text-overflow: ellipsis;'}, item.data.name),
+            m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
+                m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
+                m('span',{ style : 'margin-left: 9px;'}, item.data.name)
+            ]),
             m('.col-xs-3',
                 m('.progress', [
                     m('.progress-bar.progress-bar-info.progress-bar-striped', {
@@ -1077,7 +1086,7 @@ function _fangornResolveRows(item) {
         return uploadRowTemplate.call(tb, item);
     }
 
-    if(item.data.status) {
+    if (item.data.status) {
         return [{
             data : '',  // Data field name
             css : 't-a-c',
