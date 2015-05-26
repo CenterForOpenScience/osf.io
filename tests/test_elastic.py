@@ -1,5 +1,14 @@
 import unittest
-from nose.tools import *  # PEP8 asserts
+import logging
+
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
+
+from framework.auth.core import Auth
+from website import settings
+import website.search.search as search
+from website.search import elastic_search
+from website.search.util import build_query
+from website.search_migration.migrate import migrate
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
@@ -7,14 +16,6 @@ from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
     UnregUserFactory, UnconfirmedUserFactory
 )
-
-from framework.auth.core import Auth
-
-from website import settings
-import website.search.search as search
-from website.search import elastic_search
-from website.search.util import build_query
-from website.search_migration.migrate import migrate
 
 @requires_search
 class SearchTestCase(OsfTestCase):
@@ -181,7 +182,7 @@ class TestProject(SearchTestCase):
 
 @requires_search
 class TestPublicNodes(SearchTestCase):
-    
+
     def setUp(self):
         super(TestPublicNodes, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
@@ -445,6 +446,7 @@ class TestSearchExceptions(OsfTestCase):
 
     @classmethod
     def setUpClass(cls):
+        logging.getLogger('website.project.model').setLevel(logging.CRITICAL)
         super(TestSearchExceptions, cls).setUpClass()
         if settings.SEARCH_ENGINE == 'elastic':
             cls._es = search.search_engine.es
@@ -456,11 +458,8 @@ class TestSearchExceptions(OsfTestCase):
         if settings.SEARCH_ENGINE == 'elastic':
             search.search_engine.es = cls._es
 
-
     def test_connection_error(self):
-        """
-        Ensures that saving projects/users doesn't break as a result of connection errors
-        """
+        # Ensures that saving projects/users doesn't break as a result of connection errors
         self.user = UserFactory(usename='Doug Bogie')
         self.project = ProjectFactory(
             title="Tom Sawyer",
@@ -472,9 +471,7 @@ class TestSearchExceptions(OsfTestCase):
 
 
 class TestSearchMigration(SearchTestCase):
-    """
-    Verify that the correct indices are created/deleted during migration
-    """
+    # Verify that the correct indices are created/deleted during migration
 
     @classmethod
     def tearDownClass(cls):
@@ -494,28 +491,28 @@ class TestSearchMigration(SearchTestCase):
         )
 
     def test_first_migration_no_delete(self):
-        migrate(delete=False, index=settings.ELASTIC_INDEX)
+        migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_no_delete(self):
         for n in xrange(1, 21):
-            migrate(delete=False, index=settings.ELASTIC_INDEX)
+            migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_first_migration_with_delete(self):
-        migrate(delete=True, index=settings.ELASTIC_INDEX)
+        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_with_delete(self):
         for n in xrange(1, 21, 2):
-            migrate(delete=True, index=settings.ELASTIC_INDEX)
+            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-            migrate(delete=True, index=settings.ELASTIC_INDEX)
+            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))

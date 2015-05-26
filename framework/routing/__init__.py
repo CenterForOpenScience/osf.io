@@ -166,12 +166,15 @@ def process_rules(app, rules, prefix=''):
 
         # Add routes
         for url in rule.routes:
-            app.add_url_rule(
-                prefix + url,
-                endpoint=endpoint + rule.endpoint_suffix,
-                view_func=wrapped_view_func,
-                methods=rule.methods,
-            )
+            try:
+                app.add_url_rule(
+                    prefix + url,
+                    endpoint=endpoint + rule.endpoint_suffix,
+                    view_func=wrapped_view_func,
+                    methods=rule.methods,
+                )
+            except AssertionError:
+                raise AssertionError('URLRule({}, {})\'s view function name is overwriting an existing endpoint'.format(prefix + url, view_func.__name__ + rule.endpoint_suffix))
 
 
 ### Renderer helpers ###

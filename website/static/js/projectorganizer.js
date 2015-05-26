@@ -855,7 +855,7 @@ function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -874,14 +874,14 @@ function _addFolderEvent() {
         }).fail($osf.handleJSONError);
 
     });
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function _renameEvent() {
     var tb = this;
     var val = $.trim($('#renameInput').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -897,7 +897,7 @@ function _renameEvent() {
         tb.updateFolder(null, tb.find(1));
         // Also update every
     }).fail($osf.handleJSONError);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function applyTypeahead() {
@@ -1025,7 +1025,7 @@ function addProjectEvent() {
         });
     });
     triggerClickOnItem.call(tb, item);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
     tb.select('.tb-header-row .twitter-typeahead').remove();
 }
 
@@ -1093,14 +1093,14 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addFolder');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                     },
                     icon: 'fa fa-cubes',
                     className: 'text-primary'
                 }, 'Add Collection'),
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addProject');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDPROJECT);
                     },
                     icon: 'fa fa-cube',
                     className: 'text-primary'
@@ -1139,7 +1139,7 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('rename');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
                     icon: 'fa fa-font',
                     className: 'text-primary'

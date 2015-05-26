@@ -112,7 +112,6 @@ var scientists = [
     'Meitner',
     'Mitchell',
     'Morgan',
-    'Nosek',
     'Odum',
     'Pasteur',
     'Pauling',
