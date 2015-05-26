@@ -2,7 +2,6 @@ import functools
 from flask import request
 from framework.flask import redirect
 from framework.auth.core import Auth
-from website.settings import SPAM_ASSASSIN
 def must_be_spam_admin(func):
     """Require that user be spam_admin.
     """
@@ -17,18 +16,6 @@ def must_be_spam_admin(func):
         if kwargs['auth'].user.spam_admin:
             return func(*args, **kwargs)
         else:
-            return redirect('/login/?next={0}'.format(request.path))
-
-    return wrapped
-
-
-def spam_assassin_active(func):
-    """Spam Assassin is running.
-    """
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-
-        if not SPAM_ASSASSIN:
             return redirect('/login/?next={0}'.format(request.path))
 
     return wrapped

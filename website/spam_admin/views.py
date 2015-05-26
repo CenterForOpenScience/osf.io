@@ -4,7 +4,7 @@ from framework.exceptions import HTTPError
 from website.models import Node
 from website.models import Comment
 from framework.auth.decorators import must_be_logged_in
-from .decorators import must_be_spam_admin, spam_assassin_active
+from .decorators import must_be_spam_admin
 from .utils import serialize_comments, serialize_projects, train_spam_project, train_spam
 from flask import request
 import logging
