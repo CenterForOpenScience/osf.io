@@ -67,7 +67,7 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
 
 var defaultOptions = {
     editVisible: true,
-    viewVisible: false,
+    viewVisible: true,
     canEdit: true,
     viewVersion: 'current',
     urls: {
@@ -80,25 +80,8 @@ function ViewModel(options){
     var self = this;
 
     // enabled?
-    self.editVis = ko.observable(options.editVisible);
-    self.viewVis = ko.observable(options.viewVisible);
-    // singleVis : checks if the item visible is the only visible column
-    self.singleVis = ko.pureComputed(function(){
-        var visible = 0;
-        var single;
-        if(self.editVis()){
-            visible++;
-            single = 'edit';
-        }
-        if(self.viewVis()){
-            visible++;
-            single = 'view';
-        }
-        if(visible === 1){
-            return single;
-        }
-        return false;
-    });
+    self.editVis = options.editVisible;
+    self.viewVis = options.viewVisible;
 
     self.pageTitle = $(document).find('title').text();
 
