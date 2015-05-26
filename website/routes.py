@@ -7,6 +7,7 @@ from flask import send_from_directory
 
 from framework import status
 from framework import sentry
+from framework.auth import cas
 from framework.routing import Rule
 from framework.flask import redirect
 from framework.sessions import session
@@ -19,7 +20,6 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
-from framework.auth.cas import CasClient
 
 from website import util
 from website import settings
@@ -69,7 +69,7 @@ def get_globals():
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
-        'login_url': CasClient(settings.CAS_SERVER_URL).get_login_url(request.url, auto=True),
+        'login_url': cas.get_login_url(request.url, auto=True),
         'access_token': session.data.get('auth_user_access_token') or '',
     }
 
@@ -441,8 +441,6 @@ def make_url_map(app):
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),
-        Rule('/login/two_factor/', ['get', 'post'], auth_views.two_factor,
-             OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
         Rule('/forgotpassword/', 'get', auth_views.forgot_password_get,
              OsfWebRenderer('public/forgot_password.mako')),

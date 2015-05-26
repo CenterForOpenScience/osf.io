@@ -1070,7 +1070,7 @@ function _fangornResolveRows(item) {
     var default_columns = [];
     var configOption;
     item.css = '';
-    if(this.isMultiselected(item.id)){
+    if(tb.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     }
 
@@ -1392,7 +1392,7 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
-        } else {
+        } else if(item.data.provider) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
@@ -1833,7 +1833,7 @@ function getCopyMode(folder, items) {
         ) return 'forbidden';
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
-        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || item.data.provider === folder.data.provider);
+        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId));
     }
     if (folder.data.isPointer) return 'copy';
     if (altKey) return 'copy';

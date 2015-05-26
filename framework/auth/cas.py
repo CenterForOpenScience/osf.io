@@ -144,6 +144,7 @@ class CasClient(object):
             resp.attributes[attribute] = data['attributes'][attribute]
         return resp
 
+
 def get_client():
     return CasClient(settings.CAS_SERVER_URL)
 
@@ -154,6 +155,14 @@ def get_login_url(*args, **kwargs):
     :param kwargs: Same kwargs that `CasClient.get_login_url` receives
     """
     return get_client().get_login_url(*args, **kwargs)
+
+def get_logout_url(*args, **kwargs):
+    """Convenience function for getting a logout URL for a service.
+
+    :param args: Same args that `CasClient.get_logout_url` receives
+    :param kwargs: Same kwargs that `CasClient.get_logout_url` receives
+    """
+    return get_client().get_logout_url(*args, **kwargs)
 
 def make_response_from_ticket(ticket, service_url):
     """Given a CAS ticket and service URL, attempt to the user and return a proper

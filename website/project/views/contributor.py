@@ -9,7 +9,7 @@ from modularodm.exceptions import ValidationValueError
 
 from framework import forms
 from framework import status
-from framework.auth.cas import CasClient
+from framework.auth import cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.auth import User, get_user
@@ -641,7 +641,7 @@ def claim_user_form(auth, **kwargs):
             node = Node.load(pid)
             status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node), 'success')
             # Redirect to CAS and authenticate the user with a verification key.
-            return redirect(CasClient(settings.CAS_SERVER_URL).get_login_url(
+            return redirect(cas.get_login_url(
                 web_url_for('user_profile', _absolute=True),
                 auto=True,
                 username=user.username,

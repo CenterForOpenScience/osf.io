@@ -312,7 +312,7 @@ class OsfStorageFileNode(StoredObject):
                 return
         raise errors.VersionNotFoundError
 
-    def delete(self):
+    def delete(self, recurse=True):
         trashed = OsfStorageTrashedFileNode()
         trashed._id = self._id
         trashed.name = self.name
@@ -323,7 +323,7 @@ class OsfStorageFileNode(StoredObject):
 
         trashed.save()
 
-        if self.is_folder:
+        if self.is_folder and recurse:
             for child in self.children:
                 child.delete()
 

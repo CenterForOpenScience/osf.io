@@ -140,9 +140,8 @@ def _must_be_contributor_factory(include_public):
             if not node.is_public or not include_public:
                 if key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user, key=key):
-                        cas_client = cas.get_client()
                         redirect_url = check_key_expired(key=key, node=node, url=request.url)
-                        response = redirect(cas_client.get_login_url(redirect_url))
+                        response = redirect(cas.get_login_url(redirect_url))
 
             return response or func(*args, **kwargs)
 
