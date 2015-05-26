@@ -6,6 +6,7 @@ from modularodm import Q
 import requests
 
 import mock  # noqa
+from mock import call
 from nose.tools import *  # noqa PEP8 asserts
 import httpretty
 
@@ -19,16 +20,17 @@ from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
+    ARCHIVE_COPY_FAIL,
+    ARCHIVE_SIZE_EXCEEDED,
 )
 from website.archiver import settings as archiver_settings
-from website.archiver import exceptions as archiver_exceptions
 from website.archiver import utils as archiver_utils
-from website.archiver import mails as archiver_mails
 from website.app import *  # noqa
-from framework import archiver
+from website import archiver
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa
 
+from website import mails
 from website import settings
 from website.util import waterbutler_url_for
 from website.project.model import Node
@@ -128,19 +130,19 @@ class TestStorageAddonBase(ArchiverTestCase):
 
 class TestArchiverTasks(ArchiverTestCase):
 
-    def test_archive(self):
+    @mock.patch('celery.chain')
+    def test_archive(self, mock_chain):
         src_pk, dst_pk, user_pk = self.pks
-        with mock.patch.object(stat_node, 'si') as mock_stat_node:
-            with mock.patch.object(archive_node, 's') as mock_archive_node:
-                archive(src_pk, dst_pk, user_pk)
-        assert(mock_stat_node.called_with(dst_pk, user_pk))
-        assert(mock_archive_node.called_with(src_pk, dst_pk, user_pk))
+        archive(src_pk, dst_pk, user_pk)
+        stat_node_sig = stat_node.si(src_pk, dst_pk, user_pk)
+        archive_node_sig = archive_node.s(src_pk, dst_pk, user_pk)
+        mock_chain.assert_called_with(stat_node_sig, archive_node_sig)
         assert_true(self.dst.archiving)
 
     def test_stat_node(self):
         src_pk, dst_pk, user_pk = self.pks
         self.src.add_addon('box', auth=self.auth)  # has box, dropbox
-        with mock.patch.object(celery, 'group') as mock_group:
+        with mock.patch('celery.group') as mock_group:
             stat_node(src_pk, dst_pk, user_pk)
         stat_dropbox_sig = stat_addon.si('dropbox', src_pk, dst_pk, user_pk)
         stat_box_sig = stat_addon.si('box', src_pk, dst_pk, user_pk)
@@ -183,14 +185,15 @@ class TestArchiverTasks(ArchiverTestCase):
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             result = stat_node.apply(args=(src_pk, dst_pk, user_pk)).result
-        with mock.patch.object(archiver_exceptions, 'ArchiverSizeExceeded') as MockError:
+        with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             archive_node(result, src_pk, dst_pk, user_pk)
-        assert(MockError.called_with(
+        mock_fail.assertcalled_with(
+            ARCHIVE_SIZE_EXCEEDED,
             self.src,
             self.dst,
             self.user,
             result
-        ))
+        )
 
     def test_archive_addon(self):
         src_pk, dst_pk, user_pk = self.pks
@@ -273,67 +276,78 @@ class TestArchiverTasks(ArchiverTestCase):
             })
         assert(mock_catch_error.called_with(self.dst, 'dropbox', error))
 
-class TestArchiverExceptions(ArchiverTestCase):
-
-    def test_ArchiverCopyError(self):
-        src_pk, dst_pk, user_pk = self.pks
-        result = {
-            'dropbox': {
-                'status': ARCHIVER_FAILURE,
-                'errors': ['BAD REQUEST'],
-            },
-        }
-        with mock.patch.object(archiver_exceptions, 'send_archiver_mail') as mock_send_mail:
-            ArchiverCopyError(self.src, self.dst, self.user, result)
-        assert_equal(mock_send_mail.call_count, 2)
-        assert(mock_send_mail.called_once_with(
-            to_addr=self.user.username,
-            mail=archiver_mails.ARCHIVE_COPY_ERROR_DESK,
-            user=self.user,
-            src=self.src,
-            dst=self.dst,
-            result=result,
-        ))
-        assert(mock_send_mail.called_once_with(
-            to_addr=self.user.username,
-            mail=archiver_mails.ARCHIVE_COPY_ERROR_USER,
-            user=self.user,
-            src=self.src,
-            dst=self.dst,
-        ))
-        assert_true(self.dst.is_deleted)
-
-    def test_ArchiverSizeExceeded(self):
-        src_pk, dst_pk, user_pk = self.pks
-        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
-            mock_file_tree.return_value = FILE_TREE
-            result =  AggregateStatResult(
-                src_pk,
-                self.src.title,
-                targets=[result.result for result in stat_node.apply(args=(src_pk, dst_pk, user_pk)).result]
-            )
-        with mock.patch.object(archiver_exceptions, 'send_archiver_mail') as mock_send_mail:
-            ArchiverSizeExceeded(self.src, self.dst, self.user, result)
-        assert_equal(mock_send_mail.call_count, 2)
-        assert(mock_send_mail.called_once_with(
-            to_addr=self.user.username,
-            mail=archiver_mails.ARCHIVE_SIZE_EXCEEDED_DESK,
-            user=self.user,
-            src=self.src,
-            dst=self.dst,
-            result=result,
-        ))
-        assert(mock_send_mail.called_once_with(
-            to_addr=self.user.username,
-            mail=archiver_mails.ARCHIVE_SIZE_EXCEEDED_USER,
-            user=self.user,
-            src=self.src,
-            dst=self.dst,
-        ))
-        assert_true(self.dst.is_deleted)
-
-
 class TestArchiverUtils(ArchiverTestCase):
+
+    @mock.patch('website.mails.send_mail')
+    def test_handle_archive_fail(self, mock_send_mail):
+        handle_archive_fail(
+            ARCHIVE_COPY_FAIL,
+            self.src,
+            self.dst,
+            self.user,
+            {}
+        )
+        assert_equal(mock_send_mail.call_count, 2)
+        assert_true(self.dst.is_deleted)
+
+    @mock.patch('website.mails.send_mail')
+    def test_handle_archive_fail_copy(self, mock_send_mail):
+        handle_archive_fail(
+            ARCHIVE_COPY_FAIL,
+            self.src,
+            self.dst,
+            self.user,
+            {}
+        )
+        args_user = dict(
+            to_addr=self.user.username,
+            user=self.user,
+            src=self.src,
+            mail=mails.ARCHIVE_COPY_ERROR_USER,
+            results={},
+            mimetype='html',
+        )
+        args_desk = dict(
+            to_addr=settings.SUPPORT_EMAIL,
+            user=self.user,
+            src=self.src,
+            mail=mails.ARCHIVE_COPY_ERROR_DESK,
+            results={},
+        )
+        mock_send_mail.assert_has_calls([
+            call(**args_user),
+            call(**args_desk),
+        ], any_order=True)
+
+    @mock.patch('website.mails.send_mail')
+    def test_handle_archive_fail_size(self, mock_send_mail):
+        handle_archive_fail(
+            ARCHIVE_SIZE_EXCEEDED,            
+            self.src,
+            self.dst,
+            self.user,
+            {}
+        )
+        args_user = dict(
+            to_addr=self.user.username,
+            user=self.user,
+            src=self.src,
+            mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
+            stat_result={},
+            mimetype='html',
+        )
+        args_desk = dict(
+            to_addr=settings.SUPPORT_EMAIL,
+            user=self.user,
+            src=self.src,
+            mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
+            stat_result={},
+        )
+
+        mock_send_mail.assert_has_calls([
+            call(**args_user),
+            call(**args_desk),
+        ], any_order=True)
 
     def test_update_status(self):
         self.dst.archived_providers['test'] = {
@@ -414,11 +428,11 @@ class TestArchiverListeners(ArchiverTestCase):
             'status': ARCHIVER_SUCCESS
         }
         self.dst.save()
-        with mock.patch.object(handlers, 'enqueue_task') as mock_enqueue:
-            with mock.patch.object(archiver_exceptions, 'ArchiverCopyError') as MockError:
+        with mock.patch('website.archiver.tasks.send_success_message') as mock_send:
+            with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
                 listeners.archive_callback(self.dst)
-        assert_false(mock_enqueue.called)
-        assert_false(MockError.called)
+        assert_false(mock_send.called)
+        assert_false(mock_fail.called)
 
     def test_archive_callback_done_success(self):
         self.dst.archived_providers = {
@@ -440,9 +454,9 @@ class TestArchiverListeners(ArchiverTestCase):
         }
         self.dst.archived_providers['osfstorage']['status'] = ARCHIVER_FAILURE
         self.dst.save()
-        with mock.patch.object(archiver_exceptions, 'ArchiverCopyError') as MockError:
+        with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             listeners.archive_callback(self.dst)
-        assert(MockError.called_with(self.src, self.dst, self.user, self.dst.archived_providers))
+        assert(mock_fail.called_with(ARCHIVE_COPY_FAIL, self.src, self.dst, self.user, self.dst.archived_providers))
 
 
 class TestArchiverScripts(ArchiverTestCase):
@@ -451,7 +465,7 @@ class TestArchiverScripts(ArchiverTestCase):
         failures = []
         delta = datetime.timedelta(2)
         for i in range(5):
-            reg = factories.RegistrationFactory(send_signals=False)
+            reg = factories.RegistrationFactory()
             reg._fields['registered_date'].__set__(
                 reg,
                 datetime.datetime.now() - delta,
@@ -467,7 +481,7 @@ class TestArchiverScripts(ArchiverTestCase):
             failures.append(reg)
         pending = []
         for i in range(5):
-            reg = factories.RegistrationFactory(send_signals=False)
+            reg = factories.RegistrationFactory()
             reg.archived_providers = {
                 addon: {
                     'status': ARCHIVER_PENDING
