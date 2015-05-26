@@ -152,7 +152,7 @@ class ZipLocalFile(MultiStream):
             self.zinfo.CRC,
             self.compressed_size,
             self.original_size,
-            len(self.zinfo.filename),
+            len(self.zinfo.filename.encode('utf-8')),
             len(extra_data),
             len(self.zinfo.comment),
             0,
