@@ -77,11 +77,7 @@
                             id="signInForm"
                             class="navbar-form navbar-right"
                             data-bind="submit: submit"
-                            % if next_url:
-                                action="/login/?next=${next_url}"
-                            % else:
-                                action="/login/"
-                            % endif
+                            action="${login_url}"
                             method="POST"
                         >
                         <div class="form-group">
@@ -94,7 +90,7 @@
                     </form>
                 </li>
                 <li>
-                    <a href="${web_url_for('_forgot_password')}">Forgot Password?</a>
+                    <a href="${web_url_for('forgot_password_get')}">Forgot Password?</a>
                 </li>
                 % endif
             </ul><!-- end nav navbar-nav navbar-right -->

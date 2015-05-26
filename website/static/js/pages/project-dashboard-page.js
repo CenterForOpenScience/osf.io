@@ -11,6 +11,7 @@ var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
+var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment');
@@ -62,6 +63,7 @@ $(document).ready(function () {
             placement: 'dashboard',
             title : undefined,
             filterFullWidth : true, // Make the filter span the entire row for this view
+            xhrconfig: $osf.setXHRAuthorization,
             columnTitles : function () {
                 return [
                     {
@@ -73,7 +75,9 @@ $(document).ready(function () {
                 ];
             },
             resolveRows : function (item) {
-                if(this.isMultiselected(item.id)){
+                var tb = this;
+                item.css = '';
+                if(tb.isMultiselected(item.id)){
                     item.css = 'fangorn-selected';
                 }
                 var defaultColumns = [
@@ -89,15 +93,8 @@ $(document).ready(function () {
                         item.data.accept = item.data.accept || item.parent().data.accept;
                     }
                 }
-                if (item.data.tmpID) {
-                    defaultColumns = [
-                        {
-                            data : 'name',  // Data field name
-                            folderIcons : true,
-                            filter : true,
-                            custom : function () { return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
-                        }
-                    ];
+                if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
+                    return Fangorn.Utils.uploadRowTemplate.call(tb, item);
                 }
 
                 var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);

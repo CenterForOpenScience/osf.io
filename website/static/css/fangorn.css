@@ -53,8 +53,14 @@ text-align: center;
 	background: #337AB7;
 	color: #FFF;
 }
+.fangorn-selected .text-muted {
+    color: #eeeeee;
+}
 .fangorn-selected a {
 	color : white;
+}
+.fangorn-selected > div span.text-muted {
+	color: #DDD;
 }
 .tb-disabled {
 	background: #eee;
@@ -118,6 +124,10 @@ text-align: center;
     padding-top: 4px;
 }
 
+.tb-row .progress {
+    height: 12px;
+    margin-top: 5px;
+}
 .tb-expand-icon-holder {
 	cursor: default;
 }
@@ -147,6 +157,8 @@ text-align: center;
     margin-left: 9px;
     border-radius: 3px;
     background: #F8F8F8;
+    display: inline-block;
+    margin-bottom: 7px;
 }
 .tb-modal-btn:hover {
 	background-color: #efefef;
