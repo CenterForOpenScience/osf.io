@@ -16,22 +16,21 @@ class TestWelcomeToApi(ApiTestCase):
         self.user.set_password('justapoorboy')
         self.user.save()
         self.auth = (self.user.username, 'justapoorboy')
+        self.url = '/v2'
 
     # Logged out, public page
     def test_returns_200_for_logged_out_user(self):
-        res = self.app.get('/v2/')
+        res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['current_user'], None)
 
     # Logged in, public page
     def test_returns_200_for_logged_in_user(self):
-        url = '/v2/'
-        res = self.app.get(url, auth=(self.auth))
+        res = self.app.get(self.url, auth=(self.auth))
         assert_equal(res.status_code, 200)
 
     def test_returns_current_user_info_when_logged_in(self):
-        url = '/v2/'
-        res = self.app.get(url, auth=(self.auth))
+        res = self.app.get(self.url, auth=(self.auth))
         assert_equal(res.json['meta']['current_user']['data']['given_name'], 'Freddie')
 
 class TestNodeList(ApiTestCase):
@@ -70,50 +69,50 @@ class TestNodeContributorList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
-
         password = fake.password()
         self.password = password
-
         self.user.set_password(password)
         self.user.save()
         self.auth = (self.user.username, password)
 
-        self.project = ProjectFactory(is_public=False)
-        self.project.add_contributor(self.user)
-        self.project.save()
-
-        self.project_two = ProjectFactory(is_public=True)
-        self.project_two.add_contributor(self.user)
-        self.project_two.save()
-
-    def test_must_be_contributor(self):
-
-        non_contrib = UserFactory.build()
+        self.non_contrib = UserFactory.build()
         pw = fake.password()
-        non_contrib.set_password(pw)
-        non_contrib.save()
+        self.non_contrib.set_password(pw)
+        self.non_contrib.save()
+        self.non_contrib_auth = (self.non_contrib.username, pw)
 
-        url = '/v2/nodes/{}/contributors/'.format(self.project._id)
-        # non-authenticated, private resource
-        res = self.app.get(url, expect_errors=True)
+        self.private_project = ProjectFactory(is_public=False)
+        self.private_project.add_contributor(self.user)
+        self.private_project.save()
+        self.private_url = '/v2/nodes/{}/contributors/'.format(self.private_project._id)
+
+        self.public_project = ProjectFactory(is_public=True)
+        self.public_project.add_contributor(self.user)
+        self.public_project.save()
+        self.public_url = '/v2/nodes/{}/contributors/'.format(self.public_project._id)
+
+    def test_logged_out_user_can_access_public_contributor_list(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['given_name'], 'Freddie')
+
+    def test_logged_in_user_can_access_public_contributor_list(self):
+        res = self.app.get(self.public_url, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        assert 'Mercury' in res.json['data'][0]['family_name']
+
+    def test_logged_out_user_cannot_access_private_contributor_list(self):
+        res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-        # non-contrib, private resource
-        res = self.app.get(url, auth=(non_contrib.username, pw), expect_errors=True)
+    def test_logged_in_contributor_can_access_private_contributor_list(self):
+        res = self.app.get(self.private_url, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        assert 'Mercury' in res.json['data'][0]['family_name']
+
+    def test_logged_in_non_contributor_cannot_access_private_contributor_list(self):
+        res = self.app.get(self.private_url, auth=self.non_contrib_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-
-        # contrib, private resource
-        res = self.app.get(url, auth=(self.user.username, self.password))
-        assert_equal(res.status_code, 200)
-
-        url = '/v2/nodes/{}/contributors/'.format(self.project_two._id)
-        # Logged out, public
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-
-        # Logged in, public
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 200)
 
         Node.remove()
 
