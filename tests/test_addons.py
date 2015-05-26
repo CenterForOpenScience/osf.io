@@ -147,7 +147,7 @@ class TestAddonAuth(OsfTestCase):
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
         res = self.test_app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 401)
 
     def test_auth_bad_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
@@ -468,6 +468,8 @@ class TestAddonFileViews(OsfTestCase):
             'file_name': '',
             'is_editable': '',
             'panels_used': '',
+            'render_url': '',
+            'materialized_path': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
         return ret

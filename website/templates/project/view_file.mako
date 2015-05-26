@@ -260,7 +260,7 @@
                 <th></th>
               </tr>
             </thead>
-
+            
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
@@ -342,7 +342,8 @@
                 name: '${file_name | js_str}',
                 path: '${file_path | js_str}',
                 provider: '${provider | js_str}',
-                safeName: '${file_name | h,js_str}'
+                safeName: '${file_name | h,js_str}',
+                materializedPath: '${materialized_path | js_str}',
             },
             node: {
               urls: {
