@@ -12,14 +12,14 @@ import aiohttpretty
 
 from waterbutler.core import streams
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.github import GitHubProvider
-from waterbutler.providers.github.provider import GitHubPath
 from waterbutler.providers.github.metadata import GitHubRevision
-from waterbutler.providers.github.metadata import GitHubFileContentMetadata
-from waterbutler.providers.github.metadata import GitHubFolderContentMetadata
 from waterbutler.providers.github.metadata import GitHubFileTreeMetadata
 from waterbutler.providers.github.metadata import GitHubFolderTreeMetadata
+from waterbutler.providers.github.metadata import GitHubFileContentMetadata
+from waterbutler.providers.github.metadata import GitHubFolderContentMetadata
 
 
 @pytest.fixture
@@ -41,11 +41,6 @@ def settings():
         'owner': 'cat',
         'repo': 'food',
     }
-
-
-@pytest.fixture
-def provider(auth, credentials, settings):
-    return GitHubProvider(auth, credentials, settings)
 
 
 @pytest.fixture
@@ -447,6 +442,14 @@ def content_repo_metadata_root_file_txt():
     }
 
 
+@pytest.fixture
+def provider(auth, credentials, settings, repo_metadata):
+    provider = GitHubProvider(auth, credentials, settings)
+    provider._repo = repo_metadata
+    provider.default_branch = repo_metadata['default_branch']
+    return provider
+
+
 class TestHelpers:
 
     def test_build_repo_url(self, provider, settings):
@@ -461,47 +464,112 @@ class TestHelpers:
         assert provider.committer == expected
 
 
+class TestValidatePath:
+
+    @async
+    def test_validate_path(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == (provider.default_branch, None)
+
+    @async
+    def test_validate_path_passes_branch(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path', branch='NotMaster')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == ('NotMaster', None)
+
+    @async
+    def test_validate_path_passes_ref(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path', ref='NotMaster')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == ('NotMaster', None)
+
+    @async
+    def test_validate_path_passes_file_sha(self, provider):
+        path = yield from provider.validate_path('/this/is/my/path', fileSha='Thisisasha')
+
+        assert path.is_dir is False
+        assert path.is_file is True
+        assert path.name == 'path'
+        assert isinstance(path.identifier, tuple)
+        assert path.identifier == (provider.default_branch, 'Thisisasha')
+
+
 class TestCRUD:
 
+    # @async
+    # @pytest.mark.aiohttpretty
+    # def test_download_by_file_sha(self, provider, content_repo_metadata_root_file_txt):
+    #     ref = hashlib.sha1().hexdigest()
+    #     url = provider.build_repo_url('git', 'refs', 'heads', 'master')
+    #     path = WaterButlerPath('/file.txt', _ids=(None, ('master', ref)))
+
+    #     aiohttpretty.register_uri('GET', url, body=b'delicious')
+    #     aiohttpretty.register_json_uri('GET', url, body={'object': {'sha': ref}})
+
+    #     result = yield from provider.download(path)
+
+    #     content = yield from result.read()
+    #     assert content == b'delicious'
+
     @async
     @pytest.mark.aiohttpretty
-    def test_download_by_file_sha(self, provider):
+    def test_download_by_path(self, provider, repo_tree_metadata_root):
         ref = hashlib.sha1().hexdigest()
-        url = provider.build_repo_url('git', 'blobs', ref)
+        file_sha = repo_tree_metadata_root['tree'][0]['sha']
+        path = yield from provider.validate_path('/file.txt')
+
+        url = provider.build_repo_url('git', 'blobs', file_sha)
+        tree_url = provider.build_repo_url('git', 'trees', ref, recursive=1)
+        latest_sha_url = provider.build_repo_url('git', 'refs', 'heads', path.identifier[0])
+
         aiohttpretty.register_uri('GET', url, body=b'delicious')
-        result = yield from provider.download('', fileSha=ref)
-        content = yield from result.response.read()
+        aiohttpretty.register_json_uri('GET', tree_url, body=repo_tree_metadata_root)
+        aiohttpretty.register_json_uri('GET', latest_sha_url, body={'object': {'sha': ref}})
+
+        result = yield from provider.download(path)
+        content = yield from result.read()
         assert content == b'delicious'
 
     @async
     @pytest.mark.aiohttpretty
-    def test_download_by_path(self, provider):
-        path = GitHubPath('/my.file')
-        url = provider.build_repo_url('contents', path.path)
-        aiohttpretty.register_uri('GET', url, body=b'delicious')
-        result = yield from provider.download(str(path))
-        content = yield from result.response.read()
-        assert content == b'delicious'
-
-    @async
-    @pytest.mark.aiohttpretty
-    def test_download_by_path_ref_branch(self, provider):
-        path = GitHubPath('/my.file')
-        ref = 'other_branch'
-        url = provider.build_repo_url('contents', path.path, ref=ref)
-        aiohttpretty.register_uri('GET', url, body=b'delicious')
-        result = yield from provider.download(str(path), ref=ref)
-        content = yield from result.response.read()
-        assert content == b'delicious'
-
-    @async
-    @pytest.mark.aiohttpretty
-    def test_download_bad_status(self, provider):
+    def test_download_by_path_ref_branch(self, provider, repo_tree_metadata_root):
         ref = hashlib.sha1().hexdigest()
-        url = provider.build_repo_url('git', 'blobs', ref)
-        aiohttpretty.register_uri('GET', url, body=b'delicious', status=418)
-        with pytest.raises(exceptions.DownloadError):
-            yield from provider.download('', fileSha=ref)
+        file_sha = repo_tree_metadata_root['tree'][0]['sha']
+        path = yield from provider.validate_path('/file.txt', branch='other_branch')
+
+        url = provider.build_repo_url('git', 'blobs', file_sha)
+        tree_url = provider.build_repo_url('git', 'trees', ref, recursive=1)
+        latest_sha_url = provider.build_repo_url('git', 'refs', 'heads', path.identifier[0])
+
+        aiohttpretty.register_uri('GET', url, body=b'delicious')
+        aiohttpretty.register_json_uri('GET', tree_url, body=repo_tree_metadata_root)
+        aiohttpretty.register_json_uri('GET', latest_sha_url, body={'object': {'sha': ref}})
+
+        result = yield from provider.download(path)
+        content = yield from result.read()
+        assert content == b'delicious'
+
+    # @async
+    # @pytest.mark.aiohttpretty
+    # def test_download_bad_status(self, provider):
+    #     ref = hashlib.sha1().hexdigest()
+    #     url = provider.build_repo_url('git', 'blobs', ref)
+    #     aiohttpretty.register_uri('GET', url, body=b'delicious', status=418)
+    #     with pytest.raises(exceptions.DownloadError):
+    #         yield from provider.download('', fileSha=ref)
 
     # @async
     # @pytest.mark.aiohttpretty
@@ -589,13 +657,19 @@ class TestMetadata:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_metadata_file(self, provider, content_repo_metadata_root_file_txt):
-        path = GitHubPath('/file.txt')
-        url = provider.build_repo_url('contents', path.path)
-        aiohttpretty.register_json_uri('GET', url, body=content_repo_metadata_root_file_txt)
-        result = yield from provider.metadata(str(path))
+    def test_metadata_file(self, provider, repo_metadata, repo_tree_metadata_root):
+        ref = hashlib.sha1().hexdigest()
+        path = yield from provider.validate_path('/file.txt')
 
-        assert result == GitHubFileContentMetadata(content_repo_metadata_root_file_txt).serialized()
+        tree_url = provider.build_repo_url('git', 'trees', ref, recursive=1)
+        latest_sha_url = provider.build_repo_url('git', 'refs', 'heads', path.identifier[0])
+
+        aiohttpretty.register_json_uri('GET', tree_url, body=repo_tree_metadata_root)
+        aiohttpretty.register_json_uri('GET', latest_sha_url, body={'object': {'sha': ref}})
+
+        result = yield from provider.metadata(path)
+
+        assert result == GitHubFileTreeMetadata(repo_tree_metadata_root['tree'][0]).serialized()
 
     # TODO: Additional Tests
     # def test_metadata_root_file_txt_branch(self, provider, repo_metadata, branch_metadata, repo_metadata_root):
@@ -603,11 +677,13 @@ class TestMetadata:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_metadata_folder_root(self, provider, content_repo_metadata_root):
-        path = GitHubPath('/')
-        url = provider.build_repo_url('contents', path.path)
+    def test_metadata_folder_root(self, provider, repo_metadata, content_repo_metadata_root):
+        path = yield from provider.validate_path('/')
+
+        url = provider.build_repo_url('contents', path.path, ref=provider.default_branch)
         aiohttpretty.register_json_uri('GET', url, body=content_repo_metadata_root)
-        result = yield from provider.metadata(str(path))
+
+        result = yield from provider.metadata(path)
 
         ret = []
         for item in content_repo_metadata_root:
@@ -628,29 +704,29 @@ class TestCreateFolder:
 
     @async
     @pytest.mark.aiohttpretty
-    def test_errors_out(self, provider):
-        path = GitHubPath('/Imarealboy/')
-        url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
+    def test_errors_out(self, provider, repo_metadata):
+        path = yield from provider.validate_path('/Imarealboy/')
+        url = provider.build_repo_url('contents', path.child('.gitkeep').path)
 
         aiohttpretty.register_uri('PUT', url, status=400)
 
         with pytest.raises(exceptions.CreateFolderError) as e:
-            yield from provider.create_folder(str(path))
+            yield from provider.create_folder(path)
 
         assert e.value.code == 400
 
     @async
     @pytest.mark.aiohttpretty
-    def test_must_be_folder(self, provider):
-        path = GitHubPath('/Imarealboy')
+    def test_must_be_folder(self, provider, repo_metadata):
+        path = yield from provider.validate_path('/Imarealboy')
 
         with pytest.raises(exceptions.CreateFolderError) as e:
-            yield from provider.create_folder(str(path))
+            yield from provider.create_folder(path)
 
     @async
     @pytest.mark.aiohttpretty
-    def test_already_exists(self, provider):
-        path = GitHubPath('/Imarealboy/')
+    def test_already_exists(self, provider, repo_metadata):
+        path = yield from provider.validate_path('/Imarealboy/')
         url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
 
         aiohttpretty.register_json_uri('PUT', url, status=422, body={
@@ -658,15 +734,15 @@ class TestCreateFolder:
         })
 
         with pytest.raises(exceptions.FolderNamingConflict) as e:
-            yield from provider.create_folder(str(path))
+            yield from provider.create_folder(path)
 
         assert e.value.code == 409
         assert e.value.message == 'Cannot create folder "Imarealboy" because a file or folder already exists at path "/Imarealboy/"'
 
     @async
     @pytest.mark.aiohttpretty
-    def test_raises_other_422(self, provider):
-        path = GitHubPath('/Imarealboy/')
+    def test_raises_other_422(self, provider, repo_metadata):
+        path = yield from provider.validate_path('/Imarealboy/')
         url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
 
         aiohttpretty.register_json_uri('PUT', url, status=422, body={
@@ -674,20 +750,20 @@ class TestCreateFolder:
         })
 
         with pytest.raises(exceptions.CreateFolderError) as e:
-            yield from provider.create_folder(str(path))
+            yield from provider.create_folder(path)
 
         assert e.value.code == 422
         assert e.value.data == {'message': 'github no likey'}
 
     @async
     @pytest.mark.aiohttpretty
-    def test_returns_metadata(self, provider, create_folder_response):
-        path = GitHubPath('/i/like/trains/')
+    def test_returns_metadata(self, provider, repo_metadata, create_folder_response):
+        path = yield from provider.validate_path('/i/like/trains/')
         url = provider.build_repo_url('contents', os.path.join(path.path, '.gitkeep'))
 
         aiohttpretty.register_json_uri('PUT', url, status=201, body=create_folder_response)
 
-        metadata = yield from provider.create_folder(str(path))
+        metadata = yield from provider.create_folder(path)
 
         assert metadata['kind'] == 'folder'
         assert metadata['name'] == 'trains'

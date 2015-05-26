@@ -35,7 +35,10 @@ def _upload_parity(path, credentials, settings):
     provider = make_provider(provider_name, {}, credentials, settings)
     with open(path, 'rb') as file_pointer:
         stream = streams.FileStreamReader(file_pointer)
-        yield from provider.upload(stream, path='/' + name)
+        yield from provider.upload(
+            stream,
+            (yield from provider.validate_path('/' + name))
+        )
 
 
 @async_retry(retries=5, backoff=5)

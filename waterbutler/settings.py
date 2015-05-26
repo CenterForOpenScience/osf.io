@@ -12,7 +12,8 @@ DEFAULT_LOGGING_CONFIG = {
     'disable_existing_loggers': False,
     'formatters': {
         'console': {
-            'format': '[%(asctime)s][%(levelname)s][%(name)s]: %(message)s'
+            '()': 'colorlog.ColoredFormatter',
+            'format': '%(cyan)s[%(asctime)s]%(log_color)s[%(levelname)s][%(name)s]: %(reset)s%(message)s'
         }
     },
     'handlers': {

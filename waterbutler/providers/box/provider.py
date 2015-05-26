@@ -3,10 +3,10 @@ import http
 import json
 import asyncio
 
-from waterbutler.core import utils
 from waterbutler.core import streams
 from waterbutler.core import provider
 from waterbutler.core import exceptions
+from waterbutler.core.path import WaterButlerPath
 
 from waterbutler.providers.box import settings
 from waterbutler.providers.box.metadata import BoxRevision
@@ -14,23 +14,154 @@ from waterbutler.providers.box.metadata import BoxFileMetadata
 from waterbutler.providers.box.metadata import BoxFolderMetadata
 
 
-class BoxPath(utils.WaterButlerPath):
-
-    def __init__(self, path, prefix=False, suffix=False):
-        super().__init__(path, prefix=prefix, suffix=suffix)
-        if path != '/':
-            self._id = path.split('/')[1]
-        else:
-            self._id = path
-
 class BoxProvider(provider.BaseProvider):
-
+    NAME = 'box'
     BASE_URL = settings.BASE_URL
 
     def __init__(self, auth, credentials, settings):
         super().__init__(auth, credentials, settings)
         self.token = self.credentials['token']
         self.folder = self.settings['folder']
+
+    @asyncio.coroutine
+    def validate_path(self, path, **kwargs):
+        if path == '/':
+            return WaterButlerPath('/', _ids=[self.folder])
+
+        try:
+            obj_id, new_name = path.strip('/').split('/')
+        except ValueError:
+            obj_id, new_name = path.strip('/'), None
+
+        if path.endswith('/') or new_name is not None:
+            files_or_folders = 'folders'
+        else:
+            files_or_folders = 'files'
+
+        response = yield from self.make_request(
+            'get',
+            self.build_url(files_or_folders, obj_id, fields='id,name,path_collection'),
+            expects=(200, 404),
+            throws=exceptions.MetadataError,
+        )
+
+        if response.status == 404:
+            if new_name is not None:
+                raise exceptions.MetadataError('Could not find {}'.format(path), code=404)
+
+            return (yield from self.revalidate_path(
+                WaterButlerPath('/', _ids=[self.folder]),
+                obj_id,
+                folder=path.endswith('/')
+            ))
+        else:
+            data = yield from response.json()
+            names, ids = zip(*[
+                (x['name'], x['id'])
+                for x in
+                data['path_collection']['entries'] + [data]
+            ])
+
+            try:
+                names, ids = ('',) + names[ids.index(self.folder) + 1:], ids[ids.index(self.folder):]
+            except ValueError:
+                raise Exception  # TODO
+
+        is_folder = path.endswith('/')
+
+        ret = WaterButlerPath('/'.join(names), _ids=ids, folder=is_folder)
+
+        if new_name is not None:
+            return (yield from self.revalidate_path(ret, new_name, folder=is_folder))
+
+        return ret
+
+    @asyncio.coroutine
+    def revalidate_path(self, base, path, folder=None):
+        #TODO Research the search api endpoint
+        resp = yield from self.make_request(
+            'GET',
+            self.build_url('folders', base.identifier, 'items', fields='id,name,type'),
+            expects=(200,),
+            throws=exceptions.ProviderError
+        )
+
+        data = yield from resp.json()
+        lower_name = path.lower()
+
+        try:
+            item = next(
+                x for x in data['entries']
+                if x['name'].lower() == lower_name and (
+                    folder is None or
+                    (x['type'] == 'folder') == folder
+                )
+            )
+            name = path  # Use path over x['name'] because of casing issues
+            _id = item['id']
+            folder = item['type'] == 'folder'
+        except StopIteration:
+            _id = None
+            name = path
+
+        return base.child(name, _id=_id, folder=folder)
+
+    def can_intra_move(self, other, path=None):
+        return self == other
+
+    def can_intra_copy(self, other, path=None):
+        return self == other
+
+    def intra_copy(self, dest_provider, src_path, dest_path):
+        if dest_path.identifier is not None:
+            yield from dest_provider.delete(dest_path)
+
+        resp = yield from self.make_request(
+            'POST',
+            self.build_url(
+                'files' if src_path.is_file else 'folders',
+                src_path.identifier,
+                'copy'
+            ),
+            data=json.dumps({
+                'name': dest_path.name,
+                'parent': {
+                    'id': dest_path.parent.identifier
+                }
+            }),
+            headers={'Content-Type': 'application/json'},
+            expects=(200, 201),
+            throws=exceptions.IntraCopyError
+        )
+
+        data = yield from resp.json()
+
+        return self._serialize_item(data, dest_path), dest_path.identifier is None
+
+    def intra_move(self, dest_provider, src_path, dest_path):
+        if dest_path.identifier is not None and str(dest_path).lower() != str(src_path).lower():
+            yield from dest_provider.delete(dest_path)
+
+        resp = yield from self.make_request(
+            'PUT',
+            self.build_url(
+                'files' if src_path.is_file else 'folders',
+                src_path.identifier,
+            ),
+            data=json.dumps({
+                'name': dest_path.name,
+                'parent': {
+                    'id': dest_path.parent.identifier
+                }
+            }),
+            headers={'Content-Type': 'application/json'},
+            expects=(200, 201),
+            throws=exceptions.IntraCopyError
+        )
+
+        data = yield from resp.json()
+
+        return self._serialize_item(data, dest_path), dest_path.identifier is None
 
     @property
     def default_headers(self):
@@ -47,57 +178,71 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, revision=None, **kwargs):
-        meta = yield from self.metadata(path, raw=True)
+        if path.identifier is None:
+            raise exceptions.DownloadError('"{}" not found'.format(str(path)), code=404)
+
         query = {}
-        if revision and revision != meta['id']:
+        if revision and revision != path.identifier:
             query['version'] = revision
+
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', meta['id'], 'content', **query),
+            self.build_url('files', path.identifier, 'content', **query),
             expects=(200, ),
             throws=exceptions.DownloadError,
         )
+
         return streams.ResponseStreamReader(resp)
 
     @asyncio.coroutine
-    def upload(self, stream, path, **kwargs):
-        parts = path.split('/')
-        if len(parts) == 2:
-            parts.insert(1, self.folder)
-        _, parent_id, name = parts
-        parent_path = '/{}/'.format(parent_id)
-        meta = yield from self.metadata(parent_path, raw=True)
-        matches = [each for each in meta['entries'] if each['name'] == name]
-        if matches:
-            created = False
-            data = yield from self._send_upload(stream, name, parent_id, matches[0]['id'])
-        else:
-            created = True
-            data = yield from self._send_upload(stream, name, parent_id)
+    def upload(self, stream, path, conflict='replace', **kwargs):
+        if path.identifier and conflict == 'keep':
+            path, _ = self.handle_name_conflict(path, conflict=conflict, kind='folder')
+            path._parts[-1]._id = None
 
-        data['entries'][0]['fullPath'] = self._build_full_path(data['entries'][0]['path_collection']['entries'][1:], name)
-        return BoxFileMetadata(data['entries'][0], self.folder).serialized(), created
+        data_stream = streams.FormDataStream(
+            attributes=json.dumps({
+                'name': path.name,
+                'parent': {
+                    'id': path.parent.identifier
+                }
+            })
+        )
+        data_stream.add_file('file', stream, path.name, disposition='form-data')
+
+        resp = yield from self.make_request(
+            'POST',
+            self._build_upload_url(*filter(lambda x: x is not None, ('files', path.identifier, 'content'))),
+            data=data_stream,
+            headers=data_stream.headers,
+            expects=(201,),
+            throws=exceptions.UploadError,
+        )
+
+        data = yield from resp.json()
+        return BoxFileMetadata(data['entries'][0], path).serialized(), path.identifier is None
 
     @asyncio.coroutine
     def delete(self, path, **kwargs):
-        path = BoxPath(path)
-        metadata = yield from self.metadata(str(path), raw=True, folder=path.is_dir)
+        if not path.identifier:  # TODO This should be abstracted
+            raise exceptions.NotFoundError(str(path))
 
         if path.is_file:
-            url = self.build_url('files', metadata['id'])
+            url = self.build_url('files', path.identifier)
         else:
-            url = self.build_url('folders', metadata['id'], recursive=True)
+            url = self.build_url('folders', path.identifier, recursive=True)
 
         yield from self.make_request(
-            'DELETE',
-            url,
+            'DELETE', url,
             expects=(204, ),
             throws=exceptions.DeleteError,
         )
 
     @asyncio.coroutine
     def metadata(self, path, raw=False, folder=False, **kwargs):
-        path = BoxPath(path)
+        if path.identifier is None:
+            raise exceptions.NotFoundError(str(path))
+
         if path.is_file:
             return (yield from self._get_file_meta(path, raw=raw))
         return (yield from self._get_folder_meta(path, raw=raw, folder=folder))
@@ -107,11 +252,10 @@ class BoxProvider(provider.BaseProvider):
         #from https://developers.box.com/docs/#files-view-versions-of-a-file :
         #Alert: Versions are only tracked for Box users with premium accounts.
         #Few users will have a premium account, return only current if not
-        path = BoxPath(path)
-        curr = yield from self.metadata(str(path), raw=True)
+        curr = yield from self.metadata(path, raw=True)
         response = yield from self.make_request(
             'GET',
-            self.build_url('files', path._id, 'versions'),
+            self.build_url('files', path.identifier, 'versions'),
             expects=(200, 403),
             throws=exceptions.RevisionsError,
         )
@@ -126,11 +270,10 @@ class BoxProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def create_folder(self, path, **kwargs):
-        if len(path.split('/')) == 3:
-            path = '/{}{}'.format(self.folder, path)
+        WaterButlerPath.validate_folder(path)
 
-        path = BoxPath(path)
-        path.validate_folder()
+        if path.identifier is not None:
+            raise exceptions.FolderNamingConflict(str(path))
 
         resp = yield from self.make_request(
             'POST',
@@ -138,20 +281,20 @@ class BoxProvider(provider.BaseProvider):
             data={
                 'name': path.name,
                 'parent': {
-                    'id': path._id or self.folder
+                    'id': path.parent.identifier
                 }
             },
             expects=(201, 409),
             throws=exceptions.CreateFolderError,
         )
 
+        # Catch 409s to avoid race conditions
         if resp.status == 409:
-            data = yield from self.metadata(str(path.parent), folder=True)
-            raise exceptions.FolderNamingConflict(os.path.join(data['extra']['fullPath'], path.name))
+            raise exceptions.FolderNamingConflict(str(path))
 
         return BoxFolderMetadata(
             (yield from resp.json()),
-            self.folder
+            path
         ).serialized()
 
     def _assert_child(self, paths, target=None):
@@ -180,7 +323,7 @@ class BoxProvider(provider.BaseProvider):
     def _get_file_meta(self, path, raw=False):
         resp = yield from self.make_request(
             'GET',
-            self.build_url('files', path._id),
+            self.build_url('files', path.identifier),
             expects=(200, ),
             throws=exceptions.MetadataError,
         )
@@ -189,20 +332,14 @@ class BoxProvider(provider.BaseProvider):
         if not data:
             raise exceptions.NotFoundError(str(path))
 
-        self._assert_child(data['path_collection']['entries'])
-
-        return data if raw else BoxFileMetadata(data, self.folder).serialized()
+        return data if raw else BoxFileMetadata(data, path).serialized()
 
     @asyncio.coroutine
     def _get_folder_meta(self, path, raw=False, folder=False):
-        if str(path) == '/':
-            path = BoxPath('/{}/'.format(self.folder))
-        yield from self._assert_child_folder(path)
-
         if folder:
-            url = self.build_url('folders', path._id)
+            url = self.build_url('folders', path.identifier)
         else:
-            url = self.build_url('folders', path._id, 'items')
+            url = self.build_url('folders', path.identifier, 'items')
 
         response = yield from self.make_request(
             'GET',
@@ -220,34 +357,16 @@ class BoxProvider(provider.BaseProvider):
             return self._serialize_item(data)
 
         return [
-            self._serialize_item(each)
+            self._serialize_item(each, path.child(each['name']))
             for each in data['entries']
         ]
 
-    def _serialize_item(self, item):
+    def _serialize_item(self, item, path):
         if item['type'] == 'folder':
             serializer = BoxFolderMetadata
         else:
             serializer = BoxFileMetadata
-        return serializer(item, self.folder).serialized()
-
-    def _send_upload(self, stream, name, parent_id, file_id=None):
-        data_stream = streams.FormDataStream(
-            attributes=json.dumps({'name': name, 'parent': {'id': parent_id}}),
-        )
-        segments = ['files', 'content']
-        if file_id:
-            segments.insert(1, file_id)
-        data_stream.add_file('file', stream, name, disposition='form-data')
-        resp = yield from self.make_request(
-            'POST',
-            self._build_upload_url(*segments),
-            data=data_stream,
-            headers=data_stream.headers,
-            expects=(201, ),
-            throws=exceptions.UploadError,
-        )
-        return (yield from resp.json())
+        return serializer(item, path).serialized()
 
     def _build_upload_url(self, *segments, **query):
         return provider.build_url(settings.BASE_UPLOAD_URL, *segments, **query)
