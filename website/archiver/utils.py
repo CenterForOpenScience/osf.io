@@ -57,12 +57,32 @@ def handle_archive_fail(reason, src, dst, user, result):
         send_archiver_size_exceeded_mails(src, user, result)
 
 def archive_provider_for(node, user):
+    """A generic function to get the archive provider for some node, user pair.
+
+    :param node: target node
+    :param user: target user (currently unused, but left in for future-proofing
+    the code for use with archive providers other than OSF Storage)
+    """
     return node.get_addon(ARCHIVE_PROVIDER)
 
 def has_archive_provider(node, user):
+    """A generic function for checking whether or not some node, user pair has
+    an attached provider for archiving
+
+    :param node: target node
+    :param user: target user (currently unused, but left in for future-proofing
+    the code for use with archive providers other than OSF Storage)
+    """
     return node.has_addon(ARCHIVE_PROVIDER)
 
 def link_archive_provider(node, user):
+    """A generic function for linking some node, user pair with the configured
+    archive provider
+
+    :param node: target node
+    :param user: target user (currently unused, but left in for future-proofing
+    the code for use with archive providers other than OSF Storage)
+    """
     addon = node.get_or_add_addon(ARCHIVE_PROVIDER, auth=Auth(user))
     addon.on_add()
     node.save()
