@@ -213,7 +213,7 @@ def archive(self, src_pk, dst_pk, user_pk):
     dst.archiving = True
     dst.archive_task_id = self.request.id
     dst.save()
-    chain(stat_node.si(src_pk, dst_pk, user_pk), archive_node.s(src_pk, dst_pk, user_pk))()
+    chain(stat_node.si(src_pk, dst_pk, user_pk), archive_node.s(src_pk, dst_pk, user_pk)).apply_async()
 
 
 @celery_app.task
