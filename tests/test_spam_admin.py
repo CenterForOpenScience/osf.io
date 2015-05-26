@@ -44,8 +44,8 @@ class TestCommentSpamAdmin(OsfTestCase):
 
         def request_callback(request, uri, headers):
             if self.GTUBE in request.body:
-                return (200, headers, "SPAM")
-            return (200, headers, "HAM")
+                return (200, headers, json.dumps({"decision":"SPAM"}))
+            return (200, headers, json.dumps({"decision":"HAM"}))
 
         httpretty.register_uri(
             httpretty.POST, SPAM_ASSASSIN_URL,
@@ -105,7 +105,7 @@ class TestCommentSpamAdmin(OsfTestCase):
 
         httpretty.register_uri(
             httpretty.POST, SPAM_ASSASSIN_TEACHING_URL,
-            body=lambda r, u, h: (200, h, "Learned")
+            body=lambda r, u, h: (200, h,json.dumps({"status":"Learned"}))
         )
 
         comment = self._add_comment(
@@ -127,7 +127,7 @@ class TestCommentSpamAdmin(OsfTestCase):
 
         httpretty.register_uri(
             httpretty.POST, SPAM_ASSASSIN_TEACHING_URL,
-            body=lambda r,u,h: (200,h,"Learned")
+            body=lambda r,u,h: (200,h,json.dumps({"status":"Learned"}))
         )
         comment = self._add_comment(
             self.project, auth=self.project.creator.auth,
@@ -347,8 +347,8 @@ class TestProjectSpamAdmin(OsfTestCase):
 
         def request_callback(request, uri, headers):
             if self.GTUBE in request.body:
-                return (200, headers, "SPAM")
-            return (200, headers, "HAM")
+                return (200, headers, json.dumps({"decision":"SPAM"}))
+            return (200, headers, json.dumps({"decision":"HAM"}))
 
         httpretty.register_uri(
             httpretty.POST, SPAM_ASSASSIN_URL,

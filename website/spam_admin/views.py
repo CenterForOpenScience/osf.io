@@ -12,13 +12,7 @@ import httplib as http
 from website.settings import SPAM_ASSASSIN as spam_assassin_active
 logger = logging.getLogger(__name__)
 
-@must_be_logged_in
-@must_be_spam_admin
-def init_spam_admin_page(**kwargs):
-    """
-    determine whether user is on comments page or projects page
-    """
-    return {}
+
 
 ################################### COMMENTS ############################################################
 
@@ -98,6 +92,14 @@ def mark_comment_as_ham(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
 ##################################  PROJECTS   #######################################################
+@must_be_logged_in
+@must_be_spam_admin
+def init_spam_admin_page(**kwargs):
+    """
+    determine whether user is on comments page or projects page
+    """
+    return {}
+
 @must_be_logged_in
 @must_be_spam_admin
 def list_projects_page(**kwargs):

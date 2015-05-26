@@ -58,9 +58,11 @@ def train_spam(comment, is_spam):
         }
 
         resp = requests.post(SPAM_ASSASSIN_TEACHING_URL, data=json.dumps(data))
-
+        import pdb;pdb.set_trace()
+        print(resp.text)
+        print(json.loads(resp.text))
         #todo: handle new response
-        if resp.text == "Learned":
+        if json.loads(resp.text).get('status','') == "Learned":
             return True
         return False
     except:
@@ -81,7 +83,7 @@ def is_spam(comment):
         resp = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
 
         #todo: handle new response
-        if resp.text == "SPAM":
+        if json.loads(resp.text).get('decision','') == "SPAM":
             return True
 
         return False
@@ -176,10 +178,10 @@ def _project_is_spam(node):
             return False
     try:
         data = _format_spam_node_data(node)
-        res = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
+        resp = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
 
         #todo: handle new response
-        if res.text == "SPAM":
+        if json.loads(resp.text).get('decision','') == "SPAM":
             return True
         return False
     except:
@@ -191,10 +193,10 @@ def train_spam_project(project, is_spam):
     try:
         serialized_project = _format_spam_node_data(project)
         serialized_project['is_spam'] = is_spam
-        r = requests.post(SPAM_ASSASSIN_TEACHING_URL, data=json.dumps(serialized_project))
+        resp = requests.post(SPAM_ASSASSIN_TEACHING_URL, data=json.dumps(serialized_project))
 
         #todo: handle new response
-        if r.text == "Learned":
+        if json.loads(resp.text).get('status','') == "Learned":
             return True
         return False
     except:

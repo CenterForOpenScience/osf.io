@@ -254,4 +254,4 @@ SHARE_API_DOCS_URL = ''
 CAS_SERVER_URL = 'http://localhost:8080'
 
 
-SPAM_ASSASSIN = False
+SPAM_ASSASSIN = True
