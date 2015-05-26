@@ -2138,6 +2138,7 @@ span#profileFullname{
     font-size: 20px;
     color: #738EA2;
     font-weight: 300;
+    visibility: hidden;
 }
 
 .osf-search {

@@ -81,7 +81,9 @@ function placeholder(inputDom, inputLabel) {
 
 function searchBarPlaceHolderInit() {
     var inputDom =  $("#searchPageFullBar");
-    var inputLabel =  $('#searchBarLabel');
+    var inputLabel =  $("#searchBarLabel");
+    inputDom.attr("placeholder", ""); //Clear the original placeholder
+    inputLabel.css( "visibility", "visible" );
     placeholder(inputDom, inputLabel);
     inputDom.focus();
 
@@ -95,10 +97,19 @@ function searchBarPlaceHolderInit() {
     }
 }
 
+function isIE(userAgent) {
+  userAgent = userAgent || navigator.userAgent;
+  return userAgent.indexOf("MSIE ") > -1 || userAgent.indexOf("Trident/") > -1;
+}
+
+
 NavbarControl.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
-    searchBarPlaceHolderInit();
+    if(isIE()){
+        searchBarPlaceHolderInit();
+    }
+    
 };
 
 
