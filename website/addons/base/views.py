@@ -3,7 +3,6 @@
 import os
 import json
 import codecs
-import errno
 import httplib
 import functools
 
@@ -336,14 +335,6 @@ def is_editable(file_guid):
             return True
     else:
         return False
-
-
-def ensure_path(path):
-    try:
-        os.makedirs(path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            raise
 
 
 @must_be_valid_project
