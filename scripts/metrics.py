@@ -87,7 +87,7 @@ def main():
         records = addon.file_tree.children if addon.file_tree else []
         for record in records:
             for idx, version in enumerate(record.versions):
-                page = ':'.join(['download', project._id, record.path, str(idx + 1)])
+                page = ':'.join(['download', project._id, record.path, str(idx)])
                 unique, total = get_basic_counters(page)
                 number_downloads_total += total or 0
                 number_downloads_unique += unique or 0
