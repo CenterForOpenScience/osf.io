@@ -289,46 +289,46 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-def get_or_start_render(file_guid, start_render=True):
+def get_or_start_render(guid_file, start_render=True):
     try:
-        file_guid.enrich()
+        guid_file.enrich()
     except exceptions.AddonEnrichmentError as error:
         return error.as_html()
 
     try:
-        return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
+        return codecs.open(guid_file.mfr_cache_path, 'r', 'utf-8').read()
     except IOError:
         if start_render:
             # Start rendering job if requested
             build_rendered_html(
-                file_guid.mfr_download_url,
-                file_guid.mfr_cache_path,
-                file_guid.mfr_temp_path,
-                file_guid.public_download_url
+                guid_file.mfr_download_url,
+                guid_file.mfr_cache_path,
+                guid_file.mfr_temp_path,
+                guid_file.public_download_url
             )
     return None
 
 
-def file_content(file_guid):
+def file_content(guid_file):
     content = None
-    if is_editable(file_guid):
+    if is_editable(guid_file):
         content = get_file_contents(
-            file_guid.mfr_download_url,
-            file_guid.mfr_cache_path,
-            file_guid.mfr_temp_path,
-            file_guid.public_download_url,
+            guid_file.mfr_download_url,
+            guid_file.mfr_cache_path,
+            guid_file.mfr_temp_path,
+            guid_file.public_download_url,
         )
 
     return content
 
 
-def is_editable(file_guid):
+def is_editable(guid_file):
     try:
-        file_guid.enrich()
+        guid_file.enrich()
     except exceptions.AddonEnrichmentError:
         return False
 
-    file_type = get_mimetype(file_guid.waterbutler_path)
+    file_type = get_mimetype(guid_file.waterbutler_path)
     if file_type is not None:
         file_type = file_type.split('/')[0]
         if file_type == 'text':
@@ -401,37 +401,37 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path.startswith('/'):
         path = '/' + path
 
-    file_guid, created = node_addon.find_or_create_file_guid(path)
+    guid_file, created = node_addon.find_or_create_file_guid(path)
 
-    if file_guid.guid_url != request.path:
-        guid_url = furl.furl(file_guid.guid_url)
+    if guid_file.guid_url != request.path:
+        guid_url = furl.furl(guid_file.guid_url)
         guid_url.args.update(extras)
         return redirect(guid_url)
 
-    file_guid.maybe_set_version(**extras)
+    guid_file.maybe_set_version(**extras)
 
     if request.method == 'HEAD':
-        download_url = furl.furl(file_guid.download_url)
+        download_url = furl.furl(guid_file.download_url)
         download_url.args.update(extras)
         download_url.args['accept_url'] = 'false'
         return make_response(('', 200, {'Location': download_url.url}))
 
     if action == 'download':
-        download_url = furl.furl(file_guid.download_url)
+        download_url = furl.furl(guid_file.download_url)
         download_url.args.update(extras)
 
         return redirect(download_url.url)
 
-    return addon_view_file(auth, node, node_addon, file_guid, extras)
+    return addon_view_file(auth, node, node_addon, guid_file, extras)
 
 
-def addon_view_file(auth, node, node_addon, file_guid, extras):
+def addon_view_file(auth, node, node_addon, guid_file, extras):
     # TODO: resolve circular import issue
     from website.addons.wiki.utils import get_sharejs_uuid, generate_private_uuid
     from website.addons.wiki import settings as wiki_settings
 
-    path = file_guid.waterbutler_path
-    provider = file_guid.provider
+    path = guid_file.waterbutler_path
+    provider = guid_file.provider
 
     render_url = node.api_url_for(
         'addon_render_file',
@@ -448,13 +448,13 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
     )
 
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
-    file_guid_str = str(file_guid)
-    file_key = to_mongo_key(file_guid_str)
+    file_guid = str(guid_file)
+    file_key = to_mongo_key(file_guid)
 
     if can_edit:
         if file_key not in node.wiki_private_uuids:
-            generate_private_uuid(node, file_guid_str)
-        sharejs_uuid = get_sharejs_uuid(node, file_guid_str)
+            generate_private_uuid(node, file_guid)
+        sharejs_uuid = get_sharejs_uuid(node, file_guid)
     else:
         sharejs_uuid = None
 
@@ -465,8 +465,8 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
         ret['user']['can_edit'] = False
 
     ret.update({
-        'provider': file_guid.provider,
-        'file_path': file_guid.waterbutler_path,
+        'provider': guid_file.provider,
+        'file_path': guid_file.waterbutler_path,
         'sharejs_uuid': sharejs_uuid or '',
         'urls': {
             'web': {
@@ -480,15 +480,15 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
             }
         },
         'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(file_guid),
-        'content': file_content(file_guid),
+        'rendered': get_or_start_render(guid_file),
+        'content': file_content(guid_file),
         # Note: must be called after get_or_start_render. This is really only for github
-        'extra': json.dumps(getattr(file_guid, 'extra', {})),
+        'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
-        'is_editable': is_editable(file_guid),
+        'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
+        'is_editable': is_editable(guid_file),
         'panels_used': ['edit', 'view'],
-        'materialized_path': getattr(file_guid, 'materialized', file_guid.waterbutler_path),
+        'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
     })
 
     ret.update(rubeus.collect_addon_assets(node))
@@ -526,14 +526,14 @@ def addon_render_file(auth, path, provider, **kwargs):
     if not path.startswith('/'):
         path = '/' + path
 
-    file_guid, created = node_addon.find_or_create_file_guid(path)
+    guid_file, created = node_addon.find_or_create_file_guid(path)
 
-    file_guid.maybe_set_version(**request.args.to_dict())
+    guid_file.maybe_set_version(**request.args.to_dict())
 
     ret = serialize_node(node, auth, primary=True)
     ret.update({
-        'rendered': get_or_start_render(file_guid),
-        'content': file_content(file_guid)
+        'rendered': get_or_start_render(guid_file),
+        'content': file_content(guid_file)
     })
 
     return ret
