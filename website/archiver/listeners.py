@@ -1,13 +1,14 @@
 from framework.tasks.handlers import enqueue_task
-from framework.archiver.tasks import archive, send_success_message
-from framework.archiver.utils import (
+
+from website.archiver.tasks import archive, send_success_message
+from website.archiver.utils import (
     link_archive_provider,
 )
-from framework.archiver import (
+from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
 )
-from framework.archiver.exceptions import ArchiverCopyError
+from website.archiver.exceptions import ArchiverCopyError
 
 from website.project import signals as project_signals
 

@@ -166,7 +166,7 @@ WIKI_WHITELIST = {
 BROKER_URL = 'amqp://'
 
 # Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
+CELERY_RESULT_BACKEND = None
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (

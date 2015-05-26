@@ -1,10 +1,10 @@
 from framework.auth import Auth
 
-from framework.archiver import (
+from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_FAILURE,
 )
-from framework.archiver.settings import (
+from website.archiver.settings import (
     ARCHIVE_PROVIDER,
 )
 

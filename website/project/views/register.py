@@ -11,8 +11,8 @@ from framework.exceptions import HTTPError
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
-from framework.archiver.utils import catch_archive_addon_error
-from framework.archiver import ARCHIVER_SUCCESS
+from website.archiver.utils import catch_archive_addon_error
+from website.archiver import ARCHIVER_SUCCESS
 
 from website import settings
 from website.project.decorators import (

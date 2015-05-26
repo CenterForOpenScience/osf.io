@@ -1,6 +1,5 @@
-from framework.archiver import mails
-from framework.archiver.utils import delete_registration_tree
-
+from website.archiver import mails
+from website.archiver.utils import delete_registration_tree
 from website import settings
 from website.mails import send_mail
 

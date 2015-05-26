@@ -6,23 +6,24 @@ from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
 from framework.auth.core import User
-from framework.archiver import mails
-from framework.archiver import (
+
+from website.archiver import mails
+from website.archiver import (
     AggregateStatResult,
 )
-from framework.archiver.exceptions import ArchiverSizeExceeded
-from framework.archiver import (
+from website.archiver.exceptions import ArchiverSizeExceeded
+from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
     ARCHIVER_SENDING,
     ARCHIVER_SENT
 )
-from framework.archiver.settings import (
+from website.archiver.settings import (
     ARCHIVE_PROVIDER,
     MAX_ARCHIVE_SIZE,
 )
-from framework.archiver.utils import (
+from website.archiver.utils import (
     catch_archive_addon_error,
     update_status,
     aggregate_file_tree_metadata,

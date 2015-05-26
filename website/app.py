@@ -156,4 +156,4 @@ def apply_middlewares(flask_app, settings):
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
     return flask_app
 
-from framework.archiver import listeners  # noqa
+from website.archiver import listeners  # noqa
