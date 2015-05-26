@@ -16,6 +16,8 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
+from mock import patch
+
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
@@ -173,10 +175,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, send_signals=False, *args, **kwargs):
-        """
-        :param send_signals: optionally send blinker signals-- currently used only by Archiver
-        """
+                template=None, data=None, archive=False, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -192,13 +191,17 @@ class RegistrationFactory(AbstractNodeFactory):
         template = template or "Template1"
         data = data or "Some words"
         auth = Auth(user=user)
-        return project.register_node(
+        register = lambda: project.register_node(
             schema=schema,
             auth=auth,
             template=template,
             data=data,
-            send_signals=send_signals,
         )
+        if archive:
+            return register()
+        else:
+            with patch('website.archiver.tasks.archive.si'):
+                return register()
 
 
 class PointerFactory(ModularOdmFactory):
