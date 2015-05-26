@@ -72,6 +72,7 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
+SUPPORT_EMAIL = 'support@osf.io'
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
@@ -249,5 +250,7 @@ EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
+
+CAS_SERVER_URL = 'http://localhost:8080'
 
 SPAM_ASSASSIN = False

@@ -10,49 +10,10 @@ var Paginator = require('js/paginator');
 var oop = require('js/oop');
 require('knockout.punches');
 
-var $osf = require('./osfHelpers');
+var $osf = require('js/osfHelpers');  // Injects 'listing' binding hanlder to to Knockout
+var nodeCategories = require('json!built/nodeCategories.json');
 
 ko.punches.enableAll();  // Enable knockout punches
-
-
-/* A binding handler to convert lists into formatted lists, e.g.:
- * [dog] -> dog
- * [dog, cat] -> dog and cat
- * [dog, cat, fish] -> dog, cat, and fish
- *
- * This handler should not be used for user inputs.
- */
-ko.bindingHandlers.listing = {
-    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-        var value = valueAccessor();
-        var valueUnwrapped = ko.unwrap(value);
-        if (!Array.isArray(valueUnwrapped)) {
-            valueUnwrapped = [valueUnwrapped];
-        }
-        var index = 1;
-        var list = ko.utils.arrayMap(valueUnwrapped, function(item) {
-            var ret;
-            if (index === 1){
-                ret = '';
-            }
-            else if (index === 2){
-                if (valueUnwrapped.length === 2) {
-                    ret = ' and ';
-                }
-                else {
-                    ret = ', ';
-                }
-            }
-            else {
-                ret = ', and ';
-            }
-            ret += item;
-            index++;
-            return ret;
-        }).join('');
-        $(element).html(list);
-    }
-};
 
 /**
   * Log model.
@@ -83,6 +44,14 @@ var Log = function(params) {
         return $('script#' + self.action).length > 0;
     });
 
+    self.mapUpdates = function(key, item) {
+        if (key === 'category') {
+            return key + ' to ' + nodeCategories[item['new']];
+        }
+        else {
+            return key + ' to ' + item;
+        }
+    };
 
     /**
       * Return the html for a comma-delimited list of contributor links, formatted
@@ -113,6 +82,16 @@ var Log = function(params) {
         }
         return ret;
     });
+
+    //helper function to strip the leading slash for file or folder in log template
+    self.stripLeadingSlash = function(path){
+        return path.replace(/^\//, '');
+    };
+
+    //helper funtion to determine the type for removing in log template
+    self.pathType = function(path){
+        return path.match(/\/$/) ? 'folder' : 'file';
+    };
 };
 
 /**
@@ -190,9 +169,9 @@ var createLogs = function(logData){
             userURL: item.user.url,
             apiKey: item.api_key,
             params: item.params,
-            nodeTitle: item.node.title,            
+            nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,
-            nodePath: item.node.path            
+            nodePath: item.node.path
         });
     });
     return mappedLogs;

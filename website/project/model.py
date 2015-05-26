@@ -291,6 +291,7 @@ class NodeLog(StoredObject):
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
     params = fields.DictionaryField()
+    should_hide = fields.BooleanField(default=False)
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
@@ -333,6 +334,9 @@ class NodeLog(StoredObject):
     EDITED_DESCRIPTION = 'edit_description'
 
     UPDATED_FIELDS = 'updated_fields'
+
+    FILE_MOVED = 'addon_file_moved'
+    FILE_COPIED = 'addon_file_copied'
 
     FOLDER_CREATED = 'folder_created'
 
@@ -762,6 +766,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    @property
+    def forks(self):
+        """List of forks of this node"""
+        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
+                                           Q('is_registration', 'ne', True)))
+
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
 
@@ -948,16 +958,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.is_public or
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
-        return self.can_edit(auth)
+        return self.is_contributor(auth.user)
 
     def update(self, fields, auth=None, save=True):
         if self.is_registration:
             raise NodeUpdateError(reason="Registered content cannot be updated")
+        values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
             with warnings.catch_warnings():
                 try:
+                    # This is in place because historically projects and components
+                    # live on different ElasticSearch indexes, and at the time of Node.save
+                    # there is no reliable way to check what the old Node.category
+                    # value was. When the cateogory changes it is possible to have duplicate/dead
+                    # search entries, so always delete the ES doc on categoryt change
+                    # TODO: consolidate Node indexes into a single index, refactor search
+                    if key == 'category':
+                        self.delete_search_entry()
+                    ###############
+                    values[key] = {
+                        'old': getattr(self, key),
+                        'new': value,
+                    }
                     setattr(self, key, value)
                 except AttributeError:
                     raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
@@ -967,10 +991,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             updated = self.save()
         else:
             updated = []
+        for key in values:
+            values[key]['new'] = getattr(self, key)
         self.add_log(NodeLog.UPDATED_FIELDS,
                      params={
                          'node': self._id,
-                         'updated_fields': list(updated)
+                         'updated_fields': {
+                             key: {
+                                 'old': values[key]['old'],
+                                 'new': values[key]['new']
+                             }
+                             for key in values
+                         }
                      },
                      auth=auth)
         return updated
@@ -1055,7 +1087,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         children.
         :return: The `Node` instance created.
         """
-
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1265,15 +1296,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def get_descendants_recursive(self, include=lambda n: True):
         for node in self.nodes:
-            yield node
-            for descendant in node.get_descendants_recursive(include):
-                yield descendant
+            if include(node):
+                yield node
+            if node.primary:
+                for descendant in node.get_descendants_recursive(include):
+                    if include(descendant):
+                        yield descendant
 
     def get_aggregate_logs_queryset(self, auth):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids)
+        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
         return NodeLog.find(query).sort('-_id')
 
     @property
@@ -1439,7 +1473,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'parent_node': self.parent_node,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -1455,6 +1489,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1628,6 +1670,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # database objects to which these dictionaries refer. This means that
         # the cloned node must pass itself to its wiki objects to build the
         # correct URLs to that content.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
+
         registered = original.clone()
 
         registered.is_registration = True
@@ -1657,11 +1702,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.nodes = []
 
         for node_contained in original.nodes:
-            registered_node = node_contained.register_node(
-                schema, auth, template, data
-            )
-            if registered_node is not None:
-                registered.nodes.append(registered_node)
+            if not node_contained.is_deleted:
+                registered_node = node_contained.register_node(
+                    schema, auth, template, data
+                )
+                if registered_node is not None:
+                    registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1962,7 +2008,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.add_permission(new, permission)
                 self.permissions.pop(old._id)
                 if old._id in self.visible_contributor_ids:
-                    self.visible_contributor_ids.remove(old._id)
+                    self.visible_contributor_ids[self.visible_contributor_ids.index(old._id)] = new._id
                 return True
         return False
 

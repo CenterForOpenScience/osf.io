@@ -6,8 +6,8 @@
 'use strict';
 
 // CSS
-require('../css/onboarding.css');
-require('../css/typeahead.css');
+require('css/onboarding.css');
+require('css/typeahead.css');
 
 var Dropzone = require('dropzone');
 var Handlebars = require('handlebars');
@@ -17,9 +17,9 @@ var $ = require('jquery');
 require('typeahead.js');
 
 
-require('./projectCreator.js');
-var waterbutler = require('./waterbutler');
-var $osf = require('./osfHelpers');
+require('js/projectCreator.js');
+var waterbutler = require('js/waterbutler');
+var $osf = require('js/osfHelpers');
 
 function noop() {}
 var MAX_RESULTS = 14;
@@ -492,6 +492,8 @@ function OBUploaderViewModel(params) {
     var dropzoneOpts = {
 
         sending: function(file, xhr) {
+            //Inject Bearer token
+            xhr = $osf.setXHRAuthorization(xhr);
             //Hack to remove webkitheaders
             var _send = xhr.send;
             xhr.send = function() {

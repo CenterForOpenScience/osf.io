@@ -13,7 +13,7 @@ from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo
+from framework.mongo.utils import from_mongo, get_or_http_error
 
 from website import language
 
@@ -77,10 +77,12 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = strip_html(request.json.get('title'))
-    template = request.json.get('template')
-    description = strip_html(request.json.get('description'))
+    data = request.get_json()
+    title = strip_html(data.get('title'))
     title = title.strip()
+    category = data.get('category', 'project')
+    template = data.get('template')
+    description = strip_html(data.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -88,7 +90,9 @@ def project_new_post(auth, **kwargs):
     if template:
         original_node = Node.load(template)
         changes = {
-            'title': title
+            'title': title,
+            'category': category,
+            'template_node': original_node,
         }
 
         if description:
@@ -97,11 +101,12 @@ def project_new_post(auth, **kwargs):
         project = original_node.use_as_template(
             auth=auth,
             changes={
-                template: changes
-            })
+                template: changes,
+            }
+        )
 
     else:
-        project = new_node('project', title, user, description)
+        project = new_node(category, title, user, description)
 
     return {
         'projectUrl': project.url
@@ -154,11 +159,15 @@ def folder_new_post(auth, node, **kwargs):
         'projectUrl': '/dashboard/',
     }, http.CREATED
 
-@must_be_valid_project
+
 @collect_auth
-def add_folder(auth, node, **kwargs):
+def add_folder(auth, **kwargs):
+    data = request.get_json()
+    node_id = data.get('node_id')
+    node = get_or_http_error(Node, node_id)
+
     user = auth.user
-    title = strip_html(request.json.get('title'))
+    title = strip_html(data.get('title'))
     if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -544,8 +553,10 @@ def togglewatch_post(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission(ADMIN)
+@must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
+    # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
+    # category, title, and discription which can be edited by write permission contributor
     try:
         return {
             'updated_fields': {
@@ -574,6 +585,7 @@ def component_remove(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
@@ -583,7 +595,8 @@ def component_remove(auth, node, **kwargs):
         node.project_or_component.capitalize()
     )
     status.push_status_message(message)
-    if node.node__parent:
+    parent = node.parent_node
+    if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
     else:
         redirect_url = '/dashboard/'
@@ -611,6 +624,7 @@ def delete_folder(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data={
+                'message_short': 'Error',
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
@@ -619,7 +633,7 @@ def delete_folder(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission("admin")
+@must_have_permission(ADMIN)
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
@@ -720,7 +734,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
+            'fork_count': len(node.forks),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
@@ -737,11 +751,14 @@ def _view_project(node, auth, primary=False):
             },
         },
         'parent_node': {
+            'exists': parent is not None,
             'id': parent._primary_key if parent else '',
             'title': parent.title if parent else '',
+            'category': parent.category_display if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
             'absolute_url': parent.absolute_url if parent else '',
+            'registrations_url': parent.web_url_for('node_registrations') if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': parent.can_view(auth) if parent else False
@@ -965,11 +982,7 @@ def get_folder_pointers(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    forks = node.node__forked.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False)
-    )
-    return _render_nodes(forks, auth)
+    return _render_nodes(nodes=node.forks, auth=auth)
 
 
 @must_be_contributor_or_public
@@ -1029,10 +1042,12 @@ def _serialize_node_search(node):
     if node.is_registration:
         title += ' (registration)'
 
+    first_author = node.visible_contributors[0]
+
     return {
         'id': node._id,
         'title': title,
-        'firstAuthor': node.visible_contributors[0].family_name,
+        'firstAuthor': first_author.family_name or first_author.given_name or first_author.full_name,
         'etal': len(node.visible_contributors) > 1,
     }
 

@@ -192,12 +192,6 @@ div.project-grid-menu span.pg-collapse-all {
     margin-right: 5px;
 }
 
-/* Project details box  */
-span.project-details {
-    visibility: hidden;
-}
-
-
 span.add-link-warning {
     color: #808080;
 }
@@ -211,25 +205,9 @@ span.rename-container{
     display: none;
 }
 
-div.project-details span.title {
-    display: inline;
-    overflow-x: hidden;
-    font-size: 15px;
-    overflow-x: hidden;
-}
-
-
 .project-action-icons img {
     margin-right: 4px;
     cursor:pointer;cursor:hand
-}
-
-div.project-details {
-    display: inline-block;
-    width: 100%;
-    background-color: #EEE;
-    padding: 7px;
-    margin-bottom: 10px;
 }
 
 div.contributors {
@@ -308,12 +286,13 @@ height: 32px ;
 /* rgb of glow 106 176 232
 */
 .tt-input, .typeahead {
-    padding: 0 12px;
+    padding: 4px 10px;
 }
+
 
 .tt-hint {
     color: #999;
-    padding: 2px 12px 0px 13px;
+    padding: 0px 12px 3px 8px
 }
 h3.category {
     font-size: 18px;
@@ -356,10 +335,11 @@ h3.category {
 }
 .tb-row {
     font-size: 13px;
+    line-height: 30px;
 }
 
 .po-hover {
-    background : #F4F5DF;
+    background : #E0EBF3;
 }
 
 .tb-td {
@@ -386,13 +366,24 @@ h3.category {
     vertical-align: bottom;
     margin-right: 4px;
 }
-
+.tb-h-success {
+    background: #B8ECC0;
+}
 .po-icon-registered {
     color: #D4D4D4;
 }
 .po-icon {
     color: #5E5E5E;
 }
+.fangorn-selected .po-icon-registered {
+    color: #CCCCCC;
+}
+.fangorn-selected .po-icon {
+    color: #FFFFFF;
+}
 .po-modal {
     width: auto;
+}
+.smaller {
+    font-size: 75%;
 }

@@ -6,7 +6,7 @@ from furl import furl
 from flask import request
 
 from framework import status
-from framework.auth import Auth
+from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
@@ -23,11 +23,13 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of parent and node
 
     """
-    node = None
-    parent = None
+    node = kwargs.get('node') or kwargs.get('project')
+    parent = kwargs.get('parent')
+    if node:
+        return parent, node
 
-    pid = kwargs.get('project') or kwargs.get('pid')
-    nid = kwargs.get('node') or kwargs.get('nid')
+    pid = kwargs.get('pid')
+    nid = kwargs.get('nid')
     if pid and nid:
         node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
@@ -37,7 +39,6 @@ def _kwargs_to_nodes(kwargs):
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
         raise HTTPError(http.NOT_FOUND)
-
     return parent, node
 
 def _inject_nodes(kwargs):
@@ -126,9 +127,8 @@ def _must_be_contributor_factory(include_public):
             if not node.is_public or not include_public:
                 if key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user, key=key):
-                        url = '/login/?next={0}'.format(request.path)
-                        redirect_url = check_key_expired(key=key, node=node, url=url)
-                        response = redirect(redirect_url)
+                        redirect_url = check_key_expired(key=key, node=node, url=request.url)
+                        response = redirect(cas.get_login_url(redirect_url))
 
             return response or func(*args, **kwargs)
 

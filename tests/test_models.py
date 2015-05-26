@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import mock
@@ -1593,6 +1594,19 @@ class TestNode(OsfTestCase):
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(user=self.user), False)
 
+    def test_cannot_register_deleted_node(self):
+        self.node.is_deleted = True
+        self.node.save()
+        with assert_raises(NodeStateError) as err:
+            self.node.register_node(
+                schema=None,
+                auth=self.consolidate_auth,
+                template='the template',
+                data=None
+            )
+        assert_equal(err.exception.message, 'Cannot register deleted node.')
+
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
@@ -1603,7 +1617,7 @@ class TestNodeTraversals(OsfTestCase):
         self.root = ProjectFactory(creator=self.user)
 
     def test_next_descendants(self):
-        
+
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
@@ -1621,7 +1635,7 @@ class TestNodeTraversals(OsfTestCase):
         assert_equal(len(descendants), 2)  # two immediate children
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
-        
+
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
@@ -1652,8 +1666,17 @@ class TestNodeTraversals(OsfTestCase):
             lambda n: n.is_contributor(self.viewer)
         )
         ids = {d._id for d in descendants}
-        assert_false({node._id for node in [comp1a, comp2, comp2a]}.difference(ids))
+        nids = {node._id for node in [comp1a, comp2, comp2a]}
+        assert_false(ids.difference(nids))
 
+    def test_get_descendants_recursive_cyclic(self):
+        point1 = ProjectFactory(creator=self.user, parent=self.root)
+        point2 = ProjectFactory(creator=self.user, parent=self.root)
+        point1.add_pointer(point2, auth=self.consolidate_auth)
+        point2.add_pointer(point1, auth=self.consolidate_auth)
+
+        descendants = list(point1.get_descendants_recursive())
+        assert_equal(len(descendants), 1)
 
 class TestRemoveNode(OsfTestCase):
 
@@ -2443,6 +2466,19 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_equal(self.project.description, 'new description')
         latest_log = self.project.logs[-1]
+        assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
+        assert_equal(latest_log.params['description_original'], old_desc)
+        assert_equal(latest_log.params['description_new'], 'new description')
+
+    def test_set_description_on_node(self):
+        node = NodeFactory(project=self.project)
+
+        old_desc = node.description
+        node.set_description(
+            'new description', auth=self.consolidate_auth)
+        node.save()
+        assert_equal(node.description, 'new description')
+        latest_log = node.logs[-1]
         assert_equal(latest_log.action, NodeLog.EDITED_DESCRIPTION)
         assert_equal(latest_log.params['description_original'], old_desc)
         assert_equal(latest_log.params['description_new'], 'new description')
@@ -3265,7 +3301,6 @@ class TestPointer(OsfTestCase):
         self._assert_clone(self.pointer, registered)
 
     def test_register_with_pointer_to_registration(self):
-        """Check for regression"""
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)
@@ -3574,6 +3609,15 @@ class TestComments(OsfTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
+
+    def test_read_permission_contributor_can_comment(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        project.set_privacy('private')
+        project.add_contributor(user, 'read')
+        project.save()
+
+        assert_true(project.can_comment(Auth(user=user)))
 
 
 class TestPrivateLink(OsfTestCase):

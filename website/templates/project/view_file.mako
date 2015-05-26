@@ -28,7 +28,10 @@
 
             <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
                 <div id="grid">
-                    <div class="fangorn-loading"> <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+                      <div class="fangorn-loading"> 
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                        <p class="m-t-sm fg-load-message"> Loading files...  </p> 
+                      </div>
                 </div>
             </div>
         </div>
@@ -80,13 +83,13 @@
             <thead class="file-version-thread">
               <tr>
                 <th width="10%">Version ID</th>
-                <th>Date</th>
+                <th data-bind="if: hasDate">Date</th>
                 <th data-bind="if: userColumn">User</th>
                 <th colspan="2">Download</th>
                 <th></th>
               </tr>
             </thead>
-
+            
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
@@ -97,9 +100,9 @@
                     {{ revision.displayVersion }}
                   </span>
                 </td>
-                <td>{{ revision.displayDate }}</td>
+                <td data-bind="if: $parent.hasDate">{{ revision.displayDate }}</td>
                 <td data-bind="if: $parent.userColumn">
-                  <a data-bind="if: revision.extra.user.url"
+                  <a class="word-break-word" data-bind="if: revision.extra.user.url"
                     href="{{ revision.extra.user.url }}">
                     {{ revision.extra.user.name }}
                   </a>
@@ -158,7 +161,8 @@
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}'
+            safeName: '${file_name | h,js_str}',
+            materializedPath: '${materialized_path | js_str}',
         },
         node: {
           urls: {

@@ -148,11 +148,12 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
+            % if access_token:
+                accessToken: '${access_token | js_str}',
+            % endif
                 cookieName: '${cookie_name}'
             });
         </script>
-        <script src="/static/public/js/nodeCategories.js"></script>
-
 
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>

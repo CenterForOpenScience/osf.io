@@ -80,8 +80,8 @@ var RevisionsViewModel = function(node, file, editable) {
     self.node = node;
     self.file = file;
     self.path = file.provider !== 'googledrive' ?
-        (file.extra.fullPath || file.path).split('/') :
-        (file.extra.fullPath || file.path).split('/').map(decodeURIComponent);
+        (file.materializedPath || file.path).split('/') :
+        (file.materializedPath || file.path).split('/').map(decodeURIComponent);
 
     // Hack: Set Figshare files to uneditable by default, then update after
     // fetching file metadata after revisions request fails
@@ -103,6 +103,10 @@ var RevisionsViewModel = function(node, file, editable) {
             self.revisions()[0].extra &&
             self.revisions()[0].extra.user;
     });
+
+    self.hasDate = ko.computed(function() {
+        return self.file.provider !== 'dataverse';
+    });
 };
 
 RevisionsViewModel.prototype.fetch = function() {
@@ -118,7 +122,11 @@ RevisionsViewModel.prototype.fetch = function() {
         }
     }
 
-    var request = $.getJSON(self.urls.revisions);
+    var request = $.ajax({
+        url: self.urls.revisions,
+        dataType: 'json',
+        beforeSend: $osf.setXHRAuthorization
+    });
 
     request.done(function(response) {
         self.revisions(ko.utils.arrayMap(response.data, function(item, index) {
@@ -150,7 +158,8 @@ RevisionsViewModel.prototype.fetch = function() {
             // so dont allow downloads and set a fake current version
             $.ajax({
                 method: 'GET',
-                url: self.urls.metadata
+                url: self.urls.metadata,
+                beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.editable(resp.data.extra.canDelete);
             }).fail(function(xhr) {
@@ -174,6 +183,7 @@ RevisionsViewModel.prototype.delete = function() {
     $.ajax({
         type: 'DELETE',
         url: self.urls.delete,
+        beforeSend: $osf.setXHRAuthorization
     }).done(function() {
         window.location = self.node.urls.files;
     }).fail(function() {

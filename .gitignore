@@ -73,7 +73,7 @@ sauce.json
 website/templates/_log_templates.mako
 
 # Build JS files
-website/static/js/built/*
+website/static/built/*
 
 # Logs
 logs/*
