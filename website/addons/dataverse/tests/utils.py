@@ -3,12 +3,7 @@ import mock
 from webtest_plus import TestApp
 from dataverse import Connection, Dataverse, Dataset, DataverseFile
 
-import website
 from website.addons.base.testing import AddonTestCase
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
 
 
 class DataverseAddonTestCase(AddonTestCase):
