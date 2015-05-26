@@ -31,8 +31,8 @@ def archive_callback(dst):
     """
     if not dst.archiving:
         return
-    pending = {key: value for key, value in dst.archived_providers.iteritems() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)}
-    if not len(pending):
+    pending = [value for value in dst.archived_providers.values() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)]
+    if not pending:
         dst.archiving = False
         dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
