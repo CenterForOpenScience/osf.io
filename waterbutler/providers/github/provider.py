@@ -594,7 +594,7 @@ class GitHubProvider(provider.BaseProvider):
                 'tree': new_tree_sha,
                 'parents': [old_commit_sha],
                 'committer': self.committer,
-                'message': 'Moved on behalf of WaterButler'  # TODO
+                'message': '{} on behalf of WaterButler'.format('Copied' if is_copy else 'Moved')
             }),
             expects=(201, ),
             throws=exceptions.DeleteError,
