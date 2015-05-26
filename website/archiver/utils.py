@@ -7,6 +7,58 @@ from website.archiver import (
 from website.archiver.settings import (
     ARCHIVE_PROVIDER,
 )
+from website.archiver import (
+    ARCHIVE_COPY_FAIL,
+    ARCHIVE_SIZE_EXCEEDED,
+)
+
+from website import mails
+from website import settings
+
+def send_archiver_mail(*args, **kwargs):
+    """A proxy to facilitate unit testing"""
+    mails.send_mail(*args, **kwargs)
+
+def send_archiver_copy_error_mails(src, user, stat_result):
+    send_archiver_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
+        user=user,
+        src=src,
+        stat_result=stat_result
+    )
+    send_archiver_mail(
+        to_addr=user.username,
+        mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
+        user=user,
+        src=src,
+        stat_result=stat_result,
+        mimetype='html',
+    )
+
+def send_archiver_size_exceeded_mails(src, user, results):
+    send_archiver_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.ARCHIVE_COPY_ERROR_DESK,
+        user=user,
+        src=src,
+        results=results,
+    )
+    send_archiver_mail(
+        to_addr=user.username,
+        mail=mails.ARCHIVE_COPY_ERROR_USER,
+        user=user,
+        src=src,
+        results=results,
+        mimetype='html',
+    )
+
+def handle_archive_fail(reason, src, dst, user, result):
+    delete_registration_tree(dst)
+    if reason == ARCHIVE_COPY_FAIL:
+        send_archiver_copy_error_mails(src, user, result)
+    elif reason == ARCHIVE_SIZE_EXCEEDED:
+        send_archiver_size_exceeded_mails(src, user, result)
 
 def archive_provider_for(node, user):
     return node.get_addon(ARCHIVE_PROVIDER)

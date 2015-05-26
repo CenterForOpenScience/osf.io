@@ -3,12 +3,13 @@ from framework.tasks.handlers import enqueue_task
 from website.archiver.tasks import archive, send_success_message
 from website.archiver.utils import (
     link_archive_provider,
+    handle_archive_fail,
 )
 from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
+    ARCHIVE_COPY_FAIL,
 )
-from website.archiver.exceptions import ArchiverCopyError
 
 from website.project import signals as project_signals
 
@@ -35,6 +36,12 @@ def archive_callback(dst):
         dst.archiving = False
         dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
-            raise ArchiverCopyError(dst.registered_from, dst, dst.creator, dst.archived_providers)
+            handle_archive_fail(
+                ARCHIVE_COPY_FAIL,
+                dst.registered_from,
+                dst,
+                dst.creator,
+                dst.archived_providers
+            )
         else:
             send_success_message.delay(dst._id)

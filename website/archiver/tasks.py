@@ -11,13 +11,13 @@ from website.archiver import mails
 from website.archiver import (
     AggregateStatResult,
 )
-from website.archiver.exceptions import ArchiverSizeExceeded
 from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
     ARCHIVER_SENDING,
-    ARCHIVER_SENT
+    ARCHIVER_SENT,
+    ARCHIVE_SIZE_EXCEEDED
 )
 from website.archiver.settings import (
     ARCHIVE_PROVIDER,
@@ -27,6 +27,7 @@ from website.archiver.utils import (
     catch_archive_addon_error,
     update_status,
     aggregate_file_tree_metadata,
+    handle_archive_fail,
 )
 
 from website.project.model import Node
@@ -180,7 +181,8 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
         targets=[result.result for result in group_result.results]
     )
     if stat_result.disk_usage > MAX_ARCHIVE_SIZE:
-        raise ArchiverSizeExceeded(
+        handle_archive_fail(
+            ARCHIVE_SIZE_EXCEEDED,
             src,
             dst,
             user,

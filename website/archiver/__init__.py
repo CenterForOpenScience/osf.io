@@ -7,6 +7,9 @@ ARCHIVER_CHECKING = 'CHECKING'
 ARCHIVER_SENDING = 'SENDING'
 ARCHIVER_SENT = 'SENT'
 
+ARCHIVE_COPY_FAIL = 'COPY_FAIL'
+ARCHIVE_SIZE_EXCEEDED = 'SIZE_EXCEEDED'
+
 class StatResult(object):
     """
     Helper class to collect metadata about a single file
