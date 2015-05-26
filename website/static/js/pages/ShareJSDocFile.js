@@ -1,6 +1,6 @@
 var $ = require('jquery');
 
-var FileEditor = require('./FileEditor.js');
+var FileEditor = require('js/pages/FileEditor.js');
 
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
