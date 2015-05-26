@@ -14,6 +14,7 @@ from tests.test_features import requires_search
 
 from modularodm import Q
 from dateutil.parser import parse as parse_date
+from xml.sax.saxutils import escape, unescape
 
 from framework import auth
 from framework.exceptions import HTTPError
@@ -22,7 +23,7 @@ from framework.auth.utils import impute_names_model
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions
+from website.util import permissions, sanitize
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -147,6 +148,7 @@ class TestProjectViews(OsfTestCase):
         )
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
+
 
     def test_can_view_nested_project_as_admin(self):
         self.parent_project = NodeFactory(
@@ -436,24 +438,22 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/{tag}/".format(
+        url = "/api/v1/project/{0}/addtag/".format(
             self.project._primary_key,
-            tag="footag",
         )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_in("footag", self.project.tags)
+        assert_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
-        assert_in("footag", self.project.tags)
-        url = "/api/v1/project/{0}/removetag/{tag}/".format(
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        url = "/api/v1/project/{0}/removetag/".format(
             self.project._primary_key,
-            tag="footag",
         )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_not_in("footag", self.project.tags)
+        assert_not_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
 
     def test_register_template_page(self):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
