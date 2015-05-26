@@ -1,10 +1,11 @@
-from unittest import mock
-
 import pytest
+import functools
+from unittest import mock
 
 from tests.utils import async
 
 from waterbutler.core import streams
+
 
 @pytest.fixture(autouse=True)
 def boundary(monkeypatch):

@@ -1,5 +1,4 @@
 import os
-from urllib.parse import quote
 
 from waterbutler.core import metadata
 
@@ -17,11 +16,23 @@ class BaseGoogleDriveMetadata(metadata.BaseMetadata):
         return 'googledrive'
 
     @property
+    def path(self):
+        return '/' + self._path.raw_path
+
+    @property
+    def materialized_path(self):
+        return str(self._path)
+
+    @property
     def extra(self):
         return {'revisionId': self.raw['version']}
 
 
 class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMetadata):
+
+    def __init__(self, raw, path):
+        super().__init__(raw, path)
+        self._path._is_folder = True
 
     @property
     def id(self):
@@ -30,10 +41,6 @@ class GoogleDriveFolderMetadata(BaseGoogleDriveMetadata, metadata.BaseFolderMeta
     @property
     def name(self):
         return self.raw['title']
-
-    @property
-    def path(self):
-        return os.path.join(str(self._path), quote(self.raw['title'], safe='')) + '/'
 
 
 class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata):
@@ -54,10 +61,7 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
     @property
     def size(self):
         # Google docs(Docs,sheets, slides, etc)  don't have file size before they are exported
-        try:
-            return self.raw['fileSize']
-        except KeyError:
-            return None
+        return self.raw.get('fileSize')
 
     @property
     def modified(self):
@@ -66,10 +70,6 @@ class GoogleDriveFileMetadata(BaseGoogleDriveMetadata, metadata.BaseFileMetadata
     @property
     def content_type(self):
         return self.raw['mimeType']
-
-    @property
-    def path(self):
-        return os.path.join(str(self._path), quote(self.raw['title'], safe=''))
 
     @property
     def extra(self):

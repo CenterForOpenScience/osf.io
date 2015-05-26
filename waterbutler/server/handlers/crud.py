@@ -1,4 +1,3 @@
-import os
 import http
 import asyncio
 
@@ -17,7 +16,7 @@ TRUTH_MAP = {
 }
 
 @web.stream_request_body
-class CRUDHandler(core.BaseHandler):
+class CRUDHandler(core.BaseProviderHandler):
 
     ACTION_MAP = {
         'GET': 'download',
@@ -76,7 +75,7 @@ class CRUDHandler(core.BaseHandler):
         elif headers.get('content-disposition'):
             disposition = headers['content-disposition']
         else:
-            disposition = utils.make_disposition(os.path.split(self.arguments['path'])[-1])
+            disposition = utils.make_disposition(self.arguments['path'].name)
 
         self.set_header('Content-Disposition', disposition)
 
@@ -90,14 +89,12 @@ class CRUDHandler(core.BaseHandler):
     @utils.coroutine
     def post(self):
         """Create a folder"""
-        self.set_status(201)
         metadata = yield from self.provider.create_folder(**self.arguments)
+
+        self.set_status(201)
         self.write(metadata)
 
-        self._send_hook(
-            'create_folder',
-            metadata,
-        )
+        self._send_hook('create_folder', metadata)
 
     @utils.coroutine
     def put(self):
@@ -126,7 +123,7 @@ class CRUDHandler(core.BaseHandler):
         self._send_hook(
             'delete',
             {
-                'path': self.arguments['path'],
-                'full_path': self.arguments.get('full_path'),
+                'path': str(self.arguments['path']),
+                'materialized': str(self.arguments['path'])
             }
         )

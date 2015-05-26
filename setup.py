@@ -13,7 +13,7 @@ requirements = parse_requirements('requirements.txt')
 setup(
     name='waterbutler',
     version=__version__,
-    namespace_packages=['waterbutler', 'waterbutler.providers'],
+    namespace_packages=['waterbutler', 'waterbutler.auth', 'waterbutler.providers'],
     description='WaterButler Storage Server',
     author='Center for Open Science',
     author_email='contact@cos.io',
@@ -32,9 +32,13 @@ setup(
         'License :: OSI Approved :: Apache Software License',
     ],
     provides=[
+        'waterbutler.auth',
         'waterbutler.providers',
     ],
     entry_points={
+        'waterbutler.auth': [
+            'osf = waterbutler.auth.osf:OsfAuthHandler',
+        ],
         'waterbutler.providers': [
             'cloudfiles = waterbutler.providers.cloudfiles:CloudFilesProvider',
             'dropbox = waterbutler.providers.dropbox:DropboxProvider',

@@ -1,39 +1,19 @@
-import os
-
 from waterbutler.core import metadata
 
 
 class BaseBoxMetadata(metadata.BaseMetadata):
 
-    def __init__(self, raw, folder):
+    def __init__(self, raw, path_obj):
         super().__init__(raw)
-        self.folder = folder
+        self._path_obj = path_obj
 
     @property
     def provider(self):
         return 'box'
 
     @property
-    def full_path(self):
-        if self.raw['id'] == self.folder:
-            return ''
-
-        if 'path_collection' not in self.raw:
-            return None
-
-        path = []
-        for entry in reversed(self.raw['path_collection']['entries']):
-            if self.folder == entry['id']:
-                break
-            path.append(entry['name'])
-
-        return '/' + os.path.join('/'.join(reversed(path)), self.name)
-
-    @property
-    def extra(self):
-        return {
-            'fullPath': self.full_path
-        }
+    def materialized_path(self):
+        return str(self._path_obj)
 
 
 class BoxFolderMetadata(BaseBoxMetadata, metadata.BaseFolderMetadata):
@@ -46,14 +26,6 @@ class BoxFolderMetadata(BaseBoxMetadata, metadata.BaseFolderMetadata):
     def path(self):
         return '/{}/'.format(self.raw['id'])
 
-    @property
-    def full_path(self):
-        path = super().full_path
-        if path is None:
-            return None
-        return path + '/'
-
-
 class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
 
     @property
@@ -62,7 +34,7 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
 
     @property
     def path(self):
-        return '/{0}/{1}'.format(self.raw['id'], self.raw['name'])
+        return '/{0}'.format(self.raw['id'])
 
     @property
     def size(self):
@@ -80,7 +52,6 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
     def extra(self):
         return {
             'etag': self.raw.get('etag'),
-            'fullPath': self.full_path
         }
 
 

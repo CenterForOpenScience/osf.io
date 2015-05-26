@@ -14,6 +14,7 @@ def wheelhouse(develop=False):
 
 @task
 def install(develop=False, upgrade=False):
+    run('python setup.py develop')
     req_file = 'dev-requirements.txt' if develop else 'requirements.txt'
     cmd = 'pip install -r {}'.format(req_file)
 
@@ -40,7 +41,7 @@ def test(verbose=False):
 @task
 def celery():
     from waterbutler.tasks.app import app
-    app.worker_main(['worker'])
+    app.worker_main(['worker', '-l', 'INFO'])
 
 
 @task

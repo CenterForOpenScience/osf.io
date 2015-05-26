@@ -6,11 +6,13 @@ from unittest import mock
 import pytest
 import aiohttpretty
 
+from tests import utils
 from tests.utils import async
 
 from waterbutler.core import streams
 from waterbutler.core import exceptions
 from waterbutler.server import settings
+from waterbutler.core.path import WaterButlerPath
 from waterbutler.providers.osfstorage import OSFStorageProvider
 from waterbutler.providers.osfstorage.settings import FILE_PATH_COMPLETE
 
@@ -33,6 +35,7 @@ def file_stream(file_like):
 @pytest.fixture
 def auth():
     return {
+        'id': 'cat',
         'name': 'cat',
         'email': 'cat@cat.com',
     }
@@ -54,8 +57,9 @@ def credentials():
 def settings():
     return {
         'justa': 'setting',
-        'callback': 'https://waterbutler.io',
-        'metadata': 'https://waterbutler.io/metadata',
+        'nid': 'foo',
+        'rootId': 'rootId',
+        'baseUrl': 'https://waterbutler.io',
         'storage': {
             'provider': 'mock',
         },
@@ -66,7 +70,15 @@ def settings():
 
 @pytest.fixture
 def provider_and_mock(monkeypatch, auth, credentials, settings):
-    mock_provider = mock.MagicMock()
+    mock_provider = utils.MockProvider1({}, {}, {})
+
+    mock_provider.copy = utils.MockCoroutine()
+    mock_provider.move = utils.MockCoroutine()
+    mock_provider.delete = utils.MockCoroutine()
+    mock_provider.upload = utils.MockCoroutine()
+    mock_provider.download = utils.MockCoroutine()
+    mock_provider.metadata = utils.MockCoroutine()
+
     mock_make_provider = mock.Mock(return_value=mock_provider)
     monkeypatch.setattr(OSFStorageProvider, 'make_provider', mock_make_provider)
     return OSFStorageProvider(auth, credentials, settings), mock_provider
@@ -93,52 +105,69 @@ def osf_response():
 @pytest.fixture
 def upload_response():
     return {
-        'downloads': 10,
-        'version': 8,
-        'path': '/dfl893b1pdn11kd28b'
+        'version': 'vid',
+        'status': 'success',
+        'data': {
+            'downloads': 10,
+            'version': 8,
+            'path': '/dfl893b1pdn11kd28b'
+        }
     }
 
+@pytest.fixture
+def mock_path():
+    return WaterButlerPath('/unrelatedpath', _ids=('rootId', 'another'))
+
+@pytest.fixture
+def mock_folder_path():
+    return WaterButlerPath('/unrelatedfolder/', _ids=('rootId', 'another'))
 
 @async
 @pytest.mark.aiohttpretty
-def test_download(monkeypatch, provider_and_mock, osf_response):
+def test_download(monkeypatch, provider_and_mock, osf_response, mock_path):
     provider, inner_provider = provider_and_mock
-    aiohttpretty.register_json_uri('GET', 'https://waterbutler.io', body=osf_response)
 
-    yield from provider.download(path='/unrelatedpath')
+    url = 'https://waterbutler.io/{}/download/?mode&version'.format(mock_path.identifier)
+
+    aiohttpretty.register_json_uri('GET', url, body=osf_response)
+
+    yield from provider.download(mock_path)
 
     assert provider.make_provider.called
     assert inner_provider.download.called
 
-    inner_provider.download.assert_called_once_with(path='/test/path', displayName='unrelatedpath')
+    aiohttpretty.has_call(method='GET', uri=url)
     provider.make_provider.assert_called_once_with(osf_response['settings'])
+    inner_provider.download.assert_called_once_with(path=WaterButlerPath('/test/path'), displayName='unrelatedpath')
 
 
 @async
 @pytest.mark.aiohttpretty
-def test_delete(monkeypatch, provider):
-    aiohttpretty.register_uri('DELETE', 'https://waterbutler.io', status_code=200)
+def test_delete(monkeypatch, provider, mock_path):
+    path = WaterButlerPath('/unrelatedpath', _ids=('Doesntmatter', 'another'))
+    aiohttpretty.register_uri('DELETE', 'https://waterbutler.io/another/', status_code=200)
 
-    yield from provider.delete(path='/unrelatedpath')
+    yield from provider.delete(path)
 
-    aiohttpretty.has_call(method='DELETE', uri='https://waterbutler.io', parmas={'path': 'unrelatedpath'})
+    aiohttpretty.has_call(method='DELETE', uri='https://waterbutler.io/another/', params={'user': 'cat'})
 
 
 @async
 @pytest.mark.aiohttpretty
-def test_provider_metadata_empty(monkeypatch, provider):
-    aiohttpretty.register_json_uri('GET', 'https://waterbutler.io/metadata', status_code=200, body=[])
+def test_provider_metadata_empty(monkeypatch, provider, mock_folder_path):
+    url = 'https://waterbutler.io/{}/children/'.format(mock_folder_path.identifier)
+    aiohttpretty.register_json_uri('GET', url, status_code=200, body=[])
 
-    res = yield from provider.metadata(path='/unrelatedpath')
+    res = yield from provider.metadata(mock_folder_path)
 
     assert res == []
 
-    aiohttpretty.has_call(method='GET', uri='https://waterbutler.io', parmas={'path': 'unrelatedpath'})
+    aiohttpretty.has_call(method='GET', uri=url)
 
 
 @async
 @pytest.mark.aiohttpretty
-def test_provider_metadata(monkeypatch, provider):
+def test_provider_metadata(monkeypatch, provider, mock_folder_path):
     items = [
         {
             'name': 'foo',
@@ -160,9 +189,10 @@ def test_provider_metadata(monkeypatch, provider):
             'kind': 'folder'
         }
     ]
-    aiohttpretty.register_json_uri('GET', 'https://waterbutler.io/metadata', status=200, body=items)
+    url = 'https://waterbutler.io/{}/children/'.format(mock_folder_path.identifier)
+    aiohttpretty.register_json_uri('GET', url, status=200, body=items)
 
-    res = yield from provider.metadata(path='/unrelatedpath')
+    res = yield from provider.metadata(mock_folder_path)
 
     assert isinstance(res, list)
 
@@ -172,53 +202,56 @@ def test_provider_metadata(monkeypatch, provider):
         assert item['path'] is not None
         assert item['provider'] == 'osfstorage'
 
-    aiohttpretty.has_call(method='GET', uri='https://waterbutler.io', parmas={'path': 'unrelatedpath'})
+    aiohttpretty.has_call(method='GET', uri=url)
 
 
 class TestUploads:
-    @async
-    @pytest.mark.aiohttpretty
-    def test_upload_new(self, monkeypatch, provider_and_mock, file_stream, upload_response):
-        mock_metadata = asyncio.Future()
-        provider, inner_provider = provider_and_mock
-        basepath = 'waterbutler.providers.osfstorage.provider.{}'
-        aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body=upload_response)
 
-        mock_metadata.set_result({})
-        inner_provider.metadata.return_value = mock_metadata
+    def patch_tasks(self, monkeypatch):
+        basepath = 'waterbutler.providers.osfstorage.provider.{}'
         monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
         monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
         monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
-        res, created = yield from provider.upload(file_stream, '/foopath')
+    @async
+    @pytest.mark.aiohttpretty
+    def test_upload_new(self, monkeypatch, provider_and_mock, file_stream, upload_response):
+        self.patch_tasks(monkeypatch)
 
-        assert created is False
-        assert res['name'] == 'foopath'
+        path = WaterButlerPath('/newfile', _ids=('rootId', None))
+        url = 'https://waterbutler.io/{}/children/'.format(path.parent.identifier)
+        aiohttpretty.register_json_uri('POST', url, status=201, body=upload_response)
+
+        provider, inner_provider = provider_and_mock
+        inner_provider.metadata = utils.MockCoroutine(return_value={})
+
+        res, created = yield from provider.upload(file_stream, path)
+
+        assert created is True
+        assert res['name'] == 'newfile'
         assert res['extra']['version'] == 8
         assert res['provider'] == 'osfstorage'
         assert res['extra']['downloads'] == 10
 
-        inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
-        inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
-        inner_provider.delete.assert_called_once_with('/uniquepath')
+        inner_provider.delete.assert_called_once_with(WaterButlerPath('/uniquepath'))
+        inner_provider.metadata.assert_called_once_with(WaterButlerPath('/' + file_stream.writers['sha256'].hexdigest))
+        inner_provider.upload.assert_called_once_with(file_stream, WaterButlerPath('/uniquepath'), check_created=False, fetch_metadata=False)
 
     @async
     @pytest.mark.aiohttpretty
     def test_upload_existing(self, monkeypatch, provider_and_mock, file_stream):
-        mock_move = asyncio.Future()
+        self.patch_tasks(monkeypatch)
         provider, inner_provider = provider_and_mock
-        basepath = 'waterbutler.providers.osfstorage.provider.{}'
-        aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=200, body={'downloads': 10, 'version': 8, 'path': '/24601'})
 
-        mock_move.set_result({})
-        inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
-        inner_provider.move.return_value = mock_move
+        path = WaterButlerPath('/foopath', _ids=('Test', 'OtherTest'))
+        url = 'https://waterbutler.io/{}/children/'.format(path.parent.identifier)
 
-        monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
-        monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), False)
-        monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
+        inner_provider.move.return_value = ({}, True)
+        inner_provider.metadata.side_effect = exceptions.MetadataError('Boom!', code=404)
 
-        res, created = yield from provider.upload(file_stream, '/foopath')
+        aiohttpretty.register_json_uri('POST', url, status=200, body={'data': {'downloads': 10, 'version': 8, 'path': '/24601'}})
+
+        res, created = yield from provider.upload(file_stream, path)
 
         assert created is False
         assert res['name'] == 'foopath'
@@ -227,30 +260,32 @@ class TestUploads:
         assert res['provider'] == 'osfstorage'
         assert res['extra']['downloads'] == 10
 
-        inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
-        inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
-        inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
+        inner_provider.metadata.assert_called_once_with(WaterButlerPath('/' + file_stream.writers['sha256'].hexdigest))
+        inner_provider.upload.assert_called_once_with(file_stream, WaterButlerPath('/uniquepath'), check_created=False, fetch_metadata=False)
+        inner_provider.move.assert_called_once_with(inner_provider, WaterButlerPath('/uniquepath'), WaterButlerPath('/' + file_stream.writers['sha256'].hexdigest))
 
     @async
     @pytest.mark.aiohttpretty
     def test_upload_and_tasks(self, monkeypatch, provider_and_mock, file_stream, credentials, settings):
-        mock_parity = mock.Mock()
-        mock_backup = mock.Mock()
-        mock_move = asyncio.Future()
         provider, inner_provider = provider_and_mock
         basepath = 'waterbutler.providers.osfstorage.provider.{}'
-        aiohttpretty.register_json_uri('POST', 'https://waterbutler.io', status=201, body={'version': 42, 'downloads': 30, 'path': '/alkjdaslke09'})
+        path = WaterButlerPath('/foopath', _ids=('Test', 'OtherTest'))
+        url = 'https://waterbutler.io/{}/children/'.format(path.parent.identifier)
 
-        mock_move.set_result({})
-        inner_provider.metadata.side_effect = exceptions.ProviderError('Boom!')
-        inner_provider.move.return_value = mock_move
+        mock_parity = mock.Mock()
+        mock_backup = mock.Mock()
+        inner_provider.move.return_value = ({}, True)
+        inner_provider.metadata.side_effect = exceptions.MetadataError('Boom!', code=404)
+
+        aiohttpretty.register_json_uri('POST', url, status=201, body={'version': 'versionpk', 'data': {'version': 42, 'downloads': 30, 'path': '/alkjdaslke09'}})
+
         monkeypatch.setattr(basepath.format('backup.main'), mock_backup)
         monkeypatch.setattr(basepath.format('parity.main'), mock_parity)
         monkeypatch.setattr(basepath.format('settings.RUN_TASKS'), True)
         monkeypatch.setattr(basepath.format('os.rename'), lambda *_: None)
         monkeypatch.setattr(basepath.format('uuid.uuid4'), lambda: 'uniquepath')
 
-        res, created = yield from provider.upload(file_stream, '/foopath')
+        res, created = yield from provider.upload(file_stream, path)
 
         assert created is True
         assert res['name'] == 'foopath'
@@ -258,11 +293,9 @@ class TestUploads:
         assert res['provider'] == 'osfstorage'
         assert res['extra']['downloads'] == 30
 
-        inner_provider.upload.assert_called_once_with(file_stream, '/uniquepath', check_created=False, fetch_metadata=False)
+        inner_provider.upload.assert_called_once_with(file_stream, WaterButlerPath('/uniquepath'), check_created=False, fetch_metadata=False)
         complete_path = os.path.join(FILE_PATH_COMPLETE, file_stream.writers['sha256'].hexdigest)
         mock_parity.assert_called_once_with(complete_path, credentials['parity'], settings['parity'])
-        mock_backup.assert_called_once_with(complete_path, 42, 'https://waterbutler.io', credentials['archive'], settings['parity'])
-        inner_provider.metadata.assert_called_once_with('/' + file_stream.writers['sha256'].hexdigest)
-        inner_provider.move.assert_called_once_with(inner_provider, {'path': '/uniquepath'}, {'path': '/' + file_stream.writers['sha256'].hexdigest})
-
-
+        mock_backup.assert_called_once_with(complete_path, 'versionpk', 'https://waterbutler.io/hooks/metadata/', credentials['archive'], settings['parity'])
+        inner_provider.metadata.assert_called_once_with(WaterButlerPath('/' + file_stream.writers['sha256'].hexdigest))
+        inner_provider.move.assert_called_once_with(inner_provider, WaterButlerPath('/uniquepath'), WaterButlerPath('/' + file_stream.writers['sha256'].hexdigest))

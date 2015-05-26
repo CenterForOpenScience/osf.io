@@ -16,11 +16,7 @@ class BaseGitHubMetadata(metadata.BaseMetadata):
 
     @property
     def extra(self):
-        ret = {
-            'fileSha': self.raw['sha']
-        }
-        ret.update(self.extras)
-        return ret
+        return self.extras
 
     def build_path(self, path):
         if self.folder:
@@ -41,6 +37,10 @@ class BaseGitHubFileMetadata(BaseGitHubMetadata, metadata.BaseFileMetadata):
     @property
     def content_type(self):
         return None
+
+    @property
+    def extra(self):
+        return dict(self.extras, fileSha=self.raw['sha'])
 
 
 class BaseGitHubFolderMetadata(BaseGitHubMetadata, metadata.BaseFolderMetadata):
@@ -76,7 +76,7 @@ class GitHubFileTreeMetadata(BaseGitHubFileMetadata):
 
     @property
     def size(self):
-        return None
+        return self.raw['size']
 
 
 class GitHubFolderTreeMetadata(BaseGitHubFolderMetadata):

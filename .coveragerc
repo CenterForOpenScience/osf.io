@@ -1,0 +1,6 @@
+[report]
+max-complexity = 10
+exclude_lines =
+    pragma: no cover
+
+    raise NotImplementedError
