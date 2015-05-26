@@ -38,4 +38,4 @@ def archive_callback(dst):
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
             raise ArchiverCopyError(dst.registered_from, dst, dst.creator, dst.archived_providers)
         else:
-            send_success_message.si(dst._id).apply_async()
+            send_success_message.delay(dst._id)
