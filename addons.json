@@ -22,6 +22,6 @@
         "figshare",
         "googledrive",
         "github",
-        "s3",
+        "s3"
     ]
 }
