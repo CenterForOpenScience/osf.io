@@ -58,3 +58,17 @@ def assert_clean(data):
             raise ValueError
 
     return escape_html(data)
+
+
+def unescape(s):
+    """
+    Return a string without html escape characters.
+
+    :param s: A string
+    :return: A string without html escape characters
+
+    """
+    s = s.replace('&amp;', '&')
+    s = s.replace('&lt;', '<')
+    s = s.replace('&gt;', '>')
+    return s

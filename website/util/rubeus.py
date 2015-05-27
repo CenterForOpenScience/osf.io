@@ -10,6 +10,7 @@ from modularodm import Q
 from framework.auth.decorators import Auth
 
 from website.util import paths
+from website.util import sanitize
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
     ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
@@ -26,20 +27,6 @@ DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False,
 }
-
-
-def unescape(s):
-    """
-    Return a string without html escape characters.
-
-    :param s: A string
-    :return: A string without html escape characters
-
-    """
-    s = s.replace('&amp;', '&')
-    s = s.replace('&lt;', '<')
-    s = s.replace('&gt;', '>')
-    return s
 
 def format_filesize(size):
     return hurry.filesize.size(size, system=hurry.filesize.alternative)
@@ -338,7 +325,7 @@ class NodeProjectCollector(object):
 
         return {
             #TODO Remove the replace when mako html safe comes around
-            'name': unescape(node.title) if can_view else u'Private Component',
+            'name': sanitize.unescape(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
@@ -456,7 +443,7 @@ class NodeFileCollector(object):
             children = []
         return {
             # #TODO Remove the replace when mako html safe comes around
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), unescape(node.title))
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.unescape(node.title))
             if can_view
             else u'Private Component',
             'kind': FOLDER,
