@@ -422,13 +422,14 @@ class TestNodeUpdate(ApiTestCase):
         self.user.set_password('justapoorboy')
         self.user.save()
         self.auth = (self.user.username, 'justapoorboy')
-        self.url = '/v2/nodes/'
+
         self.title = 'Cool Project'
         self.new_title = 'Super Cool Project'
         self.description = 'A Properly Cool Project'
         self.new_description = 'An even cooler project'
         self.category = 'data'
         self.new_category = 'project'
+
         self.user_two = UserFactory.build()
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
@@ -436,6 +437,7 @@ class TestNodeUpdate(ApiTestCase):
 
         self.public_project = ProjectFactory(title=self.title, description=self.description, category=self.category, is_public=True, creator=self.user)
         self.public_url = '/v2/nodes/{}/'.format(self.public_project._id)
+
         self.private_project = ProjectFactory(title=self.title, description=self.description, category=self.category, is_public=False, creator=self.user)
         self.private_url ='/v2/nodes/{}/'.format(self.private_project._id)
 
@@ -518,7 +520,6 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.json['data']['title'], strip_html(new_title))
         assert_equal(res.json['data']['description'], strip_html(new_description))
 
-
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(self):
         new_title = 'An <script>alert("even cooler")</script> project'
         project = self.project = ProjectFactory(
@@ -547,11 +548,11 @@ class TestNodeUpdate(ApiTestCase):
             'is_public': False,
         }, auth=self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
-        # Test creator writing to public field
+        # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json(url, {
             'is_public': False,
         }, auth=self.auth, expect_errors=True)
-        #assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 403)
 
     def test_partial_update_public_project_logged_out(self):
         res = self.app.patch_json(self.public_url, {'title': self.new_title}, expect_errors=True)
@@ -580,6 +581,8 @@ class TestNodeUpdate(ApiTestCase):
         res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['title'], self.new_title)
+        assert_equal(res.json['data']['description'], self.description)
+        assert_equal(res.json['data']['category'], self.category)
 
     def test_partial_update_private_project_logged_in_non_contributor(self):
         res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.auth_two, expect_errors=True)
@@ -595,6 +598,8 @@ class TestNodeContributorList(ApiTestCase):
         self.user.set_password(password)
         self.user.save()
         self.auth = (self.user.username, password)
+
+        self.user_two 
         self.non_contrib = UserFactory.build()
         pw = fake.password()
         self.non_contrib.set_password(pw)
