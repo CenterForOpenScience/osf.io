@@ -660,17 +660,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'with _id {self._id!r}>').format(self=self)
 
     @property
-    def is_archiving(self):
-        return self.archiving or False
-
-    @property
-    def archive_task(self):
-        if not self.archive_task_id:
-            return None
-        else:
-            return task_utils.get_task_by_id(self.archive_task_id)
-
-    @property
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]

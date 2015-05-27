@@ -38,7 +38,13 @@ def _kwargs_to_nodes(kwargs):
     elif nid and not pid:
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(
+            http.NOT_FOUND,
+            data={
+                'message_short': 'Node not found',
+                'message_long': "No Node with that primary key could be found",
+            }
+        )
     return parent, node
 
 def _inject_nodes(kwargs):
@@ -65,7 +71,13 @@ def must_not_be_registration(func):
         node = kwargs['node']
 
         if not node.archiving and node.is_registration:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registered Nodes are immutable',
+                    'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+                }
+            )
         return func(*args, **kwargs)
 
     return wrapped
@@ -78,7 +90,13 @@ def must_be_registration(func):
         node = kwargs['node']
 
         if not node.is_registration:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registered Nodes only',
+                    'message_long': "This view is restricted to registered Nodes only",
+                }
+            )
         return func(*args, **kwargs)
 
     return wrapped
