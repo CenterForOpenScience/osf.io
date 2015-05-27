@@ -424,6 +424,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
 
         tb.redraw();
+
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
