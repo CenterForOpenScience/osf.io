@@ -62,6 +62,7 @@ REST_FRAMEWORK = {
     'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # Custom auth classes
+        'api.base.authentication.drf.OSFBasicAuthentication',
         'api.base.authentication.drf.OSFSessionAuthentication',
     ),
 }
