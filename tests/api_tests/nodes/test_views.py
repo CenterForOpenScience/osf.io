@@ -754,7 +754,7 @@ class TestNodeChildrenList(ApiTestCase):
         self.project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
         self.private_project_url ='/v2/nodes/{}/children/'.format(self.project._id)
 
-        self.public_project = ProjectFactory(is_public=True)
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_project.save()
         self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
         self.public_project_url ='/v2/nodes/{}/children/'.format(self.public_project._id)
@@ -765,40 +765,38 @@ class TestNodeChildrenList(ApiTestCase):
         self.auth_two = (self.user_two.username, password)
 
     def test_node_children_list_does_not_include_pointers(self):
-        url = '/v2/nodes/{}/children/'.format(self.project._id)
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(self.private_project_url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
 
-    def test_logged_out_user_can_access_public_node_children_list(self):
+    def test_return_public_node_children_list_logged_out(self):
         res = self.app.get(self.public_project_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_component._id)
 
-    def test_logged_in_user_can_access_public_node_children_list(self):
+    def test_return_public_node_children_list_logged_in(self):
         res = self.app.get(self.public_project_url, auth=self.auth_two)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_component._id)
 
-    def test_logged_out_user_cannot_access_private_node_children_list(self):
+    def test_return_private_node_children_list_logged_out(self):
         res = self.app.get(self.private_project_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_logged_in_contributing_user_can_access_private_node_children_list(self):
+    def test_return_private_node_children_list_logged_in_contributor(self):
         res = self.app.get(self.private_project_url, auth=self.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.component._id)
 
-    def test_logged_in_non_contributing_user_cannot_access_private_node_children_list(self):
+    def test_return_private_node_children_list_logged_in_non_contributor(self):
         res = self.app.get(self.private_project_url, auth=self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_node_children_list_does_not_include_unauthorized_projects(self):
         private_component = NodeFactory(parent=self.project)
-        url = '/v2/nodes/{}/children/'.format(self.project._id)
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(self.private_project_url, auth=self.auth)
         assert_equal(len(res.json['data']), 1)
 
         Node.remove()
@@ -811,14 +809,14 @@ class TestNodePointersList(ApiTestCase):
         self.user.set_password('password')
         self.user.save()
         self.auth = (self.user.username, 'password')
-        self.project = ProjectFactory(is_public=False)
-        self.pointer_project = ProjectFactory(is_public=False)
+        self.project = ProjectFactory(is_public=False, creator=self.user)
+        self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
         self.project.add_pointer(self.pointer_project, auth=Auth(self.user))
         self.private_url = '/v2/nodes/{}/pointers/'.format(self.project._id)
         self.private_payload = {'node_id': self.project._id}
 
-        self.public_project = ProjectFactory(is_public=True)
-        self.public_pointer_project = ProjectFactory(is_public=True)
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_project.add_pointer(self.public_pointer_project, auth=Auth(self.user))
         self.public_url = '/v2/nodes/{}/pointers/'.format(self.public_project._id)
         self.public_payload = {'node_id': self.public_project._id}
@@ -827,11 +825,6 @@ class TestNodePointersList(ApiTestCase):
         self.user_two.set_password('password')
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'password')
-
-    def test_returns_200(self):
-        url = '/v2/nodes/{}/pointers/'.format(self.project._id)
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 200)
 
     def test_return_public_node_pointers_logged_out(self):
         res = self.app.get(self.public_url)
