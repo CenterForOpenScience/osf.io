@@ -10,7 +10,7 @@ from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration
+from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
 class NodeMixin(object):
@@ -114,6 +114,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """
 
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
     )
 
@@ -139,6 +140,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
      created for the current node."""
     permissions_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
     )
     serializer_class = NodeSerializer
@@ -182,12 +184,14 @@ class NodePointersList(generics.ListCreateAPIView, NodeMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
     )
 
     serializer_class = NodePointersSerializer
 
     def get_queryset(self):
-        return self.get_node().nodes_pointer
+        pointers = self.get_node().nodes_pointer
+        return pointers
 
 
 class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
@@ -197,6 +201,7 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
     )
 
     serializer_class = NodePointersSerializer
