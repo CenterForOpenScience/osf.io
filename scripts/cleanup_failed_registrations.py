@@ -12,7 +12,7 @@ from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVE_COPY_FAIL,
 )
-from website.archiver.settings import ARCHIVE_TIMEOUT_TIMEDELTA
+from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA
 from website.archiver.utils import handle_archive_fail
 
 from website.project.model import Node
