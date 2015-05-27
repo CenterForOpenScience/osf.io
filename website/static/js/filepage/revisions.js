@@ -38,29 +38,36 @@ var FileRevisionsTable = {
                 self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
                 m.endComputation();
             }).fail(function(response) {
-                //TODO
-            });
-        };
+                // self.versioningSupported(false);
+                // var err = response.responseJSON ?
+                //     response.responseJSON.message || 'Unable to fetch versions' :
+                //     'Unable to fetch versions';
 
-        self.delete = function() {
-            bootbox.confirm({
-                title: 'Delete file?',
-                message: '<p class="overflow">' +
-                        'Are you sure you want to delete <strong>' +
-                        self.file.safeName + '</strong>?' +
-                    '</p>',
-                callback: function(confirm) {
-                    if (!confirm) return;
-                    $.ajax({
-                        type: 'DELETE',
-                        url: self.urls.delete,
-                        beforeSend: $osf.setXHRAuthorization
-                    }).done(function() {
-                        window.location = self.node.urls.files;
-                    }).fail(function() {
-                        $osf.growl('Error', 'Could not delete file.');
-                    });
-                }
+                // self.errorMessage(err);
+
+                // if (self.file.provider === 'figshare') {
+                //     // Hack for Figshare
+                //     // only figshare will error on a revisions request
+                //     // so dont allow downloads and set a fake current version
+                //     $.ajax({
+                //         method: 'GET',
+                //         url: self.urls.metadata,
+                //         beforeSend: $osf.setXHRAuthorization
+                //     }).done(function(resp) {
+                //         self.editable(resp.data.extra.canDelete);
+                //     }).fail(function(xhr) {
+                //         self.editable(false);
+                //     });
+                // }
+
+                // self.currentVersion({
+                //     osfViewUrl: '',
+                //     osfDownloadUrl: '?action=download',
+                //     download: function() {
+                //         window.location = self.urls.download + '&' + $.param({displayName: self.file.name});
+                //         return false;
+                //     }
+                // });
             });
         };
 
