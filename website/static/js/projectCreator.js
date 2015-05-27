@@ -170,7 +170,7 @@ function ProjectCreatorViewModel(params) {
     };
 
     self.templates = self.loadNodes(params.data);
-    $('#createNodeTemplates').select2({
+    $('.select-template').select2({
         allowClear: true,
         placeholder: 'Select a project to use as a template',
         query: self.query
