@@ -68,9 +68,12 @@ var FileViewPage = {
         revisionsHeader = m('.row', [
             m('.col-md-6', 'Revisions'),
             m('.col-md-6', [
-                m('.pull-right', [
-                    m('button.btn.btn-danger.btn-sm', {onclick: self.deleteFile}, 'Delete'),
-                    m('button.btn.btn-success.btn-sm', {onclick: self.downloadFile}, 'Download')
+                m('.pull-right.btn-group.btn-group-sm', [
+                    m('button.btn.btn-danger', {onclick: self.deleteFile}, 'Delete'),
+                    m('button.btn.btn-success', {
+                        onclick: self.downloadFile,
+                        href: '?' + $.param($.extend(true, {}, $osf.urlParams(), {download: true}))
+                    }, 'Download')
                 ])
             ])
         ]);
