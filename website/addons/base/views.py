@@ -395,26 +395,25 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 
 def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = node.api_url_for(
-        'addon_render_file',
-        path=file_guid.waterbutler_path.lstrip('/'),
-        provider=file_guid.provider,
-        render=True,
-        **extras
-    )
-
     ret = serialize_node(node, auth, primary=True)
 
     # Disable OSF Storage file deletion in DISK_SAVING_MODE
     if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
         ret['user']['can_edit'] = False
 
+    try:
+        file_guid.enrich()
+    except exceptions.AddonEnrichmentError as e:
+        error = e.as_html()
+    else:
+        error = None
+
     ret.update({
+        'error': error,
         'provider': file_guid.provider,
-        'render_url': render_url,
+        'render_url': file_guid.mfr_render_url,
         'file_path': file_guid.waterbutler_path,
         'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(file_guid),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(file_guid, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
