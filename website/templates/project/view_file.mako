@@ -48,11 +48,7 @@
     <div class="panel-expand col-md-6">
 
         <div id="fileRendered" class="mfr mfr-file">
-          % if rendered is not None:
-            ${rendered}
-          % else:
             <img src="/static/img/loading.gif">
-          % endif
         </div>
     </div>
 
@@ -151,11 +147,7 @@
     %endif
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
-    %if rendered is None:
-        renderURL: '${render_url | js_str}',
-    %else:
-        renderURL: undefined,
-    %endif
+      renderURL: '${render_url | js_str}',
         file: {
             extra: ${extra},
             name: '${file_name | js_str}',
