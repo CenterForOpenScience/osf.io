@@ -6,6 +6,12 @@ var waterbutler = require('js/waterbutler');
 var util = require('./util.js');
 
 
+// Helper for filtering
+function TRUTHY(item) {
+    return !!item; //Force cast to a bool
+}
+
+
 var FileRevisionsTable = {
     controller: function(file, node) {
         var self = this;
@@ -13,6 +19,10 @@ var FileRevisionsTable = {
         self.file = file;
         self.loaded = false;
         self.revisions = [];
+        self.errorMessage = undefined;
+
+        self.hasUser = true;
+        self.hasDate = self.provider !== 'dataverse';
 
         self.currentRevision = 0;
 
@@ -25,33 +35,81 @@ var FileRevisionsTable = {
                 m.startComputation();
                 self.revisions = response.data.map(FileRevisionsTable.postProcessRevision.bind(this, self.file, self.node));
                 self.loaded = true;
+                self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
                 m.endComputation();
             }).fail(function(response) {
                 //TODO
             });
         };
 
+        self.delete = function() {
+            bootbox.confirm({
+                title: 'Delete file?',
+                message: '<p class="overflow">' +
+                        'Are you sure you want to delete <strong>' +
+                        self.file.safeName + '</strong>?' +
+                    '</p>',
+                callback: function(confirm) {
+                    if (!confirm) return;
+                    $.ajax({
+                        type: 'DELETE',
+                        url: self.urls.delete,
+                        beforeSend: $osf.setXHRAuthorization
+                    }).done(function() {
+                        window.location = self.node.urls.files;
+                    }).fail(function() {
+                        $osf.growl('Error', 'Could not delete file.');
+                    });
+                }
+            });
+        };
+
+        self.getTableHead = function() {
+            return m('thead', [
+                m('tr', [
+                    m('th', 'Version ID'),
+                    self.hasDate ? m('th', 'Date') : false,
+                    self.hasUser ? m('th', 'User') : false,
+                    m('th[colspan=2]', 'Download'),
+                ].filter(TRUTHY))
+            ]);
+        };
+
+        self.makeTableRow = function(revision, index) {
+            var isCurrent = index === self.currentRevision;
+
+            return m('tr' + (isCurrent ? '.active' : ''), [
+                m('td',  isCurrent ?
+                  revision.displayVersion :
+                  m('a', {href: revision.osfViewUrl}, revision.displayVersion)
+                ),
+                self.hasDate ? m('td', revision.displayDate) : false,
+                self.hasUser ?
+                    m('td', revision.extra.user.url ?
+                        m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
+                        revision.extra.user.name
+                    ) : false,
+                m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
+                m('td',
+                  m('a.btn.btn-primary.btn-sm.file-download', {
+                        href: revision.osfDownloadUrl,
+                        onclick: function() {
+                            window.location = revision.waterbutlerDownloadUrl;
+                            return false;
+                        }
+                    }, m('i.fa.fa-download'))
+                ),
+            ].filter(TRUTHY));
+        };
+
         self.reload();
     },
     view: function(ctrl) {
         if (!ctrl.loaded) return util.Spinner;
+
         return m('table.table', [
-            m('thead.file-version-thread', [
-                m('tr', [
-                    m('th', 'Version ID'),
-                    m('th', 'Date'),
-                    m('th', 'User'),
-                    m('th', 'Download'),
-                ])
-            ]),
-            m('tbody.file-version', ctrl.revisions.map(function(revision, index) {
-                return m('tr' + (index === ctrl.currentRevision ? '.active' : ''), [
-                    m('td', revision.displayVersion),
-                    m('td', revision.displayDate),
-                    m('td', revision.extra.user),
-                    m('td', revision.extra.downloads),
-                ]);
-            }))
+            ctrl.getTableHead(),
+            m('tbody', ctrl.revisions.map(ctrl.makeTableRow))
         ]);
     },
     postProcessRevision: function(file, node, revision, index) {
@@ -61,7 +119,7 @@ var FileRevisionsTable = {
         if (urlParams.branch !== undefined) {
             options.branch = urlParams.branch;
         }
-        options[self.versionIdentifier] = self.version;
+        options[revision.versionIdentifier] = revision.version;
 
         revision.date = new $osf.FormattableDate(revision.modified);
         revision.displayDate = revision.date.local !== 'Invalid date' ?
@@ -87,23 +145,18 @@ var FileRevisionsTable = {
                 revision.displayVersion = revision.version.substring(0, 8);
         }
 
-        // if (file.provider === 'osfstorage' && file.name && index !== 0) {
-        //     var parts = file.name.split('.');
-        //     if (parts.length === 1) {
-        //         options.displayName = parts[0] + '-' + data.modified;
-        //     } else {
-        //         options.displayName = parts.slice(0, parts.length - 1).join('') + '-' + data.modified + '.' + parts[parts.length - 1];
-        //     }
-        // }
+        if (file.provider === 'osfstorage' && file.name && index !== 0) {
+            var parts = file.name.split('.');
+            if (parts.length === 1) {
+                options.displayName = parts[0] + '-' + revision.modified;
+            } else {
+                options.displayName = parts.slice(0, parts.length - 1).join('') + '-' + revision.modified + '.' + parts[parts.length - 1];
+            }
+        }
 
-        self.osfViewUrl = '?' + $.param(options);
-        self.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
-        self.waterbutlerDownloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, options);
-
-        self.download = function() {
-            window.location = self.waterbutlerDownloadUrl;
-            return false;
-        };
+        revision.osfViewUrl = '?' + $.param(options);
+        revision.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
+        revision.waterbutlerDownloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, options);
 
         return revision;
     }
