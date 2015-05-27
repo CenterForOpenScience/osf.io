@@ -126,13 +126,13 @@ class CasClient(object):
         resp = CasResponse()
         doc = etree.fromstring(xml)
         auth_doc = doc.xpath('/cas:serviceResponse/*[1]', namespaces=doc.nsmap)[0]
-        resp.status = str(auth_doc.xpath('local-name()'))
+        resp.status = unicode(auth_doc.xpath('local-name()'))
         if (resp.status == 'authenticationSuccess'):
             resp.authenticated = True
-            resp.user = str(auth_doc.xpath('string(./cas:user)', namespaces=doc.nsmap))
+            resp.user = unicode(auth_doc.xpath('string(./cas:user)', namespaces=doc.nsmap))
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
-                resp.attributes[str(attribute.xpath('local-name()'))] = str(attribute.text)
+                resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
         else:
             resp.authenticated = False
         return resp

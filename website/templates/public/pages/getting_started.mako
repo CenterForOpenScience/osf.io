@@ -33,6 +33,7 @@
                         <ul class="nav">
                             <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
                             <li><a href="#privacy"><i class="fa fa-chevron-right"></i> Privacy</a></li>
+                            <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
                             <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only Links</a></li>
                             <li><a href="#comments"><i class="fa fa-chevron-right"></i> Comments</a></li>
                         </ul>
@@ -55,7 +56,7 @@
                     <li>
                         <a href="#metrics">Metrics</a>
                         <ul class="nav">
-                            <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
+
                             <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Statistics</a></li>
                             <li><a href="#notifications"><i class="fa fa-chevron-right"></i> Notifications</a></li>
                         </ul>
@@ -131,6 +132,7 @@
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
                 <%include file="/public/pages/help/privacy.mako"/>
+                <%include file="/public/pages/help/citations.mako"/>
                 <%include file="/public/pages/help/view_only.mako"/>
                 <%include file="/public/pages/help/comments.mako"/>
             </div>
@@ -146,7 +148,6 @@
         <div id="metrics" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
             <h2 class="text-center">Metrics</h2>
             <div class="row col-sm-12 col-md-12">
-                <%include file="/public/pages/help/citations.mako"/>
                 <%include file="/public/pages/help/statistics.mako"/>
                 <%include file="/public/pages/help/notifications.mako"/>
             </div>
