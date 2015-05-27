@@ -651,7 +651,7 @@ ListViewModel.prototype.unserialize = function(data) {
     } else {
         self.editable(false);
     }
-    self.contents(ko.utils.arrayMap(data.contents || data.data || [], function (each) {
+    self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
         return new self.ContentModel(self).unserialize(each);
     }));
 
@@ -745,74 +745,6 @@ var SchoolsViewModel = function(urls, modes) {
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-
-var ApplicationViewModel = function() {
-    var self = this;
-    TrackedMixin.call(self);
-
-    self.client_id = ko.observable('').extend({required: true});
-    self.client_secret = ko.observable('').extend({required: true});
-    self.owner = ko.observable('').extend({required: true});
-
-    self.name = ko.observable('').extend({required: true, trimmed: true});
-    self.description = ko.observable('').extend({trimmed: true});
-    self.home_url = ko.observable('').extend({trimmed: true});
-    self.callback_url = ko.observable('').extend({trimmed: true});
-
-    self.trackedProperties = [
-        self.name,
-        self.description,
-        self.home_url,
-        self.callback_url
-    ];
-
-    var validated = ko.validatedObservable(self);
-    self.isValid = ko.computed(function() {
-        return validated.isValid();
-    });
-};
-$.extend(ApplicationViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
-
-
-/**
- * Track data related to API consumer applications registered by a given user
- */
-var ApplicationsViewModel = function(urls, modes) {
-    var self = this;
-    ListViewModel.call(self, ApplicationViewModel, urls, modes);
-    self.fetch();
-
-    self.getDetailUrl = function(appId){
-        // Get the web detail URL
-        return self.urls.baseDetailUrl + appId() + "/"
-    };
-
-    self.getApiDetailUrl = function(appId){
-        // Get the API detail URL
-        return self.urls.baseApiDetailUrl + appId() + "/"
-
-    };
-
-    self.deleteApplication = function(appData){
-        // Delete a single application
-        var detailUrl = self.getApiDetailUrl(appData.client_id);
-
-        $.ajax({
-            type: 'DELETE',
-            url: detailUrl,
-            dataType: 'json',
-            success: function(data){
-                self.contents.destroy(appData);
-            },
-            error: function(){}
-        });
-    };
-
-
-};
-ApplicationsViewModel.prototype = Object.create(ListViewModel.prototype);
-
-
 var Names = function(selector, urls, modes) {
     this.viewModel = new NameViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
@@ -836,20 +768,11 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
-var Applications = function(selector, urls, modes) {
-    this.viewModel = new ApplicationsViewModel(urls, modes);
-    $osf.applyBindings(this.viewModel, selector);
-};
-
-
 module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,
     Schools: Schools,
-
-    Applications: Applications,
-
     // Expose private viewmodels
     _NameViewModel: NameViewModel
 };
