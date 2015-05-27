@@ -28,12 +28,21 @@ var FileViewPage = {
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id)
         });
 
+        self.reloadFile = function() {
+            self.panels.forEach(function(panel) {
+                if (panel.reload) {
+                    panel.reload();
+                }
+            });
+        };
+
         self.panels = [
             Panel('Tree', FileTree, [self.node.urls.api]),
-            Panel('Edit', FileEditor, [self.file.urls.content]),
-            Panel('View', FileRenderer, [self.file.urls.render], true),
+            Panel('Edit', FileEditor, [self.file.urls.content, self.reloadFile]),
+            Panel('View', FileRenderer, [self.file.urls.render, self.file.urls.sharejs, self.context.editorMeta, self.reloadFile], true),
             Panel('Revisions', FileRevisionsTable, [self.file, self.node], true),
         ];
+
     },
     view: function(ctrl) {
         return m('.file-view-page', [
