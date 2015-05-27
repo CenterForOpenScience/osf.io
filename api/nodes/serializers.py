@@ -52,12 +52,13 @@ class NodeSerializer(JSONAPISerializer):
                                                      'Project Organizer collections. Every user will always have '
                                                      'one Dashboard')
     # TODO: When we have 'admin' permissions, make this writable for admins
-    public = ser.BooleanField(source='is_public', help_text='Nodes that are made public will give read-only access '
+    public = ser.BooleanField(source='is_public', read_only=True,
+                              help_text='Nodes that are made public will give read-only access '
                                                             'to everyone. Private nodes require explicit read '
                                                             'permission. Write and admin access are the same for '
                                                             'public and private nodes. Administrators on a parent '
                                                             'node have implicit read permissions for all child nodes',
-                              read_only=True)
+                              )
     # TODO: finish me
 
     class Meta:
@@ -114,19 +115,8 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(instance, Node), 'instance must be a Node'
-        if 'is_public' in validated_data:
-            is_public = validated_data.pop('is_public')
-        else:
-            is_public = instance.is_public
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-
-        request = self.context['request']
-        user = request.user
-        auth = Auth(user)
-        if is_public != instance.is_public:
-            privacy = 'public' if is_public else 'private'
-            instance.set_privacy(privacy, auth)
         instance.save()
         return instance
 

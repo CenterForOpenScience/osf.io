@@ -201,7 +201,7 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        ContributorOrPublicForPointers,
     )
 
     serializer_class = NodePointersSerializer
