@@ -76,9 +76,11 @@ var defaultOptions = {
     metadata: {}
 };
 
-function ViewModel(options){
+function ViewModel(options, renderer){
     var self = this;
 
+    self.renderer = renderer;
+    //
     // enabled?
     self.editVis = options.editVisible;
     self.viewVis = options.viewVisible;
@@ -86,7 +88,7 @@ function ViewModel(options){
     self.pageTitle = $(document).find('title').text();
 
     self.viewVersion = ko.observable(options.viewVersion);
-    self.contentURL = options.urls.waterbutler;
+    self.contentURL = options.urls.content,
     self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
     self.isEditable = options.isEditable;
@@ -108,19 +110,18 @@ function ViewModel(options){
         self.editor = ace.edit('editor'); // jshint ignore: line
 
         var ShareJSDoc = require('./ShareJSDocFile.js');
-        self.editVM = new ShareJSDoc(self.contentURL, self.editorMetadata, self.viewText, self.editor);
+        self.editVM = new ShareJSDoc(self.contentURL, self.editorMetadata, self.viewText, self.editor, self.renderer);
     }
     self.viewVM = new ViewWidget(self.viewVis, self.viewVersion, self.viewText, self.renderedView, self.contentURL, self.allowMathjaxification, self.allowFullRender, self.editor);
 
 }
 
-var FilePage = function(selector, options) {
+var FilePage = function(selector, options, renderer) {
     var self = this;
     self.options = $.extend({}, defaultOptions, options);
 
-    this.viewModel = new ViewModel(self.options);
+    this.viewModel = new ViewModel(self.options, renderer);
     $osf.applyBindings(self.viewModel, selector);
 };
 
 module.exports = FilePage;
-

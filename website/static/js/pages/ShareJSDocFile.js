@@ -5,14 +5,15 @@ var FileEditor = require('js/pages/FileEditor.js');
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
-var ShareJSDoc = function(url, metadata, viewText, editor) {
+var ShareJSDoc = function(url, metadata, viewText, editor, renderer) {
     var self = this;
     self.editor = editor;
-    var fileEditor = new FileEditor(url, viewText, self.editor);
+    self.renderer = renderer;
+    var fileEditor = new FileEditor(url, viewText, self.editor, self.renderer);
     self.fileEditor = fileEditor;
 
     var viewModel = fileEditor.viewModel;
-    var ctx = window.contextVars.files;
+    var ctx = window.contextVars.file;
 
     // Initialize Ace and configure settings
     self.editor.getSession().setMode('ace/mode/markdown');
