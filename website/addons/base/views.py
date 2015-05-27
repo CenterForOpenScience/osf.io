@@ -395,8 +395,6 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     from website.addons.wiki.utils import get_sharejs_uuid, generate_private_uuid
     from website.addons.wiki import settings as wiki_settings
 
-    path = guid_file.waterbutler_path
-    provider = guid_file.provider
     ret = serialize_node(node, auth, primary=True)
 
     # Disable OSF Storage file deletion in DISK_SAVING_MODE
@@ -411,35 +409,23 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         error = None
 
     ret.update({
+        'error': error,
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
-        'sharejs_uuid': sharejs_uuid or '',
+        'panels_used': ['edit', 'view'],
+        'sharejs_uuid': 'lkjdf;ldf;lkajdf',
+        # 'sharejs_uuid': sharejs_uuid or '',
         'urls': {
-            'web': {
-                'sharejs': wiki_settings.SHAREJS_URL,
-                'edit': waterbutler_url_for('upload', provider, path, node),
-                'view': view_url,
-                'gravatar': get_gravatar(auth.user, 25)
-            },
-            'api': {
-                'render': render_url
-            }
+            'files': node.web_url_for('collect_file_trees'),
+            'content': guid_file.download_url,
+            'render': guid_file.mfr_render_url,
+            'sharejs': wiki_settings.SHAREJS_URL,
+            'gravatar': get_gravatar(auth.user, 25),
         },
-        'waterbutler_content_url': guid_file.download_url,
-        'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(guid_file),
-        'content': file_content(guid_file),
-        'error': error,
-        'provider': file_guid.provider,
-        'render_url': file_guid.mfr_render_url,
-        'file_path': file_guid.waterbutler_path,
-        'files_url': node.web_url_for('collect_file_trees'),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
-        'is_editable': True, #is_editable(guid_file),
-        'panels_used': ['edit', 'view'],
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
     })
 
