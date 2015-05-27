@@ -19,9 +19,6 @@ from website.search.elastic_search import es
 
 logger = logging.getLogger(__name__)
 
-app = init_app("website.settings", set_backends=True, routes=True)
-
-
 def migrate_nodes(index):
     logger.info("Migrating nodes to index: {}".format(index))
     n_iter = 0
@@ -46,7 +43,8 @@ def migrate_users(index):
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 
-def migrate(delete, index=settings.ELASTIC_INDEX):
+def migrate(delete, index=settings.ELASTIC_INDEX, app=None):
+    app = app or init_app("website.settings", set_backends=True, routes=True)
 
     script_utils.add_file_logger(logger, __file__)
     ctx = app.test_request_context()

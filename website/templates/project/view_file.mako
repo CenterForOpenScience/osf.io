@@ -161,7 +161,8 @@
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}'
+            safeName: '${file_name | h,js_str}',
+            materializedPath: '${materialized_path | js_str}',
         },
         node: {
           urls: {

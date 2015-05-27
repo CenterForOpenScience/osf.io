@@ -209,7 +209,7 @@ MEETING_DATA = {
         'name': 'L. Starling Reid Undergraduate Psychology Conference 2015',
         'info_url': 'http://avillage.web.virginia.edu/Psych/Conference',
         'logo_url': None,
-        'active': False,
+        'active': True,
         'admins': [],
         'public_projects': True,
     },

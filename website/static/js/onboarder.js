@@ -492,6 +492,8 @@ function OBUploaderViewModel(params) {
     var dropzoneOpts = {
 
         sending: function(file, xhr) {
+            //Inject Bearer token
+            xhr = $osf.setXHRAuthorization(xhr);
             //Hack to remove webkitheaders
             var _send = xhr.send;
             xhr.send = function() {

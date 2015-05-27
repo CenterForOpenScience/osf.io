@@ -212,7 +212,7 @@ class TestProvisionNode(ContextTestCase):
         mock_get_url.assert_called_with(
             'upload',
             'osfstorage',
-            self.attachment.filename,
+            '/' + self.attachment.filename,
             self.node,
             user=self.user,
         )
@@ -231,7 +231,7 @@ class TestProvisionNode(ContextTestCase):
         mock_get_url.assert_called_with(
             'upload',
             'osfstorage',
-            settings.MISSING_FILE_NAME,
+            '/' + settings.MISSING_FILE_NAME,
             self.node,
             user=self.user,
         )
