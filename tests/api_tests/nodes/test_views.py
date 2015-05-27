@@ -1058,8 +1058,8 @@ class TestDeleteNodePointer(ApiTestCase):
         self.user.set_password('password')
         self.user.save()
         self.auth = (self.user.username, 'password')
-        self.project = ProjectFactory()
-        self.pointer_project = ProjectFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=False)
+        self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
         self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
         self.private_url = '/v2/nodes/{}/pointers/{}'.format(self.project._id, self.pointer._id)
 
@@ -1068,8 +1068,8 @@ class TestDeleteNodePointer(ApiTestCase):
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'password')
 
-        self.public_project = ProjectFactory(is_public=True)
-        self.public_pointer_project = ProjectFactory(is_public=True)
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project, auth= Auth(self.user), save=True)
         self.public_url = '/v2/nodes/{}/pointers/{}'.format(self.public_project._id, self.public_pointer._id)
 
@@ -1080,6 +1080,10 @@ class TestDeleteNodePointer(ApiTestCase):
     def test_deletes_public_node_pointer_logged_in(self):
         res = self.app.delete(self.public_url, auth = self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 405)
+
+        res = self.app.delete(self.public_url, auth = self.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+        assert_equal(len(self.project.nodes_pointer), 0)
 
     def test_deletes_private_node_pointer_logged_out(self):
         res = self.app.delete(self.private_url, expect_errors=True)
