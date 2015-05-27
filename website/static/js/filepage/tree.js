@@ -36,18 +36,7 @@ var FileTree = {
             ]);
         }
 
-        return m('', [
-            m('.row', [
-                m('.col-md-12', [
-                    m('#filesSearch'),
-                ])
-            ]),
-            m('.row', [
-                m('.col-md-12', [
-                    m('#grid', {config: ctrl.bindFangorn})
-                ])
-            ])
-        ]);
+        return m('.row', m('.col-md-12', m('#grid', {config: ctrl.bindFangorn})));
     }
 };
 
