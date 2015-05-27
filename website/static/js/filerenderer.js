@@ -19,7 +19,9 @@ var FileRenderer = {
     getCachedFromServer: function() {
         var self = this;
         $.ajax({
-            url: self.url
+            method: 'GET',
+            url: self.url,
+            beforeSend: $osf.setXHRAuthorization
         }).done(function(data) {
             if (data) {
                 self.element.html(data.rendered);

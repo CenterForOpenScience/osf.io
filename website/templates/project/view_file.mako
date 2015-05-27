@@ -27,15 +27,15 @@
             <div class="osf-panel-header osf-panel-header-flex" style="display:none">
                 <div id="filesSearch"></div>
                 <div id="toggleIcon" class="pull-right">
-                    <div class="panel-collapse"> <i class="fa fa-angle-left"> </i> </div>
+                    <div class="panel-collapse"> <i class="fa fa-angle-left"></i> </div>
                 </div>
             </div>
 
             <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
                 <div id="grid">
-                      <div class="fangorn-loading"> 
-                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
-                        <p class="m-t-sm fg-load-message"> Loading files...  </p> 
+                      <div class="fangorn-loading">
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                        <p class="m-t-sm fg-load-message"> Loading files...  </p>
                       </div>
                 </div>
             </div>
@@ -44,14 +44,13 @@
     <!-- Menu toggle closed -->
         <div class="osf-panel panel-collapsed hidden-xs text-center reset-height"  style="display: none">
             <div class="osf-panel-header">
-                <i class="fa fa-file"> </i>
-                <i class="fa fa-angle-right"> </i>
+                <i class="fa fa-file"></i>
+                <i class="fa fa-angle-right"></i>
             </div>
         </div>
     </div>
 
     <div class="panel-expand col-md-6">
-        <div id="fileRendered" class="mfr mfr-file">
             <div class="wiki" id="filePageContext">
 
             % if user['can_edit'] and is_editable:
@@ -138,24 +137,23 @@
             <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
                 <div class="row">
                     <div class="col-sm-6">
-                        <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
+                        <span class="wiki-panel-title"><i class="fa fa-eye"></i>  View</span>
                     </div>
                 </div>
             </div>
 
-            <div id="wikiViewPanel"  class="osf-panel-body" >
-                <div id="wikiViewRender" >
-                    % if content:
-                        <pre style="background-color: white; border: none">${content}</pre>
-                     % else:
-                        <p><em>No file content</em></p>
-                    % endif
+            <div id="fileViewPanel"  class="osf-panel-body" >
+              <div id="fileRendered" class="mfr mfr-file">
+                  %if error is None:
+                    <img src="/static/img/loading.gif">
+                  %else:
+                    ${error}
+                  %endif
                 </div>
             </div>
         </div>
     </div>
 
-    % endif
     </div>
 
     <div class="modal fade" id="connectedModal" tabindex="-1">
@@ -260,7 +258,7 @@
                 <th></th>
               </tr>
             </thead>
-            
+
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
@@ -328,52 +326,70 @@
       % endif
 
       window.contextVars = $.extend(true, {}, window.contextVars, {
+        ## %if user['can_edit'] and is_editable:
+        ##     renderURL: undefined,
+        ## %elif rendered is not None:
+        ##     renderURL: undefined,
+        ## %else:
+        ##     renderURL: '${urls['api']['render'] | js_str}',
+        ## %endif
 
-        %if user['can_edit'] and is_editable:
-            renderURL: undefined,
-        %elif rendered is not None:
-            renderURL: undefined,
-        %else:
-            renderURL: '${urls['api']['render'] | js_str}',
-        %endif
-
-            file: {
-                extra: ${extra},
-                name: '${file_name | js_str}',
-                path: '${file_path | js_str}',
-                provider: '${provider | js_str}',
-                safeName: '${file_name | h,js_str}',
-                materializedPath: '${materialized_path | js_str}',
-            },
-            node: {
-              urls: {
-                files: '${files_url | js_str}'
-              }
-            },
-            currentUser: {
-              canEdit: ${int(user['can_edit'])}
-            },
-            files: {
-                canEdit: ${json.dumps(user['can_edit'])},
-                panelsUsed: ${json.dumps(panels_used) | n},
-                isEditable: isEditable,
-                urls: {
-                    waterbutler: '${waterbutler_content_url | js_str}',
-                    draft: '${urls['api']['render'] | js_str}',
-                    content: '${urls['api']['render'] | js_str}',
-                    page: '${urls['api']['render'] | js_str}',
-                    base: '${urls['api']['render'] | js_str}',
-                    sharejs: '${urls['web']['sharejs']}'
-                },
-                metadata: {
-                    registration: true,
-                    docId: '${sharejs_uuid}',
-                    userId: '${user_id}',
-                    userName: '${user_full_name}',
-                    userUrl: '${user_url}',
-                    userGravatar: '${urls['web']['gravatar']}'.replace('&amp;', '&')
-                }
-            }
+        ##     file: {
+        ##         extra: ${extra},
+        ##         name: '${file_name | js_str}',
+        ##         path: '${file_path | js_str}',
+        ##         provider: '${provider | js_str}',
+        ##         safeName: '${file_name | h,js_str}',
+        ##         materializedPath: '${materialized_path | js_str}',
+        ##     },
+        ##     node: {
+        ##       urls: {
+        ##         files: '${files_url | js_str}'
+        ##       }
+        ##     },
+        ##     currentUser: {
+        ##       canEdit: ${int(user['can_edit'])}
+        ##     },
+        ##     files: {
+        ##         canEdit: ${json.dumps(user['can_edit'])},
+        ##         panelsUsed: ${json.dumps(panels_used) | n},
+        ##         isEditable: isEditable,
+        ##         urls: {
+        ##             waterbutler: '${waterbutler_content_url | js_str}',
+        ##             draft: '${urls['api']['render'] | js_str}',
+        ##             content: '${urls['api']['render'] | js_str}',
+        ##             page: '${urls['api']['render'] | js_str}',
+        ##             base: '${urls['api']['render'] | js_str}',
+        ##             sharejs: '${urls['web']['sharejs']}'
+        ##         },
+        ##         metadata: {
+        ##             registration: true,
+        ##             docId: '${sharejs_uuid}',
+        ##             userId: '${user_id}',
+        ##             userName: '${user_full_name}',
+        ##             userUrl: '${user_url}',
+        ##             userGravatar: '${urls['web']['gravatar']}'.replace('&amp;', '&')
+        ##         }
+        ##     }
+      %if error is None:
+        renderURL: '${render_url | js_str}',
+      %endif
+        file: {
+            extra: ${extra},
+            name: '${file_name | js_str}',
+            path: '${file_path | js_str}',
+            provider: '${provider | js_str}',
+            safeName: '${file_name | h,js_str}',
+            materializedPath: '${materialized_path | js_str}',
+        },
+        node: {
+          urls: {
+            files: '${files_url | js_str}'
+          }
+        },
+        currentUser: {
+          canEdit: ${int(user['can_edit'])}
+        }
       });
     </script>
 

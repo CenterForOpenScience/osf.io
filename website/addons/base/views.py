@@ -16,8 +16,6 @@ from framework.auth import Auth
 from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
-from framework.mongo.utils import to_mongo_key
-from framework.render.tasks import build_rendered_html, get_file_contents
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
 from website import mails
@@ -289,54 +287,6 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-def get_or_start_render(guid_file, start_render=True):
-    try:
-        guid_file.enrich()
-    except exceptions.AddonEnrichmentError as error:
-        return error.as_html()
-
-    try:
-        return codecs.open(guid_file.mfr_cache_path, 'r', 'utf-8').read()
-    except IOError:
-        if start_render:
-            # Start rendering job if requested
-            build_rendered_html(
-                guid_file.mfr_download_url,
-                guid_file.mfr_cache_path,
-                guid_file.mfr_temp_path,
-                guid_file.public_download_url
-            )
-    return None
-
-
-def file_content(guid_file):
-    content = None
-    if is_editable(guid_file):
-        content = get_file_contents(
-            guid_file.mfr_download_url,
-            guid_file.mfr_cache_path,
-            guid_file.mfr_temp_path,
-            guid_file.public_download_url,
-        )
-
-    return content
-
-
-def is_editable(guid_file):
-    try:
-        guid_file.enrich()
-    except exceptions.AddonEnrichmentError:
-        return False
-
-    file_type = get_mimetype(guid_file.waterbutler_path)
-    if file_type is not None:
-        file_type = file_type.split('/')[0]
-        if file_type == 'text':
-            return True
-    else:
-        return False
-
-
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
@@ -392,11 +342,26 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     node_addon = node.get_addon(provider)
 
-    if not path or not node_addon:
+    if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not node_addon:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)
+        })
+
     if not node_addon.has_auth:
-        raise HTTPError(httplib.FORBIDDEN)
+        raise HTTPError(httplib.UNAUTHORIZED, {
+            'message_short': 'Unauthorized',
+            'message_long': 'The add-on containing this file is no longer authorized.'
+        })
+
+    if not node_addon.complete:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer configured.'
+        })
 
     if not path.startswith('/'):
         path = '/' + path
@@ -432,37 +397,18 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
 
     path = guid_file.waterbutler_path
     provider = guid_file.provider
-
-    render_url = node.api_url_for(
-        'addon_render_file',
-        path=path.lstrip('/'),
-        provider=provider,
-        render=True,
-        **extras
-    )
-
-    view_url = node.web_url_for(
-        'addon_view_or_download_file',
-        path=path.lstrip('/'),
-        provider=provider
-    )
-
-    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
-    file_guid = str(guid_file)
-    file_key = to_mongo_key(file_guid)
-
-    if can_edit:
-        if file_key not in node.wiki_private_uuids:
-            generate_private_uuid(node, file_guid)
-        sharejs_uuid = get_sharejs_uuid(node, file_guid)
-    else:
-        sharejs_uuid = None
-
     ret = serialize_node(node, auth, primary=True)
 
     # Disable OSF Storage file deletion in DISK_SAVING_MODE
     if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
         ret['user']['can_edit'] = False
+
+    try:
+        guid_file.enrich()
+    except exceptions.AddonEnrichmentError as e:
+        error = e.as_html()
+    else:
+        error = None
 
     ret.update({
         'provider': guid_file.provider,
@@ -483,6 +429,11 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(guid_file),
         'content': file_content(guid_file),
+        'error': error,
+        'provider': file_guid.provider,
+        'render_url': file_guid.mfr_render_url,
+        'file_path': file_guid.waterbutler_path,
+        'files_url': node.web_url_for('collect_file_trees'),
         # Note: must be called after get_or_start_render. This is really only for github
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
@@ -493,48 +444,4 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     })
 
     ret.update(rubeus.collect_addon_assets(node))
-    return ret
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def addon_render_file(auth, path, provider, **kwargs):
-    node = kwargs.get('node') or kwargs['project']
-
-    node_addon = node.get_addon(provider)
-
-    if not path:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if not node_addon:
-        raise HTTPError(httplib.BAD_REQUEST, {
-            'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer attached to the {}.'.format(node.project_or_component)
-        })
-
-    if not node_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED, {
-            'message_short': 'Unauthorized',
-            'message_long': 'The add-on containing this file is no longer authorized.'
-        })
-
-    if not node_addon.complete:
-        raise HTTPError(httplib.BAD_REQUEST, {
-            'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer configured.'
-        })
-
-    if not path.startswith('/'):
-        path = '/' + path
-
-    guid_file, created = node_addon.find_or_create_file_guid(path)
-
-    guid_file.maybe_set_version(**request.args.to_dict())
-
-    ret = serialize_node(node, auth, primary=True)
-    ret.update({
-        'rendered': get_or_start_render(guid_file),
-        'content': file_content(guid_file)
-    })
-
     return ret
