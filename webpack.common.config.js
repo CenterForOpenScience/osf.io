@@ -34,6 +34,7 @@ var entry = {
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list.js'),
+    'profile-settings-applications-detail-page': staticPath('js/pages/profile-settings-applications-detail.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),

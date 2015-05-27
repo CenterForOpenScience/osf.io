@@ -1,8 +1,7 @@
 <%inherit file="base.mako"/>
-<%def name="title()">OAuth Application settings</%def>
+<%def name="title()">Application Detail</%def>
 <%def name="content()">
-<% from website import settings %>
-<h2 class="page-header">OAuth application settings</h2>
+<h2 class="page-header">OAuth Application Settings</h2>
 
 <div class="row">
 
@@ -19,35 +18,62 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
-        % if app_data is not None:
-            ## Reuse this template for creation and deletion
-                <!-- TODO: Style -->
-            <div class="">
-                <span class="text-muted">Client ID:</span> <span class="">${app_data["client_id"]}</span><br>
-                <span class="text-muted">Client secret:</span> <span class="">${app_data["client_secret"]}</span>
+
+        <div id="app-detail"> <!-- TODO: Style this to stand apart from page -->
+
+            <div id="app-keys" class=""
+                 data-bind="visible: (content().length > 0)">
+                <span class="text-muted">Client ID:</span> <span data-bind="text: content().clientId"></span><br>
+                <span class="text-muted">Client secret:</span> <span data-bind="text: content().clientSecret"></span>
             </div>
+            <div id="app-fields">
+                <!-- TODO: Add revoke/ reset buttons -->
+                <form role="form">
+                    <!-- TODO: Write AJAX or KO endpoint for submission -->
+                    <div class="form-group">
+                        <label>Application name</label>
+                        <input class="form-control" type="text" data-bind="value: content().name">
+                    </div>
 
-            <!-- TODO: Add revoke/ reset buttons -->
-        % endif
+                    <div class="form-group">
+                        <label>Project homepage URL</label>
+                        <input class="form-control" type="text" data-bind="value: content().homeUrl">
+                    </div>
 
-        <%include file="include/profile/oauth_app_data.mako" />
+                    <div class="form-group">
+                        <label>Application description</label>
+                        <textarea class="form-control" placeholder="Application description is optional" data-bind="value: content().description"></textarea>
+                    </div>
 
+                    <div class="form-group">
+                        <label>Authorization callback URL</label>
+                        <input type="text" class="form-control" data-bind="value: content().callbackUrl">
+                    </div>
 
-            <!-- TODO: Rewrite using KO.js and hide the "you have registered" blurb when registered list is empty -->
+                    <div class="padded">
+                        <button type="submit" class="btn btn-primary" data-bind="click: $root.updateApplication">Submit</button>
+                    </div>
+                </form>
+
+                <!-- Flashed Messages -->
+                <div class="help-block">
+                    <p data-bind="html: message, attr.class: messageClass"></p>
+                </div>
+            </div>
+        </div> <!-- End app-detail section -->
     </div>
 </div>
-
 </%def>
 
 <%def name="javascript_bottom()">
-##<script type="text/javascript">
-##    ## Store mako variables on window so they are accessible from JS
-##    ## modules. Not sure if this is a good idea.
-##    window.contextVars = window.contextVars || {};
-##    window.contextVars.appDetailUrls = {
-##     ## TODO: Make sure template url is correct
-##        //crud: '${ api_v2_url_for('users:application-detail', kwargs={'pk': user_id, 'client_id': client_id}) }'
-##    };
-##</script>
-##<script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>
+<script type="text/javascript">
+   ## Store mako variables on window so they are accessible from JS
+   ## modules. Not sure if this is a good idea.
+   window.contextVars = window.contextVars || {};
+   window.contextVars.urls = {
+    // TODO: Make sure template url is correct
+       apiUrl: ${detail_url}
+   };
+</script>
+<script src=${"/static/public/js/profile-settings-applications-detail-page.js" | webpack_asset}></script>
 </%def>

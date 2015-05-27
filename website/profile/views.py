@@ -3,8 +3,10 @@
 import logging
 import operator
 import httplib
-import httplib as http
+import httplib as http  # TODO: Inconsistent usage of aliased import
+import json
 import os
+from urlparse import urljoin
 
 from dateutil.parser import parse as parse_date
 
@@ -360,27 +362,20 @@ def user_notifications(auth, **kwargs):
 @must_be_logged_in
 def oauth_application_config(auth, **kwargs):
     """Return app creation page with list of known apps"""
-    # TODO: Will rewrite as knockout.js endpoint
-    user_apps = OAuth2App.find(Q('owner', 'eq', auth.user))
-    user_apps_dict = [{"id": ua.client_id,
-                       "owner": ua.owner,
-                       "name": ua.name,
-                       "description": ua.description,
-                       "reg_date": ua.reg_date,
-                       "home_url": ua.home_url,
-                       "callback_url": ua.callback_url}
-                      for ua in user_apps]
+    # TODO: Hardcoded URL
+
+    url_string = "v2/users/{}/applications/".format(auth.user._id)
+    app_list_url = urljoin(settings.API_DOMAIN, url_string)
     return {
-        "known_apps": user_apps_dict
+        "app_list_url": json.dumps(app_list_url)
     }
 
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
-    # TODO: Maybe something JSON based would be easier to work with? DEPRECATED; use API call and KO.js instead
-
-    return {"app_data": None,
-            "user_id": auth.user._id}
+    url_string = "v2/users/{}/applications/".format(auth.user._id)  # POST request to this url
+    submit_url = urljoin(settings.API_DOMAIN, url_string)  # TODO: hardcoded url
+    return {"detail_url": json.dumps(submit_url)}
 
 @must_be_logged_in
 def oauth_application_submit(auth, **kwargs):
@@ -406,20 +401,22 @@ def oauth_application_submit(auth, **kwargs):
 def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
     client_id = kwargs.get('cid')
-
-    ua = OAuth2App.find_one(Q('client_id', 'eq', client_id))
-
-    # TODO: Rewrite to use api endpoint
-    return {"user_id": ua.owner,
-            "app_data": {"client_id": ua.client_id,
-                         "client_secret": ua.client_secret,
-                         "owner": ua.owner,
-                         "name": ua.name,
-                         "description": ua.description,
-                         "reg_date": ua.reg_date,
-                         "home_url": ua.home_url,
-                         "callback_url": ua.callback_url}}
-
+    #
+    # ua = OAuth2App.find_one(Q('client_id', 'eq', client_id))
+    #
+    # # TODO: Rewrite to use api endpoint
+    # return {"user_id": ua.owner,
+    #         "app_data": {"client_id": ua.client_id,
+    #                      "client_secret": ua.client_secret,
+    #                      "owner": ua.owner,
+    #                      "name": ua.name,
+    #                      "description": ua.description,
+    #                      "reg_date": ua.reg_date,
+    #                      "home_url": ua.home_url,
+    #                      "callback_url": ua.callback_url}}
+    url_string = "v2/users/{}/applications/{}/".format(auth.user._id, client_id)  # POST request to this url
+    detail_url = urljoin(settings.API_DOMAIN, url_string)  # TODO: hardcoded url
+    return {"detail_url": json.dumps(detail_url)}
 
 def collect_user_config_js(addons):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return

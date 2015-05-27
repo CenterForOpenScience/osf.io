@@ -21,37 +21,38 @@
         <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-default pull-right"><i class="fa fa-plus"></i> Register new application</a>
 
 
+        <!-- TODO: Set initial state so divs don't flash while performing request (empty list to Full) -->
         <div id="app-list">
 
-            <!-- TODO: Hidden data bindings not firing properly? Rewrite so it also hides the table view entirely -->
-            <p data-bind="hidden: !(contents.length > 0)">You have registered the following applications that can connect to the OSF:</p>
-            <p data-bind="hidden: (contents.length > 0)">You have not registered any applications that can connect to the OSF.</p>
+            <p data-bind="visible: (content().length == 0)">You have not registered any applications that can connect to the OSF.</p>
+            <div id="if-apps" data-bind="visible: (content().length > 0)">
+                <p>You have registered the following applications that can connect to the OSF:</p>
 
-            <table class="table table-condensed">
-                <thead>
-                <tr>
-                    <th>Application</th>
-                    <th>
-                        <span class="pull-right">
-                            Delete <span class="glyphicon glyphicon-info-sign" aria-hidden="true"
-                                         title="Deleting this API key will de-authorize any external applications that use it to connect to the OSF. This cannot be reversed!"></span>
-                        </span>
-                    </th>
-                </tr>
-                </thead>
-                <tbody data-bind="foreach: content">
-                <tr><!-- TODO: Write KO to fetch from API -->
-                    <td>
-                        <!-- TODO: Write delete method that uses an internal URL concatenation method + AJAX delete request -->
-                        <a href="#" data-bind="attr: {href: detailUrl  }"><span data-bind="text: ownerName"></span></a>
-                        <p>Client ID: <span class="text-muted" data-bind="text: clientId"></span></p>
-                    </td>
-                    <td>
-                        <a href="#" data-bind="click: $root.deleteApplication"><i class="fa fa-times text-danger pull-right"></i></a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+                <table class="table table-condensed">
+                    <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>
+                            <span class="pull-right">
+                                Delete <span class="glyphicon glyphicon-info-sign" aria-hidden="true"
+                                             title="De-registering this application cannot be reversed!"></span>
+                            </span>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody data-bind="foreach: content">
+                        <tr>
+                            <td>
+                                <a href="#" data-bind="attr: {href: detailUrl  }"><span data-bind="text: name"></span></a>
+                                <p>Client ID: <span class="text-muted" data-bind="text: clientId"></span></p>
+                            </td>
+                            <td>
+                                <a href="#" data-bind="click: $root.deleteApplication"><i class="fa fa-times text-danger pull-right"></i></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -60,22 +61,13 @@
 
 
 <%def name="javascript_bottom()">
-<% from website import settings %>
-<% from urlparse import urljoin %>
 
 <script type="text/javascript">
     ## Store mako variables on window so they are accessible from JS
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
-    window.contextVars.appListUrls = {
-        // TODO: Insert user id and possibly application ID into these urls, eg  api_v2_url_for("users:application-detail", kwargs={'pk':'abs', 'client_id':'asdf'})
-
-
-
-        // TODO: Use this as domain
-        appListUrl: '${urljoin(settings.API_DOMAIN, api_v2_url_for("users:application-list", kwargs={"pk": user_id}))}',
-        baseDetailUrl: '/settings/applications/', // Base URL for web detail pages: concatenate client_id to get specific detail page. TODO: Hardcoded URL
-        baseApiDetailUrl:  "/api/v2/users/" + "${user_id}" + "/applications/"  // Base URL for API detail calls (used for updates and deletes. TODO: Hardcoded URL
+    window.contextVars.urls = {
+        apiUrl: ${app_list_url}  // TODO: Hardcoded URL
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>
