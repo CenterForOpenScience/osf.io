@@ -36,7 +36,7 @@ ko.bindingHandlers.ace = {
     }
 };
 
-var EditorViewModel = function(url, viewText) {
+var EditorViewModel = function(url, viewText, renderer) {
     var self = this;
 
     self.initText = ko.observable('');
@@ -45,6 +45,7 @@ var EditorViewModel = function(url, viewText) {
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
+    self.renderer = renderer;
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
@@ -136,9 +137,11 @@ EditorViewModel.prototype.fetchData = function() {
     var request = $.ajax({
         type: 'GET',
         url: self.url,
+        beforeSend: $osf.setXHRAuthorization
     });
     request.done(function (response) {
         self.initText(response);
+        self.renderer.getCachedFromServer();
 
     });
     request.fail(function (xhr, textStatus, error) {
@@ -161,9 +164,36 @@ EditorViewModel.prototype.revertChanges = function() {
     });
 };
 
-function FileEditor(url, viewText, editor) {
+EditorViewModel.prototype.saveChanges = function() {
     var self = this;
-    self.viewModel = new EditorViewModel(url, viewText);
+
+    if (self.changed()) {
+        var request = $.ajax({
+            type: 'PUT',
+            url: self.url,
+            data: self.currentText(),
+            beforeSend: $osf.setXHRAuthorization
+        });
+
+        request.done(function () {
+            self.renderer.reload();
+            self.initText(self.currentText());
+        });
+
+        request.fail(function(error) {
+            self.currentText(self.initText());
+            $osf.growl('Error', 'The file could not be updated.');
+            Raven.captureMessage('Could not PUT file content.', {
+                error: error,
+                url: self.url,
+            });
+        });
+    }
+};
+
+function FileEditor(url, viewText, editor, renderer) {
+    var self = this;
+    self.viewModel = new EditorViewModel(url, viewText, renderer);
     var mdConverter = Markdown.getSanitizingConverter();
     var mdEditor = new Markdown.Editor(mdConverter);
     mdEditor.run(editor);
