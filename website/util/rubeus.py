@@ -325,7 +325,7 @@ class NodeProjectCollector(object):
 
         return {
             #TODO Remove the replace when mako html safe comes around
-            'name': sanitize.unescape(node.title) if can_view else u'Private Component',
+            'name': sanitize.unescape_html(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
@@ -443,7 +443,7 @@ class NodeFileCollector(object):
             children = []
         return {
             # #TODO Remove the replace when mako html safe comes around
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.unescape(node.title))
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.unescape_html(node.title))
             if can_view
             else u'Private Component',
             'kind': FOLDER,
