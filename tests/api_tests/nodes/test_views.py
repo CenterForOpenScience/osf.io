@@ -16,22 +16,17 @@ class TestWelcomeToApi(ApiTestCase):
         self.user.set_password('justapoorboy')
         self.user.save()
         self.auth = (self.user.username, 'justapoorboy')
-        self.url = '/v2'
+        self.url = '/v2/'
 
-    # Logged out, public page
     def test_returns_200_for_logged_out_user(self):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['current_user'], None)
 
-    # Logged in, public page
-    def test_returns_200_for_logged_in_user(self):
-        res = self.app.get(self.url, auth=(self.auth))
-        assert_equal(res.status_code, 200)
-
     def test_returns_current_user_info_when_logged_in(self):
-        res = self.app.get(self.url, auth=(self.auth))
-        assert_equal(res.json['meta']['current_user']['data']['given_name'], 'Freddie')
+        res = self.app.get(self.url, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
 
 class TestNodeList(ApiTestCase):
 
