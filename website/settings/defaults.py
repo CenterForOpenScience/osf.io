@@ -100,6 +100,8 @@ MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 # Use Celery for file rendering
 USE_CELERY = True
 
+CELERY_DEFAULT_QUEUE = 'osf'
+
 # Use GnuPG for encryption
 USE_GNUPG = True
 
