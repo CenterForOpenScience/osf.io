@@ -1,28 +1,35 @@
 var m = require('mithril');
 var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
-var Markdown = require('pagedown-ace-converter');
-Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
-require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
+var Markdown = require('pagedown-ace-converter');
+Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
+require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 
 var util = require('./util.js');
 
 var FileEditor = {
-    controller: function(contentUrl) {
+    controller: function(contentUrl, shareWSUrl, editorMeta, triggerReload) {
         var self = this;
         self.url = contentUrl;
         self.loaded = false;
         self.initialText = '';
         self.editor = undefined;
+        self.editorMeta = editorMeta;
+        self.triggerReload = triggerReload;
+        self.changed = m.prop(false);
 
         self.bindAce = function(element, isInitialized, context) {
             if (isInitialized) return;
             self.editor = ace.edit(element.id);
+            self.editor.setValue(self.initialText);
+            self.editor.on('change', self.onChanged);
+            // var ShareJSDoc = require('js/pages/ShareJSDocFile.js');
+            // new ShareJSDoc(self.contentURL, self.editorMetadata, self.editor);
         };
 
         self.reloadFile = function() {
@@ -46,16 +53,58 @@ var FileEditor = {
             });
         };
 
+        self.saveChanges = function() {
+            var request = $.ajax({
+                type: 'PUT',
+                url: self.url,
+                data: self.editor.getValue(),
+                beforeSend: $osf.setXHRAuthorization
+            }).done(function () {
+                self.triggerReload();
+                self.initText = self.editor.getValue();
+            }).fail(function(error) {
+                self.editor.setValue(self.initialText);
+                $osf.growl('Error', 'The file could not be updated.');
+                Raven.captureMessage('Could not PUT file content.', {
+                    error: error,
+                    url: self.url,
+                });
+            });
+        };
+
+        self.revertChanges = function() {
+            self.reloadFile();
+        };
+
+        self.onChanged = function(e) {
+            //To avoid extra typing
+            var file1 = self.initialText;
+            var file2 = !self.editor ? '' : self.editor.getValue();
+
+            var clean1 = typeof file1 === 'string' ?
+                file1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+            var clean2 = typeof file2 === 'string' ?
+                file2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
+
+            self.changed(clean1 !== clean2);
+        };
+
         self.reloadFile();
     },
     view: function(ctrl) {
         if (!ctrl.loaded) return util.Spinner;
 
         return m('.editor-pane', [
-            m('.editor', {config: ctrl.bindAce}),
-            m('.panel', [
-                m('button.btn.btn-danger', 'Revert'),
-                m('button.btn.btn-danger', 'Save')
+            m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce}),
+            m('.osf-panel-footer', [
+                m('.col-xs-12', [
+                    m('.pull-right', [
+                        // m('button.btn.btn-danger', {onclick: ctrl.revertChanges, disabled: ctrl.changed() ? '' : 'disabled'}, 'Revert'),
+                        // m('button.btn.btn-success', {onclick: ctrl.saveChanges, disabled: ctrl.changed() ? '' : 'disabled'}, 'Save')
+                        m('button.btn.btn-danger', {onclick: ctrl.revertChanges}, 'Revert'),
+                        m('button.btn.btn-success', {onclick: ctrl.saveChanges}, 'Save')
+                    ])
+                ])
             ])
         ]);
 
@@ -63,75 +112,3 @@ var FileEditor = {
 };
 
 module.exports = FileEditor;
-
-
-
-///    <div class="panel-expand col-md-6">
-///            <div class="wiki" id="filePageContext">
-///                <div data-bind="with: $root.editVM.fileEditor.viewModel" data-osf-panel="Edit" style="display: none">
-///                    <div class="osf-panel" >
-///                        <div class="osf-panel-header" >
-///                            <div class="wiki-panel">
-///                                <div class="wiki-panel-header">
-///                                    <div class="row">
-///                                        <div class="col-md-6">
-///                                            <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"></i>   Edit </span>
-///                                        </div>
-///                                        <div class="col-md-6">
-///                                            <div class="pull-right">
-///                                                <div class="progress progress-no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
-///                                                    <div role="progressbar" data-bind="attr: progressBar">
-///                                                        <span class="progress-bar-content">
-///                                                            <span data-bind="text: statusDisplay"></span>
-///                                                            <span class="sharejs-info-btn">
-///                                                                <i class="fa fa-question-circle fa-large"></i>
-///                                                            </span>
-///                                                        </span>
-///                                                    </div>
-///                                                </div>
-///                                            </div>
-///                                        </div>
-///                                    </div>
-///                                </div>
-///                            </div>
-///                        </div>
-
-///                        <form id="file-edit-form">
-///                            <div class="wiki-panel-body" style="padding: 10px">
-///                                <div class="row">
-///                                    <div class="col-xs-12">
-///                                        <div class="form-group wmd-panel">
-///                                            <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
-///                                              {{#ifnot: id === '${user['id']}'}}
-///                                                  <li><a data-bind="attr: { href: url }" >
-///                                                      <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
-///                                                           style="border: 1px solid black;">
-///                                                  </a></li>
-///                                              {{/ifnot}}
-///                                            </ul>
-///                                            <div id="wmd-button-bar" style="display: none"></div>
-///                                            <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
-///                                        </div>
-///                                    </div>
-///                                </div>
-///                            </div>
-
-///                            <div class="wiki-panel-footer">
-///                                <div class="row">
-///                                    <div class="col-xs-12">
-///                                        <div class="pull-right">
-///                                            <button id="revert-button" class="btn btn-danger" data-bind="click: revertChanges, enable: changed()">Revert</button>
-///                                            <button id="save-button" class="btn btn-success" data-bind="click: saveChanges, enable: changed()">Save</button>
-///                                        </div>
-///                                    </div>
-///                                </div>
-
-///                                <!-- Invisible textarea for form submission -->
-///                                <textarea id="original_content" style="display: none;"></textarea>
-///                                <textarea id="edit_content" style="display: none;" data-bind="value: currentText"></textarea>
-
-///                            </div>
-///                        </form>
-///                    </div>
-///                </div>
-///            </div>
