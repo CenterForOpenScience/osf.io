@@ -16,7 +16,6 @@ from framework.auth import Auth
 from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
-from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
 from website import mails
@@ -286,26 +285,6 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-def get_or_start_render(file_guid, start_render=True):
-    try:
-        file_guid.enrich()
-    except exceptions.AddonEnrichmentError as error:
-        return error.as_html()
-
-    try:
-        return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
-    except IOError:
-        if start_render:
-            # Start rendering job if requested
-            build_rendered_html(
-                file_guid.mfr_download_url,
-                file_guid.mfr_cache_path,
-                file_guid.mfr_temp_path,
-                file_guid.public_download_url
-            )
-    return None
-
-
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
@@ -361,11 +340,26 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     node_addon = node.get_addon(provider)
 
-    if not path or not node_addon:
+    if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not node_addon:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)
+        })
+
     if not node_addon.has_auth:
-        raise HTTPError(httplib.FORBIDDEN)
+        raise HTTPError(httplib.UNAUTHORIZED, {
+            'message_short': 'Unauthorized',
+            'message_long': 'The add-on containing this file is no longer authorized.'
+        })
+
+    if not node_addon.complete:
+        raise HTTPError(httplib.BAD_REQUEST, {
+            'message_short': 'Bad Request',
+            'message_long': 'The add-on containing this file is no longer configured.'
+        })
 
     if not path.startswith('/'):
         path = '/' + path
@@ -423,41 +417,3 @@ def addon_view_file(auth, node, node_addon, file_guid, extras):
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def addon_render_file(auth, path, provider, **kwargs):
-    node = kwargs.get('node') or kwargs['project']
-
-    node_addon = node.get_addon(provider)
-
-    if not path:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if not node_addon:
-        raise HTTPError(httplib.BAD_REQUEST, {
-            'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer attached to the {}.'.format(node.project_or_component)
-        })
-
-    if not node_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED, {
-            'message_short': 'Unauthorized',
-            'message_long': 'The add-on containing this file is no longer authorized.'
-        })
-
-    if not node_addon.complete:
-        raise HTTPError(httplib.BAD_REQUEST, {
-            'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer configured.'
-        })
-
-    if not path.startswith('/'):
-        path = '/' + path
-
-    file_guid, created = node_addon.find_or_create_file_guid(path)
-
-    file_guid.maybe_set_version(**request.args.to_dict())
-
-    return get_or_start_render(file_guid)
