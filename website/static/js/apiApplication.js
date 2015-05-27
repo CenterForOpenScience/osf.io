@@ -22,7 +22,7 @@ require('js/objectCreateShim');
 /*
  *  Store the data related to a single API application
  */
-var ApplicationData = function(data){
+var ApplicationData = function (data){
     var self = this;
     self.clientId = ko.observable();
     self.clientSecret = ko.observable();
@@ -45,7 +45,7 @@ var ApplicationData = function(data){
 };
 
 // Serialize data for POST request
-ApplicationData.prototype.serialize = function() {
+ApplicationData.prototype.serialize = function () {
     var self = this;
     return {
         client_id: self.clientId(),
@@ -59,7 +59,7 @@ ApplicationData.prototype.serialize = function() {
     };
 
 // Load data from JSON
-ApplicationData.prototype.fromJSON = function(data) {
+ApplicationData.prototype.fromJSON = function (data) {
     var self = this;
     data = data || {};
     self.clientId(data.client_id);
@@ -77,7 +77,7 @@ ApplicationData.prototype.fromJSON = function(data) {
 };
 
 // TODO: Having one view that CREATES or UPDATES in the same model is a bit of a kludge: they use different URLs etc
-var ApplicationViewModel = function(urls) {
+var ApplicationViewModel = function (urls) {
     // Read and update operations
 
     var self = this;
@@ -93,7 +93,7 @@ var ApplicationViewModel = function(urls) {
     }
 };
 
-ApplicationViewModel.prototype.fetch = function(url) { // TODO: duplicated in ApplicationListViewModel
+ApplicationViewModel.prototype.fetch = function (url) { // TODO: duplicated in ApplicationListViewModel
     var self = this;
     $.ajax({
         type: 'GET',
@@ -167,9 +167,8 @@ ApplicationViewModel.prototype.updateApplication = function () {
     });
 };
 
-ApplicationViewModel.prototype.createApplication = function() {
+ApplicationViewModel.prototype.createApplication = function () {
     // Create a new application instance via POST request (when model has submitUrl, but no dataUrl)
-    debugger;
     var self = this;
     var payload = self.content().serialize();
 
@@ -209,7 +208,7 @@ ApplicationViewModel.prototype.createApplication = function() {
     });
 };
 
-ApplicationViewModel.prototype.changeMessage = function(text, css, timeout) {
+ApplicationViewModel.prototype.changeMessage = function (text, css, timeout) {
     // TODO: duplicated from profile.js; clean up and consolidate
     var self = this;
     self.message(text);
@@ -218,7 +217,7 @@ ApplicationViewModel.prototype.changeMessage = function(text, css, timeout) {
     if (timeout) {
         // Reset message after timeout period
         setTimeout(
-            function() {
+            function () {
                 self.message('');
                 self.messageClass('text-info');
             },
@@ -230,33 +229,12 @@ ApplicationViewModel.prototype.changeMessage = function(text, css, timeout) {
 /*
  * Fetch a list of applications associated with the given user.
  */
-var ApplicationsListViewModel= function(urls) {
+var ApplicationsListViewModel= function (urls) {
     var self = this;
     self.listUrl = urls.dataUrl;
     self.content = ko.observableArray();
 
-    //////// Helper functions
-    self.fetch(self.listUrl); // TODO: Reorg code
-
-    self.deleteApplication = function (appData) {
-        // Delete a single application
-        // TODO: Add confirmation dialog- modal
-        $.ajax({
-            type: 'DELETE',
-            url: appData.apiUrl,
-            dataType: 'json',
-            // Enable CORS
-            crossOrigin: true,
-            xhrFields: {
-                withCredentials: true
-            },
-            success: function (data) {
-                self.content.destroy(appData);
-            },
-            error: function () {
-            }
-        });
-    };
+    self.fetch(self.listUrl);
 };
 
 ApplicationsListViewModel.prototype.fetch = function (url) {
@@ -297,13 +275,44 @@ ApplicationsListViewModel.prototype.fetch = function (url) {
     })
 };
 
+ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
+    // Delete a single application
+    var self = this;
+    bootbox.confirm({
+        title: 'De-register application?',
+        message: 'Are you sure you want to de-register this application and revoke all access tokens? This cannot be reversed.',
+        callback: function (confirmed) {
+            if (confirmed) {
+                $.ajax({
+                    type: 'DELETE',
+                    url: appData.apiUrl(),
+                    dataType: 'json',
+                    // Enable CORS
+                    crossOrigin: true,
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success: function (data) {
+                        self.content.destroy(appData);
+                        $osf.growl('Deletion', appData.name() + ' has been deleted', 'success');
+                    },
+                    error: function () {
+                        $osf.growl('Error', 'Could not delete application. Please refresh the page and try ' +
+                                   'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                                   'if the problem persists.', 'danger');
+                    }
+                });
+                }
+            }})
+};
 
-var ApplicationsList = function(selector, urls, modes) {
+
+var ApplicationsList = function (selector, urls, modes) {
     this.viewModel = new ApplicationsListViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
 };
 
-var ApplicationDetail = function(selector, urls, modes) {
+var ApplicationDetail = function (selector, urls, modes) {
     this.viewModel = new ApplicationViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
 };
