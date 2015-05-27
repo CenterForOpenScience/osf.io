@@ -1121,12 +1121,14 @@ class TestDeleteNodePointer(ApiTestCase):
 
     def test_deletes_public_node_pointer_logged_in(self):
         res = self.app.delete(self.public_url, auth = self.basic_auth_two, expect_errors=True)
+        node_count_before = len(self.public_project.nodes_pointer)
         # This is could arguably be a 405, but we don't need to go crazy with status codes
         assert_equal(res.status_code, 403)
+        assert_equal(node_count_before, len(self.public_project.nodes_pointer))
 
-        res = self.app.delete(self.public_url, auth = self.basic_auth, expect_errors=True)
+        res = self.app.delete(self.public_url, auth = self.basic_auth)
         assert_equal(res.status_code, 204)
-        assert_equal(len(self.project.nodes_pointer), 0)
+        assert_equal(node_count_before-1, len(self.public_project.nodes_pointer))
 
     def test_deletes_private_node_pointer_logged_out(self):
         res = self.app.delete(self.private_url, expect_errors=True)
