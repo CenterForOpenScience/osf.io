@@ -31,7 +31,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     if (!collaborative) {
         // Populate editor with most recent draft
         viewModel.fetchData().done(function(response) {
-            var content = response.content.toString();
+            var content = response;
             self.editor.setValue(content, -1);
             self.editor.setReadOnly(false);
             if (typeof WebSocket === 'undefined') {
@@ -68,8 +68,8 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
 
         viewModel.fetchData().done(function(response) {
             doc.attachAce(self.editor);
-            if (viewModel.filesDiffer(viewModel.currentText(), response.content)) {
-                viewModel.currentText(response.content);
+            if (viewModel.filesDiffer(viewModel.currentText(), response)) {
+                viewModel.currentText(response);
             }
             unlockEditor();
             viewModel.status('connected');

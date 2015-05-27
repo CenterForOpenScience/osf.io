@@ -358,6 +358,7 @@
                 panelsUsed: ${json.dumps(panels_used) | n},
                 isEditable: isEditable,
                 urls: {
+                    waterbutler: '${waterbutler_content_url | js_str}',
                     draft: '${urls['api']['render'] | js_str}',
                     content: '${urls['api']['render'] | js_str}',
                     page: '${urls['api']['render'] | js_str}',

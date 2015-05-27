@@ -136,10 +136,9 @@ EditorViewModel.prototype.fetchData = function() {
     var request = $.ajax({
         type: 'GET',
         url: self.url,
-        dataType: 'json'
     });
     request.done(function (response) {
-        self.initText(response.content);
+        self.initText(response);
 
     });
     request.fail(function (xhr, textStatus, error) {
@@ -157,8 +156,8 @@ EditorViewModel.prototype.revertChanges = function() {
     var self = this;
     return self.fetchData().then(function(response) {
         // Dirty check now covers last saved version
-        self.initText(response.content);
-        self.currentText(response.content);
+        self.initText(response);
+        self.currentText(response);
     });
 };
 

@@ -86,7 +86,7 @@ function ViewModel(options){
     self.pageTitle = $(document).find('title').text();
 
     self.viewVersion = ko.observable(options.viewVersion);
-    self.contentURL = options.urls.content;
+    self.contentURL = options.urls.waterbutler;
     self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
     self.isEditable = options.isEditable;
