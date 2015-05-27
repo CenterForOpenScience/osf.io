@@ -208,8 +208,8 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     Pointers are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublicForPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     serializer_class = NodePointersSerializer

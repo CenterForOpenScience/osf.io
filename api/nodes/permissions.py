@@ -25,7 +25,7 @@ class ContributorOrPublic(permissions.BasePermission):
 class ContributorOrPublicForPointers(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, Node), 'obj must be a Node, got {}'.format(obj)
+        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
         auth = get_user_auth(request)
         parent_node = Node.load(request.parser_context['kwargs']['pk'])
         pointer_node = Pointer.load(request.parser_context['kwargs']['pointer_id']).node
