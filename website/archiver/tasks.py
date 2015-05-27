@@ -18,11 +18,8 @@ from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_SENDING,
     ARCHIVER_SENT,
-    ARCHIVE_SIZE_EXCEEDED
-)
-from website.archiver.settings import (
-    ARCHIVE_PROVIDER,
-    MAX_ARCHIVE_SIZE,
+    ARCHIVE_SIZE_EXCEEDED,
+    ARCHIVE_METADATA_FAIL,
 )
 from website.archiver.utils import (
     handle_archive_addon_error,
@@ -66,6 +63,14 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
         file_tree = src_addon._get_file_tree(user=user)
     except HTTPError as e:
         handle_archive_addon_error(dst, addon_short_name, errors=[e.data])
+        handle_archive_fail(
+            ARCHIVE_METADATA_FAIL,
+            src,
+            dst,
+            user,
+            dst.archived_providers
+        )
+        return
     result = AggregateStatResult(
         src_addon._id,
         addon_short_name,
@@ -153,7 +158,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
         'destination': {
             'cookie': cookie,
             'nid': dst_pk,
-            'provider': ARCHIVE_PROVIDER,
+            'provider': settings.ARCHIVE_PROVIDER,
             'path': '/',
         },
         'rename': folder_name,
@@ -184,7 +189,7 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
         src.title,
         targets=[result.result for result in group_result.results]
     )
-    if stat_result.disk_usage > MAX_ARCHIVE_SIZE:
+    if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         handle_archive_fail(
             ARCHIVE_SIZE_EXCEEDED,
             src,
@@ -192,6 +197,7 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
             user,
             stat_result
         )
+        return
     celery.group(
         archive_addon.si(
             result.target_name,

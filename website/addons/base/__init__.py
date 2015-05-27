@@ -889,7 +889,7 @@ class StorageAddonBase(object):
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None):
         kwargs = dict(
             provider=self.config.short_name,
-            path=filenode.get('path'),
+            path=filenode.get('path', ''),
             node=self.owner,
             user=user,
             view_only=True,
@@ -902,7 +902,7 @@ class StorageAddonBase(object):
         )
         res = requests.get(metadata_url)
         if res.status_code != 200:
-            raise HTTPError(res.status_code, data=res.json)
+            raise HTTPError(res.status_code, data=res.json())
         return res.json().get('data', [])
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None):
@@ -910,9 +910,9 @@ class StorageAddonBase(object):
         Recursively get file metadata
         """
         filenode = filenode or {
-            'path': self.root_node.path,
-            'name': self.root_node.name,
+            'path': '/',
             'kind': 'folder',
+            'name': self.root_node.name,
         }
         if filenode.get('kind') == 'file':
             return filenode

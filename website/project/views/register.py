@@ -160,7 +160,6 @@ def node_register_template_page_post(auth, node, **kwargs):
     )
     return {
         'status': 'initiated',
-        'result': register.url,
     }, http.CREATED
 
 

@@ -7,6 +7,7 @@ These settings can be overridden in local.py.
 import os
 import json
 import hashlib
+from datetime import timedelta
 
 os_env = os.environ
 
@@ -254,3 +255,12 @@ SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
 
 CAS_SERVER_URL = 'http://localhost:8080'
+
+###### ARCHIVER ###########
+ARCHIVE_PROVIDER = 'osfstorage'
+
+MAX_ARCHIVE_SIZE = 1024 ** 3  # == math.pow(1024, 3) == 1 GB
+MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
+
+ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
+###########################

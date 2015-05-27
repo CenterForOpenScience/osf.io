@@ -10,6 +10,7 @@ from website.archiver.settings import (
 from website.archiver import (
     ARCHIVE_COPY_FAIL,
     ARCHIVE_SIZE_EXCEEDED,
+    ARCHIVE_METADATA_FAIL,
 )
 
 from website import mails
@@ -51,7 +52,7 @@ def send_archiver_copy_error_mails(src, user, results):
 
 def handle_archive_fail(reason, src, dst, user, result):
     delete_registration_tree(dst)
-    if reason == ARCHIVE_COPY_FAIL:
+    if reason in [ARCHIVE_COPY_FAIL, ARCHIVE_METADATA_FAIL]:
         send_archiver_copy_error_mails(src, user, result)
     elif reason == ARCHIVE_SIZE_EXCEEDED:
         send_archiver_size_exceeded_mails(src, user, result)
@@ -119,7 +120,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     disk_usage = fileobj_metadata.get('size')
     if fileobj_metadata['kind'] == 'file':
         # Files are never actually copied on osfstorage, so file size is irrelivant
-        if not disk_usage and not addon_short_name == 'osfstorage':
+        if disk_usage is None and not addon_short_name == 'osfstorage':
             disk_usage = float('inf')  # trigger failure
         result = StatResult(
             target_name=fileobj_metadata['name'],

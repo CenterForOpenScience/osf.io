@@ -1,4 +1,4 @@
-<% from framework.archiver import settings %>
+<% from website.archiver import settings %>
 
 User: ${user.fullname} (${user.username}) [${user._id}]
 
