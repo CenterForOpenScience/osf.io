@@ -39,7 +39,7 @@ from website.addons.base import AddonConfig
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
-    settings_module='website.settings', routes=True, set_backends=False
+    settings_module='website.settings', routes=True, set_backends=False, supress_assertion_errors=True
 )
 test_app.testing = True
 
