@@ -599,46 +599,45 @@ class TestNodeContributorList(ApiTestCase):
         self.user.save()
         self.auth = (self.user.username, password)
 
-        self.user_two 
-        self.non_contrib = UserFactory.build()
-        pw = fake.password()
-        self.non_contrib.set_password(pw)
-        self.non_contrib.save()
-        self.non_contrib_auth = (self.non_contrib.username, pw)
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(self.password)
+        self.user_two.save()
+        self.auth_two = (self.user_two.username, self.password)
 
-        self.private_project = ProjectFactory(is_public=False)
-        self.private_project.add_contributor(self.user)
-        self.private_project.save()
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/v2/nodes/{}/contributors/'.format(self.private_project._id)
-
-        self.public_project = ProjectFactory(is_public=True)
-        self.public_project.add_contributor(self.non_contrib)
-        self.public_project.save()
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/v2/nodes/{}/contributors/'.format(self.public_project._id)
 
     def test_logged_out_user_can_access_public_contributor_list(self):
+        self.public_project.add_contributor(self.user_two)
         res = self.app.get(self.public_url)
-        print res.json['data'][0]
-        print res.json['data'][1]
-    #
-    # def test_logged_in_user_can_access_public_contributor_list(self):
-    #     print self.user
-    #     res = self.app.get(self.public_url, auth=self.auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(res.json['data'][0]['family_name'], self.user.given_name)
-    #
-    # def test_logged_out_user_cannot_access_private_contributor_list(self):
-    #     res = self.app.get(self.private_url, expect_errors=True)
-    #     assert_equal(res.status_code, 401)
-    #
-    # def test_logged_in_contributor_can_access_private_contributor_list(self):
-    #     res = self.app.get(self.private_url, auth=self.auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert 'Mercury' in res.json['data'][0]['family_name']
-    #
-    # def test_logged_in_non_contributor_cannot_access_private_contributor_list(self):
-    #     res = self.app.get(self.private_url, auth=self.non_contrib_auth, expect_errors=True)
-    #     assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['id'], self.user._id)
+        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+
+    def test_logged_in_user_can_access_public_contributor_list(self):
+         res = self.app.get(self.public_url, auth=self.auth_two)
+         assert_equal(res.status_code, 200)
+         assert_equal(len(res.json['data']), 1)
+         assert_equal(res.json['data'][0]['id'], self.user._id)
+
+    def test_logged_out_user_cannot_access_private_contributor_list(self):
+         res = self.app.get(self.private_url, expect_errors=True)
+         assert_equal(res.status_code, 401)
+
+    def test_logged_in_contributor_can_access_private_contributor_list(self):
+        self.private_project.add_contributor(self.user_two)
+        res = self.app.get(self.private_url, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['id'], self.user._id)
+        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+
+    def test_logged_in_non_contributor_cannot_access_private_contributor_list(self):
+         res = self.app.get(self.private_url, auth=self.auth_two, expect_errors=True)
+         assert_equal(res.status_code, 403)
 
 class TestNodeContributorFiltering(ApiTestCase):
 
