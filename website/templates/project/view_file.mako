@@ -28,9 +28,9 @@
 
             <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
                 <div id="grid">
-                      <div class="fangorn-loading"> 
-                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
-                        <p class="m-t-sm fg-load-message"> Loading files...  </p> 
+                      <div class="fangorn-loading">
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                        <p class="m-t-sm fg-load-message"> Loading files...  </p>
                       </div>
                 </div>
             </div>
@@ -48,7 +48,11 @@
     <div class="panel-expand col-md-6">
 
         <div id="fileRendered" class="mfr mfr-file">
-            <img src="/static/img/loading.gif">
+            %if error is None:
+              <img src="/static/img/loading.gif">
+            %else:
+              ${error}
+            %endif
         </div>
     </div>
 
@@ -85,7 +89,7 @@
                 <th></th>
               </tr>
             </thead>
-            
+
             <tbody class="file-version" data-bind="foreach: {data: revisions, as: 'revision'}">
               <tr data-bind="css: $parent.isActive(revision)">
                 <td>
@@ -147,7 +151,9 @@
     %endif
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
-      renderURL: '${render_url | js_str}',
+      %if error is None:
+        renderURL: '${render_url | js_str}',
+      %endif
         file: {
             extra: ${extra},
             name: '${file_name | js_str}',
