@@ -875,18 +875,19 @@ class TestCreateNodePointer(ApiTestCase):
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
         self.user_two.save()
-        self.basic_auth_two = (self.user_two.username, 'password')
+        self.auth_two = (self.user_two.username, 'password')
 
     def test_creates_public_node_pointer_logged_out(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors = True)
         assert_equal(res.status_code, 401)
 
     def test_creates_public_node_pointer_logged_in(self):
-        res = self.app.post(self.public_url, self.public_payload, auth = self.basic_auth_two, expect_errors=True)
+        res = self.app.post(self.public_url, self.public_payload, auth = self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 405)
 
         res = self.app.post(self.public_url, self.public_payload, auth = self.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['node_id'], self.public_project._id)
 
     def test_creates_private_node_pointer_logged_out(self):
         res = self.app.post(self.private_url, self.private_payload, expect_errors=True)
@@ -898,8 +899,8 @@ class TestCreateNodePointer(ApiTestCase):
         assert_equal(res.json['data']['node_id'], self.project._id)
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
-        res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
-        #assert_equal(res.status_code, 403)
+        res = self.app.post(self.private_url, self.private_payload, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestNodeFilesList(ApiTestCase):
@@ -921,17 +922,15 @@ class TestNodeFilesList(ApiTestCase):
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_url = '/v2/nodes/{}/files/'.format(self.public_project._id)
 
-    def test_returns_200(self):
-        res = self.app.get(self.private_url, auth=self.auth)
-        assert_equal(res.status_code, 200)
-
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
     def test_returns_public_files_logged_in(self):
         res = self.app.get(self.public_url, auth=self.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
     def test_returns_private_files_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -939,6 +938,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_returns_private_files_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
@@ -947,9 +947,13 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_returns_addon_folders(self):
+        user_auth = Auth(self.user)
+        res = self.app.get(self.private_url, auth=self.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+
         self.project.add_addon('github', auth=user_auth)
         self.project.save()
-
         res = self.app.get(self.private_url, auth=self.auth)
         data = res.json['data']
         providers = [item['provider'] for item in data]
