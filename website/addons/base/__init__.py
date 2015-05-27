@@ -7,6 +7,7 @@ from bson import ObjectId
 from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
+from time import sleep
 
 import furl
 import requests
@@ -901,6 +902,7 @@ class StorageAddonBase(object):
             **kwargs
         )
         res = requests.get(metadata_url)
+        sleep(1.0 / 5.0)
         if res.status_code != 200:
             raise HTTPError(res.status_code, data=res.json())
         return res.json().get('data', [])
