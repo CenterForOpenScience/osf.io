@@ -342,7 +342,7 @@
         panelsUsed: ['edit', 'view'],
         currentUser: {
           canEdit: ${int(user['can_edit'])}
-          }
+        }
       });
     </script>
 

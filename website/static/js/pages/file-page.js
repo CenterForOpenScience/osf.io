@@ -46,7 +46,7 @@ $(document).ready(function () {
     );
 
     if (window.contextVars.file.urls.render !== undefined) {
-        renderer = new FileRenderer(window.contextVars.files.urls.render, '#fileRendered');
+        renderer = new FileRenderer(window.contextVars.file.urls.render, '#fileRendered');
         renderer.start();
     }
 
