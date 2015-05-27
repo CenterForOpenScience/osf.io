@@ -22,7 +22,7 @@
         <div id="app-detail"> <!-- TODO: Style this to stand apart from page -->
 
             <div id="app-keys" class=""
-                 data-bind="visible: (content().length > 0)">
+                 data-bind="visible: dataUrl">
                 <span class="text-muted">Client ID:</span> <span data-bind="text: content().clientId"></span><br>
                 <span class="text-muted">Client secret:</span> <span data-bind="text: content().clientSecret"></span>
             </div>
