@@ -47,3 +47,6 @@ class OSFBasicAuthentication(BasicAuthentication):
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
         return (user, None)
+
+    def authenticate_header(self, request):
+        return
