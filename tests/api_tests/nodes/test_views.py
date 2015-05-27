@@ -29,7 +29,6 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
 
 class TestNodeList(ApiTestCase):
-
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
@@ -61,27 +60,27 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.deleted._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_logged_out_user_can_access_public_node_list(self):
+    def test_return_public_node_list_logged_out_user(self):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_logged_in_user_can_access_public_node_list(self):
+    def test_return_public_node_list_logged_in_user(self):
         res = self.app.get(self.url, auth=self.non_contrib)
         assert_equal(res.status_code, 200)
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_logged_out_user_cannot_access_private_node_list(self):
+    def test_return_private_node_list_logged_out_user(self):
         res = self.app.get(self.url)
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_logged_in_contributor_can_access_private_node_list(self):
+    def test_return_private_node_list_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
@@ -89,7 +88,7 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_in(self.private._id, ids)
 
-    def test_logged_in_non_contributor_cannot_access_private_node_list(self):
+    def test_return_private_node_list_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.non_contrib)
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
@@ -310,17 +309,21 @@ class TestNodeCreate(ApiTestCase):
         self.user.set_password('justapoorboy')
         self.user.save()
         self.auth = (self.user.username, 'justapoorboy')
+
         self.url = '/v2/nodes/'
+
         self.title = 'Cool Project'
         self.new_title = 'Super Cool Project'
         self.description = 'A Properly Cool Project'
         self.new_description = 'An even cooler project'
         self.category = 'data'
         self.new_category = 'project'
+
         self.user_two = UserFactory.build()
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
+
         self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user)
         self.project_two = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
 
