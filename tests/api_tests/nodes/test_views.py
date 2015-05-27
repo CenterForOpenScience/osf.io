@@ -1025,11 +1025,6 @@ class TestNodePointerDetail(ApiTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project, auth= Auth(self.user), save=True)
         self.public_url = '/v2/nodes/{}/pointers/{}'.format(self.public_project._id, self.public_pointer._id)
 
-    def test_returns_200(self):
-        url = '/v2/nodes/{}/pointers/{}'.format(self.project._id, self.pointer._id)
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 200)
-
     def test_returns_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
