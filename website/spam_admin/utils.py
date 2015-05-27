@@ -58,11 +58,7 @@ def train_spam(comment, is_spam):
         }
 
         resp = requests.post(SPAM_ASSASSIN_TEACHING_URL, data=json.dumps(data))
-        import pdb;pdb.set_trace()
-        print(resp.text)
-        print(json.loads(resp.text))
-        #todo: handle new response
-        if json.loads(resp.text).get('status','') == "Learned":
+        if json.loads(resp.text).get('status', '') == "Learned":
             return True
         return False
     except:
@@ -70,6 +66,7 @@ def train_spam(comment, is_spam):
 
 def is_spam(comment):
     try:
+
         if not settings.SPAM_ASSASSIN:
             return False
         data = {
@@ -79,11 +76,8 @@ def is_spam(comment):
             'author': comment.user.fullname,
             'project_title': comment.node.title,
         }
-
         resp = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
-
-        #todo: handle new response
-        if json.loads(resp.text).get('decision','') == "SPAM":
+        if json.loads(resp.text).get('decision', '') == "SPAM":
             return True
 
         return False
@@ -180,8 +174,7 @@ def _project_is_spam(node):
         data = _format_spam_node_data(node)
         resp = requests.post(SPAM_ASSASSIN_URL, data=json.dumps(data))
 
-        #todo: handle new response
-        if json.loads(resp.text).get('decision','') == "SPAM":
+        if json.loads(resp.text).get('decision', '') == "SPAM":
             return True
         return False
     except:
@@ -195,8 +188,7 @@ def train_spam_project(project, is_spam):
         serialized_project['is_spam'] = is_spam
         resp = requests.post(SPAM_ASSASSIN_TEACHING_URL, data=json.dumps(serialized_project))
 
-        #todo: handle new response
-        if json.loads(resp.text).get('status','') == "Learned":
+        if json.loads(resp.text).get('status', '') == "Learned":
             return True
         return False
     except:

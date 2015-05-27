@@ -12,10 +12,7 @@ import httplib as http
 from website.settings import SPAM_ASSASSIN as spam_assassin_active
 logger = logging.getLogger(__name__)
 
-
-
 ################################### COMMENTS ############################################################
-
 @must_be_logged_in
 @must_be_spam_admin
 def init_spam_admin_comments_page(**kwargs):

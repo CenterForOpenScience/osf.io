@@ -18,7 +18,7 @@ import httpretty
 from website.spam_admin.utils import train_spam, _project_is_spam
 from website.project.model import Node
 from website.project.views.node import project_before_set_public
-
+import json
 
 
 class TestCommentSpamAdmin(OsfTestCase):
@@ -41,7 +41,6 @@ class TestCommentSpamAdmin(OsfTestCase):
 
 
     def _add_comment(self, project, content=None, **kwargs):
-
         def request_callback(request, uri, headers):
             if self.GTUBE in request.body:
                 return (200, headers, json.dumps({"decision":"SPAM"}))
@@ -64,7 +63,6 @@ class TestCommentSpamAdmin(OsfTestCase):
             },
             **kwargs
         )
-
 
         return Comment.load(ret.json['comment']['id'])
 
