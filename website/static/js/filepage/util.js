@@ -64,7 +64,13 @@ var PanelToggler = {
 };
 
 
-var Spinner = m('i.fa.fa-spinner.fa-pulse');
+var Spinner = m.component({
+    controller: function(){},
+    view: function() {
+        return m('i.fa.fa-spinner.fa-pulse');
+    }
+});
+
 
 module.exports = {
     Panel: Panel,
