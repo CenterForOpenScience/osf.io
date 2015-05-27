@@ -4,23 +4,23 @@
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
-    <div class="row">
-        <div class="col-sm-6">
-            <h2 class="break-word">
-                ${file_name | h}
-                % if file_revision:
-                    <small>&nbsp;${file_revision | h}</small>
-                % endif
-            </h2>
-        </div>
-        <div class="col-sm-6">
-            <div class="pull-right">
-                <div class="switch"></div>
-            </div>
+<div class="row">
+    <div class="col-sm-6">
+        <h2 class="break-word">
+            ${file_name | h}
+            % if file_revision:
+                <small>&nbsp;${file_revision | h}</small>
+            % endif
+        </h2>
+    </div>
+    <div class="col-sm-6">
+        <div class="pull-right">
+            <div class="switch"></div>
         </div>
     </div>
+</div>
 
-    <div id="file-container" class="row">
+<div id="file-container" class="row">
 
     <div id="file-navigation" class="panel-toggle col-md-3">
         <div class="osf-panel osf-panel-flex hidden-xs reset-height">
@@ -52,9 +52,6 @@
 
     <div class="panel-expand col-md-6">
             <div class="wiki" id="filePageContext">
-
-            % if user['can_edit'] and is_editable:
-
                 <div data-bind="with: $root.editVM.fileEditor.viewModel" data-osf-panel="Edit" style="display: none">
                     <div class="osf-panel" >
                         <div class="osf-panel-header" >
@@ -89,12 +86,12 @@
                                     <div class="col-xs-12">
                                         <div class="form-group wmd-panel">
                                             <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
-                                              <!-- ko ifnot: id === '${user_id}' -->
+                                              {{#ifnot: id === '${user['id']}'}}
                                                   <li><a data-bind="attr: { href: url }" >
                                                       <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
                                                            style="border: 1px solid black;">
                                                   </a></li>
-                                              <!-- /ko -->
+                                              {{/ifnot}}
                                             </ul>
                                             <div id="wmd-button-bar" style="display: none"></div>
                                             <div id="editor" class="wmd-input wiki-editor" data-bind="ace: currentText">Loading. . .</div>
@@ -107,31 +104,22 @@
                                 <div class="row">
                                     <div class="col-xs-12">
                                         <div class="pull-right">
-                                            <button id="revert-button" class="btn btn-danger" data-bind="click: revertChanges">Revert</button>
-                                            <input type="submit" class="btn btn-success" value="Save" id="submitEdit">
+                                            <button id="revert-button" class="btn btn-danger" data-bind="click: revertChanges, enable: changed()">Revert</button>
+                                            <button id="save-button" class="btn btn-success" data-bind="click: saveChanges, enable: changed()">Save</button>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Invisible textarea for form submission -->
-                                <textarea id="original_content" style="display: none;">${content}</textarea>
+                                <textarea id="original_content" style="display: none;"></textarea>
                                 <textarea id="edit_content" style="display: none;" data-bind="value: currentText"></textarea>
 
                             </div>
                         </form>
                     </div>
                 </div>
-            % else:
-                % if rendered is not None:
-                    ${rendered}
-                % else:
-                    <img src="/static/img/loading.gif">
-                % endif
-            % endif
-        </div>
-    </div>
+            </div>
 
-    % if user['can_edit'] and is_editable:
     <div data-osf-panel="View">
         <div class="osf-panel" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
             <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
@@ -156,6 +144,7 @@
 
     </div>
 
+    ## Begin Modals
     <div class="modal fade" id="connectedModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -223,8 +212,10 @@
                 </div>
             </div>
         </div>
-    </div>
+      </div>
+    ## End Modals block
 
+    ## Begin File revision pane
     <div class="col-md-3">
         <div id="fileRevisions" class="scripted">
           <ol class="breadcrumb">
@@ -307,7 +298,6 @@
 
 
 <%def name="javascript_bottom()">
-<% import json %>
     ${parent.javascript_bottom()}
     % for script in tree_js:
         <script type="text/javascript" src="${script | webpack_asset}"></script>
@@ -320,60 +310,7 @@
     </script>
     %endif
     <script type="text/javascript">
-        var isEditable = false;
-      % if user['can_edit'] and is_editable:
-          isEditable = true;
-      % endif
-
       window.contextVars = $.extend(true, {}, window.contextVars, {
-        ## %if user['can_edit'] and is_editable:
-        ##     renderURL: undefined,
-        ## %elif rendered is not None:
-        ##     renderURL: undefined,
-        ## %else:
-        ##     renderURL: '${urls['api']['render'] | js_str}',
-        ## %endif
-
-        ##     file: {
-        ##         extra: ${extra},
-        ##         name: '${file_name | js_str}',
-        ##         path: '${file_path | js_str}',
-        ##         provider: '${provider | js_str}',
-        ##         safeName: '${file_name | h,js_str}',
-        ##         materializedPath: '${materialized_path | js_str}',
-        ##     },
-        ##     node: {
-        ##       urls: {
-        ##         files: '${files_url | js_str}'
-        ##       }
-        ##     },
-        ##     currentUser: {
-        ##       canEdit: ${int(user['can_edit'])}
-        ##     },
-        ##     files: {
-        ##         canEdit: ${json.dumps(user['can_edit'])},
-        ##         panelsUsed: ${json.dumps(panels_used) | n},
-        ##         isEditable: isEditable,
-        ##         urls: {
-        ##             waterbutler: '${waterbutler_content_url | js_str}',
-        ##             draft: '${urls['api']['render'] | js_str}',
-        ##             content: '${urls['api']['render'] | js_str}',
-        ##             page: '${urls['api']['render'] | js_str}',
-        ##             base: '${urls['api']['render'] | js_str}',
-        ##             sharejs: '${urls['web']['sharejs']}'
-        ##         },
-        ##         metadata: {
-        ##             registration: true,
-        ##             docId: '${sharejs_uuid}',
-        ##             userId: '${user_id}',
-        ##             userName: '${user_full_name}',
-        ##             userUrl: '${user_url}',
-        ##             userGravatar: '${urls['web']['gravatar']}'.replace('&amp;', '&')
-        ##         }
-        ##     }
-      %if error is None:
-        renderURL: '${render_url | js_str}',
-      %endif
         file: {
             extra: ${extra},
             name: '${file_name | js_str}',
@@ -381,62 +318,37 @@
             provider: '${provider | js_str}',
             safeName: '${file_name | h,js_str}',
             materializedPath: '${materialized_path | js_str}',
+          urls: {
+        %if error is None:
+              render: '${urls['render']}',
+        %endif
+              content: '${urls['content'] | js_str}',
+              sharejs: '${urls['sharejs'] | js_str}',
+            }
+        },
+        editor: {
+            registration: true,
+            docId: '${sharejs_uuid}',
+            userId: '${user['id']}',
+            userName: '${user['fullname'] | js_str}',
+            userUrl: '/${user['id']}/',
+            userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
         },
         node: {
           urls: {
-            files: '${files_url | js_str}'
+            files: '${urls['files'] | js_str}'
           }
         },
+        panelsUsed: ['edit', 'view'],
         currentUser: {
           canEdit: ${int(user['can_edit'])}
-        }
+          }
       });
     </script>
 
-    <script>
+    <script src="//${urls['sharejs']}/text.js"></script>
+    <script src="//${urls['sharejs']}/share.js"></script>
 
-        $('#submitEdit').on('click', function(e) {
-            e.preventDefault();
-            var editContent = $('#edit_content').val();
-            var originalContent = $('#original_content').val();
-
-            if (editContent != originalContent) {
-                var request = $.ajax({
-                    type: 'PUT',
-                    url: '${urls['web']['edit']}',
-                    data: editContent
-                });
-
-                request.done(function () {
-                    $.ajax({
-                        type: 'GET',
-                        url: '${urls['web']['view']}'
-                    }).done(function() {
-                        window.location.href = '${urls['web']['view']}';
-                    });
-                });
-
-                request.fail(function(error) {
-                   $osf.growl('Error', 'The file could not be updated.');
-                   Raven.captureMessage('Could not PUT file content.', {
-                       url: '${urls['web']['edit']}',
-                       error: error
-                   });
-                });
-
-            } else {
-                alert("There are no changes to be saved.");
-            }
-        });
-    </script>
-
-    <script src="//${urls['web']['sharejs']}/text.js"></script>
-    <script src="//${urls['web']['sharejs']}/share.js"></script>
-
-    % if user['can_edit'] and is_editable:
-        <script src=${"/static/public/js/file-edit-page.js" | webpack_asset}></script>
-    % endif
-
-    <script src=${"/static/public/js/view-file-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/file-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>
