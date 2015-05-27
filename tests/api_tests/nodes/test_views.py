@@ -313,57 +313,46 @@ class TestNodeCreate(ApiTestCase):
         self.url = '/v2/nodes/'
 
         self.title = 'Cool Project'
-        self.new_title = 'Super Cool Project'
         self.description = 'A Properly Cool Project'
-        self.new_description = 'An even cooler project'
         self.category = 'data'
-        self.new_category = 'project'
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
 
-        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user)
-        self.project_two = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
+        self.public_project = {'title': self.title, 'description': self.description, 'category' : self.category,
+                          'public': True }
+        self.private_project =  {'title': self.title, 'description': self.description, 'category' : self.category,
+                          'public': False }
 
     def test_creates_public_project_logged_out(self):
-        public_project = {'title': 'My public project', 'description': 'Project description', 'category' : 'project',
-                          'public': True }
-        res1 = self.app.post_json(self.url, public_project, expect_errors=True)
-        assert_equal(res1.status_code, 401)
+        res = self.app.post_json(self.url, self.public_project, expect_errors=True)
+        assert_equal(res.status_code, 401)
 
     def test_creates_public_project_logged_in(self):
-        public_project = {'title': 'My public project', 'description': 'Project description', 'category' : 'project',
-                          'public': True }
-        res = self.app.post_json(self.url, public_project, auth=self.auth)
-        project_id = res.json['data']['id']
+        res = self.app.post_json(self.url, self.public_project, auth=self.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], public_project['title'])
-        assert_equal(res.json['data']['description'], public_project['description'])
-        assert_equal(res.json['data']['category'], public_project['category'])
+        assert_equal(res.json['data']['title'], self.public_project['title'])
+        assert_equal(res.json['data']['description'], self.public_project['description'])
+        assert_equal(res.json['data']['category'], self.public_project['category'])
 
     def test_creates_private_project_logged_out(self):
-        private_project = {'title': 'My private project', 'description': 'Project description', 'category' : 'project',
-                          'public': False }
-        res = self.app.post_json(self.url, private_project, expect_errors=True)
+        res = self.app.post_json(self.url, self.private_project, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_creates_private_project_logged_in_contributor(self):
-        private_project = {'title': 'Cool Private Project', 'description': 'A properly cool project', 'category': 'data',
-                           'public': False }
-        res = self.app.post_json(self.url, private_project, auth=self.auth)
+        res = self.app.post_json(self.url, self.private_project, auth=self.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], private_project['title'])
-        assert_equal(res.json['data']['description'], private_project['description'])
-        assert_equal(res.json['data']['category'], private_project['category'])
+        assert_equal(res.json['data']['title'], self.private_project['title'])
+        assert_equal(res.json['data']['description'], self.private_project['description'])
+        assert_equal(res.json['data']['category'], self.private_project['category'])
 
     def test_creates_project_creates_project_and_sanitizes_html(self):
-        url = '/v2/nodes/'
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> project'
 
-        res = self.app.post_json(url, {
+        res = self.app.post_json(self.url, {
             'title': title,
             'description': description,
             'category': self.category,
@@ -376,7 +365,6 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['title'], strip_html(title))
         assert_equal(res.json['data']['description'], strip_html(description))
         assert_equal(res.json['data']['category'], self.category)
-
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
