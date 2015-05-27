@@ -49,4 +49,4 @@ class OSFBasicAuthentication(BasicAuthentication):
         return (user, None)
 
     def authenticate_header(self, request):
-        return
+        return ""
