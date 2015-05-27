@@ -139,15 +139,23 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
      created for the current node."""
-    permissions_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+    permission_classes = (
         ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
+
     serializer_class = NodeSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_node().node__registrations
+        nodes = self.get_node().node__registrations
+        user = self.request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        registrations = [node for node in nodes if node.can_view(auth)]
+        return registrations
 
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
