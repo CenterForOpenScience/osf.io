@@ -23,13 +23,37 @@ var FileEditor = {
         self.triggerReload = triggerReload;
         self.changed = m.prop(false);
 
+        self.observables = {
+            status: m.prop('connecting'),
+            activeUsers: m.prop([])
+        };
+
+//        self.throttledStatus = m.prop(self.observables.status());
+
+
+        $osf.throttle(self.observables.status(), 4000, {leading: false});
+
+//        self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
+//
+//        self.observables.status.subscribe(function (newValue) {
+//            if (newValue !== 'connecting') {
+//                self.updateStatus();
+//            }
+//            self.throttledUpdateStatus();
+//        });
+//
+//        self.updateStatus = function() {
+//            self.throttledStatus(self.status());
+//        };
+
+
         self.bindAce = function(element, isInitialized, context) {
             if (isInitialized) return;
             self.editor = ace.edit(element.id);
             self.editor.setValue(self.initialText);
             self.editor.on('change', self.onChanged);
-            // var ShareJSDoc = require('js/pages/ShareJSDocFile.js');
-            // new ShareJSDoc(self.contentURL, self.editorMetadata, self.editor);
+            var ShareJSDoc = require('js/pages/ShareJSDocFile.js');
+            new ShareJSDoc(shareWSUrl, self.editorMeta, self.editor, self.observables);
         };
 
         self.reloadFile = function() {

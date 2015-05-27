@@ -20,6 +20,7 @@ var FileViewPage = {
         self.context = context;
         self.file = self.context.file;
         self.node = self.context.node;
+        self.editorMeta = self.context.editor;
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
@@ -37,8 +38,8 @@ var FileViewPage = {
         };
 
         self.panels = [
-            Panel('Tree', FileTree, [self.node.urls.api]),
-            Panel('Edit', FileEditor, [self.file.urls.content, self.reloadFile]),
+            Panel('Tree', FileTree, [self.node.urls.api], true),
+            Panel('Edit', FileEditor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true),
             Panel('View', FileRenderer, [self.file.urls.render, self.file.urls.sharejs, self.context.editorMeta, self.reloadFile], true),
             Panel('Revisions', FileRevisionsTable, [self.file, self.node], true),
         ];

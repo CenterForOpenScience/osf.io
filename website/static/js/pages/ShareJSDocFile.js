@@ -3,10 +3,10 @@ var $ = require('jquery');
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
-var ShareJSDoc = function(wsUrl, metadata, editor) {
+var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     var self = this;
     self.editor = editor;
-    self.renderer = renderer;
+//    self.renderer = renderer;
 
     var ctx = window.contextVars.file;
 
@@ -25,6 +25,7 @@ var ShareJSDoc = function(wsUrl, metadata, editor) {
     });
 
     self.collaborative = collaborative;
+    self.observables = observables;
 
     // if (!collaborative) {
     //     // Populate editor with most recent draft
@@ -48,6 +49,7 @@ var ShareJSDoc = function(wsUrl, metadata, editor) {
 
     // Configure connection
     var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+    var wsUrl = wsPrefix + shareWSUrl;
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
@@ -63,15 +65,15 @@ var ShareJSDoc = function(wsUrl, metadata, editor) {
             doc.create('text');
         }
 
-        viewModel.fetchData().done(function(response) {
+//        self.editor.fetchData().done(function(response) {
             doc.attachAce(self.editor);
-            if (viewModel.filesDiffer(viewModel.currentText(), response)) {
-                viewModel.currentText(response);
-            }
+//            if (self.editor.filesDiffer(self.editor.currentText(), response)) {
+//                self.editor.currentText(response);
+//            }
             unlockEditor();
-            viewModel.status('connected');
+            self.observables.status('connected');
             madeConnection = true;
-        });
+//        });
 
     }
 
@@ -108,7 +110,7 @@ var ShareJSDoc = function(wsUrl, metadata, editor) {
                     userMeta.id = user;
                     activeUsers.push(userMeta);
                 }
-                viewModel.activeUsers(activeUsers);
+                self.observables.activeUsers(activeUsers);
                 break;
             case 'lock':
                 allowRefresh = false;
@@ -137,14 +139,14 @@ var ShareJSDoc = function(wsUrl, metadata, editor) {
     var onclose = socket.onclose;
     socket.onclose = function (event) {
         onclose(event);
-        viewModel.status('connecting');
+        self.observables.status('connecting');
     };
 
     var onopen = socket.onopen;
     socket.onopen = function(event) {
         onopen(event);
         if (madeConnection) {
-            viewModel.status('connected');
+            self.observables.status('connected');
         }
     };
 
