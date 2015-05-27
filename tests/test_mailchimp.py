@@ -11,8 +11,9 @@ from framework.tasks import handlers
 class TestMailChimpHelpers(OsfTestCase):
 
     def setUp(self, *args, **kwargs):
-        super(TestMailChimpHelpers, self).__init__(*args, **kwargs)        
-        handlers.celery_before_request()
+        super(TestMailChimpHelpers, self).setUp(*args, **kwargs)
+        with self.context:
+            handlers.celery_before_request()
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_get_list_id_from_name(self, mock_get_mailchimp_api):
@@ -43,6 +44,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        handlers.celery_teardown_request()
         mock_client.lists.subscribe.assert_called_with(
             id=list_id,
             email={'email': user.username},
@@ -63,6 +65,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         mock_client.lists.subscribe.side_effect = mailchimp.ValidationError
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        handlers.celery_teardown_request()
         assert_false(user.mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
@@ -74,4 +77,5 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+        handlers.celery_teardown_request()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': user.username})
