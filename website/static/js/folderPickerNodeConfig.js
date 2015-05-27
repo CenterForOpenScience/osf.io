@@ -172,6 +172,17 @@ var FolderPickerViewModel = oop.defclass({
             return userIsOwner ? name : '';
         });
 
+        /**  Functions for Google Drive's linked and selected folders' URI decoded display text.*/
+        self.decodedFolderName = ko.pureComputed(function() {
+            var folder_name = self.folderName();
+            return decodeURIComponent(folder_name);
+        });
+
+        self.decodedSelectedFolderName = ko.pureComputed(function() {
+           var folder_name = self.selectedFolderName();
+            return decodeURIComponent(folder_name);
+        });
+
         self.treebeardOptions = {
             lazyLoadPreprocess: function(data) { 
                 return data;
