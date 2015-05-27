@@ -155,7 +155,7 @@ def node_register_template_page_post(auth, node, **kwargs):
     schema = MetaSchema.find(
         Q('name', 'eq', template)
     ).sort('-schema_version')[0]
-    register = node.register_node(
+    node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
     return {

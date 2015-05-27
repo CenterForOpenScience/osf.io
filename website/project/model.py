@@ -35,7 +35,6 @@ from framework.analytics import (
 )
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
-from framework.tasks import utils as task_utils
 
 from website import language
 from website import settings
