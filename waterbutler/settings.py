@@ -8,17 +8,17 @@ PROJECT_NAME = 'waterbutler'
 PROJECT_CONFIG_PATH = '~/.cos'
 
 try:
-    import colorlog
+    import colorlog  # noqa
     DEFAULT_FORMATTER = {
         '()': 'colorlog.ColoredFormatter',
         'format': '%(cyan)s[%(asctime)s]%(log_color)s[%(levelname)s][%(name)s]: %(reset)s%(message)s'
     }
 except ImportError:
     DEFAULT_FORMATTER = {
-         '()': 'waterbutler.core.logging.MaskFormatter',
-         'format': '[%(asctime)s][%(levelname)s][%(name)s]: %(message)s',
-         'pattern': '(?<=cookie=)(.*?)(?=&|$)',
-         'mask': '***'
+        '()': 'waterbutler.core.logging.MaskFormatter',
+        'format': '[%(asctime)s][%(levelname)s][%(name)s]: %(message)s',
+        'pattern': '(?<=cookie=)(.*?)(?=&|$)',
+        'mask': '***'
     }
 DEFAULT_LOGGING_CONFIG = {
     'version': 1,
