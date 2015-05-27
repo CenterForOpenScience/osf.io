@@ -479,6 +479,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
                 'render': render_url
             }
         },
+        'waterbutler_content_url': guid_file.download_url,
         'files_url': node.web_url_for('collect_file_trees'),
         'rendered': get_or_start_render(guid_file),
         'content': file_content(guid_file),
@@ -486,7 +487,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
-        'is_editable': is_editable(guid_file),
+        'is_editable': True, #is_editable(guid_file),
         'panels_used': ['edit', 'view'],
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
     })
