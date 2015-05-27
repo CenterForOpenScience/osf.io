@@ -1,35 +1,35 @@
 var m = require('mithril');
 
 
-function Panel(title, inner, args, selected) {
-    panel = m.component(Panel, title, inner, args);
+function Panel(title, header, inner, args, selected) {
+    panel = m.component(Panel, title, header, inner, args);
     panel.title = title;
     panel.selected = selected || false;
     return panel;
 }
 
 
-Panel.controller = function(title, inner, args) {
+Panel.controller = function(title, header, inner, args) {
     var self = this;
-
     self.title = title;
+    self.header = header || title;
     self.inner = m.component.apply(this, [inner].concat(args || []));
 };
 
 
 Panel.view = function(ctrl) {
     return m('.osf-panel', [
-        m('.osf-panel-header', ctrl.title),
+        m('.osf-panel-header', ctrl.header),
         m('.osf-panel-body', ctrl.inner)
     ]);
 };
 
 
 var PanelToggler = {
-    controller: function(panels) {
+    controller: function(header, panels) {
         var self = this;
         self.panels = panels;
-
+        self.header = header || '';
     },
     view: function(ctrl) {
         var shown = ctrl.panels.reduce(function(accu, panel) {
@@ -38,7 +38,11 @@ var PanelToggler = {
 
         return m('.panel-toggler', [
             m('.row', [
-                m('.col-md-6'),
+                m('.col-md-6', [
+                    m('.pull-left', [
+                        ctrl.header
+                    ])
+                ]),
                 m('.col-md-6', [
                     m('.pull-right', [
                         m('.btn-group.btn-group-sm', [m('.btn.btn-default.disabled', 'Toggle View: ')].concat(
