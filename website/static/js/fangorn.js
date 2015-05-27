@@ -413,8 +413,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.open = true;
             from.load = true;
         }
-
-        tb.redraw();
+        _fangornOrderFolder.call(tb, from.parent());
+        // no need to redraw because fangornOrderFolder does it
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
