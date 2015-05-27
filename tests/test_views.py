@@ -475,7 +475,8 @@ class TestProjectViews(OsfTestCase):
         assert_in('Template not found', res)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    def test_registered_projects_contributions(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_registered_projects_contributions(self, mock_archive):
         # register a project
         self.project.register_node(None, Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
@@ -3651,7 +3652,8 @@ class TestDashboardViews(OsfTestCase):
         res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_registered_components_with_are_accessible_from_dashboard(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_registered_components_with_are_accessible_from_dashboard(self, mock_archive):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
