@@ -3,11 +3,6 @@ from framework.auth import Auth
 from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_FAILURE,
-)
-from website.archiver.settings import (
-    ARCHIVE_PROVIDER,
-)
-from website.archiver import (
     ARCHIVE_COPY_FAIL,
     ARCHIVE_SIZE_EXCEEDED,
     ARCHIVE_METADATA_FAIL,
@@ -64,7 +59,7 @@ def archive_provider_for(node, user):
     :param user: target user (currently unused, but left in for future-proofing
     the code for use with archive providers other than OSF Storage)
     """
-    return node.get_addon(ARCHIVE_PROVIDER)
+    return node.get_addon(settings.ARCHIVE_PROVIDER)
 
 def has_archive_provider(node, user):
     """A generic function for checking whether or not some node, user pair has
@@ -74,7 +69,7 @@ def has_archive_provider(node, user):
     :param user: target user (currently unused, but left in for future-proofing
     the code for use with archive providers other than OSF Storage)
     """
-    return node.has_addon(ARCHIVE_PROVIDER)
+    return node.has_addon(settings.ARCHIVE_PROVIDER)
 
 def link_archive_provider(node, user):
     """A generic function for linking some node, user pair with the configured
@@ -84,7 +79,7 @@ def link_archive_provider(node, user):
     :param user: target user (currently unused, but left in for future-proofing
     the code for use with archive providers other than OSF Storage)
     """
-    addon = node.get_or_add_addon(ARCHIVE_PROVIDER, auth=Auth(user))
+    addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user))
     addon.on_add()
     node.save()
 
