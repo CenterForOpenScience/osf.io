@@ -715,7 +715,7 @@ def _view_project(node, auth, primary=False):
             'update_url': node.api_url_for('update_node'),
             'in_dashboard': in_dashboard,
             'is_public': node.is_public,
-            'is_archiving': node.is_archiving,
+            'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
