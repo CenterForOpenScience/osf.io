@@ -1,18 +1,13 @@
 var $ = require('jquery');
 
-var FileEditor = require('js/pages/FileEditor.js');
-
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
-var ShareJSDoc = function(url, metadata, viewText, editor, renderer) {
+var ShareJSDoc = function(wsUrl, metadata, editor) {
     var self = this;
     self.editor = editor;
     self.renderer = renderer;
-    var fileEditor = new FileEditor(url, viewText, self.editor, self.renderer);
-    self.fileEditor = fileEditor;
 
-    var viewModel = fileEditor.viewModel;
     var ctx = window.contextVars.file;
 
     // Initialize Ace and configure settings
@@ -29,20 +24,22 @@ var ShareJSDoc = function(url, metadata, viewText, editor, renderer) {
         enableLiveAutocompletion: false
     });
 
-    if (!collaborative) {
-        // Populate editor with most recent draft
-        viewModel.fetchData().done(function(response) {
-            var content = response;
-            self.editor.setValue(content, -1);
-            self.editor.setReadOnly(false);
-            if (typeof WebSocket === 'undefined') {
-                viewModel.status('unsupported');
-            } else {
-                viewModel.status('disconnected');
-            }
-        });
-        return;
-    }
+    self.collaborative = collaborative;
+
+    // if (!collaborative) {
+    //     // Populate editor with most recent draft
+    //     viewModel.fetchData().done(function(response) {
+    //         var content = response;
+    //         self.editor.setValue(content, -1);
+    //         self.editor.setReadOnly(false);
+    //         if (typeof WebSocket === 'undefined') {
+    //             viewModel.status('unsupported');
+    //         } else {
+    //             viewModel.status('disconnected');
+    //         }
+    //     });
+    //     return;
+    // }
 
     // Requirements load order is specific in this case to compensate
     // for older browsers.
@@ -51,7 +48,6 @@ var ShareJSDoc = function(url, metadata, viewText, editor, renderer) {
 
     // Configure connection
     var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-    var wsUrl = wsPrefix + ctx.urls.sharejs;
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
@@ -94,11 +90,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor, renderer) {
 
     function refreshMaybe() {
         if (allowRefresh && refreshTriggered) {
-            if (canEdit) {
-                window.location.reload();
-            } else {
-                window.location.replace(ctx.urls.content);
-            }
+            window.location.reload();
         }
     }
 
