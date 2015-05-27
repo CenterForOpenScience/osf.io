@@ -52,11 +52,18 @@ function treebeardTitleColumn(item, col) {
             tb.updateFolder(null, item);
         };
     }
-
-    return m('span', {
-        className: cls,
-        onclick: onclick
-    }, item.data.name);
+    if (item.data.addon == "googledrive"){
+        return m('span', {
+            className: cls,
+            onclick: onclick
+        }, decodeURIComponent(item.data.name));
+    }
+    else {
+        return m('span', {
+            className: cls,
+            onclick: onclick
+        }, item.data.name);
+    }
 }
 
 /**
