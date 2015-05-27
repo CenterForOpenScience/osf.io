@@ -609,7 +609,7 @@ class TestNodeContributorList(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/v2/nodes/{}/contributors/'.format(self.public_project._id)
 
-    def test_logged_out_user_can_access_public_contributor_list(self):
+    def test_return_public_contributor_list_logged_out(self):
         self.public_project.add_contributor(self.user_two)
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
@@ -617,17 +617,17 @@ class TestNodeContributorList(ApiTestCase):
         assert_equal(res.json['data'][0]['id'], self.user._id)
         assert_equal(res.json['data'][1]['id'], self.user_two._id)
 
-    def test_logged_in_user_can_access_public_contributor_list(self):
+    def test_return_public_contributor_list_logged_in(self):
          res = self.app.get(self.public_url, auth=self.auth_two)
          assert_equal(res.status_code, 200)
          assert_equal(len(res.json['data']), 1)
          assert_equal(res.json['data'][0]['id'], self.user._id)
 
-    def test_logged_out_user_cannot_access_private_contributor_list(self):
+    def test_return_private_contributor_list_logged_out(self):
          res = self.app.get(self.private_url, expect_errors=True)
          assert_equal(res.status_code, 401)
 
-    def test_logged_in_contributor_can_access_private_contributor_list(self):
+    def test_return_private_contributor_list_logged_in_contributor(self):
         self.private_project.add_contributor(self.user_two)
         res = self.app.get(self.private_url, auth=self.auth)
         assert_equal(res.status_code, 200)
@@ -635,7 +635,7 @@ class TestNodeContributorList(ApiTestCase):
         assert_equal(res.json['data'][0]['id'], self.user._id)
         assert_equal(res.json['data'][1]['id'], self.user_two._id)
 
-    def test_logged_in_non_contributor_cannot_access_private_contributor_list(self):
+    def test_return_private_contributor_list_logged_in_non_contributor(self):
          res = self.app.get(self.private_url, auth=self.auth_two, expect_errors=True)
          assert_equal(res.status_code, 403)
 
