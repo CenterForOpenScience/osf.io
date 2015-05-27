@@ -28,6 +28,19 @@ DEFAULT_PERMISSIONS = {
 }
 
 
+def unescape(s):
+    """
+    Return a string without html escape characters.
+
+    :param s: A string
+    :return: A string without html escape characters
+
+    """
+    s = s.replace('&amp;', '&')
+    s = s.replace('&lt;', '<')
+    s = s.replace('&gt;', '>')
+    return s
+
 def format_filesize(size):
     return hurry.filesize.size(size, system=hurry.filesize.alternative)
 
@@ -325,7 +338,7 @@ class NodeProjectCollector(object):
 
         return {
             #TODO Remove the replace when mako html safe comes around
-            'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
+            'name': unescape(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
@@ -443,7 +456,7 @@ class NodeFileCollector(object):
             children = []
         return {
             # #TODO Remove the replace when mako html safe comes around
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title.replace('&amp;', '&'))
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), unescape(node.title))
             if can_view
             else u'Private Component',
             'kind': FOLDER,
