@@ -29,10 +29,10 @@ var FileViewPage = {
         });
 
         self.panels = [
-            Panel('Tree', FileTree),
-            Panel('Edit', FileEditor),
+            Panel('Tree', FileTree, [self.node.urls.api]),
+            Panel('Edit', FileEditor, [self.file.urls.content]),
             Panel('View', FileRenderer, [self.file.urls.render], true),
-            Panel('Revisions', FileRevisionsTable, [self.file], true),
+            Panel('Revisions', FileRevisionsTable, [self.file, self.node], true),
         ];
     },
     view: function(ctrl) {
