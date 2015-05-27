@@ -233,14 +233,6 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
-    def version_identifier(self):
-        raise NotImplementedError
-
-    @property
-    def unique_identifier(self):
-        raise NotImplementedError
-
-    @property
     def waterbutler_path(self):
         '''The waterbutler formatted path of the specified file.
         Must being with a /
@@ -266,12 +258,6 @@ class GuidFile(GuidStoredObject):
         except (TypeError, KeyError):
             # If materialized is not in _metadata_cache or metadata_cache is None
             raise AttributeError('No attribute materialized')
-
-    @property
-    def file_name(self):
-        if self.revision:
-            return '{0}_{1}.html'.format(self._id, self.revision)
-        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
 
     @property
     def joinable_path(self):
@@ -320,6 +306,13 @@ class GuidFile(GuidStoredObject):
         return url.url
 
     @property
+    def mfr_render_url(self):
+        url = furl.furl(settings.MFR_SERVER_URL)
+        url.path.add('render')
+        url.args['url'] = self.public_download_url
+        return url.url
+
+    @property
     def public_download_url(self):
         url = furl.furl(settings.DOMAIN)
 
@@ -341,25 +334,6 @@ class GuidFile(GuidStoredObject):
         url.path.add('data')
 
         return url.url
-
-    @property
-    def mfr_cache_path(self):
-        return os.path.join(
-            settings.MFR_CACHE_PATH,
-            self.node._id,
-            self.provider,
-            self.file_name,
-        )
-
-    @property
-    def mfr_temp_path(self):
-        return os.path.join(
-            settings.MFR_TEMP_PATH,
-            self.node._id,
-            self.provider,
-            # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.name)[1]
-        )
 
     @property
     def deep_url(self):
