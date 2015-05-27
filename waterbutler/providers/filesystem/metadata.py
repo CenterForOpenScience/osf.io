@@ -52,3 +52,7 @@ class FileSystemFileMetadata(BaseFileSystemMetadata, metadata.BaseFileMetadata):
     @property
     def content_type(self):
         return self.raw['mime_type']
+
+    @property
+    def etag(self):
+        return '{}::{}'.format(self.raw['modified'], self.raw['path'])
