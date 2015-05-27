@@ -20,9 +20,10 @@ var FileRenderer = {
                 url: self.url,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(data) {
+                m.startComputation();
                 self.data = data;
                 self.loaded = true;
-                m.redraw();
+                m.endComputation();
             }).fail(function() {
                 //TODO
             });
@@ -31,7 +32,7 @@ var FileRenderer = {
         self.reload();
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) util.Spinner;
+        if (!ctrl.loaded) return util.Spinner;
         return m('.mfr.mfr-file', m.trust(ctrl.data));
     }
 };
