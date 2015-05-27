@@ -22,6 +22,7 @@ var FileViewPage = {
         self.context = context;
         self.file = self.context.file;
         self.node = self.context.node;
+        self.editorMeta = self.context.editor;
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
@@ -83,10 +84,10 @@ var FileViewPage = {
         editHeader = [m('i.fa.fa-pencil-square-o'), ' Edit'];
 
         self.panels = [
-            new Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
-            new Panel('Edit', editHeader, FileEditor, [self.file.urls.content, self.reloadFile]),
-            new Panel('View', viewHeader, FileRenderer, [self.file.urls.render, self.file.urls.sharejs, self.context.editorMeta, self.reloadFile], true),
-            new Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node], true),
+            Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
+            Panel('Edit', editHeader, FileEditor, [self.file.urls.render, self.file.urls.sharejs, self.context.editorMeta, self.reloadFile]),
+            Panel('View', viewHeader, FileRenderer, [self.file.urls.render], true),
+            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node], true),
         ];
 
     },

@@ -17,14 +17,14 @@ from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in, must_be_signed
+from framework.mongo.utils import to_mongo_key
 
 from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
-from website.util import rubeus, waterbutler_url_for
-from website.util.mimetype import get_mimetype
+from website.util import rubeus
 from website.profile.utils import get_gravatar
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
@@ -408,13 +408,23 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     else:
         error = None
 
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    file_guid = str(guid_file)
+    file_key = to_mongo_key(file_guid)
+
+    if can_edit:
+        if file_key not in node.wiki_private_uuids:
+            generate_private_uuid(node, file_guid)
+        sharejs_uuid = get_sharejs_uuid(node, file_guid)
+    else:
+        sharejs_uuid = None
+
     ret.update({
         'error': error,
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],
-        'sharejs_uuid': 'lkjdf;ldf;lkajdf',
-        # 'sharejs_uuid': sharejs_uuid or '',
+        'sharejs_uuid': sharejs_uuid or '',
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
             'content': guid_file.download_url,
