@@ -13,5 +13,15 @@
         "twofactor",
         "wiki",
         "googledrive"
+    ],
+    "addons_archivable": [
+        "osfstorage",
+        "box",
+        "dataverse",
+        "dropbox",
+        "figshare",
+        "googledrive",
+        "github",
+        "s3",
     ]
 }

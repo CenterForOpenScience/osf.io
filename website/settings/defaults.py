@@ -182,7 +182,9 @@ CELERY_IMPORTS = (
 # Add-ons
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
-    ADDONS_REQUESTED = json.load(fp)['addons']
+    addon_settings = json.load(fp)
+    ADDONS_REQUESTED = addon_settings['addons']
+    ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -191,17 +193,6 @@ ADDON_CATEGORIES = [
     'other',
     'security',
     'citations',
-]
-
-ADDONS_ARCHIVABLE = [
-    'osfstorage',
-    'box',
-    'dataverse',
-    'dropbox',
-    'figshare',
-    'googledrive',
-    'github',
-    's3',
 ]
 
 SYSTEM_ADDED_ADDONS = {
