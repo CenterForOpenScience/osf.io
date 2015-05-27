@@ -8,7 +8,7 @@ from framework.tasks import app as celery_app
 from framework.auth.core import User
 from framework.exceptions import HTTPError
 
-from website.archiver import mails
+from website import mails
 from website.archiver import (
     AggregateStatResult,
 )
