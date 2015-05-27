@@ -17,7 +17,10 @@ from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
-from framework.exceptions import PermissionsError
+from framework.exceptions import (
+    PermissionsError,
+    HTTPError,
+)
 
 from website import settings
 from website.addons.base import exceptions
@@ -899,7 +902,7 @@ class StorageAddonBase(object):
         )
         res = requests.get(metadata_url)
         if res.status_code != 200:
-            pass
+            raise HTTPError(res.status_code, data=res.json)
         return res.json().get('data', [])
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None):
@@ -918,7 +921,10 @@ class StorageAddonBase(object):
             kwargs = {
                 'cookie': cookie,
             }
-        filenode['children'] = [self._get_file_tree(child, user, cookie=cookie) for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)]
+        filenode['children'] = [
+            self._get_file_tree(child, user, cookie=cookie)
+            for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)
+        ]
         return filenode
 
 

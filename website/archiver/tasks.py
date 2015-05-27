@@ -6,6 +6,7 @@ from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
 from framework.auth.core import User
+from framework.exceptions import HTTPError
 
 from website.archiver import mails
 from website.archiver import (
@@ -61,7 +62,10 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     update_status(dst, addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     user = User.load(user_pk)
-    file_tree = src_addon._get_file_tree(user=user)
+    try:
+        file_tree = src_addon._get_file_tree(user=user)
+    except HTTPError as e:
+        handle_archive_addon_error(dst, addon_short_name, errors=[e.data])
     result = AggregateStatResult(
         src_addon._id,
         addon_short_name,
