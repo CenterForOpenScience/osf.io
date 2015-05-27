@@ -167,7 +167,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': metadata['path'],
+                'path': metadata['materialized'],
                 'bucket': self.bucket,
                 'urls': {
                     'view': url,

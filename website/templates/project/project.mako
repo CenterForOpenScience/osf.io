@@ -61,7 +61,7 @@
                     <!-- /ko -->
                     <div class="btn-group">
                         <a
-                        % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
+                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
                             class="btn btn-default"
                         % else:
@@ -112,10 +112,16 @@
                         <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                     % endfor
                 % endif
-                <br />Date Created:
-                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                | Last Updated:
-                <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % if node['is_registration']:
+                    <br />Date Registered:
+                    <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                % endif
+                    <br />Date Created:
+                    <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
+                % if not node['is_registration']:
+                    | Last Updated:
+                    <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % endif
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
@@ -286,7 +292,7 @@
                   }'></div>
             </div><!-- end containment -->
         % else:
-          <p>No components have been added to this project.</p>
+          <p>No components have been added to this ${node['node_type']}.</p>
         % endif
     </div><!-- end addon-widget-body -->
 </div><!-- end components -->

@@ -14,7 +14,7 @@ ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var NodeActions = require('js/project.js');
-var iconmap = require('js/iconmap')
+var iconmap = require('js/iconmap');
 
 // Modal language
 var MESSAGES = {
@@ -137,14 +137,14 @@ var ProjectViewModel = function(data) {
     });
 
     self.canBeOrganized = ko.pureComputed(function() {
-        return !!(self.user.username && (self.nodeIsPublic || self.user.is_contributor));
+        return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
     // Add icon to title
     self.icon = '';
     var category = data.node.category_short;
     if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-        self.icon = iconmap.componentIcons[category];        
+        self.icon = iconmap.componentIcons[category];
     }
     else {
         self.icon = iconmap.projectIcons[category];
@@ -293,14 +293,19 @@ var ProjectViewModel = function(data) {
         var timeout = setTimeout(function() {
             self.idCreationInProgress(true); // show loading indicator
         }, 500);
+        var url = self.apiUrl + 'identifiers/';
         return $.post(
-            self.apiUrl + 'identifiers/'
+            url
         ).done(function(resp) {
             self.doi(resp.doi);
             self.ark(resp.ark);
-        }).fail(function() {
-            osfHelpers.growl('Error', 'Could not create identifiers.', 'danger');
-            Raven.captureMessage('Could not create identifiers');
+        }).fail(function(xhr) {
+            var message = 'We could not create the identifier at this time. ' +
+                'The DOI/ARK acquisition service may be down right now. ' +
+                'Please try again soon and/or contact ' +
+                '<a href="mailto: support@osf.io">support@osf.io</a>';
+            osfHelpers.growl('Error', message, 'danger');
+            Raven.captureMessage('Could not create identifiers', {url: url, status: xhr.status});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator
