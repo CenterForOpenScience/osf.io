@@ -353,11 +353,11 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.move(to.id);
     }
 
-    tb.redraw();
-
     if (to.data.provider === from.provider) {
         tb.pendingFileOps.push(from.id);
     }
+    _fangornOrderFolder.call(tb, from.parent());
+
 
     $.ajax({
         type: 'POST',
@@ -450,7 +450,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             }
         });
 
-        tb.redraw();
+        _fangornOrderFolder.call(tb, from.parent());
     });
 }
 
