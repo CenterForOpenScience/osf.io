@@ -538,17 +538,8 @@ def make_url_map(app):
             OsfWebRenderer('profile/oauth_app_detail.mako')
         ),
 
-
         Rule(
-            '/settings/applications/create/',  # TODO: Entirely deprecated in favor of API v2 endpoint
-            'post',
-            # TODO: Why does a post view need a template?
-            profile_views.oauth_application_submit,
-            OsfWebRenderer('profile/oauth_app_detail.mako')
-        ),
-
-        Rule(
-            '/settings/applications/<cid>/',  # TODO: How to handle unrecognized cid?
+            '/settings/applications/<cid>/',
             'get',
             profile_views.oauth_application_detail,
             OsfWebRenderer('profile/oauth_app_detail.mako')

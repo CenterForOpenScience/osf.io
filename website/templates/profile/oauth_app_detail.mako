@@ -51,7 +51,11 @@
                     </div>
 
                     <div class="padded">
-                        <button type="submit" class="btn btn-primary" data-bind="click: $root.updateApplication">Submit</button>
+                        <button type="submit" class="btn btn-primary"
+                                data-bind="visible: !dataUrl, click: $root.createApplication">Create</button>
+
+                        <button type="submit" class="btn btn-primary"
+                                data-bind="visible: dataUrl, click: $root.updateApplication">Update</button>
                     </div>
                 </form>
 
@@ -71,8 +75,8 @@
    ## modules. Not sure if this is a good idea.
    window.contextVars = window.contextVars || {};
    window.contextVars.urls = {
-    // TODO: Make sure template url is correct
-       apiUrl: ${detail_url}
+       dataUrl: ${detail_url},
+       submitUrl: ${submit_url}
    };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-detail-page.js" | webpack_asset}></script>

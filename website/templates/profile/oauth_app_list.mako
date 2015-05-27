@@ -67,7 +67,7 @@
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        apiUrl: ${app_list_url}  // TODO: Hardcoded URL
+        dataUrl: ${app_list_url}  // TODO: Hardcoded URL
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>

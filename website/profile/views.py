@@ -375,48 +375,24 @@ def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
     url_string = "v2/users/{}/applications/".format(auth.user._id)  # POST request to this url
     submit_url = urljoin(settings.API_DOMAIN, url_string)  # TODO: hardcoded url
-    return {"detail_url": json.dumps(submit_url)}
-
-@must_be_logged_in
-def oauth_application_submit(auth, **kwargs):
-    """Register an API application"""
-    # TODO: Maybe something JSON based would be easier to work with? DEPRECATED; use API call and KO.js instead
-    app_name = request.form['appName']
-    home_url = request.form['appHomeURL']
-    app_desc = request.form['appDesc']
-    app_callback_url = request.form['appCallbackURL']
-
-    new_reg = OAuth2App(name=app_name,
-                        home_url=home_url,
-                        callback_url=app_callback_url,
-                        description=app_desc)
-    new_reg.owner = auth.user  # Tie reg to the logged-in user
-
-    new_reg.save()
-
-    # TODO: Tighten up submission view later
-    return redirect(web_url_for('oauth_application_config'))
+    return {"submit_url": json.dumps(submit_url),
+            "detail_url": json.dumps(None)}
 
 @must_be_logged_in
 def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
     client_id = kwargs.get('cid')
-    #
-    # ua = OAuth2App.find_one(Q('client_id', 'eq', client_id))
-    #
-    # # TODO: Rewrite to use api endpoint
-    # return {"user_id": ua.owner,
-    #         "app_data": {"client_id": ua.client_id,
-    #                      "client_secret": ua.client_secret,
-    #                      "owner": ua.owner,
-    #                      "name": ua.name,
-    #                      "description": ua.description,
-    #                      "reg_date": ua.reg_date,
-    #                      "home_url": ua.home_url,
-    #                      "callback_url": ua.callback_url}}
-    url_string = "v2/users/{}/applications/{}/".format(auth.user._id, client_id)  # POST request to this url
+
+    # TODO: This method requires 2 database hits (page load + API call) instead of 1. Is there a more concise way?
+    try:
+        OAuth2App.find_one(Q('client_id', 'eq', client_id))
+    except:
+        raise HTTPError(http.NOT_FOUND)
+
+    url_string = "v2/users/{}/applications/{}/".format(auth.user._id, client_id)  # Send request to this URL
     detail_url = urljoin(settings.API_DOMAIN, url_string)  # TODO: hardcoded url
-    return {"detail_url": json.dumps(detail_url)}
+    return {"submit_url": json.dumps(None),
+            "detail_url": json.dumps(detail_url)}
 
 def collect_user_config_js(addons):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
