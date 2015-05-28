@@ -1,5 +1,5 @@
 import bleach
-import re
+
 
 
 #Thank you Lyndsy
@@ -29,9 +29,7 @@ def clean_tag(data):
     # for c in chr:
     #     str = str.replace(c, r"\%s#" % c)
 
-    return escape_html(data).replace('"', '&quot;').replace("/", "&sol;")\
-        .replace('*', '&midast;').replace('!', '&excl;').replace('@', '&COPY;')\
-        .replace('#' , '&num;', ).replace('|', '&vert;').replace('|', '&vert;')
+    return escape_html(data).replace('"', '&quot;')
 
 
 def escape_html(data):
