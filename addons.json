@@ -22,6 +22,7 @@
         "figshare": "partial",
         "googledrive": "partial",
         "github": "partial",
-        "s3": "partial"
+        "s3": "partial",
+        "wiki": "full"
     }
 }

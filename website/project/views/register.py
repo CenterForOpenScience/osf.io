@@ -280,11 +280,11 @@ def project_before_register(auth, node, **kwargs):
     messages = {
         'full': {
             'addons': [],
-            'message': 'The files and version history of <strong>{0}</strong> will be copied to the registration.',
+            'message': 'The content and version history of <strong>{0}</strong> will be copied to the registration.',
         },
         'partial': {
             'addons': [],
-            'message': 'The current version of the files in <strong>{0}</strong> will be copied to the registration, but version history will be lost.'
+            'message': 'The current version of the content in <strong>{0}</strong> will be copied to the registration, but version history will be lost.'
         },
         'none': {
             'addons': [],
