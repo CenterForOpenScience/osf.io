@@ -30,9 +30,9 @@ var FileViewPage = {
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
-            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id)
+            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false}),
         });
 
         self.reloadFile = function() {
