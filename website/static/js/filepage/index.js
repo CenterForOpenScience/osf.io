@@ -7,7 +7,6 @@ var waterbutler = require('js/waterbutler');
 
 // Local requires
 var utils = require('./util.js');
-var FileTree = require('./tree.js');
 var FileRenderer = require('./render.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
@@ -18,6 +17,8 @@ var PanelToggler = utils.PanelToggler;
 
 
 var EDITORS = {'text': FileEditor};
+
+window.m = m;
 
 
 var FileViewPage = {
@@ -84,28 +85,27 @@ var FileViewPage = {
             ])
         ]);
 
-        treeHeader = m('.row', m('.col-md-12', m('#filesSearch')));
         viewHeader = [m('i.fa.fa-eye'), ' View'];
         editHeader = [m('i.fa.fa-pencil-square-o'), ' Edit'];
 
         //crappy hack to delay creation of the editor
         //until we know this is the current file revsion
         self.enableEditing = function() {
+            if (self.editor) return;
             var fileType = mime.lookup(self.file.name);
             if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    var p = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
+                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
                     // Splicing breaks mithrils caching :shrug:
                     // self.panels.splice(1, 0, p);
-                    self.panels.push(p);
+                    self.panels.push(self.editor);
                 }
             }
         };
 
         self.panels = [
-            Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
-            Panel('View', viewHeader, FileRenderer, [self.file.urls.render], true),
+            Panel('View', viewHeader, FileRenderer, [self.file.urls.render, self.file.error], true),
             Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
         ];
 
