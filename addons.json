@@ -14,14 +14,14 @@
         "wiki",
         "googledrive"
     ],
-    "addons_archivable": [
-        "osfstorage",
-        "box",
-        "dataverse",
-        "dropbox",
-        "figshare",
-        "googledrive",
-        "github",
-        "s3"
-    ]
+    "addons_archivable": {
+        "osfstorage": "full",
+        "box": "partial",
+        "dataverse": "partial",
+        "dropbox": "partial",
+        "figshare": "partial",
+        "googledrive": "partial",
+        "github": "partial",
+        "s3": "partial"
+    }
 }

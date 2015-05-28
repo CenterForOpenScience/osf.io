@@ -28,6 +28,17 @@ waterbutler_action_map = {
     'create_folder': 'file',
 }
 
+def conjunct(words, conj='and'):
+    num_words = len(words)
+    if num_words == 0:
+        return ''
+    elif num_words == 1:
+        return words[0]
+    elif num_words == 2:
+        return ' {0} '.format(conj).join(words)
+    elif num_words > 2:
+        return ', '.join(words[:-1]) + ', {0} {1}'.format(conj, words[-1])
+
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
     urls into guid urls. Ex: `<nid>/wiki/home`.

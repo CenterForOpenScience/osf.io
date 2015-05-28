@@ -705,7 +705,6 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 node_addon.clear_auth()
 
 class AddonNodeSettingsBase(AddonSettingsBase):
-
     owner = fields.ForeignField('node', backref='addons')
 
     _meta = {

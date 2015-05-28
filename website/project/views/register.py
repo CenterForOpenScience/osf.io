@@ -33,6 +33,7 @@ from website.models import MetaSchema
 from website.models import NodeLog
 from website import language, mails
 from website.project import signals as project_signals
+from website import util
 
 from website.identifiers.client import EzidClient
 
@@ -276,9 +277,30 @@ def node_register_template_page(auth, node, **kwargs):
 def project_before_register(auth, node, **kwargs):
     """Returns prompt informing user that addons, if any, won't be registered."""
 
-    user = auth.user
-
-    prompts = node.callback('before_register', user=user)
+    messages = {
+        'full': {
+            'addons': [],
+            'message': 'The files and version history of <strong>{0}</strong> will be copied to the registration.',
+        },
+        'partial': {
+            'addons': [],
+            'message': 'The current version of the files in <strong>{0}</strong> will be copied to the registration, but version history will be lost.'
+        },
+        'none': {
+            'addons': [],
+            'message': 'The contents of <strong>{0}</strong> cannot be registered at this time,  and will not be included as part of this registration.',
+        },
+    }
+    for addon in node.get_addons():
+        name = addon.config.short_name
+        if name in settings.ADDONS_ARCHIVABLE:
+            messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].append(addon.config.full_name)
+        else:
+            messages['none']['addons'].append(addon.config.full_name)
+    prompts = [
+        m['message'].format(util.conjunct(m['addons']))
+        for m in messages.values()
+    ]
 
     if node.has_pointers_recursive:
         prompts.append(

@@ -31,10 +31,9 @@ $(document).ready(function() {
         var parentTitle = node.parentTitle;
         var parentRegisterUrl = node.parentRegisterUrl;
         var category = node.category;
-        var bootboxTitle = 'Register Project';
+        var bootboxTitle = 'Register ' + title;
         if (node.category !== 'project'){
             category = 'component';
-            bootboxTitle = 'Register Component';
         }
 
         bootbox.confirm({
