@@ -469,7 +469,8 @@ class TestProjectViews(OsfTestCase):
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
 
-    def test_register_template_make_public_creates_public_registration(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_make_public_creates_public_registration(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
         self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
@@ -480,7 +481,8 @@ class TestProjectViews(OsfTestCase):
         # The registration created is public
         assert_true(reg.is_public)
 
-    def test_register_template_with_embargo_creates_embargo(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_with_embargo_creates_embargo(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
         self.app.post_json(

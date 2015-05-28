@@ -598,7 +598,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             u'summary': unicode(fake.sentence())
         })
 
-    def test_POST_register_make_public_immediately_creates_public_registration(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_POST_register_make_public_immediately_creates_public_registration(self, mock_archive):
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.valid_make_public_payload,
@@ -613,7 +614,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_true(registration.is_registration)
         assert_true(registration.is_public)
 
-    def test_POST_register_embargo_is_not_public(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_POST_register_embargo_is_not_public(self, mock_archive):
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.valid_embargo_payload,
@@ -641,7 +643,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    def test_valid_POST_embargo_adds_to_parent_node_log(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_valid_POST_embargo_adds_to_parent_node_log(self, mock_archive):
         initial_num_logs = len(self.registration.logs)
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
