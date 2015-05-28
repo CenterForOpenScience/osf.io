@@ -5,6 +5,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from website.models import Node
 from website.util.sanitize import strip_html
+import unittest
 
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory, PointerFactory
