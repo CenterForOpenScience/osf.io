@@ -26,18 +26,18 @@
                         <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                     % endif
 
-                    % if 'write' in user['permissions'] and not node['is_registration']:
-                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
-    
                     % if addon_enabled_settings:
                         <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                     % endif
 
-                        <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
-                    %endif
-                </ul>
-            </div><!-- end sidebar -->
-        % endif
+                    <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                %endif
+
+                % if node['is_registration'] and node['is_public'] and 'admin' in user['permissions']:
+                    <li><a href="#retractRegistrationAnchor">Retract Public Registration</a></li>
+                % endif
+            </ul>
+        </div><!-- end sidebar -->
     </div>
 
     <div class="col-sm-9">
@@ -126,7 +126,7 @@
         % endif
 
 
-        % if 'write' in user['permissions']:
+        % if 'write' in user['permissions'] and not node['is_registration']:
         <div class="panel panel-default">
             <span id="selectAddonsAnchor" class="anchor"></span>
              <div class="panel-heading">
@@ -226,6 +226,33 @@
                 </form>
             </div>
          % endif
+
+        % if node['is_registration'] and node['is_public'] and 'admin' in user['permissions']:
+            <div class="panel panel-osf">
+                <span id="retractRegistrationAnchor" class="anchor"></span>
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Retract Public Retraction</h3>
+                </div>
+
+                <div class="panel-body">
+                    <div class="help-block">
+                        Retracting a registration will remove its content from the OSF, but leave basic meta-data
+                        behind. The title of a retracted registration and its contributor list will remain, as will
+                        justification or explanation of the retraction, should you wish to provide it. Retracted
+                        registrations will be marked with a <strong>retracted</strong> tag.
+                    </div>
+                    %if not node['pending_retraction']:
+                        <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
+                    % else:
+                        <p><strong>This registration is already pending a retraction.</strong></p>
+                    %endif
+
+
+                </div>
+
+            </div>
+        % endif
     </div>
 
 </div>

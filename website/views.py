@@ -77,6 +77,7 @@ def _render_node(node, auth=None):
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
+        'archiving': node.archiving,
     }
 
 
@@ -163,8 +164,10 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     contributed = user.node__contributed
 
     nodes = contributed.find(
+
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
+        Q('is_retracted', 'ne', True) &
         Q('is_folder', 'eq', False)
     ).sort('-title')
 

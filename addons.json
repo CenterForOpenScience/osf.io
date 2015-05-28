@@ -13,5 +13,16 @@
         "twofactor",
         "wiki",
         "googledrive"
-    ]
+    ],
+    "addons_archivable": {
+        "osfstorage": "full",
+        "box": "partial",
+        "dataverse": "partial",
+        "dropbox": "partial",
+        "figshare": "partial",
+        "googledrive": "partial",
+        "github": "partial",
+        "s3": "partial",
+        "wiki": "full"
+    }
 }

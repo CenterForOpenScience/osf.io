@@ -34,6 +34,18 @@ def ensure_item(cron, command):
     return items[0] if items else cron.new(command)
 
 
+def cleanup_failed_registrations(cron):
+    cleanup = ensure_item(
+        cron,
+        cd_app(
+            tasks.bin_prefix(
+                'python -m scripts.cleanup_failed_registrations'
+            )
+        )
+    )
+    cleanup.hour.on(0)  # daily, 12 a.m.
+
+
 def schedule_osf_storage(cron):
     for idx in range(N_AUDIT_WORKERS):
         audit = ensure_item(
@@ -82,6 +94,9 @@ def main(dry_run=True):
 
     digests = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_digests.sh')))
     digests.hour.on(2)      # 2 a.m.
+
+    retractions = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/retract_registrations.sh')))
+    retractions.hour.on(0)  # 12 a.m.
 
     schedule_osf_storage(cron)
     schedule_glacier(cron)

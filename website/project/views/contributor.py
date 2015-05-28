@@ -28,14 +28,14 @@ from website.models import Node
 from website.profile import utils
 from website.project.model import has_anonymous_link
 from website.util import web_url_for, is_json_request
-from website.project.model import unreg_contributor_added
+from website.project.signals import unreg_contributor_added
 from website.util.permissions import expand_permissions, ADMIN
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_node_contributors_abbrev(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
 
@@ -80,7 +80,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_contributors(auth, node, **kwargs):
 
     # Can set limit to only receive a specified number of contributors in a call to this route

@@ -10,7 +10,6 @@ from collections import OrderedDict
 import warnings
 
 import pytz
-import blinker
 from flask import request
 from HTMLParser import HTMLParser
 
@@ -37,17 +36,20 @@ from framework.analytics import (
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 
-from website import language
-from website import settings
+from website import language, settings, security
 from website.util import web_url_for
 from website.util import api_url_for
-from website.exceptions import NodeStateError
+from website.exceptions import (
+    NodeStateError, InvalidRetractionApprovalToken,
+    InvalidRetractionDisapprovalToken
+)
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.project import signals as project_signals
 
 html_parser = HTMLParser()
 
@@ -71,13 +73,6 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
-
-
-signals = blinker.Namespace()
-contributor_added = signals.signal('contributor-added')
-unreg_contributor_added = signals.signal('unreg-contributor-added')
-write_permissions_revoked = signals.signal('write-permissions-revoked')
-
 
 class MetaSchema(StoredObject):
 
@@ -484,6 +479,7 @@ class Pointer(StoredObject):
             )
         )
 
+
 def get_pointer_parent(pointer):
     """Given a `Pointer` object, return its parent node.
     """
@@ -539,6 +535,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'tags',
         'is_fork',
         'is_registration',
+        'retraction',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
@@ -596,6 +593,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
+    retraction = fields.ForeignField('retraction')
+
+    archiving = fields.BooleanField(default=False)
+    archive_task_id = fields.StringField()
+    archived_providers = fields.DictionaryField()
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -665,6 +667,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]
+
+    @property
+    def is_retracted(self):
+        return getattr(self.retraction, 'is_retracted', False)
+
+    @property
+    def pending_retraction(self):
+        return getattr(self.retraction, 'pending_retraction', False)
 
     @property
     def private_links(self):
@@ -1698,16 +1708,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
-
         registered.nodes = []
 
         for node_contained in original.nodes:
-            if not node_contained.is_deleted:
-                registered_node = node_contained.register_node(
-                    schema, auth, template, data
-                )
-                if registered_node is not None:
-                    registered.nodes.append(registered_node)
+            registered_node = node_contained.register_node(
+                schema, auth, template, data,
+            )
+            if registered_node is not None:
+                registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1726,6 +1734,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
+        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
         return registered
 
     def remove_tag(self, tag, auth, save=True):
@@ -1894,6 +1903,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return self.parent_node.root
         else:
             return self
+
+    @property
+    def registrations(self):
+        return self.node__registrations.find(Q('archiving', 'eq', False))
 
     @property
     def watch_url(self):
@@ -2185,7 +2198,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         with TokuTransaction():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
-                write_permissions_revoked.send(self)
+                project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
@@ -2237,7 +2250,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            contributor_added.send(self, contributor=contributor, auth=auth)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
             return True
         else:
             return False
@@ -2310,12 +2323,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
         elif permissions == 'private' and self.is_public:
-            self.is_public = False
+            if self.is_registration:
+                raise NodeStateError("Public registrations must be retracted, not made private.")
+            else:
+                self.is_public = False
         else:
             return False
 
@@ -2524,6 +2540,44 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'is_registration': self.is_registration,
         }
 
+    def _initiate_retraction(self, user, justification=None):
+        """Initiates the retraction process for a registration
+        :param user: User who initiated the retraction
+        :param justification: Justification, if given, for retraction
+        """
+
+        retraction = Retraction()
+        retraction.initiated_by = user
+        if justification:
+            retraction.justification = justification
+        retraction.state = 'pending'
+
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
+
+        approval_state = {}
+        # Create approve/disapprove tokens
+        for admin in admins:
+            approval_state[admin._id] = {
+                'approval_token': security.random_string(30),
+                'disapproval_token': security.random_string(30),
+                'has_approved': False
+            }
+
+        retraction.approval_state = approval_state
+        return retraction
+
+    def retract_registration(self, user, justification=None):
+        """Retract public registration. Instantiate new Retraction object
+        and associate it with the respective registration.
+        """
+
+        if not self.is_public or not self.is_registration:
+            raise NodeStateError('Cannot retract private node or non-registration')
+
+        retraction = self._initiate_retraction(user, justification)
+        # Retraction record needs to be saved to ensure the forward reference Node->Retraction
+        retraction.save()
+        self.retraction = retraction
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -2623,3 +2677,60 @@ class PrivateLink(StoredObject):
                       for x in self.nodes if not x.is_deleted],
             "anonymous": self.anonymous
         }
+
+
+def validate_retraction_state(value):
+    acceptable_states = ['pending', 'retracted', 'cancelled']
+    if value not in acceptable_states:
+        raise ValidationValueError
+
+    return True
+
+
+class Retraction(StoredObject):
+    """Retraction object for public registrations."""
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
+    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    initiated_by = fields.ForeignField('user', backref='retracted_by')
+    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
+    # {
+    #   'b3k97': {
+    #     'has_approved': False,
+    #     'approval_token': 'Cru7wj1Puf7DENUPFPnXSwa1rf3xPN',
+    #     'disapproval_token': 'UotzClTFOic2PYxHDStby94bCQMwJy'}
+    # }
+    approval_state = fields.DictionaryField()
+    # One of 'pending', 'retracted', or 'cancelled'
+    state = fields.StringField(default='pending', validate=validate_retraction_state)
+
+    @property
+    def is_retracted(self):
+        return self.state == 'retracted'
+
+    @property
+    def pending_retraction(self):
+        return self.state == 'pending'
+
+    def disapprove_retraction(self, user, token):
+        """Cancels retraction if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['disapproval_token'] != token:
+                raise InvalidRetractionDisapprovalToken
+            self.state = 'cancelled'
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
+
+    def approve_retraction(self, user, token):
+        """Add user to approval list if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['approval_token'] != token:
+                raise InvalidRetractionApprovalToken
+            self.approval_state[user._id]['has_approved'] = True
+            num_of_approvals = sum([val['has_approved'] for val in self.approval_state.values()])
+
+            if num_of_approvals == len(self.approval_state.keys()):
+                self.state = 'retracted'
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')

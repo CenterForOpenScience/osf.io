@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import mock
@@ -1845,7 +1844,8 @@ class TestAddonCallbacks(OsfTestCase):
                 self.node, fork, self.user
             )
 
-    def test_register_callback(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_callback(self, mock_archive):
         registration = self.node.register_node(
             None, self.consolidate_auth, '', '',
         )
@@ -2359,14 +2359,16 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_fork_of(self.project))
 
-    def test_is_registration_of(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_is_registration_of(self, mock_archive):
         project = ProjectFactory()
         reg1 = project.register_node(None, Auth(user=project.creator), '', None)
         reg2 = reg1.register_node(None, Auth(user=project.creator), '', None)
         assert_true(reg1.is_registration_of(project))
         assert_true(reg2.is_registration_of(project))
 
-    def test_is_registration_of_false(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_is_registration_of_false(self, mock_archive):
         project = ProjectFactory()
         to_reg = ProjectFactory()
         reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
@@ -2378,7 +2380,8 @@ class TestProject(OsfTestCase):
         with assert_raises(PermissionsError):
             project.register_node(None, Auth(user=user), '', None)
 
-    def test_admin_can_register_private_children(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_admin_can_register_private_children(self, mock_archive):
         user = UserFactory()
         project = ProjectFactory(creator=user)
         project.set_permissions(user, ['admin', 'write', 'read'])
