@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 import json
 import httplib as http
@@ -10,7 +9,6 @@ from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework import status
 from framework.exceptions import HTTPError
-from framework.flask import redirect  # VOL-aware redirect
 
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
@@ -22,7 +20,8 @@ from website import settings
 from website.exceptions import InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
-    must_have_permission, must_not_be_registration,
+    must_have_permission,
+    must_not_be_registration, must_be_registration,
     must_be_public_registration
 )
 from website.identifiers.model import Identifier

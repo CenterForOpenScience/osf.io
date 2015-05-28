@@ -23,7 +23,6 @@ from website.archiver import (
     ARCHIVE_COPY_FAIL,
     ARCHIVE_SIZE_EXCEEDED,
 )
-from website.archiver import settings as archiver_settings
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa
 from website import archiver
@@ -180,7 +179,7 @@ class TestArchiverTasks(ArchiverTestCase):
         assert(mock_group.called_with(archive_dropbox_signature))
 
     def test_archive_node_fail(self):
-        archiver_settings.MAX_ARCHIVE_SIZE = 100
+        settings.MAX_ARCHIVE_SIZE = 100
         src_pk, dst_pk, user_pk = self.pks
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
@@ -216,7 +215,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 destination=dict(
                     cookie=cookie,
                     nid=dst_pk,
-                    provider=archiver_settings.ARCHIVE_PROVIDER,
+                    provider=settings.ARCHIVE_PROVIDER,
                     path='/',
                 ),
                 rename='Archive of DropBox',
@@ -365,18 +364,18 @@ class TestArchiverUtils(ArchiverTestCase):
         assert_equal(len(a_stat_result.targets), 2)
 
     def test_archive_provider_for(self):
-        provider = self.src.get_addon(archiver_settings.ARCHIVE_PROVIDER)
+        provider = self.src.get_addon(settings.ARCHIVE_PROVIDER)
         assert_equal(archiver_utils.archive_provider_for(self.src, self.user)._id, provider._id)
 
     def test_has_archive_provider(self):
         assert_true(archiver_utils.has_archive_provider(self.src, self.user))
         wo = factories.NodeFactory(user=self.user)
-        wo.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
+        wo.delete_addon(settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         assert_false(archiver_utils.has_archive_provider(wo, self.user))
 
     def test_link_archive_provider(self):
         wo = factories.NodeFactory(user=self.user)
-        wo.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
+        wo.delete_addon(settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         archiver_utils.link_archive_provider(wo, self.user)
         assert_true(archiver_utils.has_archive_provider(wo, self.user))
 
@@ -411,7 +410,7 @@ class TestArchiverListeners(ArchiverTestCase):
         assert(mock_queue.called_with(archive_signature))
 
     def test_archive_node_links_unlinked(self):
-        self.dst.delete_addon(archiver_settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
+        self.dst.delete_addon(settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
             listeners.archive_node(self.src, self.dst, self.user)
         archive_signature = archive.si(self.src._id, self.dst._id, self.user._id)
