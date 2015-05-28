@@ -1,4 +1,5 @@
 import bleach
+import re
 
 
 #Thank you Lyndsy
@@ -14,6 +15,7 @@ def strip_html(unclean):
 
 
 def clean_tag(data):
+
     """Format as a valid Tag
 
     :param data: A string to be cleaned
@@ -22,7 +24,14 @@ def clean_tag(data):
     :rtype: str
     """
     #TODO: make this a method of Tag?
-    return escape_html(data).replace('"', '&quot;').replace("'", '')
+    # if data.startswith("#"):
+    #     return  data[1:], data
+    # for c in chr:
+    #     str = str.replace(c, r"\%s#" % c)
+
+    return escape_html(data).replace('"', '&quot;').replace("/", "&sol;")\
+        .replace('*', '&midast;').replace('!', '&excl;').replace('@', '&COPY;')\
+        .replace('#' , '&num;', ).replace('|', '&vert;').replace('|', '&vert;')
 
 
 def escape_html(data):
