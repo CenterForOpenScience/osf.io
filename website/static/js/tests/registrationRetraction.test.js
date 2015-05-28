@@ -1,11 +1,13 @@
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
-var assert = require('chai').assert;
-var $osf = require('js/osfHelpers');
-var utils = require('./utils');
-var Raven = require('raven-js');
-var faker = require('faker');
 
+var $osf = require('js/osfHelpers');
+
+var assert = require('chai').assert;
+var faker = require('faker');
+var utils = require('./utils');
+
+var Raven = require('raven-js');
 var registrationRetraction = require('js/registrationRetraction');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
@@ -31,13 +33,12 @@ describe('registrationRetraction', () => {
                 },
                 {
                     method: 'POST',
-                    url: invalidConfirmationText,
-                    response: {status: 500}
+                    url: invalidSubmitUrl,
+                    response: {},
+                    status: 500
                 }
-
             ];
             var server;
-
 
             before(() => {
                 server = utils.createServer(sinon, endpoints);
@@ -62,64 +63,63 @@ describe('registrationRetraction', () => {
             });
 
             describe('submit', () => {
-                var growlSpy;
                 var postSpy;
+                var changeMessageSpy;
 
                 beforeEach(() => {
-                    growlSpy = new sinon.stub($osf, 'growl');
                     postSpy = new sinon.spy($osf, 'postJSON');
+                    changeMessageSpy = new sinon.spy(vm, 'changeMessage');
                 });
 
                 afterEach(() => {
-                    growlSpy.restore();
                     postSpy.restore();
+                    changeMessageSpy.restore();
                 });
 
-                it('calls growl if invalid confirmation text submitted', () => {
+                it('calls changeMessage if invalid confirmation text submitted', () => {
                     vm.confirmationText(invalidConfirmationText);
                     vm.submit();
-                    assert.calledOnce(growlSpy);
+                    assert.calledOnce(changeMessageSpy);
                     assert.notCalled(postSpy);
                 });
-                it('calls growl if justification is too long', () => {
+                it('calls changeMessage if justification is too long', () => {
                     vm.confirmationText(registrationTitle);
                     vm.justification(invalidJustification);
                     vm.submit();
-                    assert.calledOnce(growlSpy);
+                    assert.calledOnce(changeMessageSpy);
                     assert.notCalled(postSpy);
                 });
                 it('submits successfully with valid confirmation text', (done) => {
                     var onSubmitSuccessStub = new sinon.stub(vm, 'onSubmitSuccess');
 
                     vm.confirmationText(registrationTitle);
-                    vm.submit().done(() => {
-                        assert.equal(response, redirectUrl);
+                    vm.submit().always(() => {
+                        assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitSuccessStub);
                         assert.called(postSpy);
-                        assert.notCalled(growlSpy);
+                        assert.notCalled(changeMessageSpy);
+                        onSubmitSuccessStub.restore();
+                        done();
                     });
-
-                    onSubmitSuccessStub.restore();
-                    done();
                 });
+
                 it('logs error with Raven if submit fails', (done) => {
                     vm = new registrationRetraction.ViewModel(invalidSubmitUrl, registrationTitle);
                     var onSubmitErrorSpy = new sinon.spy(vm, 'onSubmitError');
                     var ravenStub = new sinon.stub(Raven, 'captureMessage');
 
                     vm.confirmationText(registrationTitle);
-
-                    vm.submit().done(() => {
-                        assert.equal(response, redirectUrl);
+                    vm.submit().always((xhr) => {
+                        assert.equal(xhr.status, 500);
+                        assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitErrorSpy);
                         assert.called(postSpy);
-                        assert.called(growlSpy);
+                        onSubmitErrorSpy.restore();
+                        ravenStub.restore();
+                        done();
                     });
-
-                    onSubmitErrorSpy.restore();
-                    ravenStub.restore();
-                    done();
                 });
+
             });
         });
     });

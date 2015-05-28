@@ -19,11 +19,14 @@
             % endif
             % if summary['is_retracted']:
                 <span class="label label-danger"><strong>Retracted</strong></span> |
+            % elif summary['pending_retraction']:
+                <span class="label label-info"><strong>Pending Retraction</strong></span> |
+            % elif summary['embargo_end_date']:
+                <span class="label label-info"><strong>Embargoed</strong></span> |
+            % elif summary['pending_embargo']:
+                <span class="label label-info"><strong>Pending Embargo</strong></span> |
             % endif
 
-            % if summary['pending_retraction']:
-                <span class="label label-info"><strong>Pending Retraction</strong></span> |
-            % endif
             <a href="${summary['url']}">${summary['title']}</a>
 
             % if summary['is_registration']:
@@ -31,6 +34,7 @@
             % endif
             </span>
 
+            <!-- Show/Hide recent activity log -->
             <div class="pull-right">
                 % if not summary['primary'] and 'admin' in user['permissions']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>

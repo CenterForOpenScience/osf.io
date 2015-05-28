@@ -28,15 +28,18 @@
             <hr />
 
             <div class="form-group">
-                <label class="control-label">Type '<span data-bind="text: registrationTitle"></span>' if you are sure you want to continue.</label>
-                <textarea
+                <label style="font-weight:normal" class="control-label">
+                    Type <span data-bind="text: registrationTitle" style="font-weight:bold"></span> and click Retract Registration if you are sure you want to continue.
+                </label>
+                <input  type="text"
                         class="form-control"
                         data-bind="textInput: confirmationText"
-                        >
-                </textarea>
+                />
+
             </div>
             <button type="submit" class="btn btn-danger" data-bind="click: submit, visible: true">Retract Registration</button>
-
+            <br /><br />
+            <span data-bind="css: messageClass, html: message"></span>
         </form>
     </div>
 

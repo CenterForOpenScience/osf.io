@@ -16,6 +16,7 @@ from website.models import Node
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
+
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
 
@@ -47,8 +48,10 @@ def _kwargs_to_nodes(kwargs):
         )
     return parent, node
 
+
 def _inject_nodes(kwargs):
     kwargs['parent'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+
 
 def must_be_valid_project(func=None, retractions_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
@@ -62,7 +65,10 @@ def must_be_valid_project(func=None, retractions_valid=False):
             _inject_nodes(kwargs)
 
             if not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(
+                    http.BAD_REQUEST,
+                    data=dict(message_long='Viewing retracted registrations is not permitted')
+                )
             else:
                 return func(*args, **kwargs)
 
@@ -81,10 +87,13 @@ def must_be_public_registration(func):
 
         _inject_nodes(kwargs)
 
-        node = kwargs['node'] or kwargs['project']
+        node = kwargs['node']
 
         if not node.is_public or not node.is_registration:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Must be a public registration to view')
+            )
 
         return func(*args, **kwargs)
 

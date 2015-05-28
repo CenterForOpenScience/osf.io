@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
 import httplib as http
 
 from flask import request
-from flask import redirect
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework import status
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
+from framework.flask import redirect  # VOL-aware redirect
 
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
@@ -17,7 +18,11 @@ from website.archiver.utils import handle_archive_addon_error
 from website.archiver import ARCHIVER_SUCCESS
 
 from website import settings
-from website.exceptions import InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken
+from website.exceptions import (
+    InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
+    InvalidEmbargoApprovalToken, InvalidEmbargoDisapprovalToken,
+    NodeStateError
+)
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission,
@@ -29,8 +34,7 @@ from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
-from website.models import MetaSchema
-from website.models import NodeLog
+from website.models import MetaSchema, NodeLog
 from website import language, mails
 from website.project import signals as project_signals
 from website import util
@@ -60,7 +64,6 @@ def node_register_page(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_retraction_get(auth, node, **kwargs):
     """Prepares node object for registration retraction page.
 
@@ -68,7 +71,11 @@ def node_registration_retraction_get(auth, node, **kwargs):
     :raises: 400: BAD_REQUEST if registration already pending retraction
     """
 
-    # node = kwargs['node'] or kwargs['project']
+    if not node.is_registration:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retractions of non-registrations is not permitted.'
+        })
     if node.pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
@@ -79,7 +86,6 @@ def node_registration_retraction_get(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_retraction_post(auth, node, **kwargs):
     """Handles retraction of public registrations
 
@@ -87,12 +93,28 @@ def node_registration_retraction_post(auth, node, **kwargs):
     :return: Redirect URL for successful POST
     """
 
+    if not node.is_registration:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retractions of non-registrations is not permitted.'
+        })
+
     data = request.get_json()
     try:
-        node.retract_registration(auth.user, data['justification'])
+        node.retract_registration(auth.user, data.get('justification', None))
+        node.add_log(
+            action=NodeLog.RETRACTION_INITIATED,
+            params={
+                'node': node._id,
+                'retraction_id': node.retraction._id,
+            },
+            auth=auth,
+            log_date=datetime.datetime.utcnow(),
+            save=False,
+        )
         node.save()
-    except ValidationValueError:
-        raise HTTPError(http.BAD_REQUEST)
+    except NodeStateError as err:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
     for contributor in node.contributors:
         _send_retraction_email(node, contributor)
@@ -143,7 +165,6 @@ def _send_retraction_email(node, user):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_retraction_approve(auth, node, token, **kwargs):
     """Handles disapproval of registration retractions
     :param auth: User wanting to disapprove retraction
@@ -165,7 +186,8 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         })
-    except ValidationValueError as e:
+    # FIXME(hrybacki) should be PermissionsError
+    except PermissionsError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
             'message_long': e.message
@@ -199,7 +221,8 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         })
-    except ValidationValueError as e:
+    # FIXME(hrybacki) should be PermissionsError
+    except PermissionsError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
             'message_long': e.message
@@ -207,6 +230,75 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
 
     status.push_status_message('Your disapproval has been accepted and the retraction has been cancelled.')
     return redirect(node.web_url_for('view_project'))
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_registration_embargo_approve(auth, node, token, **kwargs):
+    """Handles approval of registration embargoes
+    :param auth: User wanting to approve the embargo
+    :param kwargs:
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    if not node.pending_embargo:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending an embargo.'
+        })
+
+    try:
+        node.embargo.approve_embargo(auth.user, token)
+        node.embargo.save()
+    except InvalidEmbargoApprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except PermissionsError as e:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your approval has been accepted.')
+    return redirect(node.web_url_for('view_project'))
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_registration_embargo_disapprove(auth, node, token, **kwargs):
+    """Handles disapproval of registration embargoes
+    :param auth: User wanting to disapprove the embargo
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    if not node.pending_embargo:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending an embargo.'
+        })
+    # Note(hryabcki): node.registered_from not accessible after disapproval
+    if node.embargo.for_existing_registration:
+        redirect_url = node.web_url_for('view_project')
+    else:
+        redirect_url = node.registered_from.web_url_for('view_project')
+    try:
+        node.embargo.disapprove_embargo(auth.user, token)
+        node.embargo.save()
+    except InvalidEmbargoDisapprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except PermissionsError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your disapproval has been accepted and the embargo has been cancelled.')
+    return redirect(redirect_url)
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -312,6 +404,54 @@ def project_before_register(auth, node, **kwargs):
     return {'prompts': prompts}
 
 
+def _send_embargo_email(node, user):
+    """ Sends pending embargo announcement email to contributors. Project
+    admins will also receive approval/disapproval information.
+    :param node: Node being embargoed
+    :param user: User to be emailed
+    """
+
+    embargo_end_date = node.embargo.end_date
+    registration_link = node.web_url_for('view_project', _absolute=True)
+    initiators_fullname = node.embargo.initiated_by.fullname
+
+    if node.has_permission(user, 'admin'):
+        approval_token = node.embargo.approval_state[user._id]['approval_token']
+        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
+        approval_link = node.web_url_for(
+            'node_registration_embargo_approve',
+            token=approval_token,
+            _absolute=True)
+        disapproval_link = node.web_url_for(
+            'node_registration_embargo_disapprove',
+            token=disapproval_token,
+            _absolute=True)
+        approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+
+        mails.send_mail(
+            user.username,
+            mails.PENDING_EMBARGO_ADMIN,
+            'plain',
+            user=user,
+            initiated_by=initiators_fullname,
+            approval_link=approval_link,
+            disapproval_link=disapproval_link,
+            registration_link=registration_link,
+            embargo_end_date=embargo_end_date,
+            approval_time_span=approval_time_span
+        )
+    else:
+        mails.send_mail(
+            user.username,
+            mails.PENDING_EMBARGO_NON_ADMIN,
+            user=user,
+            initiated_by=initiators_fullname,
+            registration_link=registration_link,
+            embargo_end_date=embargo_end_date,
+
+        )
+
+
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
@@ -334,9 +474,42 @@ def node_register_template_page_post(auth, node, **kwargs):
     schema = MetaSchema.find(
         Q('name', 'eq', template)
     ).sort('-schema_version')[0]
-    node.register_node(
+
+    # Create the registration
+    register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+
+    if data['registrationChoice'] == 'Make registration public immediately':
+        register.is_public = True
+        register.save()
+    elif data['registrationChoice'] == 'Enter registration into embargo':
+        # Sanitize embargo end date
+        embargo_end_date = datetime.datetime.strptime(
+            data['embargoEndDate'],
+            "%a, %d %b %Y %H:%M:%S %Z"
+        )
+
+        # Initiate embargo
+        try:
+            register.embargo_registration(auth.user, embargo_end_date)
+            register.add_log(
+                action=NodeLog.EMBARGO_INITIATED,
+                params={
+                    'node': register._id,
+                    'embargo_id': register.embargo._id,
+                },
+                auth=auth,
+                log_date=datetime.datetime.utcnow(),
+                save=False,
+            )
+            register.save()
+        except ValidationValueError as err:
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+
+        for contributor in register.contributors:
+            _send_embargo_email(register, contributor)
+
     return {
         'status': 'initiated',
     }, http.CREATED

@@ -79,6 +79,7 @@
                 update: ${json.dumps(node['update_url'])}
             },
             isPublic: ${json.dumps(node.get('is_public', False))},
+            isRetracted: ${json.dumps(node.get('is_retracted', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)},
             anonymous: ${json.dumps(node['anonymous'])},
