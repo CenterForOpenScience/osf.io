@@ -14,11 +14,11 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
             ' its parent, <b>' + parentTitle + '</b>.' +
             ' If you want to register the parent, please go <a href="' +
             parentUrl + '">here.</a>' +
-            '<hr /><b>Important Note:</b> Effective <u>29 May 2015</u>, registrations ' +
+            '<hr /><b>Important Note:</b> Effective <u>June 1, 2015</u>, registrations ' +
             'will be made public immediately or can be embargoed for up to one year. ' +
             'There will no longer be the option of creating a permanently private ' +
-            'registration. If you register before 29 May 2015 and leave your ' +
-            'registration private, then the registration can remain private. After 29 May 2015, ' +
+            'registration. If you register before June 1, 2015 and leave your ' +
+            'registration private, then the registration can remain private. After June 1, 2015, ' +
             'if you ever make it public, you will not be able to return it to private. ';
     } else {
         return 'You are about to register <b>' + title +
@@ -26,11 +26,11 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
             'time-stamped, uneditable version of the project. If you would prefer to ' +
             'register a particular component, please navigate to that component and then ' +
             'initiate registration. '+
-            '<hr /><b>Important Note:</b> Effective <u>29 May 2015</u>, registrations ' +
+            '<hr /><b>Important Note:</b> Effective <u>June 1, 2015</u>, registrations ' +
             'will be made public immediately or can be embargoed for up to one year. ' +
             'There will no longer be the option of creating a permanently private ' +
-            'registration. If you register before 29 May 2015 and leave your ' +
-            'registration private, then the registration can remain private. After 29 May 2015, ' +
+            'registration. If you register before June 1, 2015 and leave your ' +
+            'registration private, then the registration can remain private. After June 1, 2015, ' +
             'if you ever make it public, you will not be able to return it to private.';
     }
 };
