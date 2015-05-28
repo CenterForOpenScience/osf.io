@@ -7,7 +7,6 @@ var waterbutler = require('js/waterbutler');
 
 // Local requires
 var utils = require('./util.js');
-var FileTree = require('./tree.js');
 var FileRenderer = require('./render.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
@@ -83,12 +82,10 @@ var FileViewPage = {
             ])
         ]);
 
-        treeHeader = m('.row', m('.col-md-12', m('#filesSearch')));
         viewHeader = [m('i.fa.fa-eye'), ' View'];
         editHeader = [m('i.fa.fa-pencil-square-o'), ' Edit'];
 
         self.panels = [
-            Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
             mime.lookup(self.file.name) && mime.lookup(self.file.name).split('/')[0] in EDITORS ?
                 Panel('Edit', editHeader, EDITORS[mime.lookup(self.file.name).split('/')[0]], [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile]) :
                 false,

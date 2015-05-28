@@ -84,4 +84,4 @@ var $osf = require('js/osfHelpers');
 var m = require('mithril');
 var FileViewPage = require('js/filepage');
 
-m.mount(document.getElementsByClassName('files-view-page')[0], FileViewPage(window.contextVars));
+m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(window.contextVars));
