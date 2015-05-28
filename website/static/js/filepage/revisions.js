@@ -81,8 +81,6 @@ var FileRevisionsTable = {
                 //     }
                 // });
             });
-
-            return self;
         };
 
         self.getTableHead = function() {
