@@ -14,6 +14,7 @@ var FileRenderer = {
 
         self.reload = function() {
             self.loaded = false;
+            self.element = '.mfr-file';
 
             $.ajax({
                 method: 'GET',
@@ -23,6 +24,7 @@ var FileRenderer = {
                 m.startComputation();
                 self.data = data;
                 self.loaded = true;
+                $(self.element).html(self.data);
                 m.endComputation();
             }).fail(function() {
                 //TODO
@@ -32,8 +34,7 @@ var FileRenderer = {
         self.reload();
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) return util.Spinner;
-        return m('.mfr.mfr-file', m.trust(ctrl.data));
+        return m('.mfr.mfr-file', util.Spinner);
     }
 };
 
