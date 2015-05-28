@@ -35,22 +35,18 @@ def file_notify(user, node, event, payload):
 def file_info(node, path, provider):
     addon = node.get_addon(provider)
     file_guid, created = addon.find_or_create_file_guid(path if path.startswith('/') else '/' + path)
-    return file_guid
+    return file_guid, file_guid.guid_url.strip('/') + "_file_updated", file_guid.guid_url
 
 
 def file_created(node, f_url, payload):
-    file_guid = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
-    event_sub = file_guid.guid_url.strip('/') + "_file_updated"
-    f_url.path = file_guid.guid_url
+    file_guid, event_sub, f_url.path = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
     message = 'added file "<strong>{}{}</strong>".'.format(payload['provider'],
                                                            payload['metadata']['materialized'])
     return event_sub, f_url, message
 
 
 def file_updated(node, f_url, payload):
-    file_guid = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
-    event_sub = file_guid.guid_url.strip('/') + "_file_updated"
-    f_url.path = file_guid.guid_url
+    file_guid, event_sub, f_url.path = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
     message = 'updated file "<strong>{}{}</strong>".'.format(payload['provider'],
                                                              payload['metadata']['materialized'])
     return event_sub, f_url, message
@@ -72,10 +68,8 @@ def folder_added(node, f_url, payload):
 
 
 def file_moved(node, f_url, payload):
-    file_guid = file_info(node, path=payload['destination']['path'],
-                          provider=payload['destination']['provider'])
-    event_sub = file_guid.guid_url.strip('/') + "_file_updated"
-    f_url.path = file_guid.guid_url
+    file_guid, event_sub, f_url.path = file_info(node, path=payload['destination']['path'],
+                                                 provider=payload['destination']['provider'])
     # TODO: Copy subscription to new guid
     message = 'moved "<strong>{}</strong>" from "<strong>{}/{}{}</strong>" to "<strong>{}/{}/{}</strong>".'.format(
         payload['destination']['name'],
@@ -87,11 +81,9 @@ def file_moved(node, f_url, payload):
 
 
 def file_copied(node, f_url, payload):
-    file_guid = file_info(node, path=payload['destination']['path'],
-                          provider=payload['destination']['provider'])
-    event_sub = file_guid.guid_url.strip('/') + "_file_updated"
-    f_url.path = file_guid.guid_url
-    # TODO: send subscription to old sub guid.
+    file_guid, event_sub, f_url.path = file_info(node, path=payload['destination']['path'],
+                                                 provider=payload['destination']['provider'])
+    # TODO: send subscription to old sub guid. Should not have a sub for the new one.
     message = 'copied "<strong>{}</strong>" from "<strong>{}/{}{}</strong>" to "<strong>{}/{}/{}</strong>".'.format(
         payload['destination']['name'],
         payload['source']['node']['title'], payload['source']['provider'], payload['source']['materialized'],

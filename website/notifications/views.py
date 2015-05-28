@@ -29,7 +29,8 @@ def get_node_subscriptions(auth, **kwargs):
 def get_file_subscriptions(auth, **kwargs):
     node_id = request.args.get('node_id')
     path = request.args.get('path')
-    return utils.format_file_subscription(auth.user, node_id, path)
+    provider = request.args.get('provider')
+    return utils.format_file_subscription(auth.user, node_id, path, provider)
 
 
 @must_be_logged_in
@@ -39,6 +40,8 @@ def configure_subscription(auth):
     target_id = json_data.get('id')
     event = json_data.get('event')
     notification_type = json_data.get('notification_type')
+    path = json_data.get('path')
+    provider = json_data.get('provider')
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
         raise HTTPError(http.BAD_REQUEST, data=dict(
@@ -46,6 +49,10 @@ def configure_subscription(auth):
         )
 
     node = Node.load(target_id)
+    if 'file_updated' in event and path is not None and provider is not None:
+        addon = node.get_addon(provider)
+        file_guid, created = addon.find_or_create_file_guid(path if path.startswith('/') else '/' + path)
+        event = file_guid.guid_url.strip('/') + '_file_updated'
     event_id = utils.to_subscription_key(target_id, event)
 
     if not node:

@@ -7,6 +7,7 @@ from framework.auth import signals
 from website.models import Node
 from website.notifications import constants
 from website.notifications import model
+from website.notifications.model import NotificationSubscription
 
 
 class NotificationsDict(dict):
@@ -65,6 +66,15 @@ def remove_subscription(node):
             if node._id in parent.child_node_subscriptions[user_id]:
                 parent.child_node_subscriptions[user_id].remove(node._id)
         parent.save()
+
+def move_file_subscription(old_event_sub, old_node, new_event_sub, new_node):
+    if old_event_sub == new_event_sub:
+        return
+    new_sub = NotificationSubscription.load(to_subscription_key(new_node._id, new_event_sub))
+    old_sub = NotificationSubscription.load(to_subscription_key(old_node._id, old_event_sub))
+    if not old_sub:
+        return
+
 
 
 def get_configured_projects(user):
@@ -189,11 +199,13 @@ def format_user_subscriptions(user):
     ]
 
 
-def format_file_subscription(user, node_id, file_id):
+def format_file_subscription(user, node_id, path, provider):
     """Formats a single file event"""
     node = Node.load(node_id)
+    addon = node.get_addon(provider)
+    file_guid, created = addon.find_or_create_file_guid(path if path.startswith('/') else '/' + path)
     for subscription in get_all_node_subscriptions(user, node):
-        if file_id in getattr(subscription, 'event_name'):
+        if file_guid.guid_url.strip('/') in getattr(subscription, 'event_name'):
             return serialize_event(user, subscription, node)
     return serialize_event(user, node=node, event_description='file_updated')
 

@@ -121,10 +121,10 @@ var RevisionsViewModel = function(node, file, editable) {
 
     var notificationsURL = self.node.urls.api + 'file_subscriptions/';
     var path = self.file.path;
-    path = path.replace('\/', '');
     var payload = {
         node_id: node.id,
-        path: path
+        path: path,
+        provider: self.file.provider
     };
     self.subscription = ko.observable();
     self.curSubscription = ko.observable();
@@ -144,11 +144,13 @@ var RevisionsViewModel = function(node, file, editable) {
             }
             self.subscription(notification_type.value);
             var id = node.id;
-            var event = path + "_file_updated";
+            var event = "file_updated";
             var payload = {
                 'id': id,
                 'event': event,
-                'notification_type': notification_type.value
+                'notification_type': notification_type.value,
+                'path': path,
+                'provider': self.file.provider
             };
             $osf.postJSON(
                 '/api/v1/subscriptions/',
