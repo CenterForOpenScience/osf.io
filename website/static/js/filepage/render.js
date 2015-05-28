@@ -29,7 +29,7 @@ var FileRenderer = {
                 m.endComputation();
             }).fail(function(response) {
                 m.startComputation();
-                self.data = respaonse.responseText;
+                self.data = response.responseText;
                 self.loaded = true;
                 $(self.element).html(self.data);
                 m.endComputation();
@@ -41,7 +41,7 @@ var FileRenderer = {
         }
     },
     view: function(ctrl) {
-        if (ctrl.error) return m('.mfr.mfr-error', {style: {margin: '10px'}}, m.trust(ctrl.error));
+        if (!ctrl.url) return m('.mfr.mfr-error', {style: {margin: '10px'}}, m.trust(ctrl.error));
         return m('.mfr.mfr-file', util.Spinner);
     }
 };

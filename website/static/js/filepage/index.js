@@ -91,14 +91,15 @@ var FileViewPage = {
         //crappy hack to delay creation of the editor
         //until we know this is the current file revsion
         self.enableEditing = function() {
+            if (self.editor) return;
             var fileType = mime.lookup(self.file.name);
             if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    var p = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
+                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
                     // Splicing breaks mithrils caching :shrug:
                     // self.panels.splice(1, 0, p);
-                    self.panels.push(p);
+                    self.panels.push(self.editor);
                 }
             }
         };
