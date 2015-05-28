@@ -111,7 +111,9 @@ var FileEditor = {
         if (!ctrl.loaded) return util.Spinner;
 
         return m('.editor-pane', [
-            m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce}),
+            m('.wmd-panel.col-md-12', {style: {'padding-top': '10px'}}, [
+                m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
+            ]),
             m('.osf-panel-footer', [
                 m('.col-xs-12', {style:{'padding-right': '0px'}}, [
                     m('.pull-right', [
