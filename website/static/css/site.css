@@ -1760,6 +1760,9 @@ span.edit-profile-settings {
     bottom: 0;
     right: 0;
 }
+.profile-panel.affix{
+    top:50px;
+}
 
 div.profile-fullname{
     display: block;
