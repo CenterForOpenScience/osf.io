@@ -1039,7 +1039,7 @@ function gotoFileEvent (item) {
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Options for this particulat column
+ * @param {Object} col Options for this particular column
  * @this Treebeard.controller
  * @returns {Array} Returns an array of mithril template objects using m()
  * @private
@@ -1054,6 +1054,13 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
+
+    //Unescapes entity values for <, >, and & for Project names in file explorer
+    if(item.kind === 'folder') {
+        var unescapedName = item.data.name.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
+        return m('span', unescapedName);
+    }
+
     return m('span', item.data.name);
 }
 

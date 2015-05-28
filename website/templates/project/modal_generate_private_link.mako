@@ -45,7 +45,7 @@
                             <div class="list-overflow">
                             <input type="checkbox" checked disabled />
 
-                            <span data-bind="text:title"></span> (current component
+                            <span data-bind="unescapeHTML: title()"></span> (current component
                                 <span data-bind="if: isPublic">, public</span>)
 
                             <div data-bind="foreach:nodes">
@@ -56,7 +56,7 @@
                                     <!-- ko ifnot: $root.isChildVisible($data) -->
                                         <i class="fa fa-question-circle" data-bind="tooltip: {title: 'Parent needs to be checked'}"></i>
                                     <!-- /ko -->
-                                    <span data-bind="text:$data.title"></span>
+                                    <span data-bind="unescapeHTML:$data.title"></span>
                                     <span data-bind="if: $data.is_public">(public)</span>
                                 </div>
                             </div>

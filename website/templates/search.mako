@@ -32,18 +32,15 @@
                                 <h4> Improve your search:</h4>
                                 <span class="tag-cloud" data-bind="foreach: tags">
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
-                                    <span class="cloud-tag tag-big pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name }}
+                                    <span class="cloud-tag tag-big pointer" data-bind="click: $root.addTag.bind(name), unescapeHTML:name">
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
-                                    <span class="cloud-tag tag-med pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name }}
+                                    <span class="cloud-tag tag-med pointer" data-bind="click: $root.addTag.bind(name), unescapeHTML:name">
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
-                                    <span class="cloud-tag tag-sm pointer" data-bind="click: $root.addTag.bind(name)">
-                                        {{ name }}
+                                    <span class="cloud-tag tag-sm pointer" data-bind="click: $root.addTag.bind(name), unescapeHTML:name">
                                     </span>
                                     <!-- /ko -->
                                 </span>
@@ -177,10 +174,10 @@
     </script>
     <script type="text/html" id="node">
       <!-- ko if: parent_url -->
-      <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
+      <h4><a data-bind="attr.href: parent_url, unescapeHTML: parent_title"></a> / <a data-bind="attr.href: url, unescapeHTML: title"></a></h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->        
-        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
+        <h4><span data-bind="if: parent_title, unescapeHTML: parent_title"> /</span> <a data-bind="attr.href: url, unescapeHTML: title"></a></h4>
         <!-- /ko -->
 
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
@@ -201,7 +198,7 @@
         <!-- ko if: tags.length > 0 -->
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
           <span class="tag-cloud" data-bind="foreach: tags">
-              <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+              <span class="cloud-tag tag-sm pointer" data-bind="unescapeHTML: $data, click: $root.addTag.bind($parentContext, $data)">
               </span>
           </span>
         </p>
@@ -218,7 +215,7 @@
       <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="registration">
-        <h4><a data-bind="attr.href: url">{{ title }}</a>  (Registration)</h4>
+        <h4><a data-bind="attr.href: url, unescapeHTML: title"></a>  (Registration)</h4>
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
@@ -239,7 +236,7 @@
         <!-- ko if: tags.length > 0 -->
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
+                <span class="cloud-tag tag-sm pointer" data-bind="unescapeHTML: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </p>
