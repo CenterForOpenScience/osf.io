@@ -174,7 +174,9 @@ module.exports = {
             {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
-            {test: /\.ttf/, loader: 'file-loader'}
+            {test: /\.ttf/, loader: 'file-loader'},
+            //Dirty hack because mime-type's json file is "special"
+            {test: /db.json/, loader: 'json-loader'},
         ]
     }
 };
