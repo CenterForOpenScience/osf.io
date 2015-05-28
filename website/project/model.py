@@ -293,6 +293,8 @@ class NodeLog(StoredObject):
     params = fields.DictionaryField()
     should_hide = fields.BooleanField(default=False)
 
+    was_connected_to = fields.ForeignField('node', list=True, backref='connected')
+
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
     foreign_user = fields.StringField()
@@ -1307,7 +1309,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        query = Q('__backrefs.logged.node.logs', 'in', ids)
         return NodeLog.find(query).sort('-_id')
 
     @property
