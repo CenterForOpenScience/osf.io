@@ -455,7 +455,8 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_not_in("footag", self.project.tags)
 
-    def test_register_template_page(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_page(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
         self.app.post_json(url, {}, auth=self.auth)

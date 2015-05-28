@@ -14,7 +14,7 @@ from scripts import cleanup_failed_registrations as scripts
 
 from framework.auth import Auth
 from framework.tasks import handlers
-from website.archiver.exceptions import *  # noqa
+
 from website.archiver import (
     ARCHIVER_CHECKING,
     ARCHIVER_PENDING,
