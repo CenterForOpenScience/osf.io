@@ -62,18 +62,17 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
 
         // Create a text document if one does not exist
         if (!doc.type) {
+            var x = self.editor.getValue();
             doc.create('text');
+            doc.attachAce(self.editor);
+            self.editor.setValue(x);
+        } else {
+            doc.attachAce(self.editor);
         }
 
-//        self.editor.fetchData().done(function(response) {
-            doc.attachAce(self.editor);
-//            if (self.editor.filesDiffer(self.editor.currentText(), response)) {
-//                self.editor.currentText(response);
-//            }
-            unlockEditor();
-            self.observables.status('connected');
-            madeConnection = true;
-//        });
+        unlockEditor();
+        self.observables.status('connected');
+        madeConnection = true;
 
     }
 
