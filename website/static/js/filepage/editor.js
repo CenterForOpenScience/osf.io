@@ -50,7 +50,7 @@ var FileEditor = {
                 self.loaded = true;
                 self.initialText = response;
                 if (self.editor) {
-                    self.editor.setValue(self.initialText);
+                  self.editor.setValue(self.initialText);
                 }
                 m.endComputation();
             }).fail(function (xhr, textStatus, error) {
@@ -64,22 +64,27 @@ var FileEditor = {
         };
 
         self.saveChanges = function() {
-            var request = $.ajax({
-                type: 'PUT',
-                url: self.url,
-                data: self.editor.getValue(),
-                beforeSend: $osf.setXHRAuthorization
-            }).done(function () {
-                self.triggerReload();
-                self.initialText = self.editor.getValue();
-            }).fail(function(error) {
-                self.editor.setValue(self.initialText);
-                $osf.growl('Error', 'The file could not be updated.');
-                Raven.captureMessage('Could not PUT file content.', {
-                    error: error,
+            if(self.changed()) {
+                var request = $.ajax({
+                    type: 'PUT',
                     url: self.url,
+                    data: self.editor.getValue(),
+                    beforeSend: $osf.setXHRAuthorization
+                }).done(function () {
+                    self.triggerReload();
+                    self.initialText = self.editor.getValue();
+                }).fail(function(error) {
+                    self.editor.setValue(self.initialText);
+                    $osf.growl('Error', 'The file could not be updated.');
+                    Raven.captureMessage('Could not PUT file content.', {
+                        error: error,
+                        url: self.url
+                    });
                 });
-            });
+            } else {
+                alert('There are no changes to save.');
+            }
+
         };
 
         self.revertChanges = function() {
@@ -100,6 +105,7 @@ var FileEditor = {
         };
 
         self.reloadFile();
+
     },
     view: function(ctrl) {
         if (!ctrl.loaded) return util.Spinner;
