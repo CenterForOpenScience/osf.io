@@ -12,6 +12,7 @@ import warnings
 import pytz
 import blinker
 from flask import request
+from django.core.urlresolvers import reverse
 from HTMLParser import HTMLParser
 
 from modularodm import Q
@@ -20,6 +21,7 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
+from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -660,6 +662,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
                 'with _id {self._id!r}>').format(self=self)
+
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
 
     @property
     def category_display(self):
@@ -1808,6 +1815,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         url = self.absolute_url
         if url is not None:
             return re.sub(r'https?:', '', url).strip('/')
+
+    @property
+    def api_v2_url(self):
+        return reverse('nodes:node-detail', kwargs={'pk': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('nodes:node-detail', kwargs={'pk': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     @property
     def api_url(self):

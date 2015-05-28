@@ -45,6 +45,7 @@ def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
     app = init_app(set_backends=True, routes=True, mfr=True)
+    settings.API_SERVER_PORT = port
 
     if live:
         from livereload import Server
@@ -53,6 +54,15 @@ def server(host=None, port=5000, debug=True, live=False):
         server.serve(port=port)
     else:
         app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+
+@task
+def apiserver(port=8000, live=False):
+    """Run the API server."""
+    cmd = 'python manage.py runserver {}'.format(port)
+    if live:
+        cmd += ' livereload'
+    run(cmd, echo=True)
 
 
 SHELL_BANNER = """
