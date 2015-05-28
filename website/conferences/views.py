@@ -157,7 +157,7 @@ def _render_conference_node(node, idx):
         'category': 'talk' if 'talk' in node.system_tags else 'poster',
         'download': download_count,
         'downloadUrl': download_url,
-        'tags' :' '.join(tags)
+        'tags': ' '.join(tags)
     }
 
 
