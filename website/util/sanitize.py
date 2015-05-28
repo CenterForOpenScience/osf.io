@@ -1,7 +1,5 @@
 import bleach
 
-
-
 #Thank you Lyndsy
 def strip_html(unclean):
     """Sanitize a string, removing (as opposed to escaping) HTML tags
@@ -28,7 +26,6 @@ def clean_tag(data):
     #     return  data[1:], data
     # for c in chr:
     #     str = str.replace(c, r"\%s#" % c)
-
     return escape_html(data).replace('"', '&quot;')
 
 
