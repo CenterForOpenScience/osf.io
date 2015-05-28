@@ -343,7 +343,7 @@ class BoxProvider(provider.BaseProvider):
         if folder:
             url = self.build_url('folders', path.identifier)
         else:
-            url = self.build_url('folders', path.identifier, 'items', fields='id,name,size,modifiedt_at,etag')
+            url = self.build_url('folders', path.identifier, 'items', fields='id,name,size,modified_at,etag')
 
         response = yield from self.make_request(
             'GET',
