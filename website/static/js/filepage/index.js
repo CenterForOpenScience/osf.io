@@ -36,14 +36,6 @@ var FileViewPage = {
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false}),
         });
 
-        self.reloadFile = function() {
-            self.panels.forEach(function(panel) {
-                if (panel.reload) {
-                    panel.reload();
-                }
-            });
-        };
-
         self.deleteFile = function() {
             bootbox.confirm({
                 title: 'Delete file?',
@@ -103,10 +95,91 @@ var FileViewPage = {
             }
         };
 
+        self.viewReload = function() {
+            self.loaded = false;
+            self.element = '.mfr-file';
+            $.ajax({
+                method: 'GET',
+                url: self.file.urls.render,
+                beforeSend: $osf.setXHRAuthorization
+            }).done(function(data) {
+                m.startComputation();
+                self.data = data;
+                self.loaded = true;
+                $(self.element).html(self.data);
+                m.endComputation();
+            }).fail(function(response) {
+                m.startComputation();
+                self.data = response.responseText;
+                self.loaded = true;
+                $(self.element).html(self.data);
+                m.endComputation();
+            });
+        };
+
+//        self.revisionReload = function() {
+//            debugger;
+//            self.selectedRevision = 0;
+//            $.ajax({
+//                dataType: 'json',
+//                url: self.file.urls.revisions,
+//                beforeSend: $osf.setXHRAuthorization
+//            }).done(function(response) {
+//                // m.startComputation();
+//                debugger;
+//                var urlParmas = $osf.urlParams();
+//                self.revisions = response.data.map(function(rev, index) {
+//                    rev = FileRevisionsTable.postProcessRevision(self.file, self.node, rev, index);
+//                    if (urlParmas[rev.versionIdentifier] === rev.version) {
+//                        self.selectedRevision = index;
+//                    }
+//                    return rev;
+//                });
+//                self.loaded = true;
+//                // Can only edit the latest version of a file
+//                if (self.selectedRevision === 0) {
+//                    self.enableEditing(self.selectedRevision === 0);
+//                }
+//                self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
+//                // m.endComputation();
+//            }).fail(function(response) {
+//                self.loaded = true;
+//                self.errorMessage = response.responseJSON ?
+//                    response.responseJSON.message || 'Unable to fetch versions' :
+//                    'Unable to fetch versions';
+
+                // self.errorMessage(err);
+
+                // if (self.file.provider === 'figshare') {
+                //     // Hack for Figshare
+                //     // only figshare will error on a revisions request
+                //     // so dont allow downloads and set a fake current version
+                //     $.ajax({
+                //         method: 'GET',
+                //         url: self.urls.metadata,
+                //         beforeSend: $osf.setXHRAuthorization
+                //     }).done(function(resp) {
+                //         self.editable(resp.data.extra.canDelete);
+                //     }).fail(function(xhr) {
+                //         self.editable(false);
+                //     });
+                // }
+//            });
+//        };
+
+
         self.panels = [
-            Panel('View', viewHeader, FileRenderer, [self.file.urls.render, self.file.error], true),
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
+            Panel('View', viewHeader, FileRenderer, [self.file.urls.render, self.file.error], true, self.viewReload ),
+            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing], false),
         ];
+
+        self.reloadFile = function() {
+            self.panels.forEach(function(panel) {
+                if (panel.reload) {
+                    panel.reload();
+                }
+            });
+        };
 
     },
     view: function(ctrl) {
