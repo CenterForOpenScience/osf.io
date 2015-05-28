@@ -255,7 +255,7 @@ class TestWebpackFilter(unittest.TestCase):
 
 class TestWebsiteUtils(unittest.TestCase):
 
-    def test_conjunctutils.(self):
+    def test_conjunct(self):
         words = []
         assert_equal(conjunct(words), '')
         words = ['a']
@@ -265,4 +265,3 @@ class TestWebsiteUtils(unittest.TestCase):
         words = ['a', 'b', 'c']
         assert_equal(conjunct(words), 'a, b, and c')
         assert_equal(conjunct(words, conj='or'), 'a, b, or c')
-        

@@ -129,12 +129,6 @@ class TestStorageAddonBase(ArchiverTestCase):
 
 class TestArchiverTasks(ArchiverTestCase):
 
-    def setUp(self, *args, **kwargs):
-        super(TestArchiverTasks, self).setUp(*args, **kwargs)
-        with mock.patch('website.addons.base.StorageAddonBase._get_file_tree') as mock_ft:
-            mock_ft.return_value = FILE_TREE
-            self.stat_result = stat_node(*self.pks)
-
     @mock.patch('celery.chain')
     def test_archive(self, mock_chain):
         src_pk, dst_pk, user_pk = self.pks
@@ -441,7 +435,7 @@ class TestArchiverListeners(ArchiverTestCase):
         assert_false(mock_send.called)
         assert_false(mock_fail.called)
 
-    @mock.patch('website.archiver.tasks.send_success_message.si')
+    @mock.patch('website.archiver.tasks.send_success_message.delay')
     def test_archive_callback_done_success(self, mock_send):
         self.dst.archived_providers = {
             addon: {
