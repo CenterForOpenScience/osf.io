@@ -325,7 +325,7 @@ class NodeProjectCollector(object):
 
         return {
             #TODO Remove the replace when mako html safe comes around
-            'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
+            'name': node.title.replace('&amp;', '&').replace('&gt;', '>').replace('&lt;', '<') if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE

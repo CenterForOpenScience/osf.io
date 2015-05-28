@@ -357,6 +357,20 @@ ko.bindingHandlers.anchorScroll = {
 };
 
 /**
+ * Applies HTML escaping for <,>, and & for title names.
+ */
+ko.bindingHandlers.unescapeHTML = {
+    update: function(elem, valueAccessor) {
+        var buffer = valueAccessor() || "";
+        var newValueAccessor = function() {
+            buffer = buffer.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
+            return buffer;
+        }
+        ko.bindingHandlers.text.update(elem, newValueAccessor);
+    }
+}
+
+/**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
   * previously hidden by applying the 'scripted' CSS class.

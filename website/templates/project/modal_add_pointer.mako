@@ -40,7 +40,7 @@
                                                 data-bind="click:$root.add, tooltip: {title: 'Add link'}"
                                             >+</a>
                                     </td>
-                                    <td data-bind="text:title" class="overflow"></td>
+                                    <td data-bind="unescapeHTML:title" class="overflow"></td>
                                     <td data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
@@ -68,7 +68,7 @@
                                                 data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
                                             >-</a>
                                     </td>
-                                    <td data-bind="text:title" class="overflow"></td>
+                                    <td data-bind="unescapeHTML:title" class="overflow"></td>
                                     <td data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>

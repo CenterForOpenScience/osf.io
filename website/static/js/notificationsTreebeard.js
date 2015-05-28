@@ -184,9 +184,11 @@ function ProjectNotifications(data) {
                     sortInclude : false,
                     custom : function() {
                         if (item.data.node.url !== '') {
-                            return m('a', { href : item.data.node.url, target : '_blank' }, item.data.node.title);
+                            var unescapedName = item.data.node.title.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
+                            return m('a', { href : item.data.node.url, target : '_blank' }, unescapedName);
                         } else {
-                            return m('span', item.data.node.title);
+                            var unescapedName = item.data.node.title.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
+                            return m('span', unescapedName);
                         }
 
                     }
