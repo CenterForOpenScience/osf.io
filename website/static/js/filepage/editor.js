@@ -66,6 +66,9 @@ var FileEditor = {
                 m.startComputation();
                 self.loaded = true;
                 self.initialText = response;
+                if (self.editor) {
+                    self.editor.setValue(self.initialText);
+                }
                 m.endComputation();
             }).fail(function (xhr, textStatus, error) {
                 $osf.growl('Error','The file content could not be loaded.');
@@ -85,7 +88,7 @@ var FileEditor = {
                 beforeSend: $osf.setXHRAuthorization
             }).done(function () {
                 self.triggerReload();
-                self.initText = self.editor.getValue();
+                self.initialText = self.editor.getValue();
             }).fail(function(error) {
                 self.editor.setValue(self.initialText);
                 $osf.growl('Error', 'The file could not be updated.');
