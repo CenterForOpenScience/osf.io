@@ -2,7 +2,7 @@
 <%def name="title()">Settings</%def>
 <%def name="content()">
 <% from website import settings %>
-<h2 class="page-header">Profile Information</h2>
+<h2 class="page-header" data-spy="affix" data-offset-top="80" data-offset-bottom="268">Profile Information</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
@@ -16,10 +16,10 @@
 ##    </div>
 ##</div>
 
-<div class="row">
+<div class="row profile-page">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
+    <div class="col-sm-3 affix-parent">
+        <div class="panel panel-default" data-spy="affix" data-offset-top="80" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
