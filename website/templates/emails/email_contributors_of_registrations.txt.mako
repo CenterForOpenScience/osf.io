@@ -16,3 +16,5 @@ Regards,
 
 The OSF Team
 Center for Open Science
+
+We may send you occasional Service-related emails that you may not opt-out of (e.g. changes or updates to features of our Services that have security or privacy implications, technical and security notices, account verification); this is one of those emails.
