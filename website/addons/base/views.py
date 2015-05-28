@@ -416,7 +416,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         sharejs_uuid = None
 
     ret.update({
-        'error': error,
+        'error': error.replace('\n', '') if error else None,
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],

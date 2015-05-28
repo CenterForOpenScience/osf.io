@@ -6,9 +6,10 @@ var util = require('./util.js');
 
 
 var FileRenderer = {
-    controller: function(url) {
+    controller: function(url, error) {
         var self = this;
         self.url = url;
+        self.error = error;
         self.loaded = false;
         self.data = undefined;
 
@@ -26,14 +27,21 @@ var FileRenderer = {
                 self.loaded = true;
                 $(self.element).html(self.data);
                 m.endComputation();
-            }).fail(function() {
-                //TODO
+            }).fail(function(response) {
+                m.startComputation();
+                self.data = respaonse.responseText;
+                self.loaded = true;
+                $(self.element).html(self.data);
+                m.endComputation();
             });
         };
 
-        self.reload();
+        if (self.url) {
+            self.reload();
+        }
     },
     view: function(ctrl) {
+        if (ctrl.error) return m('.mfr.mfr-error', {style: {margin: '10px'}}, m.trust(ctrl.error));
         return m('.mfr.mfr-file', util.Spinner);
     }
 };

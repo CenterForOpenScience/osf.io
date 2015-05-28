@@ -318,6 +318,7 @@
         file: {
             size: ${size},
             extra: ${extra},
+            error: '${error | js_str}',
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
@@ -355,5 +356,5 @@
     <script src="//${urls['sharejs']}/share.js"></script>
 
     <script src=${"/static/public/js/file-page.js" | webpack_asset}></script>
-    ## <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>
