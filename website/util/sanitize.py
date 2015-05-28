@@ -31,8 +31,7 @@ def clean_tag(data):
 
     return escape_html(data).replace('"', '&quot;').replace("/", "&sol;")\
         .replace('*', '&midast;').replace('!', '&excl;').replace('@', '&COPY;')\
-        .replace('#' , '&num;', ).replace('|', '&vert;').replace('?', '')\
-
+        .replace('#' , '&num;', ).replace('|', '&vert;').replace('|', '&vert;')
 
 
 def escape_html(data):
