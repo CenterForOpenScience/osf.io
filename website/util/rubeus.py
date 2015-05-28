@@ -458,6 +458,7 @@ class NodeFileCollector(object):
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeType': node.project_or_component,
             'nodeID': node.resolve()._id,
         }
 

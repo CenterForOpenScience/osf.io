@@ -61,7 +61,7 @@
                     <!-- /ko -->
                     <div class="btn-group">
                         <a
-                        % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
+                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
                             class="btn btn-default"
                         % else:
@@ -184,7 +184,8 @@
             <div class="addon-widget-body">
                 <div id="treeGrid">
                     <div class="fangorn-loading">
-                        <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>
@@ -291,7 +292,7 @@
                   }'></div>
             </div><!-- end containment -->
         % else:
-          <p>No components have been added to this project.</p>
+          <p>No components have been added to this ${node['node_type']}.</p>
         % endif
     </div><!-- end addon-widget-body -->
 </div><!-- end components -->

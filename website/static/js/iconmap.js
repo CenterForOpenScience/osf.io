@@ -13,8 +13,8 @@ module.exports = {
         '': 'fa fa-circle-o-notch'
     },
     projectIcons: {
-        folder: 'fa fa-cubes',
-        smartFolder: 'fa fa-certificate',
+        collection: 'fa fa-cubes',
+        smartCollection: 'fa fa-certificate',
         project: 'fa fa-cube',
         registration:  'fa fa-th-list text-muted',
         component:  'fa fa-th-large',
