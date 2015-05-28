@@ -2484,6 +2484,12 @@ span#profileFullname{
     max-height: 500px;
     height: inherit;
 }
+.file-tree {
+    padding-top: 5px;
+}
+.file-toggle-btn {
+    padding-bottom: 30px;
+}
 .file-page #tb-tbody {
     border: none;
 }

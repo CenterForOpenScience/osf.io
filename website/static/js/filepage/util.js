@@ -38,24 +38,17 @@ var PanelToggler = {
 
         return m('.panel-toggler', [
             m('.row', [
-                m('.col-md-6', [
-                    m('.pull-left', [
-                        ctrl.header
-                    ])
-                ]),
-                m('.col-md-6', [
-                    m('.pull-right', [
-                        m('.btn-group.btn-group-sm', [m('.btn.btn-default.disabled', 'Toggle View: ')].concat(
-                            ctrl.panels.map(function(panel) {
-                                return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
-                                    onclick: function(e) {
-                                        e.preventDefault();
-                                        panel.selected = !panel.selected;
-                                    }
-                                }, panel.title);
-                            })
-                        ))
-                    ])
+                m('.pull-right', [
+                    m('.btn-group.btn-group-sm', {class: 'file-toggle-btn'}, [m('.btn.btn-default.disabled', 'Toggle View: ')].concat(
+                        ctrl.panels.map(function(panel) {
+                            return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
+                                onclick: function(e) {
+                                    e.preventDefault();
+                                    panel.selected = !panel.selected;
+                                }
+                            }, panel.title);
+                        })
+                    ))
                 ])
             ]),
             m('br'),
