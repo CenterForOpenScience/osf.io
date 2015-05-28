@@ -2,24 +2,33 @@
  * Refresh rendered file through mfr
  */
 
-'use strict';
-
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
-var FileRenderer = {
-    start: function(url, selector){
-        this.url = url;
-        this.tries = 0;
-        this.ALLOWED_RETRIES = 10;
-        this.element = $(selector);
-        this.getCachedFromServer();
-    },
+function FileRenderer(url, selector) {
+    var self = this;
 
-    getCachedFromServer: function() {
-        var self = this;
+    self.url = url;
+    self.tries = 0;
+    self.selector = selector;
+    self.ALLOWED_RETRIES = 10;
+    self.element = $(selector);
+
+
+    self.start = function() {
+        self.getCachedFromServer();
+    };
+
+    self.reload = function() {
+        self.tries = 0;
+        self.start();
+    };
+
+    self.getCachedFromServer = function() {
         $.ajax({
-            url: self.url
+            method: 'GET',
+            url: self.url,
+            beforeSend: $osf.setXHRAuthorization
         }).done(function(data) {
             if (data) {
                 self.element.html(data);
@@ -27,10 +36,9 @@ var FileRenderer = {
                 self.handleRetry();
             }
         }).fail(self.handleRetry);
-    },
+    };
 
-    handleRetry: $osf.throttle(function() {
-        var self = FileRenderer;
+    self.handleRetry = $osf.throttle(function() {
         self.tries += 1;
 
         if(self.tries > self.ALLOWED_RETRIES){
@@ -38,7 +46,7 @@ var FileRenderer = {
         } else {
             self.getCachedFromServer();
         }
-    }, 1000)
-};
+    }, 1000);
+}
 
 module.exports = FileRenderer;

@@ -1,22 +1,14 @@
 var $ = require('jquery');
 
-var WikiEditor = require('./WikiEditor.js');
-var LanguageTools = ace.require('ace/ext/language_tools');
-
 var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
-var ShareJSDoc = function(url, metadata, viewText, editor) {
+var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     var self = this;
     self.editor = editor;
-    var wikiEditor = new WikiEditor(url, viewText, self.editor);
-    self.wikiEditor = wikiEditor;
+//    self.renderer = renderer;
 
-    var viewModel = wikiEditor.viewModel;
-    var ctx = window.contextVars.wiki;
-    var deleteModal = $('#deleteModal');
-    var renameModal = $('#renameModal');
-    var permissionsModal = $('#permissionsModal');
+    var ctx = window.contextVars.file;
 
     // Initialize Ace and configure settings
     self.editor.getSession().setMode('ace/mode/markdown');
@@ -27,24 +19,28 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     self.editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
     self.editor.setReadOnly(true); // Read only until initialized
     self.editor.setOptions({
-        enableBasicAutocompletion: [LanguageTools.snippetCompleter],
-        enableSnippets: true,
-        enableLiveAutocompletion: true
+        enableBasicAutocompletion: false,
+        enableSnippets: false,
+        enableLiveAutocompletion: false
     });
 
-    if (!collaborative) {
-        // Populate editor with most recent draft
-        viewModel.fetchData().done(function(response) {
-            self.editor.setValue(response.wiki_draft, -1);
-            self.editor.setReadOnly(false);
-            if (typeof WebSocket === 'undefined') {
-                viewModel.status('unsupported');
-            } else {
-                viewModel.status('disconnected');
-            }
-        });
-        return;
-    }
+    self.collaborative = collaborative;
+    self.observables = observables;
+
+    // if (!collaborative) {
+    //     // Populate editor with most recent draft
+    //     viewModel.fetchData().done(function(response) {
+    //         var content = response;
+    //         self.editor.setValue(content, -1);
+    //         self.editor.setReadOnly(false);
+    //         if (typeof WebSocket === 'undefined') {
+    //             viewModel.status('unsupported');
+    //         } else {
+    //             viewModel.status('disconnected');
+    //         }
+    //     });
+    //     return;
+    // }
 
     // Requirements load order is specific in this case to compensate
     // for older browsers.
@@ -53,7 +49,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
 
     // Configure connection
     var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-    var wsUrl = wsPrefix + ctx.urls.sharejs;
+    var wsUrl = wsPrefix + shareWSUrl;
     var socket = new ReconnectingWebSocket(wsUrl);
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
@@ -66,18 +62,17 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
 
         // Create a text document if one does not exist
         if (!doc.type) {
+            var x = self.editor.getValue();
             doc.create('text');
+            doc.attachAce(self.editor);
+            self.editor.setValue(x);
+        } else {
+            doc.attachAce(self.editor);
         }
 
-        viewModel.fetchData().done(function(response) {
-            doc.attachAce(self.editor);
-            if (viewModel.wikisDiffer(viewModel.currentText(), response.wiki_draft)) {
-                viewModel.currentText(response.wiki_draft);
-            }
-            unlockEditor();
-            viewModel.status('connected');
-            madeConnection = true;
-        });
+        unlockEditor();
+        self.observables.status('connected');
+        madeConnection = true;
 
     }
 
@@ -96,11 +91,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
 
     function refreshMaybe() {
         if (allowRefresh && refreshTriggered) {
-            if (canEdit) {
-                window.location.reload();
-            } else {
-                window.location.replace(ctx.urls.page);
-            }
+            window.location.reload();
         }
     }
 
@@ -118,7 +109,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                     userMeta.id = user;
                     activeUsers.push(userMeta);
                 }
-                viewModel.activeUsers(activeUsers);
+                self.observables.activeUsers(activeUsers);
                 break;
             case 'lock':
                 allowRefresh = false;
@@ -137,26 +128,6 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                 refreshTriggered = true;
                 refreshMaybe();
                 break;
-            case 'redirect':
-                self.editor.setReadOnly(true);
-                renameModal.modal({
-                    backdrop: 'static',
-                    keyboard: false
-                });
-                setTimeout(function() {
-                    window.location.replace(data.redirect);
-                }, 3000);
-                break;
-            case 'delete':
-                if (ctx.triggeredDelete) {
-                    break;
-                }
-                self.editor.setReadOnly(true);
-                deleteModal.on('hide.bs.modal', function() {
-                    window.location.replace(data.redirect);
-                });
-                deleteModal.modal();
-                break;
             default:
                 onmessage(message);
                 break;
@@ -167,14 +138,14 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     var onclose = socket.onclose;
     socket.onclose = function (event) {
         onclose(event);
-        viewModel.status('connecting');
+        self.observables.status('connecting');
     };
 
     var onopen = socket.onopen;
     socket.onopen = function(event) {
         onopen(event);
         if (madeConnection) {
-            viewModel.status('connected');
+            self.observables.status('connected');
         }
     };
 

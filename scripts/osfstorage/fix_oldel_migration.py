@@ -52,5 +52,5 @@ if __name__ == '__main__':
     dry = 'dry' in sys.argv
     if not dry:
         scripts_utils.add_file_logger(logger, __file__)
-    init_app(routes=False, mfr=False, set_backends=True)
+    init_app(routes=False, set_backends=True)
     main(dry=dry)
