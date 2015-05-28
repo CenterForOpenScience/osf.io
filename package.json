@@ -50,7 +50,8 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
-    "ws": "~0.4.32"
+    "ws": "~0.4.32",
+    "mime-types": "~2.0.12"
   },
   "devDependencies": {
     "chai": "^2.1.1",
