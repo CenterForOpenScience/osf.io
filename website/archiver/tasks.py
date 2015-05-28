@@ -25,8 +25,8 @@ from website.archiver.utils import (
     handle_archive_addon_error,
     update_status,
     aggregate_file_tree_metadata,
-    handle_archive_fail,
 )
+from website.archiver import utils as archiver_utils
 
 from website.project.model import Node
 from website.project import signals as project_signals
@@ -63,7 +63,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
         file_tree = src_addon._get_file_tree(user=user)
     except HTTPError as e:
         handle_archive_addon_error(dst, addon_short_name, errors=[e.data])
-        handle_archive_fail(
+        archiver_utils.handle_archive_fail(
             ARCHIVE_METADATA_FAIL,
             src,
             dst,
@@ -190,7 +190,7 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
         targets=[result.result for result in group_result.results]
     )
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
-        handle_archive_fail(
+        archiver_utils.handle_archive_fail(
             ARCHIVE_SIZE_EXCEEDED,
             src,
             dst,

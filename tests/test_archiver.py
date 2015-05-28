@@ -123,11 +123,17 @@ class TestStorageAddonBase(ArchiverTestCase):
         self._test__get_file_tree(addon_short_name)
 
     def test_addons(self):
-        #  Test that each addon in settings.ADDONS_ARCHIVABLE implements the StorageAddonBase interface
-        for addon in settings.ADDONS_ARCHIVABLE:
+        #  Test that each addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki' implements the StorageAddonBase interface
+        for addon in [a for a in settings.ADDONS_ARCHIVABLE if not a == 'wiki']:
             self._test_addon(addon)
 
 class TestArchiverTasks(ArchiverTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestArchiverTasks, self).setUp(*args, **kwargs)
+        with mock.patch('website.addons.base.StorageAddonBase._get_file_tree') as mock_ft:
+            mock_ft.return_value = FILE_TREE
+            self.stat_result = stat_node(*self.pks)
 
     @mock.patch('celery.chain')
     def test_archive(self, mock_chain):
@@ -166,7 +172,7 @@ class TestArchiverTasks(ArchiverTestCase):
         src_pk, dst_pk, user_pk = self.pks
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
-            result = stat_node.apply(args=(src_pk, dst_pk, user_pk)).result
+            result = stat_node(src_pk, dst_pk, user_pk)
         with mock.patch.object(celery, 'group') as mock_group:
             archive_node(result, src_pk, dst_pk, user_pk)
         archive_dropbox_signature = archive_addon.si(
@@ -186,12 +192,14 @@ class TestArchiverTasks(ArchiverTestCase):
             result = stat_node.apply(args=(src_pk, dst_pk, user_pk)).result
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             archive_node(result, src_pk, dst_pk, user_pk)
-        mock_fail.assertcalled_with(
-            ARCHIVE_SIZE_EXCEEDED,
-            self.src,
-            self.dst,
-            self.user,
-            result
+        assert_equal(
+            mock_fail.call_args_list[0][0][:-1],
+            (
+                ARCHIVE_SIZE_EXCEEDED,
+                self.src,
+                self.dst,
+                self.user,
+            )
         )
 
     def test_archive_addon(self):
@@ -279,7 +287,7 @@ class TestArchiverUtils(ArchiverTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail(self, mock_send_mail):
-        handle_archive_fail(
+        archiver_utils.handle_archive_fail(
             ARCHIVE_COPY_FAIL,
             self.src,
             self.dst,
@@ -291,7 +299,7 @@ class TestArchiverUtils(ArchiverTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail_copy(self, mock_send_mail):
-        handle_archive_fail(
+        archiver_utils.handle_archive_fail(
             ARCHIVE_COPY_FAIL,
             self.src,
             self.dst,
@@ -320,8 +328,8 @@ class TestArchiverUtils(ArchiverTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail_size(self, mock_send_mail):
-        handle_archive_fail(
-            ARCHIVE_SIZE_EXCEEDED,            
+        archiver_utils.handle_archive_fail(
+            ARCHIVE_SIZE_EXCEEDED,
             self.src,
             self.dst,
             self.user,
@@ -421,7 +429,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archived_providers = {
             addon: {
                 'status': ARCHIVER_PENDING
-            } for addon in settings.ADDONS_ARCHIVABLE
+            } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
         }
         self.dst.archived_providers['osfstorage'] = {
             'status': ARCHIVER_SUCCESS
@@ -433,11 +441,12 @@ class TestArchiverListeners(ArchiverTestCase):
         assert_false(mock_send.called)
         assert_false(mock_fail.called)
 
-    def test_archive_callback_done_success(self):
+    @mock.patch('website.archiver.tasks.send_success_message.si')
+    def test_archive_callback_done_success(self, mock_send):
         self.dst.archived_providers = {
             addon: {
                 'status': ARCHIVER_SUCCESS
-            } for addon in settings.ADDONS_ARCHIVABLE
+            } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
         }
         self.dst.save()
         with mock.patch.object(handlers, 'enqueue_task') as mock_enqueue:
@@ -449,7 +458,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archived_providers = {
             addon: {
                 'status': ARCHIVER_SUCCESS
-            } for addon in settings.ADDONS_ARCHIVABLE
+            } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
         }
         self.dst.archived_providers['osfstorage']['status'] = ARCHIVER_FAILURE
         self.dst.save()
@@ -473,7 +482,7 @@ class TestArchiverScripts(ArchiverTestCase):
             reg.archived_providers = {
                 addon: {
                     'status': ARCHIVER_PENDING
-                } for addon in settings.ADDONS_ARCHIVABLE
+                } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
             }
             reg.archiving = True
             reg.save()
@@ -484,7 +493,7 @@ class TestArchiverScripts(ArchiverTestCase):
             reg.archived_providers = {
                 addon: {
                     'status': ARCHIVER_PENDING
-                } for addon in settings.ADDONS_ARCHIVABLE
+                } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
             }
             reg.archiving = True
             reg.save()

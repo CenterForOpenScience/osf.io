@@ -255,7 +255,7 @@ class TestWebpackFilter(unittest.TestCase):
 
 class TestWebsiteUtils(unittest.TestCase):
 
-    def test_conjunct(self):
+    def test_conjunctutils.(self):
         words = []
         assert_equal(conjunct(words), '')
         words = ['a']
