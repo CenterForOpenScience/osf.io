@@ -92,7 +92,7 @@ var FileViewPage = {
         //until we know this is the current file revsion
         self.enableEditing = function() {
             var fileType = mime.lookup(self.file.name);
-            if (fileType) { //May return false
+            if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     var p = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
