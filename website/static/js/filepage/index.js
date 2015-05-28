@@ -24,6 +24,7 @@ var FileViewPage = {
     controller: function(context) {
         var self = this;
         self.context = context;
+        self.canEdit = m.prop(false);
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
@@ -87,14 +88,24 @@ var FileViewPage = {
         viewHeader = [m('i.fa.fa-eye'), ' View'];
         editHeader = [m('i.fa.fa-pencil-square-o'), ' Edit'];
 
+        //crappy hack to delay creation of the editor
+        //until we know this is the current file revsion
+        self.enableEditing = function() {
+            var fileType = mime.lookup(self.file.name);
+            //THis is a dirty hack, fix me
+            if (self.panels.length === 3 && fileType) { //May return false
+                editor = EDITORS[fileType.split('/')[0]];
+                if (editor) {
+                    self.panels.splice(1, 0, Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile]));
+                }
+            }
+        };
+
         self.panels = [
             Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
-            mime.lookup(self.file.name) && mime.lookup(self.file.name).split('/')[0] in EDITORS ?
-                Panel('Edit', editHeader, EDITORS[mime.lookup(self.file.name).split('/')[0]], [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile]) :
-                false,
             Panel('View', viewHeader, FileRenderer, [self.file.urls.render], true),
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node], true),
-        ].filter(function(item){return !!item;});
+            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing], true),
+        ];
 
     },
     view: function(ctrl) {

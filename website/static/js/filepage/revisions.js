@@ -13,18 +13,19 @@ function TRUTHY(item) {
 
 
 var FileRevisionsTable = {
-    controller: function(file, node) {
-        var self = this;
+    controller: function(file, node, enableEditing) {
+        var self = {};
         self.node = node;
         self.file = file;
         self.loaded = false;
         self.revisions = [];
         self.errorMessage = undefined;
+        self.enableEditing = enableEditing;
 
         self.hasUser = true;
         self.hasDate = self.provider !== 'dataverse';
 
-        self.currentRevision = 0;
+        self.selectedRevision = 0;
 
         self.reload = function() {
             $.ajax({
@@ -33,8 +34,19 @@ var FileRevisionsTable = {
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
                 m.startComputation();
-                self.revisions = response.data.map(FileRevisionsTable.postProcessRevision.bind(this, self.file, self.node));
+                var urlParmas = $osf.urlParams();
+                self.revisions = response.data.map(function(rev, index) {
+                    rev = FileRevisionsTable.postProcessRevision(self.file, self.node, rev, index);
+                    if (urlParmas[rev.versionIdentifier] === rev.version) {
+                        self.selectedRevision = index;
+                    }
+                    return rev;
+                });
                 self.loaded = true;
+                // Can only edit the latest version of a file
+                if (self.selectedRevision === 0) {
+                    self.enableEditing(self.selectedRevision === 0);
+                }
                 self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
                 m.endComputation();
             }).fail(function(response) {
@@ -69,6 +81,8 @@ var FileRevisionsTable = {
                 //     }
                 // });
             });
+
+            return self;
         };
 
         self.getTableHead = function() {
@@ -83,10 +97,10 @@ var FileRevisionsTable = {
         };
 
         self.makeTableRow = function(revision, index) {
-            var isCurrent = index === self.currentRevision;
+            var isSelected = index === self.selectedRevision;
 
-            return m('tr' + (isCurrent ? '.active' : ''), [
-                m('td',  isCurrent ?
+            return m('tr' + (isSelected ? '.active' : ''), [
+                m('td',  isSelected ?
                   revision.displayVersion :
                   m('a', {href: revision.osfViewUrl}, revision.displayVersion)
                 ),
@@ -110,6 +124,7 @@ var FileRevisionsTable = {
         };
 
         self.reload();
+        return self;
     },
     view: function(ctrl) {
         if (!ctrl.loaded) return util.Spinner;
