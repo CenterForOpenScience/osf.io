@@ -14,6 +14,8 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
+var iconmap = require('js/iconmap');
+
 // CSS
 require('css/fangorn.css');
 
@@ -182,12 +184,43 @@ var uploadRowTemplate = function(item){
  * @private
  */
 function _fangornResolveIcon(item) {
+    var icons = iconmap.projectIcons;
+    var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
     var privateFolder =  m('div.file-extension._folder_delete', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
         closedFolder = m('i.fa.fa-folder', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         icon;
+    function returnView(type, category) {
+        var iconType = icons[type];
+        if (type === 'component' || type === 'registeredComponent') {
+            iconType = componentIcons[category];
+        } else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
+            iconType += ' po-icon-registered';
+        } else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
+        return template;
+    }
+    if (item.data.nodeType === 'component') {
+        if (item.data.isRegistration) {
+            return returnView('registeredComponent', item.data.category);
+        }
+        return returnView('component', item.data.category);
+    }
+    if (item.data.nodeType === 'project') {
+        if (item.data.isRegistration) {
+            return returnView('registeredProject', item.data.category);
+        } else {
+            return returnView('project', item.data.category);
+        }
+    }
 
     if (item.kind === 'folder') {
         if (item.data.iconUrl) {
