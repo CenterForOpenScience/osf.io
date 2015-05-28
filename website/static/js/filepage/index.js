@@ -92,11 +92,13 @@ var FileViewPage = {
         //until we know this is the current file revsion
         self.enableEditing = function() {
             var fileType = mime.lookup(self.file.name);
-            //THis is a dirty hack, fix me
-            if (self.panels.length === 3 && fileType) { //May return false
+            if (fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    self.panels.splice(1, 0, Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile]));
+                    var p = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
+                    // Splicing breaks mithrils caching :shrug:
+                    // self.panels.splice(1, 0, p);
+                    self.panels.push(p);
                 }
             }
         };
@@ -104,7 +106,7 @@ var FileViewPage = {
         self.panels = [
             Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
             Panel('View', viewHeader, FileRenderer, [self.file.urls.render], true),
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing], true),
+            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
         ];
 
     },
