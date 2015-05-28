@@ -2,6 +2,7 @@
 
 import os
 import json
+import uuid
 import httplib
 import functools
 
@@ -16,7 +17,6 @@ from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in, must_be_signed
-from framework.mongo.utils import to_mongo_key
 
 from website import mails
 from website import settings
@@ -391,7 +391,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 def addon_view_file(auth, node, node_addon, guid_file, extras):
     # TODO: resolve circular import issue
-    from website.addons.wiki.utils import get_sharejs_uuid, generate_private_uuid
     from website.addons.wiki import settings as wiki_settings
 
     ret = serialize_node(node, auth, primary=True)
@@ -407,14 +406,12 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     else:
         error = None
 
-    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
-    file_guid = str(guid_file)
-    file_key = to_mongo_key(file_guid)
+    if guid_file._id not in node.wiki_private_uuids:
+        node.wiki_private_uuids[guid_file._id] = uuid.uuid4()
+        node.save()
 
-    if can_edit:
-        if file_key not in node.wiki_private_uuids:
-            generate_private_uuid(node, file_guid)
-        sharejs_uuid = get_sharejs_uuid(node, file_guid)
+    if ret['user']['can_edit']:
+        sharejs_uuid = str(node.wiki_private_uuids[guid_file._id])
     else:
         sharejs_uuid = None
 
@@ -423,7 +420,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],
-        'sharejs_uuid': sharejs_uuid or '',
+        'sharejs_uuid': sharejs_uuid,
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
             'content': guid_file.download_url,
