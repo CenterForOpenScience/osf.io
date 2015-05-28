@@ -16,10 +16,11 @@
 ##    </div>
 ##</div>
 
-<div class="row">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
+<div class="row profile-page">
+
+    <div class="col-sm-3 affix-parent">
+        <div class="panel panel-default profile-panel" data-spy="affix" data-offset-top="100" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
