@@ -52,8 +52,26 @@ var GithubConfigHelper = (function() {
         });
     };
 
-    $(document).ready(function() {
+    var setScrollPostionBasedCookie = function(){
+        if ($.cookie('status') !== null && $.cookie('status') === 'enabled' && $.cookie("location") !== null
+           && $.cookie("location") == $(location).attr('href')){
+            $(document).scrollTop( $.cookie("scroll") );
+            $.cookie("status", "disabled");
+            alert("setScrollPostionBasedCookie");
+        };
 
+    }
+
+    var updateScrollPostionAtCookie = function(){
+        // set a cookie that holds the current location.
+        $.cookie("location", $(location).attr('href'));
+        $.cookie("scroll", $(document).scrollTop() );
+        $.cookie("status", "enabled");
+        alert("updateScrollPostionAtCookie");
+    }
+
+    $(document).ready(function() {
+        setScrollPostionBasedCookie();
         $('#githubSelectRepo').on('change', function() {
             var value = $(this).val();
             if (value) {
@@ -70,7 +88,10 @@ var GithubConfigHelper = (function() {
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {
-                window.location.reload();
+                    //var currentScroll = $(window).scrollTop();
+                    //alert(currentScroll);
+                    updateScrollPostionAtCookie();
+                    window.location.reload();
             }).fail(
                 $osf.handleJSONError
             );
