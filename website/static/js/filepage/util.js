@@ -13,7 +13,7 @@ Panel.controller = function(title, header, inner, args) {
     var self = this;
     self.title = title;
     self.header = header || title;
-    self.inner = m.component.apply(this, [inner].concat(args || []));
+    self.inner = m.component.apply(self, [inner].concat(args || []));
 };
 
 
@@ -52,7 +52,7 @@ var PanelToggler = {
                 ])
             ]),
             m('br'),
-            m('.row', ctrl.panels.map(function(panel, index, iter) {
+            m('.row', ctrl.panels.map(function(panel, index) {
                 if (!panel.selected) return m('[style="display:none"]', panel);
                 return m('.col-md-' + Math.floor(12/shown), panel);
             }))

@@ -300,7 +300,6 @@
 
 
 
-
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     % for script in tree_js:
@@ -316,6 +315,7 @@
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
+            size: ${size},
             extra: ${extra},
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',

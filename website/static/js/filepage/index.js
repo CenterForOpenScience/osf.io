@@ -23,15 +23,16 @@ var FileViewPage = {
     controller: function(context) {
         var self = this;
         self.context = context;
+        self.canEdit = m.prop(false);
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
-            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id)
+            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false}),
         });
 
         self.reloadFile = function() {
@@ -85,13 +86,25 @@ var FileViewPage = {
         viewHeader = [m('i.fa.fa-eye'), ' View'];
         editHeader = [m('i.fa.fa-pencil-square-o'), ' Edit'];
 
+        //crappy hack to delay creation of the editor
+        //until we know this is the current file revsion
+        self.enableEditing = function() {
+            var fileType = mime.lookup(self.file.name);
+            if (self.file.size < 1048576 && fileType) { //May return false
+                editor = EDITORS[fileType.split('/')[0]];
+                if (editor) {
+                    var p = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
+                    // Splicing breaks mithrils caching :shrug:
+                    // self.panels.splice(1, 0, p);
+                    self.panels.push(p);
+                }
+            }
+        };
+
         self.panels = [
-            mime.lookup(self.file.name) && mime.lookup(self.file.name).split('/')[0] in EDITORS ?
-                Panel('Edit', editHeader, EDITORS[mime.lookup(self.file.name).split('/')[0]], [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile]) :
-                false,
             Panel('View', viewHeader, FileRenderer, [self.file.urls.render], true),
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node], true),
-        ].filter(function(item){return !!item;});
+            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
+        ];
 
     },
     view: function(ctrl) {
