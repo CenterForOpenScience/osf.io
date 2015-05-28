@@ -38,6 +38,7 @@ function ViewModel(qrCodeSelector, otpURL) {
             {code: self.tfaCode()}
         ).done(function() {
             $('#TfaVerify').slideUp(function() {
+                window.location.reload();
                 $('#TfaDeactivate').slideDown();
             });
         }).fail(function(e) {
