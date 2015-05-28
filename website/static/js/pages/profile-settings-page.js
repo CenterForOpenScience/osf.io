@@ -18,7 +18,6 @@ function fixAffixWidth() {
 
 
 $(document).ready(function() {
-
     $(window).resize(function (){ fixAffixWidth(); });
-    $('.profile-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
+    $('.profile-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth();});
 });
