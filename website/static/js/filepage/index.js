@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var m = require('mithril');
+var mime = require('mime-types');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
@@ -14,6 +15,9 @@ var FileRevisionsTable = require('./revisions.js');
 //Sanity
 var Panel = utils.Panel;
 var PanelToggler = utils.PanelToggler;
+
+
+var EDITORS = {'text': FileEditor};
 
 
 var FileViewPage = {
@@ -85,10 +89,12 @@ var FileViewPage = {
 
         self.panels = [
             Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
-            Panel('Edit', editHeader, FileEditor, [self.file.urls.render, self.file.urls.sharejs, self.context.editorMeta, self.reloadFile]),
+            mime.lookup(self.file.name) && mime.lookup(self.file.name).split('/')[0] in EDITORS ?
+                Panel('Edit', editHeader, EDITORS[mime.lookup(self.file.name).split('/')[0]], [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile]) :
+                false,
             Panel('View', viewHeader, FileRenderer, [self.file.urls.render], true),
             Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node], true),
-        ];
+        ].filter(function(item){return !!item;});
 
     },
     view: function(ctrl) {
