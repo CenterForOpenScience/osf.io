@@ -33,7 +33,7 @@ var FileRevisionsTable = {
                 url: self.file.urls.revisions,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
-                m.startComputation();
+                // m.startComputation();
                 var urlParmas = $osf.urlParams();
                 self.revisions = response.data.map(function(rev, index) {
                     rev = FileRevisionsTable.postProcessRevision(self.file, self.node, rev, index);
@@ -48,12 +48,12 @@ var FileRevisionsTable = {
                     self.enableEditing(self.selectedRevision === 0);
                 }
                 self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
-                m.endComputation();
+                // m.endComputation();
             }).fail(function(response) {
-                // self.versioningSupported(false);
-                // var err = response.responseJSON ?
-                //     response.responseJSON.message || 'Unable to fetch versions' :
-                //     'Unable to fetch versions';
+                self.loaded = true;
+                self.errorMessage = response.responseJSON ?
+                    response.responseJSON.message || 'Unable to fetch versions' :
+                    'Unable to fetch versions';
 
                 // self.errorMessage(err);
 
@@ -71,15 +71,6 @@ var FileRevisionsTable = {
                 //         self.editable(false);
                 //     });
                 // }
-
-                // self.currentVersion({
-                //     osfViewUrl: '',
-                //     osfDownloadUrl: '?action=download',
-                //     download: function() {
-                //         window.location = self.urls.download + '&' + $.param({displayName: self.file.name});
-                //         return false;
-                //     }
-                // });
             });
         };
 
@@ -126,6 +117,7 @@ var FileRevisionsTable = {
     },
     view: function(ctrl) {
         if (!ctrl.loaded) return util.Spinner;
+        if (ctrl.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, ctrl.errorMessage);
 
         return m('table.table', [
             ctrl.getTableHead(),
