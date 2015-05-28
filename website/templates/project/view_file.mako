@@ -314,6 +314,7 @@
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
+            size: ${size},
             extra: ${extra},
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
@@ -352,5 +353,4 @@
     <script src="//${urls['sharejs']}/share.js"></script>
 
     <script src=${"/static/public/js/file-page.js" | webpack_asset}></script>
-    ## <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>

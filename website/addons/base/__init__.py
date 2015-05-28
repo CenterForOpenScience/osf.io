@@ -252,6 +252,13 @@ class GuidFile(GuidStoredObject):
             raise AttributeError('No attribute name')
 
     @property
+    def size(self):
+        try:
+            return self._metadata_cache['size']
+        except (TypeError, KeyError):
+            raise AttributeError('No attribute size')
+
+    @property
     def materialized(self):
         try:
             return self._metadata_cache['materialized']
