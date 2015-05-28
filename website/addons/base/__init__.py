@@ -903,7 +903,9 @@ class StorageAddonBase(object):
         res = requests.get(metadata_url)
         sleep(1.0 / 5.0)
         if res.status_code != 200:
-            raise HTTPError(res.status_code, data=res.json())
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
         return res.json().get('data', [])
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None):

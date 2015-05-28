@@ -383,6 +383,7 @@ def project_before_register(auth, node, **kwargs):
             'message': 'The contents of <strong>{0}</strong> cannot be registered at this time,  and will not be included as part of this registration.',
         },
     }
+
     for addon in node.get_addons():
         name = addon.config.short_name
         if name in settings.ADDONS_ARCHIVABLE:
@@ -391,7 +392,7 @@ def project_before_register(auth, node, **kwargs):
             messages['none']['addons'].append(addon.config.full_name)
     prompts = [
         m['message'].format(util.conjunct(m['addons']))
-        for m in messages.values()
+        for m in messages.values() if m['addons']
     ]
 
     if node.has_pointers_recursive:

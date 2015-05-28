@@ -19,8 +19,7 @@ function registrationFailed() {
 
 function postRegisterNode() {
     $('#registration_template').children().remove();
-    var msg = "Your registration request was submitted successfully. Files are being copied to the newly created registration, and you will recieve an email notification containing a link to the registration when the copying is finished.";
-    $('#registration_template').append([$('<h4>Registration Initiated</h4>'), $('<p>' + msg + '</p>')]);
+    $osf.block('<h4>Your registration request was submitted successfully. Files are being copied to the newly created registration, and you will recieve an email notification containing a link to the registration when the copying is finished.</h4> <br /> <h4>Click <a href="' + ctx.node.urls.web + 'registrations/">here</a> to return the to registrations page.</h4>');
 }
 
 function registerNode(data) {

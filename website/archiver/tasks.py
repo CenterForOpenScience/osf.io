@@ -8,10 +8,6 @@ from framework.tasks import app as celery_app
 from framework.auth.core import User
 from framework.exceptions import HTTPError
 
-from website import mails
-from website.archiver import (
-    AggregateStatResult,
-)
 from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
@@ -20,6 +16,7 @@ from website.archiver import (
     ARCHIVER_SENT,
     ARCHIVE_SIZE_EXCEEDED,
     ARCHIVE_METADATA_FAIL,
+    AggregateStatResult,
 )
 from website.archiver.utils import (
     handle_archive_addon_error,
@@ -28,6 +25,7 @@ from website.archiver.utils import (
 )
 from website.archiver import utils as archiver_utils
 
+from website import mails
 from website.project.model import Node
 from website.project import signals as project_signals
 from website.mails import send_mail
@@ -62,7 +60,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     try:
         file_tree = src_addon._get_file_tree(user=user)
     except HTTPError as e:
-        handle_archive_addon_error(dst, addon_short_name, errors=[e.data])
+        handle_archive_addon_error(dst, addon_short_name, errors=[e.data['error']])
         archiver_utils.handle_archive_fail(
             ARCHIVE_METADATA_FAIL,
             src,
@@ -70,7 +68,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
             user,
             dst.archived_providers
         )
-        return
+        raise
     result = AggregateStatResult(
         src_addon._id,
         addon_short_name,
@@ -167,8 +165,8 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     make_copy_request.si(dst_pk, copy_url, data)()
 
 
-@celery_app.task(name="archiver.archive_node")
-def archive_node(group_result, src_pk, dst_pk, user_pk):
+@celery_app.task(bind=True, name="archiver.archive_node")
+def archive_node(self, group_result, src_pk, dst_pk, user_pk):
     """First use the result of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
     create a celery.group group of subtasks to archive addons
@@ -181,6 +179,10 @@ def archive_node(group_result, src_pk, dst_pk, user_pk):
     :return: None
     """
     logger.info("Archiving node: {0}".format(src_pk))
+    for result in group_result.results:  # if errors in results, kill task
+        if not isinstance(result.result, AggregateStatResult):
+            logger.info("Aborting archive task due to errors fetching metadata")
+            celery_app.control.revoke(self.request.id)
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
     user = User.load(user_pk)

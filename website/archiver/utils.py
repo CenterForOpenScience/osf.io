@@ -114,13 +114,10 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     """
     disk_usage = fileobj_metadata.get('size')
     if fileobj_metadata['kind'] == 'file':
-        # Files are never actually copied on osfstorage, so file size is irrelivant
-        if disk_usage is None and not addon_short_name == 'osfstorage':
-            disk_usage = float('inf')  # trigger failure
         result = StatResult(
             target_name=fileobj_metadata['name'],
             target_id=fileobj_metadata['path'].lstrip('/'),
-            disk_usage=disk_usage,
+            disk_usage=disk_usage or 0,
             meta=fileobj_metadata,
         )
         return result

@@ -397,7 +397,7 @@ class TestArchiverUtils(ArchiverTestCase):
         factories.NodeFactory(parent=proj)
         comp2 = factories.NodeFactory(parent=proj)
         factories.NodeFactory(parent=comp2)
-        reg = factories.RegistrationFactory(project=proj, send_signals=False)
+        reg = factories.RegistrationFactory(project=proj)
         reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
         archiver_utils.delete_registration_tree(reg)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())

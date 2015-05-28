@@ -734,7 +734,7 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
-            'registration_count': len(node.registrations),
+            'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
@@ -899,6 +899,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
         'pending_retraction': node.pending_retraction,
         'embargo_end_date': node.embargo_end_date,
         'pending_embargo': node.pending_embargo,
+        'archiving': node.archiving,
     }
 
     if node.can_view(auth):
@@ -996,7 +997,7 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = node.registrations
+    registrations = node.node__registrations  # get all registratioms, including archiving
     return _render_nodes(registrations, auth)
 
 
