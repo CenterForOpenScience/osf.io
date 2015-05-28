@@ -7,7 +7,6 @@ import json
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
-
 import framework
 from framework.flask import app, add_handlers
 from framework.logging import logger
@@ -147,4 +146,5 @@ def apply_middlewares(flask_app, settings):
     # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
     if settings.LOAD_BALANCER:
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+
     return flask_app
