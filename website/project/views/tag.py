@@ -35,16 +35,14 @@ def project_tag(tag, auth, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def project_addtag(auth, **kwargs):
+def project_addtag(auth, node, **kwargs):
     tag = clean_tag(kwargs['tag'])
-    node = kwargs['node'] or kwargs['project']
     if tag:
         try:
             node.add_tag(tag=tag, auth=auth)
-
-            if kwargs is not None:
-                for key, value in kwargs.iteritems():
-                    print("%s == %s" %(key,value))
+            # if kwargs is not None:
+            #     for key, value in kwargs.iteritems():
+            #         print("%s == %s" %(key,value))
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
@@ -53,30 +51,24 @@ def project_addtag(auth, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def project_removetag(auth, **kwargs):
-
+def project_removetag(auth, node, **kwargs):
     tag = clean_tag(kwargs['tag'])
-    node = kwargs['node'] or kwargs['project']
-
     if tag:
         node.remove_tag(tag=tag, auth=auth)
         return {'status': 'success'}
 
 
+@must_be_valid_project # injects project
 @must_be_valid_file  # injects file
 @must_have_permission('write')
 @must_not_be_registration
-def file_addtag(auth, guid, **kwargs):
-
+def file_addtag(auth, node, guid, **kwargs):
     tag = clean_tag(kwargs['tag'])
-
-
     if tag:
         try:
-
             fileobject = Guid.load(guid).referent
+            fileobject.add_tag(tag=tag, auth=auth, node=node)
 
-            fileobject.add_tag(tag=tag, auth=auth)
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
@@ -86,13 +78,9 @@ def file_addtag(auth, guid, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def file_removetag(auth, guid, **kwargs):
-
     tag = clean_tag(kwargs['tag'])
-
     if tag:
-
-        if tag:
-            fileobject = Guid.load(guid).referent
-            fileobject.remove_tag(tag=tag, auth=auth)
-            return {'status': 'success'}
+        fileobject = Guid.load(guid).referent
+        fileobject.remove_tag(tag=tag, auth=auth)
+        return {'status': 'success'}
 

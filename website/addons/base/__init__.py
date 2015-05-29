@@ -359,12 +359,11 @@ class GuidFile(GuidStoredObject):
     def revision(self):
         return getattr(self, '_revision', None)
 
-
     def remove_tag(self, tag, auth, save=True):
-       if tag in self.tags:
+        if tag in self.tags:
             self.tags.remove(tag)
             self.add_log(
-               action=NodeLog.FILETAG_REMOVED,
+                action=NodeLog.FILETAG_REMOVED,
                 params={
                     'file': self._id,
                     'tag': tag,
@@ -375,49 +374,28 @@ class GuidFile(GuidStoredObject):
             if save:
                 self.save()
 
-    def add_tag(self, tag, auth, save=True):
+    def add_tag(self, tag, auth, node, save=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
             new_tag.save()
             self.tags.append(new_tag)
-            self.add_log(
-               action=NodeLog.FILETAG_ADDED,
+            node.add_log(
+                action=NodeLog.FILETAG_ADDED,
                 params={
+                    'node': node._primary_key,
                     'file': self._id,
                     'tag': tag,
+                    'path': self.waterbutler_path.lstrip('/'),
+                    'url': self.guid_url
                 },
                 auth=auth,
                 save=False,
             )
             if save:
                 self.save()
-
-    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
-        user = auth.user if auth else None
-        api_key = auth.api_key if auth else None
-        log = NodeLog(
-            action=action,
-            user=user,
-            foreign_user=foreign_user,
-            api_key=api_key,
-            params=params,
-        )
-        if log_date:
-            log.date = log_date
-        log.save()
-        self.logs.append(log)
-        if save:
-            self.save()
-        if user:
-            increment_user_activity_counters(user._primary_key, action, log.date)
-        if self.node__parent:
-            parent = self.node__parent[0]
-            parent.logs.append(log)
-            parent.save()
-        return log
-
+                node.save()
 
     def maybe_set_version(self, **kwargs):
         self._revision = kwargs.get(self.version_identifier)

@@ -123,6 +123,19 @@ from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="filetag_added">
+tagged
+<a class="log-file-link overflow" data-bind="attr: {href: params.url}, text: params.path"></a>
+as <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+</script>
+
+<script type="text/html" id="filetag_removed">
+removed tag <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+from
+<a class="log-file-link overflow" data-bind="attr: {href: params.url}, text: params.path"></a>
+</script>
+
+
 <script type="text/html" id="edit_title">
 changed the title from <span class="overflow" data-bind="text: params.title_original"></span>
 to
