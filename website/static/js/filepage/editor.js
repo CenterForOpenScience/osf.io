@@ -40,11 +40,11 @@ var FileEditor = {
             $.ajax({
                 type: 'GET',
                 url: self.url,
-                beforeSend: $osf.setXHRAuthorization
-            }).done(function (response) {
+                beforeSend: $osf.setXHRAuthorization,
+            }).done(function (parsed, status, response) {
                 m.startComputation();
                 self.loaded = true;
-                self.initialText = response;
+                self.initialText = response.responseText;
                 if (self.editor) {
                     self.editor.setValue(self.initialText);
                 }
@@ -60,7 +60,7 @@ var FileEditor = {
         };
 
         //Really crappy hack, panel and m.component blackbox this module
-        //so its not possible, in the alotted time, to bind a function here to 
+        //so its not possible, in the alotted time, to bind a function here to
         //buttons ~2 levels up
         $(document).on('fileviewpage:save', function() {
             if(self.changed()) {
