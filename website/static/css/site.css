@@ -2764,3 +2764,8 @@ span#profileFullname{
         position: relative;
     }
 }
+
+#viewPanel > .osf-panel-body,
+.mfr-file {
+  height: 100%;
+}
