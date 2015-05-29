@@ -35,8 +35,8 @@ describe('Paginator', () => {
     });
 
     it('previousPage', () => {
-        numberOfPages = 14;
-        currentPage = 16;
+        numberOfPages = 12;
+        currentPage = 12;
         paginator.configure(function(p){
             p.numberOfPages(numberOfPages);
             p.currentPage(currentPage);
@@ -47,9 +47,9 @@ describe('Paginator', () => {
     });
 
     it('nextPage', () => {
-        numberOfPages = 14;
+        numberOfPages = 12;
         paginator.configure(function(p){
-            p.numberOfPages(numberOfPages);
+            p.num`erOfPages(numberOfPages);
         });
         paginator.nextPage();
         assert.calledOnce(paginator.fetchResults);
@@ -62,7 +62,7 @@ describe('Paginator', () => {
     });
 
     describe('addNewPaginator', () => {
-        var maxPaginatorNumber = 16;
+        var maxPaginatorNumber = 12;
 
         it('one page no paginator', () => {
             numberOfPages = 1;
@@ -74,7 +74,7 @@ describe('Paginator', () => {
         });
 
         it('less than 7 pages', () => {
-            numberOfPages = 14;
+            numberOfPages = 6;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
             });
@@ -93,8 +93,8 @@ describe('Paginator', () => {
         });
 
         it('more than 7 pages, currentPage less than 4, one ellipse at the end', () => {
-            numberOfPages = 14;
-            currentPage = 16;
+            numberOfPages = 12;
+            currentPage = 10;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
@@ -109,8 +109,8 @@ describe('Paginator', () => {
 
         it('more than 7 pages, currentPage more than numbersOfPages - 5, one ellipse at the beginning',
             () => {
-            numberOfPages = 14;
-            currentPage = 16;
+            numberOfPages = 12;
+            currentPage = 10;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
@@ -127,8 +127,8 @@ describe('Paginator', () => {
 
         it('more than 7 pages, currentPage more than 5 and numbersOfPages - 5, two ellipses',
             () => {
-            numberOfPages = 14;
-            currentPage = 16;
+            numberOfPages = 12;
+            currentPage = 9;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);

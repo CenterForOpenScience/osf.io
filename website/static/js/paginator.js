@@ -5,7 +5,7 @@
 var ko = require('knockout');
 var oop = require('js/oop');
 var MAX_PAGES_ON_PAGINATOR = 16;
-var MAX_PAGES_ON_PAGINATOR_SIDE = 10;
+var MAX_PAGES_ON_PAGINATOR_SIDE = 12;
 
 var Paginator = oop.defclass({
     constructor: function() {
