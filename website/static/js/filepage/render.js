@@ -14,6 +14,8 @@ var FileRenderer = {
         self.data = undefined;
 
         self.reload = function() {
+            if (!self.url) return;
+            if (self.loaded) m.render($(self.element)[0], util.Spinner);
             self.loaded = false;
             self.element = '.mfr-file';
 
@@ -36,9 +38,8 @@ var FileRenderer = {
             });
         };
 
-        if (self.url) {
-            self.reload();
-        }
+        self.reload();
+        $(document).on('fileviewpage:reload', self.reload);
     },
     view: function(ctrl) {
         if (!ctrl.url) return m('.mfr.mfr-error', {style: {margin: '10px'}}, m.trust(ctrl.error));

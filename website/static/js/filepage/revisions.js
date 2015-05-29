@@ -17,8 +17,8 @@ var FileRevisionsTable = {
         var self = {};
         self.node = node;
         self.file = file;
-        self.loaded = false;
         self.revisions = [];
+        self.loaded = m.prop(false);
         self.errorMessage = undefined;
         self.enableEditing = enableEditing;
 
@@ -28,6 +28,8 @@ var FileRevisionsTable = {
         self.selectedRevision = 0;
 
         self.reload = function() {
+            self.loaded(false);
+            m.redraw();
             $.ajax({
                 dataType: 'json',
                 url: self.file.urls.revisions,
@@ -42,7 +44,7 @@ var FileRevisionsTable = {
                     }
                     return rev;
                 });
-                self.loaded = true;
+                self.loaded(true);
                 // Can only edit the latest version of a file
                 if (self.selectedRevision === 0) {
                     self.enableEditing(self.selectedRevision === 0);
@@ -50,7 +52,7 @@ var FileRevisionsTable = {
                 self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
                 // m.endComputation();
             }).fail(function(response) {
-                self.loaded = true;
+                self.loaded(true);
                 self.errorMessage = response.responseJSON ?
                     response.responseJSON.message || 'Unable to fetch versions' :
                     'Unable to fetch versions';
@@ -113,10 +115,11 @@ var FileRevisionsTable = {
         };
 
         self.reload();
+        $(document).on('fileviewpage:reload', self.reload);
         return self;
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) return util.Spinner;
+        if (!ctrl.loaded()) return util.Spinner;
         if (ctrl.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, ctrl.errorMessage);
 
         return m('table.table', [

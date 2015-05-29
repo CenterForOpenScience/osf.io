@@ -14,14 +14,13 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 var util = require('./util.js');
 
 var FileEditor = {
-    controller: function(contentUrl, shareWSUrl, editorMeta, triggerReload, observables) {
+    controller: function(contentUrl, shareWSUrl, editorMeta, observables) {
         var self = this;
         self.url = contentUrl;
         self.loaded = false;
         self.initialText = '';
         self.editor = undefined;
         self.editorMeta = editorMeta;
-        self.triggerReload = triggerReload;
         self.changed = m.prop(false);
 
         self.observables = observables;
@@ -47,7 +46,7 @@ var FileEditor = {
                 self.loaded = true;
                 self.initialText = response;
                 if (self.editor) {
-                  self.editor.setValue(self.initialText);
+                    self.editor.setValue(self.initialText);
                 }
                 m.endComputation();
             }).fail(function (xhr, textStatus, error) {
@@ -63,7 +62,7 @@ var FileEditor = {
         //Really crappy hack, panel and m.component blackbox this module
         //so its not possible, in the alotted time, to bind a function here to 
         //buttons ~2 levels up
-        window.__fileEditorSave = function() {
+        $(document).on('fileviewpage:save', function() {
             if(self.changed()) {
                 var request = $.ajax({
                     type: 'PUT',
@@ -71,7 +70,7 @@ var FileEditor = {
                     data: self.editor.getValue(),
                     beforeSend: $osf.setXHRAuthorization
                 }).done(function () {
-                    self.triggerReload();
+                    $(document).trigger('fileviewpage:reload');
                     self.initialText = self.editor.getValue();
                 }).fail(function(error) {
                     self.editor.setValue(self.initialText);
@@ -84,12 +83,12 @@ var FileEditor = {
             } else {
                 alert('There are no changes to save.');
             }
-        };
+        });
 
         //See Above comment
-        window.__fileEditorRevert = function() {
+        $(document).on('fileviewpage:revert', function() {
             self.editor.setValue(self.initialText);
-        };
+        });
 
         self.onChanged = function(e) {
             //To avoid extra typing
