@@ -59,11 +59,6 @@ class CRUDHandler(core.BaseProviderHandler):
         if isinstance(result, str):
             return self.redirect(result)
 
-        try:
-            headers = result.response.headers
-        except AttributeError:
-            headers = {}
-
         self.set_header('Content-Type', result.content_type)
         if result.size:
             self.set_header('Content-Length', str(result.size))
@@ -72,8 +67,6 @@ class CRUDHandler(core.BaseProviderHandler):
         # headers of provider response, or file path, whichever is truthy first
         if self.arguments.get('displayName'):
             disposition = utils.make_disposition(self.arguments['displayName'])
-        elif headers.get('content-disposition'):
-            disposition = headers['content-disposition']
         else:
             disposition = utils.make_disposition(self.arguments['path'].name)
 
