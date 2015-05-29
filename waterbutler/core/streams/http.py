@@ -141,11 +141,11 @@ class FormDataStream(MultiStream):
 
 class ResponseStreamReader(BaseStream):
 
-    def __init__(self, response, size=None, unsizeable=False):
+    def __init__(self, response, size=None, unsizable=False):
         super().__init__()
         if 'Content-Length' in response.headers:
             self._size = int(response.headers['Content-Length'])
-        elif not unsizeable:
+        elif not unsizable:
             self._size = int(size)
         else:
             self._size = None
