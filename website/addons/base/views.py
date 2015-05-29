@@ -428,7 +428,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
             'gravatar': get_gravatar(auth.user, 25),
         },
         # Note: must be called after get_or_start_render. This is really only for github
-        'size': getattr(guid_file, 'size') or 999999999,
+        'size': getattr(guid_file, 'size', 9966699),  # if we dont know the size assume its to big to edit
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
