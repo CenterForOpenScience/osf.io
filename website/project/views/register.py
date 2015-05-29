@@ -2,6 +2,7 @@
 import datetime
 import json
 import httplib as http
+from dateutil.parser import parse as parse_date
 
 from flask import request
 from modularodm import Q
@@ -180,7 +181,6 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         })
-    # FIXME(hrybacki) should be PermissionsError
     except PermissionsError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
@@ -457,11 +457,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         register.is_public = True
         register.save()
     elif data['registrationChoice'] == 'Enter registration into embargo':
-        # Sanitize embargo end date
-        embargo_end_date = datetime.datetime.strptime(
-            data['embargoEndDate'],
-            "%a, %d %b %Y %H:%M:%S %Z"
-        )
+        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
 
         # Initiate embargo
         try:
