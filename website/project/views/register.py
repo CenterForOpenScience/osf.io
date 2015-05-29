@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime
 import json
 import httplib as http
 from dateutil.parser import parse as parse_date
