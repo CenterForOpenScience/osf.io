@@ -137,7 +137,7 @@ var FileViewPage = {
         //crappy hack to delay creation of the editor
         //until we know this is the current file revsion
         self.enableEditing = function() {
-            if (self.editor || !self.user.canEdit) return;
+            if (self.editor || !self.context.currentUser.canEdit) return;
             var fileType = mime.lookup(self.file.name.toLowerCase());
             if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
