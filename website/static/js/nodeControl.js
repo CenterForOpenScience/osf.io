@@ -322,6 +322,44 @@ var ProjectViewModel = function(data) {
             self.idCreationInProgress(false); // hide loading indicator
         });
     };
+
+
+    /* Contributor toggle */
+    self.showToggle = ko.observable(false);
+    self.collapsed = ko.observable(false);
+    self.collapseLimit = 40;
+    self.collapseHeight = ko.observable($('#contributors-list').height());
+    if(self.collapseHeight() > self.collapseLimit ){
+        self.showToggle(true);
+        self.collapsed(true);
+    }
+    self.toggleHeight = function(){
+        self.collapsed(!self.collapsed());
+    };
+
+    ko.bindingHandlers.animateHeight = {
+        init : function(element,valueAccessor){
+            var value = valueAccessor();
+            var height = value.state ? value.shortHeight : $(element)[0].scrollHeight;
+            $(element).height(height);
+        },
+        update: function(element, valueAccessor) {
+            var value = valueAccessor();
+            var speed = 400;
+            //var height = value.state ? value.shortHeight : value.longHeight;
+            if(value.state){
+                $(element).animate({
+                    height: value.shortHeight
+                }, speed);
+            } else {
+                $(element).animate({
+                    height: $(element)[0].scrollHeight
+                }, speed);
+            }
+
+        }
+    };
+
 };
 
 ////////////////
