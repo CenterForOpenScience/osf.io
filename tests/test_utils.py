@@ -11,7 +11,7 @@ from website.routes import process_rules, OsfWebRenderer
 from website import settings
 from website.util import paths
 from website.util.mimetype import get_mimetype
-from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for
+from website.util import web_url_for, api_url_for, api_v2_url_for, is_json_request, waterbutler_url_for
 
 
 try:
@@ -58,6 +58,20 @@ class TestUrlForHelpers(unittest.TestCase):
     def test_api_url_for(self):
         with self.app.test_request_context():
             assert api_url_for('dummy_view', pid='123') == '/api/v1/123/'
+
+    def test_api_v2_url_for_with_port(self):
+        """Handles URLs with port correctly"""
+        full_url = api_v2_url_for('/nodes/abcd3/contributors/',
+                                  base_route='http://localhost:8000/')
+        assert full_url == "http://localhost:8000/nodes/abcd3/contributors/"
+
+    def test_api_v2_url_for_with_params(self):
+        """Handles URLs with parameters (dict and kwarg) correctly"""
+        full_url = api_v2_url_for('/nodes/abcd3/contributors/',
+                                  params={'filter[fullname]': 'bob'},
+                                  base_route='https://staging2.osf.io/api/v2/',
+                                  page_size=10)
+        assert full_url == "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10"
 
     def test_web_url_for(self):
         with self.app.test_request_context():

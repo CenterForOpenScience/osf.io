@@ -7,7 +7,6 @@ import urlparse
 import furl
 
 from flask import request, url_for
-from django.core.urlresolvers import reverse
 
 from website import settings
 
@@ -38,9 +37,6 @@ def _get_guid_url_for(url):
     guid_url = guid_url_profile_pattern.sub('', guid_url, count=1)
     return guid_url
 
-def api_v2_url_for(*args, **kwargs):
-    return reverse(prefix='/', *args, **kwargs)
-
 
 def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
@@ -58,6 +54,28 @@ def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, *
         domain = settings.OFFLOAD_DOMAIN if _offload else settings.DOMAIN
         return urlparse.urljoin(domain, url)
     return url
+
+
+def api_v2_url_for(path_str, params=None, base_route=settings.API_DOMAIN, **kwargs):
+    """
+    Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
+
+    For example: given path_str = '/nodes/abcd3/contributors/' and params {'filter[fullname]': 'bob'},
+        this function would return the following on the local staging environment:
+        'http://localhost:8000/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob'
+
+    This is NOT a full lookup function. It does not verify that a route actually exists to match the path_str given.
+    """
+    params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
+
+    base_url = furl.furl(base_route)
+    sub_url = furl.furl(path_str)
+
+    base_url.path.add(sub_url.path.segments)
+
+    base_url.args.update(params)
+    base_url.args.update(kwargs)
+    return str(base_url)
 
 
 def web_url_for(view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
