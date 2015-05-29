@@ -18,6 +18,7 @@ var PanelToggler = utils.PanelToggler;
 
 var EDITORS = {'text': FileEditor};
 
+
 var FileViewPage = {
     controller: function(context) {
         var self = this;
@@ -136,8 +137,8 @@ var FileViewPage = {
         //crappy hack to delay creation of the editor
         //until we know this is the current file revsion
         self.enableEditing = function() {
-            if (self.editor) return;
-            var fileType = mime.lookup(self.file.name);
+            if (self.editor || !self.context.currentUser.canEdit) return;
+            var fileType = mime.lookup(self.file.name.toLowerCase());
             if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
@@ -150,8 +151,8 @@ var FileViewPage = {
         };
 
         self.panels = [
+            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing], true),
             Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
         ];
 
     },
