@@ -406,12 +406,12 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     else:
         error = None
 
-    if guid_file._id not in node.wiki_private_uuids:
-        node.wiki_private_uuids[guid_file._id] = uuid.uuid4()
+    if guid_file._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[guid_file._id] = uuid.uuid4()
         node.save()
 
     if ret['user']['can_edit']:
-        sharejs_uuid = str(node.wiki_private_uuids[guid_file._id])
+        sharejs_uuid = str(node.file_guid_to_share_uuids[guid_file._id])
     else:
         sharejs_uuid = None
 
