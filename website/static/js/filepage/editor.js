@@ -122,7 +122,7 @@ var FileEditor = {
 
         return m('.editor-pane', [
             m('.wiki-connected-users', m('.row', m('.col-md-12', [
-                m('.ul.list-inline', {style: {margin: '10px'}}, [
+                m('.ul.list-inline', {style: {'margin-top': '10px'}}, [
                     ctrl.observables.activeUsers().map(function(user) {
                         return m('li', m('a', {href: user.url}, [
                             m('img', {
