@@ -56,7 +56,7 @@ def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, *
     return url
 
 
-def api_v2_url_for(path_str, params=None, base_route=settings.API_DOMAIN, **kwargs):
+def api_v2_url(path_str, params=None, base_route=settings.API_DOMAIN, **kwargs):
     """
     Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
 
