@@ -78,7 +78,8 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
 
 @celery_app.task(name="archiver.stat_node")
 def stat_node(src_pk, dst_pk, user_pk):
-    """Create a celery.group group of #stat_addon subtasks
+    """Create a celery.chord that first runs a group of
+    #stat_addon subtasks, then calls #archive_node with the results
 
     :param src_pk: primary key of node being registered
     :param dst_pk: primary key of registration node
@@ -166,12 +167,11 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
 
 @celery_app.task(bind=True, name="archiver.archive_node")
 def archive_node(self, results, src_pk, dst_pk, user_pk):
-    """First use the result of #stat_node to check disk usage of the
+    """First use the results of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
     create a celery.group group of subtasks to archive addons
 
-    :param group_result: a celery.result.GroupResult containing the collected
-    results from the #stat_addon subtasks spawned in #stat_node
+    :param results: results from the #stat_addon subtasks spawned in #stat_node
     :param src_pk: primary key of node being registered
     :param dst_pk: primary key of registration node
     :param user_pk: primary key of registration initatior
@@ -214,8 +214,7 @@ def archive_node(self, results, src_pk, dst_pk, user_pk):
 
 @celery_app.task(bind=True, name='archiver.archive')
 def archive(self, src_pk, dst_pk, user_pk):
-    """Create a celery.chain task chain for first examining the file trees
-    of a Node and its associated addons, then archiving that Node.
+    """Saves the celery task id, and kicks off a stat_node task
 
     :param src_pk: primary key of node being registered
     :param dst_pk: primary key of registration node
