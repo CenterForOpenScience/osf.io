@@ -23,12 +23,6 @@ var RegistrationRetractionViewModel = oop.extend(
 
             var self = this;
 
-            self.SUBMIT_ERROR_MESSAGE = 'Error submitting your retraction request, please try again. If the problem ' +
-                'persists, email <a href="mailto:support@osf.iop">support@osf.io</a>';
-            self.CONFIRMATION_ERROR_MESSAGE = 'Please enter the registration title before clicking Retract Registration';
-            self.JUSTIFICATON_ERROR_MESSAGE = 'Your justification is too long, please enter a justification with no more ' +
-                'than 2048 characters long.';
-            self.MESSAGE_ERROR_CLASS = 'text-danger';
             self.submitUrl = submitUrl;
             self.registrationTitle = registrationTitle;
             self.justification = ko.observable('').extend({
@@ -39,7 +33,12 @@ var RegistrationRetractionViewModel = oop.extend(
                 mustEqual: self.registrationTitle
             });
         },
-
+        SUBMIT_ERROR_MESSAGE: 'Error submitting your retraction request, please try again. If the problem ' +
+                'persists, email <a href="mailto:support@osf.iop">support@osf.io</a>',
+        CONFIRMATION_ERROR_MESSAGE: 'Please enter the registration title before clicking Retract Registration',
+        JUSTIFICATON_ERROR_MESSAGE: 'Your justification is too long, please enter a justification with no more ' +
+            'than 2048 characters long.',
+        MESSAGE_ERROR_CLASS: 'text-danger',
         onSubmitSuccess: function(response) {
             window.location = response.redirectUrl;
         },

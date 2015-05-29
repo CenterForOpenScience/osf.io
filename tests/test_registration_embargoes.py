@@ -578,7 +578,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
                 month=current_month,
                 year=current_year
             ),
-            u'registrationChoice': 'Make registration public immediately',
+            u'registrationChoice': 'immediate',
             u'summary': unicode(fake.sentence())
         })
         self.valid_embargo_payload = json.dumps({
@@ -586,7 +586,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
                 month=current_month,
                 year=str(int(current_year)+1)
             ),
-            u'registrationChoice': 'Enter registration into embargo',
+            u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
         })
         self.invalid_embargo_date_payload = json.dumps({
@@ -594,7 +594,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
                 month=current_month,
                 year=str(int(current_year)-1)
             ),
-            u'registrationChoice': 'Enter registration into embargo',
+            u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
         })
 

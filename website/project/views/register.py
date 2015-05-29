@@ -443,10 +443,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         schema, auth, template, json.dumps(clean_data),
     )
 
-    if data['registrationChoice'] == 'Make registration public immediately':
-        register.is_public = True
-        register.save()
-    elif data['registrationChoice'] == 'Enter registration into embargo':
+    if data['registrationChoice'] == 'embargo':
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
 
         # Initiate embargo
@@ -458,6 +455,9 @@ def node_register_template_page_post(auth, node, **kwargs):
 
         for contributor in register.contributors:
             _send_embargo_email(register, contributor)
+    else:
+        register.is_public = True
+        register.save()
 
     return {
         'status': 'success',
