@@ -94,12 +94,12 @@ var FileViewPage = {
         viewHeader = [m('i.fa.fa-eye'), ' View'];
         editHeader = function() {
             return m('.row', [
-                m('.col-md-6', [
+                m('.col-md-3', [
                     m('i.fa.fa-pencil-square-o'),
                     ' Edit',
                 ]),
                 m('.col-md-6', [
-                    m('.pull-right', [
+                    m('', [
                         m('.progress.progress-no-margin.pointer', {
                             'data-toggle': 'modal',
                             'data-target': '#' + self.shareJSObservables.status() + 'Modal',
@@ -128,7 +128,17 @@ var FileViewPage = {
                             ])
                         ])
                     ])
+                ]),
+                m('.col-md-3', [
+                    m('.pull-right.btn-group.btn-group-sm', [
+                        m('button.btn.btn-warning', {onclick: self.deleteFile}, 'Revert'),
+                        m('button.btn.btn-success', {
+                            onclick: self.downloadFile,
+                            href: '?' + $.param($.extend(true, {}, $osf.urlParams(), {download: true}))
+                        }, 'Save')
+                    ])
                 ])
+
             ]);
         };
 

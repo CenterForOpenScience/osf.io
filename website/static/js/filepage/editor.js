@@ -111,10 +111,11 @@ var FileEditor = {
             m('.wiki-connected-users', m('.row', m('.col-md-12', [
                 m('.ul.list-inline', {style: {margin: '10px'}}, [
                     ctrl.observables.activeUsers().map(function(user) {
-                        return m('li', m('a[data-container=body]', {href: user.url}, [
+                        return m('li', m('a', {href: user.url}, [
                             m('img', {
                                 title: user.name,
                                 src: user.gravatar,
+                                'data-container': 'body',
                                 'data-placement': 'top',
                                 'data-toggle': 'tooltip',
                                 style: {border: '1px solid black'}
@@ -127,14 +128,6 @@ var FileEditor = {
             m('.wmd-panel.col-md-12', {style: {'padding-top': '10px'}}, [
                 m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
             ]),
-            m('.osf-panel-footer', [
-                m('.col-xs-12', {style:{'padding-right': '0px'}}, [
-                    m('.pull-right', [
-                        m('button.btn.btn-danger', {onclick: ctrl.revertChanges, style:{'margin-right': '5px'}}, 'Revert'),
-                        m('button.btn.btn-success', {onclick: ctrl.saveChanges}, 'Save')
-                    ])
-                ])
-            ])
         ]);
 
     }

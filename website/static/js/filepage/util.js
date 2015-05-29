@@ -18,9 +18,9 @@ Panel.controller = function(title, header, inner, args) {
 
 
 Panel.view = function(ctrl) {
-    return m('.osf-panel', [
+    return m('#' + ctrl.title.toLowerCase() + 'Panel', [
         m('.osf-panel-header', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
-        m('.osf-panel-body', ctrl.inner)
+        m('', ctrl.inner)
     ]);
 };
 
@@ -64,7 +64,12 @@ var PanelToggler = {
 var Spinner = m.component({
     controller: function(){},
     view: function() {
-        return m('i.fa.fa-spinner.fa-pulse');
+        return m('.fangorn-loading', [
+            m('.logo-spin.text-center', [
+                m('img[src=/static/img/logo_spin.png][alt=loader]')
+            ]),
+            m('p.m-t-sm.fg-load-message', ' Loading... ')
+        ]);
     }
 });
 
