@@ -1,4 +1,3 @@
-
 import requests
 import json
 
@@ -55,7 +54,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
-    update_status(dst, addon_short_name, ARCHIVER_CHECKING)
+    update_status(dst_pk, addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     user = User.load(user_pk)
     try:
@@ -84,22 +83,22 @@ def stat_node(src_pk, dst_pk, user_pk):
     :param src_pk: primary key of node being registered
     :param dst_pk: primary key of registration node
     :param user_pk: primary key of registration initatior
-    :return: celery.result.GroupResult containing the collected return
-    values of a #stat_addon
     """
     logger.info("Statting node: {0}".format(src_pk))
     create_app_context()
     src = Node.load(src_pk)
     targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE if not name == 'wiki']  # TODO don't special case
-    return celery.group(
-        stat_addon.si(
-            addon.config.short_name,
-            src_pk,
-            dst_pk,
-            user_pk,
+    celery.chord(
+        celery.group(
+            stat_addon.si(
+                addon.config.short_name,
+                src_pk,
+                dst_pk,
+                user_pk,
+            )
+            for addon in targets if addon
         )
-        for addon in targets if addon
-    ).apply_async()
+    )(archive_node.s(src_pk, dst_pk, user_pk))
 
 @celery_app.task(name="archiver.make_copy_request")
 def make_copy_request(dst_pk, url, data):
@@ -113,15 +112,15 @@ def make_copy_request(dst_pk, url, data):
     """
     dst = Node.load(dst_pk)
     provider = data['source']['provider']
-    update_status(dst, provider, ARCHIVER_SENDING)
+    update_status(dst_pk, provider, ARCHIVER_SENDING)
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst_pk))
     res = requests.post(url, data=json.dumps(data))
     logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst_pk))
-    update_status(dst, provider, ARCHIVER_SENT)
+    update_status(dst_pk, provider, ARCHIVER_SENT)
     if not res.ok:
         handle_archive_addon_error(dst, provider, errors=[res.json()])
     elif res.status_code in (200, 201):
-        update_status(dst, provider, ARCHIVER_SUCCESS)
+        update_status(dst_pk, provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(name="archiver.archive_addon")
@@ -138,8 +137,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src_pk))
     create_app_context()
     src = Node.load(src_pk)
-    dst = Node.load(dst_pk)
-    update_status(dst, addon_short_name, ARCHIVER_PENDING, meta={
+    update_status(dst_pk, addon_short_name, ARCHIVER_PENDING, meta={
         'stat_result': str(stat_result),
     })
     user = User.load(user_pk)
@@ -167,7 +165,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
 
 
 @celery_app.task(bind=True, name="archiver.archive_node")
-def archive_node(self, group_result, src_pk, dst_pk, user_pk):
+def archive_node(self, results, src_pk, dst_pk, user_pk):
     """First use the result of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
     create a celery.group group of subtasks to archive addons
@@ -180,17 +178,18 @@ def archive_node(self, group_result, src_pk, dst_pk, user_pk):
     :return: None
     """
     logger.info("Archiving node: {0}".format(src_pk))
-    for result in group_result.results:  # if errors in results, kill task
-        if not isinstance(result.result, AggregateStatResult):
-            logger.info("Aborting archive task due to errors fetching metadata")
+    for result in results:  # if errors in results, kill task
+        if not isinstance(result, AggregateStatResult):
+            logger.info("Aborting archive task due to errors fetching metadata: {0}".format(result))
             celery_app.control.revoke(self.request.id)
+            return
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
     user = User.load(user_pk)
     stat_result = AggregateStatResult(
         src_pk,
         src.title,
-        targets=[result.result for result in group_result.results]
+        targets=results,
     )
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         archiver_utils.handle_archive_fail(
@@ -212,6 +211,7 @@ def archive_node(self, group_result, src_pk, dst_pk, user_pk):
         for result in stat_result.targets.values()
     ).apply_async()
 
+
 @celery_app.task(bind=True, name='archiver.archive')
 def archive(self, src_pk, dst_pk, user_pk):
     """Create a celery.chain task chain for first examining the file trees
@@ -222,11 +222,13 @@ def archive(self, src_pk, dst_pk, user_pk):
     :param user_pk: primary key of registration initatior
     :return: None
     """
+    logger = get_task_logger(__name__)
+    logger.info("Received archive task for Node: {0} into Node: {1}".format(src_pk, dst_pk))
     dst = Node.load(dst_pk)
     dst.archiving = True
     dst.archive_task_id = self.request.id
     dst.save()
-    celery.chain(stat_node.si(src_pk, dst_pk, user_pk), archive_node.s(src_pk, dst_pk, user_pk)).apply_async()
+    stat_node.delay(src_pk, dst_pk, user_pk)
 
 
 @celery_app.task
@@ -238,7 +240,6 @@ def send_success_message(dst_pk):
     """
     dst = Node.load(dst_pk)
     user = dst.creator
-
     send_mail(
         to_addr=user.username,
         mail=mails.ARCHIVE_SUCCESS,
