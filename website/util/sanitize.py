@@ -69,7 +69,11 @@ def safe_unescape_html(s):
     :return: A string without html escape characters
 
     """
-    s = s.replace('&amp;', '&')
-    s = s.replace('&lt;', '<')
-    s = s.replace('&gt;', '>')
+    safe_characters = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+    }
+    for escape_sequence, character in safe_characters.items():
+        s = s.replace(escape_sequence, character)
     return s
