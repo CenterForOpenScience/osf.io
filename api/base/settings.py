@@ -113,13 +113,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
-STATIC_URL = '/v2/static/'
+
+API_BASE = 'v2/'
+API_PATH = '', # 'api/' on staging/production, '' on develop
+STATIC_URL = '{}{}static/'.format(API_PATH, API_BASE)
+
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
     ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
 )
 
 SWAGGER_SETTINGS = {
+    'api_path': API_PATH,
     'info': {
         'description':
         """

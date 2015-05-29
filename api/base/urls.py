@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls import include, url, patterns
 # from django.contrib import admin
 from django.conf.urls.static import static
+from settings import API_BASE
 
 
 from . import views
@@ -9,7 +10,7 @@ from . import views
 
 urlpatterns = [
     ### API ###
-    url(r'^v2/', include(patterns('',
+    url(r'^{}'.format(API_BASE), include(patterns('',
         url(r'^$', views.root),
         url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
         url(r'^users/', include('api.users.urls', namespace='users')),
