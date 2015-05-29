@@ -37,6 +37,6 @@ class TestSanitize(unittest.TestCase):
 
     def test_unescape_html(self):
         assert_equal(
-            sanitize.unescape_html('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
+            sanitize.safe_unescape_html('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
             '<> diamonds & diamonds <>'
         )

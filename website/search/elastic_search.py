@@ -166,10 +166,10 @@ def format_result(result, parent_id=None):
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
         # TODO: Remove when html safe comes in
-        'title': sanitize.unescape_html(result['title']),
+        'title': sanitize.safe_unescape_html(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': sanitize.unescape_html(parent_info.get('title')) if parent_info else None,
+        'parent_title': sanitize.safe_unescape_html(parent_info.get('title')) if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None

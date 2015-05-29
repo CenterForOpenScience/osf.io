@@ -60,7 +60,7 @@ def assert_clean(data):
     return escape_html(data)
 
 
-def unescape_html(s):
+def safe_unescape_html(s):
     """
     Return a string without html escape characters.
 
