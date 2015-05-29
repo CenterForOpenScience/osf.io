@@ -7,7 +7,7 @@ from website.models import Node
 from website.util.sanitize import strip_html
 
 from tests.base import ApiTestCase, fake
-from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory, PointerFactory
+from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -1047,10 +1047,10 @@ class TestNodePointerDetail(ApiTestCase):
         self.user.set_password('password')
         self.user.save()
         self.basic_auth = (self.user.username, 'password')
-        self.project = ProjectFactory()
-        self.pointer_project = ProjectFactory()
-        self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.private_url = '/v2/nodes/{}/pointers/{}'.format(self.project._id, self.pointer._id)
+        self.private_project = ProjectFactory(creator=self.user, is_public=False)
+        self.pointer_project = ProjectFactory(creator=self.user, is_public=False)
+        self.pointer = self.private_project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
+        self.private_url = '/v2/nodes/{}/pointers/{}'.format(self.private_project._id, self.pointer._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -1074,7 +1074,6 @@ class TestNodePointerDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res_json['node_id'], self.public_pointer_project._id)
 
-    @unittest.skip('Skipping for today because it is minor. Will fix before launching.')
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
