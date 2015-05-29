@@ -324,7 +324,7 @@ class NodeProjectCollector(object):
             to_expand = False
 
         return {
-            #TODO Remove the replace when mako html safe comes around
+            # TODO: Remove safe_unescape_html when mako html safe comes in
             'name': sanitize.safe_unescape_html(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
@@ -442,7 +442,7 @@ class NodeFileCollector(object):
         else:
             children = []
         return {
-            # #TODO Remove the replace when mako html safe comes around
+            # TODO: Remove safe_unescape_html when mako html safe comes in
             'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
             if can_view
             else u'Private Component',

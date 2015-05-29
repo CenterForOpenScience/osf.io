@@ -165,7 +165,7 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        # TODO: Remove when html safe comes in
+        # TODO: Remove safe_unescape_html when mako html safe comes in
         'title': sanitize.safe_unescape_html(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,

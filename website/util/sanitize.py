@@ -60,6 +60,7 @@ def assert_clean(data):
     return escape_html(data)
 
 
+# TODO: Remove safe_unescape_html when mako html safe comes in
 def safe_unescape_html(s):
     """
     Return a string without html escape characters.
