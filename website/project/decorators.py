@@ -6,7 +6,7 @@ from furl import furl
 from flask import request
 
 from framework import status
-from framework.auth import Auth
+from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
@@ -127,9 +127,11 @@ def _must_be_contributor_factory(include_public):
             if not node.is_public or not include_public:
                 if key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user, key=key):
-                        url = '/login/?next={0}'.format(request.path)
-                        redirect_url = check_key_expired(key=key, node=node, url=url)
-                        response = redirect(redirect_url)
+                        redirect_url = check_key_expired(key=key, node=node, url=request.url)
+                        if request.headers.get('Content-Type') == 'application/json':
+                            raise HTTPError(http.UNAUTHORIZED)
+                        else:
+                            response = redirect(cas.get_login_url(redirect_url))
 
             return response or func(*args, **kwargs)
 

@@ -39,11 +39,6 @@ LOGIN_FAILED = '''
 Log-in failed. Please try again or reset your password.
 '''
 
-# Shown if incorrect 2fa verification is entered at login
-TWO_FACTOR_FAILED = '''
-You entered an incorrect verification code. Please try again.
-'''
-
 # Shown at login page if user tries to access a resource that requires auth
 MUST_LOGIN = '''
 You must log in to access this resource.

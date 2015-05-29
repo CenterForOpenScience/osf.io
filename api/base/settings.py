@@ -140,8 +140,8 @@ SWAGGER_SETTINGS = {
         projects, components, and files from the <a href="https://osf.io/">Open Science Framework</a>. The Open Science
         Framework is a website that
          integrates with the scientist's daily workflow. OSF helps document and archive study designs, materials, and data.
-         OSF facilitates sharing of materials and data within a laboratory or across laboratories. OSF also facilitates
-         transparency of laboratory research and provides a network design that details and credits individual
+         OSF facilitates sharing of materials and data within a research group or between groups. OSF also facilitates
+         transparency of research and provides a network design that details and credits individual
          contributions for all aspects of the research process.</p>
          <p>NOTE: This API is currently in beta. The beta period should be fairly short, but until then, details about
          the api could change. Once this notice disappears, it will be replaced with a description of how long we will

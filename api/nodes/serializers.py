@@ -51,11 +51,14 @@ class NodeSerializer(JSONAPISerializer):
                                                      'A dashboard is a collection node that serves as the root of '
                                                      'Project Organizer collections. Every user will always have '
                                                      'one Dashboard')
-    public = ser.BooleanField(source='is_public', help_text='Nodes that are made public will give read-only access '
+    # TODO: When we have 'admin' permissions, make this writable for admins
+    public = ser.BooleanField(source='is_public', read_only=True,
+                              help_text='Nodes that are made public will give read-only access '
                                                             'to everyone. Private nodes require explicit read '
                                                             'permission. Write and admin access are the same for '
                                                             'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes')
+                                                            'node have implicit read permissions for all child nodes',
+                              )
     # TODO: finish me
 
     class Meta:
@@ -64,13 +67,18 @@ class NodeSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
-    def get_node_count(self, obj):
-        request = self.context['request']
+    # TODO: See if we can get the count filters into the filter rather than the serializer.
+
+    def get_user_auth(self, request):
         user = request.user
         if user.is_anonymous():
             auth = Auth(None)
         else:
             auth = Auth(user)
+        return auth
+
+    def get_node_count(self, obj):
+        auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
         return len(nodes)
 
@@ -78,7 +86,9 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.contributors)
 
     def get_registration_count(self, obj):
-        return len(obj.node__registrations)
+        auth = self.get_user_auth(self.context['request'])
+        registrations = [node for node in obj.node__registrations if node.can_view(auth)]
+        return len(registrations)
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
@@ -110,19 +120,8 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(instance, Node), 'instance must be a Node'
-        if 'is_public' in validated_data:
-            is_public = validated_data.pop('is_public')
-        else:
-            is_public = instance.is_public
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-
-        request = self.context['request']
-        user = request.user
-        auth = Auth(user)
-        if is_public != instance.is_public:
-            privacy = 'public' if is_public else 'private'
-            instance.set_privacy(privacy, auth)
         instance.save()
         return instance
 

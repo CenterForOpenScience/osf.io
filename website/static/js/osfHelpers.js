@@ -88,6 +88,34 @@ var putJSON = function(url, data, success, error) {
     return $.ajax(ajaxOpts);
 };
 
+/**
+* Set XHR Authentication
+*
+* Example:
+*     var $osf = require('./osf-helpers');
+*
+*     JQuery
+*     $ajax({
+*         beforeSend: $osf.setXHRAuthorization,
+*         // ...
+*     }).done( ... );
+*
+*     MithrilJS
+*     m.request({
+*         config: $osf.setXHRAuthorization,
+*         // ...
+*     }).then( ... );
+*
+* @param  {Object} XML Http Request
+* @return {Object} xhr
+*/
+var setXHRAuthorization = function (xhr) {
+    if (window.contextVars.accessToken) {
+        xhr.setRequestHeader('Authorization', 'Bearer ' + window.contextVars.accessToken);
+    }
+    return xhr;
+};
+
 var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
@@ -470,12 +498,30 @@ ko.bindingHandlers.listing = {
     }
 };
 
+// Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
+function humanFileSize(bytes, si) {
+    var thresh = si ? 1000 : 1024;
+    if(Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+    }
+    var units = si ?
+        ['kB','MB','GB','TB','PB','EB','ZB','YB'] :
+        ['KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
+    var u = -1;
+    do {
+        bytes /= thresh;
+        ++u;
+    } while(Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(1) + ' ' + units[u];
+}
+
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
+    setXHRAuthorization: setXHRAuthorization,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,
@@ -491,5 +537,6 @@ module.exports = window.$.osf = {
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
-    tableResize: tableResize
+    tableResize: tableResize,
+    humanFileSize: humanFileSize
 };

@@ -147,7 +147,7 @@ class TestAddonAuth(OsfTestCase):
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
         res = self.test_app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 401)
 
     def test_auth_bad_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
@@ -447,13 +447,29 @@ class TestAddonFileViews(OsfTestCase):
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
         ret.update({
-            'extra': '',
             'provider': '',
-            'rendered': '',
             'file_path': '',
+            'sharejs_uuid': '',
+            'urls': {
+                'web': {
+                    'sharejs': '',
+                    'edit': '',
+                    'view': '',
+                    'gravatar': ''
+                },
+                'api': {
+                    'render': '',
+                }
+            },
             'files_url': '',
+            'rendered': '',
+            'content': '',
+            'extra': '',
             'file_name': '',
+            'is_editable': '',
+            'panels_used': '',
             'render_url': '',
+            'materialized_path': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
         return ret

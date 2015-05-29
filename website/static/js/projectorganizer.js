@@ -41,24 +41,12 @@ var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
 
-
 var projectOrganizerCategories = $.extend({}, {
     collection: 'Collections',
     smartCollection: 'Smart Collections',
     project: 'Project',
     link:  'Link'
 }, nodeCategories);
-
-var _defaultIconState = function () {
-    return {
-        mode : 'bar',
-        generalIcons : {
-            search : { on : true, template : searchButton },
-            info : { on : true, template : infoIcon }
-        },
-        rowIcons : [{}]
-    };
-};
 
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
@@ -118,15 +106,11 @@ projectOrganizer.myProjects = new Bloodhound({
 function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    var isLink = item.data.urls.fetch ? '.fg-file-links' : '';
-    return m('span' + isLink, { 'class' : css, ondblclick : function (event) {
-        if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-            window.open(item.data.urls.fetch, '_blank');
-        } else {
-            window.open(item.data.urls.fetch, '_self');
-        }
+    if(item.data.urls.fetch){
+        return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
+    } else {
+        return  m('span', { 'class' : css}, item.data.name);
     }
-        }, item.data.name);
 }
 
 /**
@@ -190,7 +174,7 @@ function saveExpandState(item, callback) {
         postAction = $osf.postJSON(collapseUrl, {});
         postAction.done(function () {
             item.expand = false;
-            if (typeof callback !== 'undefined') {
+            if (callback !== undefined) {
                 callback();
             }
         }).fail($osf.handleJSONError);
@@ -200,7 +184,7 @@ function saveExpandState(item, callback) {
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
             item.expand = false;
-            if (typeof callback !== 'undefined') {
+            if (callback !== undefined) {
                 callback();
             }
         }).fail($osf.handleJSONError);
@@ -267,11 +251,12 @@ function _poResolveRows(item) {
     if (item.data.permissions) {
         draggable = item.data.permissions.movable || item.data.permissions.copyable;
     }
+    if(this.isMultiselected(item.id)){
+        item.css = 'fangorn-selected';
+    }
     if (draggable) {
         css = 'po-draggable';
     }
-
-
     item.css = '';
     default_columns = [{
         data : 'name',  // Data field name
@@ -346,8 +331,7 @@ function _poResolveIcon(item) {
         var iconType = icons[type];
         if (type === 'component' || type === 'registeredComponent') {
             iconType = componentIcons[category];
-        }
-        else if (type === 'project' || type === 'registeredProject') {
+        } else if (type === 'project' || type === 'registeredProject') {
             iconType = projectIcons[category];
         }
         if (type === 'registeredComponent' || type === 'registeredProject') {
@@ -356,9 +340,6 @@ function _poResolveIcon(item) {
             iconType += ' po-icon';
         }
         var template = m('span', { 'class' : iconType});
-        if (viewLink) {
-            return m('a', { href : viewLink}, template);
-        }
         return template;
     }
     if (item.data.isSmartFolder) {
@@ -459,7 +440,7 @@ function expandStateLoad(item) {
  */
 function _poLoadOpenChildren() {
     var tb = this;
-    this.treeData.children.map(function (item) {
+    tb.treeData.children.map(function (item) {
         if (item.data.expand) {
             tb.updateFolder(null, item);
         }
@@ -474,38 +455,26 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
-    var tb = this,
-        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected()),
-        someItemsAreFolders,
-        pointerIds;
+    var tb = this;
+    filterRowsNotInParent.call(tb, tb.multiselected());
     var scrollToItem = false;
-    _dismissToolbar.call(tb);
-    if (!tb.filterOn) {
+    if (tb.toolbarMode() === 'search') {
+        _dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         Fangorn.Utils.openParentFolders.call(tb, tree);
     }
-    m.redraw();
     if (tb.multiselected().length === 1) {
         // temporarily remove classes until mithril redraws raws with another hover.
+        tb.inputValue(tb.multiselected()[0].data.name);
         tb.select('#tb-tbody').removeClass('unselectable');
         if (scrollToItem) {
             Fangorn.Utils.scrollToFile.call(tb, tb.multiselected()[0].id);
         }
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
-        someItemsAreFolders = false;
-        pointerIds = [];
-        selectedRows.forEach(function (item) {
-            var thisItem = item.data;
-            someItemsAreFolders = someItemsAreFolders ||
-                                  thisItem.isFolder ||
-                                  thisItem.isSmartFolder ||
-                                  thisItem.parentIsSmartFolder ||
-                                  !thisItem.permissions.movable;
-            pointerIds.push(thisItem.node_id);
-        });
     }
+    m.redraw();
 }
 
 /**
@@ -537,6 +506,8 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
             $osf.growl('Error:', textStatus + '. ' + errorThrown);
         });
     }
+    _dismissToolbar.call(tb);
+
 }
 
 /**
@@ -545,13 +516,15 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRowsNotInParent(rows) {
-    if (this.multiselected().length < 2) {
-        return this.multiselected();
+    var tb = this;
+    if (tb.multiselected().length < 2) {
+        return tb.multiselected();
     }
     var i, newRows = [],
-        originalRow = this.find(this.multiselected()[0].id),
+        originalRow = tb.find(tb.multiselected()[0].id),
         originalParent,
         currentItem;
+    var changeColor = function() { $(this).css('background-color', ''); };
     if (typeof originalRow !== 'undefined') {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
@@ -559,12 +532,12 @@ function filterRowsNotInParent(rows) {
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
             } else {
-                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, function() { $(this).css('background-color', ''); });
+                $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, changeColor);
             }
         }
     }
-    this.multiselected(newRows);
-    this.highlightMultiselect();
+    tb.multiselected(newRows);
+    tb.highlightMultiselect();
     return newRows;
 }
 
@@ -575,10 +548,11 @@ function filterRowsNotInParent(rows) {
  * @private
  */
 function _poDragStart(event, ui) {
+    var tb = this;
     var itemID = $(event.target).attr('data-id'),
-        item = this.find(itemID);
-    if (this.multiselected().length < 2) {
-        this.multiselected([item]);
+        item = tb.find(itemID);
+    if (tb.multiselected().length < 2) {
+        tb.multiselected([item]);
     }
 }
 
@@ -589,9 +563,10 @@ function _poDragStart(event, ui) {
  * @private
  */
 function _poDrop(event, ui) {
-    var items = this.multiselected().length === 0 ? [this.find(this.selected)] : this.multiselected(),
-        folder = this.find($(event.target).attr('data-id'));
-    dropLogic.call(this, event, items, folder);
+    var tb = this;
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
+        folder = tb.find($(event.target).attr('data-id'));
+    dropLogic.call(tb, event, items, folder);
 }
 
 /**
@@ -601,9 +576,10 @@ function _poDrop(event, ui) {
  * @private
  */
 function _poOver(event, ui) {
-    var items = this.multiselected().length === 0 ? [this.find(this.selected)] : this.multiselected(),
-        folder = this.find($(event.target).attr('data-id')),
-        dragState = dragLogic.call(this, event, items, ui);
+    var tb = this;
+    var items = tb.multiselected().length === 0 ? [tb.find(tb.selected)] : tb.multiselected(),
+        folder = tb.find($(event.target).attr('data-id')),
+        dragState = dragLogic.call(tb, event, items, ui);
     $('.tb-row').removeClass('tb-h-success po-hover');
     if (dragState !== 'forbidden') {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
@@ -879,7 +855,7 @@ function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -898,14 +874,14 @@ function _addFolderEvent() {
         }).fail($osf.handleJSONError);
 
     });
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function _renameEvent() {
     var tb = this;
     var val = $.trim($('#renameInput').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -921,7 +897,7 @@ function _renameEvent() {
         tb.updateFolder(null, tb.find(1));
         // Also update every
     }).fail($osf.handleJSONError);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function applyTypeahead() {
@@ -1049,7 +1025,7 @@ function addProjectEvent() {
         });
     });
     triggerClickOnItem.call(tb, item);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
     tb.select('.tb-header-row .twitter-typeahead').remove();
 }
 
@@ -1107,7 +1083,6 @@ var POItemButtons = {
                         onclick: function (event) {
                             _gotoEvent.call(tb, event, item);
                         },
-                        tooltip: 'Opens the project in same window. Use Command + Click to open in new window.',
                         icon: 'fa fa-external-link',
                         className: 'text-primary'
                     }, 'Open')
@@ -1118,17 +1093,15 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addFolder');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                     },
-                    tooltip: 'Adds a Collection to visually organize your projects or components.',
                     icon: 'fa fa-cubes',
                     className: 'text-primary'
                 }, 'Add Collection'),
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addProject');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDPROJECT);
                     },
-                    tooltip: 'Adds an existing project or component to the Collection.',
                     icon: 'fa fa-cube',
                     className: 'text-primary'
                 }, 'Add Existing Project')
@@ -1157,7 +1130,6 @@ var POItemButtons = {
                             });
                         });
                     },
-                    tooltip: 'Removes the selected row from the Collection. This action does NOT delete the project.',
                     icon: 'fa fa-minus',
                     className: 'text-primary'
                 }, 'Remove from Collection')
@@ -1167,9 +1139,8 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('rename');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the Collection or project.',
                     icon: 'fa fa-font',
                     className: 'text-primary'
                 }, 'Rename')
@@ -1181,7 +1152,6 @@ var POItemButtons = {
                     onclick: function (event) {
                         _deleteFolder.call(tb, item, theItem);
                     },
-                    tooltip: 'Deletes the collection.',
                     icon: 'fa fa-trash',
                     className: 'text-danger'
                 }, 'Delete')
@@ -1193,12 +1163,13 @@ var POItemButtons = {
 
 var _dismissToolbar = function () {
     var tb = this;
+    if (tb.toolbarMode() === Fangorn.Components.toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
     tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
-    tb.resetFilter();
     tb.filterText('');
     tb.select('.tb-header-row .twitter-typeahead').remove();
     m.redraw();
-
 };
 
 
@@ -1207,6 +1178,7 @@ var POToolbar = {
         var self = this;
         self.tb = args.treebeard;
         self.tb.toolbarMode = m.prop(Fangorn.Components.toolbarModes.DEFAULT);
+        self.tb.inputValue = m.prop('');
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
         self.helpText = m.prop('');
@@ -1218,7 +1190,6 @@ var POToolbar = {
         var rowButtons = [];
         var dismissIcon = m.component(Fangorn.Components.button, {
             onclick: ctrl.dismissToolbar,
-            tooltip: 'Close Search',
             icon : 'fa fa-times'
         }, '');
         templates[Fangorn.Components.toolbarModes.SEARCH] =  [
@@ -1230,7 +1201,6 @@ var POToolbar = {
                     [
                         m.component(Fangorn.Components.button, {
                             onclick: ctrl.dismissToolbar,
-                            tooltip: 'Close Search',
                             icon : 'fa fa-times'
                         }, 'Close')
                     ]
@@ -1258,7 +1228,6 @@ var POToolbar = {
                             onclick: function () {
                                 _addFolderEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Add folder',
                             icon : 'fa fa-plus',
                             className : 'text-info'
                         }, 'Add'),
@@ -1271,6 +1240,7 @@ var POToolbar = {
             m('.col-xs-9',
                 m.component(Fangorn.Components.input, {
                     onkeypress: function (event) {
+                        ctrl.tb.inputValue($(event.target).val());
                         if (ctrl.tb.pressedKey === ENTER_KEY) {
                             _renameEvent.call(ctrl.tb);
                         }
@@ -1278,7 +1248,7 @@ var POToolbar = {
                     id : 'renameInput',
                     helpTextId : 'renameHelpText',
                     placeholder : null,
-                    value : ctrl.items()[0] ? ctrl.items()[0].data.name : '',
+                    value : ctrl.tb.inputValue(),
                     tooltip: 'Rename this item'
                 }, ctrl.helpText())
                 ),
@@ -1289,7 +1259,6 @@ var POToolbar = {
                             onclick: function () {
                                 _renameEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Rename collection or project',
                             icon : 'fa fa-pencil',
                             className : 'text-info'
                         }, 'Rename'),
@@ -1304,6 +1273,11 @@ var POToolbar = {
                     config : function () {
                         applyTypeahead.call(ctrl.tb);
                     },
+                    onkeypress : function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            addProjectEvent.call(ctrl.tb);
+                        }
+                    },
                     type : 'text',
                     placeholder : 'Name of the project to find'
                 }),
@@ -1317,7 +1291,6 @@ var POToolbar = {
                             onclick: function () {
                                 addProjectEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Add project',
                             icon : 'fa fa-plus',
                             className : 'text-info'
                         }, 'Add'),
@@ -1332,7 +1305,6 @@ var POToolbar = {
                     ctrl.mode(Fangorn.Components.toolbarModes.SEARCH);
                     ctrl.tb.clearMultiselect();
                 },
-                tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, 'Search'),
@@ -1340,11 +1312,37 @@ var POToolbar = {
                 onclick: function (event) {
                     showLegend.call(ctrl.tb);
                 },
-                tooltip: 'Learn more about how to use the project organizer.',
                 icon: 'fa fa-info',
                 className : 'text-info'
             }, '')
         );
+        if(ctrl.items().length > 1){
+            var someItemsAreFolders = false;
+            var pointerIds = [];
+            var theParentNode = ctrl.items()[0].parent();
+            ctrl.items().forEach(function (item) {
+                var thisItem = item.data;
+                someItemsAreFolders = (
+                    someItemsAreFolders ||
+                    thisItem.isFolder ||
+                    thisItem.isSmartFolder ||
+                    thisItem.parentIsSmartFolder ||
+                    !thisItem.permissions.movable
+                );
+                pointerIds.push(thisItem.node_id);
+            });
+            if(!someItemsAreFolders){
+                generalButtons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            deleteMultiplePointersFromFolder.call(ctrl.tb, pointerIds, theParentNode);
+                        },
+                        icon: 'fa fa-minus',
+                        className : 'text-primary'
+                    }, 'Remove All from Collection')
+                );
+            }
+        }
         if (ctrl.items().length === 1) {
             rowButtons = m.component(POItemButtons, {treebeard : ctrl.tb, item : ctrl.items()[0]});
         }
@@ -1394,7 +1392,7 @@ function _deleteFolder(item) {
  * For documentation visit: https://github.com/caneruguz/treebeard/wiki
  */
 var tbOptions = {
-    rowHeight : 27,         // user can override or get from .tb-row height
+    rowHeight : 35,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.

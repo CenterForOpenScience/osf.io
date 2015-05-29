@@ -9,9 +9,9 @@ import httplib as http
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
-from modularodm import Q
 
 from framework import auth
+from framework.auth import cas
 from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import (
@@ -56,40 +56,6 @@ class TestAuthUtils(OsfTestCase):
         assert_false(
             auth.get_user(email=user.username, password='wrong')
         )
-
-    def test_login_success_authenticates_user(self):
-        user = UserFactory.build(date_last_login=datetime.datetime.utcnow())
-        user.set_password('killerqueen')
-        user.save()
-        # need request context because login returns a rsponse
-        res = auth.login(user.username, 'killerqueen')
-        assert_true(isinstance(res, BaseResponse))
-        assert_equal(res.status_code, 302)
-
-    def test_login_unregistered_user(self):
-        user = UnregUserFactory()
-        user.set_password('killerqueen')
-        user.save()
-        with assert_raises(auth.LoginNotAllowedError):
-            # password is correct, but user is unregistered
-            auth.login(user.username, 'killerqueen')
-
-    def test_login_disabled_user(self):
-        """Logging in to a disabled account fails"""
-        user = UserFactory()
-        user.set_password('Leeloo')
-        user.is_disabled = True
-        user.save()
-
-        with assert_raises(auth.LoginDisabledError):
-            auth.login(user.username, 'Leeloo')
-
-    def test_login_with_incorrect_password_returns_false(self):
-        user = UserFactory.build()
-        user.set_password('rhapsody')
-        user.save()
-        with assert_raises(auth.PasswordIncorrectError):
-            auth.login(user.username, 'wrongpassword')
 
 
 class TestAuthObject(OsfTestCase):
@@ -211,8 +177,10 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
             api_node='abc',
         )
         assert_is_redirect(res)
+        # redirects to login url
         redirect_url = res.headers['Location']
-        assert_equal(redirect_url, '/login/?next=/')
+        login_url = cas.get_login_url(service_url='http://localhost/')
+        assert_equal(redirect_url, login_url)
 
     def test_must_be_contributor_parent_admin(self):
         user = UserFactory()
@@ -261,7 +229,8 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_from_kwargs.return_value = Auth()
         resp = protected()
         assert_true(isinstance(resp, BaseResponse))
-        assert_in('/login/', resp.headers.get('location'))
+        login_url = cas.get_login_url(service_url='http://localhost/')
+        assert_in(login_url, resp.headers.get('location'))
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')

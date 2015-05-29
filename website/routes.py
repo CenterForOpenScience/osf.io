@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 import os
+import httplib as http
 
+from flask import request
 from flask import send_from_directory
 
 from framework import status
 from framework import sentry
+from framework.auth import cas
 from framework.routing import Rule
 from framework.flask import redirect
+from framework.sessions import session
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
@@ -67,6 +70,8 @@ def get_globals():
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
+        'login_url': cas.get_login_url(request.url, auto=True),
+        'access_token': session.data.get('auth_user_access_token') or '',
     }
 
 
@@ -434,18 +439,13 @@ def make_url_map(app):
 
         Rule(['/login/', '/account/'], 'get',
              auth_views.auth_login, OsfWebRenderer('public/login.mako')),
-        Rule('/login/', 'post', auth_views.auth_login,
-             OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),
-        Rule('/login/two_factor/', ['get', 'post'], auth_views.two_factor,
-             OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-        # TODO(hrybacki): combining the get/posts into a single rule is causing a build error and needs debugging
-        Rule('/forgotpassword/', 'get', auth_views._forgot_password,
+        Rule('/forgotpassword/', 'get', auth_views.forgot_password_get,
              OsfWebRenderer('public/forgot_password.mako')),
-        Rule('/forgotpassword/', 'post', auth_views.forgot_password,
+        Rule('/forgotpassword/', 'post', auth_views.forgot_password_post,
              OsfWebRenderer('public/login.mako')),
 
         Rule([
@@ -1318,15 +1318,6 @@ def make_url_map(app):
             'put',
             addon_views.create_waterbutler_log,
             json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/files/<provider>/<path:path>/',
-                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
-            ],
-            'get',
-            addon_views.addon_render_file,
-            json_renderer
         ),
         Rule(
             '/settings/addons/',
