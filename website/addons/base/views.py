@@ -415,6 +415,10 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     else:
         sharejs_uuid = None
 
+    size = getattr(guid_file, 'size', None)
+    if size is None:  # Size could be 0 which is a falsey value
+        size = 9966699  # if we dont know the size assume its to big to edit
+
     ret.update({
         'error': error.replace('\n', '') if error else None,
         'provider': guid_file.provider,
@@ -428,7 +432,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
             'gravatar': get_gravatar(auth.user, 25),
         },
         # Note: must be called after get_or_start_render. This is really only for github
-        'size': getattr(guid_file, 'size', 9966699),  # if we dont know the size assume its to big to edit
+        'size': size,
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
