@@ -64,12 +64,7 @@ class GitHubProvider(provider.BaseProvider):
 
         #TODO Validate that filesha is a valid sha
         path.parts[-1]._id = (
-            next(
-                (kwargs[key] for key in
-                ('ref', 'branch')
-                if key in kwargs),
-                self.default_branch
-            ),
+            kwargs.get('branch') or kwargs.get('ref') or self.default_branch,
             kwargs.get('fileSha')
         )
 
@@ -508,7 +503,11 @@ class GitHubProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def _metadata_file(self, path, ref=None, **kwargs):
-        latest = yield from self._get_latest_sha(ref=path.identifier[0])
+        if not GitHubProvider.is_sha(path.identifier[0]):
+            latest = yield from self._get_latest_sha(ref=path.identifier[0])
+        else:
+            latest = path.identifier[0]
+
         tree = yield from self._fetch_tree(latest, recursive=True)
 
         try:
