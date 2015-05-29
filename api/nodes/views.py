@@ -158,6 +158,98 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
+class NodeRegistrationsOpenEnded(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = NodeSerializer
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        nodes = self.get_node().node__registrations
+        user = self.request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        registrations = [node for node in nodes if node.can_view(auth)]
+        return registrations
+
+class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = NodeSerializer
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        nodes = self.get_node().node__registrations
+        user = self.request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        registrations = [node for node in nodes if node.can_view(auth)]
+        return registrations
+
+class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = NodeSerializer
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        nodes = self.get_node().node__registrations
+        user = self.request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        registrations = [node for node in nodes if node.can_view(auth)]
+        return registrations
+
+class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = NodeSerializer
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        nodes = self.get_node().node__registrations
+        user = self.request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        registrations = [node for node in nodes if node.can_view(auth)]
+        return registrations
+
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
     """Children of the current node.
 
