@@ -18,9 +18,6 @@ var PanelToggler = utils.PanelToggler;
 
 var EDITORS = {'text': FileEditor};
 
-window.m = m;
-
-
 var FileViewPage = {
     controller: function(context) {
         var self = this;
@@ -36,14 +33,6 @@ var FileViewPage = {
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false}),
         });
-
-        self.reloadFile = function() {
-            self.panels.forEach(function(panel) {
-                if (panel.reload) {
-                    panel.reload();
-                }
-            });
-        };
 
         self.deleteFile = function() {
             bootbox.confirm({
@@ -131,13 +120,12 @@ var FileViewPage = {
                     ]),
                     m('.col-md-3', [
                         m('.pull-right.btn-group.btn-group-sm', [
-                            m('button#fileEditorRevert.btn.btn-warning', {onclick: window.__fileEditorSave}, 'Revert'),
-                            m('button#fileEditorSave.btn.btn-success', {onclick: window.__fileEditorRevert}, 'Save')
+                            m('button#fileEditorRevert.btn.btn-warning', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
+                            m('button#fileEditorSave.btn.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
                         ])
                     ])
                 ]);
         };
-
 
 
         //crappy hack to delay creation of the editor
@@ -148,7 +136,7 @@ var FileViewPage = {
             if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile, self.shareJSObservables], true);
+                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], true);
                     // Splicing breaks mithrils caching :shrug:
                     // self.panels.splice(1, 0, p);
                     self.panels.push(self.editor);

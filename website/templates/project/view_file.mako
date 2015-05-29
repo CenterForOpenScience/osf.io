@@ -120,7 +120,6 @@
 </div>
 ## End Modals block
 
-
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     % for script in tree_js:

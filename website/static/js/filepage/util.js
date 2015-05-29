@@ -1,10 +1,11 @@
 var m = require('mithril');
 
 
-function Panel(title, header, inner, args, selected) {
+function Panel(title, header, inner, args, selected, reload) {
     panel = m.component(Panel, title, header, inner, args);
     panel.title = title;
     panel.selected = selected || false;
+    panel.reload = reload || undefined;
     return panel;
 }
 
