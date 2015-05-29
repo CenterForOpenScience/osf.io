@@ -123,8 +123,8 @@ class TestStorageAddonBase(ArchiverTestCase):
         self._test__get_file_tree(addon_short_name)
 
     def test_addons(self):
-        #  Test that each addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki' implements the StorageAddonBase interface
-        for addon in [a for a in settings.ADDONS_ARCHIVABLE if not a == 'wiki']:
+        #  Test that each addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki'] implements the StorageAddonBase interface
+        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['osfstorage', 'wiki']]:
             self._test_addon(addon)
 
 class TestArchiverTasks(ArchiverTestCase):
@@ -410,7 +410,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archived_providers = {
             addon: {
                 'status': ARCHIVER_PENDING
-            } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
+            } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
         }
         self.dst.archived_providers['osfstorage'] = {
             'status': ARCHIVER_SUCCESS
@@ -427,7 +427,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archived_providers = {
             addon: {
                 'status': ARCHIVER_SUCCESS
-            } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
+            } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
         }
         self.dst.save()
         with mock.patch.object(handlers, 'enqueue_task') as mock_enqueue:
@@ -439,9 +439,9 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archived_providers = {
             addon: {
                 'status': ARCHIVER_SUCCESS
-            } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
+            } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
         }
-        self.dst.archived_providers['osfstorage']['status'] = ARCHIVER_FAILURE
+        self.dst.archived_providers['box']['status'] = ARCHIVER_FAILURE
         self.dst.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             listeners.archive_callback(self.dst)
@@ -463,7 +463,7 @@ class TestArchiverScripts(ArchiverTestCase):
             reg.archived_providers = {
                 addon: {
                     'status': ARCHIVER_PENDING
-                } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
+                } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
             }
             reg.archiving = True
             reg.save()
@@ -474,7 +474,7 @@ class TestArchiverScripts(ArchiverTestCase):
             reg.archived_providers = {
                 addon: {
                     'status': ARCHIVER_PENDING
-                } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
+                } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
             }
             reg.archiving = True
             reg.save()

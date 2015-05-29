@@ -91,7 +91,8 @@ def stat_node(src_pk, dst_pk, user_pk):
     logger.info("Statting node: {0}".format(src_pk))
     create_app_context()
     src = Node.load(src_pk)
-    targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE if not name == 'wiki']  # TODO don't special case
+    added_default = [addon.short_name for addon in settings.ADDONS_AVAILABLE if 'node' in addon.added_default]
+    targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE if name not in added_default]
     celery.chord(
         celery.group(
             stat_addon.si(
