@@ -2769,3 +2769,11 @@ span#profileFullname{
 .mfr-file {
   height: 100%;
 }
+
+#contributor-toggle {
+    border: 1px solid #EEE;
+    background-color: #F8F8F8;
+    height: 15px;
+    line-height: 10px;
+    color: #888;
+}
