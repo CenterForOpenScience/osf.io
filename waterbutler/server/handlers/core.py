@@ -61,7 +61,8 @@ class BaseHandler(tornado.web.RequestHandler, SentryMixin):
     ACTION_MAP = {}
 
     def set_default_headers(self):
-        self.set_header('Access-Control-Allow-Origin', settings.CORS_ALLOW_ORIGIN)
+        for origin in settings.CORS_ALLOW_ORIGIN:
+            self.add_header('Access-Control-Allow-Origin', origin)
         self.set_header('Access-Control-Allow-Headers', ', '.join(CORS_ACCEPT_HEADERS))
         self.set_header('Access-Control-Expose-Headers', ', '.join(CORS_EXPOSE_HEADERS))
         self.set_header('Cache-control', 'no-store, no-cache, must-revalidate, max-age=0')
