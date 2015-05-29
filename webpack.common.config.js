@@ -37,7 +37,6 @@ var entry = {
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
-    'view-file-page': staticPath('js/pages/view-file-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
