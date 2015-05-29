@@ -19,10 +19,6 @@ from website.archiver import (
     ARCHIVE_METADATA_FAIL,
     AggregateStatResult,
 )
-from website.archiver.utils import (
-    update_status,
-    aggregate_file_tree_metadata,
-)
 from website.archiver import utils as archiver_utils
 
 from website import mails
@@ -54,13 +50,20 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
-    update_status(dst, addon_short_name, ARCHIVER_CHECKING)
+    archiver_utils.update_status(dst, addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     user = User.load(user_pk)
     try:
         file_tree = src_addon._get_file_tree(user=user)
     except HTTPError as e:
-        handle_archive_addon_error(dst, addon_short_name, errors=[e.data['error']])
+        archiver_utils.update_status(
+            dst,
+            addon_short_name,
+            ARCHIVER_FAILURE,
+            meta={
+                'errors': [e.data['error']]
+            }
+        )
         archiver_utils.handle_archive_fail(
             ARCHIVE_METADATA_FAIL,
             src,
@@ -72,7 +75,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     result = AggregateStatResult(
         src_addon._id,
         addon_short_name,
-        targets=[aggregate_file_tree_metadata(addon_short_name, file_tree, user)],
+        targets=[archiver_utils.aggregate_file_tree_metadata(addon_short_name, file_tree, user)],
     )
     return result
 
@@ -113,13 +116,13 @@ def make_copy_request(dst_pk, url, data):
     """
     dst = Node.load(dst_pk)
     provider = data['source']['provider']
-    update_status(dst, provider, ARCHIVER_SENDING)
+    archiver_utils.update_status(dst, provider, ARCHIVER_SENDING)
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst_pk))
     res = requests.post(url, data=json.dumps(data))
     logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst_pk))
-    update_status(dst, provider, ARCHIVER_SENT)
+    archiver_utils.update_status(dst, provider, ARCHIVER_SENT)
     if not res.ok:
-        update_status(
+        archiver_utils.update_status(
             dst,
             provider,
             ARCHIVER_FAILURE,
@@ -128,7 +131,7 @@ def make_copy_request(dst_pk, url, data):
             }
         )
     elif res.status_code in (200, 201):
-        update_status(dst, provider, ARCHIVER_SUCCESS)
+        archiver_utils.update_status(dst, provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(name="archiver.archive_addon")
@@ -146,7 +149,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
-    update_status(dst, addon_short_name, ARCHIVER_PENDING, meta={
+    archiver_utils.update_status(dst, addon_short_name, ARCHIVER_PENDING, meta={
         'stat_result': str(stat_result),
     })
     user = User.load(user_pk)

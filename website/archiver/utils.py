@@ -2,7 +2,6 @@ from framework.auth import Auth
 
 from website.archiver import (
     StatResult, AggregateStatResult,
-    ARCHIVER_FAILURE,
     ARCHIVE_COPY_FAIL,
     ARCHIVE_SIZE_EXCEEDED,
     ARCHIVE_METADATA_FAIL,
@@ -10,7 +9,6 @@ from website.archiver import (
 
 from website import mails
 from website import settings
-from website.models import Node
 
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
