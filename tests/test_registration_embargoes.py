@@ -1,8 +1,8 @@
 """Tests related to embargoes of registrations"""
-
 import datetime
 import json
 
+import mock
 from nose.tools import *  #noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (

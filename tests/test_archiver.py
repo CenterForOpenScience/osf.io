@@ -186,6 +186,7 @@ class TestArchiverTasks(ArchiverTestCase):
             result = stat_node.apply(args=(src_pk, dst_pk, user_pk)).result
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             archive_node(result, src_pk, dst_pk, user_pk)
+        import ipdb; ipdb.set_trace()
         assert_equal(
             mock_fail.call_args_list[0][0][:-1],
             (

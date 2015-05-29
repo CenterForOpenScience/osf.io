@@ -10,6 +10,7 @@ from website.archiver import (
 
 from website import mails
 from website import settings
+from website.models import Node
 
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
@@ -84,6 +85,7 @@ def link_archive_provider(node, user):
     node.save()
 
 def handle_archive_addon_error(node, addon_short_name, errors=[]):
+    import ipdb; ipdb.set_trace()
     node.archived_providers[addon_short_name].update({
         'status': ARCHIVER_FAILURE,
         'errors': errors,
@@ -96,7 +98,8 @@ def delete_registration_tree(node):
     for child in node.nodes:
         delete_registration_tree(child)
 
-def update_status(node, addon, status, meta={}):
+def update_status(node_pk, addon, status, meta={}):
+    node = Node.load(node_pk)
     tmp = node.archived_providers.get(addon) or {}
     tmp['status'] = status
     tmp.update(meta)
