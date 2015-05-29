@@ -252,7 +252,7 @@ def update_node(node, index=INDEX):
             'is_registration': node.is_registration,
             'is_retracted': node.is_retracted,
             'pending_retraction': node.pending_retraction,
-            'embargo_end_date': node.embargo_end_date,
+            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
             'pending_embargo': node.pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},

@@ -186,7 +186,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+        assert_equal(len(self.registration.logs), initial_num_logs + 2)
 
     def test_retraction_of_registration_pending_embargo_cancels_embargo(self):
         self.registration.is_public = True
@@ -225,8 +225,8 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
-        # One log for approval of Retraction, one for cancellation of Embargo
-        assert_equal(len(self.registration.logs), initial_num_logs + 2)
+        # Initiate Embargo, initiate of Retraction, approve of Retraction, and cancel of Embargo
+        assert_equal(len(self.registration.logs), initial_num_logs + 4)
 
     def test_retraction_of_registration_in_active_embargo_cancels_embargo(self):
         self.registration.is_public = True
@@ -334,7 +334,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.retraction.approval_state[self.user._id]['disapproval_token']
         self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+        assert_equal(len(self.registration.logs), initial_num_logs + 2)
 
     # Retraction property tests
     def test_new_retraction_is_pending_retraction(self):

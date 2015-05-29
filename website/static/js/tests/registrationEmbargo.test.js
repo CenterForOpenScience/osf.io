@@ -11,8 +11,8 @@ describe('registrationEmbargo', () => {
 
     describe('RegistrationEmbargoViewModel', () => {
         var vm;
-        var MAKE_PUBLIC = 'Make registration public immediately';
-        var MAKE_EMBARGO = 'Enter registration into embargo';
+        var MAKE_PUBLIC = 'immediate';
+        var MAKE_EMBARGO = 'embargo';
 
         beforeEach(() => {
             vm = new registrationEmbargo.ViewModel();
@@ -20,12 +20,12 @@ describe('registrationEmbargo', () => {
 
         describe('#checkShowEmbargoDatePicker', () => {
             it('returns false if registrationChoice is make public', () => {
-                vm.registrationChoice([MAKE_PUBLIC]);
+                vm.registrationChoice(MAKE_PUBLIC);
                 vm.checkShowEmbargoDatePicker();
                 assert.isFalse(vm.showEmbargoDatePicker());
             });
             it('returns true if registrationChoice is make embargo', () => {
-                vm.registrationChoice([MAKE_EMBARGO]);
+                vm.registrationChoice(MAKE_EMBARGO);
                 vm.checkShowEmbargoDatePicker();
                 assert.isTrue(vm.showEmbargoDatePicker());
             });
@@ -59,11 +59,11 @@ describe('registrationEmbargo', () => {
         });
         describe('#requestingEmbargo', () => {
             it('returns false if user chose make public', () => {
-                vm.registrationChoice([MAKE_PUBLIC]);
+                vm.registrationChoice(MAKE_PUBLIC);
                 assert.isFalse(vm.requestingEmbargo());
             });
             it('returns true if user chose requests embargo', () => {
-                vm.registrationChoice([MAKE_EMBARGO]);
+                vm.registrationChoice(MAKE_EMBARGO);
                 assert.isTrue(vm.requestingEmbargo());
             });
         });

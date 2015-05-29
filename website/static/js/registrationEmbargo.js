@@ -4,17 +4,23 @@ var pikaday = require('pikaday');
 var RegistrationEmbargoViewModel = function() {
 
     var self = this;
-    var MAKE_PUBLIC = 'Make registration public immediately';
-    var MAKE_EMBARGO = 'Enter registration into embargo';
+    var MAKE_PUBLIC = {
+        value: 'immediate',
+        message: 'Make registration public immediately'
+    };
+    var MAKE_EMBARGO = {
+        value: 'embargo',
+        message: 'Enter registration into embargo'
+    };
     var today = new Date();
     var TWO_DAYS_FROM_TODAY_TIMESTAMP = new Date().getTime() + (2 * 24 * 60 * 60 * 1000);
     var ONE_YEAR_FROM_TODAY_TIMESTAMP = new Date().getTime() + (365 * 24 * 60 * 60 * 1000);
 
-    self.registrationOptions = ko.observableArray([
+    self.registrationOptions = [
         MAKE_PUBLIC,
         MAKE_EMBARGO
-    ]);
-    self.registrationChoice = ko.observable([MAKE_PUBLIC]);
+    ];
+    self.registrationChoice = ko.observable(MAKE_PUBLIC.value);
 
     self.pikaday = ko.observable(today);
     var picker = new pikaday(
@@ -28,11 +34,7 @@ var RegistrationEmbargoViewModel = function() {
     );
     self.showEmbargoDatePicker = ko.observable(false);
     self.checkShowEmbargoDatePicker = function() {
-        if (self.registrationChoice()[0] === MAKE_EMBARGO) {
-            self.showEmbargoDatePicker(true);
-        } else {
-            self.showEmbargoDatePicker(false);
-        }
+        self.showEmbargoDatePicker(self.registrationChoice() === MAKE_EMBARGO.value);
     };
     self.embargoEndDate = ko.computed(function() {
         return new Date(self.pikaday());
@@ -41,9 +43,9 @@ var RegistrationEmbargoViewModel = function() {
         var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
         return (endEmbargoDateTimestamp < ONE_YEAR_FROM_TODAY_TIMESTAMP && endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP);
     });
-    self.requestingEmbargo = ko.computed(function() {
+    self.requestingEmbargo = ko.pureComputed(function() {
         var choice = self.registrationChoice();
-        if (choice) { return choice[0] === MAKE_EMBARGO; }
+        if (choice) { return choice === MAKE_EMBARGO.value; }
     });
 };
 

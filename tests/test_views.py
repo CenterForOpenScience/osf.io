@@ -473,7 +473,7 @@ class TestProjectViews(OsfTestCase):
     def test_register_template_make_public_creates_public_registration(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
-        self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
+        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
         self.project.reload()
         # Most recent node is a registration
         reg = Node.load(self.project.node__registrations[-1])
@@ -488,7 +488,7 @@ class TestProjectViews(OsfTestCase):
         self.app.post_json(
             url,
             {
-                'registrationChoice': 'Enter registration into embargo',
+                'registrationChoice': 'embargo',
                 'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
             },
             auth=self.auth)

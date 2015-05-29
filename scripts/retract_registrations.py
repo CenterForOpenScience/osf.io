@@ -39,7 +39,6 @@ def main(dry_run=True):
                             'retraction_id': parent_registration.retraction._id,
                         },
                         auth=Auth(parent_registration.retraction.initiated_by),
-                        log_date=datetime.datetime.utcnow(),
                         save=False,
                     )
                     retraction.save()

@@ -163,7 +163,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+        assert_equal(len(self.registration.logs), initial_num_logs + 2)
 
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
@@ -241,7 +241,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+        assert_equal(len(self.registration.logs), initial_num_logs + 2)
 
     def test_cancelling_embargo_deletes_parent_registration(self):
         self.registration.embargo_registration(
@@ -578,7 +578,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
                 month=current_month,
                 year=current_year
             ),
-            u'registrationChoice': 'Make registration public immediately',
+            u'registrationChoice': 'immediate',
             u'summary': unicode(fake.sentence())
         })
         self.valid_embargo_payload = json.dumps({
@@ -586,7 +586,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
                 month=current_month,
                 year=str(int(current_year)+1)
             ),
-            u'registrationChoice': 'Enter registration into embargo',
+            u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
         })
         self.invalid_embargo_date_payload = json.dumps({
@@ -594,7 +594,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
                 month=current_month,
                 year=str(int(current_year)-1)
             ),
-            u'registrationChoice': 'Enter registration into embargo',
+            u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
         })
 

@@ -2,6 +2,7 @@
 import datetime
 import json
 import httplib as http
+from dateutil.parser import parse as parse_date
 
 from flask import request
 from modularodm import Q
@@ -103,19 +104,9 @@ def node_registration_retraction_post(auth, node, **kwargs):
     data = request.get_json()
     try:
         node.retract_registration(auth.user, data.get('justification', None))
-        node.add_log(
-            action=NodeLog.RETRACTION_INITIATED,
-            params={
-                'node': node._id,
-                'retraction_id': node.retraction._id,
-            },
-            auth=auth,
-            log_date=datetime.datetime.utcnow(),
-            save=False,
-        )
         node.save()
     except NodeStateError as err:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
 
     for contributor in node.contributors:
         _send_retraction_email(node, contributor)
@@ -187,7 +178,6 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         })
-    # FIXME(hrybacki) should be PermissionsError
     except PermissionsError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
@@ -293,7 +283,7 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
             'message_long': e.message_long
         })
     except PermissionsError as e:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'Unauthorized access',
             'message_long': e.message
         })
@@ -482,35 +472,21 @@ def node_register_template_page_post(auth, node, **kwargs):
         schema, auth, template, json.dumps(clean_data),
     )
 
-    if data['registrationChoice'] == 'Make registration public immediately':
-        register.is_public = True
-        register.save()
-    elif data['registrationChoice'] == 'Enter registration into embargo':
-        # Sanitize embargo end date
-        embargo_end_date = datetime.datetime.strptime(
-            data['embargoEndDate'],
-            "%a, %d %b %Y %H:%M:%S %Z"
-        )
+    if data['registrationChoice'] == 'embargo':
+        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
 
         # Initiate embargo
         try:
             register.embargo_registration(auth.user, embargo_end_date)
-            register.add_log(
-                action=NodeLog.EMBARGO_INITIATED,
-                params={
-                    'node': register._id,
-                    'embargo_id': register.embargo._id,
-                },
-                auth=auth,
-                log_date=datetime.datetime.utcnow(),
-                save=False,
-            )
             register.save()
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
         for contributor in register.contributors:
             _send_embargo_email(register, contributor)
+    else:
+        register.is_public = True
+        register.save()
 
     return {
         'status': 'initiated',

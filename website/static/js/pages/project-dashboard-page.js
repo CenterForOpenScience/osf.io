@@ -65,6 +65,7 @@ $(document).ready(function () {
                 placement: 'dashboard',
                 title : undefined,
                 filterFullWidth : true, // Make the filter span the entire row for this view
+                xhrconfig: $osf.setXHRAuthorization,
                 columnTitles : function () {
                     return [
                         {
@@ -77,11 +78,12 @@ $(document).ready(function () {
                 },
                 resolveRows : function (item) {
                     var tb = this;
-                    if(this.isMultiselected(item.id)){
+                    item.css = '';
+                    if(tb.isMultiselected(item.id)){
                         item.css = 'fangorn-selected';
                     }
                     var defaultColumns = [
-                            {
+                                {
                                 data: 'name',
                                 folderIcons: true,
                                 filter: true,

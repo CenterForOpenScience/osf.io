@@ -32,8 +32,9 @@
                     % endfor
                 % endif
                 <br />
-                Date Created: ${ node['date_created'] }
-                | Last Updated: ${ node['date_modified'] }
+                Date Created: <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
+                | Date Registered:  <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${ node['category'] }</span>
                 % elif node['description'] or 'write' in user['permissions']:
@@ -50,10 +51,10 @@
                             <h4>Justification for Retraction</h4>
                         </div>
                         <div class="addon-widget-body">
-                            % if node['retracted_justification'] is None:
+                            % if not node['retracted_justification']:
                                 <em>No justification provided during retraction.</em>
                             % else:
-                                <em>${ node['retracted_justification'] }</em>
+                                ${ node['retracted_justification'] }
                             % endif
                         </div>
                     </div>

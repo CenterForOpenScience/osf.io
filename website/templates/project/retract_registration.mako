@@ -12,7 +12,7 @@
                 with a "retracted" tag. <strong>This action is irreversible.</strong>
             </div>
         </div>
-        <form id="registration_retraction_form" role="form">
+        <form id="registrationRetractionForm" role="form">
 
             <div class="form-group">
                 <label class="control-label">Please provide your justification for retracting this registration.</label>
@@ -38,8 +38,7 @@
 
             </div>
             <button type="submit" class="btn btn-danger" data-bind="click: submit, visible: true">Retract Registration</button>
-            <br /><br />
-            <span data-bind="css: messageClass, html: message"></span>
+            <div class="m-t-md" data-bind="css: messageClass, html: message"></div>
         </form>
     </div>
 

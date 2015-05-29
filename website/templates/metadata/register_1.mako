@@ -12,7 +12,11 @@
                 <p class="help-block">${language.REGISTRATION_EMBARGO_INFO}</p>
                 <div class="form-group">
                     <label class="control-label">Registration Choice</label>
-                    <select class="form-control" data-bind="options: registrationOptions, selectedOptions: registrationChoice, event: {change: checkShowEmbargoDatePicker}"></select>
+                    <select class="form-control" data-bind="options: registrationOptions,
+                                                            value: registrationChoice,
+                                                            optionsText: 'message',
+                                                            optionsValue: 'value',
+                                                            event: {change: checkShowEmbargoDatePicker}"></select>
                 </div>
                 <span data-bind="visible: showEmbargoDatePicker">
                     <div class="form-group">

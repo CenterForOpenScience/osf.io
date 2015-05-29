@@ -1,8 +1,14 @@
 import unittest
 import logging
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
+from framework.auth.core import Auth
+from website import settings
+import website.search.search as search
+from website.search import elastic_search
+from website.search.util import build_query
+from website.search_migration.migrate import migrate
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
@@ -11,13 +17,6 @@ from tests.factories import (
     UnregUserFactory, UnconfirmedUserFactory,
     RegistrationFactory
 )
-
-from framework.auth.core import Auth
-from website import settings
-import website.search.search as search
-from website.search import elastic_search
-from website.search.util import build_query
-from website.search_migration.migrate import migrate
 
 @requires_search
 class SearchTestCase(OsfTestCase):

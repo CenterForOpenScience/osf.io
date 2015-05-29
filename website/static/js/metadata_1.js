@@ -641,7 +641,7 @@ var MetaData = (function() {
                 complete = true,
                 value;
             $.each(this.observedData, function(name, model) {
-                if (!model.value) {
+                if (!model.value) {r
                     return true;
                 }
                 value = model.serialize();
@@ -656,7 +656,7 @@ var MetaData = (function() {
             });
             // Add embargoAddon relevant fields
             $.extend(data, {
-                'registrationChoice': self.embargoAddon.registrationChoice()[0],
+                'registrationChoice': self.embargoAddon.registrationChoice(),
                 'embargoEndDate': self.embargoAddon.embargoEndDate().toUTCString()
             });
             return {
