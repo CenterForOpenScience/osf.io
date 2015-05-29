@@ -5,49 +5,47 @@
 
 <%def name="title()">${file_name | h}</%def>
 
-<div class="wiki">
+<div>
+  <div>
+    <h2 class="break-word">
+      ${file_name | h}
+      % if file_revision:
+        <small>&nbsp;${file_revision | h}</small>
+      % endif
+    </h2><hr>
+  </div>
 
-        <div>
-            <h2 class="break-word">
-                ${file_name | h}
-                % if file_revision:
-                    <small>&nbsp;${file_revision | h}</small>
-                % endif
-            </h2><hr>
+  <div id="file-navigation" class="panel-toggle col-md-3 file-tree">
+    <div class="osf-panel osf-panel-flex hidden-xs reset-height">
+      <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+        <div id="filesSearch"></div>
+        <div id="toggleIcon" class="pull-right">
+          <div class="panel-collapse"> <i class="fa fa-angle-left"></i> </div>
         </div>
+      </div>
 
-         <div id="file-navigation" class="panel-toggle col-md-3 file-tree">
-             <div class="osf-panel osf-panel-flex hidden-xs reset-height">
-                 <div class="osf-panel-header osf-panel-header-flex" style="display:none">
-                     <div id="filesSearch"></div>
-                     <div id="toggleIcon" class="pull-right">
-                         <div class="panel-collapse"> <i class="fa fa-angle-left"></i> </div>
-                     </div>
-                 </div>
-
-                 <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
-                     <div id="grid">
-                           <div class="fangorn-loading">
-                             <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
-                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
-                           </div>
-                     </div>
-                 </div>
-             </div>
-
-            <!-- Menu toggle closed -->
-             <div class="osf-panel panel-collapsed hidden-xs text-center reset-height"  style="display: none">
-                 <div class="osf-panel-header">
-                     <i class="fa fa-file"></i>
-                     <i class="fa fa-angle-right"></i>
-                 </div>
-             </div>
-
-         </div>
-
-        <div class="file-view-panels panel-expand col-md-9" style="margin-top: -75px"></div>
-
+      <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+        <div id="grid">
+          <div class="fangorn-loading">
+            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+            <p class="m-t-sm fg-load-message"> Loading files...  </p>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Menu toggle closed -->
+    <div class="osf-panel panel-collapsed hidden-xs text-center reset-height"  style="display: none">
+      <div class="osf-panel-header">
+        <i class="fa fa-file"></i>
+        <i class="fa fa-angle-right"></i>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="file-view-panels panel-expand col-md-9" style="margin-top: -75px"></div>
+
 </div>
 
 
