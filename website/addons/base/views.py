@@ -423,7 +423,6 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'sharejs_uuid': sharejs_uuid,
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
-            'content': guid_file.download_url,
             'render': guid_file.mfr_render_url,
             'sharejs': wiki_settings.SHAREJS_URL,
             'gravatar': get_gravatar(auth.user, 25),
