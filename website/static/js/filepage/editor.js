@@ -98,7 +98,7 @@ var FileEditor = {
 
         //See Above comment
         $(document).on('fileviewpage:revert', function() {
-            self.editor.setValue(self.initialText);
+            self.reloadFile();
         });
 
         self.onChanged = function(e) {
