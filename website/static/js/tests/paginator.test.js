@@ -62,7 +62,7 @@ describe('Paginator', () => {
     });
 
     describe('addNewPaginator', () => {
-        var maxPaginatorNumber = 18;
+        var maxPaginatorNumber = 16;
 
         it('one page no paginator', () => {
             numberOfPages = 1;
