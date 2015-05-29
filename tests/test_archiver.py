@@ -140,7 +140,7 @@ class TestArchiverTasks(ArchiverTestCase):
         src_pk, dst_pk, user_pk = self.pks
         self.src.add_addon('box', auth=self.auth)  # has box, dropbox
         with mock.patch('celery.group') as mock_group:
-            stat_node(src_pk, dst_pk, user_pk)
+            stat_node.apply(src_pk, dst_pk, user_pk)
         stat_dropbox_sig = stat_addon.si('dropbox', src_pk, dst_pk, user_pk)
         stat_box_sig = stat_addon.si('box', src_pk, dst_pk, user_pk)
         assert(mock_group.called_with(stat_dropbox_sig, stat_box_sig))
@@ -172,7 +172,7 @@ class TestArchiverTasks(ArchiverTestCase):
             src_pk,
             dst_pk,
             user_pk,
-            result
+            results
         )
         assert(mock_group.called_with(archive_dropbox_signature))
 
