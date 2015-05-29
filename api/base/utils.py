@@ -15,7 +15,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     if query_kwargs:
         relative_url = '{}?{}'.format(relative_url, urlencode(query_kwargs))
 
-    domain = settings.DOMAIN if settings.API_SERVER_PORT == 5000 else settings.API_DOMAIN
+    domain = settings.API_DOMAIN
     return urlparse.urljoin(domain, relative_url)
 
 
