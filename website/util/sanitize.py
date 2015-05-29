@@ -22,7 +22,7 @@ def clean_tag(data):
     :rtype: str
     """
     #TODO: make this a method of Tag?
-    return escape_html(data).replace('"', '&quot;')
+    return escape_html(data).replace('"', '&quot;').replace("'", '')
 
 
 def escape_html(data):
