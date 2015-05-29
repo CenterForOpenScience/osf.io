@@ -101,6 +101,10 @@ var FileViewPage = {
                                 connecting: {
                                     style: 'width: 100%',
                                     class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                                },
+                                saving: {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-info progress-bar-striped active',
                                 }
                             }[self.shareJSObservables.status()] || {
                                     style: 'width: 100%',
@@ -111,6 +115,7 @@ var FileViewPage = {
                                             connected: 'Live editing mode ',
                                             connecting: 'Attempting to connect ',
                                             unsupported: 'Unsupported browser ',
+                                            saving: 'Saving... '
                                         }[self.shareJSObservables.status()] || 'Unavailable: Live editing ',
                                         m('i.fa.fa-question-circle.fa-large')
                                     ])

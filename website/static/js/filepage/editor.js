@@ -64,21 +64,32 @@ var FileEditor = {
         //buttons ~2 levels up
         $(document).on('fileviewpage:save', function() {
             if(self.changed()) {
+                var oldstatus = self.observables.status();
+                self.editor.setReadOnly(true);
+                self.observables.status('saving');
+                m.redraw();
                 var request = $.ajax({
                     type: 'PUT',
                     url: self.url,
                     data: self.editor.getValue(),
                     beforeSend: $osf.setXHRAuthorization
                 }).done(function () {
+                    self.editor.setReadOnly(false);
+                    self.observables.status(oldstatus);
                     $(document).trigger('fileviewpage:reload');
                     self.initialText = self.editor.getValue();
+                    m.redraw();
                 }).fail(function(error) {
+                    self.editor.setReadOnly(false);
+                    self.observables.status(oldstatus);
+                    $(document).trigger('fileviewpage:reload');
                     self.editor.setValue(self.initialText);
                     $osf.growl('Error', 'The file could not be updated.');
                     Raven.captureMessage('Could not PUT file content.', {
                         error: error,
                         url: self.url
                     });
+                    m.redraw();
                 });
             } else {
                 alert('There are no changes to save.');
@@ -127,7 +138,7 @@ var FileEditor = {
 
                 ])
             ]))),
-            m('.wmd-panel.col-md-12', {style: {'padding-top': '10px'}}, [
+            m('', {style: {'padding-top': '10px'}}, [
                 m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
             ]),
         ]);
