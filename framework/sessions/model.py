@@ -18,3 +18,8 @@ class Session(StoredObject):
         # Initialize history to empty list if not found
         if 'history' not in self.data:
             self.data['history'] = []
+
+    @property
+    def persist(self):
+        """True if the object exists in the DB"""
+        return bool(self._stored_key)

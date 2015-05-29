@@ -94,9 +94,16 @@ def set_previous_url(url=None):
     url = url or request.path
     if any([rule(url) for rule in settings.SESSION_HISTORY_IGNORE_RULES]):
         return
+
+    # Do nothing if this is a duplicate of the last visited URL
+    if len(session.data['history']) and url == session.data['history'][-1]:
+        return
+
     session.data['history'].append(url)
     while len(session.data['history']) > settings.SESSION_HISTORY_LENGTH:
         session.data['history'].pop(0)
+    if session.persist:
+        session.save()
 
 
 def goback(n=1):
@@ -114,7 +121,11 @@ def goback(n=1):
 
 
 def get_session():
-    return sessions.get(request._get_current_object())
+    session = sessions.get(request._get_current_object())
+    if not session:
+        session = Session()
+        set_session(session)
+    return session
 
 
 def set_session(session):
@@ -219,17 +230,9 @@ def before_request():
             return
         except:
             pass
-    ## TODO: Create session in before_request, cookie in after_request
-    ## Retry request, preserving status code
-    #response = redirect(request.path, code=307)
-    return create_session(None)
-
 
 @app.after_request
 def after_request(response):
     # Save if session exists and not authenticated by API
     set_previous_url()
-    if session._get_current_object() is not None \
-            and not session.data.get('auth_api_key'):
-        session.save()
     return response
