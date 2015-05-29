@@ -1,6 +1,7 @@
 var m = require('mithril');
 var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
+var ShareJSDoc = require('js/pages/ShareJSDocFile.js');
 require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
@@ -13,7 +14,7 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 var util = require('./util.js');
 
 var FileEditor = {
-    controller: function(contentUrl, shareWSUrl, editorMeta, triggerReload) {
+    controller: function(contentUrl, shareWSUrl, editorMeta, triggerReload, observables) {
         var self = this;
         self.url = contentUrl;
         self.loaded = false;
@@ -23,19 +24,15 @@ var FileEditor = {
         self.triggerReload = triggerReload;
         self.changed = m.prop(false);
 
-        self.observables = {
-            status: m.prop('connecting'),
-            activeUsers: m.prop([])
-        };
+        self.observables = observables;
 
-        $osf.throttle(self.observables.status(), 4000, {leading: false});
+        $osf.throttle(self.observables.status, 4000, {leading: false});
 
         self.bindAce = function(element, isInitialized, context) {
             if (isInitialized) return;
             self.editor = ace.edit(element.id);
             self.editor.setValue(self.initialText);
             self.editor.on('change', self.onChanged);
-            var ShareJSDoc = require('js/pages/ShareJSDocFile.js');
             new ShareJSDoc(shareWSUrl, self.editorMeta, self.editor, self.observables);
         };
 
@@ -111,6 +108,22 @@ var FileEditor = {
         if (!ctrl.loaded) return util.Spinner;
 
         return m('.editor-pane', [
+            m('.wiki-connected-users', m('.row', m('.col-md-12', [
+                m('.ul.list-inline', {style: {margin: '10px'}}, [
+                    ctrl.observables.activeUsers().map(function(user) {
+                        return m('li', m('a[data-container=body]', {href: user.url}, [
+                            m('img', {
+                                title: user.name,
+                                src: user.gravatar,
+                                'data-placement': 'top',
+                                'data-toggle': 'tooltip',
+                                style: {border: '1px solid black'}
+                            })
+                        ]));
+                    })
+
+                ])
+            ]))),
             m('.wmd-panel.col-md-12', {style: {'padding-top': '10px'}}, [
                 m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
             ]),

@@ -19,7 +19,7 @@ Panel.controller = function(title, header, inner, args) {
 
 Panel.view = function(ctrl) {
     return m('.osf-panel', [
-        m('.osf-panel-header', ctrl.header),
+        m('.osf-panel-header', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
         m('.osf-panel-body', ctrl.inner)
     ]);
 };

@@ -72,6 +72,12 @@ var FileViewPage = {
             return false;
         };
 
+        self.shareJSObservables = {
+            activeUsers: m.prop([]),
+            status: m.prop('connecting'),
+            userId: self.context.currentUser.id
+        };
+
         revisionsHeader = m('.row', [
             m('.col-md-6', 'Revisions'),
             m('.col-md-6', [
@@ -86,7 +92,47 @@ var FileViewPage = {
         ]);
 
         viewHeader = [m('i.fa.fa-eye'), ' View'];
-        editHeader = [m('i.fa.fa-pencil-square-o'), ' Edit'];
+        editHeader = function() {
+            return m('.row', [
+                m('.col-md-6', [
+                    m('i.fa.fa-pencil-square-o'),
+                    ' Edit',
+                ]),
+                m('.col-md-6', [
+                    m('.pull-right', [
+                        m('.progress.progress-no-margin.pointer', {
+                            'data-toggle': 'modal',
+                            'data-target': '#' + self.shareJSObservables.status() + 'Modal',
+                        }, [
+                            m('.progress-bar.progress-bar-success', {
+                                connected: {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-success',
+                                },
+                                connecting: {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                                }
+                            }[self.shareJSObservables.status()] || {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-danger',
+                                }, [
+                                    m('span.progress-bar-content', [
+                                        {
+                                            connected: 'Live editing mode ',
+                                            connecting: 'Attempting to connect ',
+                                            unsupported: 'Unsupported browser ',
+                                        }[self.shareJSObservables.status()] || 'Unavailable: Live editing ',
+                                        m('i.fa.fa-question-circle.fa-large')
+                                ])
+                            ])
+                        ])
+                    ])
+                ])
+            ]);
+        };
+
+
 
         //crappy hack to delay creation of the editor
         //until we know this is the current file revsion
@@ -96,7 +142,7 @@ var FileViewPage = {
             if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
+                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile, self.shareJSObservables], true);
                     // Splicing breaks mithrils caching :shrug:
                     // self.panels.splice(1, 0, p);
                     self.panels.push(self.editor);
