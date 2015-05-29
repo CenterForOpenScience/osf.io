@@ -90,41 +90,54 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                <div id="contributors-list">
-                Contributors:
-                % if node['anonymous'] and not node['is_public']:
-                    <ol>Anonymous Contributors</ol>
-                % else:
-                    <ol>
-                        <div mod-meta='{
-                            "tpl": "util/render_contributors.mako",
-                            "uri": "${node["api_url"]}get_contributors/",
-                            "replace": true
-                        }'></div>
-                    </ol>
-                % endif
-                <div id="contributor-toggle" class="text-center"><i class="fa fa-ellipsis-h"></i></div>
+                <div id="contributors-list" data-bind="animateHeight: { state : collapsed(), shortHeight : collapseLimit, longHeight : 'auto'}">
+                    Contributors:
+                    % if node['anonymous'] and not node['is_public']:
+                        <ol>Anonymous Contributors</ol>
+                    % else:
+                        <ol>
+                            <div mod-meta='{
+                                "tpl": "util/render_contributors.mako",
+                                "uri": "${node["api_url"]}get_contributors/",
+                                "replace": true
+                            }'></div>
+                        </ol>
+                    % endif
+                    <div id="contributor-gradient" data-bind="visible : collapsed()" ></div>
                 </div>
+                <div id="contributor-toggle" class="text-center m-b-xs" data-bind="visible : showToggle(), click : toggleHeight">
+                <i style="display:none" data-bind="visible : collapsed()" class="fa fa-angle-down"></i>
+                <i style="display:none"  data-bind="visible : !collapsed()" class="fa fa-angle-up"></i>
+
+                </div>
+
                 % if node['is_fork']:
-                    <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
+                    <p>
+                    Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
+                    </p>
                 % endif
                 % if node['is_registration'] and node['registered_meta']:
-                    <br />Registration Supplement:
+                    <p>Registration Supplement:
                     % for meta in node['registered_meta']:
                         <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                     % endfor
+                    </p>
                 % endif
                 % if node['is_registration']:
-                    <br />Date Registered:
+                    <p>
+                    Date Registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                    </p>
                 % endif
-                    <br />Date Created:
+                    <p>
+                    Date Created:
                     <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                % if not node['is_registration']:
-                    | Last Updated:
-                    <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
-                % endif
+                    % if not node['is_registration']:
+                        | Last Updated:
+                        <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                    % endif
+                    </p>
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
@@ -133,21 +146,28 @@
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
-                    <br />
+                    <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
                         <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                    </p
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
-                  <br />
+                  <p>
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  </p>
                   <!-- /ko -->
                 </span>
-                <br />Category: <span class="node-category">${node['category']}</span>
+                <p>
+                Category: <span class="node-category">${node['category']}</span>
                 &nbsp;
                 <span data-bind="css: icon"></span>
+                </p>
+
                 % if node['description'] or 'write' in user['permissions']:
-                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <p>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    </p>
                 % endif
             </div>
         </div>
