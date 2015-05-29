@@ -76,7 +76,7 @@ class ArchiverTestCase(OsfTestCase):
         self.src = factories.NodeFactory(creator=self.user)
         self.src.add_addon('dropbox', auth=self.auth)
         self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False)
-        self.stat_result = aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
+        self.stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
         self.pks = (self.src._id, self.dst._id, self.user._id)
 
 class TestStorageAddonBase(ArchiverTestCase):
@@ -129,13 +129,11 @@ class TestStorageAddonBase(ArchiverTestCase):
 
 class TestArchiverTasks(ArchiverTestCase):
 
-    @mock.patch('celery.chain')
-    def test_archive(self, mock_chain):
+    @mock.patch('website.archiver.tasks.stat_node.delay')
+    def test_archive(self, mock_stat):
         src_pk, dst_pk, user_pk = self.pks
         archive(src_pk, dst_pk, user_pk)
-        stat_node_sig = stat_node.si(src_pk, dst_pk, user_pk)
-        archive_node_sig = archive_node.s(src_pk, dst_pk, user_pk)
-        mock_chain.assert_called_with(stat_node_sig, archive_node_sig)
+        mock_stat.assert_called_with(src_pk, dst_pk, user_pk)
         assert_true(self.dst.archiving)
 
     def test_stat_node(self):
@@ -158,7 +156,7 @@ class TestArchiverTasks(ArchiverTestCase):
         assert(MockStat.called_with(
             src_dropbox._id,
             'dropbox',
-            targets=[aggregate_file_tree_metadata(src_dropbox, FILE_TREE, self.user)]
+            targets=[archiver_utils.aggregate_file_tree_metadata(src_dropbox, FILE_TREE, self.user)]
         ))
         assert_equal(res.target_name, 'dropbox')
 
@@ -166,9 +164,9 @@ class TestArchiverTasks(ArchiverTestCase):
         src_pk, dst_pk, user_pk = self.pks
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
-            result = stat_node(src_pk, dst_pk, user_pk)
+            results = [stat_addon(addon, src_pk, dst_pk, user_pk) for addon in ['osfstorage', 'dropbox']]
         with mock.patch.object(celery, 'group') as mock_group:
-            archive_node(result, src_pk, dst_pk, user_pk)
+            archive_node(results, src_pk, dst_pk, user_pk)
         archive_dropbox_signature = archive_addon.si(
             'dropbox',
             src_pk,
@@ -183,10 +181,9 @@ class TestArchiverTasks(ArchiverTestCase):
         src_pk, dst_pk, user_pk = self.pks
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
-            result = stat_node.apply(args=(src_pk, dst_pk, user_pk)).result
+            results = [stat_addon(addon, src_pk, dst_pk, user_pk) for addon in ['osfstorage', 'dropbox']]
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
-            archive_node(result, src_pk, dst_pk, user_pk)
-        import ipdb; ipdb.set_trace()
+            archive_node(results, src_pk, dst_pk, user_pk)
         assert_equal(
             mock_fail.call_args_list[0][0][:-1],
             (
@@ -199,7 +196,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
     def test_archive_addon(self):
         src_pk, dst_pk, user_pk = self.pks
-        result = aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user),
+        result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user),
         with mock.patch.object(make_copy_request, 'si') as mock_make_copy_request:
             with mock.patch.object(requests, 'post'):
                 archive_addon('dropbox', src_pk, dst_pk, user_pk, result)
@@ -270,13 +267,13 @@ class TestArchiverTasks(ArchiverTestCase):
                                url,
                                body=callback_400,
                                content_type='application/json')
-        with mock.patch.object(archiver_utils, 'handle_archive_addon_error') as mock_catch_error:
+        with mock.patch('website.archiver.utils.update_status') as mock_update:
             make_copy_request(dst_pk, url, {
                 'source': {
                     'provider': 'dropbox'
                 }
             })
-        assert(mock_catch_error.called_with(self.dst, 'dropbox', error))
+        mock_update.assert_called_with(self.dst, 'dropbox', ARCHIVER_FAILURE, meta={'errors': [error]})
 
 class TestArchiverUtils(ArchiverTestCase):
 
@@ -356,12 +353,12 @@ class TestArchiverUtils(ArchiverTestCase):
             'status': 'OK',
         }
         self.dst.save()
-        update_status(self.dst, 'test', 'BAD', meta={'meta': 'DATA'})
+        archiver_utils.update_status(self.dst, 'test', 'BAD', meta={'meta': 'DATA'})
         assert_equal(self.dst.archived_providers['test']['status'], 'BAD')
         assert_equal(self.dst.archived_providers['test']['meta'], 'DATA')
 
     def test_aggregate_file_tree_metadata(self):
-        a_stat_result = aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
+        a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
         assert_equal(a_stat_result.disk_usage, 128 + 256)
         assert_equal(a_stat_result.num_files, 2)
         assert_equal(len(a_stat_result.targets), 2)
@@ -381,17 +378,6 @@ class TestArchiverUtils(ArchiverTestCase):
         wo.delete_addon(settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         archiver_utils.link_archive_provider(wo, self.user)
         assert_true(archiver_utils.has_archive_provider(wo, self.user))
-
-    def test_cahandlerchive_addon_error(self):
-        self.dst.archived_providers['dropbox'] = {
-            'status': ARCHIVER_PENDING,
-        }
-        self.dst.save()
-
-        errors = ['BAD REQUEST', 'BAD GATEWAY']
-        archiver_utils.handle_archive_addon_error(self.dst, 'dropbox', errors)
-        assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_FAILURE)
-        assert_equal(self.dst.archived_providers['dropbox']['errors'], errors)
 
     def test_delete_registration_tree(self):
         proj = factories.NodeFactory()
