@@ -606,10 +606,9 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             content_type='application/json',
             auth=self.user.auth
         )
-
         assert_equal(res.status_code, 201)
-        registration_id = res.json['result'].strip('/')
-        registration = Node.find_one(Q('_id', 'eq', registration_id))
+
+        registration = Node.find().sort('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_true(registration.is_public)
@@ -624,15 +623,16 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
 
         assert_equal(res.status_code, 201)
-        registration_id = res.json['result'].strip('/')
-        registration = Node.find_one(Q('_id', 'eq', registration_id))
+
+        registration = Node.find().sort('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
         assert_true(registration.pending_registration)
         assert_is_not_none(registration.embargo)
 
-    def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_archive):
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.invalid_embargo_date_payload,
@@ -653,6 +653,5 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             auth=self.user.auth
         )
 
-        registration_id = res.json['result'].strip('/')
-        registration = Node.find_one(Q('_id', 'eq', registration_id))
+        registration = Node.find().sort('-registered_date')[0]
         assert_equal(len(registration.logs), initial_num_logs + 1)
