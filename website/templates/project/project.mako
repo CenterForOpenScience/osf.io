@@ -90,6 +90,7 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
+                <div id="contributors-list">
                 Contributors:
                 % if node['anonymous'] and not node['is_public']:
                     <ol>Anonymous Contributors</ol>
@@ -102,6 +103,8 @@
                         }'></div>
                     </ol>
                 % endif
+                <div id="contributor-toggle" class="text-center"><i class="fa fa-ellipsis-h"></i></div>
+                </div>
                 % if node['is_fork']:
                     <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
