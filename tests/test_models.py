@@ -3345,7 +3345,6 @@ class TestPointer(OsfTestCase):
         self._assert_clone(self.pointer, registered)
 
     def test_register_with_pointer_to_registration(self):
-        """Check for regression"""
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)

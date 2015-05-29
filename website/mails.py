@@ -170,3 +170,12 @@ PENDING_EMBARGO_NON_ADMIN = Mail(
     'pending_embargo_non_admin',
     subject='Registration pending for one of your projects.'
 )
+FILE_OPERATION_SUCCESS = Mail(
+    'file_operation_success',
+    subject='Your ${action} has finished',
+)
+
+FILE_OPERATION_FAILED = Mail(
+    'file_operation_failed',
+    subject='Your ${action} has failed',
+)

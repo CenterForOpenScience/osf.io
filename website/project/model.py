@@ -338,6 +338,9 @@ class NodeLog(StoredObject):
 
     UPDATED_FIELDS = 'updated_fields'
 
+    FILE_MOVED = 'addon_file_moved'
+    FILE_COPIED = 'addon_file_copied'
+
     FOLDER_CREATED = 'folder_created'
 
     FILE_ADDED = 'file_added'

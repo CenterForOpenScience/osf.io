@@ -9,9 +9,9 @@ from modularodm.exceptions import ValidationValueError
 
 from framework import forms
 from framework import status
+from framework.auth import cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
-from framework.auth import authenticate
 from framework.auth import User, get_user
 from framework.exceptions import HTTPError
 from framework.auth.signals import user_registered
@@ -22,6 +22,7 @@ from framework.transactions.handlers import no_auto_transaction
 
 from website import mails
 from website import language
+from website import security
 from website import settings
 from website.models import Node
 from website.profile import utils
@@ -530,15 +531,17 @@ def claim_user_registered(auth, node, **kwargs):
     """
     current_user = auth.user
 
-    sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
+    sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
     if not current_user:
-        response = redirect(sign_out_url)
-        return response
+        return redirect(sign_out_url)
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
-        data = {'message_short': 'Already a contributor',
-                'message_long': 'The logged-in user is already a contributor to '
-                'this project. Would you like to <a href="/logout/">log out</a>?'}
+        logout_url = web_url_for('auth_logout', redirect_url=request.url)
+        data = {
+            'message_short': 'Already a contributor',
+            'message_long': ('The logged-in user is already a contributor to this'
+                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+        }
         raise HTTPError(http.BAD_REQUEST, data=data)
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
@@ -632,13 +635,18 @@ def claim_user_form(auth, **kwargs):
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
+            user.verification_key = security.random_string(20)
             user.save()
             # Authenticate user and redirect to project page
-            response = redirect(web_url_for('user_profile'))
             node = Node.load(pid)
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
-                'success')
-            return authenticate(user, response)
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node), 'success')
+            # Redirect to CAS and authenticate the user with a verification key.
+            return redirect(cas.get_login_url(
+                web_url_for('user_profile', _absolute=True),
+                auto=True,
+                username=user.username,
+                verification_key=user.verification_key
+            ))
         else:
             forms.push_errors_to_status(form.errors)
     return {
