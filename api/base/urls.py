@@ -7,10 +7,11 @@ from settings import API_BASE
 
 from . import views
 
+base_pattern = '^{}'.format(API_BASE)
 
 urlpatterns = [
     ### API ###
-    url(r'^{}'.format(API_BASE), include(patterns('',
+    url(base_pattern, include(patterns('',
         url(r'^$', views.root),
         url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
         url(r'^users/', include('api.users.urls', namespace='users')),

@@ -115,8 +115,8 @@ USE_TZ = True
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
-API_PATH = '', # 'api/' on staging/production, '' on develop
-STATIC_URL = '{}{}static/'.format(API_PATH, API_BASE)
+API_PATH = '' # 'api/' on staging/production, '' on develop
+STATIC_URL = '/'+API_PATH+API_BASE+'static/'
 
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
