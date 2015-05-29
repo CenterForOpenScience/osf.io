@@ -2614,6 +2614,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise NodeStateError('Only public registrations or active embargoes may be retracted.')
 
         retraction = self._initiate_retraction(user, justification, save=True)
+        self.add_log(
+            action=NodeLog.RETRACTION_INITIATED,
+            params={
+                'node': self._id,
+                'retraction_id': retraction._id,
+            },
+            auth=Auth(user),
+            save=False,
+        )
         self.retraction = retraction
 
     def _is_embargo_date_valid(self, end_date):
@@ -2670,6 +2679,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
+        self.add_log(
+            action=NodeLog.EMBARGO_INITIATED,
+            params={
+                'node': self._id,
+                'embargo_id': embargo._id,
+            },
+            auth=Auth(user),
+            save=False,
+        )
         # Embargo record needs to be saved to ensure the forward reference Node->Embargo
         self.embargo = embargo
 
@@ -2838,7 +2856,6 @@ class Retraction(StoredObject):
                 'retraction_id': self._id,
             },
             auth=Auth(user),
-            log_date=datetime.datetime.utcnow(),
             save=True,
         )
 
@@ -2862,7 +2879,6 @@ class Retraction(StoredObject):
                     'retraction_id': self._id,
                 },
                 auth=Auth(user),
-                log_date=datetime.datetime.utcnow(),
                 save=True,
             )
             # Remove any embargoes associated with the registration
@@ -2875,7 +2891,6 @@ class Retraction(StoredObject):
                         'embargo_id': parent_registration.embargo._id,
                     },
                     auth=Auth(user),
-                    log_date=datetime.datetime.utcnow(),
                     save=False,
                 )
                 parent_registration.embargo.save()
@@ -2929,7 +2944,7 @@ class Embargo(StoredObject):
 
     @property
     def embargo_end_date(self):
-        if self.state == 'active':
+        if self.state == Embargo.ACTIVE:
             return self.end_date.strftime("%A, %b. %d, %Y")  # e.g. 'Friday, Jan. 01, 2016'
         return False
 
@@ -2965,7 +2980,6 @@ class Embargo(StoredObject):
                 'embargo_id': self._id,
             },
             auth=Auth(user),
-            log_date=datetime.datetime.utcnow(),
             save=True,
         )
         # Delete parent registration if it was created at the time the embargo was initiated
@@ -2992,6 +3006,5 @@ class Embargo(StoredObject):
                     'embargo_id': self._id,
                 },
                 auth=Auth(user),
-                log_date=datetime.datetime.utcnow(),
                 save=True,
             )

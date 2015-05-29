@@ -163,7 +163,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+        assert_equal(len(self.registration.logs), initial_num_logs + 2)
 
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
@@ -241,7 +241,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 1)
+        assert_equal(len(self.registration.logs), initial_num_logs + 2)
 
     def test_cancelling_embargo_deletes_parent_registration(self):
         self.registration.embargo_registration(

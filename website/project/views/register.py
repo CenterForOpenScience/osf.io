@@ -97,16 +97,6 @@ def node_registration_retraction_post(auth, node, **kwargs):
     data = request.get_json()
     try:
         node.retract_registration(auth.user, data.get('justification', None))
-        node.add_log(
-            action=NodeLog.RETRACTION_INITIATED,
-            params={
-                'node': node._id,
-                'retraction_id': node.retraction._id,
-            },
-            auth=auth,
-            log_date=datetime.datetime.utcnow(),
-            save=False,
-        )
         node.save()
     except NodeStateError as err:
         raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
@@ -462,16 +452,6 @@ def node_register_template_page_post(auth, node, **kwargs):
         # Initiate embargo
         try:
             register.embargo_registration(auth.user, embargo_end_date)
-            register.add_log(
-                action=NodeLog.EMBARGO_INITIATED,
-                params={
-                    'node': register._id,
-                    'embargo_id': register.embargo._id,
-                },
-                auth=auth,
-                log_date=datetime.datetime.utcnow(),
-                save=False,
-            )
             register.save()
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))

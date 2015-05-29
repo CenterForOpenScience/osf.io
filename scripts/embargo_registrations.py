@@ -42,7 +42,6 @@ def main(dry_run=True):
                             'embargo_id': embargo._id,
                         },
                         auth=Auth(parent_registration.embargo.initiated_by),
-                        log_date=datetime.datetime.utcnow(),
                         save=False,
                     )
                     embargo.save()
@@ -68,7 +67,6 @@ def main(dry_run=True):
                             'embargo_id': embargo._id,
                         },
                         auth=Auth(parent_registration.embargo.initiated_by),
-                        log_date=datetime.datetime.utcnow(),
                         save=False,
                     )
                     embargo.save()
