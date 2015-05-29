@@ -99,7 +99,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
         node.retract_registration(auth.user, data.get('justification', None))
         node.save()
     except NodeStateError as err:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
 
     for contributor in node.contributors:
         _send_retraction_email(node, contributor)
@@ -276,7 +276,7 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
             'message_long': e.message_long
         })
     except PermissionsError as e:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'Unauthorized access',
             'message_long': e.message
         })
