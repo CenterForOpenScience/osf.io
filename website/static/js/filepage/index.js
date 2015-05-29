@@ -150,8 +150,8 @@ var FileViewPage = {
         };
 
         self.panels = [
+            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing], true),
             Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
         ];
 
     },
