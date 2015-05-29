@@ -12,15 +12,16 @@ function Panel(title, header, inner, args, selected) {
 Panel.controller = function(title, header, inner, args) {
     var self = this;
     self.title = title;
-    self.header = header || title;
+    self.header = header === null ? null : header || title;
     self.inner = m.component.apply(self, [inner].concat(args || []));
 };
 
 
 Panel.view = function(ctrl) {
-    return m('.osf-panel', [
-        m('.osf-panel-header', ctrl.header),
-        m('.osf-panel-body', ctrl.inner)
+    return m('#' + ctrl.title.toLowerCase() + 'Panel', [
+        !ctrl.header ? '' :
+            m('.osf-panel-header', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
+        m('', ctrl.inner)
     ]);
 };
 
@@ -38,24 +39,17 @@ var PanelToggler = {
 
         return m('.panel-toggler', [
             m('.row', [
-                m('.col-md-6', [
-                    m('.pull-left', [
-                        ctrl.header
-                    ])
-                ]),
-                m('.col-md-6', [
-                    m('.pull-right', [
-                        m('.btn-group.btn-group-sm', [m('.btn.btn-default.disabled', 'Toggle View: ')].concat(
-                            ctrl.panels.map(function(panel) {
-                                return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
-                                    onclick: function(e) {
-                                        e.preventDefault();
-                                        panel.selected = !panel.selected;
-                                    }
-                                }, panel.title);
-                            })
-                        ))
-                    ])
+                m('.pull-right', [
+                    m('.btn-group.btn-group-sm', {class: 'file-toggle-btn'}, [m('.btn.btn-default.disabled', 'Toggle View: ')].concat(
+                        ctrl.panels.map(function(panel) {
+                            return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
+                                onclick: function(e) {
+                                    e.preventDefault();
+                                    panel.selected = !panel.selected;
+                                }
+                            }, panel.title);
+                        })
+                    ))
                 ])
             ]),
             m('br'),
@@ -71,7 +65,12 @@ var PanelToggler = {
 var Spinner = m.component({
     controller: function(){},
     view: function() {
-        return m('i.fa.fa-spinner.fa-pulse');
+        return m('.fangorn-loading', [
+            m('.logo-spin.text-center', [
+                m('img[src=/static/img/logo_spin.png][alt=loader]')
+            ]),
+            m('p.m-t-sm.fg-load-message', ' Loading... ')
+        ]);
     }
 });
 

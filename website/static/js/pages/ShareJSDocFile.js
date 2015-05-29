@@ -1,12 +1,12 @@
 var $ = require('jquery');
+var m = require('mithril');
 
-var activeUsers = [];
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     var self = this;
     self.editor = editor;
-//    self.renderer = renderer;
+    self.activeUsers = observables.activeUsers;
 
     var ctx = window.contextVars.file;
 
@@ -27,20 +27,6 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     self.collaborative = collaborative;
     self.observables = observables;
 
-    // if (!collaborative) {
-    //     // Populate editor with most recent draft
-    //     viewModel.fetchData().done(function(response) {
-    //         var content = response;
-    //         self.editor.setValue(content, -1);
-    //         self.editor.setReadOnly(false);
-    //         if (typeof WebSocket === 'undefined') {
-    //             viewModel.status('unsupported');
-    //         } else {
-    //             viewModel.status('disconnected');
-    //         }
-    //     });
-    //     return;
-    // }
 
     // Requirements load order is specific in this case to compensate
     // for older browsers.
@@ -59,6 +45,14 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     var canEdit = true;
 
     function whenReady() {
+        if (!collaborative) {
+            if (typeof WebSocket === 'undefined') {
+                self.observables.status('unsupported');
+            } else {
+                self.observables.status('disconnected');
+            }
+            return;
+        }
 
         // Create a text document if one does not exist
         if (!doc.type) {
@@ -102,14 +96,13 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
         // Meta type is not built into sharejs; we pass it manually
         switch (data.type) {
             case 'meta':
-                // Convert users object into knockout array
-                activeUsers = [];
-                for (var user in data.users) {
-                    var userMeta = data.users[user];
-                    userMeta.id = user;
-                    activeUsers.push(userMeta);
-                }
-                self.observables.activeUsers(activeUsers);
+                self.activeUsers(Object.keys(data.users).filter(function(key) {
+                    return key !== self.observables.userId;
+                }).map(function(key) {
+                    data.users[key].id = key;
+                    return data.users[key];
+                }));
+                m.redraw();
                 break;
             case 'lock':
                 allowRefresh = false;

@@ -7,7 +7,6 @@ var waterbutler = require('js/waterbutler');
 
 // Local requires
 var utils = require('./util.js');
-var FileTree = require('./tree.js');
 var FileRenderer = require('./render.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
@@ -18,7 +17,6 @@ var PanelToggler = utils.PanelToggler;
 
 
 var EDITORS = {'text': FileEditor};
-
 
 var FileViewPage = {
     controller: function(context) {
@@ -35,14 +33,6 @@ var FileViewPage = {
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false}),
         });
-
-        self.reloadFile = function() {
-            self.panels.forEach(function(panel) {
-                if (panel.reload) {
-                    panel.reload();
-                }
-            });
-        };
 
         self.deleteFile = function() {
             bootbox.confirm({
@@ -71,6 +61,12 @@ var FileViewPage = {
             return false;
         };
 
+        self.shareJSObservables = {
+            activeUsers: m.prop([]),
+            status: m.prop('connecting'),
+            userId: self.context.currentUser.id
+        };
+
         revisionsHeader = m('.row', [
             m('.col-md-6', 'Revisions'),
             m('.col-md-6', [
@@ -84,28 +80,77 @@ var FileViewPage = {
             ])
         ]);
 
-        treeHeader = m('.row', m('.col-md-12', m('#filesSearch')));
-        viewHeader = [m('i.fa.fa-eye'), ' View'];
-        editHeader = [m('i.fa.fa-pencil-square-o'), ' Edit'];
+        // viewHeader = [m('i.fa.fa-eye'), ' View'];
+        editHeader = function() {
+            return m('.row', [
+                m('.col-md-3', [
+                    m('i.fa.fa-pencil-square-o'),
+                    ' Edit',
+                ]),
+                m('.col-md-6', [
+                    m('', [
+                        m('.progress.progress-no-margin.pointer', {
+                            'data-toggle': 'modal',
+                            'data-target': '#' + self.shareJSObservables.status() + 'Modal',
+                        }, [
+                            m('.progress-bar.progress-bar-success', {
+                                connected: {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-success',
+                                },
+                                connecting: {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                                },
+                                saving: {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-info progress-bar-striped active',
+                                }
+                            }[self.shareJSObservables.status()] || {
+                                    style: 'width: 100%',
+                                    class: 'progress-bar progress-bar-danger',
+                                }, [
+                                    m('span.progress-bar-content', [
+                                        {
+                                            connected: 'Live editing mode ',
+                                            connecting: 'Attempting to connect ',
+                                            unsupported: 'Unsupported browser ',
+                                            saving: 'Saving... '
+                                        }[self.shareJSObservables.status()] || 'Unavailable: Live editing ',
+                                        m('i.fa.fa-question-circle.fa-large')
+                                    ])
+                                ])
+                            ])
+                        ])
+                    ]),
+                    m('.col-md-3', [
+                        m('.pull-right.btn-group.btn-group-sm', [
+                            m('button#fileEditorRevert.btn.btn-warning', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
+                            m('button#fileEditorSave.btn.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
+                        ])
+                    ])
+                ]);
+        };
+
 
         //crappy hack to delay creation of the editor
         //until we know this is the current file revsion
         self.enableEditing = function() {
+            if (self.editor) return;
             var fileType = mime.lookup(self.file.name);
             if (self.file.size < 1048576 && fileType) { //May return false
                 editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    var p = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.reloadFile], true);
+                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], true);
                     // Splicing breaks mithrils caching :shrug:
                     // self.panels.splice(1, 0, p);
-                    self.panels.push(p);
+                    self.panels.push(self.editor);
                 }
             }
         };
 
         self.panels = [
-            Panel('Tree', treeHeader, FileTree, [self.node.urls.api], true),
-            Panel('View', viewHeader, FileRenderer, [self.file.urls.render], true),
+            Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
             Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
         ];
 
