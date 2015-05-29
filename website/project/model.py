@@ -2945,7 +2945,7 @@ class Embargo(StoredObject):
     @property
     def embargo_end_date(self):
         if self.state == Embargo.ACTIVE:
-            return self.end_date.strftime("%A, %b. %d, %Y")  # e.g. 'Friday, Jan. 01, 2016'
+            return self.end_date
         return False
 
     @property
