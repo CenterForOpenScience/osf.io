@@ -12,14 +12,15 @@ function Panel(title, header, inner, args, selected) {
 Panel.controller = function(title, header, inner, args) {
     var self = this;
     self.title = title;
-    self.header = header || title;
+    self.header = header === null ? null : header || title;
     self.inner = m.component.apply(self, [inner].concat(args || []));
 };
 
 
 Panel.view = function(ctrl) {
     return m('#' + ctrl.title.toLowerCase() + 'Panel', [
-        m('.osf-panel-header', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
+        !ctrl.header ? '' :
+            m('.osf-panel-header', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
         m('', ctrl.inner)
     ]);
 };

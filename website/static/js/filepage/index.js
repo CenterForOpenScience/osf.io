@@ -91,7 +91,7 @@ var FileViewPage = {
             ])
         ]);
 
-        viewHeader = [m('i.fa.fa-eye'), ' View'];
+        // viewHeader = [m('i.fa.fa-eye'), ' View'];
         editHeader = function() {
             return m('.row', [
                 m('.col-md-3', [
@@ -124,22 +124,18 @@ var FileViewPage = {
                                             unsupported: 'Unsupported browser ',
                                         }[self.shareJSObservables.status()] || 'Unavailable: Live editing ',
                                         m('i.fa.fa-question-circle.fa-large')
+                                    ])
                                 ])
                             ])
                         ])
+                    ]),
+                    m('.col-md-3', [
+                        m('.pull-right.btn-group.btn-group-sm', [
+                            m('button#fileEditorRevert.btn.btn-warning', {onclick: window.__fileEditorSave}, 'Revert'),
+                            m('button#fileEditorSave.btn.btn-success', {onclick: window.__fileEditorRevert}, 'Save')
+                        ])
                     ])
-                ]),
-                m('.col-md-3', [
-                    m('.pull-right.btn-group.btn-group-sm', [
-                        m('button.btn.btn-warning', {onclick: self.deleteFile}, 'Revert'),
-                        m('button.btn.btn-success', {
-                            onclick: self.downloadFile,
-                            href: '?' + $.param($.extend(true, {}, $osf.urlParams(), {download: true}))
-                        }, 'Save')
-                    ])
-                ])
-
-            ]);
+                ]);
         };
 
 
@@ -161,7 +157,7 @@ var FileViewPage = {
         };
 
         self.panels = [
-            Panel('View', viewHeader, FileRenderer, [self.file.urls.render, self.file.error], true),
+            Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
             Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
         ];
 

@@ -60,7 +60,10 @@ var FileEditor = {
             });
         };
 
-        self.saveChanges = function() {
+        //Really crappy hack, panel and m.component blackbox this module
+        //so its not possible, in the alotted time, to bind a function here to 
+        //buttons ~2 levels up
+        window.__fileEditorSave = function() {
             if(self.changed()) {
                 var request = $.ajax({
                     type: 'PUT',
@@ -81,10 +84,10 @@ var FileEditor = {
             } else {
                 alert('There are no changes to save.');
             }
-
         };
 
-        self.revertChanges = function() {
+        //See Above comment
+        window.__fileEditorRevert = function() {
             self.editor.setValue(self.initialText);
         };
 
