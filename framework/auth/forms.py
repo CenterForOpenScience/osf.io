@@ -103,8 +103,6 @@ password_field = PasswordField('Password',
         validators.Required(message=u'Password is required'),
         validators.Length(min=6, message=u'Password is too short. '
             'Password should be at least 6 characters.'),
-        validators.Length(max=35, message=u'Password is too long. '
-            'Password should be at most 35 characters.'),
     ],
     filters=[stripped],
     widget=BootstrapPasswordInput()
