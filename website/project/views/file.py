@@ -1,13 +1,10 @@
 """
 Files views.
 """
-import os
-
 from flask import request
 
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
-from website import settings
 from website.project.views.node import _view_project
 
 
