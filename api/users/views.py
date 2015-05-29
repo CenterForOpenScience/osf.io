@@ -143,6 +143,8 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
         if obj.owner._id != self.request.user._id:
             raise PermissionDenied
 
+        self.check_object_permissions(self.request, obj)  # TODO: Write tests for this
+
         return obj
 
     # overrides DestroyAPIView
