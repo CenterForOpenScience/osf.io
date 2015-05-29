@@ -30,10 +30,14 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
         parent_node = Node.load(request.parser_context['kwargs']['pk'])
         pointer_node = Pointer.load(request.parser_context['kwargs']['pointer_id']).node
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or (parent_node.can_view(auth) and pointer_node.can_view(auth))
+            has_parent_auth = parent_node.can_view(auth)
+            has_pointer_auth = pointer_node.can_view(auth)
+            public = obj.is_public
+            has_auth = public or (has_parent_auth and has_pointer_auth)
+            return has_auth
         else:
-            return parent_node.can_edit(auth) and pointer_node.can_edit(auth)
-
+            has_auth = parent_node.can_edit(auth) and pointer_node.can_edit(auth)
+            return has_auth
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
