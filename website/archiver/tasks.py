@@ -12,6 +12,7 @@ from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
+    ARCHIVER_FAILURE,
     ARCHIVER_SENDING,
     ARCHIVER_SENT,
     ARCHIVE_SIZE_EXCEEDED,
@@ -19,7 +20,6 @@ from website.archiver import (
     AggregateStatResult,
 )
 from website.archiver.utils import (
-    handle_archive_addon_error,
     update_status,
     aggregate_file_tree_metadata,
 )
@@ -54,7 +54,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
-    update_status(dst_pk, addon_short_name, ARCHIVER_CHECKING)
+    update_status(dst, addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     user = User.load(user_pk)
     try:
@@ -113,15 +113,22 @@ def make_copy_request(dst_pk, url, data):
     """
     dst = Node.load(dst_pk)
     provider = data['source']['provider']
-    update_status(dst_pk, provider, ARCHIVER_SENDING)
+    update_status(dst, provider, ARCHIVER_SENDING)
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst_pk))
     res = requests.post(url, data=json.dumps(data))
     logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst_pk))
-    update_status(dst_pk, provider, ARCHIVER_SENT)
+    update_status(dst, provider, ARCHIVER_SENT)
     if not res.ok:
-        handle_archive_addon_error(dst, provider, errors=[res.json()])
+        update_status(
+            dst,
+            provider,
+            ARCHIVER_FAILURE,
+            meta={
+                'errors': [res.json()]
+            }
+        )
     elif res.status_code in (200, 201):
-        update_status(dst_pk, provider, ARCHIVER_SUCCESS)
+        update_status(dst, provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(name="archiver.archive_addon")
@@ -138,7 +145,8 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src_pk))
     create_app_context()
     src = Node.load(src_pk)
-    update_status(dst_pk, addon_short_name, ARCHIVER_PENDING, meta={
+    dst = Node.load(dst_pk)
+    update_status(dst, addon_short_name, ARCHIVER_PENDING, meta={
         'stat_result': str(stat_result),
     })
     user = User.load(user_pk)

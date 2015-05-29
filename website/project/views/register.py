@@ -14,8 +14,9 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
-from website.archiver.utils import handle_archive_addon_error
-from website.archiver import ARCHIVER_SUCCESS
+
+from website.archiver.utils import update_status
+from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from website import settings
 from website.exceptions import (
@@ -617,10 +618,15 @@ def registration_callbacks(node, payload, *args, **kwargs):
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
     if errors:
-        handle_archive_addon_error(registration, src_provider, errors)
+        update_status(
+            registration,
+            'src_provider',
+            ARCHIVER_FAILURE
+        )
     else:
-        registration.archived_providers[src_provider].update({
-            'status': ARCHIVER_SUCCESS,
-        })
-    registration.save()
+        update_status(
+            registration,
+            src_provider,
+            ARCHIVER_SUCCESS,
+        )
     project_signals.archive_callback.send(node)

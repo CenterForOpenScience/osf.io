@@ -84,12 +84,11 @@ def link_archive_provider(node, user):
     addon.on_add()
     node.save()
 
-def handle_archive_addon_error(node, addon_short_name, errors=[]):
-    import ipdb; ipdb.set_trace()
-    node.archived_providers[addon_short_name].update({
-        'status': ARCHIVER_FAILURE,
-        'errors': errors,
-    })
+def update_status(node, addon, status, meta={}):
+    tmp = node.archived_providers.get(addon) or {}
+    tmp['status'] = status
+    tmp.update(meta)
+    node.archived_providers[addon] = tmp
     node.save()
 
 def delete_registration_tree(node):
@@ -97,14 +96,6 @@ def delete_registration_tree(node):
     node.save()
     for child in node.nodes:
         delete_registration_tree(child)
-
-def update_status(node_pk, addon, status, meta={}):
-    node = Node.load(node_pk)
-    tmp = node.archived_providers.get(addon) or {}
-    tmp['status'] = status
-    tmp.update(meta)
-    node.archived_providers[addon] = tmp
-    node.save()
 
 def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     """Recursively traverse the addon's file tree and collect metadata in AggregateStatResult
