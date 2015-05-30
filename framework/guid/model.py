@@ -5,6 +5,11 @@ from modularodm import fields
 from framework.mongo import StoredObject
 
 
+class BlacklistGuid(StoredObject):
+
+    _id = fields.StringField(primary=True)
+
+
 class Guid(StoredObject):
 
     _id = fields.StringField(primary=True)
@@ -51,9 +56,15 @@ class GuidStoredObject(StoredObject):
 
         # Else create GUID optimistically
         else:
+            while True:
+                # Create GUID
+                guid = Guid()
 
-            # Create GUID
-            guid = Guid()
+                # Check GUID against blacklist
+                blacklist_guid = BlacklistGuid.load(guid._id)
+                if not blacklist_guid:
+                    break
+
             guid.save()
             guid.referent = (guid._primary_key, self._name)
             guid.save()
