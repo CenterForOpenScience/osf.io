@@ -18,7 +18,6 @@ class Guid(StoredObject):
     _id = fields.StringField(primary=True)
     referent = fields.AbstractForeignField()
 
-
     def __repr__(self):
         return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
 
