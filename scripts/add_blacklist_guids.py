@@ -8,7 +8,11 @@ def main():
     init_app(set_backends=True)
     with open(blacklist_file, 'r') as reader:
         blacklist = [item.rstrip('\n') for item in reader]
-    create_blacklist_guid_objects(list(blacklist))
+
+    chunk_size = len(blacklist)/4
+    chunks = [blacklist[0:chunk_size], blacklist[chunk_size:(chunk_size*2)], blacklist[(chunk_size*2):(chunk_size*3)], blacklist[(chunk_size*3):]]
+    for c in chunks:
+        create_blacklist_guid_objects(c)
 
 
 def create_blacklist_guid_objects(blacklist):
