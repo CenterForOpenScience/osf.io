@@ -261,7 +261,7 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
-        'OSFM2015': {
+    'OSFM2015': {
         'name': 'OSF for Meetings 2015',
         'info_url': None,
         'logo_url': None,
