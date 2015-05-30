@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+import random
 
 from modularodm import fields
 
 from framework.mongo import StoredObject
+
+ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
 
 class BlacklistGuid(StoredObject):
@@ -15,9 +18,6 @@ class Guid(StoredObject):
     _id = fields.StringField(primary=True)
     referent = fields.AbstractForeignField()
 
-    _meta = {
-        'optimistic': True,
-    }
 
     def __repr__(self):
         return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
@@ -56,15 +56,18 @@ class GuidStoredObject(StoredObject):
 
         # Else create GUID optimistically
         else:
+            guid = Guid()
+
             while True:
                 # Create GUID
-                guid = Guid()
+                guid_id = ''.join(random.sample(ALPHABET, 5))
 
                 # Check GUID against blacklist
-                blacklist_guid = BlacklistGuid.load(guid._id)
+                blacklist_guid = BlacklistGuid.load(guid_id)
                 if not blacklist_guid:
                     break
 
+            guid._id = guid_id
             guid.save()
             guid.referent = (guid._primary_key, self._name)
             guid.save()
