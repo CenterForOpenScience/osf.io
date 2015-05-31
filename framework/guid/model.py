@@ -5,6 +5,8 @@ from modularodm import fields
 
 from framework.mongo import StoredObject
 
+from modularodm.storage.base import KeyExistsException
+
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
 
@@ -55,8 +57,6 @@ class GuidStoredObject(StoredObject):
 
         # Else create GUID optimistically
         else:
-            guid = Guid()
-
             while True:
                 # Create GUID
                 guid_id = ''.join(random.sample(ALPHABET, 5))
@@ -64,10 +64,12 @@ class GuidStoredObject(StoredObject):
                 # Check GUID against blacklist
                 blacklist_guid = BlacklistGuid.load(guid_id)
                 if not blacklist_guid:
-                    break
+                    try:
+                        guid = Guid(_id=guid_id)
+                        guid.save()
+                    except KeyExistsException:
+                        pass
 
-            guid._id = guid_id
-            guid.save()
             guid.referent = (guid._primary_key, self._name)
             guid.save()
 
