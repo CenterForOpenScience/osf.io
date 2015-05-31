@@ -2238,9 +2238,6 @@ span#profileFullname{
 .break-word {
     word-wrap: break-word;
 }
-.word-break-word {
-    word-break: break-word;
-}
 .table-fixed {
     table-layout: fixed;
     width: 100%;
