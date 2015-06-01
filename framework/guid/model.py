@@ -67,6 +67,7 @@ class GuidStoredObject(StoredObject):
                     try:
                         guid = Guid(_id=guid_id)
                         guid.save()
+                        break
                     except KeyExistsException:
                         pass
 
