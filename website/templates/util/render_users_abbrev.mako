@@ -9,7 +9,7 @@
                 "replace": true
         }'>
         </div>
-        <span>${contributor['separator']}</span>
+        <span>${contributor['separator'] | n}</span>
     % endfor
     % if others_count:
         <a href="${node_url}">${others_count} more</a>

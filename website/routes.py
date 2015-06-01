@@ -479,7 +479,7 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id,
-             OsfWebRenderer('profile.mako')),
+             OsfWebRenderer('profile.mako', safe=True)),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history,
              OsfWebRenderer('profile/key_history.mako')),
         Rule('/addons/', 'get', profile_views.profile_addons,

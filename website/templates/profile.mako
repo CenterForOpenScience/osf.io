@@ -139,7 +139,7 @@
                 "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
                 "replace" : true,
-                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects"}
+                "kwargs" : {"sortable" : true, "user": ${json.dumps(user) | n}, "pluralized_node_type": "projects"}
             }'></div>
     </div>
     <div class="col-sm-6">
@@ -148,7 +148,7 @@
                   "tpl" : "util/render_nodes.mako",
                   "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
                   "replace" : true,
-                  "kwargs" : {"sortable" : true,  "user": ${json.dumps(user)}, "pluralized_node_type": "components"}
+                  "kwargs" : {"sortable" : true,  "user": ${json.dumps(user) | n}, "pluralized_node_type": "components"}
               }'></div>
     </div>
 </div><!-- end row -->
