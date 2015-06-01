@@ -1,8 +1,15 @@
+from collections import OrderedDict
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
+from website.project.model import MetaSchema
+from modularodm import Q
+from framework.forms.utils import process_payload
+from rest_framework import serializers
+import json
+
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -125,6 +132,75 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+class RegistrationOpenEndedSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+
+    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, source="registered_meta", help_text="Provide a summary or describe how this differs from prior registrations.")
+
+
+    def create(self, validated_data):
+        template = "Open-Ended_Registration"
+        schema =  MetaSchema.find(
+            Q('name', 'eq', template)).sort('-schema_version')[0]
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        clean_data = process_payload(validated_data);
+        registration = node.register_node(
+            schema = schema,
+            auth = Auth(user),
+            template = template,
+            data = json.dumps({"summary": clean_data["registered_meta"]})
+        )
+        return registration
+
+    #
+    # def create(self, validated_data):
+    #     request = self.context['request']
+    #     user = request.user
+    #     node = self.context['view'].get_node()
+    #     registration = node_register_template_page_post(Auth(user), node, kwargs={'node': node, 'nid':node, 'pid':node, 'template': 'Open-Ended_Registration', })
+    #     return registration
+
+    class Meta:
+        type_='registrations'
+
+class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
+    TRUE_FALSE_CHOICES = ["Yes", "No"]
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    registered_meta = ser.CharField(read_only=True)
+
+    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Is data collection for this project underway or complete?", write_only=True)
+    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Have you looked at the data?", write_only=True)
+    comments = ser.CharField(required=True, allow_blank=False, allow_null=False, help_text="Other comments", write_only=True)
+
+    def create(self, validated_data):
+        looked = validated_data.get('looked')
+        datacompletion = validated_data.get('datacompletion')
+        comments = validated_data.get('comments')
+
+        template = "OSF-Standard_Pre-Data_Collection_Registration"
+        schema =  MetaSchema.find(
+            Q('name', 'eq', template)).sort('-schema_version')[0]
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        clean_data = process_payload({"looked": looked, "datacompletion": datacompletion, "comments": comments})
+        registration = node.register_node(
+            schema = schema,
+            auth = Auth(user),
+            template = template,
+            data = json.dumps({"looked": clean_data["looked"], "datacompletion": clean_data["datacompletion"] , "comments": clean_data["comments"]}))
+        return registration
+
+
+    class Meta:
+        type_='registrations'
+
 
 class NodePointersSerializer(JSONAPISerializer):
 
@@ -155,6 +231,8 @@ class NodePointersSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
+
 
 
 class NodeFilesSerializer(JSONAPISerializer):
