@@ -9,7 +9,7 @@ from website.util.sanitize import clean_tag
 from website.project.model import Tag
 from website.util.sanitize import clean_tag
 from website.project.decorators import (
-    must_be_valid_project, must_have_permission, must_not_be_registration, must_be_valid_file
+    must_be_valid_project, must_have_permission, must_not_be_registration
 )
 
 
@@ -57,7 +57,6 @@ def project_removetag(auth, node, **kwargs):
 
 
 @must_be_valid_project # injects project
-@must_be_valid_file  # injects file
 @must_have_permission('write')
 @must_not_be_registration
 def file_addtag(auth, node, guid, **kwargs):
@@ -72,7 +71,6 @@ def file_addtag(auth, node, guid, **kwargs):
 
 
 @must_be_valid_project # injects project
-@must_be_valid_file # injects file
 @must_have_permission('write')
 @must_not_be_registration
 def file_removetag(auth, node, guid, **kwargs):
