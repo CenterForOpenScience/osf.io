@@ -1,15 +1,19 @@
+import celery
+from itertools import chain
+
 from framework.tasks.handlers import enqueue_task
 
-from website.archiver.tasks import archive
+from website.archiver.tasks import (
+    archive,
+)
 from website.archiver.utils import (
-    link_archive_provider,
     handle_archive_fail,
 )
 from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
-    ARCHIVE_COPY_FAIL,
+    ARCHIVER_NETWORK_ERROR,
 )
 
 from website.project import signals as project_signals
@@ -23,8 +27,11 @@ def archive_node(src, dst, user):
     :param dst: registration Node
     :param user: registration initiator
     """
-    link_archive_provider(dst, user)
-    enqueue_task(archive.si(src._id, dst._id, user._id))
+    targets = chain([dst], dst.get_descendants_recursive())
+    archive_tasks = [archive.si(t.registered_from._id, t._id, user._id) for t in targets]
+    enqueue_task(
+        celery.chain(*archive_tasks)
+    )
 
 def archive_node_finished(node):
     pending = [value for value in node.archived_providers.values() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)]
@@ -54,7 +61,7 @@ def archive_callback(dst):
         dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
             handle_archive_fail(
-                ARCHIVE_COPY_FAIL,
+                ARCHIVER_NETWORK_ERROR,
                 dst.registered_from,
                 dst,
                 dst.creator,

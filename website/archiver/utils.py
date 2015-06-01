@@ -1,14 +1,16 @@
+from modularodm import Q
+
 from framework.auth import Auth
 
 from website.archiver import (
     StatResult, AggregateStatResult,
-    ARCHIVE_COPY_FAIL,
-    ARCHIVE_SIZE_EXCEEDED,
-    ARCHIVE_METADATA_FAIL,
+    ARCHIVER_NETWORK_ERROR,
+    ARCHIVER_SIZE_EXCEEDED,
 )
 
 from website import mails
 from website import settings
+from website.project.model import NodeLog
 
 def send_archiver_success_mail(dst):
     user = dst.creator
@@ -56,9 +58,17 @@ def send_archiver_copy_error_mails(src, user, results):
 
 def handle_archive_fail(reason, src, dst, user, result):
     delete_registration_tree(dst)
-    if reason in [ARCHIVE_COPY_FAIL, ARCHIVE_METADATA_FAIL]:
+    for log in NodeLog.find(
+        (
+            Q('action', 'eq', NodeLog.PROJECT_REGISTERED) &
+            Q('params.node', 'eq', src._id) &
+            Q('params.registration', 'eq', dst._id)
+        )
+    ):
+        log.remove()
+    if reason == ARCHIVER_NETWORK_ERROR:
         send_archiver_copy_error_mails(src, user, result)
-    elif reason == ARCHIVE_SIZE_EXCEEDED:
+    elif reason == ARCHIVER_SIZE_EXCEEDED:
         send_archiver_size_exceeded_mails(src, user, result)
 
 def archive_provider_for(node, user):

@@ -1684,7 +1684,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data):
+    def register_node(self, schema, auth, template, data, top=False):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1767,7 +1767,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
-        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
+        if top:
+            project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
+
         return registered
 
     def remove_tag(self, tag, auth, save=True):
