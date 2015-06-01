@@ -76,8 +76,18 @@ def move_file_subscription(old_event_sub, old_node, new_event_sub, new_node):
         return []
     old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event_sub), event_name=new_event_sub,
                           owner=new_node)
-    # old_sub.remove_user_from_subscription(user)
+    # Remove users that don't have permission on the new node. Return user ids to send e-mail.
+    removed_users = {}
+    for notification_type in constants.NOTIFICATION_TYPES:
+        if notification_type == 'none':
+            continue
+        removed_users[notification_type] = []
+        for user in getattr(old_sub, notification_type, []):
+            if not new_node.has_permission(user, 'read'):
+                removed_users[notification_type].append(user)
+                old_sub.remove_user_from_subscription(user)
     old_sub.save()
+    return removed_users
 
 
 def get_configured_projects(user):
