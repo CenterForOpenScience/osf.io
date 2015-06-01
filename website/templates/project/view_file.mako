@@ -44,9 +44,15 @@
 
   </div>
 
-  <div class="col-md-3"><div id="mfrIframe" class="mfr mfr-file"></div></div>
+  <div id="fileViewPanelLeft" class="col-md-9 panel-expand">
+    <div class="row">
+      <div id="mfrIframeParent" class="col-md-9">
+        <div id="mfrIframe" class="mfr mfr-file"></div>
+      </div>
 
-  <div class="file-view-panels panel-expand col-md-6" style="margin-top: -75px"></div>
+      <div class="file-view-panels col-md-3" style="margin-top: -75px"></div>
+    </div>
+  </div>
 
 </div>
 

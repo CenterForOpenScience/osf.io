@@ -8,7 +8,6 @@ var waterbutler = require('js/waterbutler');
 
 // Local requires
 var utils = require('./util.js');
-var FileRenderer = require('./render.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
 
@@ -173,7 +172,7 @@ module.exports = function(context) {
         //Need token in url as we cannot send headers with an Iframe
         var mfrIframe = new pym.Parent('mfrIframe', context.file.urls.render + '&token=' + context.accessToken, {});
         $(document).on('fileviewpage:reload', function() {
-            mfrIframe.sendMessage('reload');
+            mfrIframe.sendMessage('reload', 'reload');
         });
     }
     return m.component(FileViewPage, context);

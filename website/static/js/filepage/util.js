@@ -1,3 +1,4 @@
+var $ = require('jquery');
 var m = require('mithril');
 
 
@@ -36,6 +37,19 @@ var PanelToggler = {
         var shown = ctrl.panels.reduce(function(accu, panel) {
             return accu + (panel.selected ? 1 : 0);
         }, 0);
+
+        //Dirty hack because of the treebeard redraw issues
+        //Dont ever do this
+        if (shown === 2) {
+            $('#mfrIframeParent').removeClass().addClass('col-md-6');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
+        } else if (shown === 1) {
+            $('#mfrIframeParent').removeClass().addClass('col-md-9');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-3');
+        } else {
+            $('#mfrIframeParent').removeClass().addClass('col-md-11');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-1');
+        }
 
         return m('.panel-toggler', [
             m('.row', [
