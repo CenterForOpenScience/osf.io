@@ -940,6 +940,57 @@ class TestProjectViews(OsfTestCase):
         assert_equal(0, res.json['node']['fork_count'])
 
 
+class TestFileTagViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestFileTagViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.user.add_addon('github')
+        self.project.add_addon('github', auth=Auth(self.user))
+
+        self.user_addon = self.user.get_addon('github')
+        self.node_addon = self.project.get_addon('github')
+        self.oauth = AddonGitHubOauthSettings(
+            github_user_id='denbarell',
+            oauth_access_token='Truthy'
+        )
+
+        self.oauth.save()
+
+        self.user_addon.oauth_settings = self.oauth
+        self.user_addon.save()
+
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.save()
+
+        self.path = 'cloudfiles'
+        self.guid, _ = self.node_addon.find_or_create_file_guid('/' + self.path)
+
+    def test_file_add_tag(self):
+        assert_not_in('footag', self.guid.tags)
+        url = "/api/v1/project/{pid}/addfiletag/{tag}/{guid}/".format(
+            pid=self.project._primary_key,
+            tag='footag',
+            guid=self.guid
+        )
+        self.app.post_json(url, {}, auth=self.user.auth)
+        self.guid.reload()
+        assert_in('footag', self.guid.tags)
+
+    def test_file_remove_tag(self):
+        self.guid.add_tag("footag", auth=Auth(self.user), node=self.project, save=True)
+        assert_in("footag", self.guid.tags)
+        url = "/api/v1/project/{pid}/removefiletag/{tag}/{guid}/".format(
+            pid=self.project._primary_key,
+            tag='footag',
+            guid=self.guid
+        )
+        self.app.post_json(url, {}, auth=self.user.auth)
+        self.guid.reload()
+        assert_not_in('footag', self.guid.tags)
+
 class TestEditableChildrenViews(OsfTestCase):
 
     def setUp(self):
