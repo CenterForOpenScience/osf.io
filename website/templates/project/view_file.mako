@@ -147,7 +147,6 @@
         %if error is None:
               render: '${urls['render']}',
         %endif
-              content: '${urls['content'] | js_str}',
               sharejs: '${urls['sharejs'] | js_str}',
             }
         },
