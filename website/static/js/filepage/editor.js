@@ -13,6 +13,8 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 var util = require('./util.js');
 
+var model = {};
+
 var FileEditor = {
     controller: function(contentUrl, shareWSUrl, editorMeta, observables) {
         var self = {};
@@ -20,7 +22,6 @@ var FileEditor = {
         self.url = contentUrl;
         self.loaded = false;
         self.initialText = '';
-        self.editor = undefined;
         self.editorMeta = editorMeta;
 
         self.observables = observables;
@@ -29,9 +30,9 @@ var FileEditor = {
 
         self.bindAce = function(element, isInitialized, context) {
             if (isInitialized) return;
-            self.editor = ace.edit(element.id);
-            self.editor.setValue(self.initialText);
-            new ShareJSDoc(shareWSUrl, self.editorMeta, self.editor, self.observables);
+            model.editor = ace.edit(element.id);
+            model.editor.setValue(self.initialText);
+            new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
         };
 
         self.reloadFile = function() {
@@ -46,8 +47,8 @@ var FileEditor = {
                 m.startComputation();
                 self.loaded = true;
                 self.initialText = response.responseText;
-                if (self.editor) {
-                    self.editor.setValue(self.initialText);
+                if (model.editor) {
+                    model.editor.setValue(self.initialText);
                 }
                 m.endComputation();
             }).fail(function (xhr, textStatus, error) {
@@ -66,25 +67,25 @@ var FileEditor = {
         $(document).on('fileviewpage:save', function() {
             if(self.changed()) {
                 var oldstatus = self.observables.status();
-                self.editor.setReadOnly(true);
+                model.editor.setReadOnly(true);
                 self.observables.status('saving');
                 m.redraw();
                 var request = $.ajax({
                     type: 'PUT',
                     url: self.url,
-                    data: self.editor.getValue(),
+                    data: model.editor.getValue(),
                     beforeSend: $osf.setXHRAuthorization
                 }).done(function () {
-                    self.editor.setReadOnly(false);
+                    model.editor.setReadOnly(false);
                     self.observables.status(oldstatus);
                     $(document).trigger('fileviewpage:reload');
-                    self.initialText = self.editor.getValue();
+                    self.initialText = model.editor.getValue();
                     m.redraw();
                 }).fail(function(error) {
-                    self.editor.setReadOnly(false);
+                    model.editor.setReadOnly(false);
                     self.observables.status(oldstatus);
                     $(document).trigger('fileviewpage:reload');
-                    self.editor.setValue(self.initialText);
+                    model.editor.setValue(self.initialText);
                     $osf.growl('Error', 'The file could not be updated.');
                     Raven.captureMessage('Could not PUT file content.', {
                         error: error,
@@ -104,7 +105,7 @@ var FileEditor = {
 
         self.changed = function() {
             var file1 = self.initialText;
-            var file2 = !self.editor ? '' : self.editor.getValue();
+            var file2 = !model.editor ? '' : model.editor.getValue();
 
             var clean1 = typeof file1 === 'string' ?
                 file1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
