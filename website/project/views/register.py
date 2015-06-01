@@ -432,9 +432,6 @@ def node_register_template_page_post(auth, node, **kwargs):
             register.save()
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-
-        for contributor in register.contributors:
-            _send_embargo_email(register, contributor)
     else:
         register.is_public = True
         register.save()
