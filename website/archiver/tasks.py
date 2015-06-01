@@ -27,6 +27,7 @@ from website.project import signals as project_signals
 from website.mails import send_mail
 from website import settings
 from website.app import init_addons, do_set_backends
+from website.addons.base import StorageAddonBase
 
 def create_app_context():
     try:
@@ -91,8 +92,7 @@ def stat_node(src_pk, dst_pk, user_pk):
     logger.info("Statting node: {0}".format(src_pk))
     create_app_context()
     src = Node.load(src_pk)
-    added_default = [addon.short_name for addon in settings.ADDONS_AVAILABLE if 'node' in addon.added_default]
-    targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE if name not in added_default]
+    targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
     celery.chord(
         celery.group(
             stat_addon.si(
@@ -101,7 +101,7 @@ def stat_node(src_pk, dst_pk, user_pk):
                 dst_pk,
                 user_pk,
             )
-            for addon in targets if addon
+            for addon in targets if (addon and isinstance(addon, StorageAddonBase))
         )
     )(archive_node.s(src_pk, dst_pk, user_pk))
 
@@ -112,7 +112,7 @@ def make_copy_request(dst_pk, url, data):
 
     :param dst_pk: primary key of registration node
     :param url: URL to send request to
-    :parama data: <dict> of setting to send in POST to WaterBulter API
+    :param data: <dict> of setting to send in POST to WaterBulter API
     :return: None
     """
     dst = Node.load(dst_pk)
