@@ -26,6 +26,22 @@ def archive_node(src, dst, user):
     link_archive_provider(dst, user)
     enqueue_task(archive.si(src._id, dst._id, user._id))
 
+def archive_node_finished(node):
+    pending = [value for value in node.archived_providers.values() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)]
+    return False if pending else True
+
+def archive_tree_finished(node, dir=None):
+    if archive_node_finished(node):
+        if not dir:
+            up_ = archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
+            down_ = len([ret for ret in [archive_tree_finished(child, dir='down') for child in node.nodes] if ret]) if len(node.nodes) else True
+            return up_ and down_
+        if dir == 'up':
+            return archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
+        elif dir == 'down':
+            return len([ret for ret in [archive_tree_finished(child, dir='down') for child in node.nodes]]) if len(node.nodes) else True
+    return False
+
 @project_signals.archive_callback.connect
 def archive_callback(dst):
     """Blinker listener for updates to the archive task. When no tasks are
@@ -33,8 +49,7 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
-    pending = [value for value in dst.archived_providers.values() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)]
-    if not pending:
+    if archive_tree_finished(dst):
         dst.archiving = False
         dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
@@ -48,6 +63,6 @@ def archive_callback(dst):
         else:
             if dst.pending_embargo:
                 for contributor in dst.contributors:
-                    project_utils.send_embargo_mail(dst, contributor)
+                    project_utils.send_embargo_email(dst, contributor)
             else:
                 archiver_utils.send_archiver_success_mail(dst)

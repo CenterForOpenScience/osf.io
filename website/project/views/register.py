@@ -422,6 +422,7 @@ def node_register_template_page_post(auth, node, **kwargs):
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+    project_signals.after_create_registration.send(node, dst=register, user=auth.user)
 
     if data['registrationChoice'] == 'embargo':
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
