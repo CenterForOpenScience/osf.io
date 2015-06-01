@@ -5,10 +5,10 @@
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
-<div class="row">
+<div class="row profile-page">
 
-    <div class="col-md-3">
-        <div class="panel panel-default">
+    <div class="col-sm-3 affix-parent">
+        <div class="panel panel-default profile-panel" data-spy="affix" data-offset-top="100" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
@@ -17,6 +17,7 @@
             </ul>
         </div><!-- end sidebar -->
     </div>
+
 
     <div class="col-md-6">
         <div class="panel panel-default scripted" id="selectLists">
@@ -73,4 +74,5 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src="${"/static/public/js/notifications-config-page.js" | webpack_asset}"></script>
+    <script src=${"/static/public/js/profile-settings-menu.js" | webpack_asset}></script>
 </%def>

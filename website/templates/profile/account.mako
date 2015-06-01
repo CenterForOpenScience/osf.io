@@ -8,15 +8,15 @@
     <div id="accountSettings">
         <h2 class="page-header">Account Settings</h2>
         <div class="row">
-            <div class="col-md-3">
-                <div class="panel panel-default">
+            <div class="col-sm-3 affix-parent">
+                <div class="panel panel-default profile-panel" data-spy="affix" data-offset-top="100" data-offset-bottom="268">
                     <ul class="nav nav-stacked nav-pills">
                         <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                         <li><a href="#">Account Settings</a></li>
                         <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
                         <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
                     </ul>
-                </div>
+                </div><!-- end sidebar -->
             </div>
             <div class="col-md-6">
                 <div id="connectedEmails" class="panel panel-default scripted">
@@ -121,4 +121,7 @@
         </div>
     </div>
     <script src=${"/static/public/js/profile-account-settings-page.js" | webpack_asset}></script>
+</%def>
+<%def name=javascript_bottom()>\
+    <script src=${"/static/public/js/profile-settings-menu.js" | webpack_asset}></script>
 </%def>
