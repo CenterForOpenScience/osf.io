@@ -27,7 +27,7 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li><a href="/search/?q=*&filter=registration">Registry</a></li>
-                        <li><a href="/presentations/">Presentations</a></li>
+                        <li><a href="/meetings/">Meetings</a></li>
                         <li><a href="/explore/activity/">Public Activity</a></li>
                     </ul><!-- end dropdown-menu -->
                 </li><!-- end dropdown -->
