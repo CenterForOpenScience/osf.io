@@ -63,7 +63,7 @@ class TestUrlForHelpers(unittest.TestCase):
         """Handles URLs with port correctly"""
         full_url = api_v2_url('/nodes/abcd3/contributors/',
                                   base_route='http://localhost:8000/')
-        assert_equal(full_url, "http://localhost:8000/nodes/abcd3/contributors/")
+        assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
 
     def test_api_v2_url_with_params(self):
         """Handles URLs with parameters (dict and kwarg) correctly"""

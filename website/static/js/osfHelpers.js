@@ -23,6 +23,18 @@ var growl = function(title, message, type) {
     new GrowlBox(title, message, type || 'danger');
 };
 
+
+/**
+ * Generate OSF absolute URLs, including server, port, and arguments. Assumes access to mako globals for pieces of URL.
+ *
+ */
+var apiV2Url = function (pathStr, paramsObj){
+    paramsObj = paramsObj || {};
+
+
+};
+
+
 /**
 * Posts JSON data.
 *
