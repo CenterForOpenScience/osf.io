@@ -31,8 +31,6 @@ from tests import factories
 from tests.base import capture_signals
 from tests.base import OsfTestCase
 
-from pprint import pprint
-
 
 class TestNotificationsModels(OsfTestCase):
 
