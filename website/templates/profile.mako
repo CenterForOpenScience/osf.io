@@ -26,7 +26,7 @@
                 <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
             % endif
         </div>
-        <div id="profileFullname" class="h1 overflow name_div">
+        <div class="h1 overflow name_div">
             ${profile["fullname"]}
         </div>
     </div>
