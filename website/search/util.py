@@ -43,7 +43,7 @@ def build_query_string(qs):
     return {
         'query_string': {
             'default_field': '_all',
-            'fields': ['_all', 'title^2'],
+            'fields': ['_all', 'title^2', 'description^1.2'],
             'query': qs,
             'analyze_wildcard': True,
             'lenient': True  # TODO, may not want to do this

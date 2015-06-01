@@ -119,7 +119,7 @@ var ViewModel = function(params) {
         return {
             'query_string': {
                 'default_field': '_all',
-                'fields': ['title^2', '_all'],
+                'fields': ['title^2', '_all', 'description^1.2'],
                 'query': self.query(),
                 'analyze_wildcard': true,
                 'lenient': true
