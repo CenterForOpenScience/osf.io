@@ -275,7 +275,7 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
-    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
+    cmd = 'celery worker -A framework.tasks -l {0} -f celery_worker.log'.format(level)
     run(bin_prefix(cmd))
 
 
@@ -637,7 +637,7 @@ def hotfix(name, finish=False, push=False):
 def feature(name, finish=False, push=False):
     """Rename the current branch to a feature branch and optionally finish it."""
     print('Renaming branch...')
-    run('git br -m feature/{}'.format(name), echo=True)
+    run('git branch -m feature/{}'.format(name), echo=True)
     if finish:
         run('git flow feature finish {}'.format(name), echo=True)
     if push:

@@ -9,6 +9,7 @@ from website.models import NodeLog
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+from website.addons.base import StorageAddonBase
 
 from . import messages
 from .api import Figshare
@@ -93,7 +94,7 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
         super(AddonFigShareUserSettings, self).delete(save=save)
 
 
-class AddonFigShareNodeSettings(AddonNodeSettingsBase):
+class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
@@ -102,6 +103,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
     )
+
+    @property
+    def folder_name(self):
+        return self.Figshare_title
 
     def find_or_create_file_guid(self, path):
         # path should be /aid/fid

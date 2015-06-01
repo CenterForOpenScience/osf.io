@@ -24,6 +24,7 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query
+from website.util import sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -164,15 +165,19 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        # TODO: Remove when html safe comes in
-        'title': result['title'].replace('&amp;', '&'),
+        # TODO: Remove safe_unescape_html when mako html safe comes in
+        'title': sanitize.safe_unescape_html(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
+        'parent_title': sanitize.safe_unescape_html(parent_info.get('title')) if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
+        'is_retracted': result['is_retracted'],
+        'pending_retraction': result['pending_retraction'],
+        'embargo_end_date': result['embargo_end_date'],
+        'pending_embargo': result['pending_embargo'],
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
         'date_created': result.get('date_created'),
@@ -246,17 +251,23 @@ def update_node(node, index=INDEX):
             'description': node.description,
             'url': node.url,
             'is_registration': node.is_registration,
+            'is_retracted': node.is_retracted,
+            'pending_retraction': node.pending_retraction,
+            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'pending_embargo': node.pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
-        for wiki in [
-            NodeWikiPage.load(x)
-            for x in node.wiki_pages_current.values()
-        ]:
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+
+        if not node.is_retracted:
+            for wiki in [
+                NodeWikiPage.load(x)
+                for x in node.wiki_pages_current.values()
+            ]:
+                elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 

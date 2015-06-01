@@ -42,7 +42,7 @@ body {
 .gs-sidebar .nav a,
 .gs-sidebar .nav a:hover,
 .gs-sidebar .nav a:focus {
-    
+
     text-decoration: none;
     background-color: transparent;
 }
@@ -313,6 +313,7 @@ a.btn-success.disabled {
 
 #addPointer td {
     vertical-align: middle;
+    word-break: break-all;
 }
 
 li.pointer {
@@ -981,7 +982,7 @@ h1.unavailable {
     padding-top: 100px;
     display: block;
   z-index: -1;
-  position: relative;    
+  position: relative;
 }
 
 .anchor {
@@ -2121,12 +2122,12 @@ span#profileFullname{
 @media (min-width: 768px) and (max-width: 991px)  {
     #signInForm input {
         width: 110px;
-    }    
+    }
 }
 @media (min-width: 1600px) {
     #signInForm input {
         width: 220px;
-    }    
+    }
 }
 
 /* Search bar */
@@ -2236,9 +2237,6 @@ span#profileFullname{
 }
 .break-word {
     word-wrap: break-word;
-}
-.word-break-word {
-    word-break: break-word;
 }
 .table-fixed {
     table-layout: fixed;
@@ -2513,7 +2511,7 @@ span#profileFullname{
 
   /* No support for these yet, use at own risk */
   -o-user-select: none;
-  user-select: none;          
+  user-select: none;
 }
 .inline {
     display: inline-block;
@@ -2734,7 +2732,7 @@ span#profileFullname{
   width: 15px;
   height: 13px;
   position: relative;
-} 
+}
 .fangorn-toolbar-icon .osf-fa-stack-top {
   font-size: 10px;
   margin-top: 5px;

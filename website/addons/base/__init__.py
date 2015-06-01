@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 import glob
 import importlib
@@ -8,21 +7,27 @@ from bson import ObjectId
 from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
+from time import sleep
 
 import furl
 import requests
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
-from framework.exceptions import PermissionsError
+from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
+from framework.exceptions import (
+    PermissionsError,
+    HTTPError,
+)
 
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
+from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
 
@@ -50,7 +55,6 @@ STATUS_EXCEPTIONS = {
     410: exceptions.FileDeletedError,
     404: exceptions.FileDoesntExistError
 }
-
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -259,6 +263,14 @@ class GuidFile(GuidStoredObject):
             raise AttributeError('No attribute name')
 
     @property
+    def materialized(self):
+        try:
+            return self._metadata_cache['materialized']
+        except (TypeError, KeyError):
+            # If materialized is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute materialized')
+
+    @property
     def file_name(self):
         if self.revision:
             return '{0}_{1}.html'.format(self._id, self.revision)
@@ -275,8 +287,10 @@ class GuidFile(GuidStoredObject):
             'nid': self.node._id,
             'provider': self.provider,
             'path': self.waterbutler_path,
-            'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
+
+        if session and 'auth_user_access_token' in session.data:
+            url.args.add('token', session.data.get('auth_user_access_token'))
 
         if request.args.get('view_only'):
             url.args['view_only'] = request.args['view_only']
@@ -651,6 +665,20 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         user_settings.oauth_grants = {}
         user_settings.save()
+
+        try:
+            config = settings.ADDONS_AVAILABLE_DICT[
+                self.oauth_provider.short_name
+            ]
+            Model = config.settings_models['node']
+        except KeyError:
+            pass
+        else:
+            connected = Model.find(Q('user_settings', 'eq', user_settings))
+            for node_settings in connected:
+                node_settings.user_settings = self
+                node_settings.save()
+
         self.save()
 
     def to_json(self, user):
@@ -676,9 +704,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if node_addon and node_addon.user_settings == self:
                 node_addon.clear_auth()
 
-
 class AddonNodeSettingsBase(AddonSettingsBase):
-
     owner = fields.ForeignField('node', backref='addons')
 
     _meta = {
@@ -753,7 +779,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_make_public(self, node):
-
         """
 
         :param Node node:
@@ -838,6 +863,72 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         """
         pass
+
+############
+# Archiver #
+############
+class GenericRootNode(object):
+    path = '/'
+    name = ''
+
+class StorageAddonBase(object):
+    """
+    Mixin class for traversing file trees of addons with files
+    """
+
+    root_node = GenericRootNode()
+
+    @property
+    def archive_folder_name(self):
+        name = "Archive of {addon}".format(addon=self.config.full_name)
+        folder_name = (getattr(self, 'folder_name') or '').lstrip('/').strip()
+        if folder_name:
+            name = name + ": {folder}".format(folder=folder_name)
+        return name
+
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None):
+        kwargs = dict(
+            provider=self.config.short_name,
+            path=filenode.get('path', ''),
+            node=self.owner,
+            user=user,
+            view_only=True,
+        )
+        if cookie:
+            kwargs['cookie'] = cookie
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            **kwargs
+        )
+        res = requests.get(metadata_url)
+        sleep(1.0 / 5.0)
+        if res.status_code != 200:
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
+        return res.json().get('data', [])
+
+    def _get_file_tree(self, filenode=None, user=None, cookie=None):
+        """
+        Recursively get file metadata
+        """
+        filenode = filenode or {
+            'path': '/',
+            'kind': 'folder',
+            'name': self.root_node.name,
+        }
+        if filenode.get('kind') == 'file':
+            return filenode
+        kwargs = {}
+        if cookie:
+            kwargs = {
+                'cookie': cookie,
+            }
+        filenode['children'] = [
+            self._get_file_tree(child, user, cookie=cookie)
+            for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)
+        ]
+        return filenode
 
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):

@@ -58,3 +58,22 @@ def assert_clean(data):
             raise ValueError
 
     return escape_html(data)
+
+
+# TODO: Remove safe_unescape_html when mako html safe comes in
+def safe_unescape_html(s):
+    """
+    Return a string without html escape characters.
+
+    :param s: A string
+    :return: A string without html escape characters
+
+    """
+    safe_characters = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+    }
+    for escape_sequence, character in safe_characters.items():
+        s = s.replace(escape_sequence, character)
+    return s
