@@ -2,7 +2,6 @@
 <%def name="title()">Settings</%def>
 <%def name="content()">
 <% from website import settings %>
-<h2 class="page-header">Profile Information</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
@@ -16,11 +15,13 @@
 ##    </div>
 ##</div>
 
-<div class="row">
+        <div class="row"  href="#start">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
+    <div class="profile-page">
+
+    <div class="col-sm-3 nav-list-spy">
+        <div class="gs-sidebar hidden-print hidden-xs panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268" data-target-top="page-header">
+            <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
                 <li><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
@@ -28,8 +29,10 @@
             </ul>
         </div><!-- end sidebar -->
     </div>
-
     <div class="col-sm-9 col-md-7">
+    <h2>Profile Information</h2>
+
+
 
         <div id="userProfile">
 
@@ -65,7 +68,6 @@
     </div>
 
 </div>
-
 ## TODO: Review and un-comment
 ##<div mod-meta='{
 ##        "tpl": "util/render_keys.mako",
@@ -102,3 +104,4 @@
 </script>
 <script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>
 </%def>
+</div>
