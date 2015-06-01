@@ -15,13 +15,13 @@ var util = require('./util.js');
 
 var FileEditor = {
     controller: function(contentUrl, shareWSUrl, editorMeta, observables) {
-        var self = this;
+        var self = {};
+
         self.url = contentUrl;
         self.loaded = false;
         self.initialText = '';
         self.editor = undefined;
         self.editorMeta = editorMeta;
-        self.changed = m.prop(false);
 
         self.observables = observables;
 
@@ -31,7 +31,6 @@ var FileEditor = {
             if (isInitialized) return;
             self.editor = ace.edit(element.id);
             self.editor.setValue(self.initialText);
-            self.editor.on('change', self.onChanged);
             new ShareJSDoc(shareWSUrl, self.editorMeta, self.editor, self.observables);
         };
 
@@ -103,8 +102,7 @@ var FileEditor = {
             self.reloadFile();
         });
 
-        self.onChanged = function(e) {
-            //To avoid extra typing
+        self.changed = function() {
             var file1 = self.initialText;
             var file2 = !self.editor ? '' : self.editor.getValue();
 
@@ -113,11 +111,12 @@ var FileEditor = {
             var clean2 = typeof file2 === 'string' ?
                 file2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
-            self.changed(clean1 !== clean2);
+            return clean1 !== clean2;
         };
 
         self.reloadFile();
 
+        return self;
     },
     view: function(ctrl) {
         if (!ctrl.loaded) return util.Spinner;
