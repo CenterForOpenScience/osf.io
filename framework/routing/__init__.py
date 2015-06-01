@@ -30,6 +30,16 @@ _tpl_lookup = TemplateLookup(
     ],
     module_directory='/tmp/mako_modules'
 )
+
+_tpl_lookup_safe = TemplateLookup(
+    directories=[
+        TEMPLATE_DIR,
+        os.path.join(settings.BASE_PATH, 'addons/'),
+    ],
+    module_directory='/tmp/mako_modules',
+    default_filters=('h',)
+)
+
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
@@ -187,15 +197,25 @@ def render_jinja_string(tpl, data):
     pass
 
 mako_cache = {}
-def render_mako_string(tpldir, tplname, data):
+def render_mako_string(tpldir, tplname, data, safe=False):
+    """Render a mako template. Optional safe argument to activate markup escaping"""
+    if safe is True:
+        lookup_obj = _tpl_lookup_safe
+        default_filters = ['h']  # Escape HTML entities by default
+    else:
+        lookup_obj = _tpl_lookup
+        default_filters=None
 
     tpl = mako_cache.get(tplname)
     if tpl is None:
+        with open(os.path.join(tpldir, tplname)) as f:
+            tpl_text = f.read()
         tpl = Template(
-            open(os.path.join(tpldir, tplname)).read(),
-            lookup=_tpl_lookup,
+            tpl_text,
+            lookup=lookup_obj,
             input_encoding='utf-8',
             output_encoding='utf-8',
+            default_filters=default_filters
         )
     # Don't cache in debug mode
     if not app.debug:
@@ -379,9 +399,10 @@ class WebRenderer(Renderer):
                 )
             )
 
-    def __init__(self, template_name, renderer=None, error_renderer=None,
+    def __init__(self, template_name,
+                 renderer=None, error_renderer=None,
                  data=None, detect_render_nested=True,
-                 template_dir=TEMPLATE_DIR):
+                 safe=False, template_dir=TEMPLATE_DIR):
         """Construct WebRenderer.
 
         :param template_name: Name of template file
@@ -392,12 +413,15 @@ class WebRenderer(Renderer):
                      to add to data from view function
         :param detect_render_nested: Auto-detect renderers for nested
             templates?
+        :param safe: Boolean: turn on markup-safe escaping?
         :param template_dir: Path to template directory
 
         """
         self.template_name = template_name
         self.data = data or {}
         self.detect_render_nested = detect_render_nested
+        self.safe = safe
+
         self.template_dir = template_dir
         self.renderer = self.detect_renderer(renderer, template_name)
         self.error_renderer = self.detect_renderer(
@@ -506,7 +530,8 @@ class WebRenderer(Renderer):
         # Catch errors and return appropriate debug divs
         # todo: add debug parameter
         try:
-            rendered = renderer(self.template_dir, template_name, data)
+            # TODO: Seems like Jinja2 and handlebars renderers would not work with this call sig
+            rendered = renderer(self.template_dir, template_name, data, safe=self.safe)
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 
