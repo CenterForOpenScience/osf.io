@@ -6,7 +6,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('bootstrap-editable');
 
 var oop = require('./oop');
 var $osf = require('./osfHelpers');
@@ -32,11 +31,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.super.constructor.call(this);
         var self = this;
 
-        self.permissions = ['read', 'write', 'admin'];
-
         self.title = title;
         self.parentId = parentId;
         self.parentTitle = parentTitle;
+
+        //list of permission objects for select.
+        self.permissionList = [
+            {value: 'read', text: 'Read'},
+            {value: 'write', text: 'Read + Write'},
+            {value: 'admin', text: 'Administrator'}
+        ];
 
         self.page = ko.observable('whom');
         self.pageTitle = ko.computed(function() {
@@ -222,31 +226,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
             $(element).find('.contrib-button').tooltip();
         });
     },
-    setupEditable: function(elm, data) {
-        var $elm = $(elm);
-        var $editable = $elm.find('.permission-editable');
-        $editable.editable({
-            showbuttons: false,
-            value: 'admin',
-            source: [{
-                value: 'read',
-                text: 'Read'
-            }, {
-                value: 'write',
-                text: 'Read + Write'
-            }, {
-                value: 'admin',
-                text: 'Administrator'
-            }],
-            success: function(response, value) {
-                data.permission(value);
-            }
-        });
-    },
     afterRender: function(elm, data) {
         var self = this;
         self.addTips(elm, data);
-        self.setupEditable(elm, data);
     },
     makeAfterRender: function() {
         var self = this;
@@ -288,7 +270,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
     add: function(data) {
-        data.permission = ko.observable('admin');
+        var self = this;
+        data.permission = ko.observable(self.permissionList[1]); //default permission write
         // All manually added contributors are visible
         data.visible = true;
         this.selection.push(data);
@@ -344,8 +327,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $osf.block();
         return $osf.postJSON(
             nodeApiUrl + 'contributors/', {
-                users: self.selection().map(function(user) {
-                    return ko.toJS(user);
+                users: ko.utils.arrayMap(self.selection(), function(user) {
+                    var permission = user.permission().value; //removes the value from the object
+                    var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
+                    tUser.permission = permission; //shoving the permission value into permission
+                    return tUser; //user with simplified permissions
                 }),
                 node_ids: self.nodesToChange()
             }
