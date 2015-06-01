@@ -2,9 +2,9 @@
 <%def name="title()">Getting Started</%def>
 <%def name="content()">
     <div class="row"  href="#start">
-        <div class="col-sm-3 nav-list-spy">
-            <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
-                <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
+        <div class="col-sm-3 affix-parent scrollspy">
+            <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs" role="complementary">
+                <ul class="nav nav-stacked nav-pills gs-sidenav">
                     <li>
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">
@@ -157,4 +157,5 @@
 </div>
 
 <script type="text/javascript" src="/static/vendor/youtube/youtube-loader.js"></script>
+<script type="text/javascript" src="/static/public/js/getting_started.js"></script>
 </%def>

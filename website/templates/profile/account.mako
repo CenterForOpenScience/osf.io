@@ -9,10 +9,10 @@
         <h2 class="page-header">Account Settings</h2>
         <div class="row">
             <div class="col-md-3">
-                <div class="panel panel-default">
+                <div>
                     <ul class="nav nav-stacked nav-pills">
                         <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
-                        <li><a href="#">Account Settings</a></li>
+                        <li class="active"><a href="#">Account Settings</a></li>
                         <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
                         <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
                     </ul>

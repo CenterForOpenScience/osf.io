@@ -19,9 +19,9 @@
 <div class="row">
 
     <div class="col-sm-3">
-        <div class="panel panel-default">
+        <div>
             <ul class="nav nav-stacked nav-pills">
-                <li><a href="#">Profile Information</a></li>
+                <li class="active"><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
                 <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>

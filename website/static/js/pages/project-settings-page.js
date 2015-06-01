@@ -60,7 +60,7 @@ $(document).ready(function() {
     ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
 
     $(window).resize(function (){ fixAffixWidth(); });
-    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
+    $('.scrollspy').on('affixed.bs.affix', function(){ fixAffixWidth(); });
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
