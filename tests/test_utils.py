@@ -11,7 +11,7 @@ from website.routes import process_rules, OsfWebRenderer
 from website import settings
 from website.util import paths
 from website.util.mimetype import get_mimetype
-from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for
+from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for, conjunct
 
 
 try:
@@ -252,3 +252,16 @@ class TestWebpackFilter(unittest.TestCase):
     def test_resolve_asset_not_found_and_not_in_debug_mode(self):
         with assert_raises(KeyError):
             paths.webpack_asset('bundle.js', self.asset_paths, debug=False)
+
+class TestWebsiteUtils(unittest.TestCase):
+
+    def test_conjunct(self):
+        words = []
+        assert_equal(conjunct(words), '')
+        words = ['a']
+        assert_equal(conjunct(words), 'a')
+        words = ['a', 'b']
+        assert_equal(conjunct(words), 'a and b')
+        words = ['a', 'b', 'c']
+        assert_equal(conjunct(words), 'a, b, and c')
+        assert_equal(conjunct(words, conj='or'), 'a, b, or c')
