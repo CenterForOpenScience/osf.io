@@ -19,12 +19,6 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.project.model import has_anonymous_link
 
-from website.util.sanitize import clean_tag
-from website.project.model import Tag
-from website.project.decorators import (
-    must_be_valid_project, must_have_permission, must_not_be_registration
-)
-
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
@@ -229,49 +223,3 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             osf_storage_settings.WATERBUTLER_RESOURCE: version.location[osf_storage_settings.WATERBUTLER_RESOURCE],
         },
     }
-
-def file_tag(tag, auth, **kwargs):
-    
-    tag_obj = Tag.load(tag)
-    nodes = tag_obj.node__tagged if tag_obj else []
-    visible_nodes = [obj for obj in nodes if obj.can_view(auth)]
-    return {
-        'nodes': [
-            {
-                'title': file.name,
-                'url': node.url,
-            }
-            for node in visible_nodes
-        ],
-        'tag': tag,
-    }
-
-
-@must_be_valid_project  # injects project
-@must_have_permission('write')
-@must_not_be_registration
-def file_addtag(auth, **kwargs):
-
-    tag = clean_tag(kwargs['tag'])
-    node = kwargs['node'] or kwargs['file']
-
-    if tag:
-        try:
-            node.add_tag(tag=tag, auth=auth)
-            return {'status': 'success'}, http.CREATED
-        except ValidationError:
-            return {'status': 'error'}, http.BAD_REQUEST
-
-
-@must_be_valid_project  # injects project
-@must_have_permission('write')
-@must_not_be_registration
-def file_removetag(auth, **kwargs):
-
-    tag = clean_tag(kwargs['tag'])
-    node = kwargs['node'] or kwargs['file']
-
-    if tag:
-        node.remove_tag(tag=tag, auth=auth)
-        return {'status': 'success'}
-
