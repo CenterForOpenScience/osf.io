@@ -35,7 +35,7 @@ var FileRevisionsTable = {
                 url: self.file.urls.revisions,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
-                // m.startComputation();
+                m.startComputation();
                 var urlParmas = $osf.urlParams();
                 self.revisions = response.data.map(function(rev, index) {
                     rev = FileRevisionsTable.postProcessRevision(self.file, self.node, rev, index);
@@ -50,12 +50,14 @@ var FileRevisionsTable = {
                     self.enableEditing(self.selectedRevision === 0);
                 }
                 self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
-                // m.endComputation();
+                m.endComputation();
             }).fail(function(response) {
+                m.startComputation();
                 self.loaded(true);
                 self.errorMessage = response.responseJSON ?
                     response.responseJSON.message || 'Unable to fetch versions' :
                     'Unable to fetch versions';
+                m.endComputation();
 
                 // self.errorMessage(err);
 
