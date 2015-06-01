@@ -2284,6 +2284,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.save()
 
             project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+        # Permissions needed to be overwritten on child if contrib is added to parent in this case
+        elif contrib_to_add in self.contributors and self.permissions.get(contrib_to_add._id) != []:
+            self.set_permissions(contrib_to_add, permissions)
             return True
         else:
             return False
