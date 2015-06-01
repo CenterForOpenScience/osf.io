@@ -35,8 +35,8 @@ describe('Paginator', () => {
     });
 
     it('previousPage', () => {
-        numberOfPages=16;
-        currentPage=16;
+        numberOfPages = 15;
+        currentPage = 15;
         paginator.configure(function(p){
             p.numberOfPages(numberOfPages);
             p.currentPage(currentPage);
@@ -47,7 +47,7 @@ describe('Paginator', () => {
     });
 
     it('nextPage', () => {
-        numberOfPages=16;
+        numberOfPages = 15;
         paginator.configure(function(p){
             p.num`erOfPages(numberOfPages);
         });
@@ -62,7 +62,7 @@ describe('Paginator', () => {
     });
 
     describe('addNewPaginator', () => {
-        var maxPaginatorNumber=16;
+        var maxPaginatorNumber=15;
 
         it('one page no paginator', () => {
             numberOfPages = 1;
@@ -93,8 +93,8 @@ describe('Paginator', () => {
         });
 
         it('more than 7 pages, currentPage less than 4, one ellipse at the end', () => {
-            numberOfPages=16;
-            currentPage=12;
+            numberOfPages = 15;
+            currentPage = 12;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
@@ -109,8 +109,8 @@ describe('Paginator', () => {
 
         it('more than 7 pages, currentPage more than numbersOfPages - 5, one ellipse at the beginning',
             () => {
-            numberOfPages=16;
-            currentPage=12;
+            numberOfPages = 15;
+            currentPage = 12;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
@@ -127,8 +127,8 @@ describe('Paginator', () => {
 
         it('more than 7 pages, currentPage more than 5 and numbersOfPages - 5, two ellipses',
             () => {
-            numberOfPages=16;
-            currentPage=9;
+            numberOfPages = 15;
+            currentPage = 9;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
