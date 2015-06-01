@@ -52,7 +52,7 @@
                   data-bind="css: {'has-error': password() && !password.isValid(),
                                     'has-success': password() && password.isValid()}">
                     <label class="placeholder-replace" style="display:none">Password</label>
-                    <input type="password" class="form-control" placeholder="Password (Must be at least 6 characters)" data-bind="
+                    <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind="
                         value: password,
                         disable: submitted(),
                         event: {

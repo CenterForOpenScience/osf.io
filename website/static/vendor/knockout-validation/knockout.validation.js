@@ -794,12 +794,12 @@ kv.rules['minLength'] = {
 };
 
 kv.rules['maxLength'] = {
-   validator: function (val, maxLength) {
-      if(kv.utils.isEmptyVal(val)) { return true; }
-      var normalizedVal = kv.utils.isNumber(val) ? ('' + val) : val;
-      return normalizedVal.length <= maxLength;
-   },
-   message: 'Please enter no more than {0} characters.'
+	validator: function (val, maxLength) {
+		if(kv.utils.isEmptyVal(val)) { return true; }
+		var normalizedVal = kv.utils.isNumber(val) ? ('' + val) : val;
+		return normalizedVal.length <= maxLength;
+	},
+	message: 'Please enter no more than {0} characters.'
 };
 
 kv.rules['pattern'] = {

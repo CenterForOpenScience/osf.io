@@ -34,7 +34,8 @@ var ViewModel = function(submitUrl) {
     });
     self.password = ko.observable('').extend({
         required: true,
-        minLength: 6
+        minLength: 6,
+        maxLength: 256
     });
 
     // Preserve object of validated fields for use in `submit`
