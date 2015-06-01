@@ -87,7 +87,7 @@ var FileViewPage = {
                     m('i.fa.fa-pencil-square-o'),
                     ' Edit',
                 ]),
-                m('.col-md-6', [
+                m('.col-md-5', [
                     m('', [
                         m('.progress.progress-no-margin.pointer', {
                             'data-toggle': 'modal',
@@ -123,7 +123,7 @@ var FileViewPage = {
                             ])
                         ])
                     ]),
-                    m('.col-md-3', [
+                    m('.col-md-4', [
                         m('.pull-right.btn-group.btn-group-sm', [
                             m('button#fileEditorRevert.btn.btn-warning', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
                             m('button#fileEditorSave.btn.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
